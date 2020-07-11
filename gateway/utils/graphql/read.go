@@ -146,7 +146,33 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 		readRequest.Operation = utils.Distinct
 	}
 
+	// Get extra arguments
+	readRequest.Extras = generateArguments(field, store)
+
 	return &readRequest, hasOptions, nil
+}
+
+func generateArguments(field *ast.Field, store utils.M) map[string]interface{} {
+	obj := map[string]interface{}{}
+	for _, arg := range field.Arguments {
+		switch arg.Name.Value {
+		case "where", "group", "skip", "limit", "sort", "distinct": // read & delete
+			continue
+		case "op", "set", "inc", "mul", "max", "min", "currentTimestamp", "currentDate", "push", "rename", "unset": // update
+			continue
+		case "docs": // create
+			continue
+		default:
+			val, err := utils.ParseGraphqlValue(arg.Value, store)
+			if err != nil {
+				utils.LogWarn(fmt.Sprintf("Unable to extract field (%s)", arg.Name.Value), "graph", "read")
+				continue
+			}
+
+			obj[arg.Name.Value] = val
+		}
+	}
+	return obj
 }
 
 func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string) map[string]int32 {
