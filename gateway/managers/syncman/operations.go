@@ -207,10 +207,10 @@ func (s *Manager) GetProjectConfig(projectID string, params model.RequestParams)
 			return []interface{}{config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, SecretSource: p.SecretSource, Integration: p.Integration, Name: p.Name, ID: p.ID}}, nil
 		}
 	}
-	if len(v) > 0 {
+	if len(v) > 0 || projectID == "*" {
 		return v, nil
 	}
-	return []interface{}{}, errors.New("given project is not present in state")
+	return []interface{}{}, utils.LogError(fmt.Sprintf("Project (%s) not present", projectID), "syncman", "get-projects", nil)
 }
 
 // GetConfig returns the config present in the state
