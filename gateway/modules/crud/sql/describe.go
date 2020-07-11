@@ -31,18 +31,23 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, col string) ([]ut
 	args := []interface{}{}
 	switch utils.DBType(s.dbType) {
 	case utils.MySQL:
-		queryString = `select column_name as 'Field',is_nullable as 'Null',column_key as 'Key',coalesce(column_default,'') as 'Default',coalesce(column_default,'') as 'Extra',
-case when data_type = 'varchar' then concat(DATA_TYPE,'(',CHARACTER_MAXIMUM_LENGTH,')') else DATA_TYPE end as 'Type'
+		queryString = `select column_name as 'Field',is_nullable as 'Null',column_key as 'Key',
+case when data_type = 'varchar' then concat(DATA_TYPE,'(',CHARACTER_MAXIMUM_LENGTH,')') else DATA_TYPE end as 'Type',
+CASE 
+	WHEN column_default = '1' THEN 'true'
+	WHEN column_default = '0' THEN 'false'
+	ELSE coalesce(column_default,'')
+END AS 'Default'
 from information_schema.columns
 where (table_name,table_schema) = (?,?);`
 		args = append(args, col, project)
 
 	case utils.Postgres:
-		queryString = `SELECT isc.column_name AS "Field", coalesce(isc.column_default,'') AS "Default" ,isc.data_type AS "Type",isc.is_nullable AS "Null",isc.is_nullable as "Extra",
+		queryString = `SELECT isc.column_name AS "Field", SPLIT_PART(REPLACE(coalesce(column_default,''),'''',''), '::', 1) AS "Default" ,isc.data_type AS "Type",isc.is_nullable AS "Null",
 CASE
     WHEN t.constraint_type = 'PRIMARY KEY' THEN 'PRI'
     WHEN t.constraint_type = 'UNIQUE' THEN 'UNI'
-    ELSE 'f'
+    ELSE ''
 END AS "Key"
 FROM information_schema.columns isc
     left join (select cu.table_schema, cu.table_name, cu.column_name, istc.constraint_type 
@@ -57,12 +62,12 @@ ORDER BY isc.ordinal_position;`
 	case utils.SQLServer:
 
 		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' , 
-    case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',c.CHARACTER_MAXIMUM_LENGTH,')') else C.DATA_TYPE end as 'Type',
-    coalesce(C.COLUMN_DEFAULT,'') as 'Default',C.DATA_TYPE as 'Extra',
+    case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')') else C.DATA_TYPE end as 'Type',
+    REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') as 'Default',
        CASE
            WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
            WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'
-           ELSE isnull(TC.CONSTRAINT_TYPE,'NULL')
+           ELSE isnull(TC.CONSTRAINT_TYPE,'')
            END AS 'Key'
 FROM INFORMATION_SCHEMA.COLUMNS AS C
          FULL JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS CC

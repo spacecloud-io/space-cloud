@@ -6,8 +6,8 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils/input"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/input"
 )
 
 func generateDBRule() (*model.SpecObject, error) {
@@ -153,5 +153,51 @@ func generateDBSchema() (*model.SpecObject, error) {
 		},
 	}
 
+	return v, nil
+}
+
+func generateDBPreparedQuery() (*model.SpecObject, error) {
+	project := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project: "}, &project); err != nil {
+		return nil, err
+	}
+
+	dbAlias := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter DB Alias: "}, &dbAlias); err != nil {
+		return nil, err
+	}
+
+	id := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Prepared Query Name: "}, &id); err != nil {
+		return nil, err
+	}
+
+	query := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter SQL query: ", Default: "select * from users"}, &query); err != nil {
+		return nil, err
+	}
+
+	args := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter arguments by comma seperated value: ", Default: "args.id"}, &args); err != nil {
+		return nil, err
+	}
+	arguments := strings.Split(args, ",")
+
+	v := &model.SpecObject{
+		API:  "/v1/config/projects/{project}/database/{dbAlias}/prepared-queries/{id}",
+		Type: "db-prepared-query",
+		Meta: map[string]string{
+			"project": project,
+			"dbAlias": dbAlias,
+			"id":      id,
+		},
+		Spec: map[string]interface{}{
+			"sql": query,
+			"rule": map[string]interface{}{
+				"rule": "allow",
+			},
+			"args": arguments,
+		},
+	}
 	return v, nil
 }

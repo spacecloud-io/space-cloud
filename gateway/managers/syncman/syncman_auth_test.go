@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_SetUserManagement(t *testing.T) {
@@ -93,7 +94,7 @@ func TestManager_SetUserManagement(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.SetUserManagement(tt.args.ctx, tt.args.project, tt.args.provider, tt.args.value); (err != nil) != tt.wantErr {
+			if err := tt.s.SetUserManagement(tt.args.ctx, tt.args.project, tt.args.provider, tt.args.value, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetUserManagement() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -143,7 +144,7 @@ func TestManager_GetUserManagement(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetUserManagement(tt.args.ctx, tt.args.project, tt.args.providerID)
+			got, err := tt.s.GetUserManagement(tt.args.ctx, tt.args.project, tt.args.providerID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetUserManagement() error = %v, wantErr %v", err, tt.wantErr)
 				return
