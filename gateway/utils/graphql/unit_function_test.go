@@ -29,7 +29,12 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{map[string]interface{}{}, nil},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+			{
+				method:         "PostProcessMethod",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -70,7 +75,12 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{map[string]interface{}{}, nil},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+			{
+				method:         "PostProcessMethod",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -111,7 +121,12 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{map[string]interface{}{}, nil},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+			{
+				method:         "PostProcessMethod",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -153,7 +168,7 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{map[string]interface{}{}, errors.New("function call not authorized")},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, errors.New("function call not authorized")},
 			},
 		},
 		args: args{
@@ -194,7 +209,7 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{map[string]interface{}{}, errors.New("function call not authorized")},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, errors.New("function call not authorized")},
 			},
 		},
 		args: args{
@@ -235,7 +250,7 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{map[string]interface{}{}, errors.New("function call not authorized")},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, errors.New("function call not authorized")},
 			},
 		},
 		args: args{

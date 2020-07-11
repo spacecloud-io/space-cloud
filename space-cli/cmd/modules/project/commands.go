@@ -4,17 +4,19 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // GenerateSubCommands is the list of commands the project module exposes
 func GenerateSubCommands() []*cobra.Command {
 
-	var generateService = &cobra.Command{
-		Use:  "project",
-		RunE: actionGenerateProject,
+	var generateProject = &cobra.Command{
+		Use:     "project [path to config file]",
+		RunE:    actionGenerateProject,
+		Aliases: []string{"projects"},
+		Example: "space-cli generate project config.yaml --project myproject --log-level info",
 	}
-	return []*cobra.Command{generateService}
+	return []*cobra.Command{generateProject}
 }
 
 // GetSubCommands dis the list of commands the project module exposes
@@ -55,7 +57,7 @@ func actionGetProjectConfig(cmd *cobra.Command, args []string) error {
 
 func actionGenerateProject(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	projectFilePath := args[0]
 	project, err := generateProject()

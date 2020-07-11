@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"log"
 	"os"
 	"sort"
@@ -24,7 +25,22 @@ type ConsulStore struct {
 
 // GetAdminConfig returns the admin config
 func (s *ConsulStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
-	panic("implement me")
+	kvPair, _, err := s.consulClient.KV().Get(fmt.Sprintf("sc/admin-config/%s", s.clusterID), &api.QueryOptions{})
+	if err != nil {
+		return nil, utils.LogError("couldn't fetch key in consul", "syncman", "getAdminConfig", err)
+	}
+
+	// kvPair will be nil if key doesn't exists
+	if kvPair == nil {
+		return nil, utils.LogError("specified key doesn't exists in consul", "syncman", "getAdminConfig", err)
+	}
+
+	var cluster *config.Admin
+	if err := json.Unmarshal(kvPair.Value, &cluster); err != nil {
+		return nil, utils.LogError("couldn't unmarshal cluster config to json", "syncman", "getAdminConfig", err)
+	}
+
+	return cluster, nil
 }
 
 // NewConsulStore creates new consul store

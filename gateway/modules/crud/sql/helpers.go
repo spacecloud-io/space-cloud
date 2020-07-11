@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	goqu "github.com/doug-martin/goqu/v8"
 
@@ -125,35 +126,54 @@ func (s *SQL) generateQuerySQLServer(query string) string {
 }
 
 func mysqlTypeCheck(dbType utils.DBType, types []*sql.ColumnType, mapping map[string]interface{}) {
+	var err error
 	for _, colType := range types {
 		typeName := colType.DatabaseTypeName()
-		if typeName == "VARCHAR" || typeName == "TEXT" {
-			val, ok := mapping[colType.Name()].([]byte)
-			if ok {
-				mapping[colType.Name()] = string(val)
+		switch v := mapping[colType.Name()].(type) {
+		case []byte:
+			switch typeName {
+			case "VARCHAR", "TEXT", "JSON", "JSONB":
+				val, ok := mapping[colType.Name()].([]byte)
+				if ok {
+					mapping[colType.Name()] = string(val)
+				}
+			case "TINYINT":
+				mapping[colType.Name()], err = strconv.ParseBool(string(v))
+				if err != nil {
+					log.Println("Error:", err)
+				}
+			case "BIGINT", "INT", "SMALLINT":
+				mapping[colType.Name()], err = strconv.ParseInt(string(v), 10, 64)
+				if err != nil {
+					log.Println("Error:", err)
+				}
+			case "DECIMAL", "NUMERIC", "FLOAT":
+				mapping[colType.Name()], err = strconv.ParseFloat(string(v), 64)
+				if err != nil {
+					log.Println("Error:", err)
+				}
+			case "DATE", "DATETIME":
+				if dbType == utils.MySQL {
+					d, _ := time.Parse("2006-01-02 15:04:05", string(v))
+					mapping[colType.Name()] = d.Format(time.RFC3339)
+					continue
+				}
+				mapping[colType.Name()] = string(v)
 			}
-		}
-		if data, ok := mapping[colType.Name()].([]byte); ok && (typeName == "BIGINT" || typeName == "INT" || typeName == "SMALLINT") {
-			var err error
-			mapping[colType.Name()], err = strconv.ParseInt(string(data), 10, 64)
-			if err != nil {
-				log.Println("Error:", err)
+		case int64:
+			if typeName == "TINYINT" {
+				// this case occurs for mysql database with column type tinyint during the upsert operation
+				if v == int64(1) {
+					mapping[colType.Name()] = true
+				} else {
+					mapping[colType.Name()] = false
+				}
 			}
-		}
-		if data, ok := mapping[colType.Name()].([]byte); ok && (typeName == "DECIMAL" || typeName == "NUMERIC") {
-			var err error
-			mapping[colType.Name()], err = strconv.ParseFloat(string(data), 64)
-			if err != nil {
-				log.Println("Error:", err)
-			}
-		}
-		if data, ok := mapping[colType.Name()].([]byte); ok && (typeName == "DATE" || typeName == "DATETIME") {
-			if dbType == utils.MySQL {
-				d, _ := time.Parse("2006-01-02 15:04:05", string(data))
-				mapping[colType.Name()] = d.Format(time.RFC3339)
-				continue
-			}
-			mapping[colType.Name()] = string(data)
+		case time.Time:
+			mapping[colType.Name()] = v.UTC().Format(time.RFC3339)
+
+		case primitive.DateTime:
+			mapping[colType.Name()] = v.Time().UTC().Format(time.RFC3339)
 		}
 	}
 }

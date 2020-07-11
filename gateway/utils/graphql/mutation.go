@@ -11,72 +11,73 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]*model.AllRequest, []interface{}, error) {
+func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, dbAlias, token string, store map[string]interface{}) (model.RequestParams, []*model.AllRequest, []interface{}, error) {
 	if len(field.Directives) > 0 {
 		// Insert query function
 		if strings.HasPrefix(field.Name.Value, "insert_") {
-			result, returningDocs, err := graph.generateWriteReq(ctx, field, token, store)
+			reqParams, result, returningDocs, err := graph.generateWriteReq(ctx, field, token, store)
 			if err != nil {
-				return nil, nil, err
+				return model.RequestParams{}, nil, nil, err
 			}
-			return result, returningDocs, nil
+			return reqParams, result, returningDocs, nil
 		}
 
 		// Delete query function
 		if strings.HasPrefix(field.Name.Value, "delete_") {
 			col := strings.TrimPrefix(field.Name.Value, "delete_")
 
-			result, err := graph.genrateDeleteReq(ctx, field, token, store)
+			reqParams, result, err := graph.genrateDeleteReq(ctx, field, token, store)
 			if err != nil {
-				return nil, nil, err
+				return model.RequestParams{}, nil, nil, err
 			}
 			result.Type = string(utils.Delete)
 			result.Col = col
-			return []*model.AllRequest{result}, nil, nil
+			result.DBAlias = dbAlias
+			return reqParams, []*model.AllRequest{result}, nil, nil
 		}
 
 		// Update query function
 		if strings.HasPrefix(field.Name.Value, "update_") {
 			col := strings.TrimPrefix(field.Name.Value, "update_")
 
-			result, err := graph.genrateUpdateReq(ctx, field, token, store)
+			reqParams, result, err := graph.genrateUpdateReq(ctx, field, token, store)
 			if err != nil {
-				return nil, nil, err
+				return reqParams, nil, nil, err
 			}
 			result.Type = string(utils.Update)
 			result.Col = col
-			return []*model.AllRequest{result}, nil, nil
+			result.DBAlias = dbAlias
+			return reqParams, []*model.AllRequest{result}, nil, nil
 
 		}
 	}
-	return nil, nil, fmt.Errorf("target database not provided for field %s", getFieldName(field))
+	return model.RequestParams{}, nil, nil, fmt.Errorf("target database not provided for field %s", getFieldName(field))
 }
 
-func (graph *Module) execAllReq(ctx context.Context, dbAlias, project string, req *model.BatchRequest) (map[string]interface{}, error) {
+func (graph *Module) execAllReq(ctx context.Context, dbAlias, project string, req *model.BatchRequest, params model.RequestParams) (map[string]interface{}, error) {
 	if len(req.Requests) == 1 {
 		r := req.Requests[0]
 		switch r.Type {
 		case string(utils.Create):
 			t := model.CreateRequest{Operation: r.Operation, Document: r.Document}
-			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Create(ctx, dbAlias, r.Col, &t)
+			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Create(ctx, dbAlias, r.Col, &t, params)
 
 		case string(utils.Delete):
 
 			t := model.DeleteRequest{Operation: r.Operation, Find: r.Find}
-			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Delete(ctx, dbAlias, r.Col, &t)
+			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Delete(ctx, dbAlias, r.Col, &t, params)
 
 		case string(utils.Update):
 
 			t := model.UpdateRequest{Operation: r.Operation, Find: r.Find, Update: r.Update}
-			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Update(ctx, dbAlias, r.Col, &t)
+			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Update(ctx, dbAlias, r.Col, &t, params)
 
 		default:
 			return map[string]interface{}{"error": "Wrong Operation"}, nil
-
 		}
-
 	}
-	return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Batch(ctx, dbAlias, req)
+	params.Resource = "db-batch"
+	return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Batch(ctx, dbAlias, req, params)
 }
 
 func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token string, store utils.M, cb model.GraphQLCallback) {
@@ -87,6 +88,7 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 	reqs := map[string][]*model.AllRequest{}
 	queryResults := map[string]map[string]interface{}{}
 	results := map[string]interface{}{}
+	var reqParams model.RequestParams
 	// A single mutation query can have same or different types of mutation
 	// mutation {
 	//		insert_...
@@ -105,29 +107,26 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 			return
 		}
 
-		r, ok := reqs[dbAlias]
-		if !ok {
-			r = []*model.AllRequest{}
-		}
-
 		// Generate a *model.AllRequest object for this given field
-		generatedRequests, returningDocs, err := graph.generateAllReq(ctx, field, token, store)
+		params, generatedRequests, returningDocs, err := graph.generateAllReq(ctx, field, dbAlias, token, store)
 		if err != nil {
 			cb(nil, err)
 			return
 		}
+		reqParams = params
 
 		// Keep a record of which field maps to which db and which returning docs
 		fieldDBMapping[getFieldName(field)] = dbAlias
 		fieldReturningDocsMapping[getFieldName(field)] = returningDocs
 
 		// Add the request to the number of requests available for that database
-		r = append(r, generatedRequests...)
-		reqs[dbAlias] = r
+		for _, v := range generatedRequests {
+			reqs[v.DBAlias] = append(reqs[v.DBAlias], v)
+		}
 	}
 
 	for dbAlias, reqs := range reqs {
-		obj, err := graph.execAllReq(ctx, dbAlias, graph.project, &model.BatchRequest{Requests: reqs})
+		obj, err := graph.execAllReq(ctx, dbAlias, graph.project, &model.BatchRequest{Requests: reqs}, reqParams)
 		if err != nil {
 			obj["error"] = err.Error()
 			obj["status"] = 500

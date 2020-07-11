@@ -19,7 +19,7 @@ type SchemaCrudInterface interface {
 
 // CrudAuthInterface is an interface consisting of functions of crud module used by auth module
 type CrudAuthInterface interface {
-	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, error)
 }
 
 // SchemaEventingInterface is an interface consisting of functions of schema module used by eventing module
@@ -28,20 +28,21 @@ type SchemaEventingInterface interface {
 	Parser(crud config.Crud) (Type, error)
 	SchemaValidator(col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
 	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error
+	SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error)
 }
 
 // CrudEventingInterface is an interface consisting of functions of crud module used by Eventing module
 type CrudEventingInterface interface {
 	InternalCreate(ctx context.Context, dbAlias, project, col string, req *CreateRequest, isIgnoreMetrics bool) error
 	InternalUpdate(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
-	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, error)
 }
 
 // AuthEventingInterface is an interface consisting of functions of auth module used by Eventing module
 type AuthEventingInterface interface {
 	GetInternalAccessToken() (string, error)
 	GetSCAccessToken() (string, error)
-	IsEventingOpAuthorised(ctx context.Context, project, token string, event *QueueEventRequest) error
+	IsEventingOpAuthorised(ctx context.Context, project, token string, event *QueueEventRequest) (RequestParams, error)
 }
 
 // FilestoreEventingInterface is an interface consisting of functions of Filestore module used by Eventing module
@@ -67,7 +68,7 @@ type EventingRealtimeInterface interface {
 
 // AuthRealtimeInterface is an interface consisting of functions of auth module used by RealTime module
 type AuthRealtimeInterface interface {
-	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, int, error)
+	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, RequestParams, error)
 	PostProcessMethod(postProcess *PostProcess, result interface{}) error
 	GetInternalAccessToken() (string, error)
 	GetSCAccessToken() (string, error)
@@ -75,7 +76,7 @@ type AuthRealtimeInterface interface {
 
 // CrudRealtimeInterface is an interface consisting of functions of crud module used by RealTime module
 type CrudRealtimeInterface interface {
-	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, param RequestParams) (interface{}, error)
 }
 
 // CrudSchemaInterface is an interface consisting of functions of crud module used by Schema module
@@ -89,17 +90,17 @@ type CrudSchemaInterface interface {
 // CrudUserInterface is an interface consisting of functions of crud module used by User module
 type CrudUserInterface interface {
 	GetDBType(dbAlias string) (string, error)
-	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
-	Create(ctx context.Context, dbAlias, col string, req *CreateRequest) error
-	Update(ctx context.Context, dbAlias, col string, req *UpdateRequest) error
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, error)
+	Create(ctx context.Context, dbAlias, col string, req *CreateRequest, params RequestParams) error
+	Update(ctx context.Context, dbAlias, col string, req *UpdateRequest, params RequestParams) error
 }
 
 // AuthUserInterface is an interface consisting of functions of auth module used by User module
 type AuthUserInterface interface {
-	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, int, error)
+	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, RequestParams, error)
 	PostProcessMethod(postProcess *PostProcess, result interface{}) error
 	CreateToken(tokenClaims TokenClaims) (string, error)
-	IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *UpdateRequest) (int, error)
+	IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *UpdateRequest) (RequestParams, error)
 }
 
 // SyncmanEventingInterface is an interface consisting of functions of syncman module used by eventing module

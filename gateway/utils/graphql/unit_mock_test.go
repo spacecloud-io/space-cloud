@@ -12,24 +12,24 @@ type mockGraphQLCrudInterface struct {
 	mock.Mock
 }
 
-func (m *mockGraphQLCrudInterface) Create(ctx context.Context, dbAlias, collection string, request *model.CreateRequest) error {
-	args := m.Called(ctx, dbAlias, collection, request)
+func (m *mockGraphQLCrudInterface) Create(ctx context.Context, dbAlias, collection string, request *model.CreateRequest, params model.RequestParams) error {
+	args := m.Called(ctx, dbAlias, collection, request, params)
 	return args.Error(0)
 }
-func (m *mockGraphQLCrudInterface) Read(ctx context.Context, dbAlias, collection string, request *model.ReadRequest) (interface{}, error) {
-	args := m.Called(ctx, dbAlias, collection, request)
+func (m *mockGraphQLCrudInterface) Read(ctx context.Context, dbAlias, collection string, request *model.ReadRequest, params model.RequestParams) (interface{}, error) {
+	args := m.Called(ctx, dbAlias, collection, request, params)
 	return args.Get(0), args.Error(1)
 }
-func (m *mockGraphQLCrudInterface) Update(ctx context.Context, dbAlias, collection string, request *model.UpdateRequest) error {
-	args := m.Called(ctx, dbAlias, collection, request)
+func (m *mockGraphQLCrudInterface) Update(ctx context.Context, dbAlias, collection string, request *model.UpdateRequest, params model.RequestParams) error {
+	args := m.Called(ctx, dbAlias, collection, request, params)
 	return args.Error(0)
 }
-func (m *mockGraphQLCrudInterface) Delete(ctx context.Context, dbAlias, collection string, request *model.DeleteRequest) error {
-	args := m.Called(ctx, dbAlias, collection, request)
+func (m *mockGraphQLCrudInterface) Delete(ctx context.Context, dbAlias, collection string, request *model.DeleteRequest, params model.RequestParams) error {
+	args := m.Called(ctx, dbAlias, collection, request, params)
 	return args.Error(0)
 }
-func (m *mockGraphQLCrudInterface) Batch(ctx context.Context, dbAlias string, req *model.BatchRequest) error {
-	args := m.Called(ctx, dbAlias, req)
+func (m *mockGraphQLCrudInterface) Batch(ctx context.Context, dbAlias string, req *model.BatchRequest, params model.RequestParams) error {
+	args := m.Called(ctx, dbAlias, req, params)
 	return args.Error(0)
 }
 func (m *mockGraphQLCrudInterface) GetDBType(dbAlias string) (string, error) {
@@ -40,8 +40,8 @@ func (m *mockGraphQLCrudInterface) IsPreparedQueryPresent(directive, fieldName s
 	args := m.Called(directive, fieldName)
 	return args.Bool(0)
 }
-func (m *mockGraphQLCrudInterface) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, auth map[string]interface{}) (interface{}, error) {
-	args := m.Called(ctx, dbAlias, id, req, auth)
+func (m *mockGraphQLCrudInterface) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, error) {
+	args := m.Called(ctx, dbAlias, id, req, params)
 	return args.Get(0).(interface{}), args.Error(1)
 }
 
@@ -49,41 +49,41 @@ type mockGraphQLAuthInterface struct {
 	mock.Mock
 }
 
-func (m *mockGraphQLAuthInterface) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.CreateRequest) (int, error) {
+func (m *mockGraphQLAuthInterface) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.CreateRequest) (model.RequestParams, error) {
 	args := m.Called(ctx, project, dbAlias, col, token, req)
-	return args.Int(0), args.Error(1)
+	return args.Get(0).(model.RequestParams), args.Error(1)
 }
-func (m *mockGraphQLAuthInterface) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*model.PostProcess, int, error) {
+func (m *mockGraphQLAuthInterface) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*model.PostProcess, model.RequestParams, error) {
 	args := m.Called(ctx, project, dbAlias, col, token, req)
-	return args.Get(0).(*model.PostProcess), args.Int(1), args.Error(2)
+	return args.Get(0).(*model.PostProcess), args.Get(1).(model.RequestParams), args.Error(2)
 }
-func (m *mockGraphQLAuthInterface) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.UpdateRequest) (int, error) {
+func (m *mockGraphQLAuthInterface) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.UpdateRequest) (model.RequestParams, error) {
 	args := m.Called(ctx, project, dbAlias, col, token, req)
-	return args.Int(0), args.Error(1)
+	return args.Get(0).(model.RequestParams), args.Error(1)
 }
-func (m *mockGraphQLAuthInterface) IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.DeleteRequest) (int, error) {
+func (m *mockGraphQLAuthInterface) IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.DeleteRequest) (model.RequestParams, error) {
 	args := m.Called(ctx, project, dbAlias, col, token, req)
-	return args.Int(0), args.Error(1)
+	return args.Get(0).(model.RequestParams), args.Error(1)
 }
-func (m *mockGraphQLAuthInterface) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (map[string]interface{}, error) {
-	args := m.Called()
-	return args.Get(0).(map[string]interface{}), args.Error(1)
+func (m *mockGraphQLAuthInterface) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (*model.PostProcess, model.RequestParams, error) {
+	args := m.Called(ctx, project, service, function, token, params)
+	return args.Get(0).(*model.PostProcess), args.Get(1).(model.RequestParams), args.Error(2)
 }
 func (m *mockGraphQLAuthInterface) PostProcessMethod(postProcess *model.PostProcess, result interface{}) error {
-	args := m.Called()
+	args := m.Called(postProcess, result)
 	return args.Error(0)
 }
-func (m *mockGraphQLAuthInterface) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *model.PreparedQueryRequest) (*model.PostProcess, map[string]interface{}, int, error) {
-	args := m.Called()
-	return args.Get(0).(*model.PostProcess), args.Get(1).(map[string]interface{}), args.Int(2), args.Error(3)
+func (m *mockGraphQLAuthInterface) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *model.PreparedQueryRequest) (*model.PostProcess, model.RequestParams, error) {
+	args := m.Called(ctx, project, dbAlias, id, token, req)
+	return args.Get(0).(*model.PostProcess), args.Get(1).(model.RequestParams), args.Error(2)
 }
 
 type mockGraphQLFunctionInterface struct {
 	mock.Mock
 }
 
-func (m *mockGraphQLFunctionInterface) CallWithContext(ctx context.Context, service, function, token string, auth, params interface{}) (interface{}, error) {
-	args := m.Called(ctx, service, function, token, auth, params)
+func (m *mockGraphQLFunctionInterface) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, params interface{}) (interface{}, error) {
+	args := m.Called(ctx, service, function, token, reqParams, params)
 	return args.Get(0).(interface{}), args.Error(1)
 }
 

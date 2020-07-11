@@ -34,15 +34,18 @@ type Module struct {
 	fileStoreType   string
 	makeHTTPRequest utils.TypeMakeHTTPRequest
 	aesKey          []byte
+
+	// Admin Manager
+	adminMan adminMan
 }
 
 // Init creates a new instance of the auth object
-func Init(nodeID string, crud model.CrudAuthInterface) *Module {
-	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud}
+func Init(nodeID string, crud model.CrudAuthInterface, adminMan adminMan) *Module {
+	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud, adminMan: adminMan}
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secrets []*config.Secret, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project, secretSource string, secrets []*config.Secret, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -52,7 +55,13 @@ func (m *Module) SetConfig(project string, secrets []*config.Secret, encodedAESK
 
 	m.project = project
 	m.rules = rules
+
+	// Store the secret
 	m.secrets = secrets
+	if secretSource == "admin" {
+		m.secrets = []*config.Secret{{Secret: m.adminMan.GetSecret(), IsPrimary: true}}
+	}
+
 	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
 	if err != nil {
 		return err
@@ -75,10 +84,13 @@ func (m *Module) SetConfig(project string, secrets []*config.Secret, encodedAESK
 }
 
 // SetSecrets sets the secrets to be used for JWT authentication
-func (m *Module) SetSecrets(secrets []*config.Secret) {
+func (m *Module) SetSecrets(secretSource string, secrets []*config.Secret) {
 	m.Lock()
 	defer m.Unlock()
 	m.secrets = secrets
+	if secretSource == "admin" {
+		m.secrets = []*config.Secret{{Secret: m.adminMan.GetSecret(), IsPrimary: true}}
+	}
 }
 
 // SetAESKey sets the aeskey to be used for encryption

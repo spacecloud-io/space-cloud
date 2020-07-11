@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils"
-	"github.com/spaceuptech/space-cli/cmd/utils/transport"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
 // GetDbRule gets database rule
@@ -103,6 +103,32 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 			}
 			objs = append(objs, s)
 		}
+	}
+	return objs, nil
+}
+
+// GetDbPreparedQuery gets database prepared query
+func GetDbPreparedQuery(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+	url := "/v1/config/projects/{project}/database/prepared-queries"
+
+	payload := new(model.Response)
+	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+		return nil, err
+	}
+
+	var objs []*model.SpecObject
+	for _, item := range payload.Result {
+		obj := item.(map[string]interface{})
+		meta := map[string]string{"project": project, "db": obj["db"].(string), "id": obj["id"].(string)}
+		spec := make(map[string]interface{})
+		for key, val := range obj {
+			spec[key] = val
+		}
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{db}/prepared-queries/{id}", commandName, meta, spec)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, s)
 	}
 	return objs, nil
 }

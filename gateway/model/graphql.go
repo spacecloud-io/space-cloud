@@ -15,6 +15,7 @@ type ReadRequestKey struct {
 	Col        string
 	HasOptions bool
 	Req        ReadRequest
+	ReqParams  RequestParams
 }
 
 // String returns a guaranteed unique string that can be used to identify an object

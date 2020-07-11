@@ -36,7 +36,8 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		value.ID = id
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "letsencrypt", "modify", map[string]string{"project": projectID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "letsencrypt", "modify", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -44,6 +45,7 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Headers = r.Header
 		if err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, value); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -65,18 +67,20 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 		projectID := vars["project"]
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "letsencrypt", "read", map[string]string{"project": projectID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "letsencrypt", "read", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
 		// get project config
-		project, err := syncMan.GetConfig(projectID)
+		reqParams.Headers = r.Header
+		le, err := syncMan.GetLetsEncryptConfig(projectID, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: []interface{}{project.Modules.LetsEncrypt}})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: []interface{}{le}})
 	}
 }
