@@ -10,13 +10,17 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generaterule = &cobra.Command{
-		Use:  "filestore-rules",
+		Use:  "filestore-rule [path to config file]",
 		RunE: actionGenerateFilestoreRule,
+		Aliases: []string{"filestore-rules"},
+		Example: "space-cli generate filestore-rule config.yaml --project myproject --log-level info",
 	}
 
 	var generateconfig = &cobra.Command{
-		Use:  "filestore-config",
+		Use:  "filestore-config [path to config file]",
 		RunE: actionGenerateFilestoreConfig,
+		Aliases: []string{"filestore-configs"},
+		Example: "space-cli generate filestore-config config.yaml --project myproject --log-level info",
 	}
 
 	return []*cobra.Command{generaterule, generateconfig}
@@ -94,7 +98,7 @@ func actionGetFileStoreRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateFilestoreRule()
@@ -107,7 +111,7 @@ func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateFilestoreConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateFilestoreConfig()
