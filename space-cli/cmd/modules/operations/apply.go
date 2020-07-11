@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Apply reads the config file(s) from the provided file / directory and applies it to the server

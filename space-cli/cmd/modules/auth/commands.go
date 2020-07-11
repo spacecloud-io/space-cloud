@@ -3,7 +3,7 @@ package auth
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // GetSubCommands is the list of commands the auth module exposes
@@ -47,8 +47,10 @@ func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 func GenerateSubCommands() []*cobra.Command {
 
 	var generateUserManagement = &cobra.Command{
-		Use:  "auth-provider",
+		Use:  "auth-provider [path to config file]",
 		RunE: actionGenerateUserManagement,
+		Aliases: []string{"auth-providers"},
+		Example: "space-cli generate auth-provider config.yaml --project myproject --log-level info",
 	}
 
 	return []*cobra.Command{generateUserManagement}
@@ -56,7 +58,7 @@ func GenerateSubCommands() []*cobra.Command {
 
 func actionGenerateUserManagement(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateUserManagement()
