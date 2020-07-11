@@ -10,13 +10,13 @@ import (
 // GenerateSubCommands is the list of commands the project module exposes
 func GenerateSubCommands() []*cobra.Command {
 
-	var generateService = &cobra.Command{
+	var generateProject = &cobra.Command{
 		Use:  "project [path to config file]",
 		RunE: actionGenerateProject,
 		Aliases: []string{"projects"},
 		Example: "space-cli generate project config.yaml --project myproject --log-level info",
 	}
-	return []*cobra.Command{generateService}
+	return []*cobra.Command{generateProject}
 }
 
 // GetSubCommands dis the list of commands the project module exposes
