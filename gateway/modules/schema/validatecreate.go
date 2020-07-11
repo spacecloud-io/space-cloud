@@ -51,7 +51,7 @@ func (s *Schema) SchemaValidator(col string, collectionFields model.Fields, doc 
 
 		if fieldValue.IsFieldTypeRequired {
 			if !ok {
-				return nil, errors.New("required field " + fieldKey + " from collection " + col + " not present in request")
+				return nil, errors.New("required field " + fieldKey + " from " + col + " not present in request")
 			}
 		}
 

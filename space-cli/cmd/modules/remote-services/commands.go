@@ -3,7 +3,7 @@ package remoteservices
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // GenerateSubCommands is the list of commands the remote-services module exposes

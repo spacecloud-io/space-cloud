@@ -104,7 +104,7 @@ func (s *Schema) Parser(crud config.Crud) (model.Type, error) {
 			if len(value) <= 1 { // schema might have an id by default
 				continue
 			}
-			collection[strings.ToLower(collectionName[0:1])+collectionName[1:]] = value
+			collection[collectionName] = value
 		}
 		schema[dbName] = collection
 	}
@@ -209,6 +209,9 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 							case "field":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.LinkedTable.Field = val.(string)
+							case "db":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.LinkedTable.DBType = val.(string)
 							}
 						}
 

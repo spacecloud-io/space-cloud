@@ -7,14 +7,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/spaceuptech/space-cli/cmd/modules"
-	"github.com/spaceuptech/space-cli/cmd/modules/accounts"
-	"github.com/spaceuptech/space-cli/cmd/modules/addons"
-	"github.com/spaceuptech/space-cli/cmd/modules/deploy"
-	"github.com/spaceuptech/space-cli/cmd/modules/login"
-	"github.com/spaceuptech/space-cli/cmd/modules/operations"
-	"github.com/spaceuptech/space-cli/cmd/modules/project"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/accounts"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/addons"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/deploy"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/login"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/operations"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/project"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // GetRootCommand return the rootcmd
