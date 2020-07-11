@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -47,7 +46,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 		var count int64
 		for k := range req.Update {
 			switch k {
-			case "$set", "$inc", "$mul", "$max", "$min", "$currentDate", "$unset":
+			case "$set", "$inc", "$mul", "$max", "$min", "$currentDate":
 				sqlQuery, args, err := s.generateUpdateQuery(ctx, col, req, k)
 				if err != nil {
 					return 0, err
@@ -169,18 +168,6 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 		}
 	}
 
-	//if op == "$unset" && dbType == string(utils.Postgres) {
-	//	unsetObj, ok := req.Update[op].(map[string]interface{})
-	//	if !ok {
-	//		return "", nil, errors.New("incorrect unset object provided")
-	//	}
-	//
-	//	for k := range unsetObj {
-	//		arr := strings.Split(k, ".")
-	//		unsetObj[k] = fmt.Sprintf("{%s}", strings.Join(arr[1:], ","))
-	//	}
-	//}
-
 	record, err := generateRecord(req.Update[op])
 	if err != nil {
 		logrus.Errorf("error generating update query unable to generate record %s", op)
@@ -190,7 +177,6 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 	// Generate SQL string and arguments
 	sqlString, args, err := query.Update().Set(record).ToSQL()
 	if err != nil {
-		log.Println("here", err)
 		logrus.Errorf("Error generating update query unable generate sql string - %s", err)
 		return "", nil, err
 	}
@@ -204,15 +190,6 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 				if len(arr) >= 2 {
 					sqlString = strings.Replace(sqlString, k+"=$", fmt.Sprintf("%s=jsonb_set(%s, '{%s}', $", arr[0], arr[0], strings.Join(arr[1:], ",")), -1)
 					sqlString = s.sanitiseUpdateQuery(sqlString)
-				}
-			}
-		}
-	case "$unset":
-		for k := range m {
-			if s.dbType == string(utils.Postgres) {
-				arr := strings.Split(k, ".")
-				if len(arr) >= 2 {
-					sqlString = strings.Replace(sqlString, k+"=$", fmt.Sprintf("%s=%s #- $", arr[0], arr[0]), -1)
 				}
 			}
 		}
