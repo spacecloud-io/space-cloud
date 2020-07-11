@@ -10,6 +10,7 @@ import (
 
 var distinct = "type"
 var number int64 = 5
+
 var queryTestCases = []tests{
 	{
 		name: "Query: Simple Query",
