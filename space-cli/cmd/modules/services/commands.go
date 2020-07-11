@@ -133,7 +133,7 @@ func actionGetServices(cmd *cobra.Command, args []string) error {
 
 func actionGenerateService(cmd *cobra.Command, args []string) error {
 	// get filename from args in which service config will be stored
-	if len(os.Args) != 4 {
+	if len(args) != 1 {
 		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	serviceConfigFile := os.Args[3]
