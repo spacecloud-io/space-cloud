@@ -1,8 +1,6 @@
 package services
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
