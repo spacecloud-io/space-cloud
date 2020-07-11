@@ -8,39 +8,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// GraphQLCrudInterface is an interface consisting of functions of crud module used by graphql module
-type GraphQLCrudInterface interface {
-	Create(ctx context.Context, dbAlias, collection string, request *CreateRequest) error
-	Read(ctx context.Context, dbAlias, collection string, request *ReadRequest) (interface{}, error)
-	Update(ctx context.Context, dbAlias, collection string, request *UpdateRequest) error
-	Delete(ctx context.Context, dbAlias, collection string, request *DeleteRequest) error
-	Batch(ctx context.Context, dbAlias string, req *BatchRequest) error
-	GetDBType(dbAlias string) (string, error)
-	IsPreparedQueryPresent(directive, fieldName string) bool
-	ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *PreparedQueryRequest, auth map[string]interface{}) (interface{}, error)
-}
-
-// GraphQLAuthInterface is an interface consisting of functions of auth module used by graphql module
-type GraphQLAuthInterface interface {
-	IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *CreateRequest) (int, error)
-	IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *ReadRequest) (*PostProcess, int, error)
-	IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *UpdateRequest) (int, error)
-	IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *DeleteRequest) (int, error)
-	IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (map[string]interface{}, error)
-	PostProcessMethod(postProcess *PostProcess, result interface{}) error
-	IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *PreparedQueryRequest) (*PostProcess, map[string]interface{}, int, error)
-}
-
-// GraphQLFunctionInterface is an interface consisting of functions of function module used by graphql module
-type GraphQLFunctionInterface interface {
-	CallWithContext(ctx context.Context, service, function, token string, auth, params interface{}) (interface{}, error)
-}
-
-// GraphQLSchemaInterface is an interface consisting of functions of schema module used by graphql module
-type GraphQLSchemaInterface interface {
-	GetSchema(dbAlias, col string) (Fields, bool)
-}
-
 // SchemaCrudInterface is an interface consisting of functions of schema module used by auth module
 type SchemaCrudInterface interface {
 	SetConfig(conf config.Crud, project string) error

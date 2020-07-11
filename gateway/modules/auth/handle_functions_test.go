@@ -124,7 +124,6 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				t.Error("Got Error-", err, "Want Error-", test.IsErrExpected)
 			}
 			// check result if TokenClaims is returned after parsing token and matching rule
-
 			if test.CheckResult && !reflect.DeepEqual(test.result, auth) {
 				t.Error("Got Result-", auth, "Wanted Result-", test.result)
 			}

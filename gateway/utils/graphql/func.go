@@ -3,7 +3,6 @@ package graphql
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/graphql-go/graphql/language/ast"
@@ -26,8 +25,6 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		cb(nil, err)
 		return
 	}
-
-	log.Println("func name", funcName, timeout)
 
 	params, err := getFuncParams(field, store)
 	if err != nil {

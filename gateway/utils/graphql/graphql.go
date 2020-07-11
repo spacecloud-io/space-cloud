@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/graphql-go/graphql/language/ast"
@@ -19,14 +18,14 @@ import (
 // Module is the object for the GraphQL module
 type Module struct {
 	project   string
-	auth      model.GraphQLAuthInterface
-	crud      model.GraphQLCrudInterface
-	functions model.GraphQLFunctionInterface
-	schema    model.GraphQLSchemaInterface
+	auth      AuthInterface
+	crud      CrudInterface
+	functions FunctionInterface
+	schema    SchemaInterface
 }
 
 // New creates a new GraphQL module
-func New(a model.GraphQLAuthInterface, c model.GraphQLCrudInterface, f model.GraphQLFunctionInterface, s model.GraphQLSchemaInterface) *Module {
+func New(a AuthInterface, c CrudInterface, f FunctionInterface, s SchemaInterface) *Module {
 	return &Module{auth: a, crud: c, functions: f, schema: s}
 }
 
@@ -199,9 +198,6 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		if schema != nil {
 			fieldStruct, p := schema[field.Name.Value]
-			if p {
-				log.Println("Hello Graph", p, field.Name.Value, fieldStruct.IsLinked)
-			}
 			if p && fieldStruct.IsLinked {
 				linkedInfo := fieldStruct.LinkedTable
 				loadKey := fmt.Sprintf("%s.%s", store["coreParentKey"], linkedInfo.From)
