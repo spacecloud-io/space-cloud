@@ -136,7 +136,7 @@ func actionGenerateService(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
-	serviceConfigFile := os.Args[3]
+	serviceConfigFile := args[0]
 
 	service, err := GenerateService("", "")
 	if err != nil {
