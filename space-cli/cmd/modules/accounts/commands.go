@@ -1,6 +1,8 @@
 package accounts
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -33,6 +35,23 @@ func Commands() []*cobra.Command {
 		Short:         "set the given account as the selected account",
 		SilenceErrors: true,
 		RunE:          actionSetAccount,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			credential, err := utils.GetCredentials()
+			if err != nil {
+				utils.LogDebug("Unable to get all the stored credentials", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			prefix := ""
+			if len(args) > 0 {
+				prefix = args[0]
+			}
+			prefix = strings.ToLower(prefix)
+			accountIDs := []string{}
+			for _, v := range credential.Accounts {
+				accountIDs = append(accountIDs, v.ID)
+			}
+			return accountIDs, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var deleteAccountCommand = &cobra.Command{
@@ -40,6 +59,23 @@ func Commands() []*cobra.Command {
 		Short:         "deletes the given account",
 		SilenceErrors: true,
 		RunE:          actionDeleteAccount,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			credential, err := utils.GetCredentials()
+			if err != nil {
+				utils.LogDebug("Unable to get all the stored credentials", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			prefix := ""
+			if len(args) > 0 {
+				prefix = args[0]
+			}
+			prefix = strings.ToLower(prefix)
+			accountIDs := []string{}
+			for _, v := range credential.Accounts {
+				accountIDs = append(accountIDs, v.ID)
+			}
+			return accountIDs, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	viewAccountsCommand.Flags().BoolP("show-keys", "", false, "shows the keys of the accounts")
