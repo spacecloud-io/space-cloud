@@ -1,15 +1,15 @@
 package modules
 
 import (
-	"github.com/spaceuptech/space-cli/cmd/modules/auth"
-	"github.com/spaceuptech/space-cli/cmd/modules/database"
-	"github.com/spaceuptech/space-cli/cmd/modules/eventing"
-	"github.com/spaceuptech/space-cli/cmd/modules/filestore"
-	"github.com/spaceuptech/space-cli/cmd/modules/ingress"
-	"github.com/spaceuptech/space-cli/cmd/modules/letsencrypt"
-	"github.com/spaceuptech/space-cli/cmd/modules/project"
-	remoteservices "github.com/spaceuptech/space-cli/cmd/modules/remote-services"
-	"github.com/spaceuptech/space-cli/cmd/modules/services"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/auth"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/database"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/eventing"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/filestore"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/ingress"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/letsencrypt"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/project"
+	remoteservices "github.com/spaceuptech/space-cloud/space-cli/cmd/modules/remote-services"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/services"
 	"github.com/spf13/cobra"
 )
 

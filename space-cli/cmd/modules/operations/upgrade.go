@@ -14,7 +14,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/txn2/txeh"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Upgrade upgrades the environment which has been setup

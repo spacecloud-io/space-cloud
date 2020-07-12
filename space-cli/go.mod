@@ -1,4 +1,4 @@
-module github.com/spaceuptech/space-cli
+module github.com/spaceuptech/space-cloud/space-cli
 
 go 1.13
 

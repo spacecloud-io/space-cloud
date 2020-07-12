@@ -80,7 +80,7 @@ func getFuncName(field *ast.Field) (string, error) {
 func getFuncTimeout(field *ast.Field, store utils.M) (int, error) {
 	if len(field.Directives[0].Arguments) > 0 {
 		for _, v := range field.Directives[0].Arguments {
-			if v.Name.Value == "func" {
+			if v.Name.Value == "timeout" {
 				val, err := utils.ParseGraphqlValue(v.Value, store)
 				if err != nil {
 					return 0, err

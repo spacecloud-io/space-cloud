@@ -7,8 +7,8 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils/file"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/file"
 )
 
 // Login logs the user in
