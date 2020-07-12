@@ -8,8 +8,8 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/spaceuptech/space-cli/cmd/modules/services"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/services"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 func prepareService(projectID, dockerFilePath, serviceFilePath string) error {
