@@ -93,6 +93,18 @@ func (s *Manager) Start(port int) error {
 		s.lock.Lock()
 		defer s.lock.Unlock()
 		utils.LogDebug("Updating projects", "syncman", "Start", map[string]interface{}{"projects": projects})
+		for _, p := range s.projectConfig.Projects {
+			doesNotExist := true
+			for _, q := range projects {
+				if p.ID == q.ID {
+					doesNotExist = false
+					break
+				}
+			}
+			if doesNotExist {
+				s.store.DeleteProject(context.Background(), p.ID)
+			}
+		}
 		s.projectConfig.Projects = projects
 
 		if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
