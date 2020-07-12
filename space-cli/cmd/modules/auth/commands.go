@@ -47,8 +47,8 @@ func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 func GenerateSubCommands() []*cobra.Command {
 
 	var generateUserManagement = &cobra.Command{
-		Use:  "auth-provider [path to config file]",
-		RunE: actionGenerateUserManagement,
+		Use:     "auth-provider [path to config file]",
+		RunE:    actionGenerateUserManagement,
 		Aliases: []string{"auth-providers"},
 		Example: "space-cli generate auth-provider config.yaml --project myproject --log-level info",
 	}

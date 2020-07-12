@@ -11,8 +11,8 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generateProject = &cobra.Command{
-		Use:  "project [path to config file]",
-		RunE: actionGenerateProject,
+		Use:     "project [path to config file]",
+		RunE:    actionGenerateProject,
 		Aliases: []string{"projects"},
 		Example: "space-cli generate project config.yaml --project myproject --log-level info",
 	}

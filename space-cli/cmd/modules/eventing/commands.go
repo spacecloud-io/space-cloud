@@ -10,29 +10,29 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generatetrigger = &cobra.Command{
-		Use:  "eventing-trigger [path to config file]",
-		RunE: actionGenerateEventingTrigger,
+		Use:     "eventing-trigger [path to config file]",
+		RunE:    actionGenerateEventingTrigger,
 		Aliases: []string{"eventing-triggers"},
 		Example: "space-cli generate eventing-trigger config.yaml --project myproject --log-level info",
 	}
 
 	var generateconfig = &cobra.Command{
-		Use:  "eventing-config [path to config file]",
-		RunE: actionGenerateEventingConfig,
+		Use:     "eventing-config [path to config file]",
+		RunE:    actionGenerateEventingConfig,
 		Aliases: []string{"eventing-configs"},
 		Example: "space-cli generate eventing-config config.yaml --project myproject --log-level info",
 	}
 
 	var generateschema = &cobra.Command{
-		Use:  "eventing-schema [path to config file]",
-		RunE: actionGenerateEventingSchema,
+		Use:     "eventing-schema [path to config file]",
+		RunE:    actionGenerateEventingSchema,
 		Aliases: []string{"eventing-schemas"},
 		Example: "space-cli generate eventing-schema config.yaml --project myproject --log-level info",
 	}
 
 	var generaterule = &cobra.Command{
-		Use:  "eventing-rule [path to config file]",
-		RunE: actionGenerateEventingRule,
+		Use:     "eventing-rule [path to config file]",
+		RunE:    actionGenerateEventingRule,
 		Aliases: []string{"eventing-rules"},
 		Example: "space-cli generate eventing-rule config.yaml --project myproject --log-level info",
 	}

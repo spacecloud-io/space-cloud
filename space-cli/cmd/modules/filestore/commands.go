@@ -10,15 +10,15 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generaterule = &cobra.Command{
-		Use:  "filestore-rule [path to config file]",
-		RunE: actionGenerateFilestoreRule,
+		Use:     "filestore-rule [path to config file]",
+		RunE:    actionGenerateFilestoreRule,
 		Aliases: []string{"filestore-rules"},
 		Example: "space-cli generate filestore-rule config.yaml --project myproject --log-level info",
 	}
 
 	var generateconfig = &cobra.Command{
-		Use:  "filestore-config [path to config file]",
-		RunE: actionGenerateFilestoreConfig,
+		Use:     "filestore-config [path to config file]",
+		RunE:    actionGenerateFilestoreConfig,
 		Aliases: []string{"filestore-configs"},
 		Example: "space-cli generate filestore-config config.yaml --project myproject --log-level info",
 	}

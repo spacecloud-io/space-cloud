@@ -10,29 +10,29 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generaterule = &cobra.Command{
-		Use:  "db-rule [path to config file]",
-		RunE: actionGenerateDBRule,
+		Use:     "db-rule [path to config file]",
+		RunE:    actionGenerateDBRule,
 		Aliases: []string{"db-rules"},
 		Example: "space-cli generate db-rule config.yaml --project myproject --log-level info",
 	}
 
 	var generateconfig = &cobra.Command{
-		Use:  "db-config [path to config file]",
-		RunE: actionGenerateDBConfig,
+		Use:     "db-config [path to config file]",
+		RunE:    actionGenerateDBConfig,
 		Aliases: []string{"db-configs"},
 		Example: "space-cli generate db-config config.yaml --project myproject --log-level info",
 	}
 
 	var generateschema = &cobra.Command{
-		Use:  "db-schema [path to config file]",
-		RunE: actionGenerateDBSchema,
+		Use:     "db-schema [path to config file]",
+		RunE:    actionGenerateDBSchema,
 		Aliases: []string{"db-schemas"},
 		Example: "space-cli generate db-schema config.yaml --project myproject --log-level info",
 	}
 
 	var generatePreparedQuery = &cobra.Command{
-		Use:  "db-prepared-query",
-		RunE: actionGenerateDBPreparedQuery,
+		Use:     "db-prepared-query",
+		RunE:    actionGenerateDBPreparedQuery,
 		Aliases: []string{"db-prepared-queries"},
 		Example: "space-cli generate db-prepared-query config.yaml --project myproject --log-level info",
 	}
