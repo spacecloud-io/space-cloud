@@ -102,7 +102,8 @@ func (s *Manager) Start(port int) error {
 				}
 			}
 			if doesNotExist {
-				s.store.DeleteProject(context.Background(), p.ID)
+				err := s.store.DeleteProject(context.Background(), p.ID)
+				_ = utils.LogError("Unable to delete project", "syncman", "Start", err)
 			}
 		}
 		s.projectConfig.Projects = projects
