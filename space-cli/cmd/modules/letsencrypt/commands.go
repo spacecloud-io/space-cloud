@@ -10,8 +10,8 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generateletsencrypt = &cobra.Command{
-		Use:  "letsencrypt [path to config file]",
-		RunE: actionGenerateLetsEncryptDomain,
+		Use:     "letsencrypt [path to config file]",
+		RunE:    actionGenerateLetsEncryptDomain,
 		Aliases: []string{"letsencrypts"},
 		Example: "space-cli generate letsencrypt config.yaml --project myproject --log-level info",
 	}

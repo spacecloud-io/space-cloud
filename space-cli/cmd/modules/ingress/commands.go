@@ -10,8 +10,8 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generateroutes = &cobra.Command{
-		Use:  "ingress-route [path to config file]",
-		RunE: actionGenerateIngressRouting,
+		Use:     "ingress-route [path to config file]",
+		RunE:    actionGenerateIngressRouting,
 		Aliases: []string{"ingress-routes"},
 		Example: "space-cli generate ingress-route config.yaml --project myproject --log-level info",
 	}

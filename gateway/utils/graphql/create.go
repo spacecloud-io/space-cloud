@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -25,7 +26,6 @@ func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, tok
 	if err != nil {
 		return model.RequestParams{}, nil, nil, err
 	}
-
 	reqs, returningDocs, err := graph.processNestedFields(docs, dbAlias, col)
 	if err != nil {
 		return model.RequestParams{}, nil, nil, err
@@ -216,7 +216,11 @@ func extractDocs(args []*ast.Argument, store utils.M) ([]interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			return temp.([]interface{}), nil
+			arr, ok := temp.([]interface{})
+			if !ok {
+				return nil, errors.New("docs should be of type array []")
+			}
+			return arr, nil
 		}
 	}
 
