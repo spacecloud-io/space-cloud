@@ -1,8 +1,6 @@
 package services
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
@@ -12,9 +10,16 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generateService = &cobra.Command{
+<<<<<<< HEAD
 		Use:     "services",
 		Aliases: []string{"service"},
 		RunE:    actionGenerateService,
+=======
+		Use:     "service [path to config file]",
+		RunE:    actionGenerateService,
+		Aliases: []string{"services"},
+		Example: "space-cli generate service config.yaml --project myproject --log-level info",
+>>>>>>> fe5c06928e4d5d2ad1df43f7f18de5e2c5d4b1e9
 	}
 
 	return []*cobra.Command{generateService}
@@ -184,10 +189,10 @@ func actionGetServices(cmd *cobra.Command, args []string) error {
 
 func actionGenerateService(cmd *cobra.Command, args []string) error {
 	// get filename from args in which service config will be stored
-	if len(os.Args) != 4 {
-		return utils.LogError("incorrect number of arguments", nil)
+	if len(args) != 1 {
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
-	serviceConfigFile := os.Args[3]
+	serviceConfigFile := args[0]
 
 	service, err := GenerateService("", "")
 	if err != nil {

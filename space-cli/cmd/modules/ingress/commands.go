@@ -10,8 +10,10 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generateroutes = &cobra.Command{
-		Use:  "ingress-routes",
-		RunE: actionGenerateIngressRouting,
+		Use:     "ingress-route [path to config file]",
+		RunE:    actionGenerateIngressRouting,
+		Aliases: []string{"ingress-routes"},
+		Example: "space-cli generate ingress-route config.yaml --project myproject --log-level info",
 	}
 
 	return []*cobra.Command{generateroutes}
@@ -71,7 +73,7 @@ func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 
 func actionGenerateIngressRouting(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateIngressRouting()

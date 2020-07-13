@@ -12,24 +12,20 @@ import (
 	"github.com/graphql-go/graphql/language/source"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/functions"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Module is the object for the GraphQL module
 type Module struct {
 	project   string
-	auth      *auth.Module
-	crud      *crud.Module
-	functions *functions.Module
-	schema    *schema.Schema
+	auth      AuthInterface
+	crud      CrudInterface
+	functions FunctionInterface
+	schema    SchemaInterface
 }
 
 // New creates a new GraphQL module
-func New(a *auth.Module, c *crud.Module, f *functions.Module, s *schema.Schema) *Module {
+func New(a AuthInterface, c CrudInterface, f FunctionInterface, s SchemaInterface) *Module {
 	return &Module{auth: a, crud: c, functions: f, schema: s}
 }
 
@@ -141,7 +137,6 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			wg.Wait()
 			cb(obj.GetAll(), nil)
 			return
-
 		case "mutation":
 			graph.handleMutation(ctx, node, token, store, cb)
 			return
