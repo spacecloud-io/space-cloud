@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 )
 
 // GetProjectsNamesFromArray returns the array of projects names

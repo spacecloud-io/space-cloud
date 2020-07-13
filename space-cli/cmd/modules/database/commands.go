@@ -3,30 +3,38 @@ package database
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // GenerateSubCommands is the list of commands the database module exposes
 func GenerateSubCommands() []*cobra.Command {
 
 	var generaterule = &cobra.Command{
-		Use:  "db-rules",
-		RunE: actionGenerateDBRule,
+		Use:     "db-rule [path to config file]",
+		RunE:    actionGenerateDBRule,
+		Aliases: []string{"db-rules"},
+		Example: "space-cli generate db-rule config.yaml --project myproject --log-level info",
 	}
 
 	var generateconfig = &cobra.Command{
-		Use:  "db-config",
-		RunE: actionGenerateDBConfig,
+		Use:     "db-config [path to config file]",
+		RunE:    actionGenerateDBConfig,
+		Aliases: []string{"db-configs"},
+		Example: "space-cli generate db-config config.yaml --project myproject --log-level info",
 	}
 
 	var generateschema = &cobra.Command{
-		Use:  "db-schema",
-		RunE: actionGenerateDBSchema,
+		Use:     "db-schema [path to config file]",
+		RunE:    actionGenerateDBSchema,
+		Aliases: []string{"db-schemas"},
+		Example: "space-cli generate db-schema config.yaml --project myproject --log-level info",
 	}
 
 	var generatePreparedQuery = &cobra.Command{
-		Use:  "db-prepared-query",
-		RunE: actionGenerateDBPreparedQuery,
+		Use:     "db-prepared-query",
+		RunE:    actionGenerateDBPreparedQuery,
+		Aliases: []string{"db-prepared-queries"},
+		Example: "space-cli generate db-prepared-query config.yaml --project myproject --log-level info",
 	}
 
 	return []*cobra.Command{generaterule, generateconfig, generateschema, generatePreparedQuery}
@@ -179,7 +187,7 @@ func actionGetDbPreparedQuery(cmd *cobra.Command, args []string) error {
 
 func actionGenerateDBRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateDBRule()
@@ -192,7 +200,7 @@ func actionGenerateDBRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateDBConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateDBConfig()
@@ -205,7 +213,7 @@ func actionGenerateDBConfig(cmd *cobra.Command, args []string) error {
 
 func actionGenerateDBSchema(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateDBSchema()
@@ -218,7 +226,7 @@ func actionGenerateDBSchema(cmd *cobra.Command, args []string) error {
 
 func actionGenerateDBPreparedQuery(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 
 	preparedQueryConfigFile := args[0]

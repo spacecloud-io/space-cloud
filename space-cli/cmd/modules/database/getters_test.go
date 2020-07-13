@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils/transport"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
 func TestGetDbRule(t *testing.T) {

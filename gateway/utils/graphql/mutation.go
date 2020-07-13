@@ -88,13 +88,19 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 	reqs := map[string][]*model.AllRequest{}
 	queryResults := map[string]map[string]interface{}{}
 	results := map[string]interface{}{}
-
 	var reqParams model.RequestParams
-
+	// A single mutation query can have same or different types of mutation
+	// mutation {
+	//		insert_...
+	//		update_...
+	//		delete_...
+	// }
+	// range over these different mutation queries
 	for _, v := range op.SelectionSet.Selections {
 
 		field := v.(*ast.Field)
 
+		// for query insert_... @db {} -> dbAlias is "db"
 		dbAlias, err := graph.GetDBAlias(field)
 		if err != nil {
 			cb(nil, err)
