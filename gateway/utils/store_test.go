@@ -340,15 +340,15 @@ func Test_splitVariable(t *testing.T) {
 	}
 }
 
-func Test_convert(t *testing.T) {
+func Test_getValue(t *testing.T) {
 	type args struct {
 		key string
-		obj map[string]interface{}
+		obj interface{}
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    map[string]interface{}
+		want    interface{}
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -375,30 +375,53 @@ func Test_convert(t *testing.T) {
 					},
 				},
 			},
-			//want:    map[string]interface{}{},
+			wantErr: true,
+		},
+
+		{
+			name: "valid return",
+			args: args{
+				key: "a",
+				obj: map[string]interface{}{
+					"a": []interface{}{"0"},
+				},
+			},
+			want: []interface{}{"0"},
+		},
+		{
+			name: "valid value at provided index",
+			args: args{
+				key: "2",
+				obj: []interface{}{"0", "1", "2"},
+			},
+			want: "2",
+		},
+		{
+			name: "index out of bounds",
+			args: args{
+				key: "2",
+				obj: []interface{}{"0", "1"},
+			},
 			wantErr: true,
 		},
 		{
 			name: "wrong object",
 			args: args{
 				key: "a",
-				obj: map[string]interface{}{
-					"a": 3,
-				},
+				obj: 3,
 			},
-			//want:    map[string]interface{}{},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := convert(tt.args.key, tt.args.obj)
+			got, err := getValue(tt.args.key, tt.args.obj)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("convert() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getValue() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("convert() = %v, want %v", got, tt.want)
+				t.Errorf("getValue() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -586,7 +609,108 @@ func TestLoadValue(t *testing.T) {
 		want    interface{}
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "valid array",
+			args: args{
+				key:   "args.0",
+				state: map[string]interface{}{"args": []interface{}{"abc"}},
+			},
+			want: "abc",
+		},
+		{
+			name: "array inside map",
+			args: args{
+				key: "a.b.2",
+				state: map[string]interface{}{
+					"a": map[string]interface{}{"b": []interface{}{"0", "1", "2"}},
+				},
+			},
+			want: "2",
+		},
+		{
+			name: "map inside array inside map",
+			args: args{
+				key: "a.b.0.c",
+				state: map[string]interface{}{
+					"a": map[string]interface{}{"b": []interface{}{
+						map[string]interface{}{"c": "yo"},
+					}},
+				},
+			},
+			want: "yo",
+		},
+		{
+			name: "map inside array inside map - 2",
+			args: args{
+				key: "a.b.1.c",
+				state: map[string]interface{}{
+					"a": map[string]interface{}{"b": []interface{}{
+						map[string]interface{}{"c": "yo0"},
+						map[string]interface{}{"c": "yo1"},
+						map[string]interface{}{"c": "yo2"},
+					}},
+				},
+			},
+			want: "yo1",
+		},
+		{
+			name: "using array's value within []",
+			args: args{
+				key: "a.d[a.b.0].1",
+				state: map[string]interface{}{
+					"a": map[string]interface{}{
+						"d": map[string]interface{}{"c": []interface{}{"0", "1"}},
+						"b": []interface{}{"c"},
+					},
+				},
+			},
+			want: "1",
+		},
+		{
+			name: "using array's value within [] - 2",
+			args: args{
+				key: "a.d[a.b.0].e",
+				state: map[string]interface{}{
+					"a": map[string]interface{}{
+						"d": map[string]interface{}{"c": map[string]interface{}{"e": "1"}},
+						"b": []interface{}{"c"},
+					},
+				},
+			},
+			want: "1",
+		},
+		{
+			name: "using index within []",
+			args: args{
+				key: "a.d[a.b.0].e",
+				state: map[string]interface{}{
+					"a": map[string]interface{}{
+						"d": []interface{}{
+							map[string]interface{}{"e": "0"},
+							map[string]interface{}{"e": "1"},
+						},
+						"b": []interface{}{1},
+					},
+				},
+			},
+			want: "1",
+		},
+		{
+			name: "using index within [] - 2",
+			args: args{
+				key: "a.d.1.e",
+				state: map[string]interface{}{
+					"a": map[string]interface{}{
+						"d": []interface{}{
+							map[string]interface{}{"e": "0"},
+							map[string]interface{}{"e": "1"},
+						},
+						"b": []interface{}{0},
+					},
+				},
+			},
+			want: "1",
+		},
 		{
 			name: "successful test",
 			args: args{
@@ -735,13 +859,12 @@ func TestLoadValue(t *testing.T) {
 				state: map[string]interface{}{
 					"a": map[string]interface{}{
 						"b": map[string]interface{}{
-							"c": "5",
+							"c": "c",
 						},
 					},
 				},
 			},
-			//want:    true,
-			wantErr: true,
+			want: "c",
 		},
 		{
 			name: "subkey not string",

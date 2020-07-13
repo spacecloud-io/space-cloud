@@ -74,6 +74,7 @@ func (m *Modules) SetProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt
 		if err := ingressRouting.SetProjectRoutes(p.ID, p.Modules.Routes); err != nil {
 			logrus.Errorf("error setting routing module config - %s", err.Error())
 		}
+		ingressRouting.SetGlobalConfig(p.Modules.GlobalRoutes)
 	}
 }
 
