@@ -13,6 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/modules/realtime"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/modules/userman"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
 )
 
@@ -84,21 +85,21 @@ func (m *Modules) Delete(projectID string) {
 	// Close all the modules here
 	logrus.Debugln("closing config of db module")
 	if err := m.db.CloseConfig(); err != nil {
-		logrus.Errorf("error closing db module config - %s", err.Error())
+		_ = utils.LogError("error closing db module config", "modules", "Delete", err)
 	}
 
 	logrus.Debugln("closing config of filestore module")
 	if err := m.file.CloseConfig(); err != nil {
-		logrus.Errorf("error closing filestore module config - %s", err.Error())
+		_ = utils.LogError("error closing filestore module config", "modules", "Delete", err)
 	}
 
 	logrus.Debugln("closing config of eventing module")
 	if err := m.eventing.CloseConfig(); err != nil {
-		logrus.Errorf("error closing eventing module config - %s", err.Error())
+		_ = utils.LogError("error closing eventing module config", "modules", "Delete", err)
 	}
 
 	logrus.Debugln("closing config of realtime module")
 	if err := m.realtime.CloseConfig(); err != nil {
-		logrus.Errorf("error closing realtime module config - %s", err.Error())
+		_ = utils.LogError("error closing realtime module config", "modules", "Delete", err)
 	}
 }
