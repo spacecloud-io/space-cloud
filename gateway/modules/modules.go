@@ -100,6 +100,6 @@ func (m *Modules) Delete(projectID string) {
 
 	logrus.Debugln("closing config of realtime module")
 	if err := m.realtime.CloseConfig(); err != nil {
-		//_ = utils.LogError("error closing realtime module config", "modules", "Delete", err)
+		_ = utils.LogError("error closing realtime module config", "modules", "Delete", err)
 	}
 }
