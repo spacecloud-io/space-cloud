@@ -1,8 +1,6 @@
 package accounts
 
 import (
-	"strings"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -41,11 +39,6 @@ func Commands() []*cobra.Command {
 				utils.LogDebug("Unable to get all the stored credentials", nil)
 				return nil, cobra.ShellCompDirectiveDefault
 			}
-			prefix := ""
-			if len(args) > 0 {
-				prefix = args[0]
-			}
-			prefix = strings.ToLower(prefix)
 			accountIDs := []string{}
 			for _, v := range credential.Accounts {
 				accountIDs = append(accountIDs, v.ID)
@@ -65,11 +58,6 @@ func Commands() []*cobra.Command {
 				utils.LogDebug("Unable to get all the stored credentials", nil)
 				return nil, cobra.ShellCompDirectiveDefault
 			}
-			prefix := ""
-			if len(args) > 0 {
-				prefix = args[0]
-			}
-			prefix = strings.ToLower(prefix)
 			accountIDs := []string{}
 			for _, v := range credential.Accounts {
 				accountIDs = append(accountIDs, v.ID)
