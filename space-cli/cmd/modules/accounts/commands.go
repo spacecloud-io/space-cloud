@@ -70,11 +70,11 @@ func Commands() []*cobra.Command {
 				prefix = args[0]
 			}
 			prefix = strings.ToLower(prefix)
-			acc := []string{}
+			accountIDs := []string{}
 			for _, v := range credential.Accounts {
-				acc = append(acc, v.ID)
+				accountIDs = append(accountIDs, v.ID)
 			}
-			return acc, cobra.ShellCompDirectiveDefault
+			return accountIDs, cobra.ShellCompDirectiveDefault
 		},
 	}
 
