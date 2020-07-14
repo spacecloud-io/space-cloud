@@ -2,67 +2,15 @@ package routing
 
 import (
 	"bytes"
-	"context"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
-	"sync"
 	"testing"
 	"text/template"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
-
-func TestRouting_modifyRequest(t *testing.T) {
-	type fields struct {
-		lock         sync.RWMutex
-		routes       routeMapping
-		globalConfig *config.GlobalRoutesConfig
-		goTemplates  map[string]*template.Template
-	}
-	type args struct {
-		ctx     context.Context
-		modules modulesInterface
-		route   *config.Route
-		req     *http.Request
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    string
-		want1   interface{}
-		want2   int
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := &Routing{
-				lock:         tt.fields.lock,
-				routes:       tt.fields.routes,
-				globalConfig: tt.fields.globalConfig,
-				goTemplates:  tt.fields.goTemplates,
-			}
-			got, got1, got2, err := r.modifyRequest(tt.args.ctx, tt.args.modules, tt.args.route, tt.args.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("modifyRequest() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("modifyRequest() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("modifyRequest() got1 = %v, want %v", got1, tt.want1)
-			}
-			if got2 != tt.want2 {
-				t.Errorf("modifyRequest() got2 = %v, want %v", got2, tt.want2)
-			}
-		})
-	}
-}
 
 func TestRouting_modifyResponse(t *testing.T) {
 	type args struct {
