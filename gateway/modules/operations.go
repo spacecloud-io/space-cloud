@@ -80,6 +80,7 @@ func (m *Module) SetProjectConfig(c *config.Project, le *letsencrypt.LetsEncrypt
 	if err := ingressRouting.SetProjectRoutes(p.ID, p.Modules.Routes); err != nil {
 		logrus.Errorf("error setting routing module config - %s", err.Error())
 	}
+	ingressRouting.SetGlobalConfig(p.Modules.GlobalRoutes)
 }
 
 // SetGlobalConfig sets the auth secret and AESKey

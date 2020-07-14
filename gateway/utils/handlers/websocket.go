@@ -121,7 +121,7 @@ func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 			default:
 				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]string{"error": "Invalid message type"}})
-				return false
+				return true
 			}
 			return true
 		})

@@ -126,3 +126,25 @@ func setRequest(request *http.Request, route *config.Route, url string) error {
 	request.URL.Scheme = target.Scheme
 	return nil
 }
+
+func prepareHeaders(headers config.Headers, state map[string]interface{}) config.Headers {
+	out := make([]config.Header, len(headers))
+	for i, header := range headers {
+		// First create a new header object
+		h := config.Header{Key: header.Key, Value: header.Value, Op: header.Op}
+
+		// Load the string if it exists
+		value, err := utils.LoadValue(header.Value, state)
+		if err == nil {
+			if temp, ok := value.(string); ok {
+				h.Value = temp
+			} else {
+				d, _ := json.Marshal(value)
+				h.Value = string(d)
+			}
+		}
+
+		out[i] = h
+	}
+	return out
+}

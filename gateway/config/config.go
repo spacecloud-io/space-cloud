@@ -1,5 +1,9 @@
 package config
 
+import (
+	"net/http"
+)
+
 // Config holds the entire configuration
 type Config struct {
 	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
@@ -47,15 +51,16 @@ type SSL struct {
 
 // Modules holds the config of all the modules of that environment
 type Modules struct {
-	Crud        Crud            `json:"db" yaml:"db"`
-	Auth        Auth            `json:"userMan" yaml:"userMan"`
-	Services    *ServicesModule `json:"remoteServices" yaml:"remoteServices"`
-	FileStore   *FileStore      `json:"fileStore" yaml:"fileStore"`
-	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
-	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
-	Routes      Routes          `json:"ingressRoutes" yaml:"ingressRoutes"`
-	Deployments Deployments     `json:"deployments" yaml:"deployments"`
-	Secrets     interface{}     `json:"secrets" yaml:"secrets"`
+	Crud         Crud                `json:"db" yaml:"db"`
+	Auth         Auth                `json:"userMan" yaml:"userMan"`
+	Services     *ServicesModule     `json:"remoteServices" yaml:"remoteServices"`
+	FileStore    *FileStore          `json:"fileStore" yaml:"fileStore"`
+	Eventing     Eventing            `json:"eventing,omitempty" yaml:"eventing,omitempty"`
+	LetsEncrypt  LetsEncrypt         `json:"letsencrypt" yaml:"letsencrypt"`
+	Routes       Routes              `json:"ingressRoutes" yaml:"ingressRoutes"`
+	GlobalRoutes *GlobalRoutesConfig `json:"ingressRoutesGlobal" yaml:"ingressRoutesGlobal"`
+	Deployments  Deployments         `json:"deployments" yaml:"deployments"`
+	Secrets      interface{}         `json:"secrets" yaml:"secrets"`
 }
 
 // Deployments store all services information for particular project
@@ -153,10 +158,7 @@ type Endpoint struct {
 	Method    string                   `json:"method" yaml:"method"`
 	Path      string                   `json:"path" yaml:"path"`
 	Rule      *Rule                    `json:"rule" yaml:"rule"`
-	Headers   []struct {
-		Key   string `json:"key" yaml:"key"`
-		Value string `json:"value" yaml:"value"`
-	} `json:"headers" yaml:"headers"`
+	Headers   Headers                  `json:"headers" yaml:"headers"`
 }
 
 // EndpointKind describes the type of endpoint. Default value - internal
@@ -180,6 +182,30 @@ const (
 	// EndpointTemplatingEngineGo describes the go templating engine
 	EndpointTemplatingEngineGo EndpointTemplatingEngine = "go"
 )
+
+// Header describes the operation to be performed on the header
+type Header struct {
+	Key   string `json:"key" yaml:"key"`
+	Value string `json:"value" yaml:"value"`
+	Op    string `json:"op" yaml:"op"`
+}
+
+// Headers describes an array of headers
+type Headers []Header
+
+// UpdateHeader updated the header values
+func (headers Headers) UpdateHeader(reqHeaders http.Header) {
+	for _, h := range headers {
+		switch h.Op {
+		case "", "set":
+			reqHeaders.Set(h.Key, h.Value)
+		case "add":
+			reqHeaders.Add(h.Key, h.Value)
+		case "del":
+			reqHeaders.Del(h.Key)
+		}
+	}
+}
 
 // FileStore holds the config for the file store module
 type FileStore struct {
