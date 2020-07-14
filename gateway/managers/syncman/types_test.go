@@ -162,3 +162,8 @@ func (m *mockSchemaEventingInterface) SchemaInspection(ctx context.Context, dbAl
 	c := m.Called(ctx, dbAlias, project, col)
 	return c.String(0), c.Error(1)
 }
+
+func (m *mockSchemaEventingInterface) GetSchema(dbAlias, col string) (model.Fields, bool) {
+	c := m.Called(dbAlias, col)
+	return nil, c.Bool(1)
+}
