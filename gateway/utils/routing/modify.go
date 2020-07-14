@@ -70,7 +70,7 @@ func (r *Routing) modifyResponse(res *http.Response, route *config.Route, token 
 	var data []byte
 	var err error
 
-	if res.Header.Get("Content-Type") == "application/json" && route.Modify.Tmpl != "" {
+	if res.Header.Get("Content-Type") == "application/json" && route.Modify.ResTmpl != "" {
 		data, err = ioutil.ReadAll(res.Body)
 		if err != nil {
 			return err
