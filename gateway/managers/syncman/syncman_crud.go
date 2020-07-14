@@ -500,8 +500,18 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 	return []interface{}{coll}, nil
 }
 
+type dbJSONSchemaResponse struct {
+	Fields []*field `json:"fields"`
+}
+type field struct {
+	FieldName           string `json:"fieldName"`
+	IsFieldTypeRequired bool   `json:"isFieldTypeRequired"`
+	Kind                string `json:"kind"`
+	IsPrimary           bool   `json:"isPrimary"`
+}
+
 // GetSchemas gets schemas from config
-func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string, params model.RequestParams) ([]interface{}, error) {
+func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -509,6 +519,63 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string, 
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return nil, err
+	}
+	if format == "JSON" {
+		s := s.modules.GetSchemaModuleForSyncMan()
+		if dbAlias != "*" && col != "*" {
+			collectionInfo, p := s.GetSchema(dbAlias, col)
+			if !p {
+				return nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
+			}
+			fields := []*field{}
+			for _, v := range collectionInfo {
+				field := &field{
+					FieldName:           v.FieldName,
+					IsFieldTypeRequired: v.IsFieldTypeRequired,
+					Kind:                v.Kind,
+					IsPrimary:           v.IsPrimary,
+				}
+				fields = append(fields, field)
+			}
+			return []interface{}{map[string]*dbJSONSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Fields: fields}}}, nil
+		} else if dbAlias != "*" {
+			collections := projectConfig.Modules.Crud[dbAlias].Collections
+			coll := map[string]*dbJSONSchemaResponse{}
+			for key := range collections {
+				collectionInfo, _ := s.GetSchema(dbAlias, key)
+				fields := []*field{}
+				for _, v := range collectionInfo {
+					field := &field{
+						FieldName:           v.FieldName,
+						IsFieldTypeRequired: v.IsFieldTypeRequired,
+						Kind:                v.Kind,
+						IsPrimary:           v.IsPrimary,
+					}
+					fields = append(fields, field)
+				}
+				coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &dbJSONSchemaResponse{Fields: fields}
+			}
+			return []interface{}{coll}, nil
+		}
+		databases := projectConfig.Modules.Crud
+		coll := map[string]*dbJSONSchemaResponse{}
+		for dbName, dbInfo := range databases {
+			for key := range dbInfo.Collections {
+				collectionInfo, _ := s.GetSchema(dbName, key)
+				fields := []*field{}
+				for _, v := range collectionInfo {
+					field := &field{
+						FieldName:           v.FieldName,
+						IsFieldTypeRequired: v.IsFieldTypeRequired,
+						Kind:                v.Kind,
+						IsPrimary:           v.IsPrimary,
+					}
+					fields = append(fields, field)
+				}
+				coll[fmt.Sprintf("%s-%s", dbName, key)] = &dbJSONSchemaResponse{Fields: fields}
+			}
+		}
+		return []interface{}{coll}, nil
 	}
 	if dbAlias != "*" && col != "*" {
 		collectionInfo, ok := projectConfig.Modules.Crud[dbAlias].Collections[col]
