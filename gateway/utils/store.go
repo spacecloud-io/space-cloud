@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -157,80 +158,87 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 
 	scope, present := state[tempArray[0]]
 	if !present {
-		return nil, errors.New("Scope not present")
+		return nil, fmt.Errorf("Scope (%s) not present", tempArray[0])
 	}
 
-	obj, ok := scope.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("Invalid state object")
-	}
+	// obj, ok := scope.(map[string]interface{})
+	// if !ok {
+	// 	return nil, errors.New("Invalid state object")
+	// }
+	obj := scope
 
 	for index, k := range tempArray {
 		if index < 1 {
 			continue
 		}
-		if index == length {
-			if strings.HasSuffix(k, "]") {
-				pre := strings.IndexRune(k, '[')
-				post := strings.IndexRune(k, ']')
-				var err error
-				obj, err = convert(k[0:pre], obj)
-				if err != nil {
-					return nil, err
-				}
-				subVal, err := LoadValue(k[pre+1:post], state)
-				if err != nil {
-					return nil, err
-				}
-				subKey, ok := subVal.(string)
-				if !ok {
-					return nil, errors.New("Key not of type string")
-				}
-				value, present := obj[subKey]
-				if !present {
-					return nil, errors.New("Key not present in state - " + key)
-				}
-				return value, nil
-			}
 
-			value, present := obj[k]
-			if !present {
-				return nil, errors.New("Key not present in state - " + key)
-			}
-			return value, nil
-		}
 		if strings.Contains(k, "]") {
 			pre := strings.IndexRune(k, '[')
 			post := strings.IndexRune(k, ']')
 			var err error
-			obj, err = convert(k[0:pre], obj)
+			obj, err = getValue(k[0:pre], obj)
 			if err != nil {
 				return nil, err
 			}
 
+			// Load the value within brackets
 			subVal, err := LoadValue(k[pre+1:post], state)
 			if err != nil {
 				return nil, err
 			}
-			subKey, ok := subVal.(string)
-			if !ok {
-				return nil, errors.New("Key not of type string")
-			}
 
-			obj, err = convert(subKey, obj)
-			if err != nil {
-				return nil, err
+			// Get the key value
+			switch v := subVal.(type) {
+			case int64, float64, int, float32:
+				k = fmt.Sprintf("%v", v)
+			case string:
+				k = v
+			default:
+				return nil, LogError(fmt.Sprintf("Key (%s) is of unknown type", reflect.TypeOf(subVal)), "utils", "load", nil)
 			}
-			continue
 		}
+
 		var err error
-		obj, err = convert(k, obj)
+		obj, err = getValue(k, obj)
 		if err != nil {
 			return nil, err
+		}
+
+		// If we are at the final element, it means we need to return that value
+		if index == length {
+			return obj, nil
 		}
 	}
 
 	return nil, errors.New("Key not found")
+}
+
+func getValue(key string, obj interface{}) (interface{}, error) {
+	switch val := obj.(type) {
+	case []interface{}:
+		// The key should be a number (index) if the object is an array
+		index, err := strconv.Atoi(key)
+		if err != nil {
+			return nil, LogError(fmt.Sprintf("Key (%s) provided instead of index", key), "utils", "load", err)
+		}
+
+		// Check if index is not out of bounds otherwise return value at that index
+		if index >= len(val) {
+			return nil, LogError(fmt.Sprintf("Index (%d) out of bounds", index), "utils", "load", nil)
+		}
+		return val[index], nil
+
+	case map[string]interface{}:
+		// Throw error if key is not present in state. Otherwise return value
+		tempObj, p := val[key]
+		if !p {
+			return nil, LogError(fmt.Sprintf("Key (%s) not present in state", key), "utils", "load", nil)
+		}
+		return tempObj, nil
+
+	default:
+		return nil, LogError(fmt.Sprintf("Unsupported data type (%s)", reflect.TypeOf(obj)), "utils", "load", nil)
+	}
 }
 
 // LoadNumber loads a key as a float. Throws error
@@ -280,18 +288,6 @@ func LoadBool(key interface{}, args map[string]interface{}) (bool, error) {
 	}
 
 	return false, errors.New("Store: Cloud not load value")
-}
-
-func convert(key string, obj map[string]interface{}) (map[string]interface{}, error) {
-	tempObj, present := obj[key]
-	if !present {
-		return nil, errors.New("Key not present in state (convert) - " + key)
-	}
-	conv, ok := tempObj.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("could not convert value at key (%s) of type (%s) to object", key, reflect.TypeOf(tempObj))
-	}
-	return conv, nil
 }
 
 func splitVariable(key string, delimiter rune) []string {

@@ -79,12 +79,15 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		return nil, err
 	}
 
+	// Prepare the state object
+	state := map[string]interface{}{"args": params, "auth": auth, "token": ogToken}
+
 	var res interface{}
 	req := &utils.HTTPRequest{
 		Params: newParams,
 		Method: method, URL: url,
 		Token: token, SCToken: scToken,
-		Headers: prepareHeaders(endpoint, ogToken, auth, params),
+		Headers: prepareHeaders(endpoint.Headers, state),
 	}
 	if err := utils.MakeHTTPRequest(ctx, req, &res); err != nil {
 		return nil, err
@@ -95,24 +98,26 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	return m.adjustResBody(serviceID, endpointID, ogToken, endpoint, auth, res)
 }
 
-func prepareHeaders(endpoint *config.Endpoint, token string, claims, params interface{}) map[string]string {
-	headers := make(map[string]string, len(endpoint.Headers))
-	state := map[string]interface{}{"args": params, "auth": claims, "token": token}
-	for _, header := range endpoint.Headers {
+func prepareHeaders(headers config.Headers, state map[string]interface{}) config.Headers {
+	out := make([]config.Header, len(headers))
+	for i, header := range headers {
+		// First create a new header object
+		h := config.Header{Key: header.Key, Value: header.Value, Op: header.Op}
+
 		// Load the string if it exists
 		value, err := utils.LoadValue(header.Value, state)
 		if err == nil {
 			if temp, ok := value.(string); ok {
-				header.Value = temp
+				h.Value = temp
 			} else {
 				d, _ := json.Marshal(value)
-				header.Value = string(d)
+				h.Value = string(d)
 			}
 		}
 
-		headers[header.Key] = header.Value
+		out[i] = h
 	}
-	return headers
+	return out
 }
 
 func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
