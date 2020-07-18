@@ -18,9 +18,11 @@ type AdminSyncmanInterface interface {
 }
 
 type preparedQueryResponse struct {
-	ID        string   `json:"id"`
-	SQL       string   `json:"sql"`
-	Arguments []string `json:"arguments" yaml:"arguments"`
+	ID        string       `json:"id"`
+	DBAlias   string       `json:"db"`
+	SQL       string       `json:"sql"`
+	Arguments []string     `json:"arguments" yaml:"arguments"`
+	Rule      *config.Rule `json:"rule"`
 }
 
 type dbRulesResponse struct {

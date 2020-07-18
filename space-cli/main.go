@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/spaceuptech/space-cli/cmd"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd"
 )
 
 func main() {

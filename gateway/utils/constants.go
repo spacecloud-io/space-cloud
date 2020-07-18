@@ -5,7 +5,7 @@ import (
 )
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.18.2"
+const BuildVersion = "0.18.3"
 
 // DLQEventTriggerPrefix used as suffix for DLQ event trigger
 const DLQEventTriggerPrefix = "dlq_"
@@ -200,7 +200,6 @@ type FieldType struct {
 	FieldNull    string `db:"Null"`
 	FieldKey     string `db:"Key"`
 	FieldDefault string `db:"Default"`
-	FieldExtra   string `db:"Extra"`
 }
 
 // ForeignKeysType is the type for storing  foreignkeys information of sql inspection

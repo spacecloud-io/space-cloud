@@ -1,12 +1,13 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils/transport"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
 func TestGetDbRule(t *testing.T) {
@@ -372,6 +373,105 @@ func TestGetDbSchema(t *testing.T) {
 					t.Errorf("GetDbSchema() v = %v, want %v", v, tt.want[i])
 				}
 			}
+		})
+	}
+}
+
+func TestGetDbPreparedQuery(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		project     string
+		commandName string
+		params      map[string]string
+	}
+	tests := []struct {
+		name              string
+		args              args
+		transportMockArgs []mockArgs
+		want              []*model.SpecObject
+		wantErr           bool
+	}{
+		{
+			name: "unable to get response",
+			args: args{commandName: "db-prepared-query", project: "project", params: map[string]string{"dbAlias": "dbAlias", "id": "prep"}},
+			transportMockArgs: []mockArgs{
+				{
+					method: "Get",
+					args:   []interface{}{"GET", "/v1/config/projects/{project}/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "prep"}, new(model.Response)},
+					paramsReturned: []interface{}{errors.New("unable to unmarshall"), model.Response{
+						Result: []interface{}{map[string]interface{}{
+							"id": "prep",
+						}},
+					}},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Got prepared query",
+			args: args{commandName: "db-prepared-query", project: "project", params: map[string]string{"dbAlias": "dbAlias", "id": "prep"}},
+			transportMockArgs: []mockArgs{
+				{
+					method: "Get",
+					args:   []interface{}{"GET", "/v1/config/projects/{project}/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "prep"}, new(model.Response)},
+					paramsReturned: []interface{}{nil, model.Response{
+						Result: []interface{}{map[string]interface{}{
+							"id":   "prep",
+							"db":   "dbAlias",
+							"args": []interface{}{"args.id"},
+							"sql":  "select * from users",
+							"rule": map[string]interface{}{
+								"rule": "allow",
+							},
+						}},
+					}},
+				},
+			},
+			want: []*model.SpecObject{
+				{
+					API:  "/v1/config/projects/{project}/database/{db}/prepared-queries/{id}",
+					Type: "db-prepared-query",
+					Meta: map[string]string{"project": "project", "db": "dbAlias", "id": "prep"},
+					Spec: map[string]interface{}{
+						"id":   "prep",
+						"db":   "dbAlias",
+						"args": []interface{}{"args.id"},
+						"sql":  "select * from users",
+						"rule": map[string]interface{}{
+							"rule": "allow",
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockTransport := transport.MocketAuthProviders{}
+
+			for _, m := range tt.transportMockArgs {
+				mockTransport.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			transport.Client = &mockTransport
+
+			got, err := GetDbPreparedQuery(tt.args.project, tt.args.commandName, tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetDbPreparedQuery() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("GetDbPreparedQuery() = %v, want %v", got, tt.want)
+				}
+			}
+
+			mockTransport.AssertExpectations(t)
 		})
 	}
 }

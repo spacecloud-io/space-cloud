@@ -60,7 +60,6 @@ type Crud interface {
 	Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error)
 	DescribeTable(ctc context.Context, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
-	RawExec(ctx context.Context, query string) error
 	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error)
 	GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, col string) error
@@ -114,7 +113,7 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection, dbName
 		}
 		return c, err
 	default:
-		return nil, utils.ErrInvalidParams
+		return nil, utils.LogError(fmt.Sprintf("provided database (%s) is not supported", dbType), "crud", "init-block", nil)
 	}
 }
 
