@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+// GlobalRoutesConfig describes the project level config for ingress routing
+type GlobalRoutesConfig struct {
+	RequestHeaders  Headers `json:"headers" yaml:"headers"`
+	ResponseHeaders Headers `json:"resHeaders" yaml:"resHeaders"`
+}
+
 // Routes describes the configuration for the routing module
 type Routes []*Route
 
@@ -41,14 +47,12 @@ type Route struct {
 	Targets []RouteTarget `json:"targets" yaml:"targets"`
 	Rule    *Rule         `json:"rule" yaml:"rule"`
 	Modify  struct {
-		Tmpl     EndpointTemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
-		ReqTmpl  string                   `json:"requestTemplate" yaml:"requestTemplate"`
-		ResTmpl  string                   `json:"responseTemplate" yaml:"responseTemplate"`
-		OpFormat string                   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
-		Headers  []struct {
-			Key   string `json:"key" yaml:"key"`
-			Value string `json:"value" yaml:"value"`
-		} `json:"headers" yaml:"headers"`
+		Tmpl            EndpointTemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
+		ReqTmpl         string                   `json:"requestTemplate" yaml:"requestTemplate"`
+		ResTmpl         string                   `json:"responseTemplate" yaml:"responseTemplate"`
+		OpFormat        string                   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
+		RequestHeaders  Headers                  `json:"headers" yaml:"headers"`
+		ResponseHeaders Headers                  `json:"resHeaders" yaml:"resHeaders"`
 	} `json:"modify" yaml:"modify"`
 }
 
