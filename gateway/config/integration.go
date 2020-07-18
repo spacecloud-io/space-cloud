@@ -1,29 +1,32 @@
 package config
 
 // Integrations describes all the integrations registered in the cluster
-type Integrations []IntegrationConfig
+type Integrations []*IntegrationConfig
 
 // IntegrationConfig describes the configuration of a single integration
 type IntegrationConfig struct {
-	ID                string                  `json:"id" yaml:"id"`
-	Key               string                  `json:"key" yaml:"key"`
-	Version           string                  `json:"version" yaml:"version"`
-	Level             int                     `json:"level" yaml:"level"`
-	ConfigPermissions []IntegrationPermission `json:"configPermissions" yaml:"configPermissions"`
-	APIPermissions    []IntegrationPermission `json:"apiPermissions" yaml:"apiPermissions"`
-	Deployments       []interface{}           `json:"deployments" yaml:"deployments"`
-	SecretSource      string                  `json:"secretSource" yaml:"secretSource"`
-	App               string                  `json:"app" yaml:"app"`
-	Hooks             []IntegrationHook       `json:"hooks" yaml:"hooks"`
+	ID                string                      `json:"id" yaml:"id"`
+	Key               string                      `json:"key" yaml:"key"`
+	Version           string                      `json:"version" yaml:"version"`
+	Level             int                         `json:"level" yaml:"level"`
+	ConfigPermissions []IntegrationPermission     `json:"configPermissions" yaml:"configPermissions"`
+	APIPermissions    []IntegrationPermission     `json:"apiPermissions" yaml:"apiPermissions"`
+	Deployments       []interface{}               `json:"deployments" yaml:"deployments"`
+	SecretSource      string                      `json:"secretSource" yaml:"secretSource"`
+	App               string                      `json:"app" yaml:"app"`
+	Hooks             map[string]*IntegrationHook `json:"hooks" yaml:"hooks"`
+	CompatibleVersion int                         `json:"compatibleVersion" yaml:"compatibleVersion"`
 }
 
 // IntegrationHook describes the config for a integration hook
 type IntegrationHook struct {
-	ID         string     `json:"id" yaml:"id"`
-	Resource   []string   `json:"resources" yaml:"resources"`
-	Verbs      []string   `json:"verbs" yaml:"verbs"`
-	URL        string     `json:"url" yaml:"url"`
-	Attributes Attributes `json:"attributes" yaml:"attributes"`
+	ID            string     `json:"id" yaml:"id"`
+	IntegrationID string     `json:"integrationId" yaml:"integrationId"`
+	Kind          string     `json:"kind" yaml:"kind"` // `hook` or `hijack`
+	Resource      []string   `json:"resources" yaml:"resources"`
+	Verbs         []string   `json:"verbs" yaml:"verbs"`
+	URL           string     `json:"url" yaml:"url"`
+	Attributes    Attributes `json:"attributes" yaml:"attributes"`
 }
 
 // IntegrationPermission describes a single permission object
