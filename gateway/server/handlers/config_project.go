@@ -32,6 +32,8 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 			return
 		}
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		project, err := syncMan.GetProjectConfig(projectID, reqParams)
 		if err != nil {
@@ -68,7 +70,10 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = projectConfig
 		statusCode, err := syncman.ApplyProjectConfig(ctx, &projectConfig, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, statusCode, err.Error())

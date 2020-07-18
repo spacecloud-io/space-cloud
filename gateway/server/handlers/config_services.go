@@ -41,7 +41,10 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = v
 		if err := syncMan.SetService(ctx, projectID, service, &v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -75,6 +78,8 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			return
 		}
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		services, err := syncMan.GetServices(ctx, projectID, serviceID, reqParams)
 		if err != nil {
@@ -109,6 +114,8 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		if err := syncMan.DeleteService(ctx, projectID, service, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())

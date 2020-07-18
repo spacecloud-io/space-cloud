@@ -41,7 +41,10 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		defer cancel()
 
 		// Sync the config
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = value
 		if err := syncMan.SetUserManagement(ctx, projectID, provider, value, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -76,6 +79,8 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		providers, err := syncMan.GetUserManagement(ctx, projectID, providerID, reqParams)
 		if err != nil {
