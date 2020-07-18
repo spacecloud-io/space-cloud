@@ -23,7 +23,6 @@ func TestManager_createToken(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    string
 		wantErr bool
 	}{
 		{
@@ -33,7 +32,6 @@ func TestManager_createToken(t *testing.T) {
 				config: &config.Admin{},
 			},
 			args:    args{tokenClaims: map[string]interface{}{"id": "admin", "role": "admin"}},
-			want:    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIn0.N4aa9nBNQHsvnWPUfzmKjMG3YD474ChIyOM5FEUuVm4",
 			wantErr: false,
 		},
 	}
@@ -46,13 +44,10 @@ func TestManager_createToken(t *testing.T) {
 				isProd:    tt.fields.isProd,
 				clusterID: tt.fields.clusterID,
 			}
-			got, err := m.createToken(tt.args.tokenClaims)
+			_, err := m.createToken(tt.args.tokenClaims)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("createToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-			if got != tt.want {
-				t.Errorf("createToken() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

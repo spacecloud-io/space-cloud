@@ -248,3 +248,24 @@ func (m *Module) SetGetSecrets(function utils.GetSecrets) {
 
 	m.getSecrets = function
 }
+
+// CloseConfig close the rules and secret key required by the crud block
+func (m *Module) CloseConfig() error {
+	// Acquire a lock
+	m.Lock()
+	defer m.Unlock()
+
+	for k := range m.queries {
+		delete(m.queries, k)
+	}
+	for k := range m.dataLoader.loaderMap {
+		delete(m.dataLoader.loaderMap, k)
+	}
+	err := m.block.Close()
+	if err != nil {
+		return utils.LogError("Unable to close block in crud", "crud", "CloseConfig", err)
+	}
+	m.closeBatchOperation()
+
+	return nil
+}

@@ -2,6 +2,7 @@ package admin
 
 import (
 	"errors"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -11,6 +12,9 @@ func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error
 	for k, v := range tokenClaims {
 		claims[k] = v
 	}
+
+	// Add expiry of one week
+	claims["exp"] = time.Now().Add(24 * 7 * time.Hour).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(m.user.Secret))

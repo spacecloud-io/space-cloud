@@ -126,6 +126,8 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 			return
 		}
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		if err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col, crud, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -160,7 +162,10 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = v
 		if err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -195,6 +200,8 @@ func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias, reqParams)
 		if err != nil {
@@ -228,6 +235,8 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		if err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -268,6 +277,8 @@ func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		result, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id, reqParams)
 		if err != nil {
@@ -305,7 +316,10 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = &v
 		if err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -338,6 +352,8 @@ func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manag
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		if err := syncman.RemovePreparedQueries(ctx, projectID, dbAlias, id); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -375,7 +391,10 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = v
 		if err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -415,6 +434,8 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col, reqParams)
 		if err != nil {
@@ -451,7 +472,10 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = v
 		if err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -491,6 +515,8 @@ func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		dbConfig, err := syncMan.GetCollectionRules(ctx, projectID, dbAlias, col, reqParams)
 		if err != nil {
@@ -525,6 +551,8 @@ func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		colResult, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, reqParams)
 		if err != nil {
@@ -577,6 +605,8 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 			return
 		}
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		if err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -611,6 +641,8 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		if err := syncman.RemoveCollection(ctx, projectID, dbAlias, col, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -647,7 +679,10 @@ func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = v
 		if err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

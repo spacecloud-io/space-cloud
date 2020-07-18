@@ -42,7 +42,10 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = value
 		if err := syncMan.SetFileStore(ctx, projectID, value, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -73,6 +76,8 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		}
 
 		// get project config
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		fileConfig, err := syncMan.GetFileStoreConfig(ctx, projectID)
 		if err != nil {
@@ -149,7 +154,10 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = value
 		if err := syncMan.SetFileRule(ctx, projectID, ruleName, value, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -186,6 +194,8 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		defer cancel()
 
 		// get project config
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleID, reqParams)
 		if err != nil {
@@ -222,7 +232,10 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = value
 		if err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

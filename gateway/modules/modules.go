@@ -10,6 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers"
 	"github.com/spaceuptech/space-cloud/gateway/modules/global"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Modules is an object that sets up the modules
@@ -118,6 +119,29 @@ func (m *Modules) projects() *config.Config {
 func (m *Modules) Delete(projectID string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
+	if block, p := m.blocks[projectID]; p {
+		// Close all the modules here
+		logrus.Debugln("closing config of db module")
+		if err := block.db.CloseConfig(); err != nil {
+			_ = utils.LogError("error closing db module config", "modules", "Delete", err)
+		}
+
+		logrus.Debugln("closing config of filestore module")
+		if err := block.file.CloseConfig(); err != nil {
+			_ = utils.LogError("error closing filestore module config", "modules", "Delete", err)
+		}
+
+		logrus.Debugln("closing config of eventing module")
+		if err := block.eventing.CloseConfig(); err != nil {
+			_ = utils.LogError("error closing eventing module config", "modules", "Delete", err)
+		}
+
+		logrus.Debugln("closing config of realtime module")
+		if err := block.realtime.CloseConfig(); err != nil {
+			_ = utils.LogError("error closing realtime module config", "modules", "Delete", err)
+		}
+	}
 
 	delete(m.blocks, projectID)
 
