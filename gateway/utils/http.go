@@ -15,10 +15,14 @@ import (
 
 // HTTPRequest describes the request object
 type HTTPRequest struct {
-	Headers        map[string]string
+	Headers        headers
 	Method, URL    string
 	Token, SCToken string
 	Params         interface{}
+}
+
+type headers interface {
+	UpdateHeader(http.Header)
 }
 
 // MakeHTTPRequest fires an http request and returns a response
@@ -46,9 +50,7 @@ func MakeHTTPRequest(ctx context.Context, request *HTTPRequest, vPtr interface{}
 	}
 
 	// Add the remaining headers
-	for k, v := range request.Headers {
-		req.Header.Set(k, v)
-	}
+	request.Headers.UpdateHeader(req.Header)
 
 	// Create a http client and fire the request
 	client := &http.Client{}
