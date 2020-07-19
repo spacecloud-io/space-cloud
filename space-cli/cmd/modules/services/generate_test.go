@@ -504,6 +504,7 @@ func TestGenerateService(t *testing.T) {
 				},
 			},
 		},
+		// TODO: write test cases where no error while getting project config
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -530,4 +531,223 @@ func TestGenerateService(t *testing.T) {
 	}
 }
 
-// TODO: write test cases where no error while getting project config
+func TestGenerateServiceRoute(t *testing.T) {
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
+	// surveyReturnPortValue stores the values returned from the survey for port
+	var surveyReturnPortValue int32
+	// surveyReturnWeightValue stores the values returned from the survey for weight
+	surveyReturnWeightValue := 0
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		projectID string
+	}
+	tests := []struct {
+		name           string
+		args           args
+		surveyMockArgs []mockArgs
+		want           *model.SpecObject
+		wantErr        bool
+	}{
+		{
+			name: "unable to survey project id",
+			args: args{projectID: ""},
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "unable to survey id",
+			args: args{projectID: "project"},
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "routeID"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "unable to survey port",
+			args: args{projectID: "project"},
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "routeID"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnPortValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "8080"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "unable to survey routing type",
+			args: args{projectID: "project"},
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "routeID"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnPortValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "8080"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route Type:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "routingType"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "unable to survey version",
+			args: args{projectID: "project"},
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "routeID"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnPortValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "8080"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route Type:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "routingType"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Version:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "version"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "unable to survey weight",
+			args: args{projectID: "project"},
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "routeID"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnPortValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "8080"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route Type:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "routingType"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Version:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "version"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Weight:"}, &surveyReturnWeightValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "100"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "service route generated",
+			args: args{projectID: "project"},
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "routeID"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnPortValue, mock.Anything},
+					paramsReturned: []interface{}{nil, int32(8080)},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route Type:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "routingType"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Version:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "version"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Weight:"}, &surveyReturnWeightValue, mock.Anything},
+					paramsReturned: []interface{}{nil, 100},
+				},
+			},
+			want: &model.SpecObject{
+				API:  "/v1/runner/{project}/service-routes/{id}",
+				Type: "service-route",
+				Meta: map[string]string{
+					"id":      "routeID",
+					"project": "project",
+				},
+				Spec: map[string]interface{}{
+					"routes": map[string]interface{}{
+						"source": map[string]interface{}{
+							"port": int32(8080),
+						},
+						"targets": map[string]interface{}{
+							"type":    "routingType",
+							"version": "version",
+							"weight":  100,
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockSurvey := utils.MockInputInterface{}
+
+			for _, m := range tt.surveyMockArgs {
+				mockSurvey.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			input.Survey = &mockSurvey
+
+			got, err := GenerateServiceRoute(tt.args.projectID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GenerateServiceRoute() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GenerateServiceRoute() = %v, want %v", got, tt.want)
+			}
+
+			mockSurvey.AssertExpectations(t)
+		})
+	}
+}

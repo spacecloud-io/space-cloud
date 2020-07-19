@@ -134,3 +134,60 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 	}
 	return v, nil
 }
+
+// GenerateServiceRoute creates a service route struct
+func GenerateServiceRoute(projectID string) (*model.SpecObject, error) {
+	if projectID == "" {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project ID:"}, &projectID); err != nil {
+			return nil, err
+		}
+	}
+
+	id := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Route ID:"}, &id); err != nil {
+		return nil, err
+	}
+
+	var port int32
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Port:", Default: "8080"}, &port); err != nil {
+		return nil, err
+	}
+
+	routeType := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Route Type:"}, &routeType); err != nil {
+		return nil, err
+	}
+
+	version := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Version:"}, &version); err != nil {
+		return nil, err
+	}
+
+	weight := 0
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Weight:"}, &weight); err != nil {
+		return nil, err
+	}
+
+	v := &model.SpecObject{
+		API:  "/v1/runner/{project}/service-routes/{id}",
+		Type: "service-route",
+		Meta: map[string]string{
+			"id":      id,
+			"project": projectID,
+		},
+		Spec: map[string]interface{}{
+			"routes": map[string]interface{}{
+				"source": map[string]interface{}{
+					"port": port,
+				},
+				"targets": map[string]interface{}{
+					"type":    routeType,
+					"version": version,
+					"weight":  weight,
+				},
+			},
+		},
+	}
+
+	return v, nil
+}
