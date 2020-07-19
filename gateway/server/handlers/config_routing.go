@@ -130,18 +130,14 @@ func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 // HandleSetGlobalRouteConfig sets the project level ingress route config
 func HandleSetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	type request struct {
-		Config *config.GlobalRoutesConfig `json:"config"`
-	}
+	config := &config.GlobalRoutesConfig{}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the required path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		// Get request body
-		req := new(request)
-		_ = json.NewDecoder(r.Body).Decode(req)
+		_ = json.NewDecoder(r.Body).Decode(config)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
@@ -160,7 +156,7 @@ func HandleSetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncMan.SetGlobalRouteConfig(ctx, projectID, req.Config, reqParams); err != nil {
+		if err := syncMan.SetGlobalRouteConfig(ctx, projectID, config, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
