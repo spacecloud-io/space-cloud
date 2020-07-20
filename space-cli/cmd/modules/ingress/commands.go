@@ -11,12 +11,19 @@ func GenerateSubCommands() []*cobra.Command {
 
 	var generateroutes = &cobra.Command{
 		Use:     "ingress-route [path to config file]",
-		RunE:    actionGenerateIngressRouting,
+		RunE:    actionGenerateIngressGlobal,
 		Aliases: []string{"ingress-routes"},
 		Example: "space-cli generate ingress-route config.yaml --project myproject --log-level info",
 	}
 
-	return []*cobra.Command{generateroutes}
+	var generateIngressGlobal = &cobra.Command{
+		Use:     "ingress-global [path to config file]",
+		RunE:    actionGenerateIngressRouting,
+		Aliases: []string{"ingress-global"},
+		Example: "space-cli generate ingress-global config.yaml --project myproject --log-level info",
+	}
+
+	return []*cobra.Command{generateroutes, generateIngressGlobal}
 }
 
 // GetSubCommands is the list of commands the ingress module exposes
@@ -65,6 +72,19 @@ func actionGenerateIngressRouting(cmd *cobra.Command, args []string) error {
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateIngressRouting()
+	if err != nil {
+		return err
+	}
+
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+}
+
+func actionGenerateIngressGlobal(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+	}
+	dbruleConfigFile := args[0]
+	dbrule, err := generateIngressGlobal()
 	if err != nil {
 		return err
 	}

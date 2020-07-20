@@ -105,3 +105,45 @@ func generateIngressRouting() (*model.SpecObject, error) {
 
 	return v, nil
 }
+
+func generateIngressGlobal() (*model.SpecObject, error) {
+
+	project := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project:"}, &project); err != nil {
+		return nil, err
+	}
+
+	var headers model.Header
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Key:"}, &headers.Key); err != nil {
+		return nil, err
+	}
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Value:"}, &headers.Value); err != nil {
+		return nil, err
+	}
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Option:"}, &headers.Op); err != nil {
+		return nil, err
+	}
+
+	var resHeaders model.Header
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Key:"}, &resHeaders.Key); err != nil {
+		return nil, err
+	}
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Value:"}, &resHeaders.Value); err != nil {
+		return nil, err
+	}
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Option:"}, &resHeaders.Op); err != nil {
+		return nil, err
+	}
+
+	v := &model.SpecObject{
+		API:  "/v1/config/projects/{project}/routing/ingress/global",
+		Type: "ingress-global",
+		Meta: map[string]string{"project": project},
+		Spec: map[string]interface{}{
+			"headers":    model.Headers{headers},
+			"resHeaders": model.Headers{resHeaders},
+		},
+	}
+
+	return v, nil
+}

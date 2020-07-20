@@ -147,3 +147,13 @@ type Response struct {
 	Error  string        `json:"error,omitempty"`
 	Result []interface{} `json:"result,omitempty"`
 }
+
+// Header describes the operation to be performed on the header
+type Header struct {
+	Key   string `json:"key" yaml:"key"`
+	Value string `json:"value" yaml:"value"`
+	Op    string `json:"op" yaml:"op"`
+}
+
+// Headers describes an array of headers
+type Headers []Header
