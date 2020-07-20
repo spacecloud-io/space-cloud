@@ -39,7 +39,12 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetIngressRoutes,
 	}
 
-	return []*cobra.Command{getroute, getroutes}
+	var getIngressGlobal = &cobra.Command{
+		Use:  "ingress-global",
+		RunE: actionGetIngressGlobal,
+	}
+
+	return []*cobra.Command{getroute, getroutes, getIngressGlobal}
 }
 
 func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
@@ -90,4 +95,23 @@ func actionGenerateIngressGlobal(cmd *cobra.Command, args []string) error {
 	}
 
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+}
+
+func actionGetIngressGlobal(cmd *cobra.Command, args []string) error {
+	// Get the project and url parameters
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+	commandName := "ingress-global"
+
+	objs, err := GetIngressGlobal(project, commandName)
+	if err != nil {
+		return err
+	}
+
+	if err := utils.PrintYaml(objs); err != nil {
+		return err
+	}
+	return nil
 }

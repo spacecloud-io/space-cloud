@@ -197,6 +197,14 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	objs, err = ingress.GetIngressGlobal(projectName, "ingress-global")
+	if err != nil {
+		return nil
+	}
+	if err := createConfigFile("19", "ingress-global", objs); err != nil {
+		return nil
+	}
+
 	return nil
 }
 
