@@ -44,8 +44,8 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = value
-		if err := syncMan.SetEventingRule(ctx, projectID, ruleName, value, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncMan.SetEventingRule(ctx, projectID, ruleName, value, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -81,12 +81,12 @@ func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		rules, err := syncMan.GetEventingTriggerRules(ctx, projectID, id, reqParams)
+		status, rules, err := syncMan.GetEventingTriggerRules(ctx, projectID, id, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: rules})
+		_ = utils.SendResponse(w, status, model.Response{Result: rules})
 	}
 }
 
@@ -115,8 +115,8 @@ func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.M
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -153,8 +153,8 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = c
-		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -180,17 +180,20 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
 		// get project config
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		e, err := syncMan.GetEventingConfig(projectID, reqParams)
+		status, e, err := syncMan.GetEventingConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: []interface{}{e}})
+		_ = utils.SendResponse(w, status, model.Response{Result: []interface{}{e}})
 	}
 }
 
@@ -227,9 +230,9 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = c
-		if err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema, reqParams); err != nil {
+		if status, err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema, reqParams); err != nil {
 			logrus.Errorf("Failed to set eventing schema - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -265,12 +268,12 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		schemas, err := syncMan.GetEventingSchema(ctx, projectID, id, reqParams)
+		status, schemas, err := syncMan.GetEventingSchema(ctx, projectID, id, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: schemas})
+		_ = utils.SendResponse(w, status, model.Response{Result: schemas})
 	}
 }
 
@@ -301,9 +304,9 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType, reqParams); err != nil {
+		if status, err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType, reqParams); err != nil {
 			logrus.Errorf("Failed to delete eventing schema - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -342,9 +345,9 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = c
-		if err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c, reqParams); err != nil {
+		if status, err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c, reqParams); err != nil {
 			logrus.Errorf("Failed to add eventing rules - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -381,12 +384,12 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		securityRules, err := syncMan.GetEventingSecurityRules(ctx, projectID, id, reqParams)
+		status, securityRules, err := syncMan.GetEventingSecurityRules(ctx, projectID, id, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: securityRules})
+		_ = utils.SendResponse(w, status, model.Response{Result: securityRules})
 	}
 }
 
@@ -416,9 +419,9 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType, reqParams); err != nil {
+		if status, err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType, reqParams); err != nil {
 			logrus.Errorf("Failed to delete eventing rules - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
