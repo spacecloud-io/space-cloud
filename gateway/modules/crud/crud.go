@@ -44,7 +44,7 @@ type Module struct {
 
 type loader struct {
 	loaderMap      map[string]*dataloader.Loader
-	dataLoaderLock sync.Mutex
+	dataLoaderLock sync.RWMutex
 }
 
 // Crud abstracts the implementation crud operations of databases
