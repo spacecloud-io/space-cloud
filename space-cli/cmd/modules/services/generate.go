@@ -166,14 +166,18 @@ func GenerateServiceRoute(projectID string) (*model.SpecObject, error) {
 			"project": projectID,
 		},
 		Spec: map[string]interface{}{
-			"routes": map[string]interface{}{
-				"source": map[string]interface{}{
-					"port": port,
-				},
-				"targets": map[string]interface{}{
-					"type":    "internal",
-					"version": version,
-					"weight":  100,
+			"routes": []interface{}{
+				map[string]interface{}{
+					"source": map[string]interface{}{
+						"port": port,
+					},
+					"targets": []interface{}{
+						map[string]interface{}{
+							"type":    "internal",
+							"version": version,
+							"weight":  100,
+						},
+					},
 				},
 			},
 		},

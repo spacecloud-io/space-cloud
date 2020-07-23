@@ -89,7 +89,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("18", "db-prepared-query", objs); err != nil {
+	if err := createConfigFile("05", "db-prepared-query", objs); err != nil {
 		return nil
 	}
 
@@ -97,7 +97,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("05", "filestore-config", obj); err != nil {
+	if err := createConfigFile("06", "filestore-config", obj); err != nil {
 		return nil
 	}
 
@@ -105,7 +105,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("06", "filestore-rules", objs); err != nil {
+	if err := createConfigFile("07", "filestore-rules", objs); err != nil {
 		return nil
 	}
 
@@ -113,7 +113,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("07", "eventing-configs", obj); err != nil {
+	if err := createConfigFile("08", "eventing-configs", obj); err != nil {
 		return nil
 	}
 
@@ -121,7 +121,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("08", "eventing-triggers", objs); err != nil {
+	if err := createConfigFile("09", "eventing-triggers", objs); err != nil {
 		return nil
 	}
 
@@ -129,7 +129,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("09", "eventing-rules", objs); err != nil {
+	if err := createConfigFile("10", "eventing-rules", objs); err != nil {
 		return nil
 	}
 
@@ -137,7 +137,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("10", "eventing-schemas", objs); err != nil {
+	if err := createConfigFile("11", "eventing-schemas", objs); err != nil {
 		return nil
 	}
 
@@ -145,7 +145,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("11", "remote-services", objs); err != nil {
+	if err := createConfigFile("12", "remote-services", objs); err != nil {
 		return nil
 	}
 
@@ -153,7 +153,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err = createConfigFile("12", "secrets", objs); err != nil {
+	if err = createConfigFile("13", "secrets", objs); err != nil {
 		return err
 	}
 
@@ -161,7 +161,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("13", "services", objs); err != nil {
+	if err := createConfigFile("14", "services", objs); err != nil {
 		return nil
 	}
 
@@ -169,7 +169,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("14", "service-routes", objs); err != nil {
+	if err := createConfigFile("15", "service-routes", objs); err != nil {
 		return nil
 	}
 
@@ -177,7 +177,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("19", "ingress-global", objs); err != nil {
+	if err := createConfigFile("16", "ingress-global", objs); err != nil {
 		return nil
 	}
 
@@ -185,7 +185,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("15", "ingress-routes", objs); err != nil {
+	if err := createConfigFile("17", "ingress-routes", objs); err != nil {
 		return nil
 	}
 
@@ -193,7 +193,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("16", "auth-providers", objs); err != nil {
+	if err := createConfigFile("18", "auth-providers", objs); err != nil {
 		return nil
 	}
 
@@ -201,7 +201,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("17", "letsencrypt", obj); err != nil {
+	if err := createConfigFile("19", "letsencrypt", obj); err != nil {
 		return nil
 	}
 

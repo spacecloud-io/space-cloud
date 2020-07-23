@@ -679,8 +679,8 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Option:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "option"},
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "set"},
 				},
 			},
 			wantErr: true,
@@ -705,8 +705,8 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Option:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "option"},
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "set"},
 				},
 				{
 					method:         "AskOne",
@@ -736,8 +736,8 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Option:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "option"},
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "set"},
 				},
 				{
 					method:         "AskOne",
@@ -772,8 +772,8 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Option:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "option"},
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "set"},
 				},
 				{
 					method:         "AskOne",
@@ -787,8 +787,8 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Response Header Option:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "option"},
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "set"},
 				},
 			},
 			wantErr: true,
@@ -813,8 +813,8 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Option:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "option"},
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "set"},
 				},
 				{
 					method:         "AskOne",
@@ -828,8 +828,8 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Response Header Option:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "option"},
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "set"},
 				},
 			},
 			want: &model.SpecObject{
@@ -837,8 +837,8 @@ func Test_generateIngressGlobal(t *testing.T) {
 				Type: "ingress-global",
 				Meta: map[string]string{"project": "project"},
 				Spec: map[string]interface{}{
-					"headers":    []interface{}{map[string]interface{}{"key": "key", "value": "value", "op": "option"}},
-					"resHeaders": []interface{}{map[string]interface{}{"key": "key", "value": "value", "op": "option"}},
+					"headers":    []interface{}{map[string]interface{}{"key": "key", "value": "value", "op": "set"}},
+					"resHeaders": []interface{}{map[string]interface{}{"key": "key", "value": "value", "op": "set"}},
 				},
 			},
 		},

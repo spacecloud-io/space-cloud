@@ -121,8 +121,8 @@ func generateIngressGlobal() (*model.SpecObject, error) {
 	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &headersValue); err != nil {
 		return nil, err
 	}
-	headersOption := ""
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Option:"}, &headersOption); err != nil {
+	headersOperation := ""
+	if err := input.Survey.AskOne(&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &headersOperation); err != nil {
 		return nil, err
 	}
 
@@ -134,8 +134,8 @@ func generateIngressGlobal() (*model.SpecObject, error) {
 	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Value:", Default: "Bar"}, &resHeadersValue); err != nil {
 		return nil, err
 	}
-	resHeadersOption := ""
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Option:"}, &resHeadersOption); err != nil {
+	resHeadersOperation := ""
+	if err := input.Survey.AskOne(&survey.MultiSelect{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &resHeadersOperation); err != nil {
 		return nil, err
 	}
 
@@ -144,8 +144,8 @@ func generateIngressGlobal() (*model.SpecObject, error) {
 		Type: "ingress-global",
 		Meta: map[string]string{"project": project},
 		Spec: map[string]interface{}{
-			"headers":    []interface{}{map[string]interface{}{"key": headersKey, "value": headersValue, "op": headersOption}},
-			"resHeaders": []interface{}{map[string]interface{}{"key": resHeadersKey, "value": resHeadersValue, "op": resHeadersOption}},
+			"headers":    []interface{}{map[string]interface{}{"key": headersKey, "value": headersValue, "op": headersOperation}},
+			"resHeaders": []interface{}{map[string]interface{}{"key": resHeadersKey, "value": resHeadersValue, "op": resHeadersOperation}},
 		},
 	}
 
