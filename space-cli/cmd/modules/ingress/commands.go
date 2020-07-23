@@ -19,7 +19,6 @@ func GenerateSubCommands() []*cobra.Command {
 	var generateIngressGlobal = &cobra.Command{
 		Use:     "ingress-global [path to config file]",
 		RunE:    actionGenerateIngressGlobal,
-		Aliases: []string{"ingress-global"},
 		Example: "space-cli generate ingress-global config.yaml --project myproject --log-level info",
 	}
 
@@ -73,7 +72,7 @@ func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 
 func actionGenerateIngressRouting(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+		return utils.LogError("Incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateIngressRouting()
@@ -86,7 +85,7 @@ func actionGenerateIngressRouting(cmd *cobra.Command, args []string) error {
 
 func actionGenerateIngressGlobal(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+		return utils.LogError("Incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateIngressGlobal()
@@ -103,9 +102,8 @@ func actionGetIngressGlobal(cmd *cobra.Command, args []string) error {
 	if !check {
 		return utils.LogError("Project not specified in flag", nil)
 	}
-	commandName := "ingress-global"
 
-	objs, err := GetIngressGlobal(project, commandName)
+	objs, err := GetIngressGlobal(project, "ingress-global")
 	if err != nil {
 		return err
 	}

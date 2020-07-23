@@ -437,8 +437,6 @@ func TestGetDbPreparedQuery(t *testing.T) {
 					Type: "db-prepared-query",
 					Meta: map[string]string{"project": "project", "db": "dbAlias", "id": "prep"},
 					Spec: map[string]interface{}{
-						"id":   "prep",
-						"db":   "dbAlias",
 						"args": []interface{}{"args.id"},
 						"sql":  "select * from users",
 						"rule": map[string]interface{}{

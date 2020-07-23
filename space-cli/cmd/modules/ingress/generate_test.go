@@ -632,7 +632,7 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
@@ -648,12 +648,12 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "value"},
 				},
 			},
@@ -669,12 +669,12 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "value"},
 				},
 				{
@@ -695,12 +695,12 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "value"},
 				},
 				{
@@ -710,7 +710,7 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
@@ -726,12 +726,12 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "value"},
 				},
 				{
@@ -741,12 +741,12 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Response Header Value:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "value"},
 				},
 			},
@@ -762,12 +762,12 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "value"},
 				},
 				{
@@ -777,12 +777,12 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Response Header Value:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "value"},
 				},
 				{
@@ -803,12 +803,12 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "value"},
 				},
 				{
@@ -818,12 +818,12 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Response Header Value:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "value"},
 				},
 				{
@@ -837,8 +837,8 @@ func Test_generateIngressGlobal(t *testing.T) {
 				Type: "ingress-global",
 				Meta: map[string]string{"project": "project"},
 				Spec: map[string]interface{}{
-					"headers":    model.Headers{model.Header{Key: "key", Value: "value", Op: "option"}},
-					"resHeaders": model.Headers{model.Header{Key: "key", Value: "value", Op: "option"}},
+					"headers":    []interface{}{map[string]interface{}{"key": "key", "value": "value", "op": "option"}},
+					"resHeaders": []interface{}{map[string]interface{}{"key": "key", "value": "value", "op": "option"}},
 				},
 			},
 		},

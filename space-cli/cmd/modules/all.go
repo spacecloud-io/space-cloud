@@ -85,6 +85,14 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	objs, err = database.GetDbPreparedQuery(projectName, "db-prepared-query", map[string]string{})
+	if err != nil {
+		return nil
+	}
+	if err := createConfigFile("18", "db-prepared-query", objs); err != nil {
+		return nil
+	}
+
 	obj, err = filestore.GetFileStoreConfig(projectName, "filestore-configs", map[string]string{})
 	if err != nil {
 		return nil
@@ -165,6 +173,14 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	objs, err = ingress.GetIngressGlobal(projectName, "ingress-global")
+	if err != nil {
+		return nil
+	}
+	if err := createConfigFile("19", "ingress-global", objs); err != nil {
+		return nil
+	}
+
 	objs, err = ingress.GetIngressRoutes(projectName, "ingress-routes", map[string]string{})
 	if err != nil {
 		return nil
@@ -186,22 +202,6 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if err := createConfigFile("17", "letsencrypt", obj); err != nil {
-		return nil
-	}
-
-	objs, err = database.GetDbPreparedQuery(projectName, "db-prepared-query", map[string]string{})
-	if err != nil {
-		return nil
-	}
-	if err := createConfigFile("18", "db-prepared-query", objs); err != nil {
-		return nil
-	}
-
-	objs, err = ingress.GetIngressGlobal(projectName, "ingress-global")
-	if err != nil {
-		return nil
-	}
-	if err := createConfigFile("19", "ingress-global", objs); err != nil {
 		return nil
 	}
 

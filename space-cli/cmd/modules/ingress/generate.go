@@ -113,25 +113,29 @@ func generateIngressGlobal() (*model.SpecObject, error) {
 		return nil, err
 	}
 
-	var headers model.Header
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Key:"}, &headers.Key); err != nil {
+	headersKey := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &headersKey); err != nil {
 		return nil, err
 	}
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Value:"}, &headers.Value); err != nil {
+	headersValue := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &headersValue); err != nil {
 		return nil, err
 	}
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Option:"}, &headers.Op); err != nil {
+	headersOption := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Option:"}, &headersOption); err != nil {
 		return nil, err
 	}
 
-	var resHeaders model.Header
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Key:"}, &resHeaders.Key); err != nil {
+	resHeadersKey := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &resHeadersKey); err != nil {
 		return nil, err
 	}
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Value:"}, &resHeaders.Value); err != nil {
+	resHeadersValue := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Value:", Default: "Bar"}, &resHeadersValue); err != nil {
 		return nil, err
 	}
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Option:"}, &resHeaders.Op); err != nil {
+	resHeadersOption := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Option:"}, &resHeadersOption); err != nil {
 		return nil, err
 	}
 
@@ -140,8 +144,8 @@ func generateIngressGlobal() (*model.SpecObject, error) {
 		Type: "ingress-global",
 		Meta: map[string]string{"project": project},
 		Spec: map[string]interface{}{
-			"headers":    model.Headers{headers},
-			"resHeaders": model.Headers{resHeaders},
+			"headers":    []interface{}{map[string]interface{}{"key": headersKey, "value": headersValue, "op": headersOption}},
+			"resHeaders": []interface{}{map[string]interface{}{"key": resHeadersKey, "value": resHeadersValue, "op": resHeadersOption}},
 		},
 	}
 

@@ -153,18 +153,8 @@ func GenerateServiceRoute(projectID string) (*model.SpecObject, error) {
 		return nil, err
 	}
 
-	routeType := ""
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Route Type:"}, &routeType); err != nil {
-		return nil, err
-	}
-
 	version := ""
 	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Version:"}, &version); err != nil {
-		return nil, err
-	}
-
-	weight := 0
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Weight:"}, &weight); err != nil {
 		return nil, err
 	}
 
@@ -181,9 +171,9 @@ func GenerateServiceRoute(projectID string) (*model.SpecObject, error) {
 					"port": port,
 				},
 				"targets": map[string]interface{}{
-					"type":    routeType,
+					"type":    "internal",
 					"version": version,
-					"weight":  weight,
+					"weight":  100,
 				},
 			},
 		},

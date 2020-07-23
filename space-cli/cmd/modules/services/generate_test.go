@@ -536,8 +536,6 @@ func TestGenerateServiceRoute(t *testing.T) {
 	surveyReturnValue := ""
 	// surveyReturnPortValue stores the values returned from the survey for port
 	var surveyReturnPortValue int32
-	// surveyReturnWeightValue stores the values returned from the survey for weight
-	surveyReturnWeightValue := 0
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -595,28 +593,6 @@ func TestGenerateServiceRoute(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "unable to survey routing type",
-			args: args{projectID: "project"},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "routeID"},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnPortValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "8080"},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Route Type:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "routingType"},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "unable to survey version",
 			args: args{projectID: "project"},
 			surveyMockArgs: []mockArgs{
@@ -632,45 +608,8 @@ func TestGenerateServiceRoute(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Route Type:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "routingType"},
-				},
-				{
-					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Version:"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "version"},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "unable to survey weight",
-			args: args{projectID: "project"},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "routeID"},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnPortValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "8080"},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Route Type:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "routingType"},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Version:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "version"},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Weight:"}, &surveyReturnWeightValue, mock.Anything},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "100"},
 				},
 			},
 			wantErr: true,
@@ -691,18 +630,8 @@ func TestGenerateServiceRoute(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Route Type:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "routingType"},
-				},
-				{
-					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Version:"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "version"},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Weight:"}, &surveyReturnWeightValue, mock.Anything},
-					paramsReturned: []interface{}{nil, 100},
 				},
 			},
 			want: &model.SpecObject{
@@ -718,7 +647,7 @@ func TestGenerateServiceRoute(t *testing.T) {
 							"port": int32(8080),
 						},
 						"targets": map[string]interface{}{
-							"type":    "routingType",
+							"type":    "internal",
 							"version": "version",
 							"weight":  100,
 						},

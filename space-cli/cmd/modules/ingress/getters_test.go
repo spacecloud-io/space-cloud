@@ -145,8 +145,8 @@ func TestGetIngressGlobal(t *testing.T) {
 					args:   []interface{}{"GET", "/v1/config/projects/project/routing/ingress/global", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{errors.New("unable to unmarshall"), model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"headers":    model.Headers{},
-							"resHeaders": model.Headers{},
+							"headers":    []interface{}{},
+							"resHeaders": []interface{}{},
 						}},
 					}},
 				},
