@@ -135,7 +135,7 @@ func HandleSetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-    config := new(config.GlobalRoutesConfig)
+		config := new(config.GlobalRoutesConfig)
 		_ = json.NewDecoder(r.Body).Decode(config)
 		defer utils.CloseTheCloser(r.Body)
 
