@@ -45,9 +45,9 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = value
-		if err := syncMan.SetProjectRoute(ctx, projectID, id, value, reqParams); err != nil {
+		if status, err := syncMan.SetProjectRoute(ctx, projectID, id, value, reqParams); err != nil {
 			logrus.Errorf("error handling set project route in handlers unable to add route in project config got error message - %v", err)
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -83,9 +83,9 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		routes, err := syncMan.GetIngressRouting(ctx, projectID, routeID, reqParams)
+		status, routes, err := syncMan.GetIngressRouting(ctx, projectID, routeID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -118,9 +118,9 @@ func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager)
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncMan.DeleteProjectRoute(ctx, projectID, routeID, reqParams); err != nil {
+		if status, err := syncMan.DeleteProjectRoute(ctx, projectID, routeID, reqParams); err != nil {
 			logrus.Errorf("error handling delete project route in handlers unable to delete route in project config got error message - %v", err)
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -160,8 +160,8 @@ func HandleSetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncMan.SetGlobalRouteConfig(ctx, projectID, req.Config, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncMan.SetGlobalRouteConfig(ctx, projectID, req.Config, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -195,13 +195,13 @@ func HandleGetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		c, err := syncMan.GetGlobalRouteConfig(ctx, projectID, reqParams)
+		status, c, err := syncMan.GetGlobalRouteConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
 		// Send the repsonse back
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: []interface{}{c}})
+		_ = utils.SendResponse(w, status, model.Response{Result: []interface{}{c}})
 	}
 }

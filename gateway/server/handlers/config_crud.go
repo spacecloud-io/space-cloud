@@ -35,6 +35,7 @@ func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) h
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
@@ -114,8 +115,8 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col, crud, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col, crud, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -151,8 +152,8 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = v
-		if err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -188,13 +189,13 @@ func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias, reqParams)
+		status, dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: dbConfig})
+		_ = utils.SendResponse(w, status, model.Response{Result: dbConfig})
 	}
 }
 
@@ -223,8 +224,8 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -265,13 +266,13 @@ func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		result, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id, reqParams)
+		status, result, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: result})
+		_ = utils.SendResponse(w, status, model.Response{Result: result})
 	}
 }
 
@@ -305,8 +306,8 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = &v
-		if err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -340,8 +341,8 @@ func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manag
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncman.RemovePreparedQueries(ctx, projectID, dbAlias, id); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncman.RemovePreparedQueries(ctx, projectID, dbAlias, id, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -380,8 +381,8 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = v
-		if err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -422,12 +423,12 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col, reqParams)
+		status, schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: schemas})
+		_ = utils.SendResponse(w, status, model.Response{Result: schemas})
 	}
 }
 
@@ -461,8 +462,8 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = v
-		if err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -503,12 +504,12 @@ func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		dbConfig, err := syncMan.GetCollectionRules(ctx, projectID, dbAlias, col, reqParams)
+		status, dbConfig, err := syncMan.GetCollectionRules(ctx, projectID, dbAlias, col, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: dbConfig})
+		_ = utils.SendResponse(w, status, model.Response{Result: dbConfig})
 	}
 }
 
@@ -539,13 +540,13 @@ func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		colResult, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, reqParams)
+		status, colResult, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: colResult})
+		_ = utils.SendResponse(w, status, model.Response{Result: colResult})
 	}
 }
 
@@ -589,8 +590,8 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -625,8 +626,8 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncman.RemoveCollection(ctx, projectID, dbAlias, col, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncman.RemoveCollection(ctx, projectID, dbAlias, col, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -664,8 +665,8 @@ func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = v
-		if err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 

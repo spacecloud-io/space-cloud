@@ -18,7 +18,7 @@ func TestManager_GetProjectRoutes(t *testing.T) {
 		name    string
 		s       *Manager
 		args    args
-		want    config.Routes
+		want    interface{}
 		wantErr bool
 	}{
 		{
@@ -36,7 +36,7 @@ func TestManager_GetProjectRoutes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetProjectRoutes(tt.args.ctx, tt.args.project)
+			_, got, err := tt.s.GetProjectRoutes(tt.args.ctx, tt.args.project)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetProjectRoutes() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -88,7 +88,7 @@ func TestManager_GetIngressRouting(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetIngressRouting(tt.args.ctx, tt.args.project, tt.args.routeID, model.RequestParams{})
+			_, got, err := tt.s.GetIngressRouting(tt.args.ctx, tt.args.project, tt.args.routeID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetIngressRouting() error = %v, wantErr %v", err, tt.wantErr)
 				return
