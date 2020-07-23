@@ -642,14 +642,18 @@ func TestGenerateServiceRoute(t *testing.T) {
 					"project": "project",
 				},
 				Spec: map[string]interface{}{
-					"routes": map[string]interface{}{
-						"source": map[string]interface{}{
-							"port": int32(8080),
-						},
-						"targets": map[string]interface{}{
-							"type":    "internal",
-							"version": "version",
-							"weight":  100,
+					"routes": []interface{}{
+						map[string]interface{}{
+							"source": map[string]interface{}{
+								"port": int32(8080),
+							},
+							"targets": []interface{}{
+								map[string]interface{}{
+									"type":    "internal",
+									"version": "version",
+									"weight":  100,
+								},
+							},
 						},
 					},
 				},
