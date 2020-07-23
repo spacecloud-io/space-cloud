@@ -16,7 +16,14 @@ func GenerateSubCommands() []*cobra.Command {
 		Example: "space-cli generate service config.yaml --project myproject --log-level info",
 	}
 
-	return []*cobra.Command{generateService}
+	var generateServiceRoute = &cobra.Command{
+		Use:     "service-route [path to config file]",
+		RunE:    actionGenerateServiceRoute,
+		Aliases: []string{"service-route"},
+		Example: "space-cli generate service-route config.yaml --project myproject --log-level info",
+	}
+
+	return []*cobra.Command{generateService, generateServiceRoute}
 
 }
 
@@ -142,4 +149,22 @@ func actionGenerateService(cmd *cobra.Command, args []string) error {
 	}
 
 	return utils.AppendConfigToDisk(service, serviceConfigFile)
+}
+
+func actionGenerateServiceRoute(cmd *cobra.Command, args []string) error {
+
+	// get filename from args in which service config will be stored
+	if len(args) != 1 {
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+	}
+	serviceConfigFile := args[0]
+
+	project, _ := utils.GetProjectID()
+
+	serviceRoute, err := GenerateServiceRoute(project)
+	if err != nil {
+		return err
+	}
+
+	return utils.AppendConfigToDisk(serviceRoute, serviceConfigFile)
 }
