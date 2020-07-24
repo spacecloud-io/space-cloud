@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils"
-	"github.com/spaceuptech/space-cli/cmd/utils/transport"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
 // GetIngressRoutes gets ingress routes
@@ -28,6 +28,27 @@ func GetIngressRoutes(project, commandName string, params map[string]string) ([]
 
 		// Generating the object
 		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/routing/ingress/{id}", commandName, meta, spec)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, s)
+	}
+	return objs, nil
+}
+
+// GetIngressGlobal gets ingress global
+func GetIngressGlobal(project, commandName string) ([]*model.SpecObject, error) {
+	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress/global", project)
+	// Get the spec from the server
+	payload := new(model.Response)
+	if err := transport.Client.Get(http.MethodGet, url, map[string]string{}, payload); err != nil {
+		return nil, err
+	}
+	var objs []*model.SpecObject
+	for _, item := range payload.Result {
+		spec := item.(map[string]interface{})
+		meta := map[string]string{"project": project}
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/routing/ingress/global", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}

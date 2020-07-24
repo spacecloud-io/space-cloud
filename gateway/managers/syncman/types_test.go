@@ -14,9 +14,9 @@ type mockAdminSyncmanInterface struct {
 	mock.Mock
 }
 
-func (m *mockAdminSyncmanInterface) IsTokenValid(token, resource, op string, attr map[string]string) error {
+func (m *mockAdminSyncmanInterface) IsTokenValid(token, resource, op string, attr map[string]string) (model.RequestParams, error) {
 	c := m.Called(token, resource, op, attr)
-	return c.Error(0)
+	return c.Get(0).(model.RequestParams), c.Error(1)
 }
 
 func (m *mockAdminSyncmanInterface) GetInternalAccessToken() (string, error) {
@@ -41,6 +41,10 @@ type mockModulesInterface struct {
 	mock.Mock
 }
 
+func (m *mockModulesInterface) GetAuthModuleForSyncMan() model.AuthSyncManInterface {
+	panic("implement me")
+}
+
 func (m *mockModulesInterface) LetsEncrypt() *letsencrypt.LetsEncrypt {
 	panic("implement me")
 }
@@ -57,7 +61,7 @@ func (m *mockModulesInterface) SetProjectConfig(config *config.Project) error {
 	return m.Called(config).Error(0)
 }
 
-func (m *mockModulesInterface) SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error {
+func (m *mockModulesInterface) SetGlobalConfig(projectID, secretSource string, secrets []*config.Secret, aesKey string) error {
 	c := m.Called(projectID, secrets, aesKey)
 	return c.Error(0)
 }
@@ -156,4 +160,9 @@ func (m *mockSchemaEventingInterface) SchemaValidator(col string, collectionFiel
 func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
 	c := m.Called(ctx, dbAlias, logicalDBName, tables)
 	return c.Error(0)
+}
+
+func (m *mockSchemaEventingInterface) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
+	c := m.Called(ctx, dbAlias, project, col)
+	return c.String(0), c.Error(1)
 }

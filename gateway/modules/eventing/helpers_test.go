@@ -86,14 +86,17 @@ func (new *a) SchemaValidator(col string, collectionFields model.Fields, doc map
 func (new *a) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
 	return nil
 }
+func (new *a) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
+	panic("implement me")
+}
 
 func TestModule_validate(t *testing.T) {
-	authModule := auth.Init("1", &crud.Module{})
-	err := authModule.SetConfig("project", []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": {Rule: "authenticated"}}})
+	authModule := auth.Init("1", &crud.Module{}, nil)
+	err := authModule.SetConfig("project", "", []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": {Rule: "authenticated"}}})
 	if err != nil {
 		t.Fatalf("error setting config (%s)", err.Error())
 	}
-	newSchema := &a{}
+	var newSchema = &a{}
 	type args struct {
 		ctx     context.Context
 		project string

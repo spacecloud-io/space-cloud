@@ -32,15 +32,20 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-trigger", "modify", map[string]string{"project": projectID, "id": ruleName}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-trigger", "modify", map[string]string{"project": projectID, "id": ruleName})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.SetEventingRule(ctx, projectID, ruleName, value); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = value
+		if status, err := syncMan.SetEventingRule(ctx, projectID, ruleName, value, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -65,19 +70,23 @@ func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager
 		}
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-trigger", "read", map[string]string{"project": projectID, "id": id}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-trigger", "read", map[string]string{"project": projectID, "id": id})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		rules, err := syncMan.GetEventingTriggerRules(ctx, projectID, id)
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, rules, err := syncMan.GetEventingTriggerRules(ctx, projectID, id, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: rules})
+		_ = utils.SendResponse(w, status, model.Response{Result: rules})
 	}
 }
 
@@ -95,15 +104,19 @@ func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.M
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-trigger", "modify", map[string]string{"project": projectID, "id": ruleName}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-trigger", "modify", map[string]string{"project": projectID, "id": ruleName})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		if status, err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -124,7 +137,8 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-config", "modify", map[string]string{"project": projectID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-config", "modify", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -134,8 +148,13 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		c := new(config.Eventing)
 		_ = json.NewDecoder(r.Body).Decode(c)
-		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = c
+		if status, err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -155,19 +174,26 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		projectID := vars["project"]
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-config", "read", map[string]string{"project": projectID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-config", "read", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
 		// get project config
-		project, err := syncMan.GetConfig(projectID)
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, e, err := syncMan.GetEventingConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: []interface{}{config.Eventing{DBAlias: project.Modules.Eventing.DBAlias, Enabled: project.Modules.Eventing.Enabled}}})
+		_ = utils.SendResponse(w, status, model.Response{Result: []interface{}{e}})
 	}
 }
 
@@ -187,7 +213,8 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-schema", "modify", map[string]string{"project": projectID, "id": evType}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-schema", "modify", map[string]string{"project": projectID, "id": evType})
+		if err != nil {
 			logrus.Errorf("Failed to validate token for set eventing schema - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
@@ -199,9 +226,13 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		c := schemaRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&c)
 
-		if err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema); err != nil {
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = c
+		if status, err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema, reqParams); err != nil {
 			logrus.Errorf("Failed to set eventing schema - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -226,19 +257,23 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-schema", "read", map[string]string{"project": projectID, "id": id}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-schema", "read", map[string]string{"project": projectID, "id": id})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		schemas, err := syncMan.GetEventingSchema(ctx, projectID, id)
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, schemas, err := syncMan.GetEventingSchema(ctx, projectID, id, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: schemas})
+		_ = utils.SendResponse(w, status, model.Response{Result: schemas})
 	}
 }
 
@@ -256,7 +291,8 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-schema", "modify", map[string]string{"project": projectID, "id": evType}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-schema", "modify", map[string]string{"project": projectID, "id": evType})
+		if err != nil {
 			logrus.Errorf("Failed to validate token for delete eventing schema - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
@@ -265,9 +301,12 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType); err != nil {
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		if status, err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType, reqParams); err != nil {
 			logrus.Errorf("Failed to delete eventing schema - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -289,19 +328,26 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-rule", "modify", map[string]string{"project": projectID, "id": evType}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-rule", "modify", map[string]string{"project": projectID, "id": evType})
+		if err != nil {
 			logrus.Errorf("Failed to validate token for set eventing rules - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		c := new(config.Rule)
 		_ = json.NewDecoder(r.Body).Decode(&c)
-		if err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c); err != nil {
+
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = c
+		if status, err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c, reqParams); err != nil {
 			logrus.Errorf("Failed to add eventing rules - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -326,7 +372,8 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 		}
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-rule", "read", map[string]string{"project": projectID, "id": id}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-rule", "read", map[string]string{"project": projectID, "id": id})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -334,12 +381,15 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		securityRules, err := syncMan.GetEventingSecurityRules(ctx, projectID, id)
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, securityRules, err := syncMan.GetEventingSecurityRules(ctx, projectID, id, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: securityRules})
+		_ = utils.SendResponse(w, status, model.Response{Result: securityRules})
 	}
 }
 
@@ -356,17 +406,22 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 		evType := vars["id"]
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "eventing-rule", "modify", map[string]string{"project": projectID, "id": evType}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "eventing-rule", "modify", map[string]string{"project": projectID, "id": evType})
+		if err != nil {
 			logrus.Errorf("Failed to validate token for delete eventing rules - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType); err != nil {
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		if status, err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType, reqParams); err != nil {
 			logrus.Errorf("Failed to delete eventing rules - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 

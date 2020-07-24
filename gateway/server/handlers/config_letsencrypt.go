@@ -36,7 +36,8 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		value.ID = id
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "letsencrypt", "modify", map[string]string{"project": projectID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "letsencrypt", "modify", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -44,8 +45,12 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, value); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = value
+		if status, err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, value, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -65,18 +70,25 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 		projectID := vars["project"]
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "letsencrypt", "read", map[string]string{"project": projectID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "letsencrypt", "read", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
 		// get project config
-		project, err := syncMan.GetConfig(projectID)
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, le, err := syncMan.GetLetsEncryptConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: []interface{}{project.Modules.LetsEncrypt}})
+		_ = utils.SendResponse(w, status, model.Response{Result: []interface{}{le}})
 	}
 }

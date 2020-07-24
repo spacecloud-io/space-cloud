@@ -32,7 +32,7 @@ func (m *Modules) SetProjectConfig(c *config.Project) error {
 	}
 
 	logrus.Debugln("Setting config of auth module")
-	if err := m.auth.SetConfig(p.ID, p.Secrets, p.AESKey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
+	if err := m.auth.SetConfig(p.ID, p.SecretSource, p.Secrets, p.AESKey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
 		logrus.Errorf("error setting auth module config - %s", err.Error())
 	}
 
@@ -71,13 +71,14 @@ func (m *Modules) SetProjectConfig(c *config.Project) error {
 	if err := m.GlobalMods.Routing().SetProjectRoutes(p.ID, p.Modules.Routes); err != nil {
 		logrus.Errorf("error setting routing module config - %s", err.Error())
 	}
+	m.GlobalMods.Routing().SetGlobalConfig(p.Modules.GlobalRoutes)
 
 	return nil
 }
 
 // SetGlobalConfig sets the auth secret and AESKey
-func (m *Modules) SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error {
-	m.auth.SetSecrets(secrets)
+func (m *Modules) SetGlobalConfig(projectID, secretSource string, secrets []*config.Secret, aesKey string) error {
+	m.auth.SetSecrets(secretSource, secrets)
 	return m.auth.SetAESKey(aesKey)
 }
 

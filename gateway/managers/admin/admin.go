@@ -1,8 +1,6 @@
 package admin
 
 import (
-	"errors"
-	"net/http"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -50,24 +48,8 @@ func (m *Manager) GetConfig() *config.Admin {
 }
 
 // LoadEnv gets the env
-func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas) {
+func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	return m.isProd, "space-cloud-open", m.quotas
-}
-
-// Login handles the admin login operation
-func (m *Manager) Login(user, pass string) (int, string, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	if m.user.User == user && m.user.Pass == pass {
-		token, err := m.createToken(map[string]interface{}{"id": user, "role": user})
-		if err != nil {
-			return http.StatusInternalServerError, "", err
-		}
-		return http.StatusOK, token, nil
-	}
-
-	return http.StatusUnauthorized, "", errors.New("Invalid credentials provided")
+	return m.isProd, "space-cloud-open", m.quotas, "/mission-control/login"
 }

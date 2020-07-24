@@ -33,15 +33,21 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "filestore-config", "modify", map[string]string{"project": projectID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "filestore-config", "modify", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.SetFileStore(ctx, projectID, value); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = value
+		if status, err := syncMan.SetFileStore(ctx, projectID, value, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -63,19 +69,23 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		projectID := vars["project"]
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "filestore-config", "read", map[string]string{"project": projectID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "filestore-config", "read", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
 		// get project config
-		fileConfig, err := syncMan.GetFileStoreConfig(ctx, projectID)
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, fileConfig, err := syncMan.GetFileStoreConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: fileConfig})
+		_ = utils.SendResponse(w, status, model.Response{Result: fileConfig})
 	}
 }
 
@@ -96,7 +106,8 @@ func HandleGetFileState(adminMan *admin.Manager, modules *modules.Modules) http.
 		defer cancel()
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "filestore-config", "read", map[string]string{"project": projectID}); err != nil {
+		_, err := adminMan.IsTokenValid(token, "filestore-config", "read", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -128,15 +139,21 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.SetFileRule(ctx, projectID, ruleName, value); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = value
+		if status, err := syncMan.SetFileRule(ctx, projectID, ruleName, value, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -161,7 +178,8 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		}
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "filestore-rule", "read", map[string]string{"project": projectID, "id": ruleID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "filestore-rule", "read", map[string]string{"project": projectID, "id": ruleID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -170,13 +188,16 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		defer cancel()
 
 		// get project config
-		fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleID)
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: fileRules})
+		_ = utils.SendResponse(w, status, model.Response{Result: fileRules})
 	}
 }
 
@@ -196,15 +217,21 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = value
+		if status, err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 

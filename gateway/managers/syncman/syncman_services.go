@@ -3,14 +3,16 @@ package syncman
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // SetService adds a remote service
-func (s *Manager) SetService(ctx context.Context, project, service string, value *config.Service) error {
+func (s *Manager) SetService(ctx context.Context, project, service string, value *config.Service, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -18,7 +20,7 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	value.ID = service
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return err
+		return http.StatusBadRequest, err
 	}
 
 	if projectConfig.Modules.Services.Services == nil {
@@ -28,53 +30,62 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 
 	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
 		logrus.Errorf("error setting services config - %s", err.Error())
-		return err
+		return http.StatusInternalServerError, err
 	}
 
-	return s.setProject(ctx, projectConfig)
+	if err := s.setProject(ctx, projectConfig); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 }
 
 // DeleteService deletes a remotes service
-func (s *Manager) DeleteService(ctx context.Context, project, service string) error {
+func (s *Manager) DeleteService(ctx context.Context, project, service string, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return err
+		return http.StatusBadRequest, err
 	}
+
 	delete(projectConfig.Modules.Services.Services, service)
 
 	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
 		logrus.Errorf("error setting services config - %s", err.Error())
-		return err
+		return http.StatusInternalServerError, err
 	}
 
-	return s.setProject(ctx, projectConfig)
+	if err := s.setProject(ctx, projectConfig); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 }
 
 // GetServices gets a remotes service
-func (s *Manager) GetServices(ctx context.Context, project, serviceID string) ([]interface{}, error) {
+func (s *Manager) GetServices(ctx context.Context, project, serviceID string, params model.RequestParams) (int, []interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return nil, err
+		return http.StatusBadRequest, nil, err
 	}
 	if serviceID != "*" {
 		service, ok := projectConfig.Modules.Services.Services[serviceID]
 		if !ok {
-			return nil, fmt.Errorf("serviceID (%s) not present in config", serviceID)
+			return http.StatusBadRequest, nil, fmt.Errorf("serviceID (%s) not present in config", serviceID)
 		}
-		return []interface{}{service}, nil
+		return http.StatusOK, []interface{}{service}, nil
 	}
 
 	services := []interface{}{}
 	for _, value := range projectConfig.Modules.Services.Services {
 		services = append(services, value)
 	}
-	return services, nil
+	return http.StatusOK, services, nil
 }

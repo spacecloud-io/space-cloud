@@ -31,7 +31,8 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		_ = json.NewDecoder(r.Body).Decode(value)
 		defer utils.CloseTheCloser(r.Body)
 
-		if err := adminMan.IsTokenValid(token, "auth-provider", "modify", map[string]string{"project": projectID, "id": provider}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "auth-provider", "modify", map[string]string{"project": projectID, "id": provider})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -40,8 +41,12 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		defer cancel()
 
 		// Sync the config
-		if err := syncMan.SetUserManagement(ctx, projectID, provider, value); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = value
+		if status, err := syncMan.SetUserManagement(ctx, projectID, provider, value, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -68,16 +73,20 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "auth-provider", "modify", map[string]string{"project": projectID, "id": providerID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "auth-provider", "modify", map[string]string{"project": projectID, "id": providerID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		providers, err := syncMan.GetUserManagement(ctx, projectID, providerID)
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, providers, err := syncMan.GetUserManagement(ctx, projectID, providerID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: providers})
+		_ = utils.SendResponse(w, status, model.Response{Result: providers})
 	}
 }

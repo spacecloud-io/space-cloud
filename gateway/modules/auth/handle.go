@@ -7,7 +7,7 @@ import (
 )
 
 // AuthorizeRequest authorizes a request using the rule provided
-func (m *Module) AuthorizeRequest(ctx context.Context, rule *config.Rule, project, token string, params interface{}) (map[string]interface{}, error) {
+func (m *Module) AuthorizeRequest(ctx context.Context, rule *config.Rule, project, token string, args map[string]interface{}) (map[string]interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -22,7 +22,8 @@ func (m *Module) AuthorizeRequest(ctx context.Context, rule *config.Rule, projec
 		return nil, err
 	}
 
-	args := map[string]interface{}{"auth": auth, "token": token, "params": params}
+	args["auth"] = auth
+	args["token"] = token
 	if _, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth); err != nil {
 		return nil, err
 	}
