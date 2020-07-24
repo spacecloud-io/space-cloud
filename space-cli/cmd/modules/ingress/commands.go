@@ -28,14 +28,26 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the ingress module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getroute = &cobra.Command{
-		Use:  "ingress-route",
-		RunE: actionGetIngressRoutes,
-	}
-
 	var getroutes = &cobra.Command{
-		Use:  "ingress-routes",
-		RunE: actionGetIngressRoutes,
+		Use:     "ingress-routes",
+		Aliases: []string{"ingress-route"},
+		RunE:    actionGetIngressRoutes,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			objs, err := GetIngressRoutes(project, "ingress-route", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range objs {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var getIngressGlobal = &cobra.Command{
@@ -43,7 +55,7 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetIngressGlobal,
 	}
 
-	return []*cobra.Command{getroute, getroutes, getIngressGlobal}
+	return []*cobra.Command{getroutes, getIngressGlobal}
 }
 
 func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
