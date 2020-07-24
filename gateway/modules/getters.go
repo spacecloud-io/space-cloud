@@ -103,6 +103,15 @@ func (m *Modules) GetSchemaModuleForSyncMan(projectID string) (model.SchemaEvent
 	return module.schema, nil
 }
 
+// GetAuthModuleForSyncMan returns auth module for sync manager
+func (m *Modules) GetAuthModuleForSyncMan(projectID string) (model.AuthSyncManInterface, error) {
+	module, err := m.loadModule(projectID)
+	if err != nil {
+		return nil, err
+	}
+	return module.auth, nil
+}
+
 // LetsEncrypt returns the letsencrypt module
 func (m *Modules) LetsEncrypt() *letsencrypt.LetsEncrypt {
 	return m.GlobalMods.LetsEncrypt()

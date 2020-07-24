@@ -3,6 +3,7 @@ package syncman
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/sirupsen/logrus"
 
@@ -11,13 +12,14 @@ import (
 )
 
 // SetFileStore sets the file store module
-func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStore, params model.RequestParams) error {
+func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStore, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return err
+		return http.StatusBadRequest, err
 	}
 
 	projectConfig.Modules.FileStore.Enabled = value.Enabled
@@ -29,14 +31,18 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 
 	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
 		logrus.Errorf("error setting file store config - %s", err.Error())
-		return err
+		return http.StatusInternalServerError, err
 	}
 
-	return s.setProject(ctx, projectConfig)
+	if err := s.setProject(ctx, projectConfig); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 }
 
 // SetFileRule sets the rule for file store
-func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *config.FileRule, params model.RequestParams) error {
+func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *config.FileRule, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -44,7 +50,7 @@ func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *co
 	value.ID = id
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return err
+		return http.StatusBadRequest, err
 	}
 
 	var doesExist bool
@@ -61,22 +67,25 @@ func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *co
 
 	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
 		logrus.Errorf("error setting file store config - %s", err.Error())
-		return err
+		return http.StatusInternalServerError, err
 	}
 
-	// Persist the config
-	return s.setProject(ctx, projectConfig)
+	if err := s.setProject(ctx, projectConfig); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 }
 
 // SetDeleteFileRule deletes a rule from file store
-func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename string, params model.RequestParams) error {
+func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename string, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return err
+		return http.StatusBadRequest, err
 	}
 
 	temp := projectConfig.Modules.FileStore.Rules
@@ -90,23 +99,28 @@ func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename strin
 
 	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
 		logrus.Errorf("error setting file store config - %s", err.Error())
-		return err
+		return http.StatusInternalServerError, err
 	}
 
-	return s.setProject(ctx, projectConfig)
+	if err := s.setProject(ctx, projectConfig); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 }
 
 // GetFileStoreConfig gets file store config
-func (s *Manager) GetFileStoreConfig(ctx context.Context, project string) ([]interface{}, error) {
+func (s *Manager) GetFileStoreConfig(ctx context.Context, project string, params model.RequestParams) (int, []interface{}, error) {
 	// Acquire a lock
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return nil, err
+		return http.StatusBadRequest, nil, err
 	}
-	return []interface{}{config.FileStore{
+
+	return http.StatusOK, []interface{}{config.FileStore{
 		Enabled:   projectConfig.Modules.FileStore.Enabled,
 		StoreType: projectConfig.Modules.FileStore.StoreType,
 		Conn:      projectConfig.Modules.FileStore.Conn,
@@ -117,27 +131,28 @@ func (s *Manager) GetFileStoreConfig(ctx context.Context, project string) ([]int
 }
 
 // GetFileStoreRules gets file store rules from config
-func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string, params model.RequestParams) ([]interface{}, error) {
+func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string, params model.RequestParams) (int, []interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return nil, err
+		return http.StatusBadRequest, nil, err
 	}
+
 	if ruleID != "*" {
 		for _, value := range projectConfig.Modules.FileStore.Rules {
 			if ruleID == value.ID {
-				return []interface{}{value}, nil
+				return http.StatusOK, []interface{}{value}, nil
 			}
 		}
-		return nil, fmt.Errorf("file rule (%s) not present in config", ruleID)
+		return http.StatusBadRequest, nil, fmt.Errorf("file rule (%s) not present in config", ruleID)
 	}
 
 	fileRules := []interface{}{}
 	for _, value := range projectConfig.Modules.FileStore.Rules {
 		fileRules = append(fileRules, value)
 	}
-	return fileRules, nil
+	return http.StatusOK, fileRules, nil
 }

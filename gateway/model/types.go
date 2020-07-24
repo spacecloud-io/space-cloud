@@ -50,6 +50,12 @@ type AuthEventingInterface interface {
 	IsEventingOpAuthorised(ctx context.Context, project, token string, event *QueueEventRequest) (RequestParams, error)
 }
 
+// AuthSyncManInterface is an interface consisting of functions of auth module used by sync man
+type AuthSyncManInterface interface {
+	GetIntegrationToken(id string) (string, error)
+	GetMissionControlToken(claims map[string]interface{}) (string, error)
+}
+
 // FilestoreEventingInterface is an interface consisting of functions of Filestore module used by Eventing module
 type FilestoreEventingInterface interface {
 	DoesExists(ctx context.Context, project, token, path string) error

@@ -45,8 +45,8 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = value
-		if err := syncMan.SetUserManagement(ctx, projectID, provider, value, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if status, err := syncMan.SetUserManagement(ctx, projectID, provider, value, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -82,11 +82,11 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		providers, err := syncMan.GetUserManagement(ctx, projectID, providerID, reqParams)
+		status, providers, err := syncMan.GetUserManagement(ctx, projectID, providerID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: providers})
+		_ = utils.SendResponse(w, status, model.Response{Result: providers})
 	}
 }

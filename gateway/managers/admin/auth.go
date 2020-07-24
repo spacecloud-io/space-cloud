@@ -8,6 +8,7 @@ import (
 )
 
 func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error) {
+
 	claims := jwt.MapClaims{}
 	for k, v := range tokenClaims {
 		claims[k] = v
@@ -26,6 +27,7 @@ func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error
 }
 
 func (m *Manager) parseToken(token string) (map[string]interface{}, error) {
+	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
@@ -40,6 +42,10 @@ func (m *Manager) parseToken(token string) (map[string]interface{}, error) {
 
 	// Get the claims
 	if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
+		if err := claims.Valid(); err != nil {
+			return nil, err
+		}
+
 		obj := make(map[string]interface{}, len(claims))
 		for key, val := range claims {
 			obj[key] = val

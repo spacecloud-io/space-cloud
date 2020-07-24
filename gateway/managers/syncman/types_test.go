@@ -52,6 +52,10 @@ type mockModulesInterface struct {
 	mock.Mock
 }
 
+func (m *mockModulesInterface) GetAuthModuleForSyncMan(projectID string) (model.AuthSyncManInterface, error) {
+	panic("implement me")
+}
+
 func (m *mockModulesInterface) LetsEncrypt() *letsencrypt.LetsEncrypt {
 	panic("implement me")
 }

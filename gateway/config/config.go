@@ -21,7 +21,7 @@ type ClusterConfig struct {
 type Project struct {
 	Secrets            []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty"`
 	SecretSource       string    `json:"secretSource,omitempty" yaml:"secretSource,omitempty"`
-	Integration        string    `json:"integration,omitempty" yaml:"integration,omitempty"`
+	IsIntegration      bool      `json:"isIntegration,omitempty" yaml:"isIntegration,omitempty"`
 	AESKey             string    `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
 	ID                 string    `json:"id,omitempty" yaml:"id,omitempty"`
 	Name               string    `json:"name,omitempty" yaml:"name,omitempty"`
