@@ -159,7 +159,6 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 }
 
 func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, token string, store utils.M, result interface{}, schema model.Fields, cb model.GraphQLCallback) {
-	addFieldPath(store, getFieldName(field))
 
 	switch val := result.(type) {
 	case []interface{}:
@@ -188,6 +187,7 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 					storeNew := shallowClone(store)
 					storeNew[getFieldName(field)] = v
 					storeNew["coreParentKey"] = getFieldName(field)
+					addFieldPath(storeNew, getFieldName(field))
 
 					f := sel.(*ast.Field)
 
