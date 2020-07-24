@@ -13,6 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/deploy"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/login"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/operations"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/project"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
