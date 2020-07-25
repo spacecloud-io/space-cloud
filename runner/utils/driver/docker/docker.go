@@ -591,7 +591,7 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) (map[st
 		Version := containerName[2]
 		Cont := map[string]interface{}{
 			"ID":     containerInfo.ID,
-			"Status": containerInfo.Status,
+			"Status": containerInfo.State,
 		}
 		result[fmt.Sprintf("%s--%s", ServiceID, Version)] = append(result[fmt.Sprintf("%s--%s", ServiceID, Version)], Cont)
 	}

@@ -160,46 +160,46 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 
 // GetServiceStatus gets the services status for istio
 func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) (map[string][]interface{}, error) {
-	// deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
-	// if err != nil {
-	// 	logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
-	// 	return nil, err
-	// }
-	// var results []interface{}
-	// for _, deployment := range deploymentList.Items {
-	// 	result := make(map[string]interface{})
-	// 	serviceID := deployment.Labels["app"]
-	// 	replicas := deployment.Spec.Replicas
-	// 	podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(ctx, metav1.ListOptions{})
-	// 	if err != nil {
-	// 		logrus.Errorf("Error getting service in istio - unable to find pods - %v", err)
-	// 		return nil, err
-	// 	}
-	// 	res := make(map[string]interface{})
-	// 	for _, p := range podlist.Items {
-	// 		for _, c := range p.Status.InitContainerStatuses {
+	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
+		return nil, err
+	}
+	var results []interface{}
+	for _, deployment := range deploymentList.Items {
+		result := make(map[string]interface{})
+		serviceID := deployment.Labels["app"]
+		replicas := deployment.Spec.Replicas
+		podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			logrus.Errorf("Error getting service in istio - unable to find pods - %v", err)
+			return nil, err
+		}
+		res := make(map[string]interface{})
+		for _, p := range podlist.Items {
+			for _, c := range p.Status.InitContainerStatuses {
 
-	// 			res[c.Name] = map[string]interface{}{
-	// 				"id":     c.ContainerID,
-	// 				"status": c.State,
-	// 			}
-	// 		}
-	// 	}
-	// 	// var containerID []string
-	// 	// for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
-	// 	// 	if containerInfo.Name == "metric-proxy" || containerInfo.Name == "istio-proxy" {
-	// 	// 		continue
-	// 	// 	}
-	// 	// 	containerID = append(containerID, containerInfo.Image)
-	// 	// }
-	// 	result[serviceID] = map[string]interface{}{
-	// 		"replicas": replicas,
-	// 		//"activeReplica": containerID,
-	// 		"pod": res,
-	// 	}
-	// 	results = append(results, result)
-	// }
-	// statusArr := make(map[string][]interface{})
+				res[c.Name] = map[string]interface{}{
+					"id":     c.ContainerID,
+					"status": c.State,
+				}
+			}
+		}
+		// var containerID []string
+		// for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
+		// 	if containerInfo.Name == "metric-proxy" || containerInfo.Name == "istio-proxy" {
+		// 		continue
+		// 	}
+		// 	containerID = append(containerID, containerInfo.Image)
+		// }
+		result[serviceID] = map[string]interface{}{
+			"replicas": replicas,
+			//"activeReplica": containerID,
+			"pod": res,
+		}
+		results = append(results, result)
+	}
+	//statusArr := make(map[string][]interface{})
 	return nil, nil
 }
 
