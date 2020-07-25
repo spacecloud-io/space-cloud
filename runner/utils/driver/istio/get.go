@@ -167,7 +167,7 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) (interfa
 		return nil, err
 	}
 	type replicaInfo struct {
-		Id     string `json:"id"`
+		ID     string `json:"id"`
 		Status string `json:"status"`
 	}
 	type versionInfo struct {
@@ -204,7 +204,7 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) (interfa
 					status = "terminated"
 				}
 				vInfo.Replicas = append(vInfo.Replicas, &replicaInfo{
-					Id:     p.Name,
+					ID:     p.Name,
 					Status: status,
 				})
 			}

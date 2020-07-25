@@ -580,7 +580,7 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) (interf
 		return nil, err
 	}
 	type replicaInfo struct {
-		Id     string `json:"id"`
+		ID     string `json:"id"`
 		Status string `json:"status"`
 	}
 	type versionInfo struct {
@@ -600,7 +600,7 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) (interf
 
 		vInfo := &versionInfo{DesiredReplicas: 1, Replicas: make([]*replicaInfo, 0)}
 		vInfo.Replicas = append(vInfo.Replicas, &replicaInfo{
-			Id:     containerInfo.ID,
+			ID:     containerInfo.ID,
 			Status: containerInfo.State,
 		})
 		resultValue, ok := result[serviceID]
