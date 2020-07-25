@@ -2,6 +2,7 @@ package istio
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -159,48 +160,65 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 }
 
 // GetServiceStatus gets the services status for istio
-func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) (map[string][]interface{}, error) {
+func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) (interface{}, error) {
 	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
 		return nil, err
 	}
-	var results []interface{}
+	type replicaInfo struct {
+		Id     string `json:"id"`
+		Status string `json:"status"`
+	}
+	type versionInfo struct {
+		DesiredReplicas *int32         `json:"desiredReplicas"`
+		Replicas        []*replicaInfo `json:"replicas"`
+	}
+	result := make(map[string]map[string]*versionInfo)
 	for _, deployment := range deploymentList.Items {
-		result := make(map[string]interface{})
+		vInfo := &versionInfo{
+			DesiredReplicas: deployment.Spec.Replicas,
+			Replicas:        make([]*replicaInfo, 0),
+		}
 		serviceID := deployment.Labels["app"]
-		replicas := deployment.Spec.Replicas
-		podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(ctx, metav1.ListOptions{})
+		serviceVersion := deployment.Labels["version"]
+
+		podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s,version=%s", serviceID, serviceVersion)})
 		if err != nil {
 			logrus.Errorf("Error getting service in istio - unable to find pods - %v", err)
 			return nil, err
 		}
-		res := make(map[string]interface{})
 		for _, p := range podlist.Items {
-			for _, c := range p.Status.InitContainerStatuses {
-
-				res[c.Name] = map[string]interface{}{
-					"id":     c.ContainerID,
-					"status": c.State,
+			for _, containerStatus := range p.Status.ContainerStatuses {
+				if containerStatus.Name == "metric-proxy" || containerStatus.Name == "istio-proxy" {
+					continue
 				}
+				var status string
+				if containerStatus.State.Running != nil {
+					status = "running"
+				}
+				if containerStatus.State.Waiting != nil {
+					status = "waiting"
+				}
+				if containerStatus.State.Terminated != nil {
+					status = "terminated"
+				}
+				vInfo.Replicas = append(vInfo.Replicas, &replicaInfo{
+					Id:     p.Name,
+					Status: status,
+				})
 			}
 		}
-		// var containerID []string
-		// for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
-		// 	if containerInfo.Name == "metric-proxy" || containerInfo.Name == "istio-proxy" {
-		// 		continue
-		// 	}
-		// 	containerID = append(containerID, containerInfo.Image)
-		// }
-		result[serviceID] = map[string]interface{}{
-			"replicas": replicas,
-			//"activeReplica": containerID,
-			"pod": res,
+		resultValue, ok := result[serviceID]
+		if !ok {
+			result[serviceID] = map[string]*versionInfo{
+				serviceVersion: vInfo,
+			}
+			continue
 		}
-		results = append(results, result)
+		resultValue[serviceVersion] = vInfo
 	}
-	//statusArr := make(map[string][]interface{})
-	return nil, nil
+	return result, nil
 }
 
 // GetServiceRoutes gets the routing rules of each service

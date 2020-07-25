@@ -262,11 +262,11 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 			return
 		}
 		if serviceIDExists {
-			for i := range result {
+			for i := range result.(map[string]interface{}) {
 				if i == serviceID[0] {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(model.Response{Result: result[i]})
+					_ = json.NewEncoder(w).Encode(model.Response{Result: result.(map[string]interface{})[i]})
 					return
 				}
 			}

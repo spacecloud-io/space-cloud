@@ -3,10 +3,9 @@ package syncman
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/net/context"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"golang.org/x/net/context"
 )
 
 // GetEventSource returns the source id for the space cloud instance
@@ -84,7 +83,6 @@ func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfi
 func (s *Manager) GetClusterConfig() (*config.ClusterConfig, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-
 	return s.projectConfig.Admin.ClusterConfig, nil
 }
 

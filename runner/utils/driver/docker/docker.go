@@ -571,15 +571,23 @@ func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Se
 }
 
 // GetServiceStatus gets the status of service info from docker container
-func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) (map[string][]interface{}, error) {
-	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s", projectID))
-	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
+func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) (interface{}, error) {
+	networkArgs := filters.Arg("network", getNetworkName(d.clusterName))
+	args := filters.Arg("name", getCurrentProjectServicesName(d.clusterName, projectID))
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(networkArgs, args), All: true})
 	if err != nil {
 		logrus.Errorf("error getting service in docker unable to list containers got error message - %v", err)
 		return nil, err
 	}
-	result := make(map[string][]interface{})
-	stat := make(map[string][]interface{})
+	type replicaInfo struct {
+		Id     string `json:"id"`
+		Status string `json:"status"`
+	}
+	type versionInfo struct {
+		DesiredReplicas int            `json:"desiredReplicas"`
+		Replicas        []*replicaInfo `json:"replicas"`
+	}
+	result := make(map[string]map[string]*versionInfo)
 	for _, containerInfo := range containers {
 		containerInspect, err := d.client.ContainerInspect(ctx, containerInfo.ID)
 		if err != nil {
@@ -587,26 +595,24 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) (map[st
 			return nil, err
 		}
 		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
-		ServiceID := containerName[1]
-		Version := containerName[2]
-		Cont := map[string]interface{}{
-			"ID":     containerInfo.ID,
-			"Status": containerInfo.State,
-		}
-		result[fmt.Sprintf("%s--%s", ServiceID, Version)] = append(result[fmt.Sprintf("%s--%s", ServiceID, Version)], Cont)
-	}
-	for strs, v := range result {
-		str := strings.Split(strs, "--")
-		res := map[string]interface{}{
-			str[1]: map[string]interface{}{
-				"desiredReplicas": 1,
-				"replicas":        v,
-			},
-		}
-		stat[str[0]] = append(stat[str[0]], res)
-	}
+		serviceID := containerName[1]
+		version := containerName[2]
 
-	return stat, nil
+		vInfo := &versionInfo{DesiredReplicas: 1, Replicas: make([]*replicaInfo, 0)}
+		vInfo.Replicas = append(vInfo.Replicas, &replicaInfo{
+			Id:     containerInfo.ID,
+			Status: containerInfo.State,
+		})
+		resultValue, ok := result[serviceID]
+		if !ok {
+			result[serviceID] = map[string]*versionInfo{
+				version: vInfo,
+			}
+			continue
+		}
+		resultValue[version] = vInfo
+	}
+	return result, nil
 }
 
 // AdjustScale adjust the scale for docker instance
