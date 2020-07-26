@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/spaceuptech/space-cloud/runner/utils"
 	"net/http"
 	"time"
 
@@ -143,7 +144,7 @@ func (i *Istio) ApplyServiceRoutes(ctx context.Context, projectID, serviceID str
 func (i *Istio) GetLogs(ctx context.Context, projectID, serviceID, taskID, replica string, w http.ResponseWriter, r *http.Request) error {
 
 	// get logs of pods
-	req := i.kube.CoreV1().Pods(projectID).GetLogs(serviceID, &v1.PodLogOptions{
+	req := i.kube.CoreV1().Pods(projectID).GetLogs(replica, &v1.PodLogOptions{
 		Container:  taskID,
 		Follow:     true,
 		Timestamps: true,
@@ -168,18 +169,23 @@ func (i *Istio) GetLogs(ctx context.Context, projectID, serviceID, taskID, repli
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusOK)
 
-loop:
 	for {
 		select {
 		case <-done:
-			break loop
+			utils.LogDebug("Context deadline reached for client request", "docker", "GetLogs", map[string]interface{}{})
+			return nil
 		default:
-			str, _ := rd.ReadString('\n')
-			fmt.Fprintf(w, "%s\n", str[8:]) // leave header from str
-			flusher.Flush()                 // Trigger "chunked" encoding and send a chunk...
+			str, err := rd.ReadString('\n')
+			if err != nil {
+				return err
+			}
+			// starting 8 bytes of data contains some meta data regarding each log that docker sends
+			// ignoring the first 8 bytes, send rest of the data
+			fmt.Fprint(w, str[8:])
+
+			// Trigger "chunked" encoding and send a chunk...
+			flusher.Flush()
 			time.Sleep(500 * time.Millisecond)
 		}
 	}
-
-	return nil
 }

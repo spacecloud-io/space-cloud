@@ -10,35 +10,35 @@ import (
 )
 
 // IsEventingOpAuthorised checks if the eventing operation is authorised
-func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
+func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token string, event *model.QueueEventRequest) (model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, err := m.getEventingRule(event.Type)
 	if err != nil {
-		return err
+		return model.RequestParams{}, err
 	}
 
-	if rule.Rule == "allow" {
-		if m.project == project {
-			return nil
-		}
-		return errors.New("invalid project details provided")
+	if m.project != project {
+		return model.RequestParams{}, errors.New("invalid project details provided")
 	}
 
 	var auth map[string]interface{}
-	auth, err = m.parseToken(token)
-	if err != nil {
-		return err
+	if rule.Rule != "allow" {
+		auth, err = m.parseToken(token)
+		if err != nil {
+			return model.RequestParams{}, err
+		}
 	}
 
 	if _, err = m.matchRule(ctx, project, rule, map[string]interface{}{
 		"args": map[string]interface{}{"auth": auth, "params": event.Payload, "token": token},
 	}, auth); err != nil {
-		return err
+		return model.RequestParams{}, err
 	}
 
-	return nil
+	attr := map[string]string{"project": project, "type": event.Type}
+	return model.RequestParams{Claims: auth, Resource: "eventing-trigger", Op: "access", Attributes: attr}, nil
 }
 
 func (m *Module) getEventingRule(eventType string) (*config.Rule, error) {

@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Commands are the set of account commands for space-cli
@@ -33,6 +33,18 @@ func Commands() []*cobra.Command {
 		Short:         "set the given account as the selected account",
 		SilenceErrors: true,
 		RunE:          actionSetAccount,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			credential, err := utils.GetCredentials()
+			if err != nil {
+				utils.LogDebug("Unable to get all the stored credentials", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			accountIDs := []string{}
+			for _, v := range credential.Accounts {
+				accountIDs = append(accountIDs, v.ID)
+			}
+			return accountIDs, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var deleteAccountCommand = &cobra.Command{
@@ -40,6 +52,18 @@ func Commands() []*cobra.Command {
 		Short:         "deletes the given account",
 		SilenceErrors: true,
 		RunE:          actionDeleteAccount,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			credential, err := utils.GetCredentials()
+			if err != nil {
+				utils.LogDebug("Unable to get all the stored credentials", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			accountIDs := []string{}
+			for _, v := range credential.Accounts {
+				accountIDs = append(accountIDs, v.ID)
+			}
+			return accountIDs, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	viewAccountsCommand.Flags().BoolP("show-keys", "", false, "shows the keys of the accounts")

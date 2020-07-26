@@ -2,11 +2,10 @@ package logs
 
 import (
 	"fmt"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 	"net/http"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
-
-	"github.com/spaceuptech/space-cli/cmd/utils/transport"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // GetServiceLogs gets logs of specified service

@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils"
-	"github.com/spaceuptech/space-cli/cmd/utils/input"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/input"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -590,6 +590,277 @@ func Test_generateIngressRouting(t *testing.T) {
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("generateIngressRouting() = %v, want %v", got, tt.want)
+			}
+
+			mockSurvey.AssertExpectations(t)
+		})
+	}
+}
+
+func Test_generateIngressGlobal(t *testing.T) {
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	tests := []struct {
+		name           string
+		surveyMockArgs []mockArgs
+		want           *model.SpecObject
+		wantErr        bool
+	}{
+		{
+			name: "error surveying project",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying request header key",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying request header value",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "value"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying request header option",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "value"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "set"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying response header key",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "value"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "set"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying response header value",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "value"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "set"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "value"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying response header option",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "value"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "set"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "value"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "set"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "generated ingress global spec object",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project:"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "value"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "set"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Response Header Value:", Default: "Bar"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "value"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.MultiSelect{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "set"},
+				},
+			},
+			want: &model.SpecObject{
+				API:  "/v1/config/projects/{project}/routing/ingress/global",
+				Type: "ingress-global",
+				Meta: map[string]string{"project": "project"},
+				Spec: map[string]interface{}{
+					"headers":    []interface{}{map[string]interface{}{"key": "key", "value": "value", "op": "set"}},
+					"resHeaders": []interface{}{map[string]interface{}{"key": "key", "value": "value", "op": "set"}},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockSurvey := utils.MockInputInterface{}
+
+			for _, m := range tt.surveyMockArgs {
+				mockSurvey.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			input.Survey = &mockSurvey
+
+			got, err := generateIngressGlobal()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("generateIngressGlobal() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("generateIngressGlobal() = %v, want %v", got, tt.want)
 			}
 
 			mockSurvey.AssertExpectations(t)

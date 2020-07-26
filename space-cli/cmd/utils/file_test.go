@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils/file"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/file"
 )
 
 func TestAppendConfigToDisk(t *testing.T) {

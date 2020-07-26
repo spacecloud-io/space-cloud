@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -11,13 +10,13 @@ import (
 )
 
 // IsCreateOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.CreateRequest) (int, error) {
+func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.CreateRequest) (model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Create)
 	if err != nil {
-		return http.StatusUnauthorized, err
+		return model.RequestParams{}, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "token": token}
@@ -36,106 +35,112 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 		args["doc"] = row
 		_, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 		if err != nil {
-			return http.StatusForbidden, err
+			return model.RequestParams{}, err
 		}
 	}
 
-	return http.StatusOK, nil
+	attr := map[string]string{"project": project, "db": dbAlias, "col": col}
+	return model.RequestParams{Claims: auth, Resource: "db-create", Op: "access", Attributes: attr}, nil
 }
 
 // IsReadOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*model.PostProcess, int, error) {
+func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*model.PostProcess, model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Read)
 	if err != nil {
-		return nil, http.StatusUnauthorized, err
+		return nil, model.RequestParams{}, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
 	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
-		return nil, http.StatusForbidden, err
+		return nil, model.RequestParams{}, err
 	}
 
-	return actions, http.StatusOK, nil
+	attr := map[string]string{"project": project, "db": dbAlias, "col": col}
+	return actions, model.RequestParams{Claims: auth, Resource: "db-read", Op: "access", Attributes: attr}, nil
 }
 
 // IsUpdateOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.UpdateRequest) (int, error) {
+func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.UpdateRequest) (model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Update)
 	if err != nil {
-		return http.StatusUnauthorized, err
+		return model.RequestParams{}, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "update": req.Update, "token": token}
 	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
-		return http.StatusForbidden, err
+		return model.RequestParams{}, err
 	}
 
-	return http.StatusOK, nil
+	attr := map[string]string{"project": project, "db": dbAlias, "col": col}
+	return model.RequestParams{Claims: auth, Resource: "db-update", Op: "access", Attributes: attr}, nil
 }
 
 // IsDeleteOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.DeleteRequest) (int, error) {
+func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.DeleteRequest) (model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Delete)
 	if err != nil {
-		return http.StatusUnauthorized, err
+		return model.RequestParams{}, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
 	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
-		return http.StatusForbidden, err
+		return model.RequestParams{}, err
 	}
 
-	return http.StatusOK, nil
+	attr := map[string]string{"project": project, "db": dbAlias, "col": col}
+	return model.RequestParams{Claims: auth, Resource: "db-delete", Op: "access", Attributes: attr}, nil
 }
 
 // IsAggregateOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.AggregateRequest) (int, error) {
+func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.AggregateRequest) (model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Aggregation)
 	if err != nil {
-		return http.StatusUnauthorized, err
+		return model.RequestParams{}, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "pipeline": req.Pipeline, "token": token}
 	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
-		return http.StatusForbidden, err
+		return model.RequestParams{}, err
 	}
 
-	return http.StatusOK, nil
+	attr := map[string]string{"project": project, "db": dbAlias, "col": col}
+	return model.RequestParams{Claims: auth, Resource: "db-aggregate", Op: "access", Attributes: attr}, nil
 }
 
 // IsPreparedQueryAuthorised checks if the crud operation is authorised
-func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *model.PreparedQueryRequest) (*model.PostProcess, int, error) {
+func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *model.PreparedQueryRequest) (*model.PostProcess, model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, auth, err := m.authenticatePreparedQueryRequest(dbAlias, id, token)
 	if err != nil {
-		return nil, http.StatusUnauthorized, err
+		return nil, model.RequestParams{}, err
 	}
 
 	args := map[string]interface{}{"auth": auth, "params": req.Params, "token": token}
 	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
-		return nil, http.StatusForbidden, err
+		return nil, model.RequestParams{}, err
 	}
 
-	return actions, http.StatusOK, nil
+	attr := map[string]string{"project": project, "db": dbAlias}
+	return actions, model.RequestParams{Claims: auth, Resource: "db-prepared-sql", Op: "access", Attributes: attr}, nil
 }
 
 func (m *Module) authenticateCrudRequest(dbAlias, col, token string, op utils.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {

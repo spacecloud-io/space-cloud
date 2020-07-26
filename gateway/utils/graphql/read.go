@@ -14,19 +14,32 @@ import (
 
 func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field, dbAlias, col, token string, req *model.ReadRequest, store utils.M, cb dbCallback) {
 	// Check if read op is authorised
-	actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
+	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	req.GroupBy, err = extractGroupByClause(field.Arguments, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	req.Aggregate, err = extractAggregate(field)
 	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
 
 	go func() {
-		req.IsBatch = true
+
+		req.IsBatch = !(len(req.Aggregate) > 0)
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}
 		req.Options.HasOptions = false
-		result, err := graph.crud.Read(ctx, dbAlias, col, req)
+		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
 		_ = graph.auth.PostProcessMethod(actions, result)
 
 		cb(dbAlias, col, result, err)
@@ -57,7 +70,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 	}
 
 	// Check if read op is authorised
-	actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
+	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -67,7 +80,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		//  batch operation cannot be performed with aggregation
 		req.IsBatch = !(len(req.Aggregate) > 0)
 		req.Options.HasOptions = hasOptions
-		result, err := graph.crud.Read(ctx, dbAlias, col, req)
+		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
 		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(dbAlias, col, result, err)
 	}()
@@ -89,14 +102,14 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 	}
 	req := model.PreparedQueryRequest{Params: params}
 	// Check if PreparedQuery op is authorised
-	actions, _, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
+	actions, reqParams, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
 	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
 
 	go func() {
-		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req)
+		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
 		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(dbAlias, id, result, err)
 	}()
@@ -133,7 +146,33 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 		readRequest.Operation = utils.Distinct
 	}
 
+	// Get extra arguments
+	readRequest.Extras = generateArguments(field, store)
+
 	return &readRequest, hasOptions, nil
+}
+
+func generateArguments(field *ast.Field, store utils.M) map[string]interface{} {
+	obj := map[string]interface{}{}
+	for _, arg := range field.Arguments {
+		switch arg.Name.Value {
+		case "where", "group", "skip", "limit", "sort", "distinct": // read & delete
+			continue
+		case "op", "set", "inc", "mul", "max", "min", "currentTimestamp", "currentDate", "push", "rename", "unset": // update
+			continue
+		case "docs": // create
+			continue
+		default:
+			val, err := utils.ParseGraphqlValue(arg.Value, store)
+			if err != nil {
+				utils.LogWarn(fmt.Sprintf("Unable to extract field (%s)", arg.Name.Value), "graph", "read")
+				continue
+			}
+
+			obj[arg.Name.Value] = val
+		}
+	}
+	return obj
 }
 
 func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string) map[string]int32 {

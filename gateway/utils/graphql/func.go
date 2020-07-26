@@ -32,7 +32,7 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		return
 	}
 
-	auth, err := graph.auth.IsFuncCallAuthorised(ctx, graph.project, serviceName, funcName, token, params)
+	actions, reqParams, err := graph.auth.IsFuncCallAuthorised(ctx, graph.project, serviceName, funcName, token, params)
 	if err != nil {
 		cb(nil, err)
 		return
@@ -42,9 +42,9 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		ctx2, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
 
-		result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, auth, params)
+		result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, reqParams, params)
+		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(result, err)
-		// return
 	}()
 }
 
@@ -80,7 +80,7 @@ func getFuncName(field *ast.Field) (string, error) {
 func getFuncTimeout(field *ast.Field, store utils.M) (int, error) {
 	if len(field.Directives[0].Arguments) > 0 {
 		for _, v := range field.Directives[0].Arguments {
-			if v.Name.Value == "func" {
+			if v.Name.Value == "timeout" {
 				val, err := utils.ParseGraphqlValue(v.Value, store)
 				if err != nil {
 					return 0, err

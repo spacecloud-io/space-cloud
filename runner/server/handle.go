@@ -150,6 +150,7 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		serviceID := vars["serviceId"]
 		taskID := vars["taskId"]
 		replicaID := vars["replicaId"]
+		utils.LogDebug("Get logs process started", "docker", "GetLogs", map[string]interface{}{"projectId": projectID, "serviceId": serviceID, "taskId": taskID, "replicaId": replicaID})
 
 		if err := s.driver.GetLogs(ctx, projectID, serviceID, taskID, replicaID, w, r); err != nil {
 			logrus.Errorf("Failed to get service logs - %s", err.Error())

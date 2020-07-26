@@ -1,12 +1,13 @@
 package ingress
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils/transport"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
 func TestGetIngressRoutes(t *testing.T) {
@@ -114,6 +115,95 @@ func TestGetIngressRoutes(t *testing.T) {
 					t.Errorf("GetIngressRoutes() v = %v, want %v", v, tt.want[i])
 				}
 			}
+		})
+	}
+}
+
+func TestGetIngressGlobal(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		project     string
+		commandName string
+	}
+	tests := []struct {
+		name              string
+		args              args
+		transportMockArgs []mockArgs
+		want              []*model.SpecObject
+		wantErr           bool
+	}{
+		{
+			name: "unable to get response",
+			args: args{commandName: "ingress-global", project: "project"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "Get",
+					args:   []interface{}{"GET", "/v1/config/projects/project/routing/ingress/global", map[string]string{}, new(model.Response)},
+					paramsReturned: []interface{}{errors.New("unable to unmarshall"), model.Response{
+						Result: []interface{}{map[string]interface{}{
+							"headers":    []interface{}{},
+							"resHeaders": []interface{}{},
+						}},
+					}},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "got ingress global",
+			args: args{commandName: "ingress-global", project: "project"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "Get",
+					args:   []interface{}{"GET", "/v1/config/projects/project/routing/ingress/global", map[string]string{}, new(model.Response)},
+					paramsReturned: []interface{}{nil, model.Response{
+						Result: []interface{}{map[string]interface{}{
+							"headers":    []map[string]string{{"key": "key", "value": "value", "op": "option"}},
+							"resHeaders": []map[string]string{{"key": "key", "value": "value", "op": "option"}},
+						}},
+					}},
+				},
+			},
+			want: []*model.SpecObject{
+				{
+					API:  "/v1/config/projects/{project}/routing/ingress/global",
+					Type: "ingress-global",
+					Meta: map[string]string{"project": "project"},
+					Spec: map[string]interface{}{
+						"headers":    []interface{}{map[string]interface{}{"key": "key", "value": "value", "op": "option"}},
+						"resHeaders": []interface{}{map[string]interface{}{"key": "key", "value": "value", "op": "option"}},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockTransport := transport.MocketAuthProviders{}
+
+			for _, m := range tt.transportMockArgs {
+				mockTransport.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			transport.Client = &mockTransport
+
+			got, err := GetIngressGlobal(tt.args.project, tt.args.commandName)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetIngressGlobal() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if len(got) > 0 {
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("GetIngressGlobal() = %v, want %v", got, tt.want)
+				}
+			}
+
+			mockTransport.AssertExpectations(t)
 		})
 	}
 }

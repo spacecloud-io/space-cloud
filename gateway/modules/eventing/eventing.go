@@ -7,9 +7,9 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 
+	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
+	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 // Module is responsible for managing the eventing system
@@ -36,6 +36,8 @@ type Module struct {
 	metricHook model.MetricEventingHook
 	// stores mapping of batchID w.r.t channel for sending synchronous event response
 	eventChanMap sync.Map // key here is batchID
+	tickerIntent *time.Ticker
+	tickerStaged *time.Ticker
 }
 
 // synchronous event response
@@ -80,7 +82,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		dummyCrud := config.Crud{
 			"dummyDBName": &config.CrudStub{
 				Collections: map[string]*config.TableRule{
-					eventType: &config.TableRule{
+					eventType: {
 						Schema: schemaObj.Schema,
 					},
 				},
@@ -119,5 +121,37 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		m.config.InternalRules = map[string]config.EventingRule{}
 	}
 
+	return nil
+}
+
+// CloseConfig closes the module config
+func (m *Module) CloseConfig() error {
+	// Acquire a lock
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	//erase map
+	m.processingEvents.Range(func(key interface{}, value interface{}) bool {
+		m.processingEvents.Delete(key)
+		return true
+	})
+
+	for k := range m.schemas {
+		delete(m.schemas, k)
+	}
+	for k := range m.config.Rules {
+		delete(m.config.Rules, k)
+	}
+	for k := range m.config.InternalRules {
+		delete(m.config.InternalRules, k)
+	}
+	for k := range m.config.SecurityRules {
+		delete(m.config.SecurityRules, k)
+	}
+	for k := range m.config.Schemas {
+		delete(m.config.Schemas, k)
+	}
+	m.tickerIntent.Stop()
+	m.tickerStaged.Stop()
 	return nil
 }

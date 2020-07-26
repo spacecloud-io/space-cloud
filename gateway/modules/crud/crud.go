@@ -56,7 +56,6 @@ type Crud interface {
 	Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error)
 	DescribeTable(ctc context.Context, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
-	RawExec(ctx context.Context, query string) error
 	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error)
 	GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, col string) error
@@ -105,7 +104,7 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection, dbName
 		}
 		return c, err
 	default:
-		return nil, utils.ErrInvalidParams
+		return nil, utils.LogError(fmt.Sprintf("provided database (%s) is not supported", dbType), "crud", "init-block", nil)
 	}
 }
 
@@ -125,7 +124,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		return errors.New("crud module cannot have more than 1 db")
 	}
 
-	m.closeBatchOperation()
 	m.project = project
 
 	// Reset all existing prepared query
@@ -143,6 +141,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		// set default database name to project id
 		if v.DBName == "" {
 			v.DBName = project
+		}
+
+		// Add the prepared queries in this db
+		for id, query := range v.PreparedQueries {
+			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
 		}
 
 		if m.block != nil {
@@ -183,12 +186,9 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		m.dbType = v.Type
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
-
-		// Add the prepared queries in this db
-		for id, query := range v.PreparedQueries {
-			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
-		}
 	}
+
+	m.closeBatchOperation()
 	m.initBatchOperation(project, crud)
 	return nil
 }
@@ -217,4 +217,25 @@ func (m *Module) SetGetSecrets(function utils.GetSecrets) {
 	defer m.Unlock()
 
 	m.getSecrets = function
+}
+
+// CloseConfig close the rules and secret key required by the crud block
+func (m *Module) CloseConfig() error {
+	// Acquire a lock
+	m.Lock()
+	defer m.Unlock()
+
+	for k := range m.queries {
+		delete(m.queries, k)
+	}
+	for k := range m.dataLoader.loaderMap {
+		delete(m.dataLoader.loaderMap, k)
+	}
+	err := m.block.Close()
+	if err != nil {
+		return utils.LogError("Unable to close block in crud", "crud", "CloseConfig", err)
+	}
+	m.closeBatchOperation()
+
+	return nil
 }

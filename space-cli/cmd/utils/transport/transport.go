@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 	"github.com/stretchr/testify/mock"
 )
 
