@@ -598,7 +598,7 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]*mod
 		return nil, err
 	}
 
-	serviceMapper := make(map[string]map[string][]string, 0) //
+	serviceMapper := make(map[string]map[string][]string)
 	for _, containerInfo := range containers {
 		//NOTE: the name starts with a forward slash
 		_, _, serviceID, version, _ := splitServiceContainerName(containerInfo.Names[0])
@@ -610,12 +610,7 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]*mod
 			}
 			continue
 		}
-		serviceContainers, ok := serviceVersionInfo[version]
-		if !ok {
-			serviceVersionInfo[version] = []string{containerInfo.ID}
-			continue
-		}
-		serviceContainers = append(serviceContainers, containerInfo.ID)
+		serviceVersionInfo[version] = append(serviceVersionInfo[version], containerInfo.ID)
 	}
 
 	result := make([]*model.ServiceStatus, 0)
