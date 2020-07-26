@@ -135,7 +135,24 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		"CLUSTER_ID=" + clusterID,
 		"PORT=" + portHTTPValue,
 	}
+	var runnerEnvs = []string{
+		"DEV=" + devMode,
+		"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:" + portHTTPValue, // TODO Change the default value in runner it starts with http
+		"DRIVER=docker",
+		"JWT_SECRET=" + secret,
+		"JWT_PROXY_SECRET=" + generateRandomString(24),
+		"SECRETS_PATH=/secrets",
+		"HOME_SECRETS_PATH=" + utils.GetMountTempSecretsDir(clusterName),
+		"HOSTS_FILE_PATH=" + utils.GetMountHostsFilePath(clusterName),
+		"ROUTING_FILE_PATH=" + "/routing-config.json",
+		"CLUSTER_ID=" + clusterID,
+		"PORT=4050",
+	}
 
+	if dev {
+		runnerEnvs = append(runnerEnvs, "LOG_LEVEL=debug")
+		envs = append(envs, "LOG_LEVEL=debug")
+	}
 	envs = append(envs, environmentVariables...)
 
 	mounts := []mount.Mount{
@@ -193,19 +210,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", version),
 			containerName:  utils.GetScContainers(clusterName, "runner"),
 			dnsName:        "runner.space-cloud.svc.cluster.local",
-			envs: []string{
-				"DEV=" + devMode,
-				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:" + portHTTPValue, // TODO Change the default value in runner it starts with http
-				"DRIVER=docker",
-				"JWT_SECRET=" + secret,
-				"JWT_PROXY_SECRET=" + generateRandomString(24),
-				"SECRETS_PATH=/secrets",
-				"HOME_SECRETS_PATH=" + utils.GetMountTempSecretsDir(clusterName),
-				"HOSTS_FILE_PATH=" + utils.GetMountHostsFilePath(clusterName),
-				"ROUTING_FILE_PATH=" + "/routing-config.json",
-				"CLUSTER_ID=" + clusterID,
-				"PORT=4050",
-			},
+			envs:           runnerEnvs,
 			mount: []mount.Mount{
 				{
 					Type:   mount.TypeBind,

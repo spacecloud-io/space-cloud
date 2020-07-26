@@ -160,26 +160,14 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 }
 
 // GetServiceStatus gets the services status for istio
-func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) (interface{}, error) {
+func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error) {
 	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
 		return nil, err
 	}
-	type replicaInfo struct {
-		ID     string `json:"id"`
-		Status string `json:"status"`
-	}
-	type versionInfo struct {
-		DesiredReplicas *int32         `json:"desiredReplicas"`
-		Replicas        []*replicaInfo `json:"replicas"`
-	}
-	result := make(map[string]map[string]*versionInfo)
+	result := make([]*model.ServiceStatus, 0)
 	for _, deployment := range deploymentList.Items {
-		vInfo := &versionInfo{
-			DesiredReplicas: deployment.Spec.Replicas,
-			Replicas:        make([]*replicaInfo, 0),
-		}
 		serviceID := deployment.Labels["app"]
 		serviceVersion := deployment.Labels["version"]
 
@@ -188,37 +176,45 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) (interfa
 			logrus.Errorf("Error getting service in istio - unable to find pods - %v", err)
 			return nil, err
 		}
+		replicas := make([]*model.ReplicaInfo, 0)
 		for _, p := range podlist.Items {
+			var status string
 			for _, containerStatus := range p.Status.ContainerStatuses {
 				if containerStatus.Name == "metric-proxy" || containerStatus.Name == "istio-proxy" {
 					continue
 				}
-				var status string
 				if containerStatus.State.Running != nil {
-					status = "running"
+					status = getBadStatus(status, "running")
 				}
 				if containerStatus.State.Waiting != nil {
-					status = "waiting"
+					status = getBadStatus(status, "waiting")
 				}
 				if containerStatus.State.Terminated != nil {
-					status = "terminated"
+					status = getBadStatus(status, "terminated")
 				}
-				vInfo.Replicas = append(vInfo.Replicas, &replicaInfo{
-					ID:     p.Name,
-					Status: status,
-				})
 			}
+			replicas = append(replicas, &model.ReplicaInfo{ID: p.Name, Status: status})
 		}
-		resultValue, ok := result[serviceID]
-		if !ok {
-			result[serviceID] = map[string]*versionInfo{
-				serviceVersion: vInfo,
-			}
-			continue
-		}
-		resultValue[serviceVersion] = vInfo
+		result = append(result, &model.ServiceStatus{
+			ServiceID:       serviceID,
+			Version:         serviceVersion,
+			DesiredReplicas: deployment.Spec.Replicas,
+			Replicas:        replicas,
+		})
 	}
 	return result, nil
+}
+
+func getBadStatus(previousStatus, currentStatus string) string {
+	var statuses = map[string]int{
+		"running":    1,
+		"waiting":    2,
+		"terminated": 3,
+	}
+	if statuses[currentStatus] > statuses[previousStatus] {
+		return currentStatus
+	}
+	return previousStatus
 }
 
 // GetServiceRoutes gets the routing rules of each service

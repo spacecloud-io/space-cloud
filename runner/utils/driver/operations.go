@@ -31,7 +31,7 @@ func (m *Module) GetServices(ctx context.Context, projectID string) ([]*model.Se
 }
 
 // GetServiceStatus gets services status
-func (m *Module) GetServiceStatus(ctx context.Context, projectID string) (interface{}, error) {
+func (m *Module) GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error) {
 	return m.driver.GetServiceStatus(ctx, projectID)
 }
 

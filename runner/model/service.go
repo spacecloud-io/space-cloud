@@ -134,3 +134,15 @@ type SpecObject struct {
 	Meta map[string]string `yaml:"meta"`
 	Spec interface{}       `yaml:"spec,omitempty"`
 }
+
+type ServiceStatus struct {
+	ServiceID       string         `json:"serviceId" yaml:"serviceId"`
+	Version         string         `json:"version" yaml:"version"`
+	DesiredReplicas interface{}    `json:"desiredReplicas" yaml:"desiredReplicas"`
+	Replicas        []*ReplicaInfo `json:"replicas" yaml:"replicas"`
+}
+
+type ReplicaInfo struct {
+	ID     string `json:"id" yaml:"id"`
+	Status string `json:"status" yaml:"status"`
+}

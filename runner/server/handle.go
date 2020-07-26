@@ -255,27 +255,40 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		serviceID, serviceIDExists := r.URL.Query()["serviceId"]
+		version, versionExists := r.URL.Query()["versioin"]
+
 		result, err := s.driver.GetServiceStatus(ctx, projectID)
 		if err != nil {
 			logrus.Errorf("Failed to get service status - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
-		if serviceIDExists {
-			for i := range result.(map[string]interface{}) {
-				if i == serviceID[0] {
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(model.Response{Result: result.(map[string]interface{})[i]})
-					return
+
+		arr := make([]interface{}, 0)
+		if serviceIDExists && versionExists {
+			for _, serviceStatus := range result {
+				if serviceStatus.ServiceID == serviceID[0] && serviceStatus.Version == version[0] {
+					arr = append(arr, serviceStatus)
 				}
 			}
-
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present", serviceID[0])})
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(model.Response{Result: arr})
 			return
 		}
+
+		if serviceIDExists {
+			for _, serviceStatus := range result {
+				if serviceStatus.ServiceID == serviceID[0] {
+					arr = append(arr, serviceStatus)
+				}
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(model.Response{Result: arr})
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
