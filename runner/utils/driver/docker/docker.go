@@ -390,8 +390,12 @@ func splitServiceContainerName(containerName string) (clusterID, projectID, serv
 }
 
 func getReplicaID(containerName string) string {
-	containerName = strings.TrimPrefix(containerName, "/")
-	return strings.Join(strings.Split(containerName, "--")[:3], "--")
+	arr := strings.Split(containerName, "--")
+	if len(arr) != 5 {
+		utils.LogDebug("Length of container name not equal to 5 after splitting", "docker", "get-replica-id", nil)
+		return ""
+	}
+	return strings.Join(arr[1:3], "--")
 }
 
 func getNetworkName(id string) string {
