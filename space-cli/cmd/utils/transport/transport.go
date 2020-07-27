@@ -9,13 +9,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 type transport interface {
 	Get(method, url string, params map[string]string, vPtr interface{}) error
-	GetLogs(method, url string) error
+	GetLogs(url string) error
 }
 
 type def struct{}
@@ -72,14 +73,14 @@ func (d *def) Get(method, url string, params map[string]string, vPtr interface{}
 	return nil
 }
 
-func (d *def) GetLogs(method, url string) error {
+func (d *def) GetLogs(url string) error {
 	account, token, err := utils.LoginWithSelectedAccount()
 	if err != nil {
 		return utils.LogError("Couldn't get account details or login token", err)
 	}
 	url = fmt.Sprintf("%s%s", account.ServerURL, url)
 
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
@@ -108,7 +109,13 @@ func (d *def) GetLogs(method, url string) error {
 
 	utils.LogInfo("Press ctrl + c to exit")
 	for {
-		str, _ := rd.ReadString('\n')
+		str, err := rd.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
 		if str != "\n" {
 			fmt.Println(str)
 			time.Sleep(500 * time.Millisecond)
@@ -135,7 +142,7 @@ func (m *MocketAuthProviders) Get(method, url string, params map[string]string, 
 }
 
 // GetLogs gets logs of service during test
-func (m *MocketAuthProviders) GetLogs(method, url string) error {
-	c := m.Called(method, url)
+func (m *MocketAuthProviders) GetLogs(url string) error {
+	c := m.Called(url)
 	return c.Error(0)
 }

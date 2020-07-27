@@ -1,13 +1,13 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -141,32 +141,61 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cancel()
-
+		defer logrus.Println("Closing handle of runner for logs")
 		// get query params
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		taskID := vars["taskId"]
-		replicaID := vars["replicaId"]
-		follow, isFollowExists := r.URL.Query()["follow"]
-		if !isFollowExists {
-			follow[0] = "false"
+
+		taskID := r.URL.Query().Get("taskId")
+		replicaID := r.URL.Query().Get("replicaId")
+		if replicaID == "" {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "replica id not provided in query param")
+			return
 		}
-		isFollow, err := strconv.ParseBool(follow[0])
+		_, isFollow := r.URL.Query()["follow"]
+
+		utils.LogDebug("Get logs process started", "docker", "GetLogs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
+		pipeReader, err := s.driver.GetLogs(r.Context(), isFollow, projectID, taskID, replicaID)
 		if err != nil {
 			logrus.Errorf("Failed to get service logs - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		defer utils.CloseTheCloser(pipeReader)
 
-		utils.LogDebug("Get logs process started", "docker", "GetLogs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
-
-		if err := s.driver.GetLogs(ctx, isFollow, projectID, taskID, replicaID, w, r); err != nil {
-			logrus.Errorf("Failed to get service logs - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+		reader := bufio.NewReader(pipeReader)
+		// implement http flusher
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "expected http.ResponseWriter to be an http.Flusher")
 			return
+		}
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.WriteHeader(http.StatusOK)
+		utils.LogDebug("before for loop", "docker", "GetLogs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
+		for {
+			select {
+			case <-r.Context().Done():
+				utils.LogDebug("Context deadline reached for client request", "istio", "GetLogs", map[string]interface{}{})
+				return
+			default:
+				str, err := reader.ReadString('\n')
+				if err != nil {
+					if err == io.EOF && !isFollow {
+						utils.LogDebug("End of file reached for logs", "istio", "GetLogs", map[string]interface{}{})
+						return
+					}
+					utils.LogDebug("error occured while reading from pipe in hander", "", "", nil)
+					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+					return
+				}
+				// starting 8 bytes of data contains some meta data regarding each log that docker sends
+				// ignoring the first 8 bytes, send rest of the data
+				fmt.Fprint(w, str[8:])
+				// Trigger "chunked" encoding and send a chunk...
+				flusher.Flush()
+				time.Sleep(500 * time.Millisecond)
+			}
 		}
 	}
 }

@@ -205,7 +205,6 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 				"ROUTING_FILE_PATH=" + "/routing-config.json",
 				"CLUSTER_ID=" + clusterID,
 				"PORT=4050",
-				"LOG_LEVEL=debug",
 			},
 			mount: []mount.Mount{
 				{

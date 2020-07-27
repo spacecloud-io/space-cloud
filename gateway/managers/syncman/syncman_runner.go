@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -295,6 +296,7 @@ func (s *Manager) HandleRunnerGetServiceRoutingRequest(admin *admin.Manager) htt
 func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userToken := utils.GetTokenFromHeader(r)
+		defer logrus.Println("Closing handle of gateway for logs")
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]

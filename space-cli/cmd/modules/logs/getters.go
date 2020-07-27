@@ -2,14 +2,26 @@ package logs
 
 import (
 	"fmt"
-	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
+	"log"
 	"net/http"
+	"net/url"
+
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
 // GetServiceLogs gets logs of specified service
 func GetServiceLogs(project, taskID, replicaID string, isFollow bool) error {
-	url := fmt.Sprintf("/v1/runner/%s/services/logs/%s/%s?follow=%v", project, taskID, replicaID, isFollow)
-	if err := transport.Client.GetLogs(http.MethodGet, url); err != nil {
+	u, err := url.Parse(fmt.Sprintf("/v1/runner/%s/services/logs", project))
+	if err != nil {
+		return err
+	}
+	if isFollow {
+		u.Query().Add("follow", "true")
+	}
+	u.Query().Add("taskId", taskID)
+	u.Query().Add("replicaId", replicaID)
+	log.Println("t", taskID, "r", replicaID)
+	if err := transport.Client.GetLogs(u.RequestURI()); err != nil {
 		return err
 	}
 	return nil

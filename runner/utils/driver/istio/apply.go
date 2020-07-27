@@ -1,16 +1,7 @@
 package istio
 
 import (
-	"bufio"
 	"context"
-	"errors"
-	"fmt"
-	"github.com/spaceuptech/space-cloud/runner/utils"
-	"io"
-	"net/http"
-	"time"
-
-	v1 "k8s.io/api/core/v1"
 
 	"github.com/sirupsen/logrus"
 
@@ -139,59 +130,4 @@ func (i *Istio) ApplyServiceRoutes(ctx context.Context, projectID, serviceID str
 	}
 
 	return i.applyVirtualService(ctx, ns, virtualService)
-}
-
-// GetLogs get logs of specified services
-func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string, w http.ResponseWriter, r *http.Request) error {
-
-	// get logs of pods
-	req := i.kube.CoreV1().Pods(projectID).GetLogs(replica, &v1.PodLogOptions{
-		Container:  taskID,
-		Follow:     isFollow,
-		Timestamps: true,
-	})
-
-	b, err := req.Stream(ctx)
-	if err != nil {
-		return err
-	}
-	defer utils.CloseTheCloser(b)
-
-	// get signal when client stop listening
-	done := r.Context().Done()
-
-	// read logs
-	rd := bufio.NewReader(b)
-
-	// implement http flusher
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		return errors.New("expected http.ResponseWriter to be an http.Flusher")
-	}
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusOK)
-
-	for {
-		select {
-		case <-done:
-			utils.LogDebug("Context deadline reached for client request", "istio", "GetLogs", map[string]interface{}{})
-			return nil
-		default:
-			str, err := rd.ReadString('\n')
-			if err != nil {
-				if err == io.EOF && !isFollow {
-					utils.LogDebug("End of file reached for logs", "istio", "GetLogs", map[string]interface{}{})
-					return nil
-				}
-				return err
-			}
-			// starting 8 bytes of data contains some meta data regarding each log that docker sends
-			// ignoring the first 8 bytes, send rest of the data
-			fmt.Fprint(w, str[8:])
-
-			// Trigger "chunked" encoding and send a chunk...
-			flusher.Flush()
-			time.Sleep(500 * time.Millisecond)
-		}
-	}
 }

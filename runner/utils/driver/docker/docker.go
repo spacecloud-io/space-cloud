@@ -6,6 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -14,13 +20,6 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/sirupsen/logrus"
 	"github.com/txn2/txeh"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils"
@@ -128,16 +127,22 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 }
 
 // GetLogs get logs of specified services
-func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string, w http.ResponseWriter, r *http.Request) error {
+func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error) {
+	if taskID == "" {
+		arr := strings.Split(replica, "--")
+		if len(arr) < 2 {
+			return nil, utils.LogError("Invalid replica id", "docker", "get-logs", nil)
+		}
+		taskID = arr[0]
+	}
 	replica = getRealReplicaID(d.clusterName, projectID, replica)
 	// filter containers
 	args := filters.Arg("name", replica)
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("unable to list containers got error message - %v", err)
-		return err
+		return nil, err
 	}
-
 	var b io.ReadCloser
 	containerNotFound := true
 	for _, container := range containers {
@@ -146,54 +151,43 @@ func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, 
 			utils.LogDebug("Requesting logs from docker client", "docker", "GetLogs", map[string]interface{}{"containerName": container.Names, "isFollow": isFollow})
 			b, err = d.client.ContainerLogs(ctx, container.ID, types.ContainerLogsOptions{ShowStdout: true, Details: true, Timestamps: true, ShowStderr: true, Follow: isFollow})
 			if err != nil {
-				return err
+				return nil, err
 			}
 			break
 		}
 	}
 
 	if containerNotFound {
-		return fmt.Errorf("Unable to find specified container, check if the container is running")
+		return nil, fmt.Errorf("Unable to find specified container, check if the container is running")
 	}
-	defer utils.CloseTheCloser(b)
 
+	pipeReader, pipeWriter := io.Pipe()
 	utils.LogDebug("Sending logs to client", "docker", "GetLogs", map[string]interface{}{})
-	// get signal when client stop listening
-	done := r.Context().Done()
-	// read logs
-	rd := bufio.NewReader(b)
-
-	// implement http flusher
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		return errors.New("expected http.ResponseWriter to be an http.Flusher")
-	}
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusOK)
-
-	for {
-		select {
-		case <-done:
-			utils.LogDebug("Context deadline reached for client request", "docker", "GetLogs", map[string]interface{}{})
-			return nil
-		default:
+	go func() {
+		defer utils.CloseTheCloser(b)
+		defer utils.CloseTheCloser(pipeWriter)
+		// Read logs
+		rd := bufio.NewReader(b)
+		utils.LogDebug("go fund", "", "", nil)
+		for {
+			utils.LogDebug("Starting for loop", "", "", nil)
 			str, err := rd.ReadString('\n')
 			if err != nil {
 				if err == io.EOF && !isFollow {
 					utils.LogDebug("End of file reached for logs", "docker", "GetLogs", map[string]interface{}{})
-					return nil
+					return
 				}
-				return err
+				_ = utils.LogError("Unable to read logs from container", "docker", "GetLogs", err)
+				return
 			}
-			// starting 8 bytes of data contains some meta data regarding each log that docker sends
+			// Starting 8 bytes of data contains some meta data regarding each log that docker sends
 			// ignoring the first 8 bytes, send rest of the data
-			fmt.Fprint(w, str[8:])
-
-			// Trigger "chunked" encoding and send a chunk...
-			flusher.Flush()
-			time.Sleep(500 * time.Millisecond)
+			fmt.Fprint(pipeWriter, str[8:])
+			utils.LogDebug("Sending some data into pipe", "", "", nil)
 		}
-	}
+		utils.LogDebug("Exiting docker go routine", "", "", nil)
+	}()
+	return pipeReader, nil
 }
 
 func (d *Docker) createContainer(ctx context.Context, index int, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {

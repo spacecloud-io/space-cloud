@@ -52,14 +52,9 @@ func actionGetServiceLogs(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	replicaID := args[0]
-	taskID := viper.GetString("task-id")
-	if taskID == "" {
-		taskID = replicaID
-	}
 
-	if err := GetServiceLogs(project, taskID, replicaID, viper.GetBool("follow")); err != nil {
-		return nil
+	if err := GetServiceLogs(project, viper.GetString("task-id"), replicaID, viper.GetBool("follow")); err != nil {
+		return err
 	}
-
 	return nil
 }
