@@ -94,7 +94,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 	}
 	for _, nw := range nws {
 		if nw.Name == utils.GetNetworkName(clusterName) {
-			return utils.LogError(fmt.Sprintf("Network (%s) already exists, try using different cluster", utils.GetNetworkName(clusterName)), errors.New(""))
+			return utils.LogError(fmt.Sprintf("Space cloud cluster is already running with network (%s) either destroy the existing cluster or create a new cluster with --cluster-name flag in setup command", utils.GetNetworkName(clusterName)), errors.New(""))
 		}
 	}
 
@@ -277,6 +277,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 			NetworkMode:  container.NetworkMode(utils.GetNetworkName(clusterName)),
 		}, nil, c.containerName)
 		if err != nil {
+			_ = Destroy(clusterName)
 			return utils.LogError(fmt.Sprintf("Unable to create container (%v)", c.containerName), err)
 		}
 
