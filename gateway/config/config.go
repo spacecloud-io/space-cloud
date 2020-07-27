@@ -39,8 +39,8 @@ type Secret struct {
 // Admin holds the admin config
 type Admin struct {
 	ClusterConfig *ClusterConfig `json:"clusterConfig" yaml:"clusterConfig"`
-	ClusterID     string         `json:"clusterId" yaml:"clusterId"`
-	ClusterKey    string         `json:"clusterKey" yaml:"clusterKey"`
+	LicenseKey    string         `json:"licenseKey" yaml:"licenseKey"`
+	LicenseValue  string         `json:"licenseValue" yaml:"licenseValue"`
 	License       string         `json:"license" yaml:"license"`
 	Integrations  Integrations   `json:"integrations" yaml:"integrations"`
 }

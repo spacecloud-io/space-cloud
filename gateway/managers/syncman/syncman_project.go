@@ -17,7 +17,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	defer s.lock.Unlock()
 
 	if !s.adminMan.ValidateProjectSyncOperation(s.projectConfig, project) {
-		return http.StatusInternalServerError, fmt.Errorf("upgrade your plan to create more projects")
+		return http.StatusUpgradeRequired, fmt.Errorf("upgrade your plan to create more projects")
 	}
 
 	// set default context time
@@ -76,7 +76,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 }
 
 // DeleteProjectConfig applies delete project config command to the raft log
-func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) (int, error) {
+func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
