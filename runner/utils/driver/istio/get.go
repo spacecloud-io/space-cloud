@@ -178,22 +178,7 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]*mode
 		}
 		replicas := make([]*model.ReplicaInfo, 0)
 		for _, p := range podlist.Items {
-			var status string
-			for _, containerStatus := range p.Status.ContainerStatuses {
-				if containerStatus.Name == "metric-proxy" || containerStatus.Name == "istio-proxy" {
-					continue
-				}
-				if containerStatus.State.Running != nil {
-					status = getBadStatus(status, "running")
-				}
-				if containerStatus.State.Waiting != nil {
-					status = getBadStatus(status, "waiting")
-				}
-				if containerStatus.State.Terminated != nil {
-					status = getBadStatus(status, "terminated")
-				}
-			}
-			replicas = append(replicas, &model.ReplicaInfo{ID: p.Name, Status: status})
+			replicas = append(replicas, &model.ReplicaInfo{ID: p.Name, Status: string(p.Status.Phase)})
 		}
 		result = append(result, &model.ServiceStatus{
 			ServiceID:       serviceID,
@@ -203,18 +188,6 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]*mode
 		})
 	}
 	return result, nil
-}
-
-func getBadStatus(previousStatus, currentStatus string) string {
-	var statuses = map[string]int{
-		"running":    1,
-		"waiting":    2,
-		"terminated": 3,
-	}
-	if statuses[currentStatus] > statuses[previousStatus] {
-		return currentStatus
-	}
-	return previousStatus
 }
 
 // GetServiceRoutes gets the routing rules of each service

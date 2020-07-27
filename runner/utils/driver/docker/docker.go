@@ -634,7 +634,7 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]*mod
 				Replicas: []*model.ReplicaInfo{
 					{
 						ID:     getReplicaID(containerName),
-						Status: status,
+						Status: mapDockerStatusToKubernetes(status),
 					},
 				},
 			}
@@ -642,6 +642,19 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]*mod
 		}
 	}
 	return result, nil
+}
+
+func mapDockerStatusToKubernetes(status string) string {
+	var statuses = map[string]string{
+		"created":    "Pending",
+		"restarting": "Pending",
+		"running":    "Running",
+		"paused":     "Succeeded",
+		"exited":     "Failed",
+		"removing":   "Succeeded",
+		"dead":       "Failed",
+	}
+	return statuses[status]
 }
 
 func getBadStatus(previousStatus, currentStatus string) string {
