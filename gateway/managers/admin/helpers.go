@@ -15,7 +15,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -84,7 +83,7 @@ func (m *Manager) fetchPublicKeyWithoutLock() error {
 		"timeout": 10,
 	}
 	data, _ := json.Marshal(body)
-	res, err := http.Post(fmt.Sprintf("https://api.spaceuptech.com/v1/api/spacecloud/services/backend/fetch_public_key"), "application/json", bytes.NewBuffer(data))
+	res, err := http.Post(fmt.Sprintf("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/getPublicKey"), "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
@@ -116,7 +115,7 @@ func (m *Manager) ValidateLicense() error {
 	defer m.lock.Unlock()
 
 	if _, err := m.decryptLicense(m.config.License); err != nil {
-		m.resetQuotas()
+		m.ResetQuotas()
 		return utils.LogError("Unable to validate license key", "admin", "ValidateLicense", err)
 	}
 
@@ -138,16 +137,16 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	// Marshal the request body
 	data, _ := json.Marshal(map[string]interface{}{
 		"params": model.RenewLicense{
-			ClusterID:        m.config.ClusterID,
-			ClusterKey:       m.config.ClusterKey,
+			LicenseKey:       m.config.LicenseKey,
+			LicenseValue:     m.config.LicenseValue,
 			License:          m.config.License,
 			CurrentSessionID: m.sessionID,
 		},
 		"timeout": 10,
 	})
-	utils.LogDebug(`Renewing admin license`, "admin", "renewLicenseWithoutLock", map[string]interface{}{"clusterId": m.config.ClusterID, "clusterKey": m.config.ClusterKey, "sessionId": m.sessionID})
+	utils.LogDebug(`Renewing admin license`, "admin", "renewLicenseWithoutLock", map[string]interface{}{"clusterId": m.config.LicenseKey, "clusterKey": m.config.LicenseValue, "sessionId": m.sessionID})
 	// Fire the request
-	res, err := http.Post("https://api.spaceuptech.com/v1/api/spacecloud/services/backend/fetch_license", "application/json", bytes.NewBuffer(data))
+	res, err := http.Post("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/renewLicense", "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return utils.LogError("Unable to contact server to fetch license file from server", "admin", "renewLicenseWithoutLock", err)
 	}
@@ -171,7 +170,7 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 		_ = utils.LogError(fmt.Sprintf("Unable to fetch license file. Retry count - %d", m.licenseFetchErrorCount), "admin", "renewLicenseWithoutLock", errors.New(v.Result.Message))
 		if m.licenseFetchErrorCount > maxLicenseFetchErrorCount || force {
 			utils.LogInfo("Max retry limit hit.", "admin", "renewLicenseWithoutLock")
-			m.resetQuotas()
+			m.ResetQuotas()
 			return fmt.Errorf("%s-%s", v.Result.Message, v.Result.Error)
 		}
 		return nil
@@ -183,13 +182,18 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	return m.setQuotas(v.Result.Result.License)
 }
 
-func (m *Manager) resetQuotas() {
+func (m *Manager) ResetQuotas() {
 	// TODO set sync man
 	utils.LogInfo("Resetting space cloud to run in open source model. You will have to re-register the cluster again.", "admin", "resetQuotas")
 	m.quotas.MaxProjects = 1
 	m.quotas.MaxDatabases = 1
 	m.plan = "space-cloud-open--monthly"
-	m.config = new(config.Admin)
+
+	m.config.LicenseKey = ""
+	m.config.LicenseValue = ""
+	m.config.License = ""
+
+	m.clusterName = ""
 
 	go func() {
 		if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
@@ -208,8 +212,10 @@ func (m *Manager) setQuotas(license string) error {
 	}
 
 	// set quotas
-	m.quotas.MaxProjects = licenseObj.Quotas.MaxProjects
-	m.quotas.MaxDatabases = licenseObj.Quotas.MaxDatabases
+	m.quotas.MaxProjects = licenseObj.Meta.ProductMeta.MaxProjects
+	m.quotas.MaxDatabases = licenseObj.Meta.ProductMeta.MaxDatabases
+	m.clusterName = licenseObj.Meta.LicenseKeyMeta.ClusterName
+	m.licenseRenewalDate = licenseObj.LicenseRenewal
 	m.plan = licenseObj.Plan
 	return nil
 }
@@ -218,7 +224,7 @@ func (m *Manager) isEnterpriseMode() bool {
 }
 
 func (m *Manager) isRegistered() bool {
-	return m.config.ClusterID != "" && m.config.ClusterKey != ""
+	return m.config.LicenseKey != "" && m.config.LicenseValue != ""
 }
 
 func (m *Manager) decryptLicense(license string) (*model.License, error) {

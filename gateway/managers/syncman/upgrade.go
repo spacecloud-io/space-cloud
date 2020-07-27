@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -35,10 +34,10 @@ func (s *Manager) RenewLicense(ctx context.Context, token string) error {
 	return s.SetAdminConfig(ctx, s.adminMan.GetConfig())
 }
 
-func (s *Manager) ConvertToEnterprise(ctx context.Context, token, clusterID, clusterKey string) error {
-	utils.LogDebug(`Upgrading gateway to enterprise...`, "syncman", "ConvertToEnterprise", map[string]interface{}{"clusterId": clusterID, "clusterKey": clusterKey})
+func (s *Manager) ConvertToEnterprise(ctx context.Context, token, licenseKey, licenseValue, clusterName string) error {
+	utils.LogDebug(`Upgrading gateway to enterprise...`, "syncman", "convert-to-enterprise", map[string]interface{}{"LicenseKey": licenseKey, "LicenseValue": licenseValue, "clusterName": clusterName})
 	if s.adminMan.IsRegistered() {
-		return utils.LogError("Unable to upgrade, already running in enterprise mode", "syncman", "ConvertToEnterprise", nil)
+		return utils.LogError("Unable to upgrade, already running in enterprise mode", "syncman", "convert-to-enterprise", nil)
 	}
 
 	// A follower will forward this request to leader gateway
@@ -49,18 +48,18 @@ func (s *Manager) ConvertToEnterprise(ctx context.Context, token, clusterID, clu
 		}
 
 		url := fmt.Sprintf("http://%s/v1/config/upgrade", service.addr)
-		params := map[string]string{"clusterId": clusterID, "clusterKey": clusterKey}
-		utils.LogDebug("Forwarding upgrade request to leader", "syncman", "ConvertToEnterprise", map[string]interface{}{"leader": service.addr})
+		params := map[string]string{"licenseKey": licenseKey, "licenseValue": licenseValue}
+		utils.LogDebug("Forwarding upgrade request to leader", "syncman", "convert-to-enterprise", map[string]interface{}{"leader": service.addr})
 		return s.MakeHTTPRequest(ctx, http.MethodPost, url, token, "", params, &map[string]interface{}{})
 	}
 
 	// send request to spaceuptech server for upgrade
 	upgradeResponse := new(model.GraphqlFetchLicenseResponse)
 	body := map[string]interface{}{
-		"params":  &map[string]interface{}{"sessionId": s.adminMan.GetSessionID(), "clusterId": clusterID, "clusterKey": clusterKey},
+		"params":  &map[string]interface{}{"sessionId": s.adminMan.GetSessionID(), "licenseKey": licenseKey, "licenseValue": licenseValue, "clusterName": clusterName},
 		"timeout": 10,
 	}
-	if err := s.MakeHTTPRequest(ctx, http.MethodPost, "https://api.spaceuptech.com/v1/api/spacecloud/services/backend/fetch_license", "", "", body, upgradeResponse); err != nil {
+	if err := s.MakeHTTPRequest(ctx, http.MethodPost, "https://api.spaceuptech.com/v1/api/spacecloud/services/billing/renewLicense", "", "", body, upgradeResponse); err != nil {
 		return err
 	}
 
@@ -69,10 +68,10 @@ func (s *Manager) ConvertToEnterprise(ctx context.Context, token, clusterID, clu
 	}
 
 	// set updated admin config in config file
-	clusterConfig := &config.Admin{ClusterID: upgradeResponse.Result.Result.ClusterID, ClusterKey: upgradeResponse.Result.Result.ClusterKey, License: upgradeResponse.Result.Result.License}
-	if err := s.adminMan.SetConfig(clusterConfig, false); err != nil {
-		return err
-	}
+	oldConfig := s.adminMan.GetConfig()
+	oldConfig.LicenseKey = licenseKey
+	oldConfig.LicenseValue = licenseValue
+	oldConfig.License = upgradeResponse.Result.Result.License
 
-	return s.SetAdminConfig(ctx, clusterConfig)
+	return s.SetAdminConfig(ctx, oldConfig)
 }

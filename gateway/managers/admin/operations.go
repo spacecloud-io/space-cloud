@@ -120,7 +120,7 @@ func (m *Manager) GetSessionID() string {
 }
 
 func (m *Manager) GetEnterpriseClusterID() string {
-	return m.config.ClusterID
+	return m.config.LicenseKey
 }
 
 // GetSecret returns the admin secret
