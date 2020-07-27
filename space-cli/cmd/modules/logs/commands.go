@@ -10,7 +10,7 @@ import (
 // GetSubCommands is the list of commands the log module expose
 func GetSubCommands() []*cobra.Command {
 	var getServiceLogs = &cobra.Command{
-		Use: "service-logs",
+		Use: "logs",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := viper.BindPFlag("project", cmd.Flags().Lookup("project"))
 			if err != nil {
@@ -26,12 +26,22 @@ func GetSubCommands() []*cobra.Command {
 			}
 		},
 		RunE: actionGetServiceLogs,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			replicaIDs, err := getServiceStatus(project, "service-status", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			return replicaIDs, cobra.ShellCompDirectiveDefault
+		},
 	}
 	getServiceLogs.Flags().StringP("project", "", "", "The unique id for the project")
 	getServiceLogs.Flags().StringP("task-id", "", "", "The unique id for the task")
 	getServiceLogs.Flags().BoolP("follow", "", false, "Follow log output")
-
-	getServiceLogs.Flags().StringP("replica-id", "", "", "The unique id for the replica")
 	return []*cobra.Command{getServiceLogs}
 }
 
@@ -41,12 +51,13 @@ func actionGetServiceLogs(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
+	replicaID := args[0]
 	taskID := viper.GetString("task-id")
 	if taskID == "" {
-		taskID = project
+		taskID = replicaID
 	}
 
-	if err := GetServiceLogs(project, taskID, viper.GetString("replica-id"), viper.GetBool("follow")); err != nil {
+	if err := GetServiceLogs(project, taskID, replicaID, viper.GetBool("follow")); err != nil {
 		return nil
 	}
 

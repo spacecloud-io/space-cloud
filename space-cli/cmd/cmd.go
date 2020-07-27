@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/logs"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -102,6 +103,7 @@ func GetRootCommand() *cobra.Command {
 	rootCmd.AddCommand(operations.Commands()...)
 	rootCmd.AddCommand(login.Commands()...)
 	rootCmd.AddCommand(accounts.Commands()...)
+	rootCmd.AddCommand(logs.GetSubCommands()...)
 	rootCmd.AddCommand(completionCmd)
 	return rootCmd
 }

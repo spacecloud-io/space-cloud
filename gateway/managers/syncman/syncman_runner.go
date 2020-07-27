@@ -388,7 +388,6 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 					}
 				}
 			}
-			logrus.Debugf("Successfully received data from upstream server (%s)", r.URL.String())
 		}
 	}
 }

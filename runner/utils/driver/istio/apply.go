@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spaceuptech/space-cloud/runner/utils"
+	"io"
 	"net/http"
 	"time"
 
@@ -154,6 +155,7 @@ func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, r
 	if err != nil {
 		return err
 	}
+	defer utils.CloseTheCloser(b)
 
 	// get signal when client stop listening
 	done := r.Context().Done()
@@ -172,11 +174,15 @@ func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, r
 	for {
 		select {
 		case <-done:
-			utils.LogDebug("Context deadline reached for client request", "docker", "GetLogs", map[string]interface{}{})
+			utils.LogDebug("Context deadline reached for client request", "istio", "GetLogs", map[string]interface{}{})
 			return nil
 		default:
 			str, err := rd.ReadString('\n')
 			if err != nil {
+				if err == io.EOF && !isFollow {
+					utils.LogDebug("End of file reached for logs", "istio", "GetLogs", map[string]interface{}{})
+					return nil
+				}
 				return err
 			}
 			// starting 8 bytes of data contains some meta data regarding each log that docker sends

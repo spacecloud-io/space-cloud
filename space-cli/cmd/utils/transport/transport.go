@@ -106,7 +106,7 @@ func (d *def) GetLogs(method, url string) error {
 
 	rd := bufio.NewReader(resp.Body)
 
-	utils.LogInfo("Press crtl + c to exit")
+	utils.LogInfo("Press ctrl + c to exit")
 	for {
 		str, _ := rd.ReadString('\n')
 		if str != "\n" {

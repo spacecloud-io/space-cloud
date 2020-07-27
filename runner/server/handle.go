@@ -150,18 +150,18 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		projectID := vars["project"]
 		taskID := vars["taskId"]
 		replicaID := vars["replicaId"]
-		follow := r.URL.Query().Get("isFollow")
-		if follow == "" {
-			follow = "false"
+		follow, isFollowExists := r.URL.Query()["follow"]
+		if !isFollowExists {
+			follow[0] = "false"
 		}
-		isFollow, err := strconv.ParseBool(follow)
+		isFollow, err := strconv.ParseBool(follow[0])
 		if err != nil {
 			logrus.Errorf("Failed to get service logs - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.LogDebug("Get logs process started", "docker", "GetLogs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID})
+		utils.LogDebug("Get logs process started", "docker", "GetLogs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
 
 		if err := s.driver.GetLogs(ctx, isFollow, projectID, taskID, replicaID, w, r); err != nil {
 			logrus.Errorf("Failed to get service logs - %s", err.Error())

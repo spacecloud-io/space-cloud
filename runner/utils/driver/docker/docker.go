@@ -129,6 +129,7 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 
 // GetLogs get logs of specified services
 func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string, w http.ResponseWriter, r *http.Request) error {
+	replica = getRealReplicaID(d.clusterName, projectID, replica)
 	// filter containers
 	args := filters.Arg("name", replica)
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
@@ -142,7 +143,7 @@ func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, 
 	for _, container := range containers {
 		if strings.HasSuffix(container.Names[0], taskID) {
 			containerNotFound = false
-			utils.LogDebug("Requesting logs from docker client", "docker", "GetLogs", map[string]interface{}{"containerName": container.Names})
+			utils.LogDebug("Requesting logs from docker client", "docker", "GetLogs", map[string]interface{}{"containerName": container.Names, "isFollow": isFollow})
 			b, err = d.client.ContainerLogs(ctx, container.ID, types.ContainerLogsOptions{ShowStdout: true, Details: true, Timestamps: true, ShowStderr: true, Follow: isFollow})
 			if err != nil {
 				return err
@@ -154,6 +155,7 @@ func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, 
 	if containerNotFound {
 		return fmt.Errorf("Unable to find specified container, check if the container is running")
 	}
+	defer utils.CloseTheCloser(b)
 
 	utils.LogDebug("Sending logs to client", "docker", "GetLogs", map[string]interface{}{})
 	// get signal when client stop listening
@@ -177,6 +179,10 @@ func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, 
 		default:
 			str, err := rd.ReadString('\n')
 			if err != nil {
+				if err == io.EOF && !isFollow {
+					utils.LogDebug("End of file reached for logs", "docker", "GetLogs", map[string]interface{}{})
+					return nil
+				}
 				return err
 			}
 			// starting 8 bytes of data contains some meta data regarding each log that docker sends
@@ -440,6 +446,13 @@ func getServiceContainerName(projectID, serviceID, version, taskID, clusterID st
 		return fmt.Sprintf("space-cloud-%s--%s--%s--%d--%s", projectID, serviceID, version, index, taskID)
 	}
 	return fmt.Sprintf("space-cloud-%s-%s--%s--%s--%d--%s", clusterID, projectID, serviceID, version, index, taskID)
+}
+
+func getRealReplicaID(cluterID, projectID, replicaID string) string {
+	if cluterID == "default" {
+		return fmt.Sprintf("space-cloud-%s--%s", projectID, replicaID)
+	}
+	return fmt.Sprintf("space-cloud-%s-%s--%s", cluterID, projectID, replicaID)
 }
 
 func getNetworkName(id string) string {
