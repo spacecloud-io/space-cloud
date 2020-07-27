@@ -9,7 +9,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/types"
 )
 
 // Manager syncs the project config between folders
@@ -35,7 +34,7 @@ type Manager struct {
 	adminMan AdminSyncmanInterface
 
 	// Modules
-	modules types.ModulesInterface
+	modules ModulesInterface
 }
 
 type service struct {
@@ -169,6 +168,6 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 }
 
 // SetModules sets all the modules
-func (s *Manager) SetModules(modulesInterface types.ModulesInterface) {
+func (s *Manager) SetModules(modulesInterface ModulesInterface) {
 	s.modules = modulesInterface
 }
