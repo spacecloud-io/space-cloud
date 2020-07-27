@@ -32,6 +32,17 @@ func Destroy(clusterName string) error {
 
 	// Remove all container
 	for _, containerInfo := range containers {
+		if containerInfo.Labels["service"] == "runner" {
+			// NOTE: files are created with root permission in runner. If host system want to delete these files it requires root permissions.
+			// so to delete files without root permission we remove the files from container itself
+			execProcess, err := cli.ContainerExecCreate(ctx, containerInfo.ID, types.ExecConfig{Cmd: []string{"rm", "-rf", "/secrets"}})
+			if err != nil {
+				return err
+			}
+			if err := cli.ContainerExecStart(ctx, execProcess.ID, types.ExecStartCheck{}); err != nil {
+				return err
+			}
+		}
 		if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 			_ = utils.LogError(fmt.Sprintf("Unable to remove container %s - %s", containerInfo.ID, err.Error()), nil)
 			return err
