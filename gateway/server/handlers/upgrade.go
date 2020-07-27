@@ -15,8 +15,9 @@ import (
 // HandleUpgrade returns the handler to load the projects via a REST endpoint
 func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerFunc {
 	type request struct {
-		ClusterID  string `json:"clusterId"`
-		ClusterKey string `json:"clusterKey"`
+		LicenseKey   string `json:"licenseKey"`
+		LicenseValue string `json:"licenseValue"`
+		ClusterName  string `json:"clusterName"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -36,16 +37,44 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		err := manager.ConvertToEnterprise(ctx, token, req.ClusterID, req.ClusterKey)
+		err := manager.ConvertToEnterprise(ctx, token, req.LicenseKey, req.LicenseValue, req.ClusterName)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+
 		utils.LogDebug(`Successfully upgraded gateway to enterprise`, "syncman", "startOperation", nil)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+	}
+}
+
+func HandleDownGrade(admin *admin.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		defer utils.CloseTheCloser(r.Body)
+
+		token := utils.GetTokenFromHeader(r)
+		if err := admin.CheckToken(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		// Create a context of execution
+		_, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		if !admin.IsRegistered() {
+			utils.SendErrorResponse(w, http.StatusBadRequest, "Cannot remove license already running in open source mode")
+			return
+		}
+		admin.ResetQuotas()
+
+		utils.LogDebug(`Successfully removed license`, "syncman", "startOperation", nil)
+		utils.SendOkayResponse(w)
 	}
 }
 

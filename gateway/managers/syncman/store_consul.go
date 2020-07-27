@@ -103,9 +103,9 @@ func (s *ConsulStore) WatchAdminConfig(cb func(cluster []*config.Admin)) error {
 		kvPairs := data.(api.KVPairs)
 		clusters := []*config.Admin{
 			{
-				ClusterID:  "",
-				ClusterKey: "",
-				License:    "",
+				LicenseKey:   "",
+				LicenseValue: "",
+				License:      "",
 			},
 		}
 

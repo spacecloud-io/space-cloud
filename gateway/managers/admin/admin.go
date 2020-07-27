@@ -24,6 +24,9 @@ type Manager struct {
 	user   *config.AdminUser
 	isProd bool
 
+	licenseRenewalDate string
+	clusterName        string
+
 	syncMan model.SyncManAdminInterface
 
 	nodeID, clusterID      string
@@ -75,7 +78,7 @@ func (m *Manager) startOperation(license string, isInitialCall bool) error {
 
 			// Reset quotas and admin config to defaults
 			_ = utils.LogError("Invalid license file provided. Did you change the license key yourself?", "admin", "startOperation", errors.New("session id mismatch while setting admin config"))
-			m.resetQuotas()
+			m.ResetQuotas()
 			return nil
 		}
 
@@ -87,8 +90,10 @@ func (m *Manager) startOperation(license string, isInitialCall bool) error {
 	}
 
 	// set quotas
-	m.quotas.MaxProjects = licenseObj.Quotas.MaxProjects
-	m.quotas.MaxDatabases = licenseObj.Quotas.MaxDatabases
+	m.quotas.MaxProjects = licenseObj.Meta.ProductMeta.MaxProjects
+	m.quotas.MaxDatabases = licenseObj.Meta.ProductMeta.MaxDatabases
+	m.clusterName = licenseObj.Meta.LicenseKeyMeta.ClusterName
+	m.licenseRenewalDate = licenseObj.LicenseRenewal
 	m.plan = licenseObj.Plan
 
 	return nil
@@ -119,7 +124,7 @@ func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 				utils.LogDebug("Pinging the leader now.", "admin", "SetConfig", nil)
 				if err := m.syncMan.PingLeader(); err != nil {
 					_ = utils.LogError("Unable to ping the leader now.", "admin", "SetConfig", err)
-					m.resetQuotas()
+					m.ResetQuotas()
 					return err
 				}
 				utils.LogDebug("Successfully contacted the leader.", "admin", "SetConfig", nil)
@@ -145,8 +150,8 @@ func (m *Manager) GetConfig() *config.Admin {
 }
 
 // LoadEnv gets the env
-func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string) {
+func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string, string, string, string, string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	return m.isProd, m.plan, m.quotas, "/mission-control/login"
+	return m.isProd, m.plan, m.quotas, "/mission-control/login", m.clusterName, m.licenseRenewalDate, m.config.LicenseKey, m.config.LicenseValue
 }
