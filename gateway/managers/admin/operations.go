@@ -83,6 +83,6 @@ func (m *Manager) GetSecret() string {
 
 // GetPermissions returns the permissions the user has. The permissions is for the format `projectId:resource`.
 // This only applies to the config level endpoints.
-func (m *Manager) GetPermissions(ctx context.Context, params model.RequestParams) (int, []string, error) {
-	return http.StatusOK, []string{"*:*"}, nil
+func (m *Manager) GetPermissions(ctx context.Context, params model.RequestParams) (int, interface{}, error) {
+	return http.StatusOK, []interface{}{map[string]interface{}{"project": "*", "resource": "*", "verb": "*"}}, nil
 }
