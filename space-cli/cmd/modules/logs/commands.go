@@ -16,26 +16,22 @@ func GetSubCommands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('project')", nil)
 			}
-			err = viper.BindPFlag("service-id", cmd.Flags().Lookup("service-id"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('service-id')", nil)
-			}
 			err = viper.BindPFlag("task-id", cmd.Flags().Lookup("task-id"))
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('task-id')", nil)
 			}
-			err = viper.BindPFlag("replica-id", cmd.Flags().Lookup("replica-id"))
+			err = viper.BindPFlag("follow", cmd.Flags().Lookup("follow"))
 			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('replica-id')", nil)
+				_ = utils.LogError("Unable to bind the flag ('follow')", nil)
 			}
 		},
 		RunE: actionGetServiceLogs,
 	}
 	getServiceLogs.Flags().StringP("project", "", "", "The unique id for the project")
-	getServiceLogs.Flags().StringP("service-id", "", "", "The unique id for the service")
 	getServiceLogs.Flags().StringP("task-id", "", "", "The unique id for the task")
-	getServiceLogs.Flags().StringP("replica-id", "", "", "The unique id for the replica")
+	getServiceLogs.Flags().BoolP("follow", "", false, "Follow log output")
 
+	getServiceLogs.Flags().StringP("replica-id", "", "", "The unique id for the replica")
 	return []*cobra.Command{getServiceLogs}
 }
 
@@ -45,11 +41,12 @@ func actionGetServiceLogs(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	serviceID := viper.GetString("service-id")
 	taskID := viper.GetString("task-id")
-	replicaID := viper.GetString("replica-id")
+	if taskID == "" {
+		taskID = project
+	}
 
-	if err := GetServiceLogs(project, serviceID, taskID, replicaID); err != nil {
+	if err := GetServiceLogs(project, taskID, viper.GetString("replica-id"), viper.GetBool("follow")); err != nil {
 		return nil
 	}
 

@@ -31,7 +31,7 @@ type Interface interface {
 	AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error
 	WaitForService(ctx context.Context, service *model.Service) error
 	Type() model.DriverType
-	GetLogs(ctx context.Context, projectID, serviceID, taskID, replica string, w http.ResponseWriter, r *http.Request) error
+	GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string, w http.ResponseWriter, r *http.Request) error
 
 	// Service routes
 	ApplyServiceRoutes(ctx context.Context, projectID, serviceID string, routes model.Routes) error

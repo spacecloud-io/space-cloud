@@ -141,12 +141,12 @@ func (i *Istio) ApplyServiceRoutes(ctx context.Context, projectID, serviceID str
 }
 
 // GetLogs get logs of specified services
-func (i *Istio) GetLogs(ctx context.Context, projectID, serviceID, taskID, replica string, w http.ResponseWriter, r *http.Request) error {
+func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string, w http.ResponseWriter, r *http.Request) error {
 
 	// get logs of pods
 	req := i.kube.CoreV1().Pods(projectID).GetLogs(replica, &v1.PodLogOptions{
 		Container:  taskID,
-		Follow:     true,
+		Follow:     isFollow,
 		Timestamps: true,
 	})
 

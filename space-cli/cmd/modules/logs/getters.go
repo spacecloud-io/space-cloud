@@ -9,12 +9,7 @@ import (
 )
 
 // GetServiceLogs gets logs of specified service
-func GetServiceLogs(project, serviceID, taskID, replicaID string) error {
-	if serviceID == "" {
-		_ = utils.LogError("Service id not specified in flag", nil)
-		return nil
-	}
-
+func GetServiceLogs(project, taskID, replicaID string, isFollow bool) error {
 	if taskID == "" {
 		_ = utils.LogError("Task id not specified in flag", nil)
 		return nil

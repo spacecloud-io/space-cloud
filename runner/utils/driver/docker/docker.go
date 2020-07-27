@@ -128,16 +128,10 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 }
 
 // GetLogs get logs of specified services
-func (d *Docker) GetLogs(ctx context.Context, projectID, serviceID, taskID, _ string, w http.ResponseWriter, r *http.Request) error {
+func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string, w http.ResponseWriter, r *http.Request) error {
 	// filter containers
-	networkArgs := filters.Arg("network", getNetworkName(d.clusterName))
-	args := filters.Arg("name", getCurrentProjectServicesName(d.clusterName, projectID))
-	if serviceID == "" {
-		args = filters.Arg("name", projectID)
-	}
-
-	// get container list
-	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(networkArgs, args), All: true})
+	args := filters.Arg("name", replica)
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("unable to list containers got error message - %v", err)
 		return err
@@ -149,7 +143,7 @@ func (d *Docker) GetLogs(ctx context.Context, projectID, serviceID, taskID, _ st
 		if strings.HasSuffix(container.Names[0], taskID) {
 			containerNotFound = false
 			utils.LogDebug("Requesting logs from docker client", "docker", "GetLogs", map[string]interface{}{"containerName": container.Names})
-			b, err = d.client.ContainerLogs(ctx, container.ID, types.ContainerLogsOptions{ShowStdout: true, Details: true, Timestamps: true, ShowStderr: true, Follow: true})
+			b, err = d.client.ContainerLogs(ctx, container.ID, types.ContainerLogsOptions{ShowStdout: true, Details: true, Timestamps: true, ShowStderr: true, Follow: isFollow})
 			if err != nil {
 				return err
 			}

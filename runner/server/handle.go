@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -147,12 +148,22 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		// get query params
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		serviceID := vars["serviceId"]
 		taskID := vars["taskId"]
 		replicaID := vars["replicaId"]
-		utils.LogDebug("Get logs process started", "docker", "GetLogs", map[string]interface{}{"projectId": projectID, "serviceId": serviceID, "taskId": taskID, "replicaId": replicaID})
+		follow := r.URL.Query().Get("isFollow")
+		if follow == "" {
+			follow = "false"
+		}
+		isFollow, err := strconv.ParseBool(follow)
+		if err != nil {
+			logrus.Errorf("Failed to get service logs - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 
-		if err := s.driver.GetLogs(ctx, projectID, serviceID, taskID, replicaID, w, r); err != nil {
+		utils.LogDebug("Get logs process started", "docker", "GetLogs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID})
+
+		if err := s.driver.GetLogs(ctx, isFollow, projectID, taskID, replicaID, w, r); err != nil {
 			logrus.Errorf("Failed to get service logs - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
