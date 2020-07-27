@@ -29,27 +29,35 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the filestore module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getFileStoreRule = &cobra.Command{
-		Use:  "filestore-rule",
-		RunE: actionGetFileStoreRule,
-	}
-
-	var getFileStoreConfig = &cobra.Command{
-		Use:  "filestore-config",
-		RunE: actionGetFileStoreConfig,
-	}
-
 	var getFileStoreRules = &cobra.Command{
-		Use:  "filestore-rules",
-		RunE: actionGetFileStoreRule,
+		Use:     "filestore-rules",
+		Aliases: []string{"filestore-rule"},
+		RunE:    actionGetFileStoreRule,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			objs, err := GetFileStoreRule(project, "filestore-rule", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range objs {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var getFileStoreConfigs = &cobra.Command{
-		Use:  "filestore-configs",
-		RunE: actionGetFileStoreConfig,
+		Use:     "filestore-configs",
+		Aliases: []string{"filestore-config"},
+		RunE:    actionGetFileStoreConfig,
 	}
 
-	return []*cobra.Command{getFileStoreRule, getFileStoreConfig, getFileStoreRules, getFileStoreConfigs}
+	return []*cobra.Command{getFileStoreRules, getFileStoreConfigs}
 }
 
 func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {

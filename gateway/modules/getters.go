@@ -63,6 +63,11 @@ func (m *Modules) GetSchemaModuleForSyncMan() model.SchemaEventingInterface {
 	return m.schema
 }
 
+// GetAuthModuleForSyncMan returns auth module for sync manager
+func (m *Modules) GetAuthModuleForSyncMan() model.AuthSyncManInterface {
+	return m.auth
+}
+
 // LetsEncrypt returns the letsencrypt module
 func (m *Modules) LetsEncrypt() *letsencrypt.LetsEncrypt {
 	return m.GlobalMods.LetsEncrypt()

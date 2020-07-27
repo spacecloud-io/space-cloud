@@ -16,44 +16,103 @@ func GenerateSubCommands() []*cobra.Command {
 		Example: "space-cli generate service config.yaml --project myproject --log-level info",
 	}
 
-	return []*cobra.Command{generateService}
+	var generateServiceRoute = &cobra.Command{
+		Use:     "service-route [path to config file]",
+		RunE:    actionGenerateServiceRoute,
+		Aliases: []string{"service-route"},
+		Example: "space-cli generate service-route config.yaml --project myproject --log-level info",
+	}
+
+	return []*cobra.Command{generateService, generateServiceRoute}
 
 }
 
 // GetSubCommands is the list of commands the services module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getServicesRoute = &cobra.Command{
-		Use:  "service-route",
-		RunE: actionGetServicesRoutes,
-	}
-
-	var getServicesSecret = &cobra.Command{
-		Use:  "secret",
-		RunE: actionGetServicesSecrets,
-	}
-
-	var getService = &cobra.Command{
-		Use:  "service",
-		RunE: actionGetServices,
-	}
-
 	var getServicesRoutes = &cobra.Command{
 		Use:  "service-routes",
 		RunE: actionGetServicesRoutes,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			obj, err := GetServicesRoutes(project, "service-route", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range obj {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var getServicesSecrets = &cobra.Command{
 		Use:  "secrets",
 		RunE: actionGetServicesSecrets,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			obj, err := GetServicesSecrets(project, "secret", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range obj {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var getServices = &cobra.Command{
 		Use:  "services",
 		RunE: actionGetServices,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			switch len(args) {
+			case 0:
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := GetServices(project, "service", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var serviceIds []string
+				for _, v := range objs {
+					serviceIds = append(serviceIds, v.Meta["serviceId"])
+				}
+				return serviceIds, cobra.ShellCompDirectiveDefault
+			case 1:
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := GetServices(project, "service", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var versions []string
+				for _, v := range objs {
+					versions = append(versions, v.Meta["version"])
+				}
+				return versions, cobra.ShellCompDirectiveDefault
+			}
+			return nil, cobra.ShellCompDirectiveDefault
+		},
 	}
 
-	return []*cobra.Command{getServicesRoute, getServicesSecret, getService, getServicesRoutes, getServicesSecrets, getServices}
+	return []*cobra.Command{getServicesRoutes, getServicesSecrets, getServices}
 }
 
 func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
@@ -142,4 +201,22 @@ func actionGenerateService(cmd *cobra.Command, args []string) error {
 	}
 
 	return utils.AppendConfigToDisk(service, serviceConfigFile)
+}
+
+func actionGenerateServiceRoute(cmd *cobra.Command, args []string) error {
+
+	// get filename from args in which service config will be stored
+	if len(args) != 1 {
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+	}
+	serviceConfigFile := args[0]
+
+	project, _ := utils.GetProjectID()
+
+	serviceRoute, err := GenerateServiceRoute(project)
+	if err != nil {
+		return err
+	}
+
+	return utils.AppendConfigToDisk(serviceRoute, serviceConfigFile)
 }
