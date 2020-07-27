@@ -105,3 +105,49 @@ func generateIngressRouting() (*model.SpecObject, error) {
 
 	return v, nil
 }
+
+func generateIngressGlobal() (*model.SpecObject, error) {
+
+	project := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project:"}, &project); err != nil {
+		return nil, err
+	}
+
+	headersKey := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &headersKey); err != nil {
+		return nil, err
+	}
+	headersValue := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &headersValue); err != nil {
+		return nil, err
+	}
+	headersOperation := ""
+	if err := input.Survey.AskOne(&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &headersOperation); err != nil {
+		return nil, err
+	}
+
+	resHeadersKey := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &resHeadersKey); err != nil {
+		return nil, err
+	}
+	resHeadersValue := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Value:", Default: "Bar"}, &resHeadersValue); err != nil {
+		return nil, err
+	}
+	resHeadersOperation := ""
+	if err := input.Survey.AskOne(&survey.MultiSelect{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &resHeadersOperation); err != nil {
+		return nil, err
+	}
+
+	v := &model.SpecObject{
+		API:  "/v1/config/projects/{project}/routing/ingress/global",
+		Type: "ingress-global",
+		Meta: map[string]string{"project": project},
+		Spec: map[string]interface{}{
+			"headers":    []interface{}{map[string]interface{}{"key": headersKey, "value": headersValue, "op": headersOperation}},
+			"resHeaders": []interface{}{map[string]interface{}{"key": resHeadersKey, "value": resHeadersValue, "op": resHeadersOperation}},
+		},
+	}
+
+	return v, nil
+}

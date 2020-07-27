@@ -270,7 +270,7 @@ func TestManager_SetDatabaseConnection(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.SetDatabaseConnection(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetDatabaseConnection(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetDatabaseConnection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -374,7 +374,7 @@ func TestManager_RemoveDatabaseConfig(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.RemoveDatabaseConfig(tt.args.ctx, tt.args.project, tt.args.dbAlias, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.RemoveDatabaseConfig(tt.args.ctx, tt.args.project, tt.args.dbAlias, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.RemoveDatabaseConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -483,7 +483,7 @@ func TestManager_GetPreparedQuery(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetPreparedQuery(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.id, model.RequestParams{})
+			_, got, err := tt.s.GetPreparedQuery(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.id, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetPreparedQuery() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -597,7 +597,7 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.SetPreparedQueries(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.id, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetPreparedQueries(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.id, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetPreparedQueries() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -708,7 +708,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.RemovePreparedQueries(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.id); (err != nil) != tt.wantErr {
+			if _, err := tt.s.RemovePreparedQueries(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.id, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.RemovePreparedQueries() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -1127,7 +1127,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.SetCollectionRules(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetCollectionRules(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetCollectionRules() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -1243,7 +1243,7 @@ func TestManager_GetSchemas(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetSchemas(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.format, model.RequestParams{})
+			_, got, err := tt.s.GetSchemas(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.format, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetSchemas() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1592,7 +1592,7 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.SetSchemaInspection(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.schema, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetSchemaInspection(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.schema, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetSchemaInspection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -1708,7 +1708,7 @@ func TestManager_RemoveSchemaInspection(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.RemoveCollection(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.RemoveCollection(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.RemoveCollection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -2005,7 +2005,7 @@ func TestManager_SetModifyAllSchema(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.SetModifyAllSchema(tt.args.ctx, tt.args.dbAlias, tt.args.project, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetModifyAllSchema(tt.args.ctx, tt.args.dbAlias, tt.args.project, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetModifyAllSchema() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -2056,7 +2056,7 @@ func TestManager_GetDatabaseConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetDatabaseConfig(tt.args.ctx, tt.args.project, tt.args.dbAlias, model.RequestParams{})
+			_, got, err := tt.s.GetDatabaseConfig(tt.args.ctx, tt.args.project, tt.args.dbAlias, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetDatabaseConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -2115,7 +2115,7 @@ func TestManager_GetCollectionRules(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetCollectionRules(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{})
+			_, got, err := tt.s.GetCollectionRules(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetCollectionRules() error = %v, wantErr %v", err, tt.wantErr)
 				return

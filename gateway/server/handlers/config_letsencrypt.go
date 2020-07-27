@@ -45,9 +45,12 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, value); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+		reqParams.Payload = value
+		if status, err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, value, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -73,14 +76,19 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 			return
 		}
 
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
 		// get project config
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		le, err := syncMan.GetLetsEncryptConfig(projectID, reqParams)
+		status, le, err := syncMan.GetLetsEncryptConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: []interface{}{le}})
+		_ = utils.SendResponse(w, status, model.Response{Result: []interface{}{le}})
 	}
 }

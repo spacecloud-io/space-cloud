@@ -17,6 +17,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	router := mux.NewRouter()
 	router.Methods(http.MethodGet).Path("/v1/config/credentials").HandlerFunc(handlers.HandleGetCredentials(s.managers.Admin()))
+	router.Methods(http.MethodGet).Path("/v1/config/permissions").HandlerFunc(handlers.HandleGetPermissions(s.managers.Admin()))
 
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.managers.Admin(), s.managers.Sync()))
@@ -25,6 +26,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleGetProjectConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleApplyProject(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/generate-internal-token").HandlerFunc(handlers.HandleGenerateTokenForMissionControl(s.managers.Admin(), s.managers.Sync()))
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/remote-service/service").HandlerFunc(handlers.HandleGetService(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/remote-service/service/{id}").HandlerFunc(handlers.HandleAddService(s.managers.Admin(), s.managers.Sync()))
@@ -75,6 +77,8 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/letsencrypt/config/{id}").HandlerFunc(handlers.HandleLetsEncryptWhitelistedDomain(s.managers.Admin(), s.managers.Sync()))
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/routing/ingress").HandlerFunc(handlers.HandleGetProjectRoute(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/ingress/global").HandlerFunc(handlers.HandleSetGlobalRouteConfig(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/routing/ingress/global").HandlerFunc(handlers.HandleGetGlobalRouteConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleSetProjectRoute(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.managers.Admin(), s.managers.Sync()))
 

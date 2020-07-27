@@ -71,6 +71,7 @@ func (m *Modules) SetProjectConfig(c *config.Project) error {
 	if err := m.GlobalMods.Routing().SetProjectRoutes(p.ID, p.Modules.Routes); err != nil {
 		logrus.Errorf("error setting routing module config - %s", err.Error())
 	}
+	m.GlobalMods.Routing().SetGlobalConfig(p.Modules.GlobalRoutes)
 
 	return nil
 }

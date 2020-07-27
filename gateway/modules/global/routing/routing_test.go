@@ -5,6 +5,8 @@ import (
 	"sync"
 	"testing"
 	"text/template"
+
+	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
 func TestNew(t *testing.T) {
@@ -16,9 +18,10 @@ func TestNew(t *testing.T) {
 		{
 			name: "New Routing instance",
 			want: &Routing{
-				lock:        sync.RWMutex{},
-				routes:      routeMapping{},
-				goTemplates: map[string]*template.Template{},
+				lock:         sync.RWMutex{},
+				routes:       routeMapping{},
+				goTemplates:  map[string]*template.Template{},
+				globalConfig: new(config.GlobalRoutesConfig),
 			},
 		},
 	}

@@ -11,26 +11,23 @@ import (
 //this test generates a tokenstring even if object is empty is this the behaviour we want
 func TestCreateToken(t *testing.T) {
 	var authCreateToken = []struct {
-		testName, wantThis string
-		secretKeys         []*config.Secret
-		IsTokenInvalid     bool
-		IsErrExpected      bool
-		object             map[string]interface{}
+		testName       string
+		secretKeys     []*config.Secret
+		IsTokenInvalid bool
+		IsErrExpected  bool
+		object         map[string]interface{}
 	}{
-		{testName: "Successful Test", IsTokenInvalid: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-sc-user"}},
-		{testName: "Test Case-Invalid Token", IsTokenInvalid: true, IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-scuser"}},
-		{testName: "Invalid Test Case-Empty Object", IsTokenInvalid: true, IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
+		{testName: "Successful Test", IsTokenInvalid: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, object: map[string]interface{}{"id": "internal-sc-user"}},
+		{testName: "Test Case-Invalid Token", IsTokenInvalid: true, IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, object: map[string]interface{}{"id": "internal-scuser"}},
+		{testName: "Invalid Test Case-Empty Object", IsTokenInvalid: true, IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}},
 	}
 	authModule := Init("1", &crud.Module{}, nil)
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.SetSecrets("", test.secretKeys)
-			tokenString, err := authModule.CreateToken(test.object)
+			_, err := authModule.CreateToken(test.object)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got Error", err, "Wanted Error ", test.IsErrExpected)
-			}
-			if !reflect.DeepEqual(tokenString, test.wantThis) && !test.IsTokenInvalid {
-				t.Error("Got Token", tokenString, "Wanted Token ", test.wantThis)
 			}
 		})
 	}

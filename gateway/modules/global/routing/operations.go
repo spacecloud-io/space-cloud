@@ -49,3 +49,13 @@ func (r *Routing) DeleteProjectRoutes(project string) {
 
 	r.routes.deleteProjectRoutes(project)
 }
+
+// SetGlobalConfig sets the project level config of the routing module
+func (r *Routing) SetGlobalConfig(globalConfig *config.GlobalRoutesConfig) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	if globalConfig != nil {
+		r.globalConfig = globalConfig
+	}
+}

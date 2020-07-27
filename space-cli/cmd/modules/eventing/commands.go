@@ -43,47 +43,79 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the eventing module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var gettrigger = &cobra.Command{
-		Use:  "eventing-trigger",
-		RunE: actionGetEventingTrigger,
-	}
-
-	var getconfig = &cobra.Command{
-		Use:  "eventing-config",
-		RunE: actionGetEventingConfig,
-	}
-
-	var getschema = &cobra.Command{
-		Use:  "eventing-schema",
-		RunE: actionGetEventingSchema,
-	}
-
-	var getrule = &cobra.Command{
-		Use:  "eventing-rule",
-		RunE: actionGetEventingSecurityRule,
-	}
-
 	var gettriggers = &cobra.Command{
-		Use:  "eventing-triggers",
-		RunE: actionGetEventingTrigger,
+		Use:     "eventing-triggers",
+		Aliases: []string{"eventing-trigger"},
+		RunE:    actionGetEventingTrigger,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			objs, err := GetEventingTrigger(project, "eventing-trigger", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range objs {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var getconfigs = &cobra.Command{
-		Use:  "eventing-configs",
-		RunE: actionGetEventingConfig,
+		Use:     "eventing-configs",
+		Aliases: []string{"eventing-config"},
+		RunE:    actionGetEventingConfig,
 	}
 
 	var getschemas = &cobra.Command{
-		Use:  "eventing-schemas",
-		RunE: actionGetEventingSchema,
+		Use:     "eventing-schemas",
+		Aliases: []string{"eventing-schema"},
+		RunE:    actionGetEventingSchema,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			objs, err := GetEventingSchema(project, "eventing-schema", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range objs {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var getrules = &cobra.Command{
-		Use:  "eventing-rules",
-		RunE: actionGetEventingSecurityRule,
+		Use:     "eventing-rules",
+		Aliases: []string{"eventing-rule"},
+		RunE:    actionGetEventingSecurityRule,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			objs, err := GetEventingSecurityRule(project, "eventing-rule", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range objs {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
 	}
 
-	return []*cobra.Command{gettrigger, getconfig, getschema, getrule, gettriggers, getconfigs, getschemas, getrules}
+	return []*cobra.Command{gettriggers, getconfigs, getschemas, getrules}
 }
 
 func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
