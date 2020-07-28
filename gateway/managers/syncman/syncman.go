@@ -86,6 +86,7 @@ func (s *Manager) Start(port int) error {
 	}
 	utils.LogDebug("Successfully loaded initial copy of config file", "syncman", "Start", nil)
 	_ = s.adminMan.SetConfig(adminConfig)
+	s.projectConfig.Admin = adminConfig
 
 	// Start routine to observe space cloud projects
 	if err := s.store.WatchProjects(func(projects []*config.Project) {

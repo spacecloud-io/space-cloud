@@ -36,6 +36,11 @@ func (m *Module) GetServices(ctx context.Context, projectID string) ([]*model.Se
 	return m.driver.GetServices(ctx, projectID)
 }
 
+// GetServiceStatus gets services status
+func (m *Module) GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error) {
+	return m.driver.GetServiceStatus(ctx, projectID)
+}
+
 // DeleteService delete's service
 func (m *Module) DeleteService(ctx context.Context, projectID, serviceID, version string) error {
 	return m.driver.DeleteService(ctx, projectID, serviceID, version)

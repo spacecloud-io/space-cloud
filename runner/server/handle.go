@@ -299,6 +299,66 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 	}
 }
 
+// HandleGetServicesStatus handles the request to get all services status
+func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		//var result []interface{}
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		serviceID, serviceIDExists := r.URL.Query()["serviceId"]
+		version, versionExists := r.URL.Query()["versioin"]
+
+		result, err := s.driver.GetServiceStatus(ctx, projectID)
+		if err != nil {
+			logrus.Errorf("Failed to get service status - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		arr := make([]interface{}, 0)
+		if serviceIDExists && versionExists {
+			for _, serviceStatus := range result {
+				if serviceStatus.ServiceID == serviceID[0] && serviceStatus.Version == version[0] {
+					arr = append(arr, serviceStatus)
+				}
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(model.Response{Result: arr})
+			return
+		}
+
+		if serviceIDExists {
+			for _, serviceStatus := range result {
+				if serviceStatus.ServiceID == serviceID[0] {
+					arr = append(arr, serviceStatus)
+				}
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(model.Response{Result: arr})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
+	}
+}
+
 // HandleApplyEventingService handles request to apply eventing service
 func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

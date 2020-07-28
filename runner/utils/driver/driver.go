@@ -27,6 +27,7 @@ type Interface interface {
 	DeleteProject(ctx context.Context, projectID string) error
 	ApplyService(ctx context.Context, service *model.Service) error
 	GetServices(ctx context.Context, projectID string) ([]*model.Service, error)
+	GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error)
 	DeleteService(ctx context.Context, projectID, serviceID, version string) error
 	AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error
 	WaitForService(ctx context.Context, service *model.Service) error

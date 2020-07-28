@@ -222,6 +222,27 @@ func (s *Manager) HandleRunnerGetServices(admin *admin.Manager) http.HandlerFunc
 	}
 }
 
+// HandleRunnerGetDeploymentStatus handles requests of the runner
+func (s *Manager) HandleRunnerGetDeploymentStatus(admin *admin.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		params, err := admin.IsTokenValid(token, "service", "read", map[string]string{"project": projectID})
+		if err != nil {
+			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		s.forwardRequestToRunner(ctx, w, r, admin, params)
+	}
+}
+
 // HandleRunnerDeleteService handles requests of the runner
 func (s *Manager) HandleRunnerDeleteService(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
