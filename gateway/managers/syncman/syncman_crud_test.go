@@ -1333,6 +1333,7 @@ func TestManager_GetSchemas(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+<<<<<<< HEAD
 			mockModules := mockModulesInterface{}
 
 			for _, m := range tt.modulesMockArgs {
@@ -1343,6 +1344,8 @@ func TestManager_GetSchemas(t *testing.T) {
 			}
 
 			tt.s.modules = &mockModules
+=======
+>>>>>>> b26b92c99d0530c193c234ef0a66cdbe2889aa4f
 			_, got, err := tt.s.GetSchemas(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.format, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetSchemas() error = %v, wantErr %v", err, tt.wantErr)

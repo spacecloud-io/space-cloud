@@ -563,6 +563,7 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
+
 	if format == "JSON" {
 		a := s.modules.GetSchemaModuleForSyncMan()
 		if dbAlias != "*" && col != "*" {
@@ -602,6 +603,7 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 		}
 		return http.StatusOK, []interface{}{coll}, nil
 	}
+
 	if dbAlias != "*" && col != "*" {
 		collectionInfo, ok := projectConfig.Modules.Crud[dbAlias].Collections[col]
 		if !ok {
