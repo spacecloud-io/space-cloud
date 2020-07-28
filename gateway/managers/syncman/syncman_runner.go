@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -355,9 +354,8 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 
 		if streamData {
 			if response.StatusCode != 200 {
-				data, _ := ioutil.ReadAll(response.Body)
 				respBody := map[string]interface{}{}
-				if err := json.Unmarshal(data, &respBody); err != nil {
+				if err := json.NewDecoder(response.Body).Decode(&respBody); err != nil {
 					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 					return
 				}
@@ -382,7 +380,14 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 					utils.LogDebug("Client stopped listening", "syncman", "HandleRunnerGetServiceLogs", nil)
 					return
 				default:
-					str, _ := rd.ReadString('\n')
+					str, err := rd.ReadString('\n')
+					if err != nil {
+						if err == io.EOF {
+							_ = utils.SendOkayResponse(w)
+							return
+						}
+						_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+					}
 					if str != "\n" {
 						fmt.Fprintf(w, "%s\n", str)
 						flusher.Flush() // Trigger "chunked" encoding and send a chunk...

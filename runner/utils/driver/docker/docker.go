@@ -148,7 +148,7 @@ func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, 
 	for _, container := range containers {
 		if strings.HasSuffix(container.Names[0], taskID) {
 			containerNotFound = false
-			utils.LogDebug("Requesting logs from docker client", "docker", "GetLogs", map[string]interface{}{"containerName": container.Names, "isFollow": isFollow})
+			utils.LogDebug("Requesting logs from docker client", "docker", "get-logs", map[string]interface{}{"containerName": container.Names, "isFollow": isFollow})
 			b, err = d.client.ContainerLogs(ctx, container.ID, types.ContainerLogsOptions{ShowStdout: true, Details: true, Timestamps: true, ShowStderr: true, Follow: isFollow})
 			if err != nil {
 				return nil, err
@@ -162,22 +162,20 @@ func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, 
 	}
 
 	pipeReader, pipeWriter := io.Pipe()
-	utils.LogDebug("Sending logs to client", "docker", "GetLogs", map[string]interface{}{})
+	utils.LogDebug("Sending logs to client", "docker", "get-logs", map[string]interface{}{})
 	go func() {
 		defer utils.CloseTheCloser(b)
 		defer utils.CloseTheCloser(pipeWriter)
 		// Read logs
 		rd := bufio.NewReader(b)
-		utils.LogDebug("go fund", "", "", nil)
 		for {
-			utils.LogDebug("Starting for loop", "", "", nil)
 			str, err := rd.ReadString('\n')
 			if err != nil {
 				if err == io.EOF && !isFollow {
-					utils.LogDebug("End of file reached for logs", "docker", "GetLogs", map[string]interface{}{})
+					utils.LogDebug("End of file reached for logs", "docker", "get-logs", map[string]interface{}{})
 					return
 				}
-				_ = utils.LogError("Unable to read logs from container", "docker", "GetLogs", err)
+				_ = utils.LogError("Unable to read logs from container", "docker", "get-logs", err)
 				return
 			}
 			// Starting 8 bytes of data contains some meta data regarding each log that docker sends

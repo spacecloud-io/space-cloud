@@ -154,7 +154,7 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		}
 		_, isFollow := r.URL.Query()["follow"]
 
-		utils.LogDebug("Get logs process started", "docker", "GetLogs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
+		utils.LogDebug("Get logs process started", "handler", "get-logs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
 		pipeReader, err := s.driver.GetLogs(r.Context(), isFollow, projectID, taskID, replicaID)
 		if err != nil {
 			logrus.Errorf("Failed to get service logs - %s", err.Error())
@@ -172,7 +172,6 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		}
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.WriteHeader(http.StatusOK)
-		utils.LogDebug("before for loop", "docker", "GetLogs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
 		for {
 			select {
 			case <-r.Context().Done():

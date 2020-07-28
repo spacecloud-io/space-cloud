@@ -16,7 +16,7 @@ func GetServiceLogs(project, taskID, replicaID string, isFollow bool) error {
 	}
 	params := u.Query()
 	if isFollow {
-		u.Query().Set("follow", "true")
+		params.Set("follow", "true")
 	}
 	params.Set("taskId", taskID)
 	params.Set("replicaId", replicaID)

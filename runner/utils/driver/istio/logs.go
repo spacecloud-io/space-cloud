@@ -15,9 +15,9 @@ import (
 // GetLogs get logs of specified services
 func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error) {
 	if taskID == "" {
-		arr := strings.Split(replica, "--")
+		arr := strings.Split(replica, "-")
 		if len(arr) < 2 {
-			return nil, utils.LogError("Invalid replica id", "docker", "get-logs", nil)
+			return nil, utils.LogError("Invalid replica id", "k8s", "get-logs", nil)
 		}
 		taskID = arr[0]
 	}
@@ -34,7 +34,7 @@ func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, r
 	}
 
 	pipeReader, pipeWriter := io.Pipe()
-	utils.LogDebug("Sending logs to client", "docker", "GetLogs", map[string]interface{}{})
+	utils.LogDebug("Sending logs to client", "k8s", "get-logs", map[string]interface{}{})
 	go func() {
 		defer utils.CloseTheCloser(b)
 		defer utils.CloseTheCloser(pipeWriter)
@@ -44,10 +44,10 @@ func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, r
 			str, err := rd.ReadString('\n')
 			if err != nil {
 				if err == io.EOF && !isFollow {
-					utils.LogDebug("End of file reached for logs", "docker", "GetLogs", map[string]interface{}{})
+					utils.LogDebug("End of file reached for logs", "k8s", "get-logs", map[string]interface{}{})
 					return
 				}
-				_ = utils.LogError("Unable to read logs from container", "docker", "GetLogs", err)
+				_ = utils.LogError("Unable to read logs from container", "k8s", "get-logs", err)
 				return
 			}
 			// starting 8 bytes of data contains some meta data regarding each log that docker sends

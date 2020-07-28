@@ -28,7 +28,6 @@ require (
 	github.com/txn2/txeh v1.3.0
 	github.com/urfave/cli v1.22.2
 	go.etcd.io/bbolt v1.3.3
-	go.uber.org/zap v1.15.0
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a // indirect
 	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
 	google.golang.org/genproto v0.0.0-20191216164720-4f79533eabd1 // indirect
