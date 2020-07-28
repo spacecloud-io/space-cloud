@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"k8s.io/api/core/v1"
 
@@ -13,7 +14,13 @@ import (
 
 // GetLogs get logs of specified services
 func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error) {
-
+	if taskID == "" {
+		arr := strings.Split(replica, "--")
+		if len(arr) < 2 {
+			return nil, utils.LogError("Invalid replica id", "docker", "get-logs", nil)
+		}
+		taskID = arr[0]
+	}
 	// get logs of pods
 	req := i.kube.CoreV1().Pods(projectID).GetLogs(replica, &v1.PodLogOptions{
 		Container:  taskID,
@@ -25,7 +32,6 @@ func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, r
 	if err != nil {
 		return nil, err
 	}
-	defer utils.CloseTheCloser(b)
 
 	pipeReader, pipeWriter := io.Pipe()
 	utils.LogDebug("Sending logs to client", "docker", "GetLogs", map[string]interface{}{})
@@ -47,9 +53,7 @@ func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, r
 			// starting 8 bytes of data contains some meta data regarding each log that docker sends
 			// ignoring the first 8 bytes, send rest of the data
 			fmt.Fprint(pipeWriter, str[8:])
-			utils.LogDebug("Sending some data into pipe", "", "", nil)
 		}
-		utils.LogDebug("Exiting docker go routine", "", "", nil)
 	}()
 	return pipeReader, nil
 }

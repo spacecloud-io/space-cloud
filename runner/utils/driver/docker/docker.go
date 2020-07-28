@@ -183,9 +183,7 @@ func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, 
 			// Starting 8 bytes of data contains some meta data regarding each log that docker sends
 			// ignoring the first 8 bytes, send rest of the data
 			fmt.Fprint(pipeWriter, str[8:])
-			utils.LogDebug("Sending some data into pipe", "", "", nil)
 		}
-		utils.LogDebug("Exiting docker go routine", "", "", nil)
 	}()
 	return pipeReader, nil
 }

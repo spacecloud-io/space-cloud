@@ -2,7 +2,6 @@ package logs
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 
@@ -15,12 +14,13 @@ func GetServiceLogs(project, taskID, replicaID string, isFollow bool) error {
 	if err != nil {
 		return err
 	}
+	params := u.Query()
 	if isFollow {
-		u.Query().Add("follow", "true")
+		u.Query().Set("follow", "true")
 	}
-	u.Query().Add("taskId", taskID)
-	u.Query().Add("replicaId", replicaID)
-	log.Println("t", taskID, "r", replicaID)
+	params.Set("taskId", taskID)
+	params.Set("replicaId", replicaID)
+	u.RawQuery = params.Encode()
 	if err := transport.Client.GetLogs(u.RequestURI()); err != nil {
 		return err
 	}

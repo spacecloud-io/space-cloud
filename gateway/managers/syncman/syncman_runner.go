@@ -390,6 +390,8 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 					}
 				}
 			}
+		} else {
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "Missing headers X-Content-Type-Options & nosniff")
 		}
 	}
 }
