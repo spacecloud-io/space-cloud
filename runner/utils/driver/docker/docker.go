@@ -380,6 +380,9 @@ func getServiceContainerName(projectID, serviceID, version, taskID, clusterID st
 }
 
 func splitServiceContainerName(containerName string) (clusterID, projectID, serviceID, version, taskID string) {
+	// A container can be of 2 possible formats
+	// 1) space-cloud-projectName--serviceName--version--index--taskId
+	// 2) space-cloud-clusterName-projectName--serviceName--version--index--taskId
 	s := strings.Split(containerName, "--")
 	spaceCloudPrefixStr := strings.Split(s[0], "-")
 	if len(spaceCloudPrefixStr) == 3 {
@@ -390,6 +393,10 @@ func splitServiceContainerName(containerName string) (clusterID, projectID, serv
 }
 
 func getReplicaID(containerName string) string {
+	// A container can be of 2 possible formats
+	// 1) space-cloud-projectName--serviceName--version--index--taskId
+	// 2) space-cloud-clusterName-projectName--serviceName--version--index--taskId
+	// replicaID only contains serviceName && version e.g -> serviceName--version
 	arr := strings.Split(containerName, "--")
 	if len(arr) != 5 {
 		utils.LogDebug("Length of container name not equal to 5 after splitting", "docker", "get-replica-id", nil)
@@ -602,48 +609,47 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]*mod
 		return nil, err
 	}
 
-	serviceMapper := make(map[string]map[string][]string)
+	serviceMapper := make(map[string][]string)
 	for _, containerInfo := range containers {
 		//NOTE: the name starts with a forward slash
 		_, _, serviceID, version, _ := splitServiceContainerName(containerInfo.Names[0])
 
-		serviceVersionInfo, ok := serviceMapper[serviceID]
+		containerIDs, ok := serviceMapper[serviceID]
 		if !ok {
-			serviceMapper[serviceID] = map[string][]string{
-				version: {containerInfo.ID},
-			}
+			serviceMapper[fmt.Sprintf("%s--%s", serviceID, version)] = []string{containerInfo.ID}
 			continue
 		}
-		serviceVersionInfo[version] = append(serviceVersionInfo[version], containerInfo.ID)
+		containerIDs = append(containerIDs, containerInfo.ID)
 	}
 
 	result := make([]*model.ServiceStatus, 0)
-	for serviceID, versionInfo := range serviceMapper {
-		for serviceVersion, containerIDs := range versionInfo {
-			var status string
-			var containerName string
-			for _, containerID := range containerIDs {
-				containerInspect, err := d.client.ContainerInspect(ctx, containerID)
-				if err != nil {
-					logrus.Errorf("error getting service in docker unable to inspect container - %v", err)
-					return nil, err
-				}
-				status = getBadStatus(status, containerInspect.State.Status)
-				containerName = containerInspect.Name
+	for service, containerIDs := range serviceMapper {
+		arr := strings.Split(service, "--")
+		serviceVersion := arr[2]
+		serviceID := arr[1]
+		var status string
+		var containerName string
+		for _, containerID := range containerIDs {
+			containerInspect, err := d.client.ContainerInspect(ctx, containerID)
+			if err != nil {
+				logrus.Errorf("error getting service in docker unable to inspect container - %v", err)
+				return nil, err
 			}
-			serviceStatus := &model.ServiceStatus{
-				ServiceID:       serviceID,
-				Version:         serviceVersion,
-				DesiredReplicas: 1,
-				Replicas: []*model.ReplicaInfo{
-					{
-						ID:     getReplicaID(containerName),
-						Status: mapDockerStatusToKubernetes(status),
-					},
-				},
-			}
-			result = append(result, serviceStatus)
+			status = getBadStatus(status, containerInspect.State.Status)
+			containerName = containerInspect.Name
 		}
+		serviceStatus := &model.ServiceStatus{
+			ServiceID:       serviceID,
+			Version:         serviceVersion,
+			DesiredReplicas: 1,
+			Replicas: []*model.ReplicaInfo{
+				{
+					ID:     getReplicaID(containerName),
+					Status: mapDockerStatusToKubernetes(status),
+				},
+			},
+		}
+		result = append(result, serviceStatus)
 	}
 	return result, nil
 }

@@ -13,7 +13,7 @@ type Config struct {
 
 // ClusterConfig holds the cluster level configuration
 type ClusterConfig struct {
-	LetsEncryptEmail string `json:"email" yaml:"email"`
+	LetsEncryptEmail string `json:"letsencryptEmail" yaml:"letsencryptEmail"`
 	EnableMetrics    bool   `json:"enableMetrics" yaml:"enableMetrics"`
 }
 

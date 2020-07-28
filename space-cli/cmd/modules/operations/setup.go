@@ -137,7 +137,6 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 	}
 	var runnerEnvs = []string{
 		"DEV=" + devMode,
-		"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:" + portHTTPValue, // TODO Change the default value in runner it starts with http
 		"DRIVER=docker",
 		"JWT_SECRET=" + secret,
 		"JWT_PROXY_SECRET=" + generateRandomString(24),

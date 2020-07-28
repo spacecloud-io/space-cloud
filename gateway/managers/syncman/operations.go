@@ -1,11 +1,13 @@
 package syncman
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"golang.org/x/net/context"
 )
 
 // GetEventSource returns the source id for the space cloud instance
@@ -71,19 +73,22 @@ func (s *Manager) setProject(ctx context.Context, project *config.Project) error
 }
 
 // SetClusterConfig applies the set cluster config
-func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfig) error {
+func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfig) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.projectConfig.Admin.ClusterConfig = req
-	return s.store.SetAdminConfig(ctx, s.projectConfig.Admin)
+	if err := s.store.SetAdminConfig(ctx, s.projectConfig.Admin); err != nil {
+		return http.StatusBadRequest, err
+	}
+	return http.StatusOK, nil
 }
 
 // GetClusterConfig returns cluster config
-func (s *Manager) GetClusterConfig() (*config.ClusterConfig, error) {
+func (s *Manager) GetClusterConfig() (int, *config.ClusterConfig) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return s.projectConfig.Admin.ClusterConfig, nil
+	return http.StatusOK, s.projectConfig.Admin.ClusterConfig
 }
 
 // GetConfig returns the config present in the state
