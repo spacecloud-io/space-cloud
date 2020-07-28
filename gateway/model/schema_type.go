@@ -11,26 +11,26 @@ type (
 
 	// FieldType stores information about a particular column in table
 	FieldType struct {
-		FieldName           string
-		IsFieldTypeRequired bool
-		IsList              bool
-		Kind                string
+		FieldName           string `json:"fieldName"`
+		IsFieldTypeRequired bool   `json:"isFieldTypeRequired"`
+		IsList              bool   `json:"isList"`
+		Kind                string `json:"kind"`
 		// Directive           string
-		NestedObject Fields
+		NestedObject Fields `json:"nestedObject"`
 
 		// For directives
-		IsPrimary   bool
-		IsIndex     bool
-		IsUnique    bool
-		IsCreatedAt bool
-		IsUpdatedAt bool
-		IsLinked    bool
-		IsForeign   bool
-		IsDefault   bool
-		IndexInfo   *TableProperties
-		LinkedTable *TableProperties
-		JointTable  *TableProperties
-		Default     interface{}
+		IsPrimary   bool             `json:"isPrimary"`
+		IsIndex     bool             `json:"isIndex"`
+		IsUnique    bool             `json:"isUnique"`
+		IsCreatedAt bool             `json:"isCreatedAt"`
+		IsUpdatedAt bool             `json:"isUpdatedAt"`
+		IsLinked    bool             `json:"isLinked"`
+		IsForeign   bool             `json:"isForeign"`
+		IsDefault   bool             `json:"isDefault"`
+		IndexInfo   *TableProperties `json:"indexInfo"`
+		LinkedTable *TableProperties `json:"linkedTable"`
+		JointTable  *TableProperties `json:"jointTable"`
+		Default     interface{}      `json:"default"`
 	}
 
 	// TableProperties are properties of the table

@@ -390,7 +390,7 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			col = colQuery[0]
 		}
 		formatQuery, exists := r.URL.Query()["format"]
-		format := "*"
+		format := "graphql"
 		if exists {
 			format = formatQuery[0]
 		}

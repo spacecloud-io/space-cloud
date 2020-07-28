@@ -501,14 +501,15 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 }
 
 type dbJSONSchemaResponse struct {
-	Fields []*field `json:"fields"`
+	Fields []*model.FieldType `json:"fields"`
 }
-type field struct {
-	FieldName           string `json:"fieldName"`
-	IsFieldTypeRequired bool   `json:"isFieldTypeRequired"`
-	Kind                string `json:"kind"`
-	IsPrimary           bool   `json:"isPrimary"`
-}
+
+// type field struct {
+// 	FieldName           string `json:"fieldName"`
+// 	IsFieldTypeRequired bool   `json:"isFieldTypeRequired"`
+// 	Kind                string `json:"kind"`
+// 	IsPrimary           bool   `json:"isPrimary"`
+// }
 
 // GetSchemas gets schemas from config
 func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) ([]interface{}, error) {
@@ -521,37 +522,25 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 		return nil, err
 	}
 	if format == "JSON" {
-		s := s.modules.GetSchemaModuleForSyncMan()
+		a := s.modules.GetSchemaModuleForSyncMan()
 		if dbAlias != "*" && col != "*" {
-			collectionInfo, p := s.GetSchema(dbAlias, col)
+			collectionInfo, p := a.GetSchema(dbAlias, col)
 			if !p {
 				return nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
 			}
-			fields := []*field{}
+			fields := []*model.FieldType{}
 			for _, v := range collectionInfo {
-				field := &field{
-					FieldName:           v.FieldName,
-					IsFieldTypeRequired: v.IsFieldTypeRequired,
-					Kind:                v.Kind,
-					IsPrimary:           v.IsPrimary,
-				}
-				fields = append(fields, field)
+				fields = append(fields, v)
 			}
 			return []interface{}{map[string]*dbJSONSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Fields: fields}}}, nil
 		} else if dbAlias != "*" {
 			collections := projectConfig.Modules.Crud[dbAlias].Collections
 			coll := map[string]*dbJSONSchemaResponse{}
 			for key := range collections {
-				collectionInfo, _ := s.GetSchema(dbAlias, key)
-				fields := []*field{}
+				collectionInfo, _ := a.GetSchema(dbAlias, key)
+				fields := []*model.FieldType{}
 				for _, v := range collectionInfo {
-					field := &field{
-						FieldName:           v.FieldName,
-						IsFieldTypeRequired: v.IsFieldTypeRequired,
-						Kind:                v.Kind,
-						IsPrimary:           v.IsPrimary,
-					}
-					fields = append(fields, field)
+					fields = append(fields, v)
 				}
 				coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &dbJSONSchemaResponse{Fields: fields}
 			}
@@ -561,16 +550,10 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 		coll := map[string]*dbJSONSchemaResponse{}
 		for dbName, dbInfo := range databases {
 			for key := range dbInfo.Collections {
-				collectionInfo, _ := s.GetSchema(dbName, key)
-				fields := []*field{}
+				collectionInfo, _ := a.GetSchema(dbName, key)
+				fields := []*model.FieldType{}
 				for _, v := range collectionInfo {
-					field := &field{
-						FieldName:           v.FieldName,
-						IsFieldTypeRequired: v.IsFieldTypeRequired,
-						Kind:                v.Kind,
-						IsPrimary:           v.IsPrimary,
-					}
-					fields = append(fields, field)
+					fields = append(fields, v)
 				}
 				coll[fmt.Sprintf("%s-%s", dbName, key)] = &dbJSONSchemaResponse{Fields: fields}
 			}
