@@ -1,10 +1,12 @@
 package docker
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -122,6 +124,66 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 
 	hostFile.AddHost(proxyIP, utils.GetServiceDomain(service.ProjectID, service.ID))
 	return hostFile.Save()
+}
+
+// GetLogs get logs of specified services
+func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error) {
+	if taskID == "" {
+		arr := strings.Split(replica, "--")
+		if len(arr) < 2 {
+			return nil, utils.LogError("Invalid replica id", "docker", "get-logs", nil)
+		}
+		taskID = arr[0]
+	}
+	replica = getRealReplicaID(d.clusterName, projectID, replica)
+	// filter containers
+	args := filters.Arg("name", replica)
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
+	if err != nil {
+		logrus.Errorf("unable to list containers got error message - %v", err)
+		return nil, err
+	}
+	var b io.ReadCloser
+	containerNotFound := true
+	for _, container := range containers {
+		if strings.HasSuffix(container.Names[0], taskID) {
+			containerNotFound = false
+			utils.LogDebug("Requesting logs from docker client", "docker", "get-logs", map[string]interface{}{"containerName": container.Names, "isFollow": isFollow})
+			b, err = d.client.ContainerLogs(ctx, container.ID, types.ContainerLogsOptions{ShowStdout: true, Details: true, Timestamps: true, ShowStderr: true, Follow: isFollow})
+			if err != nil {
+				return nil, err
+			}
+			break
+		}
+	}
+
+	if containerNotFound {
+		return nil, fmt.Errorf("Unable to find specified container, check if the container is running")
+	}
+
+	pipeReader, pipeWriter := io.Pipe()
+	utils.LogDebug("Sending logs to client", "docker", "get-logs", map[string]interface{}{})
+	go func() {
+		defer utils.CloseTheCloser(b)
+		defer utils.CloseTheCloser(pipeWriter)
+		// Read logs
+		rd := bufio.NewReader(b)
+		for {
+			str, err := rd.ReadString('\n')
+			if err != nil {
+				if err == io.EOF && !isFollow {
+					utils.LogDebug("End of file reached for logs", "docker", "get-logs", map[string]interface{}{})
+					return
+				}
+				_ = utils.LogError("Unable to read logs from container", "docker", "get-logs", err)
+				return
+			}
+			// Starting 8 bytes of data contains some meta data regarding each log that docker sends
+			// ignoring the first 8 bytes, send rest of the data
+			fmt.Fprint(pipeWriter, str[8:])
+		}
+	}()
+	return pipeReader, nil
 }
 
 func (d *Docker) createContainer(ctx context.Context, index int, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {
@@ -403,6 +465,13 @@ func getReplicaID(containerName string) string {
 		return ""
 	}
 	return strings.Join(arr[1:3], "--")
+}
+
+func getRealReplicaID(cluterID, projectID, replicaID string) string {
+	if cluterID == "default" {
+		return fmt.Sprintf("space-cloud-%s--%s", projectID, replicaID)
+	}
+	return fmt.Sprintf("space-cloud-%s-%s--%s", cluterID, projectID, replicaID)
 }
 
 func getNetworkName(id string) string {

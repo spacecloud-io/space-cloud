@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -132,6 +133,69 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		}
 
 		_ = utils.SendOkayResponse(w)
+	}
+}
+
+func (s *Server) handleGetLogs() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Close the body of the request
+		defer utils.CloseTheCloser(r.Body)
+		defer logrus.Println("Closing handle of runner for logs")
+		// get query params
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		taskID := r.URL.Query().Get("taskId")
+		replicaID := r.URL.Query().Get("replicaId")
+		if replicaID == "" {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "replica id not provided in query param")
+			return
+		}
+		_, isFollow := r.URL.Query()["follow"]
+
+		utils.LogDebug("Get logs process started", "handler", "get-logs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
+		pipeReader, err := s.driver.GetLogs(r.Context(), isFollow, projectID, taskID, replicaID)
+		if err != nil {
+			logrus.Errorf("Failed to get service logs - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		defer utils.CloseTheCloser(pipeReader)
+
+		reader := bufio.NewReader(pipeReader)
+		// implement http flusher
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "expected http.ResponseWriter to be an http.Flusher")
+			return
+		}
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.WriteHeader(http.StatusOK)
+		for {
+			select {
+			case <-r.Context().Done():
+				utils.LogDebug("Context deadline reached for client request", "istio", "GetLogs", map[string]interface{}{})
+				return
+			default:
+				str, err := reader.ReadString('\n')
+				if err != nil {
+					if err == io.EOF && !isFollow {
+						utils.LogDebug("End of file reached for logs", "istio", "GetLogs", map[string]interface{}{})
+						return
+					}
+					utils.LogDebug("error occured while reading from pipe in hander", "", "", nil)
+					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+					return
+				}
+				// starting 8 bytes of data contains some meta data regarding each log that docker sends
+				// ignoring the first 8 bytes, send rest of the data
+				fmt.Fprint(w, str[8:])
+				// Trigger "chunked" encoding and send a chunk...
+				flusher.Flush()
+				time.Sleep(500 * time.Millisecond)
+			}
+		}
 	}
 }
 
