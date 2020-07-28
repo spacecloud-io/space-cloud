@@ -109,13 +109,16 @@ func HandleGetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		defer cancel()
 
 		// Check if the request is authorised
-		params, err := adminMan.IsTokenValid(token, "cluster", "read", map[string]string{})
+		reqParams, err := adminMan.IsTokenValid(token, "cluster", "read", map[string]string{})
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		status, clusterConfig := syncMan.GetClusterConfig(ctx, params)
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, clusterConfig := syncMan.GetClusterConfig(ctx, reqParams)
 
 		_ = utils.SendResponse(w, status, model.Response{Result: clusterConfig})
 	}
@@ -140,7 +143,7 @@ func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		}
 
 		// Check if the request is authorised
-		params, err := adminMan.IsTokenValid(token, "cluster", "modify", map[string]string{})
+		reqParams, err := adminMan.IsTokenValid(token, "cluster", "modify", map[string]string{})
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
@@ -148,8 +151,12 @@ func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = req
 		// Sync the Adminconfig
-		status, err := syncMan.SetClusterConfig(ctx, req, params)
+		status, err := syncMan.SetClusterConfig(ctx, req, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
