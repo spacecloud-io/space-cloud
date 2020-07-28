@@ -387,9 +387,9 @@ func splitServiceContainerName(containerName string) (clusterID, projectID, serv
 	spaceCloudPrefixStr := strings.Split(s[0], "-")
 	if len(spaceCloudPrefixStr) == 3 {
 		// default cluster
-		return "default", spaceCloudPrefixStr[1], s[1], s[2], s[4]
+		return "default", spaceCloudPrefixStr[2], s[1], s[2], s[4]
 	}
-	return spaceCloudPrefixStr[1], spaceCloudPrefixStr[1], s[1], s[2], s[4]
+	return spaceCloudPrefixStr[2], spaceCloudPrefixStr[3], s[1], s[2], s[4]
 }
 
 func getReplicaID(containerName string) string {
@@ -614,12 +614,13 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]*mod
 		//NOTE: the name starts with a forward slash
 		_, _, serviceID, version, _ := splitServiceContainerName(containerInfo.Names[0])
 
-		containerIDs, ok := serviceMapper[serviceID]
+		id := fmt.Sprintf("%s--%s", serviceID, version)
+		_, ok := serviceMapper[serviceID]
 		if !ok {
-			serviceMapper[fmt.Sprintf("%s--%s", serviceID, version)] = []string{containerInfo.ID}
+			serviceMapper[id] = []string{containerInfo.ID}
 			continue
 		}
-		containerIDs = append(containerIDs, containerInfo.ID)
+		serviceMapper[id] = append(serviceMapper[id], containerInfo.ID)
 	}
 
 	result := make([]*model.ServiceStatus, 0)

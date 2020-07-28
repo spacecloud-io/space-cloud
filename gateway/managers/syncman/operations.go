@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -73,19 +74,19 @@ func (s *Manager) setProject(ctx context.Context, project *config.Project) error
 }
 
 // SetClusterConfig applies the set cluster config
-func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfig) (int, error) {
+func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfig, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.projectConfig.Admin.ClusterConfig = req
 	if err := s.store.SetAdminConfig(ctx, s.projectConfig.Admin); err != nil {
-		return http.StatusBadRequest, err
+		return http.StatusInternalServerError, err
 	}
 	return http.StatusOK, nil
 }
 
 // GetClusterConfig returns cluster config
-func (s *Manager) GetClusterConfig() (int, *config.ClusterConfig) {
+func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestParams) (int, *config.ClusterConfig) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return http.StatusOK, s.projectConfig.Admin.ClusterConfig

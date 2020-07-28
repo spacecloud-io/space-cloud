@@ -105,13 +105,17 @@ func HandleGetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
 		// Check if the request is authorised
-		if _, err := adminMan.IsTokenValid(token, "cluster", "read", map[string]string{}); err != nil {
+		params, err := adminMan.IsTokenValid(token, "cluster", "read", map[string]string{})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		status, clusterConfig := syncMan.GetClusterConfig()
+		status, clusterConfig := syncMan.GetClusterConfig(ctx, params)
 
 		_ = utils.SendResponse(w, status, model.Response{Result: clusterConfig})
 	}
@@ -136,7 +140,8 @@ func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		}
 
 		// Check if the request is authorised
-		if _, err := adminMan.IsTokenValid(token, "cluster", "modify", map[string]string{}); err != nil {
+		params, err := adminMan.IsTokenValid(token, "cluster", "modify", map[string]string{})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -144,7 +149,7 @@ func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		defer cancel()
 
 		// Sync the Adminconfig
-		status, err := syncMan.SetClusterConfig(ctx, req)
+		status, err := syncMan.SetClusterConfig(ctx, req, params)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
