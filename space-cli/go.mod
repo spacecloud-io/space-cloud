@@ -26,7 +26,6 @@ require (
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spaceuptech/space-api-go v0.17.3
-	github.com/spaceuptech/space-cli v0.0.0-20190721153730-40ccd297f6de // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect

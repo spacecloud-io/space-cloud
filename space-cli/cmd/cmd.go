@@ -12,6 +12,7 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/addons"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/deploy"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/login"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/logs"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/operations"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/project"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
@@ -102,6 +103,7 @@ func GetRootCommand() *cobra.Command {
 	rootCmd.AddCommand(operations.Commands()...)
 	rootCmd.AddCommand(login.Commands()...)
 	rootCmd.AddCommand(accounts.Commands()...)
+	rootCmd.AddCommand(logs.GetSubCommands()...)
 	rootCmd.AddCommand(completionCmd)
 	return rootCmd
 }

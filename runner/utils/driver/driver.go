@@ -3,6 +3,7 @@ package driver
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
@@ -30,6 +31,7 @@ type Interface interface {
 	AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error
 	WaitForService(ctx context.Context, service *model.Service) error
 	Type() model.DriverType
+	GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error)
 
 	// Service routes
 	ApplyServiceRoutes(ctx context.Context, projectID, serviceID string, routes model.Routes) error
