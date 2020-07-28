@@ -27,6 +27,8 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleApplyProject(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/generate-internal-token").HandlerFunc(handlers.HandleGenerateTokenForMissionControl(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodGet).Path("/v1/config/global-config").HandlerFunc(handlers.HandleGetClusterConfig(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/global-config").HandlerFunc(handlers.HandleSetClusterConfig(s.managers.Admin(), s.managers.Sync()))
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/remote-service/service").HandlerFunc(handlers.HandleGetService(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/remote-service/service/{id}").HandlerFunc(handlers.HandleAddService(s.managers.Admin(), s.managers.Sync()))
@@ -159,6 +161,8 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	runnerRouter.Methods(http.MethodDelete).Path("/{project}/services/{serviceId}/{version}").HandlerFunc(s.managers.Sync().HandleRunnerDeleteService(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodPost).Path("/{project}/service-routes/{serviceId}").HandlerFunc(s.managers.Sync().HandleRunnerServiceRoutingRequest(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/service-routes").HandlerFunc(s.managers.Sync().HandleRunnerGetServiceRoutingRequest(s.managers.Admin()))
+	runnerRouter.Methods(http.MethodGet).Path("/{project}/services/logs").HandlerFunc(s.managers.Sync().HandleRunnerGetServiceLogs(s.managers.Admin()))
+	runnerRouter.Methods(http.MethodGet).Path("/{project}/services/status").HandlerFunc(s.managers.Sync().HandleRunnerGetDeploymentStatus(s.managers.Admin()))
 
 	// Add handler for mission control
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))

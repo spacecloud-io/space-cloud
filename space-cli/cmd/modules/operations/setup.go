@@ -94,7 +94,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 	}
 	for _, nw := range nws {
 		if nw.Name == utils.GetNetworkName(clusterName) {
-			return utils.LogError(fmt.Sprintf("Network (%s) already exists, try using different cluster", utils.GetNetworkName(clusterName)), errors.New(""))
+			return utils.LogError(fmt.Sprintf("Space cloud cluster is already running with network (%s) either destroy the existing cluster or create a new cluster with --cluster-name flag in setup command", utils.GetNetworkName(clusterName)), errors.New(""))
 		}
 	}
 
@@ -135,7 +135,23 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		"CLUSTER_ID=" + clusterID,
 		"PORT=" + portHTTPValue,
 	}
+	var runnerEnvs = []string{
+		"DEV=" + devMode,
+		"DRIVER=docker",
+		"JWT_SECRET=" + secret,
+		"JWT_PROXY_SECRET=" + generateRandomString(24),
+		"SECRETS_PATH=/secrets",
+		"HOME_SECRETS_PATH=" + utils.GetMountTempSecretsDir(clusterName),
+		"HOSTS_FILE_PATH=" + utils.GetMountHostsFilePath(clusterName),
+		"ROUTING_FILE_PATH=" + "/routing-config.json",
+		"CLUSTER_ID=" + clusterID,
+		"PORT=4050",
+	}
 
+	if dev {
+		runnerEnvs = append(runnerEnvs, "LOG_LEVEL=debug")
+		envs = append(envs, "LOG_LEVEL=debug")
+	}
 	envs = append(envs, environmentVariables...)
 
 	mounts := []mount.Mount{
@@ -193,19 +209,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", version),
 			containerName:  utils.GetScContainers(clusterName, "runner"),
 			dnsName:        "runner.space-cloud.svc.cluster.local",
-			envs: []string{
-				"DEV=" + devMode,
-				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:" + portHTTPValue, // TODO Change the default value in runner it starts with http
-				"DRIVER=docker",
-				"JWT_SECRET=" + secret,
-				"JWT_PROXY_SECRET=" + generateRandomString(24),
-				"SECRETS_PATH=/secrets",
-				"HOME_SECRETS_PATH=" + utils.GetMountTempSecretsDir(clusterName),
-				"HOSTS_FILE_PATH=" + utils.GetMountHostsFilePath(clusterName),
-				"ROUTING_FILE_PATH=" + "/routing-config.json",
-				"CLUSTER_ID=" + clusterID,
-				"PORT=4050",
-			},
+			envs:           runnerEnvs,
 			mount: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
@@ -276,6 +280,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 			NetworkMode:  container.NetworkMode(utils.GetNetworkName(clusterName)),
 		}, nil, c.containerName)
 		if err != nil {
+			_ = Destroy(clusterName)
 			return utils.LogError(fmt.Sprintf("Unable to create container (%v)", c.containerName), err)
 		}
 

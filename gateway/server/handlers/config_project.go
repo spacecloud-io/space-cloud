@@ -97,3 +97,71 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "Operation not supported")
 	}
 }
+
+// HandleGetClusterConfig returns handler to get cluster-config
+func HandleGetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(token, "cluster", "read", map[string]string{})
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, clusterConfig := syncMan.GetClusterConfig(ctx, reqParams)
+
+		_ = utils.SendResponse(w, status, model.Response{Result: clusterConfig})
+	}
+}
+
+// HandleSetClusterConfig set cluster-config
+func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Load the request from the body
+		req := new(config.ClusterConfig)
+		err := json.NewDecoder(r.Body).Decode(req)
+		defer utils.CloseTheCloser(r.Body)
+
+		// Throw error if request was of incorrect type
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "Admin Config was of invalid type - "+err.Error())
+			return
+		}
+
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(token, "cluster", "modify", map[string]string{})
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		reqParams.Payload = req
+		// Sync the Adminconfig
+		status, err := syncMan.SetClusterConfig(ctx, req, reqParams)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
+			return
+		}
+
+		_ = utils.SendResponse(w, status, map[string]interface{}{})
+	}
+}
