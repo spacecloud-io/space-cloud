@@ -9,7 +9,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/types"
 )
 
 // Manager syncs the project config between folders
@@ -35,7 +34,7 @@ type Manager struct {
 	adminMan AdminSyncmanInterface
 
 	// Modules
-	modules types.ModulesInterface
+	modules ModulesInterface
 }
 
 type service struct {
@@ -87,12 +86,26 @@ func (s *Manager) Start(port int) error {
 	}
 	utils.LogDebug("Successfully loaded initial copy of config file", "syncman", "Start", nil)
 	_ = s.adminMan.SetConfig(adminConfig)
+	s.projectConfig.Admin = adminConfig
 
 	// Start routine to observe space cloud projects
 	if err := s.store.WatchProjects(func(projects []*config.Project) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
 		utils.LogDebug("Updating projects", "syncman", "Start", map[string]interface{}{"projects": projects})
+		for _, p := range s.projectConfig.Projects {
+			doesNotExist := true
+			for _, q := range projects {
+				if p.ID == q.ID {
+					doesNotExist = false
+					break
+				}
+			}
+			if doesNotExist {
+				err := s.store.DeleteProject(context.Background(), p.ID)
+				_ = utils.LogError("Unable to delete project", "syncman", "Start", err)
+			}
+		}
 		s.projectConfig.Projects = projects
 
 		if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
@@ -156,6 +169,6 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 }
 
 // SetModules sets all the modules
-func (s *Manager) SetModules(modulesInterface types.ModulesInterface) {
+func (s *Manager) SetModules(modulesInterface ModulesInterface) {
 	s.modules = modulesInterface
 }

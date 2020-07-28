@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 
@@ -162,6 +163,9 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 	for k, v := range tokenClaims {
 		claims[k] = v
 	}
+
+	// Add expiry of one week
+	claims["exp"] = time.Now().Add(24 * 7 * time.Hour).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 

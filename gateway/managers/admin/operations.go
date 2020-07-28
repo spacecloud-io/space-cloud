@@ -1,6 +1,9 @@
 package admin
 
 import (
+	"context"
+	"net/http"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -76,4 +79,10 @@ func (m *Manager) GetClusterID() string {
 // GetSecret returns the admin secret
 func (m *Manager) GetSecret() string {
 	return m.user.Secret
+}
+
+// GetPermissions returns the permissions the user has. The permissions is for the format `projectId:resource`.
+// This only applies to the config level endpoints.
+func (m *Manager) GetPermissions(ctx context.Context, params model.RequestParams) (int, []string, error) {
+	return http.StatusOK, []string{"*:*"}, nil
 }
