@@ -150,7 +150,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 		// check if connection string starts with secrets
 		secretName, isSecretExists := splitConnectionString(v.Conn)
-		var connectionString = v.Conn
+		connectionString := v.Conn
 		if isSecretExists {
 			var err error
 			connectionString, err = m.getSecrets(project, secretName, "CONN")
