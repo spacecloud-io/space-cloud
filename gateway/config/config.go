@@ -153,7 +153,7 @@ type Services map[string]*Service
 type Service struct {
 	ID        string               `json:"id,omitempty" yaml:"id,omitempty"`   // eg. http://localhost:8080
 	URL       string               `json:"url,omitempty" yaml:"url,omitempty"` // eg. http://localhost:8080
-	Endpoints map[string]*Endpoint `json:"endpoints" yaml:"endpoints"`
+	Endpoints map[string]*Endpoint `json:"endpoints,omitempty" yaml:"endpoints,omitempty"`
 }
 
 // Endpoint holds the config of a endpoint
@@ -167,8 +167,8 @@ type Endpoint struct {
 	Token     string                   `json:"token,omitempty" yaml:"token,omitempty"`
 	Method    string                   `json:"method" yaml:"method"`
 	Path      string                   `json:"path" yaml:"path"`
-	Rule      *Rule                    `json:"rule" yaml:"rule"`
-	Headers   Headers                  `json:"headers" yaml:"headers"`
+	Rule      *Rule                    `json:"rule,omitempty" yaml:"rule,omitempty"`
+	Headers   Headers                  `json:"headers,omitempty" yaml:"headers,omitempty"`
 }
 
 // EndpointKind describes the type of endpoint. Default value - internal
