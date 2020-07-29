@@ -22,17 +22,25 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands dis the list of commands the project module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getproject = &cobra.Command{
-		Use:  "project",
-		RunE: actionGetProjectConfig,
-	}
-
 	var getprojects = &cobra.Command{
-		Use:  "projects",
-		RunE: actionGetProjectConfig,
+		Use:     "projects",
+		Aliases: []string{"project"},
+		RunE:    actionGetProjectConfig,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project := viper.GetString("project")
+			objs, err := GetProjectConfig(project, "project", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range objs {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
 	}
 
-	return []*cobra.Command{getproject, getprojects}
+	return []*cobra.Command{getprojects}
 }
 
 func actionGetProjectConfig(cmd *cobra.Command, args []string) error {

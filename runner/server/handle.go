@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -135,6 +136,69 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 	}
 }
 
+func (s *Server) handleGetLogs() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Close the body of the request
+		defer utils.CloseTheCloser(r.Body)
+		defer logrus.Println("Closing handle of runner for logs")
+		// get query params
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		taskID := r.URL.Query().Get("taskId")
+		replicaID := r.URL.Query().Get("replicaId")
+		if replicaID == "" {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "replica id not provided in query param")
+			return
+		}
+		_, isFollow := r.URL.Query()["follow"]
+
+		utils.LogDebug("Get logs process started", "handler", "get-logs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
+		pipeReader, err := s.driver.GetLogs(r.Context(), isFollow, projectID, taskID, replicaID)
+		if err != nil {
+			logrus.Errorf("Failed to get service logs - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		defer utils.CloseTheCloser(pipeReader)
+
+		reader := bufio.NewReader(pipeReader)
+		// implement http flusher
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "expected http.ResponseWriter to be an http.Flusher")
+			return
+		}
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.WriteHeader(http.StatusOK)
+		for {
+			select {
+			case <-r.Context().Done():
+				utils.LogDebug("Context deadline reached for client request", "istio", "GetLogs", map[string]interface{}{})
+				return
+			default:
+				str, err := reader.ReadString('\n')
+				if err != nil {
+					if err == io.EOF && !isFollow {
+						utils.LogDebug("End of file reached for logs", "istio", "GetLogs", map[string]interface{}{})
+						return
+					}
+					utils.LogDebug("error occured while reading from pipe in hander", "", "", nil)
+					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+					return
+				}
+				// starting 8 bytes of data contains some meta data regarding each log that docker sends
+				// ignoring the first 8 bytes, send rest of the data
+				fmt.Fprint(w, str[8:])
+				// Trigger "chunked" encoding and send a chunk...
+				flusher.Flush()
+				time.Sleep(500 * time.Millisecond)
+			}
+		}
+	}
+}
+
 // HandleDeleteService handles the request to delete a service
 func (s *Server) HandleDeleteService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -228,6 +292,66 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		}
 
 		result = services
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
+	}
+}
+
+// HandleGetServicesStatus handles the request to get all services status
+func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		//var result []interface{}
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		serviceID, serviceIDExists := r.URL.Query()["serviceId"]
+		version, versionExists := r.URL.Query()["versioin"]
+
+		result, err := s.driver.GetServiceStatus(ctx, projectID)
+		if err != nil {
+			logrus.Errorf("Failed to get service status - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		arr := make([]interface{}, 0)
+		if serviceIDExists && versionExists {
+			for _, serviceStatus := range result {
+				if serviceStatus.ServiceID == serviceID[0] && serviceStatus.Version == version[0] {
+					arr = append(arr, serviceStatus)
+				}
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(model.Response{Result: arr})
+			return
+		}
+
+		if serviceIDExists {
+			for _, serviceStatus := range result {
+				if serviceStatus.ServiceID == serviceID[0] {
+					arr = append(arr, serviceStatus)
+				}
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(model.Response{Result: arr})
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

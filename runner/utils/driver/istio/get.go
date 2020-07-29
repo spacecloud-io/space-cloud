@@ -2,6 +2,7 @@ package istio
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -156,6 +157,37 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 	}
 
 	return services, nil
+}
+
+// GetServiceStatus gets the services status for istio
+func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error) {
+	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
+		return nil, err
+	}
+	result := make([]*model.ServiceStatus, 0)
+	for _, deployment := range deploymentList.Items {
+		serviceID := deployment.Labels["app"]
+		serviceVersion := deployment.Labels["version"]
+
+		podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s,version=%s", serviceID, serviceVersion)})
+		if err != nil {
+			logrus.Errorf("Error getting service in istio - unable to find pods - %v", err)
+			return nil, err
+		}
+		replicas := make([]*model.ReplicaInfo, 0)
+		for _, p := range podlist.Items {
+			replicas = append(replicas, &model.ReplicaInfo{ID: p.Name, Status: string(p.Status.Phase)})
+		}
+		result = append(result, &model.ServiceStatus{
+			ServiceID:       serviceID,
+			Version:         serviceVersion,
+			DesiredReplicas: deployment.Spec.Replicas,
+			Replicas:        replicas,
+		})
+	}
+	return result, nil
 }
 
 // GetServiceRoutes gets the routing rules of each service

@@ -96,9 +96,9 @@ func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 
 		clusters := []*config.Admin{
 			{
-				ClusterID:  "",
-				ClusterKey: "",
-				License:    "",
+				LicenseKey:   "",
+				LicenseValue: "",
+				License:      "",
 			},
 		}
 

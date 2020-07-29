@@ -13,15 +13,15 @@ type Config struct {
 
 // ClusterConfig holds the cluster level configuration
 type ClusterConfig struct {
-	Email         string `json:"email" yaml:"email"`
-	EnableMetrics bool   `json:"enableMetrics" yaml:"enableMetrics"`
+	LetsEncryptEmail string `json:"letsencryptEmail" yaml:"letsencryptEmail"`
+	EnableMetrics    bool   `json:"enableMetrics" yaml:"enableMetrics"`
 }
 
 // Project holds the project level configuration
 type Project struct {
 	Secrets            []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty"`
 	SecretSource       string    `json:"secretSource,omitempty" yaml:"secretSource,omitempty"`
-	Integration        string    `json:"integration,omitempty" yaml:"integration,omitempty"`
+	IsIntegration      bool      `json:"isIntegration,omitempty" yaml:"isIntegration,omitempty"`
 	AESKey             string    `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
 	ID                 string    `json:"id,omitempty" yaml:"id,omitempty"`
 	Name               string    `json:"name,omitempty" yaml:"name,omitempty"`
@@ -39,8 +39,8 @@ type Secret struct {
 // Admin holds the admin config
 type Admin struct {
 	ClusterConfig *ClusterConfig `json:"clusterConfig" yaml:"clusterConfig"`
-	ClusterID     string         `json:"clusterId" yaml:"clusterId"`
-	ClusterKey    string         `json:"clusterKey" yaml:"clusterKey"`
+	LicenseKey    string         `json:"licenseKey" yaml:"licenseKey"`
+	LicenseValue  string         `json:"licenseValue" yaml:"licenseValue"`
 	License       string         `json:"license" yaml:"license"`
 	Integrations  Integrations   `json:"integrations" yaml:"integrations"`
 }
@@ -153,7 +153,7 @@ type Services map[string]*Service
 type Service struct {
 	ID        string               `json:"id,omitempty" yaml:"id,omitempty"`   // eg. http://localhost:8080
 	URL       string               `json:"url,omitempty" yaml:"url,omitempty"` // eg. http://localhost:8080
-	Endpoints map[string]*Endpoint `json:"endpoints" yaml:"endpoints"`
+	Endpoints map[string]*Endpoint `json:"endpoints,omitempty" yaml:"endpoints,omitempty"`
 }
 
 // Endpoint holds the config of a endpoint
@@ -167,8 +167,8 @@ type Endpoint struct {
 	Token     string                   `json:"token,omitempty" yaml:"token,omitempty"`
 	Method    string                   `json:"method" yaml:"method"`
 	Path      string                   `json:"path" yaml:"path"`
-	Rule      *Rule                    `json:"rule" yaml:"rule"`
-	Headers   Headers                  `json:"headers" yaml:"headers"`
+	Rule      *Rule                    `json:"rule,omitempty" yaml:"rule,omitempty"`
+	Headers   Headers                  `json:"headers,omitempty" yaml:"headers,omitempty"`
 }
 
 // EndpointKind describes the type of endpoint. Default value - internal
