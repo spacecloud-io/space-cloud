@@ -76,6 +76,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			if len(req.Find) > 0 {
 				pipeline = append(pipeline, bson.M{"$match": req.Find})
 			}
+			sortFields := make([]string, 0)
 			functionsMap := make(bson.M)
 			for function, colArray := range req.Aggregate {
 				for _, column := range colArray {
@@ -94,11 +95,18 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 					default:
 						return 0, nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion %s`, function), "mgo", "Read", nil)
 					}
+					for _, field := range req.Options.Sort {
+						if sortValue := generateSortFields(field, column, asColumnName); sortValue != "" {
+							sortFields = append(sortFields, sortValue)
+						}
+					}
 				}
 			}
-			pipeline = append(pipeline, createGroupByStage(functionsMap, req.GroupBy))
+			groupStage, sortArr := createGroupByStage(functionsMap, req.GroupBy, req.Options.Sort)
+			sortFields = append(sortFields, sortArr...)
+			pipeline = append(pipeline, groupStage)
 			if req.Options != nil {
-				pipeline = append(pipeline, getOptionStage(req.Options)...)
+				pipeline = append(pipeline, getOptionStage(req.Options, sortFields)...)
 			}
 		}
 
@@ -172,6 +180,22 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 	}
 }
 
+func generateSortFields(sortColumn, currentColumn, newColumnName string) string {
+	isDescending := false
+	if strings.HasPrefix(sortColumn, "-") {
+		isDescending = true
+		sortColumn = strings.TrimPrefix(sortColumn, "-")
+	}
+	if sortColumn == currentColumn {
+		if isDescending {
+			return "-" + newColumnName
+		} else {
+			return newColumnName
+		}
+	}
+	return ""
+}
+
 func generateSortOptions(array []string) bson.D {
 	sort := bson.D{}
 	for _, value := range array {
@@ -198,21 +222,29 @@ func getGroupByStageFunctionsMap(functionsMap bson.M, asColumnName, function, co
 	return functionsMap
 }
 
-func createGroupByStage(functionsMap bson.M, groupBy []interface{}) bson.M {
+func createGroupByStage(functionsMap bson.M, groupBy []interface{}, sort []string) (bson.M, []string) {
 	groupByMap := make(map[string]interface{})
 	groupStage := bson.M{
 		"$group": bson.M{"_id": bson.M{}},
 	}
+	sortArr := make([]string, 0)
 	if len(groupBy) > 0 {
 		for _, val := range groupBy {
-			groupByMap[fmt.Sprintf("%v", val)] = fmt.Sprintf("$%v", val)
+			key := fmt.Sprintf("%v", val)
+			value := fmt.Sprintf("$%v", val)
+			groupByMap[key] = value
+			for _, sortKey := range sort {
+				if sortValue := generateSortFields(sortKey, key, "_id."+key); sortValue != "" {
+					sortArr = append(sortArr, sortValue)
+				}
+			}
 		}
 		groupStage["$group"].(bson.M)["_id"] = groupByMap
 	}
 	for key, value := range functionsMap {
 		groupStage["$group"].(bson.M)[key] = value
 	}
-	return groupStage
+	return groupStage, sortArr
 }
 
 func generateAggregateSortOptions(array []string) bson.M {
@@ -228,17 +260,20 @@ func generateAggregateSortOptions(array []string) bson.M {
 	return sort
 }
 
-func getOptionStage(options *model.ReadOptions) []bson.M {
+func getOptionStage(options *model.ReadOptions, sortFields []string) []bson.M {
 	var optionStage []bson.M
 
 	if options.Skip != nil {
+		// NOTE: we are sorting the result before skip operation to give a consistent $skip result
+		optionStage = append(optionStage, bson.M{"$sort": generateAggregateSortOptions([]string{"_id"})})
 		optionStage = append(optionStage, bson.M{"$skip": options.Skip})
 	}
 	if options.Limit != nil {
+		optionStage = append(optionStage, bson.M{"$sort": generateAggregateSortOptions([]string{"_id"})})
 		optionStage = append(optionStage, bson.M{"$limit": options.Limit})
 	}
 	if options.Sort != nil {
-		optionStage = append(optionStage, bson.M{"$sort": generateAggregateSortOptions(options.Sort)})
+		optionStage = append(optionStage, bson.M{"$sort": generateAggregateSortOptions(sortFields)})
 	}
 
 	return optionStage
@@ -275,8 +310,15 @@ func getNestedObject(doc map[string]interface{}) {
 			}
 			funcValue.(map[string]interface{})[columnName] = value
 		}
+		groupDoc, ok := doc["_id"]
+		if ok {
+			for key, value := range groupDoc.(map[string]interface{}) {
+				doc[key] = value
+			}
+		}
 	}
 	if len(resultObj) > 0 {
 		doc[utils.GraphQLAggregate] = resultObj
 	}
+	delete(doc, "_id")
 }
