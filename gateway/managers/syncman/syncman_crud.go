@@ -148,7 +148,7 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 			return http.StatusOK, []interface{}{&preparedQueryResponse{ID: id, DBAlias: dbAlias, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments, Rule: preparedQuery.Rule}}, nil
 		}
 		preparedQuery := databaseConfig.PreparedQueries
-		var coll = make([]interface{}, 0)
+		coll := make([]interface{}, 0)
 		for key, value := range preparedQuery {
 			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: value.Rule})
 		}
