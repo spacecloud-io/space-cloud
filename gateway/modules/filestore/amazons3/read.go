@@ -20,8 +20,9 @@ import (
 func (a *AmazonS3) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
 	svc := s3.New(a.client)
 
+	req.Path = strings.TrimPrefix(req.Path, "/")
 	// Add a backslash if not there already
-	if !strings.HasSuffix(req.Path, "/") {
+	if !strings.HasSuffix(req.Path, "/") && len(req.Path) != 0 {
 		req.Path = req.Path + "/"
 	}
 
@@ -36,9 +37,12 @@ func (a *AmazonS3) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesRespo
 
 	if len(resp.Contents) == 0 {
 		utils.LogDebug("AWS list response is empty", "amazons3", "list-dir", nil)
-		return nil, nil
+		return []*model.ListFilesResponse{}, nil
 	}
-	resp.Contents = resp.Contents[1:]
+
+	if req.Path != "" {
+		resp.Contents = resp.Contents[1:]
+	}
 	result := make([]*model.ListFilesResponse, 0)
 
 	for _, key := range resp.Contents {

@@ -149,10 +149,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		}
 
 		// check if connection string starts with secrets
-		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
+		secretName, isSecretExists := splitConnectionString(v.Conn)
+		var connectionString = v.Conn
 		if isSecretExists {
 			var err error
-			v.Conn, err = m.getSecrets(project, secretName, secretKey)
+			connectionString, err = m.getSecrets(project, secretName, "CONN")
 			if err != nil {
 				return utils.LogError("cannot get secrets from runner", "crud", "setConfig", err)
 			}
@@ -160,7 +161,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 		if m.block != nil {
 			// Skip if the connection string is the same
-			if m.block.IsSame(v.Conn, v.DBName) {
+			if m.block.IsSame(connectionString, v.DBName) {
 				continue
 			}
 
@@ -195,12 +196,12 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 }
 
 // splitConnectionString splits the connection string
-func splitConnectionString(connection string) (string, string, bool) {
+func splitConnectionString(connection string) (string, bool) {
 	s := strings.Split(connection, ".")
 	if s[0] == "secrets" {
-		return s[1], s[2], true
+		return s[1], true
 	}
-	return "", "", false
+	return "", false
 }
 
 // GetDBType returns the type of the db for the alias provided

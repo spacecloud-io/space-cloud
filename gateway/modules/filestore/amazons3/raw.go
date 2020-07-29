@@ -3,6 +3,7 @@ package amazons3
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -11,6 +12,8 @@ import (
 
 // DoesExists checks if path exists
 func (a *AmazonS3) DoesExists(path string) error {
+	path = strings.TrimPrefix(path, "/")
+
 	svc := s3.New(a.client)
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(a.bucket),
