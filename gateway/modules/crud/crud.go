@@ -148,10 +148,20 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
 		}
 
+		// check if connection string starts with secrets
+		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
+		if isSecretExists {
+			var err error
+			v.Conn, err = m.getSecrets(project, secretName, secretKey)
+			if err != nil {
+				return utils.LogError("cannot get secrets from runner", "crud", "setConfig", err)
+			}
+		}
+
 		if m.block != nil {
 			// Skip if the connection string is the same
 			if m.block.IsSame(v.Conn, v.DBName) {
-				break
+				continue
 			}
 
 			// Close the previous database connection
@@ -162,15 +172,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 		var c Crud
 		var err error
-
-		// check if connection string starts with secrets
-		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
-		if isSecretExists {
-			v.Conn, err = m.getSecrets(project, secretName, secretKey)
-			if err != nil {
-				return utils.LogError("cannot get secrets from runner", "crud", "setConfig", err)
-			}
-		}
 
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
 		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn, v.DBName)

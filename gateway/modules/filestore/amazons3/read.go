@@ -11,7 +11,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	uuid "github.com/satori/go.uuid"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // ListDir lists a directory in S3
@@ -23,14 +25,21 @@ func (a *AmazonS3) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesRespo
 		req.Path = req.Path + "/"
 	}
 
-	resp, _ := svc.ListObjects(&s3.ListObjectsInput{
+	resp, err := svc.ListObjectsV2(&s3.ListObjectsV2Input{
 		Bucket:    aws.String(a.bucket),
 		Prefix:    aws.String(req.Path), //backslash at the end is important
 		Delimiter: aws.String("/"),
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	result := []*model.ListFilesResponse{}
+	if len(resp.Contents) == 0 {
+		utils.LogDebug("AWS list response is empty", "amazons3", "list-dir", nil)
+		return nil, nil
+	}
 	resp.Contents = resp.Contents[1:]
+	result := []*model.ListFilesResponse{}
 
 	for _, key := range resp.Contents {
 		t := &model.ListFilesResponse{Name: filepath.Base(*key.Key), Type: "file"}

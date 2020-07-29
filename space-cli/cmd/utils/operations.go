@@ -33,12 +33,17 @@ func RemoveAccount(clusterName string) error {
 	}
 
 	index := 0
+	isFound := false
 	for i, v := range credential.Accounts {
 		accountName := strings.Split(v.ID, "--")[0]
 		if accountName == clusterName {
+			isFound = true
 			index = i
 			credential.SelectedAccount = ""
 		}
+	}
+	if !isFound {
+		return nil
 	}
 	copy(credential.Accounts[index:], credential.Accounts[index+1:])
 	credential.Accounts[len(credential.Accounts)-1] = nil
