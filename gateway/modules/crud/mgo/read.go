@@ -189,9 +189,8 @@ func generateSortFields(sortColumn, currentColumn, newColumnName string) string 
 	if sortColumn == currentColumn {
 		if isDescending {
 			return "-" + newColumnName
-		} else {
-			return newColumnName
 		}
+		return newColumnName
 	}
 	return ""
 }
