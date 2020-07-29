@@ -39,7 +39,7 @@ func (a *AmazonS3) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesRespo
 		return nil, nil
 	}
 	resp.Contents = resp.Contents[1:]
-	result := []*model.ListFilesResponse{}
+	result := make([]*model.ListFilesResponse, 0)
 
 	for _, key := range resp.Contents {
 		t := &model.ListFilesResponse{Name: filepath.Base(*key.Key), Type: "file"}
