@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -49,14 +50,15 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		result, err := functions.CallWithContext(ctx, service, function, token, reqParams, req.Params)
+		status, result, err := functions.CallWithContext(ctx, service, function, token, reqParams, req.Params)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = utils.LogError(fmt.Sprintf("Receieved error from service call (%s:%s)", service, function), "handlers", "service-call", err)
+			_ = utils.SendResponse(w, status, result)
 			return
 		}
 
 		_ = auth.PostProcessMethod(actions, result)
 
-		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"result": result})
+		_ = utils.SendResponse(w, status, map[string]interface{}{"result": result})
 	}
 }
