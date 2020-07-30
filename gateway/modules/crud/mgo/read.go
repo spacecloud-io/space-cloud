@@ -83,15 +83,15 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 					asColumnName := generateAggregateAsColumnName(function, column)
 					switch function {
 					case "sum":
-						functionsMap = getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
 					case "min":
-						functionsMap = getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
 					case "max":
-						functionsMap = getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
 					case "avg":
-						functionsMap = getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
 					case "count":
-						functionsMap = getGroupByStageFunctionsMap(functionsMap, asColumnName, function, "*")
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, "*")
 					default:
 						return 0, nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion %s`, function), "mgo", "Read", nil)
 					}
@@ -208,7 +208,7 @@ func generateSortOptions(array []string) bson.D {
 	return sort
 }
 
-func getGroupByStageFunctionsMap(functionsMap bson.M, asColumnName, function, column string) bson.M {
+func getGroupByStageFunctionsMap(functionsMap bson.M, asColumnName, function, column string) {
 	if column != "*" {
 		functionsMap[asColumnName] = bson.M{
 			fmt.Sprintf("$%s", function): fmt.Sprintf("$%s", column),
@@ -218,7 +218,6 @@ func getGroupByStageFunctionsMap(functionsMap bson.M, asColumnName, function, co
 			"$sum": 1,
 		}
 	}
-	return functionsMap
 }
 
 func createGroupByStage(functionsMap bson.M, groupBy []interface{}, sort []string) (bson.M, []string) {
