@@ -109,7 +109,7 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 
 // GetDbPreparedQuery gets database prepared query
 func GetDbPreparedQuery(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
-	url := "/v1/config/projects/{project}/database/prepared-queries"
+	url := fmt.Sprintf("/v1/config/projects/%s/database/prepared-queries", project)
 
 	payload := new(model.Response)
 	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
