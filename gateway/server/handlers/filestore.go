@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -170,13 +169,11 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 
 		v := map[string]interface{}{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
-		log.Println("v", v)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
-
 		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
