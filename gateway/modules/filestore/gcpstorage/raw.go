@@ -2,12 +2,14 @@ package gcpstorage
 
 import (
 	"context"
+	"strings"
 
 	"cloud.google.com/go/storage"
 )
 
 // DoesExists checks if the path exists
 func (g *GCPStorage) DoesExists(path string) error {
+	path = strings.TrimPrefix(path, "/")
 	if _, err := g.client.Bucket(g.bucket).Object(path).Attrs(context.TODO()); err != nil {
 		return err
 	}

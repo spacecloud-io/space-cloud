@@ -65,7 +65,7 @@ func (m *Module) DeleteFile(ctx context.Context, project, token string, path str
 
 	if err = m.store.DeleteFile(path); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
-		return http.StatusInternalServerError, nil
+		return http.StatusInternalServerError, err
 	}
 
 	m.eventing.HookStage(ctx, intent, nil)
