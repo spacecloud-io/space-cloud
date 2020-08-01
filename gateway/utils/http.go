@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/rs/cors"
@@ -66,10 +64,6 @@ func MakeHTTPRequest(ctx context.Context, request *HTTPRequest, vPtr interface{}
 		if err := json.NewDecoder(resp.Body).Decode(vPtr); err != nil {
 			return resp.StatusCode, err
 		}
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return resp.StatusCode, errors.New("service responded with status code " + strconv.Itoa(resp.StatusCode))
 	}
 
 	return resp.StatusCode, nil
