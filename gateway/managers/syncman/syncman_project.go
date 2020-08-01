@@ -42,7 +42,6 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			p.DockerRegistry = project.DockerRegistry
 			p.ContextTimeGraphQL = project.ContextTimeGraphQL
 			p.IsIntegration = project.IsIntegration
-
 			// Mark project as existing
 			doesProjectExists = true
 			project = p
@@ -52,12 +51,13 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	if !doesProjectExists {
 		// Append project with default modules to projects array
 		project.Modules = &config.Modules{
-			FileStore:   &config.FileStore{},
-			Services:    &config.ServicesModule{},
-			Auth:        map[string]*config.AuthStub{},
-			Crud:        map[string]*config.CrudStub{},
-			Routes:      []*config.Route{},
-			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
+			FileStore:    &config.FileStore{},
+			Services:     &config.ServicesModule{},
+			Auth:         map[string]*config.AuthStub{},
+			Crud:         map[string]*config.CrudStub{},
+			Routes:       []*config.Route{},
+			GlobalRoutes: &config.GlobalRoutesConfig{},
+			LetsEncrypt:  config.LetsEncrypt{WhitelistedDomains: []string{}},
 		}
 		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 

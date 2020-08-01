@@ -82,9 +82,9 @@ type mockGraphQLFunctionInterface struct {
 	mock.Mock
 }
 
-func (m *mockGraphQLFunctionInterface) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, params interface{}) (interface{}, error) {
+func (m *mockGraphQLFunctionInterface) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, params interface{}) (int, interface{}, error) {
 	args := m.Called(ctx, service, function, token, reqParams, params)
-	return args.Get(0).(interface{}), args.Error(1)
+	return 0, args.Get(0).(interface{}), args.Error(1)
 }
 
 type mockGraphQLSchemaInterface struct {

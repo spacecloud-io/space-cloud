@@ -118,7 +118,11 @@ func HandleGetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		status, clusterConfig := syncMan.GetClusterConfig(ctx, reqParams)
+		status, clusterConfig, err := syncMan.GetClusterConfig(ctx, reqParams)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
+			return
+		}
 
 		_ = utils.SendResponse(w, status, model.Response{Result: clusterConfig})
 	}
