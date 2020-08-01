@@ -695,8 +695,8 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]*mod
 	result := make([]*model.ServiceStatus, 0)
 	for service, containerIDs := range serviceMapper {
 		arr := strings.Split(service, "--")
-		serviceVersion := arr[2]
-		serviceID := arr[1]
+		serviceVersion := arr[1]
+		serviceID := arr[0]
 		var status string
 		var containerName string
 		for _, containerID := range containerIDs {
@@ -726,13 +726,13 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]*mod
 
 func mapDockerStatusToKubernetes(status string) string {
 	var statuses = map[string]string{
-		"created":    "Pending",
-		"restarting": "Pending",
-		"running":    "Running",
-		"paused":     "Succeeded",
-		"exited":     "Failed",
-		"removing":   "Succeeded",
-		"dead":       "Failed",
+		"created":    "PENDING",
+		"restarting": "PENDING",
+		"running":    "RUNNING",
+		"paused":     "SUCCEEDED",
+		"exited":     "FAILED",
+		"removing":   "SUCCEEDED",
+		"dead":       "FAILED",
 	}
 	return statuses[status]
 }

@@ -43,7 +43,7 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 					paramsReturned: []interface{}{false},
 				},
 			},
-			want:    http.StatusInternalServerError,
+			want:    http.StatusUpgradeRequired,
 			wantErr: true,
 		},
 		{
@@ -330,7 +330,7 @@ func TestManager_DeleteProjectConfig(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if _, err := tt.s.DeleteProjectConfig(tt.args.ctx, tt.args.projectID); (err != nil) != tt.wantErr {
+			if _, err := tt.s.DeleteProjectConfig(tt.args.ctx, tt.args.projectID, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.DeleteProjectConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

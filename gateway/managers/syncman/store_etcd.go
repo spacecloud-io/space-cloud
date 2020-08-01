@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -155,9 +156,10 @@ func (s *ETCDStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 
 	clusters := []*config.Admin{
 		{
-			ClusterID:  "",
-			ClusterKey: "",
-			License:    "",
+			LicenseKey:   "",
+			LicenseValue: "",
+
+			License: "",
 		},
 	}
 	for _, kv := range res.Kvs {

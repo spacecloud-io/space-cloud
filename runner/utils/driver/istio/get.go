@@ -178,7 +178,7 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]*mode
 		}
 		replicas := make([]*model.ReplicaInfo, 0)
 		for _, p := range podlist.Items {
-			replicas = append(replicas, &model.ReplicaInfo{ID: p.Name, Status: string(p.Status.Phase)})
+			replicas = append(replicas, &model.ReplicaInfo{ID: p.Name, Status: strings.ToUpper(string(p.Status.Phase))})
 		}
 		result = append(result, &model.ServiceStatus{
 			ServiceID:       serviceID,
