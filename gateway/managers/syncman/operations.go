@@ -86,10 +86,10 @@ func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfi
 }
 
 // GetClusterConfig returns cluster config
-func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestParams) (int, *config.ClusterConfig) {
+func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestParams) (int, *config.ClusterConfig, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return http.StatusOK, s.projectConfig.Admin.ClusterConfig
+	return http.StatusOK, s.projectConfig.Admin.ClusterConfig, nil
 }
 
 func (s *Manager) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {

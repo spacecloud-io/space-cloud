@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"log"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/api/watch"

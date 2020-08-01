@@ -3,6 +3,7 @@ package filestore
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -82,7 +83,7 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 	// Check if the user is authorised to make this request
 	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
-		return http.StatusForbidden, nil, errors.New("You are not authorized to make this request")
+		return http.StatusForbidden, nil, fmt.Errorf("You are not authorized to make this request - %v", err)
 	}
 
 	m.RLock()

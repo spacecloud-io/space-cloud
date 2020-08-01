@@ -98,6 +98,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: space-cloud-gateway # Name is case sensitive
+    namespace: space-cloud
 roleRef:
   kind: ClusterRole
   name: space-cloud-gateway
