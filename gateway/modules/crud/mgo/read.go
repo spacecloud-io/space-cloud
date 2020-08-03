@@ -2,10 +2,12 @@ package mgo
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -69,8 +71,54 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			}
 		}
 
+		pipeline := make([]bson.M, 0)
+		if len(req.Aggregate) > 0 {
+			if len(req.Find) > 0 {
+				pipeline = append(pipeline, bson.M{"$match": req.Find})
+			}
+			sortFields := make([]string, 0)
+			functionsMap := make(bson.M)
+			for function, colArray := range req.Aggregate {
+				for _, column := range colArray {
+					asColumnName := generateAggregateAsColumnName(function, column)
+					switch function {
+					case "sum":
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+					case "min":
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+					case "max":
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+					case "avg":
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+					case "count":
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, "*")
+					default:
+						return 0, nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion %s`, function), "mgo", "Read", nil)
+					}
+					for _, field := range req.Options.Sort {
+						if sortValue := generateSortFields(field, column, asColumnName); sortValue != "" {
+							sortFields = append(sortFields, sortValue)
+						}
+					}
+				}
+			}
+			groupStage, sortArr := createGroupByStage(functionsMap, req.GroupBy, req.Options.Sort)
+			sortFields = append(sortFields, sortArr...)
+			pipeline = append(pipeline, groupStage)
+			if req.Options != nil {
+				pipeline = append(pipeline, getOptionStage(req.Options, sortFields)...)
+			}
+		}
+
+		var cur *mongo.Cursor
+		var err error
 		results := []interface{}{}
-		cur, err := collection.Find(ctx, req.Find, findOptions)
+
+		if len(req.Aggregate) > 0 {
+			cur, err = collection.Aggregate(ctx, pipeline)
+		} else {
+			cur, err = collection.Find(ctx, req.Find, findOptions)
+		}
 		if err != nil {
 			return 0, nil, err
 		}
@@ -90,6 +138,9 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 				return 0, nil, err
 			}
 
+			if len(req.Aggregate) > 0 {
+				getNestedObject(doc)
+			}
 			results = append(results, doc)
 		}
 
@@ -129,6 +180,21 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 	}
 }
 
+func generateSortFields(sortColumn, currentColumn, newColumnName string) string {
+	isDescending := false
+	if strings.HasPrefix(sortColumn, "-") {
+		isDescending = true
+		sortColumn = strings.TrimPrefix(sortColumn, "-")
+	}
+	if sortColumn == currentColumn {
+		if isDescending {
+			return "-" + newColumnName
+		}
+		return newColumnName
+	}
+	return ""
+}
+
 func generateSortOptions(array []string) bson.D {
 	sort := bson.D{}
 	for _, value := range array {
@@ -140,4 +206,117 @@ func generateSortOptions(array []string) bson.D {
 	}
 
 	return sort
+}
+
+func getGroupByStageFunctionsMap(functionsMap bson.M, asColumnName, function, column string) {
+	if column != "*" {
+		functionsMap[asColumnName] = bson.M{
+			fmt.Sprintf("$%s", function): fmt.Sprintf("$%s", column),
+		}
+	} else {
+		functionsMap[asColumnName] = bson.M{
+			"$sum": 1,
+		}
+	}
+}
+
+func createGroupByStage(functionsMap bson.M, groupBy []interface{}, sort []string) (bson.M, []string) {
+	groupByMap := make(map[string]interface{})
+	groupStage := bson.M{
+		"$group": bson.M{"_id": bson.M{}},
+	}
+	sortArr := make([]string, 0)
+	if len(groupBy) > 0 {
+		for _, val := range groupBy {
+			key := fmt.Sprintf("%v", val)
+			value := fmt.Sprintf("$%v", val)
+			groupByMap[key] = value
+			for _, sortKey := range sort {
+				if sortValue := generateSortFields(sortKey, key, "_id."+key); sortValue != "" {
+					sortArr = append(sortArr, sortValue)
+				}
+			}
+		}
+		groupStage["$group"].(bson.M)["_id"] = groupByMap
+	}
+	for key, value := range functionsMap {
+		groupStage["$group"].(bson.M)[key] = value
+	}
+	return groupStage, sortArr
+}
+
+func generateAggregateSortOptions(array []string) bson.M {
+	sort := bson.M{}
+	for _, value := range array {
+		if strings.HasPrefix(value, "-") {
+			sort[strings.TrimPrefix(value, "-")] = -1
+		} else {
+			sort[value] = 1
+		}
+	}
+
+	return sort
+}
+
+func getOptionStage(options *model.ReadOptions, sortFields []string) []bson.M {
+	var optionStage []bson.M
+
+	if options.Skip != nil {
+		// NOTE: we are sorting the result before skip operation to give a consistent $skip result
+		optionStage = append(optionStage, bson.M{"$sort": generateAggregateSortOptions([]string{"_id"})})
+		optionStage = append(optionStage, bson.M{"$skip": options.Skip})
+	}
+	if options.Limit != nil {
+		optionStage = append(optionStage, bson.M{"$sort": generateAggregateSortOptions([]string{"_id"})})
+		optionStage = append(optionStage, bson.M{"$limit": options.Limit})
+	}
+	if options.Sort != nil {
+		optionStage = append(optionStage, bson.M{"$sort": generateAggregateSortOptions(sortFields)})
+	}
+
+	return optionStage
+}
+
+func generateAggregateAsColumnName(function, column string) string {
+	return fmt.Sprintf("%s__%s__%s", utils.GraphQLAggregate, function, column)
+}
+
+func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
+	v := strings.Split(asColumnName, "__")
+	if len(v) != 3 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
+		return "", "", false
+	}
+	return v[1], v[2], true
+}
+
+func getNestedObject(doc map[string]interface{}) {
+	resultObj := make(map[string]interface{})
+	for asColumnName, value := range doc {
+		functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
+		if isAggregateColumn {
+			delete(doc, asColumnName)
+			funcValue, ok := resultObj[functionName]
+			if !ok {
+
+				// NOTE: This case occurs for count function with no column name (using * operator instead)
+				if columnName == "" {
+					resultObj[functionName] = value
+				} else {
+					resultObj[functionName] = map[string]interface{}{columnName: value}
+				}
+				continue
+			}
+			funcValue.(map[string]interface{})[columnName] = value
+		}
+		groupDoc, ok := doc["_id"]
+		if ok {
+			for key, value := range groupDoc.(map[string]interface{}) {
+				doc[key] = value
+			}
+		}
+	}
+	if len(resultObj) > 0 {
+		doc[utils.GraphQLAggregate] = resultObj
+	}
+	delete(doc, "_id")
 }

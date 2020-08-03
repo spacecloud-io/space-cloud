@@ -46,6 +46,9 @@ func GetIngressGlobal(project, commandName string) ([]*model.SpecObject, error) 
 	}
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
+		if item == nil {
+			continue
+		}
 		spec := item.(map[string]interface{})
 		meta := map[string]string{"project": project}
 		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/routing/ingress/global", commandName, meta, spec)

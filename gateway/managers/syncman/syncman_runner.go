@@ -322,7 +322,7 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 		projectID := vars["project"]
 		utils.LogDebug("Forwarding request to runner for getting service logs", "syncman", "HandleRunnerGetServiceLogs", map[string]interface{}{})
 
-		_, err := admin.IsTokenValid(userToken, "service-logs", "read", map[string]string{"project": projectID})
+		_, err := admin.IsTokenValid(userToken, "service", "read", map[string]string{"project": projectID})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())

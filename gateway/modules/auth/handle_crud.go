@@ -140,7 +140,7 @@ func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias
 	}
 
 	attr := map[string]string{"project": project, "db": dbAlias}
-	return actions, model.RequestParams{Claims: auth, Resource: "db-prepared-sql", Op: "access", Attributes: attr}, nil
+	return actions, model.RequestParams{Claims: auth, Resource: "db-prepared-query", Op: "access", Attributes: attr}, nil
 }
 
 func (m *Module) authenticateCrudRequest(dbAlias, col, token string, op utils.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {

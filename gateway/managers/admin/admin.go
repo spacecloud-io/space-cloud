@@ -48,8 +48,8 @@ func (m *Manager) GetConfig() *config.Admin {
 }
 
 // LoadEnv gets the env
-func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string) {
+func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string, string, string, string, string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	return m.isProd, "space-cloud-open", m.quotas, "/mission-control/login"
+	return m.isProd, "space-cloud-open", m.quotas, "/mission-control/login", "", "", "", ""
 }

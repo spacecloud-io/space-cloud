@@ -454,7 +454,7 @@ func TestManager_GetPreparedQuery(t *testing.T) {
 			name: "dbAlias is empty",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "*", id: "responseID", project: "1"},
-			want: []interface{}{&preparedQueryResponse{ID: "key", DBAlias: "*", SQL: "field"}},
+			want: []interface{}{&preparedQueryResponse{ID: "key", DBAlias: "alias", SQL: "field"}},
 		},
 		{
 			name:    "dbAlias is not present in config",

@@ -42,7 +42,7 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		ctx2, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
 
-		result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, reqParams, params)
+		_, result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, reqParams, params)
 		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(result, err)
 	}()

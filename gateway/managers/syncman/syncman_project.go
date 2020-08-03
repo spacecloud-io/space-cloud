@@ -17,7 +17,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	defer s.lock.Unlock()
 
 	if !s.adminMan.ValidateProjectSyncOperation(s.projectConfig, project) {
-		return http.StatusInternalServerError, fmt.Errorf("upgrade your plan to create more projects")
+		return http.StatusUpgradeRequired, fmt.Errorf("upgrade your plan to create more projects")
 	}
 
 	// set default context time
@@ -42,7 +42,6 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			p.DockerRegistry = project.DockerRegistry
 			p.ContextTimeGraphQL = project.ContextTimeGraphQL
 			p.IsIntegration = project.IsIntegration
-
 			// Mark project as existing
 			doesProjectExists = true
 			project = p
@@ -52,12 +51,13 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	if !doesProjectExists {
 		// Append project with default modules to projects array
 		project.Modules = &config.Modules{
-			FileStore:   &config.FileStore{},
-			Services:    &config.ServicesModule{},
-			Auth:        map[string]*config.AuthStub{},
-			Crud:        map[string]*config.CrudStub{},
-			Routes:      []*config.Route{},
-			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
+			FileStore:    &config.FileStore{},
+			Services:     &config.ServicesModule{},
+			Auth:         map[string]*config.AuthStub{},
+			Crud:         map[string]*config.CrudStub{},
+			Routes:       []*config.Route{},
+			GlobalRoutes: &config.GlobalRoutesConfig{},
+			LetsEncrypt:  config.LetsEncrypt{WhitelistedDomains: []string{}},
 		}
 		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 
@@ -76,7 +76,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 }
 
 // DeleteProjectConfig applies delete project config command to the raft log
-func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) (int, error) {
+func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

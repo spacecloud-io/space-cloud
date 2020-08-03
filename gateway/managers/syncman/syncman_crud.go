@@ -148,7 +148,7 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 			return http.StatusOK, []interface{}{&preparedQueryResponse{ID: id, DBAlias: dbAlias, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments, Rule: preparedQuery.Rule}}, nil
 		}
 		preparedQuery := databaseConfig.PreparedQueries
-		var coll []interface{} = make([]interface{}, 0)
+		coll := make([]interface{}, 0)
 		for key, value := range preparedQuery {
 			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: value.Rule})
 		}
@@ -156,9 +156,9 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 	}
 	databases := projectConfig.Modules.Crud
 	coll := make([]interface{}, 0)
-	for _, dbInfo := range databases {
+	for alias, dbInfo := range databases {
 		for key, value := range dbInfo.PreparedQueries {
-			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: value.Rule})
+			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: alias, SQL: value.SQL, Arguments: value.Arguments, Rule: value.Rule})
 		}
 	}
 	return http.StatusOK, coll, nil
@@ -564,7 +564,7 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 		return http.StatusBadRequest, nil, err
 	}
 
-	if format == "JSON" {
+	if format == "json" {
 		a := s.modules.GetSchemaModuleForSyncMan()
 		if dbAlias != "*" && col != "*" {
 			collectionInfo, p := a.GetSchema(dbAlias, col)
