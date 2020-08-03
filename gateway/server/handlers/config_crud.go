@@ -409,6 +409,11 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		if exists {
 			col = colQuery[0]
 		}
+		formatQuery, exists := r.URL.Query()["format"]
+		format := "graphql"
+		if exists {
+			format = formatQuery[0]
+		}
 
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col})
@@ -423,7 +428,8 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		status, schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col, reqParams)
+
+		status, schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col, format, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return

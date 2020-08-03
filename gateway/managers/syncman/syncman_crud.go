@@ -549,8 +549,12 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 	return http.StatusOK, []interface{}{coll}, nil
 }
 
+type dbJSONSchemaResponse struct {
+	Fields []*model.FieldType `json:"fields"`
+}
+
 // GetSchemas gets schemas from config
-func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string, params model.RequestParams) (int, []interface{}, error) {
+func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) (int, []interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -558,6 +562,46 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string, 
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
+	}
+
+	if format == "json" {
+		a := s.modules.GetSchemaModuleForSyncMan()
+		if dbAlias != "*" && col != "*" {
+			collectionInfo, p := a.GetSchema(dbAlias, col)
+			if !p {
+				return http.StatusBadRequest, nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
+			}
+			fields := []*model.FieldType{}
+			for _, v := range collectionInfo {
+				fields = append(fields, v)
+			}
+			return http.StatusOK, []interface{}{map[string]*dbJSONSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Fields: fields}}}, nil
+		} else if dbAlias != "*" {
+			collections := projectConfig.Modules.Crud[dbAlias].Collections
+			coll := map[string]*dbJSONSchemaResponse{}
+			for key := range collections {
+				collectionInfo, _ := a.GetSchema(dbAlias, key)
+				fields := []*model.FieldType{}
+				for _, v := range collectionInfo {
+					fields = append(fields, v)
+				}
+				coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &dbJSONSchemaResponse{Fields: fields}
+			}
+			return http.StatusOK, []interface{}{coll}, nil
+		}
+		databases := projectConfig.Modules.Crud
+		coll := map[string]*dbJSONSchemaResponse{}
+		for dbName, dbInfo := range databases {
+			for key := range dbInfo.Collections {
+				collectionInfo, _ := a.GetSchema(dbName, key)
+				fields := []*model.FieldType{}
+				for _, v := range collectionInfo {
+					fields = append(fields, v)
+				}
+				coll[fmt.Sprintf("%s-%s", dbName, key)] = &dbJSONSchemaResponse{Fields: fields}
+			}
+		}
+		return http.StatusOK, []interface{}{coll}, nil
 	}
 
 	if dbAlias != "*" && col != "*" {

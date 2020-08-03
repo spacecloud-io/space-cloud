@@ -138,6 +138,10 @@ func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAli
 	c := m.Called(ctx, dbAlias, logicalDBName, tables)
 	return c.Error(0)
 }
+func (m *mockSchemaEventingInterface) GetSchema(dbAlias, col string) (model.Fields, bool) {
+	c := m.Called(dbAlias, col)
+	return c.Get(0).(model.Fields), c.Bool(1)
+}
 
 type mockFileStoreEventingInterface struct {
 	mock.Mock
