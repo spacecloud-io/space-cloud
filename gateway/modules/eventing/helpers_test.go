@@ -89,6 +89,9 @@ func (new *a) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string
 func (new *a) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
 	panic("implement me")
 }
+func (new *a) GetSchema(dbAlias, col string) (model.Fields, bool) {
+	return nil, false
+}
 
 func TestModule_validate(t *testing.T) {
 	authModule := auth.Init("1", &crud.Module{}, nil)
