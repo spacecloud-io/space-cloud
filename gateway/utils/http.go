@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/rs/cors"
@@ -26,14 +24,14 @@ type headers interface {
 }
 
 // MakeHTTPRequest fires an http request and returns a response
-func MakeHTTPRequest(ctx context.Context, request *HTTPRequest, vPtr interface{}) error {
+func MakeHTTPRequest(ctx context.Context, request *HTTPRequest, vPtr interface{}) (int, error) {
 	// Marshal json into byte array
 	data, _ := json.Marshal(request.Params)
 
 	// Make a request object
 	req, err := http.NewRequestWithContext(ctx, request.Method, request.URL, bytes.NewBuffer(data))
 	if err != nil {
-		return err
+		return http.StatusInternalServerError, err
 	}
 
 	// Add the headers
@@ -58,21 +56,17 @@ func MakeHTTPRequest(ctx context.Context, request *HTTPRequest, vPtr interface{}
 	req = req.WithContext(ctx)
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return http.StatusInternalServerError, err
 	}
 	defer CloseTheCloser(resp.Body)
 
 	if resp.StatusCode != 204 {
 		if err := json.NewDecoder(resp.Body).Decode(vPtr); err != nil {
-			return err
+			return resp.StatusCode, err
 		}
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return errors.New("service responded with status code " + strconv.Itoa(resp.StatusCode))
-	}
-
-	return nil
+	return resp.StatusCode, nil
 }
 
 // GetTokenFromHeader returns the token from the request header

@@ -88,7 +88,8 @@ func (holder *resultsHolder) fillErrorMessage(err error) {
 }
 
 func (m *Module) getLoader(key string) (*dataloader.Loader, bool) {
-	//  Rlock is not required since the function calling has already acquired Rlock
+	m.dataLoader.dataLoaderLock.RLock()
+	defer m.dataLoader.dataLoaderLock.RUnlock()
 	loader, ok := m.dataLoader.loaderMap[key]
 	return loader, ok
 }

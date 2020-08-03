@@ -38,7 +38,7 @@ func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token stri
 	}
 
 	attr := map[string]string{"project": project, "type": event.Type}
-	return model.RequestParams{Claims: auth, Resource: "eventing-trigger", Op: "access", Attributes: attr}, nil
+	return model.RequestParams{Claims: auth, Resource: "eventing-queue", Op: "access", Attributes: attr}, nil
 }
 
 func (m *Module) getEventingRule(eventType string) (*config.Rule, error) {
