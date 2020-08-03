@@ -1252,7 +1252,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		{
 			name: "dbAlias and col are not empty and format JSON and got schemas",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", format: "JSON"},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", format: "json"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
@@ -1279,7 +1279,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		{
 			name: "dbAlias is not empty and format is JSON and got schemas",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "*", dbAlias: "alias", project: "1", format: "JSON"},
+			args: args{ctx: context.Background(), col: "*", dbAlias: "alias", project: "1", format: "json"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
@@ -1306,7 +1306,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		{
 			name: "dbAlias and col are empty and format is JSON and got schemas",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "1", format: "JSON"},
+			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "1", format: "json"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
