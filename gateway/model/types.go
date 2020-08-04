@@ -34,6 +34,7 @@ type SchemaEventingInterface interface {
 	SchemaValidator(col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
 	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error
 	SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error)
+	GetSchema(dbAlias, col string) (Fields, bool)
 }
 
 // CrudEventingInterface is an interface consisting of functions of crud module used by Eventing module
