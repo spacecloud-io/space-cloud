@@ -233,10 +233,14 @@ func (m *Module) CloseConfig() error {
 	for k := range m.dataLoader.loaderMap {
 		delete(m.dataLoader.loaderMap, k)
 	}
-	err := m.block.Close()
-	if err != nil {
-		return utils.LogError("Unable to close block in crud", "crud", "CloseConfig", err)
+
+	if m.block != nil {
+		err := m.block.Close()
+		if err != nil {
+			return utils.LogError("Unable to close block in crud", "crud", "CloseConfig", err)
+		}
 	}
+
 	m.closeBatchOperation()
 
 	return nil
