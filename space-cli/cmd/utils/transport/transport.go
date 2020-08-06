@@ -104,6 +104,9 @@ func (d *def) GetLogs(url string) error {
 		_ = utils.LogError(fmt.Sprintf("error while getting service logs got error %s", respBody["error"]), nil)
 		return fmt.Errorf("received invalid status code (%d)", resp.StatusCode)
 	}
+	if resp.StatusCode == http.StatusNoContent {
+		return nil
+	}
 
 	rd := bufio.NewReader(resp.Body)
 
@@ -117,7 +120,7 @@ func (d *def) GetLogs(url string) error {
 			return err
 		}
 		if str != "\n" {
-			fmt.Println(str)
+			fmt.Print(str)
 			time.Sleep(500 * time.Millisecond)
 		}
 	}

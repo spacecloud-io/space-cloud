@@ -164,7 +164,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			if m.block.IsSame(connectionString, v.DBName) {
 				continue
 			}
-
 			// Close the previous database connection
 			if err := m.block.Close(); err != nil {
 				_ = utils.LogError("Unable to close database connections", "crud", "set-config", err)
@@ -175,7 +174,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		var err error
 
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
-		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn, v.DBName)
+		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, connectionString, v.DBName)
 
 		if v.Enabled {
 			if err != nil {

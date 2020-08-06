@@ -107,7 +107,9 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 			continue
 		}
 		_, _, err := d.createContainer(ctx, index, task, service, []model.Port{}, containerName)
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	// Don't forget to set the service routing initially
@@ -178,9 +180,7 @@ func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, 
 				_ = utils.LogError("Unable to read logs from container", "docker", "get-logs", err)
 				return
 			}
-			// Starting 8 bytes of data contains some meta data regarding each log that docker sends
-			// ignoring the first 8 bytes, send rest of the data
-			fmt.Fprint(pipeWriter, str[8:])
+			fmt.Fprint(pipeWriter, str)
 		}
 	}()
 	return pipeReader, nil
@@ -370,13 +370,13 @@ func (d *Docker) createContainer(ctx context.Context, index int, task model.Task
 func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, version string) error {
 
 	// list all service containers
-	networkArgs := filters.Arg("network", getNetworkName(d.clusterName))
+	networkArgs := filters.Arg("label", "app=service")
 	nameArgs := filters.Arg("name", getCurrentProjectServiceContainersName(projectID, serviceID, version, d.clusterName))
 	if serviceID == "" || version == "" {
 		nameArgs = filters.Arg("name", projectID)
 	}
 
-	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(networkArgs, nameArgs), All: true})
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(nameArgs, networkArgs), All: true})
 	if err != nil {
 		logrus.Errorf("error deleting service in docker unable to list containers got error message - %v", err)
 		return err
@@ -423,9 +423,9 @@ func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, versio
 }
 
 func (d *Docker) checkIfLastService(ctx context.Context, projectID, serviceID string) (bool, error) {
-	networkArgs := filters.Arg("network", getNetworkName(d.clusterName))
+	networkArgs := filters.Arg("label", "app=service")
 	args := filters.Arg("name", getLastServiceNameLabel(projectID, serviceID, d.clusterName))
-	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(networkArgs, args), All: true})
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args, networkArgs), All: true})
 	if err != nil {
 		logrus.Errorf("Could not list remaining containers got error message - %v", err)
 		return false, err
@@ -504,10 +504,9 @@ func getLastServiceNameLabel(projectID, serviceID, clusterID string) string {
 
 // GetServices gets the specified service info from docker container
 func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
-
-	networkArgs := filters.Arg("network", getNetworkName(d.clusterName))
+	networkArgs := filters.Arg("label", "app=service")
 	args := filters.Arg("name", getCurrentProjectServicesName(d.clusterName, projectID))
-	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(networkArgs, args), All: true})
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args, networkArgs), All: true})
 	if err != nil {
 		logrus.Errorf("error getting service in docker unable to list containers got error message - %v", err)
 		return nil, err
