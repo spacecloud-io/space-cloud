@@ -683,7 +683,7 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]*mod
 		_, _, serviceID, version, _ := splitServiceContainerName(containerInfo.Names[0])
 
 		id := fmt.Sprintf("%s--%s", serviceID, version)
-		_, ok := serviceMapper[serviceID]
+		_, ok := serviceMapper[id]
 		if !ok {
 			serviceMapper[id] = []string{containerInfo.ID}
 			continue
