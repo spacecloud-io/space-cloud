@@ -28,8 +28,7 @@ func GetSubCommands() []*cobra.Command {
 		},
 		RunE: actionGetServiceLogs,
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			switch len(args) {
-			case 0:
+			if len(args) == 0 {
 				project, check := utils.GetProjectID()
 				if !check {
 					utils.LogDebug("Project not specified in flag", nil)
