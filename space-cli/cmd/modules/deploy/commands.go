@@ -37,6 +37,7 @@ func Commands() []*cobra.Command {
 	commandDeploy.Flags().StringP("docker-file", "", "Dockerfile", "The path of the docker file")
 	commandDeploy.Flags().StringP("service-file", "", "service.yaml", "The path of the service config file")
 	commandDeploy.Flags().BoolP("prepare", "", false, "Prepare the configuration used for deploying service")
+	commandDeploy.Flag("service-file").Annotations = map[string][]string{cobra.BashCompFilenameExt: {"yaml", "yml"}}
 
 	return []*cobra.Command{commandDeploy}
 }

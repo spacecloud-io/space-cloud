@@ -3,7 +3,6 @@ package syncman
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -121,10 +120,6 @@ func (s *Manager) Start(port int) error {
 			return
 		}
 		cluster := clusters[0]
-
-		if reflect.DeepEqual(cluster, s.adminMan.GetConfig()) {
-			return
-		}
 
 		s.lock.Lock()
 		s.projectConfig.Admin = cluster

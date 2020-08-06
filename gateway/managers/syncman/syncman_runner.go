@@ -362,7 +362,15 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 			return
 		}
 		defer utils.CloseTheCloser(response.Body)
-
+		if response.StatusCode != 200 {
+			respBody := map[string]interface{}{}
+			if err := json.NewDecoder(response.Body).Decode(&respBody); err != nil {
+				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("received invalid status code (%d) got error - %v", response.StatusCode, respBody["error"]))
+			return
+		}
 		streamData := false
 		// Copy headers and status code
 		for k, v := range response.Header {
@@ -374,16 +382,6 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 		}
 
 		if streamData {
-			if response.StatusCode != 200 {
-				respBody := map[string]interface{}{}
-				if err := json.NewDecoder(response.Body).Decode(&respBody); err != nil {
-					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
-					return
-				}
-				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("received invalid status code (%d) got error - %v", response.StatusCode, respBody["error"]))
-				return
-			}
-
 			rd := bufio.NewReader(response.Body)
 
 			// get signal when client stops listening
@@ -404,13 +402,13 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 					str, err := rd.ReadString('\n')
 					if err != nil {
 						if err == io.EOF {
-							_ = utils.SendOkayResponse(w)
+							w.WriteHeader(http.StatusNoContent)
 							return
 						}
 						_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 					}
 					if str != "\n" {
-						fmt.Fprintf(w, "%s\n", str)
+						fmt.Fprintf(w, "%s", str)
 						flusher.Flush() // Trigger "chunked" encoding and send a chunk...
 						time.Sleep(500 * time.Millisecond)
 					}

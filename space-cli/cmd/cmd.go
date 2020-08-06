@@ -31,13 +31,21 @@ func GetRootCommand() *cobra.Command {
 	}
 
 	var completionCmd = &cobra.Command{
-		Use:   "completion [bash|zsh] [--no-descriptions]",
-		Short: "Generate completion script",
+		Use:     "completion [bash|zsh]",
+		Short:   "Generate completion script",
+		Example: "For bash:\n echo 'source <(space-cli completion bash)' >>~/.bashrc\n or\n space-cli completion bash > /etc/bash_completion.d/space-cli\n\nFor ZSH:\n source <(space-cli completion zsh)",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := viper.BindPFlag("file", cmd.Flags().Lookup("file"))
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('file')", err)
 			}
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			switch len(args) {
+			case 0:
+				return []string{"bash", "zsh"}, cobra.ShellCompDirectiveDefault
+			}
+			return nil, cobra.ShellCompDirectiveDefault
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			switch args[0] {

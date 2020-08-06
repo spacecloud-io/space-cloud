@@ -1,6 +1,8 @@
 package addons
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -9,6 +11,27 @@ import (
 
 // Commands is the list of commands the addon module exposes
 func Commands() []*cobra.Command {
+	clusterNameAutoComplete := func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		switch len(args) {
+		case 0:
+			credential, err := utils.GetCredentials()
+			if err != nil {
+				utils.LogDebug("Unable to get all the stored credentials", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			accountIDs := []string{}
+			for _, v := range credential.Accounts {
+				arr := strings.Split(v.ID, "--")
+				if arr[0] == "default" {
+					continue
+				}
+				accountIDs = append(accountIDs, arr[0])
+			}
+			return accountIDs, cobra.ShellCompDirectiveDefault
+		}
+		return nil, cobra.ShellCompDirectiveDefault
+	}
+
 	var addCmd = &cobra.Command{
 		Use:           "add",
 		Short:         "Add a add-on to the environment",
@@ -26,6 +49,9 @@ func Commands() []*cobra.Command {
 		RunE: ActionAddRegistry,
 	}
 	addRegistryCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster in which the registry is to be added")
+	if err := addRegistryCmd.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
 
 	var addDatabaseCmd = &cobra.Command{
 		Use:   "database",
@@ -66,6 +92,9 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
 	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
 	addDatabaseCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster in which the database is to be added")
+	if err := addDatabaseCmd.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
 
 	var removeCmd = &cobra.Command{
 		Use:           "remove",
@@ -84,6 +113,9 @@ func Commands() []*cobra.Command {
 		RunE: ActionRemoveRegistry,
 	}
 	removeRegistryCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster from which the registry is to be removed")
+	if err := removeRegistryCmd.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
 
 	var removeDatabaseCmd = &cobra.Command{
 		Use:   "database",
@@ -100,6 +132,9 @@ func Commands() []*cobra.Command {
 	}
 	removeDatabaseCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster from which the database is to be removed")
 	removeDatabaseCmd.Flags().BoolP("auto-remove", "", false, "remove database from space cloud config")
+	if err := removeDatabaseCmd.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
 
 	addCmd.AddCommand(addRegistryCmd)
 	addCmd.AddCommand(addDatabaseCmd)

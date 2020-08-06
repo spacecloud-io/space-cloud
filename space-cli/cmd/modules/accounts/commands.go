@@ -14,7 +14,22 @@ func Commands() []*cobra.Command {
 		Use:   "accounts",
 		Short: "Operations for space-cloud accounts",
 	}
-
+	autoCompleteFunc := func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		switch len(args) {
+		case 0:
+			credential, err := utils.GetCredentials()
+			if err != nil {
+				utils.LogDebug("Unable to get all the stored credentials", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			accountIDs := []string{}
+			for _, v := range credential.Accounts {
+				accountIDs = append(accountIDs, v.ID)
+			}
+			return accountIDs, cobra.ShellCompDirectiveDefault
+		}
+		return nil, cobra.ShellCompDirectiveDefault
+	}
 	var viewAccountsCommand = &cobra.Command{
 		Use:   "view",
 		Short: "list all space-cloud accounts",
@@ -24,46 +39,25 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('show-keys')", nil)
 			}
 		},
-		SilenceErrors: true,
-		RunE:          actionViewAccount,
+		ValidArgsFunction: autoCompleteFunc,
+		SilenceErrors:     true,
+		RunE:              actionViewAccount,
 	}
 
 	var setAccountCommand = &cobra.Command{
-		Use:           "set",
-		Short:         "set the given account as the selected account",
-		SilenceErrors: true,
-		RunE:          actionSetAccount,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			credential, err := utils.GetCredentials()
-			if err != nil {
-				utils.LogDebug("Unable to get all the stored credentials", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			accountIDs := []string{}
-			for _, v := range credential.Accounts {
-				accountIDs = append(accountIDs, v.ID)
-			}
-			return accountIDs, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "set",
+		Short:             "set the given account as the selected account",
+		SilenceErrors:     true,
+		RunE:              actionSetAccount,
+		ValidArgsFunction: autoCompleteFunc,
 	}
 
 	var deleteAccountCommand = &cobra.Command{
-		Use:           "delete",
-		Short:         "deletes the given account",
-		SilenceErrors: true,
-		RunE:          actionDeleteAccount,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			credential, err := utils.GetCredentials()
-			if err != nil {
-				utils.LogDebug("Unable to get all the stored credentials", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			accountIDs := []string{}
-			for _, v := range credential.Accounts {
-				accountIDs = append(accountIDs, v.ID)
-			}
-			return accountIDs, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "delete",
+		Short:             "deletes the given account",
+		SilenceErrors:     true,
+		RunE:              actionDeleteAccount,
+		ValidArgsFunction: autoCompleteFunc,
 	}
 
 	viewAccountsCommand.Flags().BoolP("show-keys", "", false, "shows the keys of the accounts")

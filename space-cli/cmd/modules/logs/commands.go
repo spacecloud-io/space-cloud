@@ -10,7 +10,8 @@ import (
 // GetSubCommands is the list of commands the log module expose
 func GetSubCommands() []*cobra.Command {
 	var getServiceLogs = &cobra.Command{
-		Use: "logs",
+		Use:     "logs [replica-id]",
+		Example: "1) space-cli logs service1--v1 --project myproject --follow\n2) space-cli logs service1--v1 --project myproject --follow --task-id greeting",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := viper.BindPFlag("project", cmd.Flags().Lookup("project"))
 			if err != nil {
@@ -27,19 +28,23 @@ func GetSubCommands() []*cobra.Command {
 		},
 		RunE: actionGetServiceLogs,
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
+			if len(args) == 0 {
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				replicaIDs, err := getServiceStatus(project, "service-status", map[string]string{})
+				if err != nil {
+					utils.LogDebug("Unable to get service status", map[string]interface{}{"error": err})
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				return replicaIDs, cobra.ShellCompDirectiveDefault
 			}
-			replicaIDs, err := getServiceStatus(project, "service-status", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			return replicaIDs, cobra.ShellCompDirectiveDefault
+			return nil, cobra.ShellCompDirectiveDefault
 		},
 	}
-	getServiceLogs.Flags().StringP("project", "", "", "The unique id for the project")
+
 	getServiceLogs.Flags().StringP("task-id", "", "", "The unique id for the task")
 	getServiceLogs.Flags().BoolP("follow", "", false, "Follow log output")
 	return []*cobra.Command{getServiceLogs}
@@ -49,6 +54,10 @@ func actionGetServiceLogs(cmd *cobra.Command, args []string) error {
 	project, check := utils.GetProjectID()
 	if !check {
 		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
+	if len(args) == 0 {
+		_ = utils.LogError("Replica name not provide", nil)
 		return nil
 	}
 	replicaID := args[0]

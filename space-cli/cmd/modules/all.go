@@ -63,10 +63,10 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 
 	objs, err := services.GetServicesSecrets(projectName, "secret", map[string]string{})
 	if err != nil {
-		return err
+		return nil
 	}
 	if err = createConfigFile("02", "secrets", objs); err != nil {
-		return err
+		return nil
 	}
 
 	objs, err = database.GetDbConfig(projectName, "db-config", map[string]string{})

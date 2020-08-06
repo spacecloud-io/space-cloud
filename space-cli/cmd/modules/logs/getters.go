@@ -28,8 +28,6 @@ func GetServiceLogs(project, taskID, replicaID string, isFollow bool) error {
 }
 
 func getServiceStatus(project, commandName string, params map[string]string) ([]string, error) {
-	url := fmt.Sprintf("/v1/runner/%s/services/status", project)
-
 	//ReplicaInfo describes structure of replica info
 	type ReplicaInfo struct {
 		ID     string `json:"id" yaml:"id"`
@@ -46,7 +44,7 @@ func getServiceStatus(project, commandName string, params map[string]string) ([]
 		Result []*ServiceStatus `json:"result,omitempty"`
 	}
 	payload := new(temp)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.Get(http.MethodGet, fmt.Sprintf("/v1/runner/%s/services/status", project), params, payload); err != nil {
 		return nil, err
 	}
 	replicaIDs := make([]string, 0)
