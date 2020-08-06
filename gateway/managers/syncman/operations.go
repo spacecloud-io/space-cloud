@@ -78,7 +78,8 @@ func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfi
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.projectConfig.Admin.ClusterConfig = req
+	s.projectConfig.Admin.ClusterConfig.LetsEncryptEmail = req.LetsEncryptEmail
+	s.projectConfig.Admin.ClusterConfig.EnableTelemetry = req.EnableTelemetry
 	if err := s.store.SetAdminConfig(ctx, s.projectConfig.Admin); err != nil {
 		return http.StatusInternalServerError, err
 	}

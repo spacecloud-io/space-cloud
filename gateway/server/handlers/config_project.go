@@ -123,6 +123,7 @@ func HandleGetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
+		clusterConfig.Credentials = adminMan.GetCredentials()
 
 		_ = utils.SendResponse(w, status, model.Response{Result: clusterConfig})
 	}

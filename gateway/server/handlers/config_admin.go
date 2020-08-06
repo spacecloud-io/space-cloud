@@ -15,22 +15,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// HandleGetCredentials is an endpoint handler which gets username pass
-func HandleGetCredentials(adminMan *admin.Manager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Get the JWT token from header
-		defer utils.CloseTheCloser(r.Body)
-
-		// Check if the request is authorised
-		if _, err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r), "creds", "read", nil); err != nil {
-			logrus.Errorf("Failed to validate token for set eventing schema - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: adminMan.GetCredentials()})
-	}
-}
-
 // HandleLoadEnv returns the handler to load the projects via a REST endpoint
 func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +75,7 @@ func HandleAdminLogin(adminMan *admin.Manager) http.HandlerFunc {
 // HandleRefreshToken creates the refresh-token endpoint
 func HandleRefreshToken(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		adminMan.GetCredentials()
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)

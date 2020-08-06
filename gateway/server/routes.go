@@ -16,7 +16,6 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	}
 
 	router := mux.NewRouter()
-	router.Methods(http.MethodGet).Path("/v1/config/credentials").HandlerFunc(handlers.HandleGetCredentials(s.managers.Admin()))
 	router.Methods(http.MethodGet).Path("/v1/config/permissions").HandlerFunc(handlers.HandleGetPermissions(s.managers.Admin()))
 
 	// Initialize the routes for config management
