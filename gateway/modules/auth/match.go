@@ -86,10 +86,10 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 
 func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Rule, crud model.CrudAuthInterface, args, auth map[string]interface{}) (*model.PostProcess, error) {
 	// Adjust the find object to load any variables referenced from state
-	rule.Find = utils.Adjust(rule.Find, args).(map[string]interface{})
+	find := utils.Adjust(rule.Find, args).(map[string]interface{})
 
 	// Create a new read request
-	req := &model.ReadRequest{Find: rule.Find, Operation: utils.All}
+	req := &model.ReadRequest{Find: find, Operation: utils.All}
 
 	// Execute the read request
 	attr := map[string]string{"project": project, "db": rule.DB, "col": rule.Col}

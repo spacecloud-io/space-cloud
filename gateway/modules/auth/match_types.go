@@ -152,6 +152,7 @@ func matchNumber(rule *config.Rule, args map[string]interface{}) error {
 			return ErrIncorrectRuleFieldType
 		}
 	}
+
 	switch rule.Eval {
 	case "==":
 		if f1 == f2 {
