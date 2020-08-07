@@ -84,7 +84,7 @@ func HandleAdminLogin(adminMan *admin.Manager) http.HandlerFunc {
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"token": token})
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"token": token, "clusterId": adminMan.GetClusterID()})
 	}
 }
 

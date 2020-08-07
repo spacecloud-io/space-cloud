@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/database"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
@@ -127,6 +128,25 @@ func Commands() []*cobra.Command {
 			if err := viper.BindPFlag("auto-remove", cmd.Flags().Lookup("auto-remove")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('auto-remove')", nil)
 			}
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) == 0 {
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := database.GetDbConfig(project, "db-config", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var dbAlias []string
+				for _, v := range objs {
+					dbAlias = append(dbAlias, v.Meta["dbAlias"])
+				}
+				return dbAlias, cobra.ShellCompDirectiveDefault
+			}
+			return nil, cobra.ShellCompDirectiveDefault
 		},
 		RunE: ActionRemoveDatabase,
 	}
