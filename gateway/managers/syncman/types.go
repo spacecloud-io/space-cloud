@@ -50,7 +50,7 @@ type preparedQueryResponse struct {
 	ID        string       `json:"id"`
 	DBAlias   string       `json:"db"`
 	SQL       string       `json:"sql"`
-	Arguments []string     `json:"arguments" yaml:"arguments"`
+	Arguments []string     `json:"args"`
 	Rule      *config.Rule `json:"rule"`
 }
 

@@ -314,7 +314,7 @@ func (s *Schema) addNewTable(logicalDBName, dbType, dbAlias, realColName string,
 		return "", utils.LogError("Primary key not found, make sure there is a primary key on a field with type (ID)", "schema", "addNewTable", nil)
 	}
 	if utils.DBType(dbType) == utils.MySQL {
-		return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `)COLLATE Latin1_General_CS;`, nil
+		return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `) COLLATE Latin1_General_CS;`, nil
 	}
 	return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `);`, nil
 }

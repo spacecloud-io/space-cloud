@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
@@ -22,11 +23,10 @@ func DockerStop(clusterName string) error {
 		return utils.LogError("Unable to initialize docker client", err)
 	}
 
-	networkArgs := filters.Arg("network", utils.GetNetworkName(clusterName))
-	argsServices := filters.Arg("label", "app=service")
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(networkArgs, argsServices), All: true})
+	containers, err := utils.GetContainers(ctx, docker, clusterName, model.ServiceContainers)
 	if err != nil {
-		return utils.LogError("Unable to list space-cloud services containers", err)
+		_ = utils.LogError(fmt.Sprintf("Unable to list containers - %s", err.Error()), nil)
+		return err
 	}
 
 	for _, container := range containers {

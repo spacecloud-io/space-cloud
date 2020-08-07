@@ -1256,7 +1256,8 @@ func TestManager_GetSchemas(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 			},
 			schemaMockArgs: []mockArgs{
@@ -1283,7 +1284,8 @@ func TestManager_GetSchemas(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 			},
 			schemaMockArgs: []mockArgs{
@@ -1310,7 +1312,8 @@ func TestManager_GetSchemas(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 			},
 			schemaMockArgs: []mockArgs{

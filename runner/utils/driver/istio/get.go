@@ -118,7 +118,10 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 		}
 
 		// set whitelist
-		authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectID).Get(ctx, getAuthorizationPolicyName(service.ProjectID, service.ID, service.Version), metav1.GetOptions{})
+		authPolicy, err := i.istio.SecurityV1beta1().AuthorizationPolicies(projectID).Get(ctx, getAuthorizationPolicyName(service.ProjectID, service.ID, service.Version), metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
 		if len(authPolicy.Spec.Rules[0].From) != 0 {
 			for _, rule := range authPolicy.Spec.Rules[0].From {
 				for _, projectID := range rule.Source.Namespaces {
