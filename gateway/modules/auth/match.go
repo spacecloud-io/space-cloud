@@ -123,15 +123,17 @@ func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Ru
 
 func (m *Module) matchOr(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
 	// append all parameters returned by all clauses! and then return mainStruct
+	var finalError error
 	for _, r := range rule.Clauses {
 		postProcess, err := m.matchRule(ctx, projectID, r, args, auth)
 		if err == nil {
 			// if condition is satisfied -> exit the function
 			return postProcess, nil
 		}
+		finalError = err
 	}
 	// if condition is not satisfied -> return empty model.PostProcess and error
-	return nil, formatError(rule, ErrIncorrectMatch)
+	return nil, formatError(rule, finalError)
 }
 
 func match(rule *config.Rule, args map[string]interface{}) error {
