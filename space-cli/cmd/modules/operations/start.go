@@ -7,8 +7,10 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 	"github.com/txn2/txeh"
+
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // DockerStart restarts the services which might have been stopped for any reason
@@ -107,22 +109,34 @@ func DockerStart(clusterName string) error {
 	}
 
 	// Get the list of the other containers we need to start
-	argsNetwork = filters.Arg("network", utils.GetNetworkName(clusterName))
-	argsServices := filters.Arg("label", "app=service")
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsServices), All: true})
+	containers, err := utils.GetContainers(ctx, docker, clusterName, model.ServiceContainers)
 	if err != nil {
-		return utils.LogError("Unable to list space-cloud services containers", err)
+		_ = utils.LogError(fmt.Sprintf("Unable to list containers - %s", err.Error()), nil)
+		return err
 	}
 
+	serviceTaskContainer := make([]types.Container, 0)
 	// Loop over each container and start them
 	for _, container := range containers {
-		// First start the container
-		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), err)
-		}
-
 		// Get the container's info
 		info, err := docker.ContainerInspect(ctx, container.ID)
+		if err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), err)
+		}
+
+		isServiceTaskContainer := len(info.NetworkSettings.Networks) == 0
+
+		if !isServiceTaskContainer {
+			if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
+				return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), err)
+			}
+		} else {
+			// this is a service task container started in the network of a service task container whose id equal to service id
+			serviceTaskContainer = append(serviceTaskContainer, container)
+			continue
+		}
+
+		info, err = docker.ContainerInspect(ctx, container.ID)
 		if err != nil {
 			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), err)
 		}
@@ -140,6 +154,12 @@ func DockerStart(clusterName string) error {
 		// Add them back. The general domain will point to the runner while the internal service domain will point to the actual container
 		hosts.AddHost(runnerIP, generalDomain)
 		hosts.AddHost(info.NetworkSettings.Networks[utils.GetNetworkName(clusterName)].IPAddress, internalDomain)
+	}
+
+	for _, container := range serviceTaskContainer {
+		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), err)
+		}
 	}
 
 	// Save the hosts file before continuing

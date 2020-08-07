@@ -164,7 +164,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			if m.block.IsSame(connectionString, v.DBName) {
 				continue
 			}
-
 			// Close the previous database connection
 			if err := m.block.Close(); err != nil {
 				_ = utils.LogError("Unable to close database connections", "crud", "set-config", err)
@@ -175,7 +174,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		var err error
 
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
-		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn, v.DBName)
+		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, connectionString, v.DBName)
 
 		if v.Enabled {
 			if err != nil {
@@ -233,10 +232,14 @@ func (m *Module) CloseConfig() error {
 	for k := range m.dataLoader.loaderMap {
 		delete(m.dataLoader.loaderMap, k)
 	}
-	err := m.block.Close()
-	if err != nil {
-		return utils.LogError("Unable to close block in crud", "crud", "CloseConfig", err)
+
+	if m.block != nil {
+		err := m.block.Close()
+		if err != nil {
+			return utils.LogError("Unable to close block in crud", "crud", "CloseConfig", err)
+		}
 	}
+
 	m.closeBatchOperation()
 
 	return nil

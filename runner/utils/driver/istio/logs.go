@@ -50,9 +50,7 @@ func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, r
 				_ = utils.LogError("Unable to read logs from container", "k8s", "get-logs", err)
 				return
 			}
-			// starting 8 bytes of data contains some meta data regarding each log that docker sends
-			// ignoring the first 8 bytes, send rest of the data
-			fmt.Fprint(pipeWriter, str[8:])
+			fmt.Fprint(pipeWriter, str)
 		}
 	}()
 	return pipeReader, nil

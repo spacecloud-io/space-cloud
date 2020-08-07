@@ -92,6 +92,16 @@ func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestPara
 	return http.StatusOK, s.projectConfig.Admin.ClusterConfig, nil
 }
 
+//SetAdminConfig sets admin config
+func (s *Manager) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	utils.LogDebug("Storing the admin config", "syncman", "SetAdminConfig", map[string]interface{}{"cluster": cluster})
+
+	return s.store.SetAdminConfig(ctx, cluster)
+}
+
 // GetConfig returns the config present in the state
 func (s *Manager) GetConfig(projectID string) (*config.Project, error) {
 	s.lock.RLock()

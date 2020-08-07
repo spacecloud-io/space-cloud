@@ -122,7 +122,7 @@ func generateIngressGlobal() (*model.SpecObject, error) {
 		return nil, err
 	}
 	headersOperation := ""
-	if err := input.Survey.AskOne(&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &headersOperation); err != nil {
+	if err := input.Survey.AskOne(&survey.Select{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &headersOperation); err != nil {
 		return nil, err
 	}
 
@@ -135,7 +135,7 @@ func generateIngressGlobal() (*model.SpecObject, error) {
 		return nil, err
 	}
 	resHeadersOperation := ""
-	if err := input.Survey.AskOne(&survey.MultiSelect{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &resHeadersOperation); err != nil {
+	if err := input.Survey.AskOne(&survey.Select{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &resHeadersOperation); err != nil {
 		return nil, err
 	}
 

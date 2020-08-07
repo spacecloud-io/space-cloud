@@ -110,7 +110,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 	clusterID := fmt.Sprintf("%s--%s", clusterName, randomdata.SillyName())
 
 	selectedAccount := model.Account{
-		ID:        clusterID,
+		ID:        clusterName,
 		UserName:  username,
 		Key:       key,
 		ServerURL: "http://localhost:" + portHTTPValue,

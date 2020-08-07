@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/input"
-	"github.com/stretchr/testify/mock"
 )
 
 func Test_generateIngressRouting(t *testing.T) {
@@ -679,7 +680,7 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "set"},
 				},
 			},
@@ -705,7 +706,7 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "set"},
 				},
 				{
@@ -736,7 +737,7 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "set"},
 				},
 				{
@@ -772,7 +773,7 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "set"},
 				},
 				{
@@ -787,7 +788,7 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.MultiSelect{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "set"},
 				},
 			},
@@ -813,7 +814,7 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.MultiSelect{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "set"},
 				},
 				{
@@ -828,7 +829,7 @@ func Test_generateIngressGlobal(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.MultiSelect{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "set"},
 				},
 			},

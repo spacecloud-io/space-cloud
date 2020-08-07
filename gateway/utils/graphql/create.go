@@ -35,7 +35,7 @@ func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, tok
 	var reqParams model.RequestParams
 	for _, req := range reqs {
 		r := &model.CreateRequest{Document: req.Document, Operation: req.Operation}
-		reqParams, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, dbAlias, req.Col, token, r)
+		reqParams, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, req.DBAlias, req.Col, token, r)
 		if err != nil {
 			return model.RequestParams{}, nil, nil, err
 		}

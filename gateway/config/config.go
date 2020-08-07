@@ -14,7 +14,7 @@ type Config struct {
 // ClusterConfig holds the cluster level configuration
 type ClusterConfig struct {
 	LetsEncryptEmail string `json:"letsencryptEmail" yaml:"letsencryptEmail"`
-	EnableMetrics    bool   `json:"enableMetrics" yaml:"enableMetrics"`
+	EnableTelemetry  bool   `json:"enableTelemetry" yaml:"enableTelemetry"`
 }
 
 // Project holds the project level configuration

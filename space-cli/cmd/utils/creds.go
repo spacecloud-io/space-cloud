@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"fmt"
+
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/file"
 
 	"github.com/ghodss/yaml"
@@ -15,6 +17,10 @@ func getSelectedAccount() (*model.Account, error) {
 	credential, err := GetCredentials()
 	if err != nil {
 		return nil, err
+	}
+
+	if len(credential.Accounts) == 0 {
+		return nil, fmt.Errorf("No accounts found, Add an account by created a space cloud cluster")
 	}
 
 	var account *model.Account

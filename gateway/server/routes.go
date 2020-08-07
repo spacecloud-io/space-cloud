@@ -27,8 +27,8 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleApplyProject(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/generate-internal-token").HandlerFunc(handlers.HandleGenerateTokenForMissionControl(s.managers.Admin(), s.managers.Sync()))
-	router.Methods(http.MethodGet).Path("/v1/config/global-config").HandlerFunc(handlers.HandleGetClusterConfig(s.managers.Admin(), s.managers.Sync()))
-	router.Methods(http.MethodPost).Path("/v1/config/global-config").HandlerFunc(handlers.HandleSetClusterConfig(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodGet).Path("/v1/config/cluster").HandlerFunc(handlers.HandleGetClusterConfig(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/cluster").HandlerFunc(handlers.HandleSetClusterConfig(s.managers.Admin(), s.managers.Sync()))
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/remote-service/service").HandlerFunc(handlers.HandleGetService(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/remote-service/service/{id}").HandlerFunc(handlers.HandleAddService(s.managers.Admin(), s.managers.Sync()))
@@ -83,12 +83,6 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/routing/ingress/global").HandlerFunc(handlers.HandleGetGlobalRouteConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleSetProjectRoute(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.managers.Admin(), s.managers.Sync()))
-
-	// Endpoints for cluster
-	router.Methods(http.MethodGet).Path("/v1/config/clusters").HandlerFunc(handlers.HandleCluster())
-	router.Methods(http.MethodPost).Path("/v1/config/clusters/{clusterId}").HandlerFunc(handlers.HandleCluster())
-	router.Methods(http.MethodGet).Path("/v1/config/clusters/{projectId}/projects").HandlerFunc(handlers.HandleCluster())
-	router.Methods(http.MethodDelete).Path("/v1/config/clusters/{projectId}/projects").HandlerFunc(handlers.HandleCluster())
 
 	// Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.modules, s.managers.Sync()))

@@ -103,10 +103,15 @@ func (m *Module) SetConfig(project string, conf *config.FileStore) error {
 	return nil
 }
 
-// CloseConfig close todo
+// CloseConfig closes file store
 func (m *Module) CloseConfig() error {
 	m.Lock()
 	defer m.Unlock()
+
+	if m.store == nil {
+		return nil
+	}
+
 	return m.store.Close()
 }
 

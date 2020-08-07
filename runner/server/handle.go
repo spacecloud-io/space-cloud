@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -190,7 +189,7 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 				}
 				// starting 8 bytes of data contains some meta data regarding each log that docker sends
 				// ignoring the first 8 bytes, send rest of the data
-				fmt.Fprint(w, str[8:])
+				fmt.Fprint(w, str)
 				// Trigger "chunked" encoding and send a chunk...
 				flusher.Flush()
 				time.Sleep(500 * time.Millisecond)
@@ -319,7 +318,7 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		serviceID, serviceIDExists := r.URL.Query()["serviceId"]
-		version, versionExists := r.URL.Query()["versioin"]
+		version, versionExists := r.URL.Query()["version"]
 
 		result, err := s.driver.GetServiceStatus(ctx, projectID)
 		if err != nil {
@@ -356,47 +355,6 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
-	}
-}
-
-// HandleApplyEventingService handles request to apply eventing service
-func (s *Server) HandleApplyEventingService() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		defer utils.CloseTheCloser(r.Body)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		// Verify token
-		_, err := s.auth.VerifyToken(utils.GetToken(r))
-		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		req := new(model.CloudEventPayload)
-		_ = json.NewDecoder(r.Body).Decode(req)
-
-		if req.Data.Meta.IsDeploy {
-			// verify path e.g -> /artifacts/acc_id/projectid/version/build.zip
-			arr := strings.Split(req.Data.Path, "/")
-			// 7 will ensure that there will not be any index out of range error
-			if len(arr) != 7 || arr[3] != req.Data.Meta.Service.ProjectID || arr[4] != req.Data.Meta.Service.Version {
-				logrus.Errorf("error applying service path verification failed")
-				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "error applying service path verification failed")
-				return
-			}
-			// Apply the service config
-			if err := s.driver.ApplyService(ctx, req.Data.Meta.Service); err != nil {
-				logrus.Errorf("Failed to apply service - %s", err.Error())
-				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
-				return
-			}
-		}
-
-		_ = utils.SendOkayResponse(w)
 	}
 }
 
