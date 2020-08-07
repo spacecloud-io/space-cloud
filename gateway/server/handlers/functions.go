@@ -59,6 +59,6 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		_ = auth.PostProcessMethod(actions, result)
 
-		_ = utils.SendResponse(w, status, map[string]interface{}{"result": result})
+		_ = utils.SendResponse(w, status, result)
 	}
 }
