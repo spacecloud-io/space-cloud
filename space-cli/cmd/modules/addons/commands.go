@@ -1,31 +1,42 @@
 package addons
 
 import (
+	"context"
 	"strings"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Commands is the list of commands the addon module exposes
 func Commands() []*cobra.Command {
 	clusterNameAutoComplete := func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		switch len(args) {
-		case 0:
-			credential, err := utils.GetCredentials()
+		if len(args) == 1 {
+			ctx := context.Background()
+			cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 			if err != nil {
-				utils.LogDebug("Unable to get all the stored credentials", nil)
+				utils.LogDebug("Unable to initialize docker client ", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			connArr, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filters.Arg("name", "space-cloud"), filters.Arg("label", "service=gateway"))})
+			if err != nil {
+				utils.LogDebug("Unable to list space cloud containers ", nil)
 				return nil, cobra.ShellCompDirectiveDefault
 			}
 			accountIDs := []string{}
-			for _, v := range credential.Accounts {
-				arr := strings.Split(v.ID, "--")
-				if arr[0] == "default" {
+			for _, v := range connArr {
+				arr := strings.Split(strings.Split(v.Names[0], "--")[0], "-")
+				if len(arr) != 4 {
+					// default gateway container
 					continue
 				}
-				accountIDs = append(accountIDs, arr[0])
+				accountIDs = append(accountIDs, arr[2])
 			}
 			return accountIDs, cobra.ShellCompDirectiveDefault
 		}
@@ -127,6 +138,32 @@ func Commands() []*cobra.Command {
 			if err := viper.BindPFlag("auto-remove", cmd.Flags().Lookup("auto-remove")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('auto-remove')", nil)
 			}
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) == 0 {
+				ctx := context.Background()
+				cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+				if err != nil {
+					utils.LogDebug("Unable to initialize docker client ", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				clusterName := cmd.Flag("cluster-name").Value.String()
+				conArr, err := utils.GetContainers(ctx, cli, clusterName, model.DbContainers)
+				if err != nil {
+					utils.LogDebug("Unable to list database containers ", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				dbAlias := make([]string, 0)
+				for _, container := range conArr {
+					value, ok := container.Labels["name"]
+					if !ok {
+						continue
+					}
+					dbAlias = append(dbAlias, value)
+				}
+				return dbAlias, cobra.ShellCompDirectiveDefault
+			}
+			return nil, cobra.ShellCompDirectiveDefault
 		},
 		RunE: ActionRemoveDatabase,
 	}
