@@ -53,12 +53,12 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		status, result, err := functions.CallWithContext(ctx, service, function, token, reqParams, req.Params)
 		if err != nil {
 			_ = utils.LogError(fmt.Sprintf("Receieved error from service call (%s:%s)", service, function), "handlers", "service-call", err)
-			_ = utils.SendResponse(w, status, result)
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
 		_ = auth.PostProcessMethod(actions, result)
 
-		_ = utils.SendResponse(w, status, map[string]interface{}{"result": result})
+		_ = utils.SendResponse(w, status, result)
 	}
 }
