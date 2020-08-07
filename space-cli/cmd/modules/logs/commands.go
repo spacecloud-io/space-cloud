@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/services"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
@@ -47,6 +48,39 @@ func GetSubCommands() []*cobra.Command {
 
 	getServiceLogs.Flags().StringP("task-id", "", "", "The unique id for the task")
 	getServiceLogs.Flags().BoolP("follow", "", false, "Follow log output")
+	if err := getServiceLogs.RegisterFlagCompletionFunc("task-id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		project, check := utils.GetProjectID()
+		if !check {
+			utils.LogDebug("Project not specified in flag", nil)
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+		specObjects, err := services.GetServices(project, "", map[string]string{})
+		if err != nil {
+			utils.LogDebug("Unable to get services from server", nil)
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+		tasksArr := make([]string, 0)
+		for _, object := range specObjects {
+			obj, ok := object.Spec.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			tasks, ok := obj["tasks"].([]interface{})
+			if !ok {
+				continue
+			}
+			for _, task := range tasks {
+				taskID, ok := task.(map[string]interface{})["id"]
+				if !ok {
+					continue
+				}
+				tasksArr = append(tasksArr, taskID.(string))
+			}
+		}
+		return tasksArr, cobra.ShellCompDirectiveDefault
+	}); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
 	return []*cobra.Command{getServiceLogs}
 }
 

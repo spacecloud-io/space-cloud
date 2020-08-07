@@ -151,6 +151,41 @@ func GetSubCommands() []*cobra.Command {
 	var getPreparedQuery = &cobra.Command{
 		Use:  "db-prepared-query",
 		RunE: actionGetDbPreparedQuery,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			switch len(args) {
+			case 0:
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := GetDbSchema(project, "db-schema", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var dbAlias []string
+				for _, v := range objs {
+					dbAlias = append(dbAlias, v.Meta["dbAlias"])
+				}
+				return dbAlias, cobra.ShellCompDirectiveDefault
+			case 1:
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := GetDbPreparedQuery(project, "db-prepared-query", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var col []string
+				for _, v := range objs {
+					col = append(col, v.Meta["id"])
+				}
+				return col, cobra.ShellCompDirectiveDefault
+			}
+			return nil, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	return []*cobra.Command{getrules, getconfigs, getschemas, getPreparedQuery}

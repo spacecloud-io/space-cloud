@@ -67,6 +67,10 @@ func ChangeSelectedAccount(clusterName string) error {
 	for _, v := range credential.Accounts {
 		// With version (v0.19.0) account id has a clusterName prefix separated by -- (default--someId)
 		clusterNameCumAccountID := strings.Split(v.ID, "--")[0]
+		if clusterNameCumAccountID == "" {
+			// this condition occurs when space cli is logged in with a remote server
+			continue
+		}
 		if clusterNameCumAccountID == clusterName {
 			credential.SelectedAccount = v.ID
 			break
