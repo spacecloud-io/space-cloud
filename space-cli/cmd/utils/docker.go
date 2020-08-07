@@ -33,6 +33,9 @@ func GetContainers(ctx context.Context, dockerClient *client.Client, clusterName
 		smallArr := strings.Split(bigArr[0], "-")
 		if clusterName == "default" {
 			if len(smallArr) == 3 || len(smallArr) == 2 {
+				if containerType == model.DbContainers && len(smallArr) != 2 {
+					continue
+				}
 				// Containers running in a default cluster
 				if isTypeSpecificContainer(containerType, container.Labels) {
 					clusterContainers = append(clusterContainers, container)
