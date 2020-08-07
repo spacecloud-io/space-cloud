@@ -63,13 +63,10 @@ func LoginStart(userName, ID, key, url string) error {
 		Key:       key,
 		ServerURL: url,
 	}
-	loginResp, err := login(&account)
+	_, err := login(&account)
 	if err != nil {
 		_ = LogError(fmt.Sprintf("error in login start unable to login - %v", err), nil)
 		return err
-	}
-	if loginResp.ClusterId != "" {
-		ID = loginResp.ClusterId
 	}
 	account = model.Account{
 		ID:        ID,
