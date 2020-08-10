@@ -317,7 +317,7 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col 
 }
 
 // SetReloadSchema reloads of the schema
-func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, params model.RequestParams) (int, map[string]interface{}, error) {
+func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -327,12 +327,12 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return http.StatusBadRequest, nil, err
+		return http.StatusBadRequest, err
 	}
 
 	collectionConfig, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		return http.StatusBadRequest, nil, errors.New("specified database not present in config")
+		return http.StatusBadRequest, errors.New("specified database not present in config")
 	}
 
 	colResult := map[string]interface{}{}
@@ -342,7 +342,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 		}
 		result, err := schemaMod.SchemaInspection(ctx, dbAlias, collectionConfig.DBName, colName)
 		if err != nil {
-			return http.StatusInternalServerError, nil, err
+			return http.StatusInternalServerError, err
 		}
 
 		// set new schema in config & return in response body
@@ -352,14 +352,14 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, err
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
-		return http.StatusInternalServerError, nil, err
+		return http.StatusInternalServerError, err
 	}
 
-	return http.StatusOK, colResult, nil
+	return http.StatusOK, nil
 }
 
 // SetSchemaInspection inspects the schema
