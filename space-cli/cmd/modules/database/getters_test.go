@@ -401,7 +401,7 @@ func TestGetDbPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "Get",
-					args:   []interface{}{"GET", "/v1/config/projects/{project}/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "prep"}, new(model.Response)},
+					args:   []interface{}{"GET", "/v1/config/projects/project/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "prep"}, new(model.Response)},
 					paramsReturned: []interface{}{errors.New("unable to unmarshall"), model.Response{
 						Result: []interface{}{map[string]interface{}{
 							"id": "prep",
@@ -417,7 +417,7 @@ func TestGetDbPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "Get",
-					args:   []interface{}{"GET", "/v1/config/projects/{project}/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "prep"}, new(model.Response)},
+					args:   []interface{}{"GET", "/v1/config/projects/project/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "prep"}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
 							"id":   "prep",
@@ -437,8 +437,6 @@ func TestGetDbPreparedQuery(t *testing.T) {
 					Type: "db-prepared-query",
 					Meta: map[string]string{"project": "project", "db": "dbAlias", "id": "prep"},
 					Spec: map[string]interface{}{
-						"id":   "prep",
-						"db":   "dbAlias",
 						"args": []interface{}{"args.id"},
 						"sql":  "select * from users",
 						"rule": map[string]interface{}{

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"text/template"
@@ -15,7 +16,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token string, auth, params interface{}) (interface{}, error) {
+func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token string, auth, params interface{}) (int, interface{}, error) {
 	var url string
 	var method string
 	var ogToken string
@@ -31,7 +32,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	// Adjust the endpointPath to account for variables
 	endpointPath, err := adjustPath(endpoint.Path, auth, params)
 	if err != nil {
-		return nil, err
+		return http.StatusBadRequest, nil, err
 	}
 
 	switch endpoint.Kind {
@@ -49,7 +50,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		url = fmt.Sprintf("http://localhost:4122/v1/api/%s/graphql", m.project)
 
 	default:
-		return nil, utils.LogError(fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), module, segmentCall, nil)
+		return http.StatusBadRequest, nil, utils.LogError(fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), module, segmentCall, nil)
 	}
 
 	/***************** Set the request method ***************/
@@ -69,50 +70,57 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	newParams, err := m.adjustReqBody(serviceID, endpointID, ogToken, endpoint, auth, params)
 	if err != nil {
-		return nil, err
+		return http.StatusBadRequest, nil, err
 	}
 
 	/******** Fire the request and get the response ********/
 
 	scToken, err := m.auth.GetSCAccessToken()
 	if err != nil {
-		return nil, err
+		return http.StatusInternalServerError, nil, err
 	}
+
+	// Prepare the state object
+	state := map[string]interface{}{"args": params, "auth": auth, "token": ogToken}
 
 	var res interface{}
 	req := &utils.HTTPRequest{
 		Params: newParams,
 		Method: method, URL: url,
 		Token: token, SCToken: scToken,
-		Headers: prepareHeaders(endpoint, ogToken, auth, params),
+		Headers: prepareHeaders(endpoint.Headers, state),
 	}
-	if err := utils.MakeHTTPRequest(ctx, req, &res); err != nil {
-		return nil, err
+	status, err := utils.MakeHTTPRequest(ctx, req, &res)
+	if err != nil {
+		return status, nil, err
 	}
 
 	/**************** Return the response body ****************/
 
-	return m.adjustResBody(serviceID, endpointID, ogToken, endpoint, auth, res)
+	res, err = m.adjustResBody(serviceID, endpointID, ogToken, endpoint, auth, res)
+	return status, res, err
 }
 
-func prepareHeaders(endpoint *config.Endpoint, token string, claims, params interface{}) map[string]string {
-	headers := make(map[string]string, len(endpoint.Headers))
-	state := map[string]interface{}{"args": params, "auth": claims, "token": token}
-	for _, header := range endpoint.Headers {
+func prepareHeaders(headers config.Headers, state map[string]interface{}) config.Headers {
+	out := make([]config.Header, len(headers))
+	for i, header := range headers {
+		// First create a new header object
+		h := config.Header{Key: header.Key, Value: header.Value, Op: header.Op}
+
 		// Load the string if it exists
 		value, err := utils.LoadValue(header.Value, state)
 		if err == nil {
 			if temp, ok := value.(string); ok {
-				header.Value = temp
+				h.Value = temp
 			} else {
 				d, _ := json.Marshal(value)
-				header.Value = string(d)
+				h.Value = string(d)
 			}
 		}
 
-		headers[header.Key] = header.Value
+		out[i] = h
 	}
-	return headers
+	return out
 }
 
 func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {

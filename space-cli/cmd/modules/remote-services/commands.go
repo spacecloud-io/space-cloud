@@ -21,16 +21,28 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the remote-services module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getService = &cobra.Command{
-		Use:  "remote-service",
-		RunE: actionGetRemoteServices,
-	}
-
 	var getServices = &cobra.Command{
-		Use:  "remote-services",
-		RunE: actionGetRemoteServices,
+		Use:     "remote-services",
+		Aliases: []string{"remote-service"},
+		RunE:    actionGetRemoteServices,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			objs, err := GetRemoteServices(project, "remote-service", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range objs {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
 	}
-	return []*cobra.Command{getService, getServices}
+	return []*cobra.Command{getServices}
 }
 
 func actionGetRemoteServices(cmd *cobra.Command, args []string) error {

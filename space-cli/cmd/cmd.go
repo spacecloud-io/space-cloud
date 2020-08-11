@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -9,7 +12,9 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/addons"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/deploy"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/login"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/logs"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/operations"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/project"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
@@ -25,6 +30,40 @@ func GetRootCommand() *cobra.Command {
 		SilenceUsage: true,
 	}
 
+	var completionCmd = &cobra.Command{
+		Use:     "completion [bash|zsh]",
+		Short:   "Generate completion script",
+		Example: "For bash:\n echo 'source <(space-cli completion bash)' >>~/.bashrc\n or\n space-cli completion bash > /etc/bash_completion.d/space-cli\n\nFor ZSH:\n source <(space-cli completion zsh)",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("file", cmd.Flags().Lookup("file"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('file')", err)
+			}
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			switch len(args) {
+			case 0:
+				return []string{"bash", "zsh"}, cobra.ShellCompDirectiveDefault
+			}
+			return nil, cobra.ShellCompDirectiveDefault
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			switch args[0] {
+			case "bash":
+				err := rootCmd.GenBashCompletion(os.Stdout)
+				if err != nil {
+					_ = utils.LogError(fmt.Sprintf("Error in generating Bash completion script-%s", err), nil)
+				}
+
+			case "zsh":
+				err := rootCmd.GenZshCompletion(os.Stdout)
+				if err != nil {
+					_ = utils.LogError(fmt.Sprintf("Error in generating Zsh completion script- %s", err), nil)
+				}
+			}
+		},
+	}
+
 	rootCmd.PersistentFlags().StringP("log-level", "", "info", "Sets the log level of the command")
 	err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
 	if err != nil {
@@ -33,6 +72,12 @@ func GetRootCommand() *cobra.Command {
 	err = viper.BindEnv("log-level", "LOG_LEVEL")
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('log-level') to environment variables", nil)
+	}
+	err = rootCmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"info", "debug", "error"}, cobra.ShellCompDirectiveDefault
+	})
+	if err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('log-level')", nil)
 	}
 
 	rootCmd.PersistentFlags().StringP("project", "", "", "The project id to perform the options in")
@@ -44,6 +89,20 @@ func GetRootCommand() *cobra.Command {
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('project') to environment variables", nil)
 	}
+	err = rootCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		obj, err := project.GetProjectConfig("", "project", map[string]string{})
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+		var projects []string
+		for _, v := range obj {
+			projects = append(projects, v.Meta["project"])
+		}
+		return projects, cobra.ShellCompDirectiveDefault
+	})
+	if err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
 
 	rootCmd.AddCommand(modules.FetchGenerateSubCommands())
 	rootCmd.AddCommand(modules.FetchGetSubCommands())
@@ -52,6 +111,8 @@ func GetRootCommand() *cobra.Command {
 	rootCmd.AddCommand(operations.Commands()...)
 	rootCmd.AddCommand(login.Commands()...)
 	rootCmd.AddCommand(accounts.Commands()...)
+	rootCmd.AddCommand(logs.GetSubCommands()...)
+	rootCmd.AddCommand(completionCmd)
 	return rootCmd
 }
 

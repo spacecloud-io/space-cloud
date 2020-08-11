@@ -41,6 +41,10 @@ type mockModulesInterface struct {
 	mock.Mock
 }
 
+func (m *mockModulesInterface) GetAuthModuleForSyncMan() model.AuthSyncManInterface {
+	panic("implement me")
+}
+
 func (m *mockModulesInterface) LetsEncrypt() *letsencrypt.LetsEncrypt {
 	panic("implement me")
 }
@@ -161,4 +165,9 @@ func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAli
 func (m *mockSchemaEventingInterface) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
 	c := m.Called(ctx, dbAlias, project, col)
 	return c.String(0), c.Error(1)
+}
+
+func (m *mockSchemaEventingInterface) GetSchema(dbAlias, col string) (model.Fields, bool) {
+	c := m.Called(dbAlias, col)
+	return c.Get(0).(model.Fields), c.Bool(1)
 }

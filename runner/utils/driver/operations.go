@@ -2,6 +2,7 @@ package driver
 
 import (
 	"context"
+	"io"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
@@ -25,9 +26,19 @@ func (m *Module) ApplyService(ctx context.Context, service *model.Service) error
 	return err
 }
 
+// GetLogs get logs of specified service
+func (m *Module) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error) {
+	return m.driver.GetLogs(ctx, isFollow, projectID, taskID, replica)
+}
+
 // GetServices gets services
 func (m *Module) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
 	return m.driver.GetServices(ctx, projectID)
+}
+
+// GetServiceStatus gets services status
+func (m *Module) GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error) {
+	return m.driver.GetServiceStatus(ctx, projectID)
 }
 
 // DeleteService delete's service

@@ -29,6 +29,7 @@ type SchemaEventingInterface interface {
 	SchemaValidator(col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
 	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error
 	SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error)
+	GetSchema(dbAlias, col string) (Fields, bool)
 }
 
 // CrudEventingInterface is an interface consisting of functions of crud module used by Eventing module
@@ -43,6 +44,12 @@ type AuthEventingInterface interface {
 	GetInternalAccessToken() (string, error)
 	GetSCAccessToken() (string, error)
 	IsEventingOpAuthorised(ctx context.Context, project, token string, event *QueueEventRequest) (RequestParams, error)
+}
+
+// AuthSyncManInterface is an interface consisting of functions of auth module used by sync man
+type AuthSyncManInterface interface {
+	GetIntegrationToken(id string) (string, error)
+	GetMissionControlToken(claims map[string]interface{}) (string, error)
 }
 
 // FilestoreEventingInterface is an interface consisting of functions of Filestore module used by Eventing module

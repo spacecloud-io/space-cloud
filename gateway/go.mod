@@ -3,7 +3,7 @@ module github.com/spaceuptech/space-cloud/gateway
 require (
 	cloud.google.com/go/storage v1.6.0
 	github.com/armon/go-metrics v0.3.3 // indirect
-	github.com/aws/aws-sdk-go v1.30.20
+	github.com/aws/aws-sdk-go v1.33.14
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.10+incompatible
 	github.com/coreos/go-semver v0.3.0 // indirect

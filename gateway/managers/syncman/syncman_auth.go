@@ -3,13 +3,14 @@ package syncman
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // SetUserManagement sets the user management
-func (s *Manager) SetUserManagement(ctx context.Context, project, provider string, value *config.AuthStub, reqParams model.RequestParams) error {
+func (s *Manager) SetUserManagement(ctx context.Context, project, provider string, value *config.AuthStub, reqParams model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -17,37 +18,45 @@ func (s *Manager) SetUserManagement(ctx context.Context, project, provider strin
 	value.ID = provider
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return err
+		return http.StatusBadRequest, err
 	}
+
 	projectConfig.Modules.Auth[provider] = value
 
 	if err := s.modules.SetUsermanConfig(project, projectConfig.Modules.Auth); err != nil {
-		return err
+		return http.StatusInternalServerError, err
 	}
 
-	return s.setProject(ctx, projectConfig)
+	if err := s.setProject(ctx, projectConfig); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 }
 
 // GetUserManagement gets user management
-func (s *Manager) GetUserManagement(ctx context.Context, project, providerID string, params model.RequestParams) ([]interface{}, error) {
+func (s *Manager) GetUserManagement(ctx context.Context, project, providerID string, params model.RequestParams) (int, []interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return nil, err
+		return http.StatusBadRequest, nil, err
 	}
+
 	if providerID != "*" {
 		auth, ok := projectConfig.Modules.Auth[providerID]
 		if !ok {
-			return nil, fmt.Errorf("providerID (%s) not present in config", providerID)
+			return http.StatusBadRequest, nil, fmt.Errorf("providerID (%s) not present in config", providerID)
 		}
-		return []interface{}{auth}, nil
+
+		return http.StatusOK, []interface{}{auth}, nil
 	}
 
 	providers := []interface{}{}
 	for _, value := range projectConfig.Modules.Auth {
 		providers = append(providers, value)
 	}
-	return providers, nil
+
+	return http.StatusOK, providers, nil
 }

@@ -118,7 +118,7 @@ func CreateFileIfNotExist(path, content string) error {
 
 // CreateConfigFile create empty config file
 func CreateConfigFile(path string) error {
-	val := map[string]interface{}{"projects": []struct{}{}, "admin": struct{}{}}
+	val := map[string]interface{}{"projects": make([]interface{}, 0), "admin": map[string]interface{}{"clusterConfig": map[string]interface{}{}}, "ssl": false}
 	b, err := yaml.Marshal(val)
 	if err != nil {
 		return err

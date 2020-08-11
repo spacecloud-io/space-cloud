@@ -98,6 +98,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: space-cloud-gateway # Name is case sensitive
+    namespace: space-cloud
 roleRef:
   kind: ClusterRole
   name: space-cloud-gateway
@@ -198,7 +199,7 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: spaceuptech/runner:0.18.2
+          image: spaceuptech/runner:0.18.4
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "LOG_LEVEL"
@@ -376,7 +377,7 @@ spec:
       containers:
         - name: gateway
           command: ["./app", "run"]
-          image: spaceuptech/gateway:0.18.2
+          image: spaceuptech/gateway:0.18.4
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "NODE_ID"

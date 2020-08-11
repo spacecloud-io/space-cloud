@@ -33,12 +33,17 @@ func RemoveAccount(clusterName string) error {
 	}
 
 	index := 0
+	isFound := false
 	for i, v := range credential.Accounts {
 		accountName := strings.Split(v.ID, "--")[0]
 		if accountName == clusterName {
+			isFound = true
 			index = i
 			credential.SelectedAccount = ""
 		}
+	}
+	if !isFound {
+		return nil
 	}
 	copy(credential.Accounts[index:], credential.Accounts[index+1:])
 	credential.Accounts[len(credential.Accounts)-1] = nil
@@ -58,22 +63,27 @@ func ChangeSelectedAccount(clusterName string) error {
 		return err
 	}
 
-	index := -1
 	credential.SelectedAccount = ""
-	for i, v := range credential.Accounts {
-		accountName := strings.Split(v.ID, "--")[0]
-		if accountName == clusterName {
-			credential.SelectedAccount = v.ID
+	for _, v := range credential.Accounts {
+		// With version (v0.19.0) account id has a clusterName prefix separated by -- (default--someId)
+		clusterNameCumAccountID := strings.Split(v.ID, "--")[0]
+		if clusterNameCumAccountID == "" {
+			// this condition occurs when space cli is logged in with a remote server
+			continue
 		}
-		if accountName == v.ID {
-			index = i
+		if clusterNameCumAccountID == clusterName {
+			credential.SelectedAccount = v.ID
+			break
+		}
+		// This is for compatibility with version (v0.18.0)
+		if clusterNameCumAccountID == v.ID {
+			credential.SelectedAccount = v.ID
+			break
 		}
 	}
+
 	if credential.SelectedAccount == "" {
-		if index == -1 {
-			return fmt.Errorf("no account found in account.yaml")
-		}
-		credential.SelectedAccount = credential.Accounts[index].ID
+		return fmt.Errorf("no account found in account.yaml")
 	}
 
 	if err := GenerateAccountsFile(credential); err != nil {

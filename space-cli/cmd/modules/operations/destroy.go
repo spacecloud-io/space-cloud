@@ -8,6 +8,8 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
@@ -22,9 +24,7 @@ func Destroy(clusterName string) error {
 	}
 
 	// get all containers containing < space-cloud > in their name
-	argsName := filters.Arg("name", "space-cloud")
-	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterName))
-	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsName), All: true})
+	containers, err := utils.GetContainers(ctx, cli, clusterName, model.AllContainers)
 	if err != nil {
 		_ = utils.LogError(fmt.Sprintf("Unable to list containers - %s", err.Error()), nil)
 		return err
@@ -32,6 +32,21 @@ func Destroy(clusterName string) error {
 
 	// Remove all container
 	for _, containerInfo := range containers {
+		if containerInfo.Labels["service"] == "runner" {
+			// Make sure the container is running before deleting secrets
+			if err := cli.ContainerStart(ctx, containerInfo.ID, types.ContainerStartOptions{}); err != nil {
+				return err
+			}
+			// NOTE: files are created with root permission in runner. If host system want to delete these files it requires root permissions.
+			// so to delete files without root permission we remove the files from container itself
+			execProcess, err := cli.ContainerExecCreate(ctx, containerInfo.ID, types.ExecConfig{Cmd: []string{"rm", "-rf", "/secrets"}})
+			if err != nil {
+				return err
+			}
+			if err := cli.ContainerExecStart(ctx, execProcess.ID, types.ExecStartCheck{}); err != nil {
+				return err
+			}
+		}
 		if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 			_ = utils.LogError(fmt.Sprintf("Unable to remove container %s - %s", containerInfo.ID, err.Error()), nil)
 			return err

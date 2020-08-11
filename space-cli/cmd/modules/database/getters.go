@@ -109,7 +109,7 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 
 // GetDbPreparedQuery gets database prepared query
 func GetDbPreparedQuery(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
-	url := "/v1/config/projects/{project}/database/prepared-queries"
+	url := fmt.Sprintf("/v1/config/projects/%s/database/prepared-queries", project)
 
 	payload := new(model.Response)
 	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
@@ -120,11 +120,9 @@ func GetDbPreparedQuery(project, commandName string, params map[string]string) (
 	for _, item := range payload.Result {
 		obj := item.(map[string]interface{})
 		meta := map[string]string{"project": project, "db": obj["db"].(string), "id": obj["id"].(string)}
-		spec := make(map[string]interface{})
-		for key, val := range obj {
-			spec[key] = val
-		}
-		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{db}/prepared-queries/{id}", commandName, meta, spec)
+		delete(obj, "db")
+		delete(obj, "id")
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{db}/prepared-queries/{id}", commandName, meta, obj)
 		if err != nil {
 			return nil, err
 		}

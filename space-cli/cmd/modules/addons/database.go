@@ -273,7 +273,7 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 }
 
 func removeDatabase(alias string) error {
-	clusterName := viper.GetString("cluster-id")
+	clusterName := viper.GetString("cluster-name")
 	project := viper.GetString("project")
 	autoRemove := viper.GetBool("auto-remove")
 

@@ -1,6 +1,12 @@
 package operations
 
 import (
+	"context"
+	"strings"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -9,6 +15,30 @@ import (
 
 // Commands is the list of commands the operations module exposes
 func Commands() []*cobra.Command {
+	clusterNameAutoComplete := func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		ctx := context.Background()
+		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		if err != nil {
+			utils.LogDebug("Unable to initialize docker client ", nil)
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+		connArr, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filters.Arg("name", "space-cloud"), filters.Arg("label", "service=gateway"))})
+		if err != nil {
+			utils.LogDebug("Unable to list space cloud containers ", nil)
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+		accountIDs := []string{}
+		for _, v := range connArr {
+			arr := strings.Split(strings.Split(v.Names[0], "--")[0], "-")
+			if len(arr) != 4 {
+				// default gateway container
+				continue
+			}
+			accountIDs = append(accountIDs, arr[2])
+		}
+		return accountIDs, cobra.ShellCompDirectiveDefault
+	}
+
 	var setup = &cobra.Command{
 		Use:   "setup",
 		Short: "setup development environment",
@@ -117,6 +147,10 @@ func Commands() []*cobra.Command {
 		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
 
+	if err := setup.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
+
 	var upgrade = &cobra.Command{
 		Use:   "upgrade",
 		Short: "Upgrade development environment",
@@ -134,6 +168,10 @@ func Commands() []*cobra.Command {
 		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
 
+	if err := upgrade.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
+
 	var destroy = &cobra.Command{
 		Use:   "destroy",
 		Short: "clean development environment & remove secrets",
@@ -148,6 +186,10 @@ func Commands() []*cobra.Command {
 	destroy.Flags().StringP("cluster-name", "", "default", "The name of  space-cloud cluster")
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
 		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
+	}
+
+	if err := destroy.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
 	}
 
 	var apply = &cobra.Command{
@@ -173,6 +215,10 @@ func Commands() []*cobra.Command {
 		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
 
+	if err := start.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
+
 	var stop = &cobra.Command{
 		Use:   "stop",
 		Short: "Stops the space-cloud docker environment",
@@ -187,6 +233,10 @@ func Commands() []*cobra.Command {
 	stop.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
 		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
+	}
+
+	if err := stop.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
 	}
 	return []*cobra.Command{setup, upgrade, destroy, apply, start, stop}
 

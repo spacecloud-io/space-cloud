@@ -50,7 +50,7 @@ func Apply(applyName string) error {
 				// Apply all spec
 				for _, spec := range specs {
 					if err := ApplySpec(token, account, spec); err != nil {
-						return fmt.Errorf("Unable to apply spec object with id (%v) type (%v) - %v", spec.Meta["id"], spec.Type, err)
+						return utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
 					}
 				}
 			}
@@ -71,7 +71,7 @@ func Apply(applyName string) error {
 	// Apply all spec
 	for _, spec := range specs {
 		if err := ApplySpec(token, account, spec); err != nil {
-			return fmt.Errorf("Unable to apply spec object with id (%v) type (%v) - %v", spec.Meta["id"], spec.Type, err)
+			return utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
 		}
 	}
 

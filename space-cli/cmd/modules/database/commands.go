@@ -43,42 +43,152 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the database module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getrule = &cobra.Command{
-		Use:  "db-rule",
-		RunE: actionGetDbRules,
-	}
-
-	var getconfig = &cobra.Command{
-		Use:  "db-config",
-		RunE: actionGetDbConfig,
-	}
-
-	var getschema = &cobra.Command{
-		Use:  "db-schema",
-		RunE: actionGetDbSchema,
-	}
-
 	var getrules = &cobra.Command{
-		Use:  "db-rules",
-		RunE: actionGetDbRules,
+		Use:     "db-rules",
+		Aliases: []string{"db-rule"},
+		RunE:    actionGetDbRules,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			switch len(args) {
+			case 0:
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := GetDbRule(project, "db-rule", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var dbAlias []string
+				for _, v := range objs {
+					dbAlias = append(dbAlias, v.Meta["dbAlias"])
+				}
+				return dbAlias, cobra.ShellCompDirectiveDefault
+			case 1:
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := GetDbRule(project, "db-rule", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var col []string
+				for _, v := range objs {
+					col = append(col, v.Meta["col"])
+				}
+				return col, cobra.ShellCompDirectiveDefault
+			}
+			return nil, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var getconfigs = &cobra.Command{
-		Use:  "db-configs",
-		RunE: actionGetDbConfig,
+		Use:     "db-configs",
+		Aliases: []string{"db-config"},
+		RunE:    actionGetDbConfig,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			objs, err := GetDbConfig(project, "db-config", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var dbAlias []string
+			for _, v := range objs {
+				dbAlias = append(dbAlias, v.Meta["dbAlias"])
+			}
+			return dbAlias, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var getschemas = &cobra.Command{
-		Use:  "db-schemas",
-		RunE: actionGetDbSchema,
+		Use:     "db-schemas",
+		Aliases: []string{"db-schema"},
+		RunE:    actionGetDbSchema,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+
+			switch len(args) {
+			case 0:
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := GetDbSchema(project, "db-schema", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var dbAlias []string
+				for _, v := range objs {
+					dbAlias = append(dbAlias, v.Meta["dbAlias"])
+				}
+				return dbAlias, cobra.ShellCompDirectiveDefault
+			case 1:
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := GetDbSchema(project, "db-schema", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var col []string
+				for _, v := range objs {
+					col = append(col, v.Meta["col"])
+				}
+				return col, cobra.ShellCompDirectiveDefault
+			}
+			return nil, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	var getPreparedQuery = &cobra.Command{
 		Use:  "db-prepared-query",
 		RunE: actionGetDbPreparedQuery,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			switch len(args) {
+			case 0:
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := GetDbSchema(project, "db-schema", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var dbAlias []string
+				for _, v := range objs {
+					dbAlias = append(dbAlias, v.Meta["dbAlias"])
+				}
+				return dbAlias, cobra.ShellCompDirectiveDefault
+			case 1:
+				project, check := utils.GetProjectID()
+				if !check {
+					utils.LogDebug("Project not specified in flag", nil)
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				objs, err := GetDbPreparedQuery(project, "db-prepared-query", map[string]string{})
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveDefault
+				}
+				var col []string
+				for _, v := range objs {
+					col = append(col, v.Meta["id"])
+				}
+				return col, cobra.ShellCompDirectiveDefault
+			}
+			return nil, cobra.ShellCompDirectiveDefault
+		},
 	}
 
-	return []*cobra.Command{getrule, getconfig, getschema, getrules, getconfigs, getschemas, getPreparedQuery}
+	return []*cobra.Command{getrules, getconfigs, getschemas, getPreparedQuery}
 }
 
 func actionGetDbRules(cmd *cobra.Command, args []string) error {
