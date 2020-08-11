@@ -619,7 +619,7 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		projectID := vars["project"]
 
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias})
+		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias})
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
