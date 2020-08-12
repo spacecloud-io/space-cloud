@@ -17,6 +17,6 @@ type EnvoyMetrics struct {
 
 // EnvoyStat describes the stats received from envoy
 type EnvoyStat struct {
-	Name  string `json:"name"`
-	Value uint64 `json:"value"`
+	Name  string      `json:"name"`
+	Value interface{} `json:"value"`
 }

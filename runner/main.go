@@ -57,6 +57,12 @@ func main() {
 					Usage:  "start runner without authentication",
 				},
 				cli.StringFlag{
+					Name:   "cluster-id",
+					EnvVar: "CLUSTER_ID",
+					Usage:  "The cluster id to uniquely identify the cluster",
+					Value:  "first-cluster",
+				},
+				cli.StringFlag{
 					Name:   "port",
 					EnvVar: "PORT",
 					Usage:  "The port the runner will bind too",
