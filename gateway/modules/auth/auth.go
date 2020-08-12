@@ -163,20 +163,41 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 	for k, v := range tokenClaims {
 		claims[k] = v
 	}
-
+	var tokenString string
 	// Add expiry of one week
 	claims["exp"] = time.Now().Add(24 * 7 * time.Hour).Unix()
+	for _, s := range m.secrets {
+		if s.IsPrimary {
+			switch s.Alg {
+			case jwt.SigningMethodRS256.Alg():
+				token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+				secret, err := m.getPrimarySecret()
+				if err != nil {
+					return "", err
+				}
+				signKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(secret))
+				if err != nil {
+					return "", err
+				}
+				tokenString, err = token.SignedString(signKey)
+				if err != nil {
+					return "", err
+				}
+			default:
+				token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	secret, err := m.getPrimarySecret()
-	if err != nil {
-		return "", err
-	}
+				secret, err := m.getPrimarySecret()
+				if err != nil {
+					return "", err
+				}
 
-	tokenString, err := token.SignedString([]byte(secret))
-	if err != nil {
-		return "", err
+				tokenString, err = token.SignedString([]byte(secret))
+				if err != nil {
+					return "", err
+				}
+			}
+		}
 	}
 
 	return tokenString, nil
@@ -201,14 +222,24 @@ func (m *Module) IsTokenInternal(token string) error {
 }
 
 func (m *Module) parseToken(token string) (map[string]interface{}, error) {
+	alg := jwt.SigningMethodHS256.Alg()
 	for _, secret := range m.secrets {
 		// Parse the JWT token
 		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 			// Don't forget to validate the alg is what you expect:
-			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			if secret.Alg == jwt.SigningMethodRS256.Alg() {
+				alg = jwt.SigningMethodRS256.Alg()
+			}
+			if token.Method.Alg() != alg {
 				return nil, ErrInvalidSigningMethod
 			}
-
+			if alg == jwt.SigningMethodRS256.Alg() {
+				verifyKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(secret.PublicKey))
+				if err != nil {
+					return nil, err
+				}
+				return verifyKey, nil
+			}
 			return []byte(secret.Secret), nil
 		})
 		if err != nil {
@@ -242,7 +273,12 @@ func (m *Module) SetMakeHTTPRequest(function utils.TypeMakeHTTPRequest) {
 func (m *Module) getPrimarySecret() (string, error) {
 	for _, s := range m.secrets {
 		if s.IsPrimary {
-			return s.Secret, nil
+			switch s.Alg {
+			case jwt.SigningMethodRS256.Alg():
+				return s.PrivateKey, nil
+			default:
+				return s.Secret, nil
+			}
 		}
 	}
 
