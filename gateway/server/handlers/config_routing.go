@@ -155,6 +155,7 @@ func HandleSetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+		reqParams.Payload = config
 		if status, err := syncMan.SetGlobalRouteConfig(ctx, projectID, config, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return

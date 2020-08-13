@@ -19,7 +19,7 @@ func TestNew(t *testing.T) {
 			name: "New Routing instance",
 			want: &Routing{
 				lock:         sync.RWMutex{},
-				routes:       routeMapping{},
+				routes:       make(config.Routes, 0),
 				goTemplates:  map[string]*template.Template{},
 				globalConfig: new(config.GlobalRoutesConfig),
 			},

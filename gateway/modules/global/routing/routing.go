@@ -11,12 +11,12 @@ import (
 type Routing struct {
 	lock sync.RWMutex
 
-	routes       routeMapping
+	routes       config.Routes
 	globalConfig *config.GlobalRoutesConfig
 	goTemplates  map[string]*template.Template
 }
 
 // New creates a new instance of the routing module
 func New() *Routing {
-	return &Routing{routes: routeMapping{}, goTemplates: map[string]*template.Template{}, globalConfig: new(config.GlobalRoutesConfig)}
+	return &Routing{routes: make(config.Routes, 0), goTemplates: map[string]*template.Template{}, globalConfig: new(config.GlobalRoutesConfig)}
 }
