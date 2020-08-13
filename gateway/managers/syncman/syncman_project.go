@@ -87,7 +87,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string, par
 		return http.StatusBadRequest, err
 	}
 
-	// Create a project in the runner as well
+	// Delete project in the runner as well
 	if s.runnerAddr != "" {
 		if err := s.MakeHTTPRequest(ctx, http.MethodDelete, fmt.Sprintf("http://%s/v1/runner/%s", s.runnerAddr, projectID), token, "", "", &map[string]interface{}{}); err != nil {
 			return http.StatusInternalServerError, err

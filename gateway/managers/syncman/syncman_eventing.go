@@ -91,11 +91,19 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	if enabled {
 		if err := s.applySchemas(ctx, project, dbAlias, projectConfig, config.CrudStub{
 			Collections: map[string]*config.TableRule{
-				utils.TableEventingLogs:   {Schema: utils.SchemaEventLogs},
-				utils.TableInvocationLogs: {Schema: utils.SchemaInvocationLogs},
+				utils.TableEventingLogs:   {Schema: utils.SchemaEventLogs, Rules: map[string]*config.Rule{"create": {Rule: "deny"}, "read": {Rule: "deny"}, "update": {Rule: "deny"}, "delete": {Rule: "deny"}}},
+				utils.TableInvocationLogs: {Schema: utils.SchemaInvocationLogs, Rules: map[string]*config.Rule{"create": {Rule: "deny"}, "read": {Rule: "deny"}, "update": {Rule: "deny"}, "delete": {Rule: "deny"}}},
 			},
 		}); err != nil {
 			return http.StatusInternalServerError, err
+		}
+		status, err := s.setCollectionRules(ctx, projectConfig, project, dbAlias, utils.TableEventingLogs, &config.TableRule{Rules: map[string]*config.Rule{"create": {Rule: "deny"}, "read": {Rule: "deny"}, "update": {Rule: "deny"}, "delete": {Rule: "deny"}}})
+		if err != nil {
+			return status, err
+		}
+		status, err = s.setCollectionRules(ctx, projectConfig, project, dbAlias, utils.TableInvocationLogs, &config.TableRule{Rules: map[string]*config.Rule{"create": {Rule: "deny"}, "read": {Rule: "deny"}, "update": {Rule: "deny"}, "delete": {Rule: "deny"}}})
+		if err != nil {
+			return status, err
 		}
 	}
 

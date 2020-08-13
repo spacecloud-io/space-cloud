@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -24,4 +25,8 @@ func setLogLevel(loglevel string) {
 		logrus.Infoln("Defaulting to `info` level")
 		logrus.SetLevel(logrus.InfoLevel)
 	}
+}
+
+func validMetric(name, filter string) bool {
+	return strings.Contains(name, "http.inbound") && strings.Contains(name, filter)
 }
