@@ -1,6 +1,8 @@
 package syncman
 
 import (
+	"context"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/global/letsencrypt"
@@ -17,6 +19,15 @@ type AdminSyncmanInterface interface {
 	ValidateProjectSyncOperation(c *config.Config, project *config.Project) bool
 	SetConfig(admin *config.Admin, isFirst bool) error
 	GetConfig() *config.Admin
+
+	// For integrations
+	GetIntegrationToken(id string) (string, error)
+	ParseLicense(license string) (map[string]interface{}, error)
+}
+
+type integrationInterface interface {
+	SetConfig(array config.Integrations) error
+	InvokeHook(context.Context, model.RequestParams) config.IntegrationAuthResponse
 }
 
 // ModulesInterface is an interface consisting of functions of the modules module used by syncman

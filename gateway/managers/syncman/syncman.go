@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -30,7 +29,8 @@ type Manager struct {
 	services  []*service
 
 	// For authentication
-	adminMan AdminSyncmanInterface
+	adminMan       AdminSyncmanInterface
+	integrationMan integrationInterface
 
 	// Modules
 	modules ModulesInterface
@@ -42,10 +42,10 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager, ssl *config.SSL) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan AdminSyncmanInterface, integrationMan integrationInterface, ssl *config.SSL) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan, integrationMan: integrationMan}
 
 	// Initialise the consul client if enabled
 	var s Store
@@ -86,6 +86,7 @@ func (s *Manager) Start(port int) error {
 	}
 	utils.LogDebug("Successfully loaded initial copy of config file", "syncman", "Start", nil)
 	_ = s.adminMan.SetConfig(adminConfig, true)
+	_ = s.integrationMan.SetConfig(adminConfig.Integrations)
 	s.projectConfig.Admin = adminConfig
 
 	// Start routine to observe active space-cloud services
@@ -133,8 +134,11 @@ func (s *Manager) Start(port int) error {
 
 		utils.LogDebug("Updating admin config", "syncman", "Start", map[string]interface{}{"admin config": clusters})
 		if err := s.adminMan.SetConfig(cluster, false); err != nil {
-			_ = utils.LogError("Unable to apply admin config", "syncman", "Start", err)
-			return
+			_ = utils.LogError("Unable to apply admin config", "syncman", "watch-admin-config", err)
+		}
+
+		if err := s.integrationMan.SetConfig(cluster.Integrations); err != nil {
+			_ = utils.LogError("Unable to apply integration config", "syncman", "watch-admin-config", err)
 		}
 
 	}); err != nil {

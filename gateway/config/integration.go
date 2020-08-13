@@ -64,6 +64,9 @@ type IntegrationAuthResponse interface {
 	// an integration is trying to configure a resource which it does not have access to.
 	Error() error
 
+	// Status returns the status code returned by the integration
+	Status() int
+
 	// Result returns the value returned by the the hook. It will always be an []interface{} or map[string]interface{}.
 	// The receiver must decode it into the appropriate struct if necessary.
 	Result() interface{}

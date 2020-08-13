@@ -158,6 +158,7 @@ func TestManager_SetService(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetService(tt.args.ctx, tt.args.project, tt.args.service, tt.args.value, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetService() error = %v, wantErr %v", err, tt.wantErr)
@@ -262,6 +263,7 @@ func TestManager_DeleteService(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.DeleteService(tt.args.ctx, tt.args.project, tt.args.service, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.DeleteService() error = %v, wantErr %v", err, tt.wantErr)
@@ -313,6 +315,7 @@ func TestManager_GetServices(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetServices(tt.args.ctx, tt.args.project, tt.args.serviceID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetServices() error = %v, wantErr %v", err, tt.wantErr)

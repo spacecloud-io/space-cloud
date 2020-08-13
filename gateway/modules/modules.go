@@ -41,7 +41,7 @@ func New(nodeID string, managers *managers.Managers, globalMods *global.Global) 
 func (m *Modules) SetProjectConfig(config *config.Project) error {
 	module, err := m.loadModule(config.ID)
 	if err != nil {
-		module, err = m.newModule(config.ID)
+		module, err = m.newModule(config)
 		if err != nil {
 			return err
 		}
@@ -161,17 +161,17 @@ func (m *Modules) loadModule(projectID string) (*Module, error) {
 	return nil, fmt.Errorf("project (%s) not found in server state", projectID)
 }
 
-func (m *Modules) newModule(projectID string) (*Module, error) {
+func (m *Modules) newModule(config *config.Project) (*Module, error) {
 	projects := m.projects()
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	if ok := m.Managers.Admin().ValidateProjectSyncOperation(projects, &config.Project{ID: projectID}); !ok {
+	if ok := m.Managers.Admin().ValidateProjectSyncOperation(projects, config); !ok {
 		logrus.Println("Cannot create new project. Upgrade your plan")
 		return nil, errors.New("upgrade your plan to create new project")
 	}
 
 	module := newModule(m.nodeID, m.Managers, m.GlobalMods)
-	m.blocks[projectID] = module
+	m.blocks[config.ID] = module
 	return module, nil
 }

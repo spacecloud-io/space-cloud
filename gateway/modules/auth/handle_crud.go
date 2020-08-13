@@ -19,6 +19,22 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 		return model.RequestParams{}, err
 	}
 
+	// Check if internal token
+	if auth != nil {
+		if id, p := auth["id"]; p && id == utils.InternalUserID {
+			hookResponse := m.integrationMan.InvokeHook(ctx, model.RequestParams{
+				Claims:     auth,
+				Resource:   "internal-api-access",
+				Op:         "db-create",
+				Attributes: map[string]string{"project": project},
+			})
+			if hookResponse.CheckResponse() {
+				attr := map[string]string{"project": project, "db": dbAlias, "col": col}
+				return model.RequestParams{Claims: auth, Resource: "db-create", Op: "access", Attributes: attr}, hookResponse.Error()
+			}
+		}
+	}
+
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "token": token}
 
 	var rows []interface{}
@@ -53,6 +69,26 @@ func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, 
 		return nil, model.RequestParams{}, err
 	}
 
+	// Check if internal token
+	if auth != nil {
+		if id, p := auth["id"]; p && id == utils.InternalUserID {
+			hookOp := "db-read"
+			if col == "event_logs" || col == "invocation_logs" {
+				hookOp = "eventing-logs"
+			}
+			hookResponse := m.integrationMan.InvokeHook(ctx, model.RequestParams{
+				Claims:     auth,
+				Resource:   "internal-api-access",
+				Op:         hookOp,
+				Attributes: map[string]string{"project": project},
+			})
+			if hookResponse.CheckResponse() {
+				attr := map[string]string{"project": project, "db": dbAlias, "col": col}
+				return nil, model.RequestParams{Claims: auth, Resource: "db-read", Op: "access", Attributes: attr}, hookResponse.Error()
+			}
+		}
+	}
+
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
 	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
@@ -71,6 +107,22 @@ func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col
 	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Update)
 	if err != nil {
 		return model.RequestParams{}, err
+	}
+
+	// Check if internal token
+	if auth != nil {
+		if id, p := auth["id"]; p && id == utils.InternalUserID {
+			hookResponse := m.integrationMan.InvokeHook(ctx, model.RequestParams{
+				Claims:     auth,
+				Resource:   "internal-api-access",
+				Op:         "db-update",
+				Attributes: map[string]string{"project": project},
+			})
+			if hookResponse.CheckResponse() {
+				attr := map[string]string{"project": project, "db": dbAlias, "col": col}
+				return model.RequestParams{Claims: auth, Resource: "db-update", Op: "access", Attributes: attr}, hookResponse.Error()
+			}
+		}
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "update": req.Update, "token": token}
@@ -93,6 +145,22 @@ func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col
 		return model.RequestParams{}, err
 	}
 
+	// Check if internal token
+	if auth != nil {
+		if id, p := auth["id"]; p && id == utils.InternalUserID {
+			hookResponse := m.integrationMan.InvokeHook(ctx, model.RequestParams{
+				Claims:     auth,
+				Resource:   "internal-api-access",
+				Op:         "db-delete",
+				Attributes: map[string]string{"project": project},
+			})
+			if hookResponse.CheckResponse() {
+				attr := map[string]string{"project": project, "db": dbAlias, "col": col}
+				return model.RequestParams{Claims: auth, Resource: "db-delete", Op: "access", Attributes: attr}, hookResponse.Error()
+			}
+		}
+	}
+
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
 	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
@@ -113,6 +181,22 @@ func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbAlias, 
 		return model.RequestParams{}, err
 	}
 
+	// Check if internal token
+	if auth != nil {
+		if id, p := auth["id"]; p && id == utils.InternalUserID {
+			hookResponse := m.integrationMan.InvokeHook(ctx, model.RequestParams{
+				Claims:     auth,
+				Resource:   "internal-api-access",
+				Op:         "db-aggregate",
+				Attributes: map[string]string{"project": project},
+			})
+			if hookResponse.CheckResponse() {
+				attr := map[string]string{"project": project, "db": dbAlias, "col": col}
+				return model.RequestParams{Claims: auth, Resource: "db-aggregate", Op: "access", Attributes: attr}, hookResponse.Error()
+			}
+		}
+	}
+
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "pipeline": req.Pipeline, "token": token}
 	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
@@ -131,6 +215,22 @@ func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias
 	rule, auth, err := m.authenticatePreparedQueryRequest(dbAlias, id, token)
 	if err != nil {
 		return nil, model.RequestParams{}, err
+	}
+
+	// Check if internal token
+	if auth != nil {
+		if id, p := auth["id"]; p && id == utils.InternalUserID {
+			hookResponse := m.integrationMan.InvokeHook(ctx, model.RequestParams{
+				Claims:     auth,
+				Resource:   "internal-api-access",
+				Op:         "db-prepared-query",
+				Attributes: map[string]string{"project": project},
+			})
+			if hookResponse.CheckResponse() {
+				attr := map[string]string{"project": project, "db": dbAlias}
+				return nil, model.RequestParams{Claims: auth, Resource: "db-prepared-query", Op: "access", Attributes: attr}, hookResponse.Error()
+			}
+		}
 	}
 
 	args := map[string]interface{}{"auth": auth, "params": req.Params, "token": token}

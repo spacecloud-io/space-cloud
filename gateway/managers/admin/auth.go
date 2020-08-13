@@ -5,7 +5,31 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
+
+// GenerateToken creates a token with the appropriate claims
+func (m *Manager) GenerateToken(token string, tokenClaims map[string]interface{}) (string, error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	claims, err := m.parseToken(token)
+	if err != nil {
+		return "", err
+	}
+
+	res := m.integrationMan.HandleConfigAuth("admin-token", "create", claims, nil)
+	if res.CheckResponse() {
+		if err := res.Error(); err != nil {
+			return "", err
+		}
+
+		return m.createToken(tokenClaims)
+	}
+
+	return "", errors.New("only integrations are allowed to generate token")
+}
 
 func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error) {
 
@@ -54,5 +78,5 @@ func (m *Manager) parseToken(token string) (map[string]interface{}, error) {
 		return obj, nil
 	}
 
-	return nil, errors.New("Admin: JWT token could not be verified")
+	return nil, utils.LogError("Unable to verify JWT token", "admin", "parse-token", nil)
 }

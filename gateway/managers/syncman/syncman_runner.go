@@ -2,9 +2,11 @@ package syncman
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -322,7 +324,7 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 		projectID := vars["project"]
 		utils.LogDebug("Forwarding request to runner for getting service logs", "syncman", "HandleRunnerGetServiceLogs", map[string]interface{}{})
 
-		_, err := admin.IsTokenValid(userToken, "service", "read", map[string]string{"project": projectID})
+		params, err := admin.IsTokenValid(userToken, "service", "read", map[string]string{"project": projectID})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -330,8 +332,33 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 		}
 
 		// Create a context of execution
-		_, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
+
+		// Load request params
+		params.Method = r.Method
+		params.Path = r.URL.Path
+		params.Headers = r.Header
+
+		// Check if the request has been hijacked
+		hookResponse := s.integrationMan.InvokeHook(ctx, params)
+		if hookResponse.CheckResponse() {
+			// Check if an error occurred
+			if err := hookResponse.Error(); err != nil {
+				_ = utils.LogError("Integration hook responded with an error", params.Resource, "forward", err)
+				_ = utils.SendErrorResponse(w, hookResponse.Status(), err.Error())
+				return
+			}
+
+			result := hookResponse.Result()
+			if result != nil {
+				_ = utils.SendResponse(w, hookResponse.Status(), model.Response{Result: result})
+				return
+			}
+
+			_ = utils.SendOkayResponse(w)
+			return
+		}
 
 		// http: Request.RequestURI can't be set in client requests.
 		// http://golang.org/src/pkg/net/http/client.go
@@ -421,6 +448,51 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 }
 
 func (s *Manager) forwardRequestToRunner(ctx context.Context, w http.ResponseWriter, r *http.Request, admin *admin.Manager, params model.RequestParams) {
+	// Extract the request
+	var payload interface{}
+	if r.Method == http.MethodPost {
+		// Extract the body
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			_ = utils.LogError("Unable to read request body", params.Resource, "forward", err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if err := json.Unmarshal(data, &payload); err != nil {
+			_ = utils.LogError("Unable to read unmarshal request body", params.Resource, "forward", err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		// Reset the body without fail
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	}
+
+	// Load request params
+	params.Method = r.Method
+	params.Path = r.URL.Path
+	params.Headers = r.Header
+	params.Payload = payload
+
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			_ = utils.LogError("Integration hook responded with an error", params.Resource, "forward", err)
+			_ = utils.SendErrorResponse(w, hookResponse.Status(), err.Error())
+			return
+		}
+
+		result := hookResponse.Result()
+		if result != nil {
+			_ = utils.SendResponse(w, hookResponse.Status(), model.Response{Result: result})
+			return
+		}
+
+		_ = utils.SendOkayResponse(w)
+		return
+	}
 
 	// http: Request.RequestURI can't be set in client requests.
 	// http://golang.org/src/pkg/net/http/client.go

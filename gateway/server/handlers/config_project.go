@@ -91,10 +91,31 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Give negative acknowledgement
-		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "Operation not supported")
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(token, "project", "modify", map[string]string{"project": projectID})
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		if status, err := syncMan.DeleteProjectConfig(ctx, projectID, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, status, err.Error())
+			return
+		}
+
+		_ = utils.SendOkayResponse(w)
 	}
 }
 

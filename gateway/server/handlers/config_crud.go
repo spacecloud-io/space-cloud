@@ -586,7 +586,7 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col})
+		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": col})
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return

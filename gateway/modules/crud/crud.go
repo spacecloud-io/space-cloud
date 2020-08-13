@@ -25,7 +25,6 @@ import (
 type Module struct {
 	sync.RWMutex
 
-	block   Crud
 	dbType  string
 	alias   string
 	project string
@@ -40,8 +39,9 @@ type Module struct {
 	metricHook model.MetricCrudHook
 
 	// Extra variables for enterprise
-	blocks map[string]Crud
-	admin  *admin.Manager
+	blocks         map[string]Crud
+	admin          *admin.Manager
+	integrationMan integrationManagerInterface
 	// function to get secrets from runner
 	getSecrets utils.GetSecrets
 }
@@ -85,6 +85,11 @@ func (m *Module) SetSchema(s model.SchemaCrudInterface) {
 // SetAdminManager sets the admin manager
 func (m *Module) SetAdminManager(a *admin.Manager) {
 	m.admin = a
+}
+
+// SetAdminManager sets the integration manager
+func (m *Module) SetIntegrationManager(i integrationManagerInterface) {
+	m.integrationMan = i
 }
 
 // SetHooks sets the internal hooks
@@ -263,8 +268,8 @@ func (m *Module) CloseConfig() error {
 		delete(m.dataLoader.loaderMap, k)
 	}
 
-	if m.block != nil {
-		err := m.block.Close()
+	for _, block := range m.blocks {
+		err := block.Close()
 		if err != nil {
 			return utils.LogError("Unable to close block in crud", "crud", "CloseConfig", err)
 		}

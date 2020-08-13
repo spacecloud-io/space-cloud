@@ -10,46 +10,20 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// SetProjectRoutes sets a projects routes
-func (s *Manager) SetProjectRoutes(ctx context.Context, project string, c config.Routes) (int, error) {
-	// Acquire a lock
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	projectConfig, err := s.getConfigWithoutLock(project)
-	if err != nil {
-		return http.StatusBadRequest, err
-	}
-
-	// Update the project's routes
-	projectConfig.Modules.Routes = c
-	if err := s.modules.Routing().SetProjectRoutes(project, c); err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	if err := s.setProject(ctx, projectConfig); err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	return http.StatusOK, nil
-}
-
-// GetProjectRoutes gets all the routes for specified project config
-func (s *Manager) GetProjectRoutes(ctx context.Context, project string) (int, interface{}, error) {
-	// Acquire a lock
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	projectConfig, err := s.getConfigWithoutLock(project)
-	if err != nil {
-		return http.StatusBadRequest, nil, err
-	}
-
-	return http.StatusOK, projectConfig.Modules.Routes, nil
-}
-
 // SetProjectRoute adds a route in specified project config
 func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *config.Route, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -87,6 +61,18 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *co
 
 // DeleteProjectRoute deletes a route from specified project config
 func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -119,6 +105,18 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 
 // GetIngressRouting gets ingress routing from config
 func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -127,6 +125,7 @@ func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
+
 	if routeID != "*" {
 		for _, value := range projectConfig.Modules.Routes {
 			if routeID == value.ID {
@@ -145,6 +144,18 @@ func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string
 
 // SetGlobalRouteConfig sets the project level ingress routing config
 func (s *Manager) SetGlobalRouteConfig(ctx context.Context, project string, globalConfig *config.GlobalRoutesConfig, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -171,6 +182,18 @@ func (s *Manager) SetGlobalRouteConfig(ctx context.Context, project string, glob
 
 // GetGlobalRouteConfig returns the project level ingress routing config
 func (s *Manager) GetGlobalRouteConfig(ctx context.Context, project string, params model.RequestParams) (int, interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

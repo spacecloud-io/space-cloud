@@ -1,9 +1,11 @@
 package admin
 
 import (
+	"context"
 	"crypto/rsa"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/segmentio/ksuid"
 	"github.com/sirupsen/logrus"
@@ -27,7 +29,8 @@ type Manager struct {
 	licenseRenewalDate string
 	clusterName        string
 
-	syncMan model.SyncManAdminInterface
+	syncMan        model.SyncManAdminInterface
+	integrationMan IntegrationInterface
 
 	nodeID, clusterID      string
 	licenseFetchErrorCount int
@@ -52,6 +55,7 @@ func New(nodeID, clusterID string, isDev bool, adminUserInfo *config.AdminUser) 
 
 	// Start the background routines
 	go m.licenseRenewalRoutine()
+	go m.fetchPublicKeyRoutine()
 
 	return m
 }
@@ -59,9 +63,11 @@ func New(nodeID, clusterID string, isDev bool, adminUserInfo *config.AdminUser) 
 func (m *Manager) startOperation(license string, isInitialCall bool) error {
 	logrus.Infoln("Starting gateway in enterprise mode")
 
-	// Fetch the public key
-	if err := m.fetchPublicKeyWithoutLock(); err != nil {
-		return utils.LogError("Unable to fetch public key", "admin", "startOperation", err)
+	// Fetch the public key if it does't already exist
+	if m.publicKey == nil {
+		if err := m.fetchPublicKeyWithoutLock(); err != nil {
+			return utils.LogError("Unable to fetch public key", "admin", "startOperation", err)
+		}
 	}
 
 	// Parse the license
@@ -105,6 +111,12 @@ func (m *Manager) SetSyncMan(s model.SyncManAdminInterface) {
 	m.syncMan = s
 }
 
+func (m *Manager) SetIntegrationMan(i IntegrationInterface) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.integrationMan = i
+}
+
 // SetConfig sets the admin config
 func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 	m.lock.Lock()
@@ -119,16 +131,6 @@ func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 			// Only the leader gateway can handle licensing information
 			return m.startOperation(config.License, isInitialCall)
 		} else {
-			if !isInitialCall {
-				// The followers will attempt to ping the leader. If ping fails they will reset the license.
-				utils.LogDebug("Pinging the leader now.", "admin", "SetConfig", nil)
-				if err := m.syncMan.PingLeader(); err != nil {
-					_ = utils.LogError("Unable to ping the leader now.", "admin", "SetConfig", err)
-					m.ResetQuotas()
-					return err
-				}
-				utils.LogDebug("Successfully contacted the leader.", "admin", "SetConfig", nil)
-			}
 			return m.setQuotas(config.License)
 		}
 	}
@@ -137,6 +139,7 @@ func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 	// Reset quotas defaults
 	m.quotas.MaxProjects = 1
 	m.quotas.MaxDatabases = 1
+	m.quotas.IntegrationLevel = 1
 	m.plan = "space-cloud-open--monthly"
 	return nil
 }
@@ -151,7 +154,24 @@ func (m *Manager) GetConfig() *config.Admin {
 
 // LoadEnv gets the env
 func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string, string, string, string, string) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	return m.isProd, m.plan, m.quotas, "/mission-control/login", m.clusterName, m.licenseRenewalDate, m.config.LicenseKey, m.config.LicenseValue
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	loginURL := "/mission-control/login"
+
+	// Invoke integration hooks
+	hookResponse := m.integrationMan.InvokeHook(ctx, model.RequestParams{
+		Resource: "load-env",
+		Op:       "read",
+	})
+	if hookResponse.CheckResponse() {
+		if err := hookResponse.Error(); err == nil {
+			loginURL = hookResponse.Result().(map[string]interface{})["loginUrl"].(string)
+		}
+	}
+
+	return m.isProd, m.plan, m.quotas, loginURL, m.clusterName, m.licenseRenewalDate, m.config.LicenseKey, m.config.LicenseValue
 }

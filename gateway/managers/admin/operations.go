@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -28,11 +29,22 @@ func (m *Manager) IsTokenValid(token, resource, op string, attr map[string]strin
 	}
 
 	claims, err := m.parseToken(token)
-	return model.RequestParams{Resource: resource, Op: op, Attributes: attr, Claims: claims}, err
+	if err != nil {
+		return model.RequestParams{}, err
+	}
+
+	// Check if its an integration request and return the integration response if its an integration request
+	res := m.integrationMan.HandleConfigAuth(resource, op, claims, attr)
+	if res.CheckResponse() && res.Error() != nil {
+		return model.RequestParams{}, res.Error()
+	}
+
+	// Otherwise just return nil for backward compatibility
+	return model.RequestParams{Resource: resource, Op: op, Attributes: attr, Claims: claims}, nil
 }
 
-// CheckToken simply checks the token
-func (m *Manager) CheckToken(token string) error {
+// CheckIfAdmin simply checks the token
+func (m *Manager) CheckIfAdmin(token string) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -40,8 +52,22 @@ func (m *Manager) CheckToken(token string) error {
 		return nil
 	}
 
-	_, err := m.parseToken(token)
-	return err
+	claims, err := m.parseToken(token)
+	if err != nil {
+		return err
+	}
+
+	// Check if role is admin
+	role, p := claims["role"]
+	if !p {
+		return utils.LogError("Invalid token provided. Claim `role` is absent.", "admin", "check-if-admin", nil)
+	}
+
+	if !strings.Contains(role.(string), "admin") {
+		return utils.LogError("Only admins are authorised to make this request.", "admin", "check-if-admin", nil)
+	}
+
+	return nil
 }
 
 // IsDBConfigValid checks if the database config is valid
@@ -68,13 +94,32 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config.Project) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
+
+	// Allow if project is an integration
+	if _, p := m.config.Integrations.Get(project.ID); p {
+		return true
+	}
+
+	var totalProjects int
+
 	for _, p := range c.Projects {
+		// Return true if the project already exists in
 		if p.ID == project.ID {
 			return true
 		}
+
+		// Increment count if it isn't an integration
+		if m.config.Integrations == nil {
+			totalProjects++
+			continue
+		}
+
+		if _, p := m.config.Integrations.Get(p.ID); !p {
+			totalProjects++
+		}
 	}
 
-	return len(c.Projects) < m.quotas.MaxProjects
+	return totalProjects < m.quotas.MaxProjects
 }
 
 // RefreshToken is used to create a new token based on an existing one
@@ -131,5 +176,14 @@ func (m *Manager) GetSecret() string {
 // GetPermissions returns the permissions the user has. The permissions is for the format `projectId:resource`.
 // This only applies to the config level endpoints.
 func (m *Manager) GetPermissions(ctx context.Context, params model.RequestParams) (int, interface{}, error) {
+	hookResponse := m.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		return hookResponse.Status(), hookResponse.Result(), nil
+	}
+
 	return http.StatusOK, []interface{}{map[string]interface{}{"project": "*", "resource": "*", "verb": "*"}}, nil
 }

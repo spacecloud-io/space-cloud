@@ -38,6 +38,7 @@ func newModule(nodeID string, managers *managers.Managers, globalMods *global.Gl
 	// Get managers
 	adminMan := managers.Admin()
 	syncMan := managers.Sync()
+	integrationMan := managers.Integration()
 
 	// Get global mods
 	metrics := globalMods.Metrics()
@@ -45,14 +46,15 @@ func newModule(nodeID string, managers *managers.Managers, globalMods *global.Gl
 	c := crud.Init()
 	c.SetAdminManager(adminMan)
 	c.SetGetSecrets(syncMan.GetSecrets)
+	c.SetIntegrationManager(integrationMan)
 
 	s := schema.Init(c)
 	c.SetSchema(s)
 
-	a := auth.Init(nodeID, c, adminMan)
+	a := auth.Init(nodeID, c, adminMan, integrationMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
-	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
+	fn := functions.Init(a, syncMan, integrationMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
 	f.SetGetSecrets(syncMan.GetSecrets)
 

@@ -167,3 +167,28 @@ func HandleGenerateTokenForMissionControl(adminMan *admin.Manager, syncMan *sync
 		_ = utils.SendResponse(w, status, model.Response{Result: newToken})
 	}
 }
+
+// HandleGenerateAdminToken generates an admin token with the claims provided
+func HandleGenerateAdminToken(adminMan *admin.Manager) http.HandlerFunc {
+	type Request struct {
+		Claims map[string]interface{} `json:"claims"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Load the request from the body
+		req := new(Request)
+		_ = json.NewDecoder(r.Body).Decode(req)
+		defer utils.CloseTheCloser(r.Body)
+
+		newToken, err := adminMan.GenerateToken(token, req.Claims)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
+			return
+		}
+
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: map[string]string{"token": newToken}})
+	}
+}

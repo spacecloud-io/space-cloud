@@ -22,6 +22,15 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/upgrade").HandlerFunc(handlers.HandleUpgrade(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/degrade").HandlerFunc(handlers.HandleDownGrade(s.managers.Admin()))
 	router.Methods(http.MethodPost).Path("/v1/config/renew-license").HandlerFunc(handlers.HandleRenewLicense(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/generate-token").HandlerFunc(handlers.HandleGenerateAdminToken(s.managers.Admin()))
+
+	router.Methods(http.MethodPost).Path("/v1/config/integrations").HandlerFunc(handlers.HandlePostIntegration(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodGet).Path("/v1/config/integrations").HandlerFunc(handlers.HandleGetIntegrations(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodDelete).Path("/v1/config/integrations/{name}").HandlerFunc(handlers.HandleDeleteIntegration(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/integrations/tokens").HandlerFunc(handlers.HandleGetIntegrationTokens(s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/integrations/{name}/hooks").HandlerFunc(handlers.HandleAddIntegrationHook(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodGet).Path("/v1/config/integrations/{name}/hooks").HandlerFunc(handlers.HandleGetIntegrationHooks(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodDelete).Path("/v1/config/integrations/{name}/hooks/{id}").HandlerFunc(handlers.HandleDeleteIntegrationHook(s.managers.Admin(), s.managers.Sync()))
 
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.managers.Admin(), s.managers.Sync()))

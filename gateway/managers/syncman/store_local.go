@@ -13,6 +13,9 @@ type LocalStore struct {
 	configPath   string
 	globalConfig *config.Config
 	services     scServices
+
+	// Callbacks
+	watchAdminCB func(clusters []*config.Admin)
 }
 
 // NewLocalStore creates a new local store
@@ -51,12 +54,14 @@ func (s *LocalStore) WatchServices(cb func(scServices)) error {
 // WatchAdminConfig sets the admin config when the gateways is started
 func (s *LocalStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 	cb([]*config.Admin{s.globalConfig.Admin})
+	s.watchAdminCB = cb
 	return nil
 }
 
 // SetAdminConfig maintains consistency between all instances of sc
 func (s *LocalStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
 	s.globalConfig.Admin = adminConfig
+	go s.watchAdminCB([]*config.Admin{s.globalConfig.Admin})
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)
 }
 

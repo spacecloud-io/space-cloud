@@ -30,6 +30,7 @@ func TestManager_SetUserManagement(t *testing.T) {
 		args            args
 		modulesMockArgs []mockArgs
 		storeMockArgs   []mockArgs
+		integrationArgs []mockArgs
 		wantErr         bool
 	}{
 		{
@@ -56,6 +57,13 @@ func TestManager_SetUserManagement(t *testing.T) {
 					paramsReturned: []interface{}{errors.New("unable to get db config")},
 				},
 			},
+			integrationArgs: []mockArgs{
+				{
+					method:         "InvokeHook",
+					args:           []interface{}{mock.Anything},
+					paramsReturned: []interface{}{mockHookResponse{}},
+				},
+			},
 			wantErr: true,
 		},
 		{
@@ -76,6 +84,13 @@ func TestManager_SetUserManagement(t *testing.T) {
 					paramsReturned: []interface{}{nil},
 				},
 			},
+			integrationArgs: []mockArgs{
+				{
+					method:         "InvokeHook",
+					args:           []interface{}{mock.Anything},
+					paramsReturned: []interface{}{mockHookResponse{}},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -93,6 +108,7 @@ func TestManager_SetUserManagement(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetUserManagement(tt.args.ctx, tt.args.project, tt.args.provider, tt.args.value, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetUserManagement() error = %v, wantErr %v", err, tt.wantErr)
@@ -105,17 +121,23 @@ func TestManager_SetUserManagement(t *testing.T) {
 }
 
 func TestManager_GetUserManagement(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
 	type args struct {
 		ctx        context.Context
 		project    string
 		providerID string
 	}
 	tests := []struct {
-		name    string
-		s       *Manager
-		args    args
-		want    []interface{}
-		wantErr bool
+		name            string
+		s               *Manager
+		args            args
+		integrationArgs []mockArgs
+		want            []interface{}
+		wantErr         bool
 	}{
 		{
 			name:    "unable to get project",
@@ -127,23 +149,47 @@ func TestManager_GetUserManagement(t *testing.T) {
 			name: "providerID is empty",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "id"}}}}}}},
 			args: args{ctx: context.Background(), project: "1", providerID: "*"},
+			integrationArgs: []mockArgs{
+				{
+					method:         "InvokeHook",
+					args:           []interface{}{mock.Anything},
+					paramsReturned: []interface{}{mockHookResponse{}},
+				},
+			},
 			want: []interface{}{&config.AuthStub{ID: "id"}},
 		},
 		{
-			name:    "providerID is not present in config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "id"}}}}}}},
-			args:    args{ctx: context.Background(), project: "1", providerID: "notProvider"},
+			name: "providerID is not present in config",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "id"}}}}}}},
+			args: args{ctx: context.Background(), project: "1", providerID: "notProvider"},
+			integrationArgs: []mockArgs{
+				{
+					method:         "InvokeHook",
+					args:           []interface{}{mock.Anything},
+					paramsReturned: []interface{}{mockHookResponse{}},
+				},
+			},
 			wantErr: true,
 		},
 		{
 			name: "providerID is present in config",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "id"}}}}}}},
 			args: args{ctx: context.Background(), project: "1", providerID: "provider"},
+			integrationArgs: []mockArgs{
+				{
+					method:         "InvokeHook",
+					args:           []interface{}{mock.Anything},
+					paramsReturned: []interface{}{mockHookResponse{}},
+				},
+			},
 			want: []interface{}{&config.AuthStub{ID: "id"}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
+
 			_, got, err := tt.s.GetUserManagement(tt.args.ctx, tt.args.project, tt.args.providerID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetUserManagement() error = %v, wantErr %v", err, tt.wantErr)

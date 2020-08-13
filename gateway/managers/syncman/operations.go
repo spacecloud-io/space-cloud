@@ -75,9 +75,22 @@ func (s *Manager) setProject(ctx context.Context, project *config.Project) error
 
 // SetClusterConfig applies the set cluster config
 func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfig, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
 	s.projectConfig.Admin.ClusterConfig = req
 	if err := s.store.SetAdminConfig(ctx, s.projectConfig.Admin); err != nil {
 		return http.StatusInternalServerError, err
@@ -86,9 +99,22 @@ func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfi
 }
 
 // GetClusterConfig returns cluster config
-func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestParams) (int, *config.ClusterConfig, error) {
+func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestParams) (int, interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result(), nil
+	}
+
 	s.lock.RLock()
 	defer s.lock.RUnlock()
+
 	return http.StatusOK, s.projectConfig.Admin.ClusterConfig, nil
 }
 

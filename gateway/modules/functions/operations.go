@@ -16,6 +16,22 @@ func (m *Module) Call(service, function, token string, reqParams model.RequestPa
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
 
+	reqParams.Payload = map[string]interface{}{
+		"service":  service,
+		"endpoint": function,
+		"params":   params,
+	}
+	hookResponse := m.integrationMan.InvokeHook(ctx, reqParams)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result(), nil
+	}
+
 	status, result, err := m.handleCall(ctx, service, function, token, reqParams.Claims, params)
 	if err != nil {
 		return status, result, err
@@ -29,6 +45,22 @@ func (m *Module) Call(service, function, token string, reqParams model.RequestPa
 func (m *Module) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, params interface{}) (int, interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
+
+	reqParams.Payload = map[string]interface{}{
+		"service":  service,
+		"endpoint": function,
+		"params":   params,
+	}
+	hookResponse := m.integrationMan.InvokeHook(ctx, reqParams)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result(), nil
+	}
 
 	status, result, err := m.handleCall(ctx, service, function, token, reqParams.Claims, params)
 	if err != nil {

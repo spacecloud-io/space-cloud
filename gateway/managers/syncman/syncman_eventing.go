@@ -14,6 +14,18 @@ import (
 
 // SetEventingRule sets the eventing rules
 func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string, value config.EventingRule, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -43,6 +55,18 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 
 // SetDeleteEventingRule deletes an eventing rule
 func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -51,6 +75,7 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
+
 	delete(projectConfig.Modules.Eventing.Rules, ruleName)
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
@@ -67,6 +92,18 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 
 // SetEventingConfig sets the eventing config
 func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string, enabled bool, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -75,6 +112,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
+
 	_, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok && enabled {
 		return http.StatusBadRequest, fmt.Errorf("unknown db (%s) provided while setting eventing config", dbAlias)
@@ -116,6 +154,18 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 
 // GetEventingConfig returns the eventing config
 func (s *Manager) GetEventingConfig(ctx context.Context, project string, params model.RequestParams) (int, interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result(), nil
+	}
+
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -130,6 +180,18 @@ func (s *Manager) GetEventingConfig(ctx context.Context, project string, params 
 
 // SetEventingSchema sets the schema for the given event type
 func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType string, schema string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -161,6 +223,18 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 
 // SetDeleteEventingSchema deletes the schema for the given event type
 func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, evType string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -169,6 +243,7 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
+
 	delete(projectConfig.Modules.Eventing.Schemas, evType)
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
@@ -185,6 +260,18 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 
 // SetEventingSecurityRules sets the securtiy rule for the given event type
 func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType string, rule *config.Rule, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -217,6 +304,18 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 
 // SetDeleteEventingSecurityRules deletes the security rule for the given event type
 func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, evType string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -242,6 +341,18 @@ func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, e
 
 // GetEventingTriggerRules gets trigger rules from config
 func (s *Manager) GetEventingTriggerRules(ctx context.Context, project, id string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -268,6 +379,18 @@ func (s *Manager) GetEventingTriggerRules(ctx context.Context, project, id strin
 
 // GetEventingSchema gets eventing schema from config
 func (s *Manager) GetEventingSchema(ctx context.Context, project, id string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -294,6 +417,18 @@ func (s *Manager) GetEventingSchema(ctx context.Context, project, id string, par
 
 // GetEventingSecurityRules gets eventing security rules from config
 func (s *Manager) GetEventingSecurityRules(ctx context.Context, project, id string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

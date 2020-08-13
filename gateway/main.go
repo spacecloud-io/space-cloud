@@ -121,7 +121,7 @@ var essentialFlags = []cli.Flag{
 	// Flags for the metrics module
 	cli.BoolFlag{
 		Name:   "disable-metrics",
-		Usage:  "Disable anonymous metric collection",
+		Usage:  "Delete anonymous metric collection",
 		EnvVar: "DISABLE_METRICS",
 	},
 }

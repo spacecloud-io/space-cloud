@@ -94,7 +94,7 @@ func (new *a) GetSchema(dbAlias, col string) (model.Fields, bool) {
 }
 
 func TestModule_validate(t *testing.T) {
-	authModule := auth.Init("1", &crud.Module{}, nil)
+	authModule := auth.Init("1", &crud.Module{}, nil, nil)
 	err := authModule.SetConfig("project", "", []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": {Rule: "authenticated"}}})
 	if err != nil {
 		t.Fatalf("error setting config (%s)", err.Error())
@@ -468,7 +468,7 @@ func TestModule_getSpaceCloudIDFromBatchID(t *testing.T) {
 
 func TestModule_generateBatchID(t *testing.T) {
 	admin := admin.New("nodeID", "clusterID", true, &config.AdminUser{})
-	syncman, _ := syncman.New("nodeID", "clusterID", "advertiseAddr", "local", "runnerAddr", admin, &config.SSL{Enabled: false})
+	syncman, _ := syncman.New("nodeID", "clusterID", "advertiseAddr", "local", "runnerAddr", admin, nil, &config.SSL{Enabled: false})
 	tests := []struct {
 		name string
 		m    *Module

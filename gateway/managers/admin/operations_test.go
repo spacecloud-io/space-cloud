@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
@@ -136,6 +138,11 @@ func TestManager_GetQuotas(t *testing.T) {
 }
 
 func TestManager_IsTokenValid(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
 	type fields struct {
 		config    *config.Admin
 		quotas    model.UsageQuotas
@@ -149,6 +156,7 @@ func TestManager_IsTokenValid(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
+		mockI   []mockArgs
 		args    args
 		wantErr bool
 	}{
@@ -159,23 +167,68 @@ func TestManager_IsTokenValid(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid token",
-			fields:  fields{isProd: true, config: &config.Admin{}, user: &config.AdminUser{Secret: "some-secret"}},
-			args:    args{token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIn0.N4aa9nBNQHsvnWPUfzmKjMG3YD474ChIyOM5FEUuVm4"},
+			name:   "valid token and no integration",
+			fields: fields{isProd: true, config: &config.Admin{}, user: &config.AdminUser{Secret: "some-secret"}},
+			args:   args{token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIn0.N4aa9nBNQHsvnWPUfzmKjMG3YD474ChIyOM5FEUuVm4"},
+			mockI: []mockArgs{
+				{
+					method:         "HandleConfigAuth",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{mockIntegrationResponse{checkResponse: false}},
+				},
+			},
 			wantErr: false,
+		},
+		{
+			name:   "valid token with integration",
+			fields: fields{isProd: true, config: &config.Admin{}, user: &config.AdminUser{Secret: "some-secret"}},
+			args:   args{token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIn0.N4aa9nBNQHsvnWPUfzmKjMG3YD474ChIyOM5FEUuVm4"},
+			mockI: []mockArgs{
+				{
+					method:         "HandleConfigAuth",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{mockIntegrationResponse{checkResponse: true}},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:   "valid token with integration error",
+			fields: fields{isProd: true, config: &config.Admin{}, user: &config.AdminUser{Secret: "some-secret"}},
+			args:   args{token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIn0.N4aa9nBNQHsvnWPUfzmKjMG3YD474ChIyOM5FEUuVm4"},
+			mockI: []mockArgs{
+				{
+					method:         "HandleConfigAuth",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{mockIntegrationResponse{checkResponse: true, err: "some-eror"}},
+				},
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			i := &mockIntegrationManager{}
+
+			for _, v := range tt.mockI {
+				i.On(v.method, v.args...).Return(v.paramsReturned...)
+			}
+
 			m := &Manager{
-				config:    tt.fields.config,
-				quotas:    tt.fields.quotas,
-				user:      tt.fields.user,
-				isProd:    tt.fields.isProd,
-				clusterID: tt.fields.clusterID,
+				config:         tt.fields.config,
+				quotas:         tt.fields.quotas,
+				user:           tt.fields.user,
+				isProd:         tt.fields.isProd,
+				clusterID:      tt.fields.clusterID,
+				integrationMan: i,
 			}
 			if _, err := m.IsTokenValid(tt.args.token, "", "", nil); (err != nil) != tt.wantErr {
 				t.Errorf("IsTokenValid() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !i.AssertExpectations(t) {
+				t.Error("Integration expections failed")
 			}
 		})
 	}

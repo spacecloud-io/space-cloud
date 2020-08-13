@@ -55,27 +55,23 @@ func (m *Manager) licenseRenewalRoutine() {
 	}
 }
 
-// func (m *Manager) fetchPublicKeyRoutine() {
-// 	// Create a new ticker
-// 	ticker := time.NewTicker(4 * 7 * 24 * time.Hour) // fetch public once every 4 weeks
-// 	defer ticker.Stop()
-//
-// 	select {
-// 	case <-ticker.C:
-// 		// Operate if in enterprise mode
-// 		if m.isEnterpriseMode() {
-// 			// Fetch the public key periodically
-// 			if err := m.fetchPublicKeyWithLock(); err != nil {
-// 				_ = utils.LogError("Could not fetch public key for license file", err)
-// 				break
-// 			}
-//
-// 			if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
-// 				_ = utils.LogError("Unable to save admin config", err)
-// 			}
-// 		}
-// 	}
-// }
+func (m *Manager) fetchPublicKeyRoutine() {
+	// Create a new ticker
+	ticker := time.NewTicker(4 * 7 * 24 * time.Hour) // fetch public once every 4 weeks
+	defer ticker.Stop()
+
+	select {
+	case <-ticker.C:
+		// Operate if in enterprise mode
+		if m.isEnterpriseMode() {
+			// Fetch the public key periodically
+			if err := m.fetchPublicKeyWithLock(); err != nil {
+				_ = utils.LogError("Could not fetch public key for license file", "admin", "fetch-license-routine", err)
+				break
+			}
+		}
+	}
+}
 
 func (m *Manager) fetchPublicKeyWithoutLock() error {
 	// Fire the http request
@@ -83,7 +79,7 @@ func (m *Manager) fetchPublicKeyWithoutLock() error {
 		"timeout": 10,
 	}
 	data, _ := json.Marshal(body)
-	res, err := http.Post(fmt.Sprintf("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/getPublicKey"), "application/json", bytes.NewBuffer(data))
+	res, err := http.Post(fmt.Sprintf("https://testing.spaceuptech.com/v1/api/spacecloud/services/billing/getPublicKey"), "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
@@ -146,7 +142,7 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	})
 	utils.LogDebug(`Renewing admin license`, "admin", "renewLicenseWithoutLock", map[string]interface{}{"clusterId": m.config.LicenseKey, "clusterKey": m.config.LicenseValue, "sessionId": m.sessionID})
 	// Fire the request
-	res, err := http.Post("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/renewLicense", "application/json", bytes.NewBuffer(data))
+	res, err := http.Post("https://testing.spaceuptech.com/v1/api/spacecloud/services/billing/renewLicense", "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return utils.LogError("Unable to contact server to fetch license file from server", "admin", "renewLicenseWithoutLock", err)
 	}
@@ -203,8 +199,10 @@ func (m *Manager) ResetQuotas() {
 }
 
 func (m *Manager) setQuotas(license string) error {
-	if err := m.fetchPublicKeyWithoutLock(); err != nil {
-		return utils.LogError("Unable to fetch public key", "admin", "setQuotas", err)
+	if m.publicKey == nil {
+		if err := m.fetchPublicKeyWithoutLock(); err != nil {
+			return utils.LogError("Unable to fetch public key", "admin", "setQuotas", err)
+		}
 	}
 	licenseObj, err := m.decryptLicense(license)
 	if err != nil {
@@ -219,6 +217,7 @@ func (m *Manager) setQuotas(license string) error {
 	m.plan = licenseObj.Plan
 	return nil
 }
+
 func (m *Manager) isEnterpriseMode() bool {
 	return m.isRegistered() && !strings.HasPrefix(m.plan, "space-cloud-open")
 }
@@ -228,7 +227,21 @@ func (m *Manager) isRegistered() bool {
 }
 
 func (m *Manager) decryptLicense(license string) (*model.License, error) {
-	licenseObj, err := jwt.Parse(license, func(token *jwt.Token) (interface{}, error) {
+	obj, err := m.parseLicenseToken(license)
+	if err != nil {
+		return nil, err
+	}
+
+	v := new(model.License)
+	if err := mapstructure.Decode(obj, v); err != nil {
+		return nil, err
+	}
+	return v, nil
+
+}
+
+func (m *Manager) parseLicenseToken(tokenString string) (map[string]interface{}, error) {
+	licenseObj, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if token.Method.Alg() != jwt.SigningMethodRS256.Alg() {
 			return nil, errors.New("invalid signing method type")
@@ -245,15 +258,10 @@ func (m *Manager) decryptLicense(license string) (*model.License, error) {
 		if err := claims.Valid(); err != nil {
 			return nil, err
 		}
-
-		v := new(model.License)
-		if err := mapstructure.Decode(claims, v); err != nil {
-			return nil, err
-		}
-		return v, nil
+		return claims, nil
 	}
 
-	return nil, errors.New("unable to parse license")
+	return nil, errors.New("unable to parse license token")
 }
 
 func (m *Manager) checkIfLeaderGateway() bool {
