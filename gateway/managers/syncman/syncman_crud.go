@@ -286,6 +286,10 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col 
 		return http.StatusBadRequest, err
 	}
 
+	return s.setCollectionRules(ctx, projectConfig, project, dbAlias, col, v)
+}
+
+func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.Project, project, dbAlias, col string, v *config.TableRule) (int, error) {
 	// update collection rules & is realtime in config
 	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {

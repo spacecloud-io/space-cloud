@@ -38,7 +38,7 @@ func (r *Routing) SetProjectRoutes(project string, routes config.Routes) error {
 		}
 	}
 
-	r.routes.addProjectRoutes(project, routes)
+	r.addProjectRoutes(project, routes)
 	return nil
 }
 
@@ -47,7 +47,7 @@ func (r *Routing) DeleteProjectRoutes(project string) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	r.routes.deleteProjectRoutes(project)
+	r.deleteProjectRoutes(project)
 }
 
 // SetGlobalConfig sets the project level config of the routing module
