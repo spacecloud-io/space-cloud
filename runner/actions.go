@@ -33,7 +33,7 @@ func actionRunner(c *cli.Context) error {
 	isMetricDisabled := c.Bool("disable-metrics")
 
 	artifactAddr := c.String("artifact-addr")
-	clusterID := os.Getenv("CLUSTER_ID")
+	clusterID := c.String("cluster-id")
 	if clusterID == "" {
 		logrus.Error("Failed to setup runner: CLUSTER_ID environment variable not provided")
 		return nil

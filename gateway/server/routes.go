@@ -71,7 +71,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/schema/mutate").HandlerFunc(handlers.HandleModifyAllSchema(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate").HandlerFunc(handlers.HandleModifySchema(s.managers.Admin(), s.modules, s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/schema/inspect").HandlerFunc(handlers.HandleReloadSchema(s.managers.Admin(), s.modules, s.managers.Sync()))
-	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/track").HandlerFunc(handlers.HandleInspectCollectionSchema(s.managers.Admin(), s.modules, s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/track").HandlerFunc(handlers.HandleInspectCollectionSchema(s.managers.Admin(), s.modules, s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/untrack").HandlerFunc(handlers.HandleUntrackCollectionSchema(s.managers.Admin(), s.modules, s.managers.Sync()))
 	router.Methods(http.MethodGet).Path("/v1/external/projects/{project}/database/{dbAlias}/schema/inspect").HandlerFunc(handlers.HandleInspectTrackedCollectionsSchema(s.managers.Admin(), s.modules))
 
