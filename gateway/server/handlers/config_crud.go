@@ -546,13 +546,13 @@ func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		status, colResult, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, reqParams)
+		status, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, status, model.Response{Result: colResult})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -601,7 +601,7 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: s})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -619,7 +619,7 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		projectID := vars["project"]
 
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias})
+		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias})
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return

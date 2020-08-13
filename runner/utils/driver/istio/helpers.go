@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/segmentio/ksuid"
@@ -139,7 +140,7 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 			Resources: *generateResourceRequirements(&model.Resources{CPU: 20, Memory: 50}),
 
 			// Docker related
-			Image:           "spaceuptech/metric-proxy:0.2.0",
+			Image:           "spaceuptech/metric-proxy:0.3.0",
 			Command:         []string{"./app"},
 			Args:            []string{"start"},
 			ImagePullPolicy: v1.PullIfNotPresent,
@@ -440,6 +441,14 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 	if service.Scale.Replicas > service.Scale.MaxReplicas {
 		service.Scale.Replicas = service.Scale.MaxReplicas
 	}
+
+	// Set the default stats inclusion prefix
+	if service.StatsInclusionPrefixes == "" {
+		service.StatsInclusionPrefixes = "http.inbound,cluster_manager,listener_manager"
+	}
+	if strings.Contains(service.StatsInclusionPrefixes, "http.inbound") {
+		service.StatsInclusionPrefixes += ",http.inbound"
+	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getDeploymentName(service.ID, service.Version),
@@ -460,7 +469,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 			Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": service.ID, "version": service.Version}},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{"sidecar.istio.io/statsInclusionPrefixes": "cluster.outbound,listener,http.inbound,cluster_manager,listener_manager,http_mixer_filter,tcp_mixer_filter,server,cluster.xds-grpc"},
+					Annotations: map[string]string{"sidecar.istio.io/statsInclusionPrefixes": service.StatsInclusionPrefixes},
 					Labels:      map[string]string{"app": service.ID, "version": service.Version},
 				},
 				Spec: v1.PodSpec{
