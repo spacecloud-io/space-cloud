@@ -211,6 +211,7 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 			tt.s.adminMan = &mockAdmin
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			got, err := tt.s.ApplyProjectConfig(tt.args.ctx, tt.args.project, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
@@ -329,6 +330,7 @@ func TestManager_DeleteProjectConfig(t *testing.T) {
 			tt.s.adminMan = &mockAdmin
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.DeleteProjectConfig(tt.args.ctx, tt.args.projectID, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.DeleteProjectConfig() error = %v, wantErr %v", err, tt.wantErr)
@@ -374,6 +376,7 @@ func TestManager_GetProjectConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetProjectConfig(context.Background(), tt.args.projectID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetProjectConfig() error = %v, wantErr %v", err, tt.wantErr)

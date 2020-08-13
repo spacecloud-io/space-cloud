@@ -48,7 +48,9 @@ func MakeHTTPRequest(ctx context.Context, request *HTTPRequest, vPtr interface{}
 	}
 
 	// Add the remaining headers
-	request.Headers.UpdateHeader(req.Header)
+	if request.Headers != nil {
+		request.Headers.UpdateHeader(req.Header)
+	}
 
 	// Create a http client and fire the request
 	client := &http.Client{}

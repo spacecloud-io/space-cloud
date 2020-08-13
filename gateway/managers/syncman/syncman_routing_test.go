@@ -9,45 +9,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
-func TestManager_GetProjectRoutes(t *testing.T) {
-	type args struct {
-		ctx     context.Context
-		project string
-	}
-	tests := []struct {
-		name    string
-		s       *Manager
-		args    args
-		want    interface{}
-		wantErr bool
-	}{
-		{
-			name:    "unable to get project config",
-			args:    args{ctx: context.Background(), project: "2"},
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Routes: config.Routes{}}}}}},
-			wantErr: true,
-		},
-		{
-			name: "got routes",
-			args: args{ctx: context.Background(), project: "1"},
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Routes: config.Routes{{ID: "1"}, {ID: "2"}}}}}}},
-			want: config.Routes{{ID: "1"}, {ID: "2"}},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, got, err := tt.s.GetProjectRoutes(tt.args.ctx, tt.args.project)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Manager.GetProjectRoutes() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Manager.GetProjectRoutes() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestManager_GetIngressRouting(t *testing.T) {
 	type args struct {
 		ctx     context.Context
@@ -88,6 +49,7 @@ func TestManager_GetIngressRouting(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetIngressRouting(tt.args.ctx, tt.args.project, tt.args.routeID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetIngressRouting() error = %v, wantErr %v", err, tt.wantErr)

@@ -441,7 +441,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 			return
 		}
 
-		var result model.Routes
+		result := make(model.Routes, 0)
 		for _, value := range serviceRoutes {
 			result = append(result, value...)
 		}

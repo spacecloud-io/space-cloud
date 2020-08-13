@@ -158,6 +158,7 @@ func TestManager_SetEventingRule(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetEventingRule(tt.args.ctx, tt.args.project, tt.args.ruleName, tt.args.value, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetEventingRule() error = %v, wantErr %v", err, tt.wantErr)
@@ -262,6 +263,7 @@ func TestManager_SetDeleteEventingRule(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetDeleteEventingRule(tt.args.ctx, tt.args.project, tt.args.ruleName, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetDeleteEventingRule() error = %v, wantErr %v", err, tt.wantErr)
@@ -380,6 +382,7 @@ func TestManager_SetEventingSchema(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetEventingSchema(tt.args.ctx, tt.args.project, tt.args.evType, tt.args.schema, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetEventingSchema() error = %v, wantErr %v", err, tt.wantErr)
@@ -484,6 +487,7 @@ func TestManager_SetDeleteEventingSchema(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetDeleteEventingSchema(tt.args.ctx, tt.args.project, tt.args.evType, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetDeleteEventingSchema() error = %v, wantErr %v", err, tt.wantErr)
@@ -608,6 +612,7 @@ func TestManager_SetEventingSecurityRules(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetEventingSecurityRules(tt.args.ctx, tt.args.project, tt.args.evType, tt.args.rule, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetEventingSecurityRules() error = %v, wantErr %v", err, tt.wantErr)
@@ -712,6 +717,7 @@ func TestManager_SetDeleteEventingSecurityRules(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetDeleteEventingSecurityRules(tt.args.ctx, tt.args.project, tt.args.evType, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetDeleteEventingSecurityRules() error = %v, wantErr %v", err, tt.wantErr)
@@ -763,6 +769,7 @@ func TestManager_GetEventingTriggerRules(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetEventingTriggerRules(tt.args.ctx, tt.args.project, tt.args.id, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetEventingTriggerRules() error = %v, wantErr %v", err, tt.wantErr)
@@ -815,6 +822,7 @@ func TestManager_GetEventingSchema(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetEventingSchema(tt.args.ctx, tt.args.project, tt.args.id, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetEventingSchema() error = %v, wantErr %v", err, tt.wantErr)
@@ -867,6 +875,7 @@ func TestManager_GetEventingSecurityRules(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetEventingSecurityRules(tt.args.ctx, tt.args.project, tt.args.id, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetEventingSecurityRules() error = %v, wantErr %v", err, tt.wantErr)

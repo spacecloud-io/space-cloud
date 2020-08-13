@@ -12,6 +12,18 @@ import (
 
 // ApplyProjectConfig creates the config for the project
 func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Project, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -70,13 +82,27 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 		}
 	}
 	// We will ignore the error for the create project request
-	_ = s.modules.SetProjectConfig(project)
+	if err := s.modules.SetProjectConfig(project); err != nil {
+		return http.StatusInternalServerError, err
+	}
 
 	return http.StatusInternalServerError, s.store.SetProject(ctx, project)
 }
 
 // DeleteProjectConfig applies delete project config command to the raft log
 func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -84,7 +110,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string, par
 	// Generate internal access token
 	token, err := s.adminMan.GetInternalAccessToken()
 	if err != nil {
-		return http.StatusBadRequest, err
+		return http.StatusInternalServerError, err
 	}
 
 	// Delete project in the runner as well
@@ -106,6 +132,18 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string, par
 
 // GetProjectConfig returns the config of specified project
 func (s *Manager) GetProjectConfig(ctx context.Context, projectID string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -113,8 +151,11 @@ func (s *Manager) GetProjectConfig(ctx context.Context, projectID string, params
 	v := []interface{}{}
 	for _, p := range s.projectConfig.Projects {
 		if projectID == "*" {
-			// get all projects
-			v = append(v, config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, SecretSource: p.SecretSource, IsIntegration: p.IsIntegration, Name: p.Name, ID: p.ID})
+			// Get all projects which aren't integrations
+			if !p.IsIntegration {
+
+				v = append(v, config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, SecretSource: p.SecretSource, Name: p.Name, ID: p.ID})
+			}
 			continue
 		}
 

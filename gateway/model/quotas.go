@@ -2,8 +2,9 @@ package model
 
 // UsageQuotas describes the usage quotas
 type UsageQuotas struct {
-	MaxProjects  int `json:"maxProjects"`
-	MaxDatabases int `json:"maxDatabases"`
+	MaxProjects      int     `json:"maxProjects"`
+	MaxDatabases     int     `json:"maxDatabases"`
+	IntegrationLevel float64 `json:"integrationLevel"`
 }
 
 // UsageQuotasResult describes the response received for fetch quota operation

@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -33,6 +34,21 @@ func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path st
 	auth, err = m.parseToken(token)
 	if err != nil {
 		return nil, err
+	}
+
+	// Check if internal token
+	if auth != nil {
+		if id, p := auth["id"]; p && id == utils.InternalUserID {
+			hookResponse := m.integrationMan.InvokeHook(ctx, model.RequestParams{
+				Claims:     auth,
+				Resource:   "internal-api-access",
+				Op:         fmt.Sprintf("file-%s", op),
+				Attributes: map[string]string{"project": project},
+			})
+			if hookResponse.CheckResponse() {
+				return nil, hookResponse.Error()
+			}
+		}
 	}
 
 	// Add the path params and auth object to the arguments list

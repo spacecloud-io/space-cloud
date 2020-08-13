@@ -73,7 +73,7 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "auth-provider", "modify", map[string]string{"project": projectID, "id": providerID})
+		reqParams, err := adminMan.IsTokenValid(token, "auth-provider", "read", map[string]string{"project": projectID, "id": providerID})
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return

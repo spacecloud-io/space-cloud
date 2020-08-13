@@ -68,10 +68,12 @@ func JoinLeadingTrailing(s1 string, s2 string, ch string) string {
 }
 
 // StringExists returns true if the given string exists in the array
-func StringExists(array []string, element string) bool {
+func StringExists(array []string, elements ...string) bool {
 	for _, v := range array {
-		if v == element {
-			return true
+		for _, e := range elements {
+			if e == v {
+				return true
+			}
 		}
 	}
 	return false

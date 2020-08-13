@@ -49,12 +49,12 @@ rules:
     resources: ["deployments"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups:
-    - "apps"
+      - "apps"
     resources: ["statefulsets"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups:
-    - "security.istio.io"
-    - "networking.istio.io"
+      - "security.istio.io"
+      - "networking.istio.io"
     resources: ["*"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---

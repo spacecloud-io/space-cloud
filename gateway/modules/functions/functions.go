@@ -16,8 +16,9 @@ type Module struct {
 	lock sync.RWMutex
 
 	// Dependencies
-	auth    model.AuthFunctionInterface
-	manager *syncman.Manager
+	auth           model.AuthFunctionInterface
+	manager        *syncman.Manager
+	integrationMan integrationManagerInterface
 
 	// Variable configuration
 	project    string
@@ -29,8 +30,8 @@ type Module struct {
 }
 
 // Init returns a new instance of the Functions module
-func Init(auth model.AuthFunctionInterface, manager *syncman.Manager, hook model.MetricFunctionHook) *Module {
-	return &Module{auth: auth, manager: manager, metricHook: hook}
+func Init(auth model.AuthFunctionInterface, manager *syncman.Manager, integrationMan integrationManagerInterface, hook model.MetricFunctionHook) *Module {
+	return &Module{auth: auth, manager: manager, integrationMan: integrationMan, metricHook: hook}
 }
 
 const (

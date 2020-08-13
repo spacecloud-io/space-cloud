@@ -13,6 +13,18 @@ import (
 
 // SetService adds a remote service
 func (s *Manager) SetService(ctx context.Context, project, service string, value *config.Service, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -42,6 +54,18 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 
 // DeleteService deletes a remotes service
 func (s *Manager) DeleteService(ctx context.Context, project, service string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -67,6 +91,18 @@ func (s *Manager) DeleteService(ctx context.Context, project, service string, pa
 
 // GetServices gets a remotes service
 func (s *Manager) GetServices(ctx context.Context, project, serviceID string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -75,6 +111,7 @@ func (s *Manager) GetServices(ctx context.Context, project, serviceID string, pa
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
+
 	if serviceID != "*" {
 		service, ok := projectConfig.Modules.Services.Services[serviceID]
 		if !ok {

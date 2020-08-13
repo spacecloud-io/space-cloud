@@ -12,6 +12,18 @@ import (
 
 // SetProjectLetsEncryptDomains sets a projects whitelisted domains
 func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project string, c config.LetsEncrypt, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -37,12 +49,24 @@ func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project stri
 
 // GetLetsEncryptConfig returns the letsencrypt config for the particular project
 func (s *Manager) GetLetsEncryptConfig(ctx context.Context, project string, params model.RequestParams) (int, interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result(), nil
+	}
+
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
-		return http.StatusBadRequest, config.LetsEncrypt{}, err
+		return http.StatusBadRequest, nil, err
 	}
 
 	return http.StatusOK, projectConfig.Modules.LetsEncrypt, nil

@@ -126,7 +126,7 @@ func TestMatch_Rule(t *testing.T) {
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
 	}
-	auth := Init("1", &crud.Module{}, nil)
+	auth := Init("1", &crud.Module{}, nil, nil)
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"default": {Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}}}
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
@@ -190,7 +190,7 @@ func TestMatchForce_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "deny"}},
 		},
 	}
-	auth := Init("1", &crud.Module{}, nil)
+	auth := Init("1", &crud.Module{}, nil, nil)
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
@@ -269,7 +269,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "deny"}},
 		},
 	}
-	auth := Init("1", &crud.Module{}, nil)
+	auth := Init("1", &crud.Module{}, nil, nil)
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}

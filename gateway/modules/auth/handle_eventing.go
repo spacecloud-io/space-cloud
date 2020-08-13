@@ -7,6 +7,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // IsEventingOpAuthorised checks if the eventing operation is authorised
@@ -28,6 +29,22 @@ func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token stri
 		auth, err = m.parseToken(token)
 		if err != nil {
 			return model.RequestParams{}, err
+		}
+	}
+
+	// Check if internal token
+	if auth != nil {
+		if id, p := auth["id"]; p && id == utils.InternalUserID {
+			hookResponse := m.integrationMan.InvokeHook(ctx, model.RequestParams{
+				Claims:     auth,
+				Resource:   "internal-api-access",
+				Op:         "eventing-queue",
+				Attributes: map[string]string{"project": project},
+			})
+			if hookResponse.CheckResponse() {
+				attr := map[string]string{"project": project, "type": event.Type}
+				return model.RequestParams{Claims: auth, Resource: "eventing-queue", Op: "access", Attributes: attr}, hookResponse.Error()
+			}
 		}
 	}
 

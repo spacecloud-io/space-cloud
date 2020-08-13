@@ -24,7 +24,7 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 		defer utils.CloseTheCloser(r.Body)
 
 		token := utils.GetTokenFromHeader(r)
-		if err := admin.CheckToken(token); err != nil {
+		if err := admin.CheckIfAdmin(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
@@ -57,7 +57,7 @@ func HandleDownGrade(admin *admin.Manager) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		token := utils.GetTokenFromHeader(r)
-		if err := admin.CheckToken(token); err != nil {
+		if err := admin.CheckIfAdmin(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
@@ -85,7 +85,7 @@ func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		defer utils.CloseTheCloser(r.Body)
 
 		token := utils.GetTokenFromHeader(r)
-		if err := adminMan.CheckToken(token); err != nil {
+		if err := adminMan.CheckIfAdmin(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return

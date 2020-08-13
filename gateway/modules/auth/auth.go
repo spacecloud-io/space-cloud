@@ -37,12 +37,13 @@ type Module struct {
 	aesKey          []byte
 
 	// Admin Manager
-	adminMan adminMan
+	adminMan       adminMan
+	integrationMan integrationManagerInterface
 }
 
 // Init creates a new instance of the auth object
-func Init(nodeID string, crud model.CrudAuthInterface, adminMan adminMan) *Module {
-	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud, adminMan: adminMan}
+func Init(nodeID string, crud model.CrudAuthInterface, adminMan adminMan, integrationMan integrationManagerInterface) *Module {
+	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud, adminMan: adminMan, integrationMan: integrationMan}
 }
 
 // SetConfig set the rules and secret key required by the auth block
