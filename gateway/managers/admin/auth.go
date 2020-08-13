@@ -17,48 +17,23 @@ func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error
 	// Add expiry of one week
 	claims["exp"] = time.Now().Add(24 * 7 * time.Hour).Unix()
 
-	var tokenString string
-	var err error
-	switch m.user.Alg {
-	case jwt.SigningMethodRS256.Alg():
-		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-		signKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(m.user.PrivateKey))
-		if err != nil {
-			return "", err
-		}
-		tokenString, err = token.SignedString(signKey)
-		if err != nil {
-			return "", err
-		}
-	default:
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		tokenString, err = token.SignedString([]byte(m.user.Secret))
-		if err != nil {
-			return "", err
-		}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(m.user.Secret))
+	if err != nil {
+		return "", err
 	}
 
 	return tokenString, nil
 }
 
 func (m *Manager) parseToken(token string) (map[string]interface{}, error) {
-	alg := jwt.SigningMethodHS256.Alg()
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
-		if m.user.Alg == jwt.SigningMethodRS256.Alg() {
-			alg = jwt.SigningMethodRS256.Alg()
-		}
-		if token.Method.Alg() != alg {
+		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, errors.New("invalid signing method type")
 		}
-		if alg == jwt.SigningMethodRS256.Alg() {
-			verifyKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(m.user.PublicKey))
-			if err != nil {
-				return nil, err
-			}
-			return verifyKey, nil
-		}
+
 		return []byte(m.user.Secret), nil
 	})
 	if err != nil {

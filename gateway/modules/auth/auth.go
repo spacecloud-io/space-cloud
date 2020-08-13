@@ -164,19 +164,15 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 		claims[k] = v
 	}
 	var tokenString string
+	var err error
 	// Add expiry of one week
 	claims["exp"] = time.Now().Add(24 * 7 * time.Hour).Unix()
 	for _, s := range m.secrets {
 		if s.IsPrimary {
 			switch s.Alg {
-			case jwt.SigningMethodRS256.Alg():
+			case utils.RS256:
 				token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-
-				secret, err := m.getPrimarySecret()
-				if err != nil {
-					return "", err
-				}
-				signKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(secret))
+				signKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(s.PrivateKey))
 				if err != nil {
 					return "", err
 				}
@@ -184,23 +180,19 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 				if err != nil {
 					return "", err
 				}
-			default:
+				return tokenString, nil
+			case utils.HS256, "":
 				token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-				secret, err := m.getPrimarySecret()
+				tokenString, err = token.SignedString([]byte(s.Secret))
 				if err != nil {
 					return "", err
 				}
-
-				tokenString, err = token.SignedString([]byte(secret))
-				if err != nil {
-					return "", err
-				}
+				return tokenString, nil
 			}
 		}
 	}
-
-	return tokenString, nil
+	return "", ErrInvalidSigningMethod
 }
 
 // IsTokenInternal checks if the provided token is internally generated
@@ -222,25 +214,25 @@ func (m *Module) IsTokenInternal(token string) error {
 }
 
 func (m *Module) parseToken(token string) (map[string]interface{}, error) {
-	alg := jwt.SigningMethodHS256.Alg()
 	for _, secret := range m.secrets {
 		// Parse the JWT token
 		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 			// Don't forget to validate the alg is what you expect:
-			if secret.Alg == jwt.SigningMethodRS256.Alg() {
-				alg = jwt.SigningMethodRS256.Alg()
-			}
-			if token.Method.Alg() != alg {
+			if token.Method.Alg() != string(secret.Alg) {
 				return nil, ErrInvalidSigningMethod
 			}
-			if alg == jwt.SigningMethodRS256.Alg() {
+			switch secret.Alg {
+			case utils.RS256:
 				verifyKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(secret.PublicKey))
 				if err != nil {
 					return nil, err
 				}
 				return verifyKey, nil
+			case utils.HS256, "":
+				return []byte(secret.Secret), nil
+			default:
+				return nil, ErrInvalidSigningMethod
 			}
-			return []byte(secret.Secret), nil
 		})
 		if err != nil {
 			continue
@@ -268,19 +260,4 @@ func (m *Module) SetMakeHTTPRequest(function utils.TypeMakeHTTPRequest) {
 	defer m.Unlock()
 
 	m.makeHTTPRequest = function
-}
-
-func (m *Module) getPrimarySecret() (string, error) {
-	for _, s := range m.secrets {
-		if s.IsPrimary {
-			switch s.Alg {
-			case jwt.SigningMethodRS256.Alg():
-				return s.PrivateKey, nil
-			default:
-				return s.Secret, nil
-			}
-		}
-	}
-
-	return "", errors.New("no primary secret provided")
 }

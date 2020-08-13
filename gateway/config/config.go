@@ -2,6 +2,8 @@ package config
 
 import (
 	"net/http"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Config holds the entire configuration
@@ -32,11 +34,11 @@ type Project struct {
 
 // Secret describes the a secret object
 type Secret struct {
-	IsPrimary  bool   `json:"isPrimary" yaml:"isPrimary"`
-	Secret     string `json:"secret" yaml:"secret"`
-	Alg        string `json:"alg" yaml:"alg"`
-	PublicKey  string `json:"publicKey" yaml:"publicKey"`
-	PrivateKey string `json:"privateKey" yaml:"privateKey"`
+	IsPrimary  bool          `json:"isPrimary" yaml:"isPrimary"`
+	Secret     string        `json:"secret" yaml:"secret"`
+	Alg        utils.AuthAlg `json:"alg" yaml:"alg"`
+	PublicKey  string        `json:"publicKey" yaml:"publicKey"`
+	PrivateKey string        `json:"privateKey" yaml:"privateKey"`
 }
 
 // Admin holds the admin config
@@ -50,12 +52,9 @@ type Admin struct {
 
 // AdminUser holds the user credentials and scope
 type AdminUser struct {
-	User       string `json:"user" yaml:"user"`
-	Pass       string `json:"pass" yaml:"pass"`
-	Secret     string `json:"secret" yaml:"secret"`
-	Alg        string `json:"alg" yaml:"alg"`
-	PublicKey  string `json:"publicKey" yaml:"publicKey"`
-	PrivateKey string `json:"privateKey" yaml:"privateKey"`
+	User   string `json:"user" yaml:"user"`
+	Pass   string `json:"pass" yaml:"pass"`
+	Secret string `json:"secret" yaml:"secret"`
 }
 
 // SSL holds the certificate and key file locations
