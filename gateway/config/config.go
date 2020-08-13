@@ -2,8 +2,6 @@ package config
 
 import (
 	"net/http"
-
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Config holds the entire configuration
@@ -34,12 +32,23 @@ type Project struct {
 
 // Secret describes the a secret object
 type Secret struct {
-	IsPrimary  bool          `json:"isPrimary" yaml:"isPrimary"`
-	Secret     string        `json:"secret" yaml:"secret"`
-	Alg        utils.AuthAlg `json:"alg" yaml:"alg"`
-	PublicKey  string        `json:"publicKey" yaml:"publicKey"`
-	PrivateKey string        `json:"privateKey" yaml:"privateKey"`
+	IsPrimary  bool   `json:"isPrimary" yaml:"isPrimary"`
+	Secret     string `json:"secret" yaml:"secret"`
+	Alg        JWTAlg `json:"alg" yaml:"alg"`
+	PublicKey  string `json:"publicKey" yaml:"publicKey"`
+	PrivateKey string `json:"privateKey" yaml:"privateKey"`
 }
+
+// JWTAlg is type of method used for signing token
+type JWTAlg string
+
+const (
+	// HS256 is method used for signing token
+	HS256 JWTAlg = "HS256"
+
+	// RS256 is method used for signing token
+	RS256 JWTAlg = "RS256"
+)
 
 // Admin holds the admin config
 type Admin struct {

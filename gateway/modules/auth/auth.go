@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -170,7 +171,7 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 	for _, s := range m.secrets {
 		if s.IsPrimary {
 			switch s.Alg {
-			case utils.RS256:
+			case config.RS256:
 				token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 				signKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(s.PrivateKey))
 				if err != nil {
@@ -181,7 +182,7 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 					return "", err
 				}
 				return tokenString, nil
-			case utils.HS256, "":
+			case config.HS256, "":
 				token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 				tokenString, err = token.SignedString([]byte(s.Secret))
@@ -189,10 +190,12 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 					return "", err
 				}
 				return tokenString, nil
+			default:
+				return "", fmt.Errorf("invalid algorithm (%s) provided", s.Alg)
 			}
 		}
 	}
-	return "", ErrInvalidSigningMethod
+	return "", errors.New("no primary secret provide")
 }
 
 // IsTokenInternal checks if the provided token is internally generated
@@ -215,6 +218,9 @@ func (m *Module) IsTokenInternal(token string) error {
 
 func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 	for _, secret := range m.secrets {
+		if string(secret.Alg) == "" {
+			secret.Alg = config.HS256
+		}
 		// Parse the JWT token
 		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 			// Don't forget to validate the alg is what you expect:
@@ -222,16 +228,12 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 				return nil, ErrInvalidSigningMethod
 			}
 			switch secret.Alg {
-			case utils.RS256:
-				verifyKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(secret.PublicKey))
-				if err != nil {
-					return nil, err
-				}
-				return verifyKey, nil
-			case utils.HS256, "":
+			case config.RS256:
+				return jwt.ParseRSAPublicKeyFromPEM([]byte(secret.PublicKey))
+			case config.HS256, "":
 				return []byte(secret.Secret), nil
 			default:
-				return nil, ErrInvalidSigningMethod
+				return nil, fmt.Errorf("invalid algorithm (%s) provided", secret.Alg)
 			}
 		})
 		if err != nil {

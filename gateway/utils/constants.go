@@ -27,17 +27,6 @@ const (
 	Upsert string = "upsert"
 )
 
-// AuthAlg is type of method used for signing token
-type AuthAlg string
-
-const (
-	// HS256 is method used for signing token
-	HS256 AuthAlg = "HS256"
-
-	// RS256 is method used for signing token
-	RS256 AuthAlg = "RS256"
-)
-
 // DBType is the type of database used for a particular crud operation
 type DBType string
 
