@@ -2,7 +2,6 @@ package local
 
 import (
 	"os"
-	"strings"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -14,9 +13,6 @@ type Local struct {
 
 // Init initialises the local filestore driver
 func Init(path string) (*Local, error) {
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
-	}
 	return &Local{path}, os.MkdirAll(path, os.ModePerm)
 }
 
