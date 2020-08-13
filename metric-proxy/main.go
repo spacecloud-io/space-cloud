@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -17,13 +18,15 @@ const (
 
 func main() {
 
+	runtime.GOMAXPROCS(1)
+
 	// Setup logrus
 	logrus.SetFormatter(&logrus.TextFormatter{})
 	logrus.SetOutput(os.Stdout)
 
 	app := cli.NewApp()
 	app.Name = "metric-proxy"
-	app.Version = "0.2.0"
+	app.Version = "0.3.0"
 
 	app.Commands = []cli.Command{
 		{

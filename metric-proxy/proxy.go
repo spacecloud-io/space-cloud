@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -15,8 +16,9 @@ type Proxy struct {
 	addr, token, filter string
 
 	// For communication
-	c  *websocket.Conn
-	ch chan *ProxyMessage
+	client *http.Client
+	c      *websocket.Conn
+	ch     chan *ProxyMessage
 }
 
 // New creates a new proxy instance
@@ -25,7 +27,24 @@ func New(addr, token, mode string) *Proxy {
 	if mode == "parallel" {
 		filter = "downstream_rq_active"
 	}
-	return &Proxy{addr: addr, token: token, filter: filter, ch: make(chan *ProxyMessage, 1)}
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+				DualStack: true,
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			MaxConnsPerHost:       1,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
+	}
+	return &Proxy{addr: addr, token: token, filter: filter, client: client, ch: make(chan *ProxyMessage, 1)}
 }
 
 // Start begins the metric collection operation
