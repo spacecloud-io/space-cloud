@@ -18,7 +18,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		r       routeMapping
+		r       config.Routes
 		args    args
 		want    *config.Route
 		wantErr bool
@@ -26,20 +26,19 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "host match and url prefix match",
-			r: routeMapping{
-				"test": config.Routes{
-					&config.Route{
-						ID: "1234",
-						Source: config.RouteSource{
-							Hosts: []string{"spaceuptech.com"},
-							URL:   "/abc",
-							Type:  config.RoutePrefix,
-						},
-						Targets: []config.RouteTarget{{
-							Host: "git.com",
-							Port: 8080,
-						}},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts: []string{"spaceuptech.com"},
+						URL:   "/abc",
+						Type:  config.RoutePrefix,
 					},
+					Targets: []config.RouteTarget{{
+						Host: "git.com",
+						Port: 8080,
+					}},
 				},
 			},
 			args: args{
@@ -47,7 +46,8 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				url:  "/abc/xyz",
 			},
 			want: &config.Route{
-				ID: "1234",
+				ID:      "1234",
+				Project: "test",
 				Source: config.RouteSource{
 					Hosts: []string{"spaceuptech.com"},
 					URL:   "/abc",
@@ -62,32 +62,32 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 		},
 		{
 			name: "does not confuses exact with prefix",
-			r: routeMapping{
-				"test": config.Routes{
-					&config.Route{
-						ID: "1234",
-						Source: config.RouteSource{
-							Hosts: []string{"spaceuptech.com"},
-							URL:   "/abc/xyz",
-							Type:  config.RouteExact,
-						},
-						Targets: []config.RouteTarget{{
-							Host: "git.com",
-							Port: 8080,
-						}},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts: []string{"spaceuptech.com"},
+						URL:   "/abc/xyz",
+						Type:  config.RouteExact,
 					},
-					&config.Route{
-						ID: "567",
-						Source: config.RouteSource{
-							Hosts: []string{"spaceuptech.com"},
-							URL:   "/abc",
-							Type:  config.RoutePrefix,
-						},
-						Targets: []config.RouteTarget{{
-							Host: "git.com",
-							Port: 8080,
-						}},
+					Targets: []config.RouteTarget{{
+						Host: "git.com",
+						Port: 8080,
+					}},
+				},
+				&config.Route{
+					ID:      "567",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts: []string{"spaceuptech.com"},
+						URL:   "/abc",
+						Type:  config.RoutePrefix,
 					},
+					Targets: []config.RouteTarget{{
+						Host: "git.com",
+						Port: 8080,
+					}},
 				},
 			},
 			args: args{
@@ -95,7 +95,8 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				url:  "/abc/xyz/123",
 			},
 			want: &config.Route{
-				ID: "567",
+				ID:      "567",
+				Project: "test",
 				Source: config.RouteSource{
 					Hosts: []string{"spaceuptech.com"},
 					URL:   "/abc",
@@ -110,20 +111,19 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 		},
 		{
 			name: "host match and url prefix match",
-			r: routeMapping{
-				"test": config.Routes{
-					&config.Route{
-						ID: "1234",
-						Source: config.RouteSource{
-							Hosts: []string{"spaceuptech.com"},
-							URL:   "/abc/xyz",
-							Type:  config.RouteExact,
-						},
-						Targets: []config.RouteTarget{{
-							Host: "git.com",
-							Port: 8080,
-						}},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts: []string{"spaceuptech.com"},
+						URL:   "/abc/xyz",
+						Type:  config.RouteExact,
 					},
+					Targets: []config.RouteTarget{{
+						Host: "git.com",
+						Port: 8080,
+					}},
 				},
 			},
 			args: args{
@@ -131,7 +131,8 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				url:  "/abc/xyz",
 			},
 			want: &config.Route{
-				ID: "1234",
+				ID:      "1234",
+				Project: "test",
 				Source: config.RouteSource{
 					Hosts: []string{"spaceuptech.com"},
 					URL:   "/abc/xyz",
@@ -147,19 +148,18 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 
 		{
 			name: "host match and url match Type not provided",
-			r: routeMapping{
-				"test": config.Routes{
-					&config.Route{
-						ID: "1234",
-						Source: config.RouteSource{
-							Hosts: []string{"spaceuptech.com"},
-							URL:   "/abc",
-						},
-						Targets: []config.RouteTarget{{
-							Host: "git.com",
-							Port: 8080,
-						}},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts: []string{"spaceuptech.com"},
+						URL:   "/abc",
 					},
+					Targets: []config.RouteTarget{{
+						Host: "git.com",
+						Port: 8080,
+					}},
 				},
 			},
 			args: args{
@@ -172,20 +172,19 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 
 		{
 			name: "host not match",
-			r: routeMapping{
-				"test": config.Routes{
-					&config.Route{
-						ID: "1234",
-						Source: config.RouteSource{
-							Hosts: []string{"spaceuptech.com"},
-							URL:   "/abc",
-							Type:  config.RoutePrefix,
-						},
-						Targets: []config.RouteTarget{{
-							Host: "git.com",
-							Port: 8080,
-						}},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts: []string{"spaceuptech.com"},
+						URL:   "/abc",
+						Type:  config.RoutePrefix,
 					},
+					Targets: []config.RouteTarget{{
+						Host: "git.com",
+						Port: 8080,
+					}},
 				},
 			},
 			args: args{
@@ -198,20 +197,19 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 
 		{
 			name: "Route not present but host contains *",
-			r: routeMapping{
-				"test": config.Routes{
-					&config.Route{
-						ID: "1234",
-						Source: config.RouteSource{
-							Hosts: []string{"spaceuptech.com", "*"},
-							URL:   "/abc",
-							Type:  config.RoutePrefix,
-						},
-						Targets: []config.RouteTarget{{
-							Host: "git.com",
-							Port: 8080,
-						}},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts: []string{"spaceuptech.com", "*"},
+						URL:   "/abc",
+						Type:  config.RoutePrefix,
 					},
+					Targets: []config.RouteTarget{{
+						Host: "git.com",
+						Port: 8080,
+					}},
 				},
 			},
 			args: args{
@@ -219,7 +217,8 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				url:  "/abc",
 			},
 			want: &config.Route{
-				ID: "1234",
+				ID:      "1234",
+				Project: "test",
 				Source: config.RouteSource{
 					Hosts: []string{"spaceuptech.com", "*"},
 					URL:   "/abc",
@@ -234,20 +233,19 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 		},
 		{
 			name: "url not match",
-			r: routeMapping{
-				"test": config.Routes{
-					&config.Route{
-						ID: "1234",
-						Source: config.RouteSource{
-							Hosts: []string{"spaceuptech.com"},
-							URL:   "/abc",
-							Type:  config.RouteExact,
-						},
-						Targets: []config.RouteTarget{{
-							Host: "git.com",
-							Port: 8080,
-						}},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts: []string{"spaceuptech.com"},
+						URL:   "/abc",
+						Type:  config.RouteExact,
 					},
+					Targets: []config.RouteTarget{{
+						Host: "git.com",
+						Port: 8080,
+					}},
 				},
 			},
 			args: args{
@@ -259,21 +257,20 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 		},
 		{
 			name: "methods not match",
-			r: routeMapping{
-				"test": config.Routes{
-					&config.Route{
-						ID: "1234",
-						Source: config.RouteSource{
-							Hosts:   []string{"spaceuptech.com"},
-							Methods: []string{http.MethodGet, http.MethodDelete},
-							URL:     "/abc",
-							Type:    config.RoutePrefix,
-						},
-						Targets: []config.RouteTarget{{
-							Host: "git.com",
-							Port: 8080,
-						}},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts:   []string{"spaceuptech.com"},
+						Methods: []string{http.MethodGet, http.MethodDelete},
+						URL:     "/abc",
+						Type:    config.RoutePrefix,
 					},
+					Targets: []config.RouteTarget{{
+						Host: "git.com",
+						Port: 8080,
+					}},
 				},
 			},
 			args: args{
@@ -286,16 +283,15 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 		},
 		{
 			name: "* method",
-			r: routeMapping{
-				"test": config.Routes{
-					&config.Route{
-						ID: "1234",
-						Source: config.RouteSource{
-							Hosts:   []string{"spaceuptech.com"},
-							Methods: []string{"*"},
-							URL:     "/abc",
-							Type:    config.RoutePrefix,
-						},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts:   []string{"spaceuptech.com"},
+						Methods: []string{"*"},
+						URL:     "/abc",
+						Type:    config.RoutePrefix,
 					},
 				},
 			},
@@ -305,7 +301,8 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				url:    "/abc/xyz",
 			},
 			want: &config.Route{
-				ID: "1234",
+				ID:      "1234",
+				Project: "test",
 				Source: config.RouteSource{
 					Hosts:   []string{"spaceuptech.com"},
 					Methods: []string{"*"},
@@ -317,16 +314,15 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 		},
 		{
 			name: "valid method",
-			r: routeMapping{
-				"test": config.Routes{
-					&config.Route{
-						ID: "1234",
-						Source: config.RouteSource{
-							Hosts:   []string{"spaceuptech.com"},
-							Methods: []string{http.MethodPatch, http.MethodGet},
-							URL:     "/abc",
-							Type:    config.RoutePrefix,
-						},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test",
+					Source: config.RouteSource{
+						Hosts:   []string{"spaceuptech.com"},
+						Methods: []string{http.MethodPatch, http.MethodGet},
+						URL:     "/abc",
+						Type:    config.RoutePrefix,
 					},
 				},
 			},
@@ -336,7 +332,8 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				url:    "/abc/xyz",
 			},
 			want: &config.Route{
-				ID: "1234",
+				ID:      "1234",
+				Project: "test",
 				Source: config.RouteSource{
 					Hosts:   []string{"spaceuptech.com"},
 					Methods: []string{http.MethodPatch, http.MethodGet},
@@ -347,9 +344,11 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			wantErr: false,
 		},
 	}
+	routeObj := New()
 	for _, tt := range tests {
+		routeObj.routes = tt.r
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.r.selectRoute(tt.args.host, tt.args.method, tt.args.url)
+			got, err := routeObj.selectRoute(tt.args.host, tt.args.method, tt.args.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("routeMapping.selectRoute() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -367,47 +366,45 @@ func Test_routeMapping_deleteProjectRoutes(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		r    routeMapping
-		want routeMapping
+		r    config.Routes
+		want config.Routes
 		args args
 	}{
 		// TODO: Add test cases.
 		{
 			name: "delete project rule",
-			r: routeMapping{
-				"test1": config.Routes{
-					&config.Route{
-						ID:     "1234",
-						Source: config.RouteSource{},
-					},
+			r: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test1",
+					Source:  config.RouteSource{},
 				},
-				"test2": config.Routes{
-					&config.Route{
-						ID:     "12345",
-						Source: config.RouteSource{},
-					},
+				&config.Route{
+					ID:      "12345",
+					Project: "test2",
+					Source:  config.RouteSource{},
 				},
 			},
-			want: routeMapping{
-				"test2": config.Routes{
-					&config.Route{
-						ID:     "12345",
-						Source: config.RouteSource{},
-					},
+			want: config.Routes{
+				&config.Route{
+					ID:      "12345",
+					Project: "test2",
+					Source:  config.RouteSource{},
 				},
 			},
 			args: args{project: "test1"},
 		},
 	}
+	routeObj := New()
 	for _, tt := range tests {
+		routeObj.routes = tt.r
 		t.Run(tt.name, func(t *testing.T) {
+			routeObj.deleteProjectRoutes(tt.args.project)
 
-			tt.r.deleteProjectRoutes(tt.args.project)
+			if !reflect.DeepEqual(tt.want, routeObj.routes) {
+				t.Errorf("Routing.deleteProjectRoutes(): wanted - %v; got - %v", tt.want, routeObj.routes)
 
-			if !reflect.DeepEqual(tt.want, tt.r) {
-				t.Errorf("Routing.deleteProjectRoutes(): wanted - %v; got - %v", tt.want, tt.r)
-
-				a, _ := json.MarshalIndent(tt.r, "", " ")
+				a, _ := json.MarshalIndent(routeObj.routes, "", " ")
 				log.Printf("got= %s", string(a))
 
 				a, _ = json.MarshalIndent(tt.want, "", " ")
@@ -424,70 +421,75 @@ func Test_routeMapping_addProjectRoutes(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		r    routeMapping
-		want routeMapping
+		r    config.Routes
+		want config.Routes
 		args args
 	}{
 		// TODO: Add test cases.
 		{
 			name: "add project rule",
-			r: routeMapping{
-				"test1": config.Routes{
-					&config.Route{
-						ID:     "12345",
-						Source: config.RouteSource{},
-					},
+			r: config.Routes{
+				&config.Route{
+					ID:      "12345",
+					Project: "test1",
+					Source:  config.RouteSource{},
 				},
 			},
 			args: args{
 				project: "test2",
 				routes: config.Routes{
 					&config.Route{
-						ID:     "1234",
-						Source: config.RouteSource{URL: "/get"},
+						ID:      "1234",
+						Project: "test2",
+						Source:  config.RouteSource{URL: "/get"},
 					},
 					&config.Route{
-						ID:     "1234",
-						Source: config.RouteSource{URL: "/"},
+						ID:      "1234",
+						Project: "test2",
+						Source:  config.RouteSource{URL: "/"},
 					},
 					&config.Route{
-						ID:     "1234",
-						Source: config.RouteSource{URL: "/add"},
+						ID:      "1234",
+						Project: "test2",
+						Source:  config.RouteSource{URL: "/add"},
 					},
 				},
 			},
-			want: routeMapping{
-				"test1": config.Routes{
-					&config.Route{
-						ID:     "12345",
-						Source: config.RouteSource{},
-					},
+			want: config.Routes{
+				&config.Route{
+					ID:      "1234",
+					Project: "test2",
+					Source:  config.RouteSource{URL: "/get"},
 				},
-				"test2": config.Routes{
-					&config.Route{
-						ID:     "1234",
-						Source: config.RouteSource{URL: "/get"},
-					},
-					&config.Route{
-						ID:     "1234",
-						Source: config.RouteSource{URL: "/add"},
-					},
-					&config.Route{
-						ID:     "1234",
-						Source: config.RouteSource{URL: "/"},
-					},
+				&config.Route{
+					ID:      "1234",
+					Project: "test2",
+					Source:  config.RouteSource{URL: "/add"},
+				},
+				&config.Route{
+					ID:      "1234",
+					Project: "test2",
+					Source:  config.RouteSource{URL: "/"},
+				},
+				&config.Route{
+					ID:      "12345",
+					Project: "test1",
+					Source:  config.RouteSource{},
 				},
 			},
 		},
 	}
+	routeObj := New()
+
 	for _, tt := range tests {
+		routeObj.routes = tt.r
 		t.Run(tt.name, func(t *testing.T) {
-			tt.r.addProjectRoutes(tt.args.project, tt.args.routes)
+			routeObj.addProjectRoutes(tt.args.project, tt.args.routes)
 
-			if !reflect.DeepEqual(tt.r, tt.want) {
-				t.Errorf("Routing.addProjectRoutes(): wanted - %v; got - %v", tt.want, tt.r)
+			if !reflect.DeepEqual(routeObj.routes, tt.want) {
+				t.Errorf("Routing.addProjectRoutes(): wanted - %v; got - %v", tt.want, routeObj.routes)
 
-				a, _ := json.MarshalIndent(tt.r, "", " ")
+				a, _ := json.MarshalIndent(routeObj.routes, "", " ")
 				log.Printf("got= %s", string(a))
 
 				a, _ = json.MarshalIndent(tt.want, "", " ")

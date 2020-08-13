@@ -11,7 +11,7 @@ import (
 
 func TestRouting_DeleteProjectRoutes(t *testing.T) {
 	type fields struct {
-		routes routeMapping
+		routes config.Routes
 	}
 	type args struct {
 		project string
@@ -20,36 +20,33 @@ func TestRouting_DeleteProjectRoutes(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   routeMapping
+		want   config.Routes
 	}{
 		// TODO: Add test cases.
 		{
 			name: "deleteProject",
 			fields: fields{
-				routes: routeMapping{
-					"test1": config.Routes{
-						&config.Route{
-							ID:     "1234",
-							Source: config.RouteSource{},
-						},
+				routes: config.Routes{
+					&config.Route{
+						ID:      "1234",
+						Project: "test1",
+						Source:  config.RouteSource{},
 					},
-					"test2": config.Routes{
-						&config.Route{
-							ID:     "12345",
-							Source: config.RouteSource{},
-						},
+					&config.Route{
+						ID:      "12345",
+						Project: "test1",
+						Source:  config.RouteSource{},
 					},
 				},
 			},
 			args: args{
 				project: "test1",
 			},
-			want: routeMapping{
-				"test2": config.Routes{
-					&config.Route{
-						ID:     "12345",
-						Source: config.RouteSource{},
-					},
+			want: config.Routes{
+				&config.Route{
+					ID:      "12345",
+					Project: "test1",
+					Source:  config.RouteSource{},
 				},
 			},
 		},
@@ -75,7 +72,7 @@ func TestRouting_DeleteProjectRoutes(t *testing.T) {
 
 func TestRouting_SetProjectRoutes(t *testing.T) {
 	type fields struct {
-		routes routeMapping
+		routes config.Routes
 	}
 	type args struct {
 		project string
@@ -85,12 +82,12 @@ func TestRouting_SetProjectRoutes(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   routeMapping
+		want   config.Routes
 	}{
 		{
 			name: "set project rule",
 			fields: fields{
-				routes: routeMapping{},
+				routes: config.Routes{},
 			},
 			args: args{
 				project: "test1",
@@ -101,12 +98,11 @@ func TestRouting_SetProjectRoutes(t *testing.T) {
 					},
 				},
 			},
-			want: routeMapping{
-				"test1": config.Routes{
-					&config.Route{
-						ID:     "12345",
-						Source: config.RouteSource{},
-					},
+			want: config.Routes{
+				&config.Route{
+					ID:      "12345",
+					Project: "test1",
+					Source:  config.RouteSource{},
 				},
 			},
 		},
