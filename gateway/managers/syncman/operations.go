@@ -82,6 +82,10 @@ func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfi
 	if err := s.store.SetAdminConfig(ctx, s.projectConfig.Admin); err != nil {
 		return http.StatusInternalServerError, err
 	}
+
+	s.globalModules.SetMetricsConfig(s.projectConfig.Admin.ClusterConfig.EnableTelemetry)
+	s.modules.LetsEncrypt().SetLetsEncryptEmail(req.LetsEncryptEmail)
+
 	return http.StatusOK, nil
 }
 

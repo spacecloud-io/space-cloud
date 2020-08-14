@@ -30,7 +30,7 @@ type ModulesInterface interface {
 	SetFileStoreConfig(projectID string, fileStore *config.FileStore) error
 	// SetEventingConfig sets the config of eventing module
 	SetEventingConfig(projectID string, eventingConfig *config.Eventing) error
-	// SetUsermanConfig set the config of the 0]userman module
+	// SetUsermanConfig set the config of the userman module
 	SetUsermanConfig(projectID string, auth config.Auth) error
 
 	// Getters
@@ -41,6 +41,11 @@ type ModulesInterface interface {
 
 	// Delete
 	Delete(projectID string)
+}
+
+type GlobalModulesInterface interface {
+	// SetMetricsConfig set the config of the metrics module
+	SetMetricsConfig(isMetricsEnabled bool)
 }
 
 type preparedQueryResponse struct {

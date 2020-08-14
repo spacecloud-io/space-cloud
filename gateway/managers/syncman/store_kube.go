@@ -94,13 +94,7 @@ func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 		defer close(stopper)
 		defer runtime.HandleCrash() // handles a crash & logs an error
 
-		clusters := []*config.Admin{
-			{
-				LicenseKey:   "",
-				LicenseValue: "",
-				License:      "",
-			},
-		}
+		clusters := []*config.Admin{getDefaultAdminConfig()}
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
@@ -111,6 +105,10 @@ func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 				onAddOrUpdateAdminConfig(obj, clusters)
 				cb(clusters)
 			},
+			DeleteFunc: func(old interface{}) {
+				clusters[0] = getDefaultAdminConfig()
+				cb(clusters)
+			},
 		})
 
 		go informer.Run(stopper)
@@ -118,6 +116,16 @@ func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 		logrus.Debug("stopped watching over projects in kube store")
 	}()
 	return nil
+}
+func getDefaultAdminConfig() *config.Admin {
+	return &config.Admin{
+		ClusterConfig: &config.ClusterConfig{
+			EnableTelemetry: true,
+		},
+		LicenseKey:   "",
+		LicenseValue: "",
+		License:      "",
+	}
 }
 
 // WatchProjects maintains consistency over all projects
@@ -298,7 +306,7 @@ func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 	for i := 0; i < 3; i++ {
 		configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(name, v12.GetOptions{})
 		if kubeErrors.IsNotFound(err) {
-			return new(config.Admin), nil
+			return &config.Admin{ClusterConfig: &config.ClusterConfig{EnableTelemetry: true}}, nil
 		} else if err != nil {
 			_ = utils.LogError("Unable to fetch admin config", "syncman", "GetAdminConfig", err)
 
