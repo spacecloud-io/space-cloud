@@ -195,7 +195,7 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 			}
 		}
 	}
-	return "", errors.New("no primary secret provide")
+	return "", errors.New("no primary secret provided")
 }
 
 // IsTokenInternal checks if the provided token is internally generated
