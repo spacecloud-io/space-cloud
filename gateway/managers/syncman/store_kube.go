@@ -306,7 +306,7 @@ func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 	for i := 0; i < 3; i++ {
 		configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(name, v12.GetOptions{})
 		if kubeErrors.IsNotFound(err) {
-			return &config.Admin{ClusterConfig: &config.ClusterConfig{EnableTelemetry: true}}, nil
+			return getDefaultAdminConfig(), nil
 		} else if err != nil {
 			_ = utils.LogError("Unable to fetch admin config", "syncman", "GetAdminConfig", err)
 

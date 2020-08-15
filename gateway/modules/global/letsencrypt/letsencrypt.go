@@ -52,10 +52,3 @@ func (l *LetsEncrypt) SetLetsEncryptEmail(email string) {
 	defer l.lock.Unlock()
 	l.client.Email = email
 }
-
-//GetLetsEncryptEmail get config email
-func (l *LetsEncrypt) GetLetsEncryptEmail(email string) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	l.client.Email = email
-}
