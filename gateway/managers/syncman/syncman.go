@@ -137,6 +137,8 @@ func (s *Manager) Start(port int) error {
 			_ = utils.LogError("Unable to apply admin config", "syncman", "Start", err)
 			return
 		}
+		s.globalModules.SetMetricsConfig(cluster.ClusterConfig.EnableTelemetry)
+		s.modules.LetsEncrypt().SetLetsEncryptEmail(cluster.ClusterConfig.LetsEncryptEmail)
 
 	}); err != nil {
 		return err
