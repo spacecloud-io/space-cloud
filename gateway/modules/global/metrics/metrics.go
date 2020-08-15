@@ -36,12 +36,6 @@ type Config struct {
 
 // New creates a new instance of the metrics module
 func New(clusterID, nodeID string, isMetricDisabled bool, adminMan *admin.Manager, syncMan *syncman.Manager, isProd bool) (*Module, error) {
-
-	// Return an empty object if the module isn't enabled
-	if isMetricDisabled {
-		return new(Module), nil
-	}
-
 	// Initialise the sink
 	conn := api.New("spacecloud", "api.spaceuptech.com", true).DB("db")
 
@@ -51,6 +45,13 @@ func New(clusterID, nodeID string, isMetricDisabled bool, adminMan *admin.Manage
 	go m.routineFlushMetricsToSink()
 
 	return m, nil
+}
+
+//SetMetricsConfig sets metric config
+func (c *Module) SetMetricsConfig(isEnabled bool) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.isMetricDisabled = !isEnabled
 }
 
 type metrics struct {

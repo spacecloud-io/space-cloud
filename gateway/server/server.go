@@ -23,14 +23,14 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, disableMetrics, isDev bool, adminUserInfo *config.AdminUser, ssl *config.SSL) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, isDev bool, adminUserInfo *config.AdminUser, ssl *config.SSL) (*Server, error) {
 
 	managers, err := managers.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, isDev, adminUserInfo, ssl)
 	if err != nil {
 		return nil, err
 	}
 
-	globalMods, err := global.New(clusterID, nodeID, disableMetrics, isDev, managers)
+	globalMods, err := global.New(clusterID, nodeID, isDev, managers)
 	if err != nil {
 		return nil, err
 	}
@@ -41,6 +41,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, disable
 	}
 
 	managers.Sync().SetModules(modules)
+	managers.Sync().SetGlobalModules(globalMods.Metrics())
 
 	logrus.Infoln("Creating a new server with id", nodeID)
 

@@ -1,16 +1,12 @@
 package metrics
 
 import (
-	"context"
-	"fmt"
-	"net/http"
 	"os"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/segmentio/ksuid"
-	"github.com/sirupsen/logrus"
 	api "github.com/spaceuptech/space-api-go"
 	"github.com/spaceuptech/space-api-go/db"
 
@@ -47,38 +43,7 @@ func New(isMetricDisabled bool, driverType model.DriverType) *Module {
 		sink:              api.New("spacecloud", "api.spaceuptech.com", true).DB("db"),
 		driverType:        string(driverType),
 	}
-	go m.routineMetrics()
-
 	return m
-}
-
-const metricsUpdaterInterval = 5 * time.Minute
-
-// RoutineMetrics routinely sends anonymous metrics
-func (m *Module) routineMetrics() {
-	ticker := time.NewTicker(metricsUpdaterInterval)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		_ = m.updateRunnerMetrics(m.loadMetrics())
-	}
-}
-
-func (m *Module) updateRunnerMetrics(doc []interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	result, err := m.sink.Insert("operation_metrics").Docs(doc).Apply(ctx)
-	if err != nil {
-		logrus.Errorf("error querying database got error")
-		return err
-	}
-	if result.Status != http.StatusOK {
-		logrus.Errorf("error querying database got status (%d) (%s)", result.Status, result.Error)
-		return fmt.Errorf("unknown status code (%d) (%s)", result.Status, result.Error)
-	}
-
-	return nil
 }
 
 func newMetrics() *metrics {
@@ -116,7 +81,8 @@ func (m *Module) AddServiceCall(projectID string) {
 	atomic.AddUint64(&metrics.serviceCall, uint64(1))
 }
 
-func (m *Module) loadMetrics() []interface{} {
+//LoadMetrics return stored metrics to gateway
+func (m *Module) LoadMetrics() []interface{} {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 

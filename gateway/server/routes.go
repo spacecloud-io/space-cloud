@@ -149,12 +149,14 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	runnerRouter.Methods(http.MethodDelete).Path("/{project}/secrets/{id}").HandlerFunc(s.managers.Sync().HandleRunnerDeleteSecret(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodPost).Path("/{project}/secrets/{id}/{key}").HandlerFunc(s.managers.Sync().HandleRunnerSetSecretKey(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodDelete).Path("/{project}/secrets/{id}/{key}").HandlerFunc(s.managers.Sync().HandleRunnerDeleteSecretKey(s.managers.Admin()))
-	// service routes
+	// service
 	runnerRouter.Methods(http.MethodPost).Path("/{project}/services/{serviceId}/{version}").HandlerFunc(s.managers.Sync().HandleRunnerApplyService(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/services").HandlerFunc(s.managers.Sync().HandleRunnerGetServices(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodDelete).Path("/{project}/services/{serviceId}/{version}").HandlerFunc(s.managers.Sync().HandleRunnerDeleteService(s.managers.Admin()))
+	// service routes
 	runnerRouter.Methods(http.MethodPost).Path("/{project}/service-routes/{serviceId}").HandlerFunc(s.managers.Sync().HandleRunnerServiceRoutingRequest(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/service-routes").HandlerFunc(s.managers.Sync().HandleRunnerGetServiceRoutingRequest(s.managers.Admin()))
+
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/services/logs").HandlerFunc(s.managers.Sync().HandleRunnerGetServiceLogs(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/services/status").HandlerFunc(s.managers.Sync().HandleRunnerGetDeploymentStatus(s.managers.Admin()))
 

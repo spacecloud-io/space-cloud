@@ -27,6 +27,9 @@ type Server struct {
 	// For handling http related stuff
 	router *mux.Router
 
+	// For sending metrics to runner
+	metrics *metrics.Module
+
 	// For internal use
 	auth     *auth.Module
 	driver   driver.Interface
@@ -85,6 +88,8 @@ func New(c *Config) (*Server, error) {
 	return &Server{
 		config: c,
 		router: mux.NewRouter(),
+
+		metrics: metric,
 
 		// For internal use
 		auth:     a,

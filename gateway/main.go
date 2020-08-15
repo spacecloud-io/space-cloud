@@ -180,9 +180,6 @@ func actionRun(c *cli.Context) error {
 	storeType := c.String("store-type")
 	advertiseAddr := c.String("advertise-addr")
 
-	// Load the flags for the metrics module
-	disableMetrics := c.Bool("disable-metrics")
-
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
@@ -205,7 +202,7 @@ func actionRun(c *cli.Context) error {
 		adminSecret = "some-secret"
 	}
 	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, disableMetrics, isDev, adminUserInfo, ssl)
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, isDev, adminUserInfo, ssl)
 	if err != nil {
 		return err
 	}

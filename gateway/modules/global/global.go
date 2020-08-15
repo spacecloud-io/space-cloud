@@ -15,8 +15,9 @@ type Global struct {
 }
 
 // New creates a new global object
-func New(clusterID, nodeID string, disableMetrics, isDev bool, managers *managers.Managers) (*Global, error) {
-	m, err := metrics.New(clusterID, nodeID, disableMetrics, managers.Admin(), managers.Sync(), !isDev)
+func New(clusterID, nodeID string, isDev bool, managers *managers.Managers) (*Global, error) {
+	// when ever gateway starts it will send metrics
+	m, err := metrics.New(clusterID, nodeID, false, managers.Admin(), managers.Sync(), !isDev)
 	if err != nil {
 		return nil, err
 	}
