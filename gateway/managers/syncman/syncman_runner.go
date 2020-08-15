@@ -48,7 +48,7 @@ func (s *Manager) HandleRunnerApplySecret(admin *admin.Manager) http.HandlerFunc
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		reqParams, err := admin.IsTokenValid(token, "secret", "modify", map[string]string{"project": projectID})
+		reqParams, err := admin.IsTokenValid(token, "secret", "modify", map[string]string{"project": projectID, "id": vars["id"]})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -70,8 +70,11 @@ func (s *Manager) HandleRunnerListSecret(admin *admin.Manager) http.HandlerFunc 
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-
-		reqParams, err := admin.IsTokenValid(token, "secret", "read", map[string]string{"project": projectID})
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			id = "*"
+		}
+		reqParams, err := admin.IsTokenValid(token, "secret", "read", map[string]string{"project": projectID, "id": id})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -94,7 +97,7 @@ func (s *Manager) HandleRunnerSetFileSecretRootPath(admin *admin.Manager) http.H
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		reqParams, err := admin.IsTokenValid(token, "secret", "modify", map[string]string{"project": projectID})
+		reqParams, err := admin.IsTokenValid(token, "secret", "modify", map[string]string{"project": projectID, "id": vars["id"]})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -117,7 +120,7 @@ func (s *Manager) HandleRunnerDeleteSecret(admin *admin.Manager) http.HandlerFun
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		reqParams, err := admin.IsTokenValid(token, "secret", "modify", map[string]string{"project": projectID})
+		reqParams, err := admin.IsTokenValid(token, "secret", "modify", map[string]string{"project": projectID, "id": vars["id"]})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -140,7 +143,7 @@ func (s *Manager) HandleRunnerSetSecretKey(admin *admin.Manager) http.HandlerFun
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		reqParams, err := admin.IsTokenValid(token, "secret", "modify", map[string]string{"project": projectID})
+		reqParams, err := admin.IsTokenValid(token, "secret", "modify", map[string]string{"project": projectID, "id": vars["id"], "key": vars["key"]})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -163,7 +166,7 @@ func (s *Manager) HandleRunnerDeleteSecretKey(admin *admin.Manager) http.Handler
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		reqParams, err := admin.IsTokenValid(token, "secret", "modify", map[string]string{"project": projectID})
+		reqParams, err := admin.IsTokenValid(token, "secret", "modify", map[string]string{"project": projectID, "id": vars["id"], "key": vars["key"]})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -186,7 +189,7 @@ func (s *Manager) HandleRunnerApplyService(admin *admin.Manager) http.HandlerFun
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		reqParams, err := admin.IsTokenValid(token, "service", "modify", map[string]string{"project": projectID})
+		reqParams, err := admin.IsTokenValid(token, "service", "modify", map[string]string{"project": projectID, "id": vars["serviceId"], "version": vars["version"]})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -208,8 +211,15 @@ func (s *Manager) HandleRunnerGetServices(admin *admin.Manager) http.HandlerFunc
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-
-		reqParams, err := admin.IsTokenValid(token, "service", "read", map[string]string{"project": projectID})
+		id := r.URL.Query().Get("serviceId")
+		if id == "" {
+			id = "*"
+		}
+		version := r.URL.Query().Get("version")
+		if id == "" {
+			version = "*"
+		}
+		reqParams, err := admin.IsTokenValid(token, "service", "read", map[string]string{"project": projectID, "id": id, "version": version})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -253,7 +263,7 @@ func (s *Manager) HandleRunnerDeleteService(admin *admin.Manager) http.HandlerFu
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		reqParams, err := admin.IsTokenValid(token, "service", "modify", map[string]string{"project": projectID})
+		reqParams, err := admin.IsTokenValid(token, "service", "modify", map[string]string{"project": projectID, "id": vars["serviceId"], "version": vars["version"]})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -276,7 +286,7 @@ func (s *Manager) HandleRunnerServiceRoutingRequest(admin *admin.Manager) http.H
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		reqParams, err := admin.IsTokenValid(token, "service-route", "modify", map[string]string{"project": projectID})
+		reqParams, err := admin.IsTokenValid(token, "service-route", "modify", map[string]string{"project": projectID, "id": vars["serviceId"]})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
@@ -299,7 +309,11 @@ func (s *Manager) HandleRunnerGetServiceRoutingRequest(admin *admin.Manager) htt
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		reqParams, err := admin.IsTokenValid(token, "service-route", "read", map[string]string{"project": projectID})
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			id = "*"
+		}
+		reqParams, err := admin.IsTokenValid(token, "service-route", "read", map[string]string{"project": projectID, "id": id})
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())

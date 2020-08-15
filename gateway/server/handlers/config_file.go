@@ -218,10 +218,6 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		projectID := vars["project"]
 		ruleName := vars["id"]
 
-		value := new(config.FileRule)
-		_ = json.NewDecoder(r.Body).Decode(value)
-		defer utils.CloseTheCloser(r.Body)
-
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName})
 		if err != nil {
@@ -235,7 +231,6 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		reqParams.Payload = value
 		if status, err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return

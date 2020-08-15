@@ -6,6 +6,8 @@ import (
 
 func (s *Server) routes() {
 	s.router.Methods(http.MethodGet).Path("/v1/runner/cluster-type").HandlerFunc(s.handleGetClusterType())
+	s.router.Methods(http.MethodGet).Path("/v1/runner/metrics").HandlerFunc(s.handleGetMetrics())
+
 	// project routes
 	s.router.Methods(http.MethodPost).Path("/v1/runner/project/{project}").HandlerFunc(s.handleCreateProject())
 	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}").HandlerFunc(s.handleDeleteProject())

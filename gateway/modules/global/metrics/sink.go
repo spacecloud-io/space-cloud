@@ -2,10 +2,13 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 const metricsUpdaterInterval = 5 * time.Minute
@@ -15,7 +18,28 @@ func (m *Module) routineFlushMetricsToSink() {
 	ticker := time.NewTicker(metricsUpdaterInterval)
 
 	for range ticker.C {
+		if m.isMetricDisabled {
+			continue
+		}
 		go m.flushMetrics(m.LoadMetrics())
+
+		if m.syncMan.GetRunnerAddr() != "" {
+			token, err := m.adminMan.GetInternalAccessToken()
+			if err != nil {
+				utils.LogDebug("Unable to get internal access token", "metrics", "routine-flush-metrics-to-sink", map[string]interface{}{"error": err})
+				continue
+			}
+			result := struct {
+				Error  string        `json:"error"`
+				Result []interface{} `json:"result"`
+			}{}
+			url := fmt.Sprintf("http://%s/v1/runner/metrics", m.syncMan.GetRunnerAddr())
+			if err := m.syncMan.MakeHTTPRequest(context.Background(), http.MethodGet, url, token, "", map[string]interface{}{}, &result); err != nil {
+				utils.LogDebug("Unable to fetch metrics from runner", "metrics", "routine-flush-metrics-to-sink", map[string]interface{}{"error": err})
+				continue
+			}
+			go m.flushMetrics(result.Result)
+		}
 
 		go func() {
 			// Flush project metrics only if our index is 0

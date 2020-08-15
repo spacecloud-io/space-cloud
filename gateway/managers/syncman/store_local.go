@@ -29,6 +29,12 @@ func NewLocalStore(nodeID, advertiseAddr string, ssl *config.SSL) (Store, error)
 	if err != nil {
 		conf = config.GenerateEmptyConfig()
 	}
+
+	// For compatibility with v18
+	if conf.Admin.ClusterConfig == nil {
+		conf.Admin.ClusterConfig = &config.ClusterConfig{EnableTelemetry: true}
+	}
+
 	if ssl.Enabled {
 		conf.SSL = ssl
 	}

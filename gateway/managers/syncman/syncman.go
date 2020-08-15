@@ -33,7 +33,8 @@ type Manager struct {
 	integrationMan integrationInterface
 
 	// Modules
-	modules ModulesInterface
+	modules       ModulesInterface
+	globalModules GlobalModulesInterface
 }
 
 type service struct {
@@ -85,6 +86,10 @@ func (s *Manager) Start(port int) error {
 		return utils.LogError("Unable to fetch initial copy of admin config", "syncman", "Start", err)
 	}
 	utils.LogDebug("Successfully loaded initial copy of config file", "syncman", "Start", nil)
+	s.globalModules.SetMetricsConfig(adminConfig.ClusterConfig.EnableTelemetry)
+	if adminConfig.ClusterConfig.LetsEncryptEmail != "" {
+		s.modules.LetsEncrypt().SetLetsEncryptEmail(adminConfig.ClusterConfig.LetsEncryptEmail)
+	}
 	_ = s.adminMan.SetConfig(adminConfig, true)
 	_ = s.integrationMan.SetConfig(adminConfig.Integrations)
 	s.projectConfig.Admin = adminConfig
@@ -104,7 +109,9 @@ func (s *Manager) Start(port int) error {
 			}
 			if doesNotExist {
 				err := s.store.DeleteProject(context.Background(), p.ID)
-				_ = utils.LogError("Unable to delete project", "syncman", "Start", err)
+				if err != nil {
+					_ = utils.LogError("Unable to delete project", "syncman", "Start", err)
+				}
 			}
 		}
 		s.projectConfig.Projects = projects
@@ -140,6 +147,8 @@ func (s *Manager) Start(port int) error {
 		if err := s.integrationMan.SetConfig(cluster.Integrations); err != nil {
 			_ = utils.LogError("Unable to apply integration config", "syncman", "watch-admin-config", err)
 		}
+		s.globalModules.SetMetricsConfig(cluster.ClusterConfig.EnableTelemetry)
+		s.modules.LetsEncrypt().SetLetsEncryptEmail(cluster.ClusterConfig.LetsEncryptEmail)
 
 	}); err != nil {
 		return err
@@ -177,4 +186,9 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 // SetModules sets all the modules
 func (s *Manager) SetModules(modulesInterface ModulesInterface) {
 	s.modules = modulesInterface
+}
+
+// SetGlobalModules sets all the modules
+func (s *Manager) SetGlobalModules(a GlobalModulesInterface) {
+	s.globalModules = a
 }

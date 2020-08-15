@@ -18,7 +18,7 @@ import (
 )
 
 // Upgrade upgrades the environment which has been setup
-func Upgrade(clusterName string) error {
+func Upgrade(clusterName string, version string) error {
 
 	// Getting current version
 	result := make(map[string]interface{})
@@ -31,6 +31,9 @@ func Upgrade(clusterName string) error {
 	latestVersion, err := utils.GetLatestVersion(currentVersion)
 	if err != nil {
 		return err
+	}
+	if version != "" {
+		latestVersion = version
 	}
 
 	if currentVersion == latestVersion {

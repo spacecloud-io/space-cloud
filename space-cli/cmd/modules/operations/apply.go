@@ -104,11 +104,16 @@ func ApplySpec(token string, account *model.Account, specObj *model.SpecObject) 
 	v := map[string]interface{}{}
 	_ = json.NewDecoder(resp.Body).Decode(&v)
 	utils.CloseTheCloser(req.Body)
-	if resp.StatusCode != 200 {
+
+	if resp.StatusCode == http.StatusAccepted {
+		// Make checker send this status
+		utils.LogInfo(fmt.Sprintf("Successfully queued %s", specObj.Type))
+	} else if resp.StatusCode == http.StatusOK {
+		utils.LogInfo(fmt.Sprintf("Successfully applied %s", specObj.Type))
+	} else {
 		_ = utils.LogError(fmt.Sprintf("error while applying service got http status code %s - %s", resp.Status, v["error"]), nil)
 		return fmt.Errorf("%v", v["error"])
 	}
-	utils.LogInfo(fmt.Sprintf("Successfully applied %s", specObj.Type))
 	return nil
 }
 
