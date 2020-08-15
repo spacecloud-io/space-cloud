@@ -158,11 +158,15 @@ func Commands() []*cobra.Command {
 			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
+			if err := viper.BindPFlag("version", cmd.Flags().Lookup("version")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('version')", nil)
+			}
 		},
 		SilenceErrors: true,
 		RunE:          actionUpgrade,
 	}
 	upgrade.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
+	upgrade.Flags().StringP("version", "", "default", "version to use for upgrade")
 
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
 		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
@@ -260,7 +264,8 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 
 func actionUpgrade(cmd *cobra.Command, args []string) error {
 	clusterName := viper.GetString("cluster-name")
-	return Upgrade(clusterName)
+	version := viper.GetString("version")
+	return Upgrade(clusterName, version)
 }
 
 func actionDestroy(cmd *cobra.Command, args []string) error {

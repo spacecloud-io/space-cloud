@@ -55,14 +55,6 @@ func TestNew(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name: "valid config provided metrics disabled",
-			args: args{
-				isMetricDisabled: true,
-			},
-			want:    new(fields),
-			wantErr: false,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
