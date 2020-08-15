@@ -47,7 +47,6 @@ func LoginStart(userName, ID, key, url string) error {
 			return err
 		}
 	}
-
 	if ID == "None" {
 		ID = userName
 	}
@@ -59,6 +58,7 @@ func LoginStart(userName, ID, key, url string) error {
 		}
 	}
 	account := model.Account{
+		ID:        ID,
 		UserName:  userName,
 		Key:       key,
 		ServerURL: url,
