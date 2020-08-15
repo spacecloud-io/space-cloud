@@ -175,7 +175,7 @@ func (s *Manager) SetModules(modulesInterface ModulesInterface) {
 	s.modules = modulesInterface
 }
 
-// SetModules sets all the modules
+// SetGlobalModules sets all the modules
 func (s *Manager) SetGlobalModules(a GlobalModulesInterface) {
 	s.globalModules = a
 }

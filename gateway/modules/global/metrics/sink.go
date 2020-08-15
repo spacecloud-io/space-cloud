@@ -24,8 +24,6 @@ func (m *Module) routineFlushMetricsToSink() {
 		go m.flushMetrics(m.LoadMetrics())
 
 		if m.syncMan.GetRunnerAddr() != "" {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel() // TODO goland possible resource leak, as it is in for loo[
 			token, err := m.adminMan.GetInternalAccessToken()
 			if err != nil {
 				utils.LogDebug("Unable to get internal access token", "metrics", "routine-flush-metrics-to-sink", map[string]interface{}{"error": err})
@@ -36,7 +34,7 @@ func (m *Module) routineFlushMetricsToSink() {
 				Result []interface{} `json:"result"`
 			}{}
 			url := fmt.Sprintf("http://%s/v1/runner/metrics", m.syncMan.GetRunnerAddr())
-			if err := m.syncMan.MakeHTTPRequest(ctx, http.MethodGet, url, token, "", map[string]interface{}{}, &result); err != nil {
+			if err := m.syncMan.MakeHTTPRequest(context.Background(), http.MethodGet, url, token, "", map[string]interface{}{}, &result); err != nil {
 				utils.LogDebug("Unable to fetch metrics from runner", "metrics", "routine-flush-metrics-to-sink", map[string]interface{}{"error": err})
 				continue
 			}

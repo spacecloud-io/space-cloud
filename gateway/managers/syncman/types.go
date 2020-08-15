@@ -43,6 +43,7 @@ type ModulesInterface interface {
 	Delete(projectID string)
 }
 
+//GlobalModulesInterface is an interface consisting of functions of the global modules
 type GlobalModulesInterface interface {
 	// SetMetricsConfig set the config of the metrics module
 	SetMetricsConfig(isMetricsEnabled bool)
