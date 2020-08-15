@@ -29,6 +29,9 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	if err := s.adminMan.ValidateIntegrationSyncOperation(config.Integrations{integrationConfig}); err != nil {
+		return http.StatusUpgradeRequired, err
+	}
 
 	// Create a project if it doesn't already exist
 	utils.LogDebug(fmt.Sprintf("Creating a new project for integration (%s)", integrationConfig.ID), "syncman", "enable-integration", nil)

@@ -139,7 +139,7 @@ func (s *Manager) Start(port int) error {
 		s.projectConfig.Admin = cluster
 		s.lock.Unlock()
 
-		utils.LogDebug("Updating admin config", "syncman", "Start", map[string]interface{}{"admin config": clusters})
+		utils.LogDebug("Updating admin config", "syncman", "Start", map[string]interface{}{"admin config": clusters, "nodeId": s.nodeID})
 		if err := s.adminMan.SetConfig(cluster, false); err != nil {
 			_ = utils.LogError("Unable to apply admin config", "syncman", "watch-admin-config", err)
 		}

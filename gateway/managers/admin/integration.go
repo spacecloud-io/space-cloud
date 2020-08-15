@@ -44,22 +44,33 @@ func (m *Manager) ValidateIntegrationSyncOperation(integrations config.Integrati
 	for _, i := range integrations {
 		obj, err := m.parseLicenseToken(i.License)
 		if err != nil {
-			m.config.Integrations = config.Integrations{}
+			m.config.Integrations = removeIntegration(m.config.Integrations, i.ID)
 			return err
 		}
 
 		// Return error if license does not belong to integration
 		if obj["id"] != i.ID {
-			m.config.Integrations = config.Integrations{}
+			m.config.Integrations = removeIntegration(m.config.Integrations, i.ID)
 			return utils.LogError(fmt.Sprintf("Integration (%s) has an invlaid license", i.ID), "admin", "validate-integration", nil)
 		}
 
 		// Check if the level is larger than the licensed level
 		if obj["level"].(float64) > m.quotas.IntegrationLevel {
-			m.config.Integrations = config.Integrations{}
+			m.config.Integrations = removeIntegration(m.config.Integrations, i.ID)
 			return utils.LogError(fmt.Sprintf("Integration (%s) cannot be used with the current plan", i.ID), "admin", "validate-integration", nil)
 		}
 	}
 
 	return nil
+}
+
+func removeIntegration(arr config.Integrations, id string) config.Integrations {
+	length := len(arr)
+	for index, integrationConfig := range arr {
+		if integrationConfig.ID == id {
+			arr[index] = arr[length-1]
+			return arr[:length-1]
+		}
+	}
+	return arr
 }
