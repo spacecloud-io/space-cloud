@@ -98,6 +98,7 @@ func (m *Manager) startOperation(license string, isInitialCall bool) error {
 	// set quotas
 	m.quotas.MaxProjects = licenseObj.Meta.ProductMeta.MaxProjects
 	m.quotas.MaxDatabases = licenseObj.Meta.ProductMeta.MaxDatabases
+	m.quotas.IntegrationLevel = licenseObj.Meta.ProductMeta.IntegrationLevel
 	m.clusterName = licenseObj.Meta.LicenseKeyMeta.ClusterName
 	m.licenseRenewalDate = licenseObj.LicenseRenewal
 	m.plan = licenseObj.Plan
@@ -139,7 +140,7 @@ func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 	// Reset quotas defaults
 	m.quotas.MaxProjects = 1
 	m.quotas.MaxDatabases = 1
-	m.quotas.IntegrationLevel = 1
+	m.quotas.IntegrationLevel = 0
 	m.plan = "space-cloud-open--monthly"
 	return nil
 }

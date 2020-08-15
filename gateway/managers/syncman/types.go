@@ -23,6 +23,7 @@ type AdminSyncmanInterface interface {
 	// For integrations
 	GetIntegrationToken(id string) (string, error)
 	ParseLicense(license string) (map[string]interface{}, error)
+	ValidateIntegrationSyncOperation(integrations config.Integrations) error
 }
 
 type integrationInterface interface {
@@ -57,7 +58,7 @@ type ModulesInterface interface {
 	Delete(projectID string)
 }
 
-//GlobalModulesInterface is an interface consisting of functions of the global modules
+// GlobalModulesInterface is an interface consisting of functions of the global modules
 type GlobalModulesInterface interface {
 	// SetMetricsConfig set the config of the metrics module
 	SetMetricsConfig(isMetricsEnabled bool)

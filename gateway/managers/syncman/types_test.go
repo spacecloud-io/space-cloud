@@ -63,24 +63,30 @@ type mockAdminSyncmanInterface struct {
 	mock.Mock
 }
 
+func (m *mockAdminSyncmanInterface) ValidateIntegrationSyncOperation(integrations config.Integrations) error {
+	return m.Called(integrations).Error(0)
+}
+
 func (m *mockAdminSyncmanInterface) ParseLicense(license string) (map[string]interface{}, error) {
-	panic("implement me")
+	v := m.Called(license)
+	return v.Get(0).(map[string]interface{}), v.Error(1)
 }
 
 func (m *mockAdminSyncmanInterface) GetIntegrationToken(id string) (string, error) {
-	panic("implement me")
+	v := m.Called(id)
+	return v.String(0), v.Error(1)
 }
 
 func (m *mockAdminSyncmanInterface) IsRegistered() bool {
-	panic("implement me")
+	return m.Called().Bool(0)
 }
 
 func (m *mockAdminSyncmanInterface) GetSessionID() string {
-	panic("implement me")
+	return m.Called().String(0)
 }
 
 func (m *mockAdminSyncmanInterface) RenewLicense(b bool) error {
-	panic("implement me")
+	return m.Called(b).Error(0)
 }
 
 func (m *mockAdminSyncmanInterface) ValidateProjectSyncOperation(projects *config.Config, projectID *config.Project) bool {
@@ -88,7 +94,7 @@ func (m *mockAdminSyncmanInterface) ValidateProjectSyncOperation(projects *confi
 }
 
 func (m *mockAdminSyncmanInterface) SetConfig(admin *config.Admin, isFirst bool) error {
-	panic("implement me")
+	return m.Called(admin, isFirst).Error(0)
 }
 
 func (m *mockAdminSyncmanInterface) IsTokenValid(token, resource, op string, attr map[string]string) (model.RequestParams, error) {
@@ -110,11 +116,11 @@ type mockModulesInterface struct {
 }
 
 func (m *mockModulesInterface) LetsEncrypt() *letsencrypt.LetsEncrypt {
-	panic("implement me")
+	return m.Called().Get(0).(*letsencrypt.LetsEncrypt)
 }
 
 func (m *mockModulesInterface) Routing() *routing.Routing {
-	panic("implement me")
+	return m.Called().Get(0).(*routing.Routing)
 }
 
 func (m *mockModulesInterface) Delete(projectID string) {

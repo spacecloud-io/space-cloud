@@ -81,7 +81,7 @@ func (m *Module) AddServiceCall(projectID string) {
 	atomic.AddUint64(&metrics.serviceCall, uint64(1))
 }
 
-//LoadMetrics return stored metrics to gateway
+// LoadMetrics return stored metrics to gateway
 func (m *Module) LoadMetrics() []interface{} {
 	m.lock.Lock()
 	defer m.lock.Unlock()

@@ -183,6 +183,7 @@ func (m *Manager) ResetQuotas() {
 	utils.LogInfo("Resetting space cloud to run in open source model. You will have to re-register the cluster again.", "admin", "resetQuotas")
 	m.quotas.MaxProjects = 1
 	m.quotas.MaxDatabases = 1
+	m.quotas.IntegrationLevel = 0
 	m.plan = "space-cloud-open--monthly"
 
 	m.config.LicenseKey = ""
@@ -212,6 +213,7 @@ func (m *Manager) setQuotas(license string) error {
 	// set quotas
 	m.quotas.MaxProjects = licenseObj.Meta.ProductMeta.MaxProjects
 	m.quotas.MaxDatabases = licenseObj.Meta.ProductMeta.MaxDatabases
+	m.quotas.IntegrationLevel = licenseObj.Meta.ProductMeta.IntegrationLevel
 	m.clusterName = licenseObj.Meta.LicenseKeyMeta.ClusterName
 	m.licenseRenewalDate = licenseObj.LicenseRenewal
 	m.plan = licenseObj.Plan

@@ -46,7 +46,7 @@ func New() (*LetsEncrypt, error) {
 	return &LetsEncrypt{client: client, domains: domainMapping{}}, nil
 }
 
-//SetLetsEncryptEmail sets config email
+// SetLetsEncryptEmail sets config email
 func (l *LetsEncrypt) SetLetsEncryptEmail(email string) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
