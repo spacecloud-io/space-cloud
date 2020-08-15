@@ -110,6 +110,7 @@ func (s *Manager) Start(port int) error {
 				if err != nil {
 					_ = utils.LogError("Unable to delete project", "syncman", "Start", err)
 				}
+				s.modules.Delete(p.ID)
 			}
 		}
 		s.projectConfig.Projects = projects
