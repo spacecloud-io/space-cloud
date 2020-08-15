@@ -25,10 +25,13 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('url')", nil)
 			}
-
+			err = viper.BindPFlag("id", cmd.Flags().Lookup("id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('id')", nil)
+			}
 		},
 		RunE:          actionLogin,
-		SilenceErrors: true,
+		SilenceErrors: false,
 	}
 	loginCommands.Flags().StringP("username", "", "None", "Accepts the username for login")
 	err := viper.BindEnv("username", "USER_NAME")
