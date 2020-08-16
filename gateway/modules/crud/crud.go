@@ -180,7 +180,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		if block, p := m.blocks[blockKey]; p {
 			// Skip if the connection string is the same
 			if block.IsSame(connectionString, v.DBName) {
-				break
+				continue
 			}
 			// Close the previous database connection
 			if err := block.Close(); err != nil {

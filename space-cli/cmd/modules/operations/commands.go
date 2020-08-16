@@ -89,8 +89,7 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
-		RunE:          actionSetup,
-		SilenceErrors: true,
+		RunE: actionSetup,
 	}
 
 	setup.Flags().StringP("username", "", "", "The username used for login")
@@ -162,8 +161,7 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('version')", nil)
 			}
 		},
-		SilenceErrors: true,
-		RunE:          actionUpgrade,
+		RunE: actionUpgrade,
 	}
 	upgrade.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
 	upgrade.Flags().StringP("version", "", "default", "version to use for upgrade")
@@ -184,8 +182,7 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
-		SilenceErrors: true,
-		RunE:          actionDestroy,
+		RunE: actionDestroy,
 	}
 	destroy.Flags().StringP("cluster-name", "", "default", "The name of  space-cloud cluster")
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
@@ -197,10 +194,9 @@ func Commands() []*cobra.Command {
 	}
 
 	var apply = &cobra.Command{
-		Use:           "apply",
-		Short:         "deploys service",
-		RunE:          actionApply,
-		SilenceErrors: true,
+		Use:   "apply",
+		Short: "deploys service",
+		RunE:  actionApply,
 	}
 
 	var start = &cobra.Command{
@@ -211,8 +207,7 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
-		SilenceErrors: true,
-		RunE:          actionStart,
+		RunE: actionStart,
 	}
 	start.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
@@ -231,8 +226,7 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
-		SilenceErrors: true,
-		RunE:          actionStop,
+		RunE: actionStop,
 	}
 	stop.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
