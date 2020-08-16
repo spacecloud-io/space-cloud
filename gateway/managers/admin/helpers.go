@@ -79,7 +79,7 @@ func (m *Manager) fetchPublicKeyWithoutLock() error {
 		"timeout": 10,
 	}
 	data, _ := json.Marshal(body)
-	res, err := http.Post(fmt.Sprintf("https://testing.spaceuptech.com/v1/api/spacecloud/services/billing/getPublicKey"), "application/json", bytes.NewBuffer(data))
+	res, err := http.Post(fmt.Sprintf("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/getPublicKey"), "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	})
 	utils.LogDebug(`Renewing admin license`, "admin", "renewLicenseWithoutLock", map[string]interface{}{"clusterId": m.config.LicenseKey, "clusterKey": m.config.LicenseValue, "sessionId": m.sessionID})
 	// Fire the request
-	res, err := http.Post("https://testing.spaceuptech.com/v1/api/spacecloud/services/billing/renewLicense", "application/json", bytes.NewBuffer(data))
+	res, err := http.Post("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/renewLicense", "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return utils.LogError("Unable to contact server to fetch license file from server", "admin", "renewLicenseWithoutLock", err)
 	}
