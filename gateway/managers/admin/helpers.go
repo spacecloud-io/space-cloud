@@ -167,7 +167,7 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 		if m.licenseFetchErrorCount > maxLicenseFetchErrorCount || force {
 			utils.LogInfo("Max retry limit hit.", "admin", "renewLicenseWithoutLock")
 			m.ResetQuotas()
-			return fmt.Errorf("%s-%s", v.Message, v.Result.Error)
+			return fmt.Errorf("%s-%s", v.Message, v.Error)
 		}
 		return nil
 	} else {

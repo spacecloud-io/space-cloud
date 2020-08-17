@@ -64,7 +64,7 @@ func (s *Manager) ConvertToEnterprise(ctx context.Context, token, licenseKey, li
 	}
 
 	if upgradeResponse.Status != http.StatusOK {
-		return fmt.Errorf("%s--%s--%d", upgradeResponse.Message, upgradeResponse.Result.Error, upgradeResponse.Status)
+		return fmt.Errorf("%s--%s--%d", upgradeResponse.Message, upgradeResponse.Error, upgradeResponse.Status)
 	}
 
 	// set updated admin config in config file
