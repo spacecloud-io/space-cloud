@@ -19,22 +19,17 @@ type UpgradeResponse struct {
 }
 
 type GraphqlFetchLicenseResponse struct {
-	Result struct {
-		Result  *UpgradeResponse `json:"result"`
-		Error   string           `json:"error"`
-		Message string           `json:"message"`
-		Status  int              `json:"status"`
-	} `json:"result"`
-	Error string `json:"error"`
+	Result  *UpgradeResponse `json:"result"`
+	Error   string           `json:"error"`
+	Message string           `json:"message"`
+	Status  int              `json:"status"`
 }
 
 type GraphqlFetchPublicKeyResponse struct {
-	Result struct {
-		Result  string `json:"result"`
-		Error   string `json:"error"`
-		Message string `json:"message"`
-		Status  int    `json:"status"`
-	} `json:"result"`
+	Result  string `json:"result"`
+	Error   string `json:"error"`
+	Message string `json:"message"`
+	Status  int    `json:"status"`
 }
 
 type License struct {

@@ -91,13 +91,13 @@ func (m *Manager) fetchPublicKeyWithoutLock() error {
 	}
 
 	// Check if valid response was received
-	if v.Result.Status != http.StatusOK {
-		return fmt.Errorf("%s-%s", v.Result.Message, v.Result.Error)
+	if v.Status != http.StatusOK {
+		return fmt.Errorf("%s-%s", v.Message, v.Error)
 	}
 
 	// Marshal the public key
 	publicKey := new(rsa.PublicKey)
-	if err = json.Unmarshal([]byte(v.Result.Result), publicKey); err != nil {
+	if err = json.Unmarshal([]byte(v.Result), publicKey); err != nil {
 		return err
 	}
 
@@ -161,21 +161,21 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	}
 
 	// Check if response is valid
-	if v.Result.Status != http.StatusOK {
+	if v.Status != http.StatusOK {
 		m.licenseFetchErrorCount++
-		_ = utils.LogError(fmt.Sprintf("Unable to fetch license file. Retry count - %d", m.licenseFetchErrorCount), "admin", "renewLicenseWithoutLock", errors.New(v.Result.Message))
+		_ = utils.LogError(fmt.Sprintf("Unable to fetch license file. Retry count - %d", m.licenseFetchErrorCount), "admin", "renewLicenseWithoutLock", errors.New(v.Message))
 		if m.licenseFetchErrorCount > maxLicenseFetchErrorCount || force {
 			utils.LogInfo("Max retry limit hit.", "admin", "renewLicenseWithoutLock")
 			m.ResetQuotas()
-			return fmt.Errorf("%s-%s", v.Result.Message, v.Result.Error)
+			return fmt.Errorf("%s-%s", v.Message, v.Result.Error)
 		}
 		return nil
 	} else {
 		m.licenseFetchErrorCount = 0
 	}
 
-	m.config.License = v.Result.Result.License
-	return m.setQuotas(v.Result.Result.License)
+	m.config.License = v.Result.License
+	return m.setQuotas(v.Result.License)
 }
 
 func (m *Manager) ResetQuotas() {

@@ -63,15 +63,15 @@ func (s *Manager) ConvertToEnterprise(ctx context.Context, token, licenseKey, li
 		return err
 	}
 
-	if upgradeResponse.Result.Status != http.StatusOK {
-		return fmt.Errorf("%s--%s--%d", upgradeResponse.Result.Message, upgradeResponse.Result.Error, upgradeResponse.Result.Status)
+	if upgradeResponse.Status != http.StatusOK {
+		return fmt.Errorf("%s--%s--%d", upgradeResponse.Message, upgradeResponse.Result.Error, upgradeResponse.Status)
 	}
 
 	// set updated admin config in config file
 	oldConfig := s.adminMan.GetConfig()
 	oldConfig.LicenseKey = licenseKey
 	oldConfig.LicenseValue = licenseValue
-	oldConfig.License = upgradeResponse.Result.Result.License
+	oldConfig.License = upgradeResponse.Result.License
 
 	return s.SetAdminConfig(ctx, oldConfig)
 }
