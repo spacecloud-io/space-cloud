@@ -133,7 +133,6 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		"DEV=" + devMode,
 		"GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/credentials.json",
 		"CLUSTER_ID=" + clusterID,
-		"PORT=" + portHTTPValue,
 	}
 	var runnerEnvs = []string{
 		"DEV=" + devMode,
