@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
 func (p *Proxy) collectMetrics() (*EnvoyMetrics, error) {
-	logrus.Debugf("Pulling metrics from envoy. Using filter  - %s", p.filter)
-	res, err := http.Get(fmt.Sprintf("http://localhost:15000/stats?filter=(?=.*%s)(?=.*http.inbound)&format=json", p.filter))
+	res, err := p.client.Get("http://localhost:15000/stats?format=json")
 	if err != nil {
 		return nil, err
 	}
@@ -28,13 +28,20 @@ func (p *Proxy) collectMetrics() (*EnvoyMetrics, error) {
 		return nil, err
 	}
 
-	logrus.Debugln("Received metrics from envoy:", metrics)
+	var array []EnvoyStat
+	for _, metric := range metrics.Stats {
+		if metric.Value != nil && validMetric(metric.Name, p.filter) {
+			logrus.Debugln("Received metrics from envoy:", metric.Name, metric.Value)
+			array = append(array, metric)
+		}
+	}
+	metrics.Stats = array
 	return metrics, nil
 }
 
 func (p *Proxy) routineCollectMetrics(duration time.Duration) {
 	// This variable tracks the last req count
-	prevValue := uint64(0)
+	prevValue := float64(0)
 
 	ticker := time.NewTicker(duration)
 	for range ticker.C {
@@ -50,9 +57,13 @@ func (p *Proxy) routineCollectMetrics(duration time.Duration) {
 		}
 
 		// Calculate the total value
-		var value uint64
+		var value float64
 		for _, stat := range metrics.Stats {
-			value += stat.Value
+			num, ok := stat.Value.(float64)
+			if !ok {
+				logrus.Warningln("Unable to convert value to float64:", stat.Value, reflect.TypeOf(stat.Value))
+			}
+			value += num
 		}
 
 		// Calculate the number of requests which occurred between subsequent requests
@@ -62,6 +73,11 @@ func (p *Proxy) routineCollectMetrics(duration time.Duration) {
 		// For active requests we need to send the active request value straight away
 		if p.filter == "downstream_rq_active" {
 			count = value
+		}
+
+		// Make sure count is not zero
+		if count < 0 {
+			count = 0
 		}
 
 		// Prepare and send proxy message

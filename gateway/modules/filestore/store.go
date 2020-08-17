@@ -103,6 +103,18 @@ func (m *Module) SetConfig(project string, conf *config.FileStore) error {
 	return nil
 }
 
+// CloseConfig closes file store
+func (m *Module) CloseConfig() error {
+	m.Lock()
+	defer m.Unlock()
+
+	if m.store == nil {
+		return nil
+	}
+
+	return m.store.Close()
+}
+
 func setFileSecret(fileStoreType utils.FileStoreType, key, value string) error {
 	switch fileStoreType {
 	case utils.AmazonS3:

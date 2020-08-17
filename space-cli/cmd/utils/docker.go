@@ -2,16 +2,76 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/docker/docker/api/types/filters"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
+
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 )
+
+// GetContainers gets container running in a specific cluster
+func GetContainers(ctx context.Context, dockerClient *client.Client, clusterName, containerType string) ([]types.Container, error) {
+	argsName := filters.Arg("name", "space-cloud")
+	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsName), All: true})
+	if err != nil {
+		_ = LogError(fmt.Sprintf("Unable to list containers - %s", err.Error()), nil)
+		return nil, err
+	}
+
+	clusterContainers := make([]types.Container, 0)
+	for _, container := range containers {
+		bigArr := strings.Split(container.Names[0], "--")
+		smallArr := strings.Split(bigArr[0], "-")
+		if clusterName == "default" {
+			if len(smallArr) == 3 || len(smallArr) == 2 {
+				if containerType == model.DbContainers && len(smallArr) != 2 {
+					continue
+				}
+				// Containers running in a default cluster
+				if isTypeSpecificContainer(containerType, container.Labels) {
+					clusterContainers = append(clusterContainers, container)
+				}
+			}
+			continue
+		}
+		if len(smallArr) >= 3 && smallArr[2] == clusterName {
+			if isTypeSpecificContainer(containerType, container.Labels) {
+				// Containers running in a specific cluster
+				clusterContainers = append(clusterContainers, container)
+			}
+		}
+	}
+	return clusterContainers, nil
+}
+
+func isTypeSpecificContainer(cType string, labels map[string]string) bool {
+	switch cType {
+	case model.AllContainers:
+		return true
+	case model.DbContainers:
+		return labels["service"] == "db"
+	case model.ServiceContainers:
+		_, ok1 := labels["service"]
+		_, ok2 := labels["task"]
+		_, ok3 := labels["version"]
+		return ok1 && ok2 && ok3
+	case model.ScContainers:
+		return labels["service"] == "gateway" || labels["service"] == "runner"
+	case model.RegistryContainers:
+		return labels["service"] == "registry"
+	default:
+		return false
+	}
+}
 
 // PullImageIfNotExist pulls the docker image if it does not exist
 func PullImageIfNotExist(ctx context.Context, dockerClient *client.Client, image string) error {

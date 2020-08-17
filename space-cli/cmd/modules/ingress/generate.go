@@ -6,40 +6,41 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/segmentio/ksuid"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/input"
 )
 
 func generateIngressRouting() (*model.SpecObject, error) {
 
 	project := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter project"}, &project); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter project"}, &project); err != nil {
 		return nil, err
 	}
 
 	hosts := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter hosts by comma separated value: "}, &hosts); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter hosts by comma separated value: "}, &hosts); err != nil {
 		return nil, err
 	}
 	host := strings.Split(hosts, ",")
 
 	methods := []string{}
-	if err := survey.AskOne(&survey.MultiSelect{Message: "Select Methods: ", Options: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "CONNECT", "TRACE"}}, &methods); err != nil {
+	if err := input.Survey.AskOne(&survey.MultiSelect{Message: "Select Methods: ", Options: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "CONNECT", "TRACE"}}, &methods); err != nil {
 		return nil, err
 	}
 
 	url := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter url", Default: "/"}, &url); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter url", Default: "/"}, &url); err != nil {
 		return nil, err
 	}
 
 	rewriteURL := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter rewriteURL"}, &rewriteURL); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter rewriteURL"}, &rewriteURL); err != nil {
 		return nil, err
 	}
 
 	routingType := ""
-	if err := survey.AskOne(&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &routingType); err != nil {
+	if err := input.Survey.AskOne(&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &routingType); err != nil {
 		return nil, err
 	}
 	var target []interface{}
@@ -48,28 +49,28 @@ func generateIngressRouting() (*model.SpecObject, error) {
 	for {
 
 		host1 := ""
-		if err := survey.AskOne(&survey.Input{Message: "Enter host"}, &host1); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter host"}, &host1); err != nil {
 			return nil, err
 		}
 
 		port := ""
-		if err := survey.AskOne(&survey.Input{Message: "Enter port", Default: "8080"}, &port); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter port", Default: "8080"}, &port); err != nil {
 			return nil, err
 		}
 
 		scheme := ""
-		if err := survey.AskOne(&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &scheme); err != nil {
+		if err := input.Survey.AskOne(&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &scheme); err != nil {
 			return nil, err
 		}
 
 		weight := 0
-		if err := survey.AskOne(&survey.Input{Message: "Enter weight"}, &weight); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter weight"}, &weight); err != nil {
 			return nil, err
 		}
 		t := map[string]interface{}{"host": host1, "port": port, "schema": scheme, "type": "", "weight": weight, "version": ""}
 		target = append(target, t)
 		totalWeight += weight
-		if err := survey.AskOne(&survey.Input{Message: "Add another host?(Y/n)", Default: "n"}, &want); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Add another host?(Y/n)", Default: "n"}, &want); err != nil {
 			return nil, err
 		}
 		if strings.ToLower(want) == "n" {
@@ -99,6 +100,52 @@ func generateIngressRouting() (*model.SpecObject, error) {
 				"rewriteURL": rewriteURL,
 			},
 			"targets": target,
+		},
+	}
+
+	return v, nil
+}
+
+func generateIngressGlobal() (*model.SpecObject, error) {
+
+	project := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project:"}, &project); err != nil {
+		return nil, err
+	}
+
+	headersKey := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Key:", Default: "Foo"}, &headersKey); err != nil {
+		return nil, err
+	}
+	headersValue := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Request Header Value:", Default: "Bar"}, &headersValue); err != nil {
+		return nil, err
+	}
+	headersOperation := ""
+	if err := input.Survey.AskOne(&survey.Select{Message: "Enter Request Header Operation:", Options: []string{"set", "add", "del"}}, &headersOperation); err != nil {
+		return nil, err
+	}
+
+	resHeadersKey := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Key:", Default: "Foo"}, &resHeadersKey); err != nil {
+		return nil, err
+	}
+	resHeadersValue := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Response Header Value:", Default: "Bar"}, &resHeadersValue); err != nil {
+		return nil, err
+	}
+	resHeadersOperation := ""
+	if err := input.Survey.AskOne(&survey.Select{Message: "Enter Response Header Operation:", Options: []string{"set", "add", "del"}}, &resHeadersOperation); err != nil {
+		return nil, err
+	}
+
+	v := &model.SpecObject{
+		API:  "/v1/config/projects/{project}/routing/ingress/global",
+		Type: "ingress-global",
+		Meta: map[string]string{"project": project},
+		Spec: map[string]interface{}{
+			"headers":    []interface{}{map[string]interface{}{"key": headersKey, "value": headersValue, "op": headersOperation}},
+			"resHeaders": []interface{}{map[string]interface{}{"key": resHeadersKey, "value": resHeadersValue, "op": resHeadersOperation}},
 		},
 	}
 

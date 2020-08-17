@@ -8,18 +8,13 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/txn2/txeh"
-	"github.com/urfave/cli"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
-// ActionStart starts all SC databases, runner, gateway and services
-func ActionStart(_ *cli.Context) error {
-	return DockerStart()
-}
-
 // DockerStart restarts the services which might have been stopped for any reason
-func DockerStart() error {
+func DockerStart(clusterName string) error {
 	ctx := context.Background()
 
 	// Create a docker client
@@ -29,14 +24,15 @@ func DockerStart() error {
 	}
 
 	// Get the hosts file
-	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(), WriteFilePath: utils.GetSpaceCloudHostsFilePath()})
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterName), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterName)})
 	if err != nil {
 		return utils.LogError("Unable to open hosts file", err)
 	}
 
 	// Start the add ons first
 	argsAddOns := filters.Arg("label", "app=addon")
-	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsAddOns), All: true})
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterName))
+	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsAddOns), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
 	}
@@ -58,7 +54,7 @@ func DockerStart() error {
 		hosts.RemoveHost(hostName)
 
 		// Add it back with the new ip address
-		hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, hostName)
+		hosts.AddHost(info.NetworkSettings.Networks[utils.GetNetworkName(clusterName)].IPAddress, hostName)
 	}
 
 	// Save the hosts file before continuing
@@ -69,7 +65,8 @@ func DockerStart() error {
 	// Second step is to start the gateway and runner. We'll need the runner's ip address in the next step
 	var runnerIP string
 	argsSC := filters.Arg("label", "app=space-cloud")
-	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsSC), All: true})
+	argsNetwork = filters.Arg("network", utils.GetNetworkName(clusterName))
+	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsSC), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
 	}
@@ -89,15 +86,16 @@ func DockerStart() error {
 		// Set the runner ip with the current service is the runner
 		name := info.Config.Labels["service"]
 		hostName := fmt.Sprintf("%s.space-cloud.svc.cluster.local", name)
+
 		if name == "runner" {
-			runnerIP = info.NetworkSettings.Networks["space-cloud"].IPAddress
+			runnerIP = info.NetworkSettings.Networks[utils.GetNetworkName(clusterName)].IPAddress
 		}
 
 		// Remove the domain from the hosts file
 		hosts.RemoveHost(hostName)
 
 		// Add it back with the new ip address
-		hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, hostName)
+		hosts.AddHost(info.NetworkSettings.Networks[utils.GetNetworkName(clusterName)].IPAddress, hostName)
 	}
 
 	// Check if the ip address is set
@@ -111,21 +109,34 @@ func DockerStart() error {
 	}
 
 	// Get the list of the other containers we need to start
-	argsServices := filters.Arg("label", "app=service")
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsServices), All: true})
+	containers, err := utils.GetContainers(ctx, docker, clusterName, model.ServiceContainers)
 	if err != nil {
-		return utils.LogError("Unable to list space-cloud services containers", err)
+		_ = utils.LogError(fmt.Sprintf("Unable to list containers - %s", err.Error()), nil)
+		return err
 	}
 
+	serviceTaskContainer := make([]types.Container, 0)
 	// Loop over each container and start them
 	for _, container := range containers {
-		// First start the container
-		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), err)
-		}
-
 		// Get the container's info
 		info, err := docker.ContainerInspect(ctx, container.ID)
+		if err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), err)
+		}
+
+		isServiceTaskContainer := len(info.NetworkSettings.Networks) == 0
+
+		if !isServiceTaskContainer {
+			if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
+				return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), err)
+			}
+		} else {
+			// this is a service task container started in the network of a service task container whose id equal to service id
+			serviceTaskContainer = append(serviceTaskContainer, container)
+			continue
+		}
+
+		info, err = docker.ContainerInspect(ctx, container.ID)
 		if err != nil {
 			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), err)
 		}
@@ -142,7 +153,13 @@ func DockerStart() error {
 
 		// Add them back. The general domain will point to the runner while the internal service domain will point to the actual container
 		hosts.AddHost(runnerIP, generalDomain)
-		hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, internalDomain)
+		hosts.AddHost(info.NetworkSettings.Networks[utils.GetNetworkName(clusterName)].IPAddress, internalDomain)
+	}
+
+	for _, container := range serviceTaskContainer {
+		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), err)
+		}
 	}
 
 	// Save the hosts file before continuing

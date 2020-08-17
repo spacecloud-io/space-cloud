@@ -46,7 +46,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 		var count int64
 		for k := range req.Update {
 			switch k {
-			case "$set", "$inc", "$mul", "$max", "$min", "$currentDate", "$unset":
+			case "$set", "$inc", "$mul", "$max", "$min", "$currentDate":
 				sqlQuery, args, err := s.generateUpdateQuery(ctx, col, req, k)
 				if err != nil {
 					return 0, err
@@ -78,8 +78,18 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 			doc := make(map[string]interface{})
 			dates := make(map[string]interface{})
 			for k, v := range req.Find {
-				for _, newValue := range v.(map[string]interface{}) {
-					doc[k] = newValue
+				if reflect.TypeOf(v).Kind() == reflect.Array {
+					return 0, utils.ErrInvalidParams
+				}
+
+				// implicit equality operator in where e.g -> "id" : "1"
+				if !strings.HasPrefix(k, "$") && reflect.TypeOf(v).Kind() != reflect.Map {
+					doc[k] = v
+					continue
+				}
+
+				for colName, colValue := range v.(map[string]interface{}) {
+					doc[colName] = colValue
 				}
 			}
 			for op := range req.Update {
@@ -158,18 +168,6 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 		}
 	}
 
-	if op == "$unset" && dbType == string(utils.Postgres) {
-		unsetObj, ok := req.Update[op].(map[string]interface{})
-		if !ok {
-			return "", nil, errors.New("incorrect unset object provided")
-		}
-
-		for k := range unsetObj {
-			arr := strings.Split(k, ".")
-			unsetObj[k] = fmt.Sprintf("{%s}", strings.Join(arr[1:], ","))
-		}
-	}
-
 	record, err := generateRecord(req.Update[op])
 	if err != nil {
 		logrus.Errorf("error generating update query unable to generate record %s", op)
@@ -192,15 +190,6 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 				if len(arr) >= 2 {
 					sqlString = strings.Replace(sqlString, k+"=$", fmt.Sprintf("%s=jsonb_set(%s, '{%s}', $", arr[0], arr[0], strings.Join(arr[1:], ",")), -1)
 					sqlString = s.sanitiseUpdateQuery(sqlString)
-				}
-			}
-		}
-	case "$unset":
-		for k := range m {
-			if s.dbType == string(utils.Postgres) {
-				arr := strings.Split(k, ".")
-				if len(arr) >= 2 {
-					sqlString = strings.Replace(sqlString, k+"=$", fmt.Sprintf("%s=%s #- $", arr[0], arr[0]), -1)
 				}
 			}
 		}

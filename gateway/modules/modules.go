@@ -8,12 +8,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud/driver"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
-	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
-	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
-	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
+	"github.com/spaceuptech/space-cloud/gateway/managers"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Modules is an object that sets up the modules
@@ -21,54 +18,45 @@ type Modules struct {
 	lock   sync.RWMutex
 	blocks map[string]*Module
 
-	nodeID   string
-	syncMan  *syncman.Manager
-	adminMan *admin.Manager
-	metrics  *metrics.Module
-	driver   *driver.Handler
+	nodeID string
 
-	letsencrypt *letsencrypt.LetsEncrypt
-	routing     *routing.Routing
+	// Global Modules
+	GlobalMods *global.Global
+
+	// Managers
+	Managers *managers.Managers
 }
 
 // New creates a new modules instance
-func New(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module) (*Modules, error) {
+func New(nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
 	return &Modules{
-		blocks:   map[string]*Module{},
-		nodeID:   nodeID,
-		syncMan:  syncMan,
-		adminMan: adminMan,
-		metrics:  metrics,
-		driver:   driver.New(),
+		blocks:     map[string]*Module{},
+		nodeID:     nodeID,
+		GlobalMods: globalMods,
+		Managers:   managers,
 	}, nil
 }
 
-// SetGlobalModules sets the global modules
-func (m *Modules) SetGlobalModules(letsencrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
-	m.letsencrypt = letsencrypt
-	m.routing = routing
-}
-
 // SetProjectConfig sets the config all modules
-func (m *Modules) SetProjectConfig(config *config.Project, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) error {
+func (m *Modules) SetProjectConfig(config *config.Project) error {
 	module, err := m.loadModule(config.ID)
 	if err != nil {
-		module, err = m.newModule(config.ID)
+		module, err = m.newModule(config)
 		if err != nil {
 			return err
 		}
 	}
-	module.SetProjectConfig(config, le, ingressRouting)
+	_ = module.SetProjectConfig(config)
 	return nil
 }
 
 // SetGlobalConfig sets the auth secret and AESKey
-func (m *Modules) SetGlobalConfig(projectID string, secret []*config.Secret, aesKey string) error {
+func (m *Modules) SetGlobalConfig(projectID, secretSource string, secret []*config.Secret, aesKey string) error {
 	module, err := m.loadModule(projectID)
 	if err != nil {
 		return err
 	}
-	return module.SetGlobalConfig(projectID, secret, aesKey)
+	return module.SetGlobalConfig(projectID, secretSource, secret, aesKey)
 }
 
 // SetCrudConfig sets the config of db, auth, schema and realtime modules
@@ -113,30 +101,53 @@ func (m *Modules) SetUsermanConfig(projectID string, auth config.Auth) error {
 	if err != nil {
 		return err
 	}
-	module.SetUsermanConfig(projectID, auth)
+	_ = module.SetUsermanConfig(projectID, auth)
 	return nil
 }
 
-func (m *Modules) ProjectIDs() []string {
+func (m *Modules) projects() *config.Config {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	ids := make([]string, 0)
+	c := &config.Config{Projects: []*config.Project{}}
 	for id := range m.blocks {
-		ids = append(ids, id)
+		c.Projects = append(c.Projects, &config.Project{ID: id})
 	}
-	return ids
+	return c
 }
 
 func (m *Modules) Delete(projectID string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	if block, p := m.blocks[projectID]; p {
+		// Close all the modules here
+		logrus.Debugln("closing config of db module")
+		if err := block.db.CloseConfig(); err != nil {
+			_ = utils.LogError("error closing db module config", "modules", "Delete", err)
+		}
+
+		logrus.Debugln("closing config of filestore module")
+		if err := block.file.CloseConfig(); err != nil {
+			_ = utils.LogError("error closing filestore module config", "modules", "Delete", err)
+		}
+
+		logrus.Debugln("closing config of eventing module")
+		if err := block.eventing.CloseConfig(); err != nil {
+			_ = utils.LogError("error closing eventing module config", "modules", "Delete", err)
+		}
+
+		logrus.Debugln("closing config of realtime module")
+		if err := block.realtime.CloseConfig(); err != nil {
+			_ = utils.LogError("error closing realtime module config", "modules", "Delete", err)
+		}
+	}
+
 	delete(m.blocks, projectID)
 
 	// Remove config from global modules
-	_ = m.letsencrypt.DeleteProjectDomains(projectID)
-	m.routing.DeleteProjectRoutes(projectID)
+	_ = m.LetsEncrypt().DeleteProjectDomains(projectID)
+	m.Routing().DeleteProjectRoutes(projectID)
 }
 
 func (m *Modules) loadModule(projectID string) (*Module, error) {
@@ -150,17 +161,17 @@ func (m *Modules) loadModule(projectID string) (*Module, error) {
 	return nil, fmt.Errorf("project (%s) not found in server state", projectID)
 }
 
-func (m *Modules) newModule(projectID string) (*Module, error) {
-	projectsIDs := m.ProjectIDs()
+func (m *Modules) newModule(config *config.Project) (*Module, error) {
+	projects := m.projects()
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	if ok := m.adminMan.ValidateProjectSyncOperation(projectsIDs, projectID); !ok {
+	if ok := m.Managers.Admin().ValidateProjectSyncOperation(projects, config); !ok {
 		logrus.Println("Cannot create new project. Upgrade your plan")
 		return nil, errors.New("upgrade your plan to create new project")
 	}
 
-	module := newModule(m.nodeID, m.syncMan, m.adminMan, m.metrics, m.driver)
-	m.blocks[projectID] = module
+	module := newModule(m.nodeID, m.Managers, m.GlobalMods)
+	m.blocks[config.ID] = module
 	return module, nil
 }

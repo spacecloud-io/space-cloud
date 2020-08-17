@@ -2,8 +2,9 @@ package model
 
 // UsageQuotas describes the usage quotas
 type UsageQuotas struct {
-	MaxProjects  int `json:"maxProjects"`
-	MaxDatabases int `json:"maxDatabases"`
+	MaxProjects      int     `json:"maxProjects"`
+	MaxDatabases     int     `json:"maxDatabases"`
+	IntegrationLevel float64 `json:"integrationLevel"`
 }
 
 // UsageQuotasResult describes the response received for fetch quota operation
@@ -13,10 +14,8 @@ type UsageQuotasResult struct {
 }
 
 type UpgradeResponse struct {
-	Error      string `json:"error"`
-	ClusterID  string `json:"clusterId"`
-	ClusterKey string `json:"clusterKey"`
-	License    string `json:"license"`
+	Error   string `json:"error"`
+	License string `json:"license"`
 }
 
 type GraphqlFetchLicenseResponse struct {
@@ -39,15 +38,25 @@ type GraphqlFetchPublicKeyResponse struct {
 }
 
 type License struct {
-	ClusterID string       `json:"clusterId" mapstructure:"clusterId" structs:"clusterId"`
-	SessionID string       `json:"sessionId" mapstructure:"sessionId" structs:"sessionId"`
-	Plan      string       `json:"plan" mapstructure:"plan" structs:"plan"`
-	Quotas    *UsageQuotas `json:"quotas" mapstructure:"quotas" structs:"quotas"`
+	LicenseKey     string            `json:"licenseKey" mapstructure:"licenseKey" structs:"licenseKey"`
+	LicenseRenewal string            `json:"licenseRenewal" mapstructure:"licenseRenewal" structs:"licenseRenewal"`
+	SessionID      string            `json:"sessionId" mapstructure:"sessionId" structs:"sessionId"`
+	Plan           string            `json:"plan" mapstructure:"plan" structs:"plan"`
+	Meta           *LicenseTokenMeta `json:"meta" mapstructure:"meta" structs:"meta"`
+}
+type LicenseTokenMeta struct {
+	ProductMeta    *UsageQuotas    `json:"productMeta" mapstructure:"productMeta" structs:"productMeta"`
+	LicenseKeyMeta *LicenseKeyMeta `json:"licenseKeyMeta" mapstructure:"licenseKeyMeta" structs:"licenseKeyMeta"`
+}
+
+type LicenseKeyMeta struct {
+	ClusterName string `json:"clusterName" mapstructure:"clusterName" structs:"clusterName"`
 }
 
 type RenewLicense struct {
-	ClusterID        string `json:"clusterId"`
-	ClusterKey       string `json:"clusterKey"`
+	ClusterName      string `json:"clusterName"`
+	LicenseValue     string `json:"licenseValue"`
+	LicenseKey       string `json:"licenseKey"`
 	License          string `json:"license"`
 	CurrentSessionID string `json:"sessionId"`
 }

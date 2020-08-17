@@ -8,17 +8,17 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/modules/auth"
-	"github.com/spaceuptech/space-cli/cmd/modules/database"
-	"github.com/spaceuptech/space-cli/cmd/modules/eventing"
-	"github.com/spaceuptech/space-cli/cmd/modules/filestore"
-	"github.com/spaceuptech/space-cli/cmd/modules/ingress"
-	"github.com/spaceuptech/space-cli/cmd/modules/letsencrypt"
-	"github.com/spaceuptech/space-cli/cmd/modules/project"
-	remoteservices "github.com/spaceuptech/space-cli/cmd/modules/remote-services"
-	"github.com/spaceuptech/space-cli/cmd/modules/services"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/auth"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/database"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/eventing"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/filestore"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/ingress"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/letsencrypt"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/project"
+	remoteservices "github.com/spaceuptech/space-cloud/space-cli/cmd/modules/remote-services"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/services"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 func getSubCommands() []*cobra.Command {
@@ -61,11 +61,19 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	objs, err := database.GetDbConfig(projectName, "db-config", map[string]string{})
+	objs, err := services.GetServicesSecrets(projectName, "secret", map[string]string{})
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("02", "db-configs", objs); err != nil {
+	if err = createConfigFile("02", "secrets", objs); err != nil {
+		return nil
+	}
+
+	objs, err = database.GetDbConfig(projectName, "db-config", map[string]string{})
+	if err != nil {
+		return nil
+	}
+	if err := createConfigFile("03", "db-configs", objs); err != nil {
 		return nil
 	}
 
@@ -73,7 +81,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("03", "db-rules", objs); err != nil {
+	if err := createConfigFile("04", "db-rules", objs); err != nil {
 		return nil
 	}
 
@@ -81,7 +89,15 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("04", "db-schemas", objs); err != nil {
+	if err := createConfigFile("05", "db-schemas", objs); err != nil {
+		return nil
+	}
+
+	objs, err = database.GetDbPreparedQuery(projectName, "db-prepared-query", map[string]string{})
+	if err != nil {
+		return nil
+	}
+	if err := createConfigFile("06", "db-prepared-query", objs); err != nil {
 		return nil
 	}
 
@@ -89,7 +105,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("05", "filestore-config", obj); err != nil {
+	if err := createConfigFile("07", "filestore-config", obj); err != nil {
 		return nil
 	}
 
@@ -97,7 +113,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("06", "filestore-rules", objs); err != nil {
+	if err := createConfigFile("08", "filestore-rules", objs); err != nil {
 		return nil
 	}
 
@@ -105,7 +121,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("07", "eventing-configs", obj); err != nil {
+	if err := createConfigFile("09", "eventing-configs", obj); err != nil {
 		return nil
 	}
 
@@ -113,7 +129,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("08", "eventing-triggers", objs); err != nil {
+	if err := createConfigFile("10", "eventing-triggers", objs); err != nil {
 		return nil
 	}
 
@@ -121,7 +137,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("09", "eventing-rules", objs); err != nil {
+	if err := createConfigFile("11", "eventing-rules", objs); err != nil {
 		return nil
 	}
 
@@ -129,7 +145,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("10", "eventing-schemas", objs); err != nil {
+	if err := createConfigFile("12", "eventing-schemas", objs); err != nil {
 		return nil
 	}
 
@@ -137,23 +153,15 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("11", "remote-services", objs); err != nil {
+	if err := createConfigFile("13", "remote-services", objs); err != nil {
 		return nil
-	}
-
-	objs, err = services.GetServicesSecrets(projectName, "secret", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err = createConfigFile("12", "secrets", objs); err != nil {
-		return err
 	}
 
 	objs, err = services.GetServices(projectName, "service", map[string]string{})
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("13", "services", objs); err != nil {
+	if err := createConfigFile("14", "services", objs); err != nil {
 		return nil
 	}
 
@@ -161,7 +169,15 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("14", "service-routes", objs); err != nil {
+	if err := createConfigFile("15", "service-routes", objs); err != nil {
+		return nil
+	}
+
+	objs, err = ingress.GetIngressGlobal(projectName, "ingress-global")
+	if err != nil {
+		return nil
+	}
+	if err := createConfigFile("16", "ingress-global", objs); err != nil {
 		return nil
 	}
 
@@ -169,7 +185,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("15", "ingress-routes", objs); err != nil {
+	if err := createConfigFile("17", "ingress-routes", objs); err != nil {
 		return nil
 	}
 
@@ -177,7 +193,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("16", "auth-providers", objs); err != nil {
+	if err := createConfigFile("18", "auth-providers", objs); err != nil {
 		return nil
 	}
 
@@ -185,7 +201,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("17", "letsencrypt", obj); err != nil {
+	if err := createConfigFile("19", "letsencrypt", obj); err != nil {
 		return nil
 	}
 

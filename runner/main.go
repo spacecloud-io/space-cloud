@@ -49,12 +49,18 @@ func main() {
 				cli.BoolFlag{
 					Name:   "disable-metrics",
 					EnvVar: "DISABLE_METRICS",
-					Usage:  "Disable anonymous metric collection",
+					Usage:  "Delete anonymous metric collection",
 				},
 				cli.BoolFlag{
 					Name:   "dev",
 					EnvVar: "DEV",
 					Usage:  "start runner without authentication",
+				},
+				cli.StringFlag{
+					Name:   "cluster-id",
+					EnvVar: "CLUSTER_ID",
+					Usage:  "The cluster id to uniquely identify the cluster",
+					Value:  "first-cluster",
 				},
 				cli.StringFlag{
 					Name:   "port",

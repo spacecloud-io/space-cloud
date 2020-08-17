@@ -4,9 +4,9 @@ import (
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
-	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/metrics"
 )
 
 // Module is responsible for managing the realtime module
@@ -51,5 +51,17 @@ func (m *Module) SetConfig(project string, crudConfig config.Crud) error {
 	// add the rules to the eventing module
 	m.eventing.SetRealtimeTriggers(generateEventRules(crudConfig, project, url))
 
+	return nil
+}
+
+// CloseConfig close the rules and secret key required by the realtime block
+func (m *Module) CloseConfig() error {
+	m.Lock()
+	defer m.Unlock()
+	//erase map
+	m.groups.Range(func(key interface{}, value interface{}) bool {
+		m.groups.Delete(key)
+		return true
+	})
 	return nil
 }

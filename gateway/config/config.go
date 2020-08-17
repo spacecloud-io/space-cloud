@@ -11,9 +11,17 @@ type Config struct {
 	Admin    *Admin     `json:"admin" yaml:"admin"`
 }
 
+// ClusterConfig holds the cluster level configuration
+type ClusterConfig struct {
+	LetsEncryptEmail string `json:"letsencryptEmail" yaml:"letsencryptEmail"`
+	EnableTelemetry  bool   `json:"enableTelemetry" yaml:"enableTelemetry"`
+}
+
 // Project holds the project level configuration
 type Project struct {
 	Secrets            []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty"`
+	SecretSource       string    `json:"secretSource,omitempty" yaml:"secretSource,omitempty"`
+	IsIntegration      bool      `json:"isIntegration,omitempty" yaml:"isIntegration,omitempty"`
 	AESKey             string    `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
 	ID                 string    `json:"id,omitempty" yaml:"id,omitempty"`
 	Name               string    `json:"name,omitempty" yaml:"name,omitempty"`
@@ -24,15 +32,31 @@ type Project struct {
 
 // Secret describes the a secret object
 type Secret struct {
-	IsPrimary bool   `json:"isPrimary" yaml:"isPrimary"`
-	Secret    string `json:"secret" yaml:"secret"`
+	IsPrimary  bool   `json:"isPrimary" yaml:"isPrimary"`
+	Secret     string `json:"secret" yaml:"secret"`
+	Alg        JWTAlg `json:"alg" yaml:"alg"`
+	PublicKey  string `json:"publicKey" yaml:"publicKey"`
+	PrivateKey string `json:"privateKey" yaml:"privateKey"`
 }
+
+// JWTAlg is type of method used for signing token
+type JWTAlg string
+
+const (
+	// HS256 is method used for signing token
+	HS256 JWTAlg = "HS256"
+
+	// RS256 is method used for signing token
+	RS256 JWTAlg = "RS256"
+)
 
 // Admin holds the admin config
 type Admin struct {
-	ClusterID  string `json:"clusterId" yaml:"clusterId"`
-	ClusterKey string `json:"clusterKey" yaml:"clusterKey"`
-	License    string `json:"license" yaml:"license"`
+	ClusterConfig *ClusterConfig `json:"clusterConfig" yaml:"clusterConfig"`
+	LicenseKey    string         `json:"licenseKey" yaml:"licenseKey"`
+	LicenseValue  string         `json:"licenseValue" yaml:"licenseValue"`
+	License       string         `json:"license" yaml:"license"`
+	Integrations  Integrations   `json:"integrations" yaml:"integrations"`
 }
 
 // AdminUser holds the user credentials and scope
@@ -94,9 +118,9 @@ type PreparedQuery struct {
 
 // TableRule contains the config at the collection level
 type TableRule struct {
-	IsRealTimeEnabled bool             `json:"isRealtimeEnabled" yaml:"isRealtimeEnabled"`
-	Rules             map[string]*Rule `json:"rules" yaml:"rules"` // The key here is query, insert, update or delete
-	Schema            string           `json:"schema" yaml:"schema"`
+	IsRealTimeEnabled bool             `json:"isRealtimeEnabled,omitempty" yaml:"isRealtimeEnabled"`
+	Rules             map[string]*Rule `json:"rules,omitempty" yaml:"rules"` // The key here is query, insert, update or delete
+	Schema            string           `json:"schema,omitempty" yaml:"schema"`
 }
 
 // Rule is the authorisation object at the query level
@@ -272,5 +296,4 @@ type SchemaObject struct {
 type LetsEncrypt struct {
 	ID                 string   `json:"id,omitempty" yaml:"id,omitempty"`
 	WhitelistedDomains []string `json:"domains" yaml:"domains"`
-	Email              string   `json:"email" yaml:"email"`
 }

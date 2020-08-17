@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Commands is the list of commands the utils module exposes
@@ -25,10 +25,13 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('url')", nil)
 			}
-
+			err = viper.BindPFlag("id", cmd.Flags().Lookup("id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('id')", nil)
+			}
 		},
 		RunE:          actionLogin,
-		SilenceErrors: true,
+		SilenceErrors: false,
 	}
 	loginCommands.Flags().StringP("username", "", "None", "Accepts the username for login")
 	err := viper.BindEnv("username", "USER_NAME")

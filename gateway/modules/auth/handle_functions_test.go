@@ -113,19 +113,19 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			result:        map[string]interface{}{"token1": "token1value", "token2": "token2value"},
 		},
 	}
-	authModule := Init("1", &crud.Module{})
+	authModule := Init("1", &crud.Module{}, nil, nil)
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			if er := authModule.SetConfig("project", test.secretKeys, "", config.Crud{}, &config.FileStore{}, test.module.funcRules, &config.Eventing{}); er != nil {
+			if er := authModule.SetConfig("project", "", test.secretKeys, "", config.Crud{}, &config.FileStore{}, test.module.funcRules, &config.Eventing{}); er != nil {
 				t.Errorf("error setting config of auth module  - %s", er.Error())
 			}
-			auth, err := (authModule).IsFuncCallAuthorised(context.Background(), test.project, test.service, test.function, test.token, test.params)
+			_, reqParams, err := (authModule).IsFuncCallAuthorised(context.Background(), test.project, test.service, test.function, test.token, test.params)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got Error-", err, "Want Error-", test.IsErrExpected)
 			}
 			// check result if TokenClaims is returned after parsing token and matching rule
-			if test.CheckResult && !reflect.DeepEqual(test.result, auth) {
-				t.Error("Got Result-", auth, "Wanted Result-", test.result)
+			if test.CheckResult && !reflect.DeepEqual(test.result, reqParams.Claims) {
+				t.Error("Got Result-", reqParams.Claims, "Wanted Result-", test.result)
 			}
 		})
 	}

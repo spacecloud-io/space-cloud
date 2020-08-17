@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Commands deploys a service
@@ -37,6 +37,7 @@ func Commands() []*cobra.Command {
 	commandDeploy.Flags().StringP("docker-file", "", "Dockerfile", "The path of the docker file")
 	commandDeploy.Flags().StringP("service-file", "", "service.yaml", "The path of the service config file")
 	commandDeploy.Flags().BoolP("prepare", "", false, "Prepare the configuration used for deploying service")
+	commandDeploy.Flag("service-file").Annotations = map[string][]string{cobra.BashCompFilenameExt: {"yaml", "yml"}}
 
 	return []*cobra.Command{commandDeploy}
 }

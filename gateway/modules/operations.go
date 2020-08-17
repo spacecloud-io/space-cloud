@@ -4,12 +4,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
-	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
 // SetProjectConfig sets the config all modules
-func (m *Module) SetProjectConfig(c *config.Project, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
+func (m *Module) SetProjectConfig(c *config.Project) error {
 	p := c
 
 	if p.Modules == nil {
@@ -19,7 +17,7 @@ func (m *Module) SetProjectConfig(c *config.Project, le *letsencrypt.LetsEncrypt
 			Auth:        map[string]*config.AuthStub{},
 			Crud:        map[string]*config.CrudStub{},
 			Routes:      []*config.Route{},
-			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}, Email: ""},
+			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
 		}
 	}
 
@@ -34,16 +32,14 @@ func (m *Module) SetProjectConfig(c *config.Project, le *letsencrypt.LetsEncrypt
 	}
 
 	logrus.Debugln("Setting config of auth module")
-	if err := m.auth.SetConfig(p.ID, p.Secrets, p.AESKey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
+	if err := m.auth.SetConfig(p.ID, p.SecretSource, p.Secrets, p.AESKey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
 		logrus.Errorf("error setting auth module config - %s", err.Error())
 	}
+
 	logrus.Debugln("Setting config of functions module")
 	if err := m.functions.SetConfig(p.ID, p.Modules.Services); err != nil {
 		logrus.Errorf("error setting remote services module config - %s", err.Error())
 	}
-
-	// logrus.Debugln("Setting config of functions module")
-	// m.functions.SetConfig(p.ID, p.Modules.Services)
 
 	logrus.Debugln("Setting config of user management module")
 	m.user.SetConfig(p.Modules.Auth)
@@ -52,11 +48,6 @@ func (m *Module) SetProjectConfig(c *config.Project, le *letsencrypt.LetsEncrypt
 	if err := m.file.SetConfig(p.ID, p.Modules.FileStore); err != nil {
 		logrus.Errorf("error setting filestore module config - %s", err.Error())
 	}
-
-	// logrus.Debugln("Setting config of file storage module")
-	// if err := m.file.SetConfig(p.Modules.FileStore); err != nil {
-	// 	logrus.Errorf("error setting filestore module config - %s", err.Error())
-	// }
 
 	logrus.Debugln("Setting config of eventing module")
 	if err := m.eventing.SetConfig(p.ID, &p.Modules.Eventing); err != nil {
@@ -72,20 +63,22 @@ func (m *Module) SetProjectConfig(c *config.Project, le *letsencrypt.LetsEncrypt
 	m.graphql.SetConfig(p.ID)
 
 	logrus.Debugln("Setting config of lets encrypt module")
-	if err := le.SetProjectDomains(p.ID, p.Modules.LetsEncrypt); err != nil {
+	if err := m.GlobalMods.LetsEncrypt().SetProjectDomains(p.ID, p.Modules.LetsEncrypt); err != nil {
 		logrus.Errorf("error setting letsencypt module config - %s", err.Error())
 	}
 
 	logrus.Debugln("Setting config of ingress routing module")
-	if err := ingressRouting.SetProjectRoutes(p.ID, p.Modules.Routes); err != nil {
+	if err := m.GlobalMods.Routing().SetProjectRoutes(p.ID, p.Modules.Routes); err != nil {
 		logrus.Errorf("error setting routing module config - %s", err.Error())
 	}
-	ingressRouting.SetGlobalConfig(p.Modules.GlobalRoutes)
+	m.GlobalMods.Routing().SetGlobalConfig(p.Modules.GlobalRoutes)
+
+	return nil
 }
 
 // SetGlobalConfig sets the auth secret and AESKey
-func (m *Module) SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error {
-	m.auth.SetSecrets(secrets)
+func (m *Module) SetGlobalConfig(projectID, secretSource string, secrets []*config.Secret, aesKey string) error {
+	m.auth.SetSecrets(secretSource, secrets)
 	return m.auth.SetAESKey(aesKey)
 }
 
@@ -146,7 +139,8 @@ func (m *Module) SetEventingConfig(projectID string, eventingConfig *config.Even
 }
 
 // SetUsermanConfig set the config of the userman module
-func (m *Module) SetUsermanConfig(projectID string, auth config.Auth) {
+func (m *Module) SetUsermanConfig(projectID string, auth config.Auth) error {
 	logrus.Debugln("Setting config of user management module")
 	m.user.SetConfig(auth)
+	return nil
 }

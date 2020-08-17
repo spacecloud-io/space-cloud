@@ -1,10 +1,12 @@
 package docker
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -32,11 +34,12 @@ type Docker struct {
 	artifactAddr string
 	secretPath   string
 	hostFilePath string
+	clusterName  string // Used by the docker driver only
 	manager      *proxy_manager.Manager
 }
 
 // NewDockerDriver returns a new docker instance
-func NewDockerDriver(auth *auth.Module, artifactAddr string) (*Docker, error) {
+func NewDockerDriver(auth *auth.Module, clusterName, artifactAddr string) (*Docker, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		logrus.Errorf("error creating docker module instance in docker in docker unable to initialize docker client - %v", err)
@@ -58,7 +61,7 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*Docker, error) {
 		return nil, err
 	}
 
-	return &Docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath, hostFilePath: hostFilePath, manager: manager}, nil
+	return &Docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath, hostFilePath: hostFilePath, manager: manager, clusterName: clusterName}, nil
 }
 
 // ApplyServiceRoutes sets the traffic splitting logic of each service
@@ -104,7 +107,9 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 			continue
 		}
 		_, _, err := d.createContainer(ctx, index, task, service, []model.Port{}, containerName)
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	// Don't forget to set the service routing initially
@@ -121,6 +126,64 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 
 	hostFile.AddHost(proxyIP, utils.GetServiceDomain(service.ProjectID, service.ID))
 	return hostFile.Save()
+}
+
+// GetLogs get logs of specified services
+func (d *Docker) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error) {
+	if taskID == "" {
+		arr := strings.Split(replica, "--")
+		if len(arr) < 2 {
+			return nil, utils.LogError("Invalid replica id", "docker", "get-logs", nil)
+		}
+		taskID = arr[0]
+	}
+	replica = getRealReplicaID(d.clusterName, projectID, replica)
+	// filter containers
+	args := filters.Arg("name", replica)
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
+	if err != nil {
+		logrus.Errorf("unable to list containers got error message - %v", err)
+		return nil, err
+	}
+	var b io.ReadCloser
+	containerNotFound := true
+	for _, container := range containers {
+		if strings.HasSuffix(container.Names[0], taskID) {
+			containerNotFound = false
+			utils.LogDebug("Requesting logs from docker client", "docker", "get-logs", map[string]interface{}{"containerName": container.Names, "isFollow": isFollow})
+			b, err = d.client.ContainerLogs(ctx, container.ID, types.ContainerLogsOptions{ShowStdout: true, Details: true, Timestamps: true, ShowStderr: true, Follow: isFollow})
+			if err != nil {
+				return nil, err
+			}
+			break
+		}
+	}
+
+	if containerNotFound {
+		return nil, fmt.Errorf("Unable to find specified container, check if the container is running")
+	}
+
+	pipeReader, pipeWriter := io.Pipe()
+	utils.LogDebug("Sending logs to client", "docker", "get-logs", map[string]interface{}{})
+	go func() {
+		defer utils.CloseTheCloser(b)
+		defer utils.CloseTheCloser(pipeWriter)
+		// Read logs
+		rd := bufio.NewReader(b)
+		for {
+			str, err := rd.ReadString('\n')
+			if err != nil {
+				if err == io.EOF && !isFollow {
+					utils.LogDebug("End of file reached for logs", "docker", "get-logs", map[string]interface{}{})
+					return
+				}
+				_ = utils.LogError("Unable to read logs from container", "docker", "get-logs", err)
+				return
+			}
+			fmt.Fprint(pipeWriter, str)
+		}
+	}()
+	return pipeReader, nil
 }
 
 func (d *Docker) createContainer(ctx context.Context, index int, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {
@@ -265,7 +328,7 @@ func (d *Docker) createContainer(ctx context.Context, index int, task model.Task
 	if cName != "" {
 		hostConfig.NetworkMode = container.NetworkMode("container:" + cName)
 	} else {
-		hostConfig.NetworkMode = "space-cloud"
+		hostConfig.NetworkMode = container.NetworkMode(getNetworkName(d.clusterName))
 		// expose ports of docker container as specified for 1st task
 		task.Ports = overridePorts // override all ports while creating container for 1st task
 		for _, port := range task.Ports {
@@ -273,8 +336,7 @@ func (d *Docker) createContainer(ctx context.Context, index int, task model.Task
 			exposedPorts[nat.Port(portString)] = struct{}{}
 		}
 	}
-
-	containerName := fmt.Sprintf("space-cloud-%s--%s--%s--%d--%s", service.ProjectID, service.ID, service.Version, index, task.ID)
+	containerName := getServiceContainerName(service.ProjectID, service.ID, service.Version, task.ID, d.clusterName, index)
 	resp, err := d.client.ContainerCreate(ctx, &container.Config{
 		Image:        task.Docker.Image,
 		Env:          envs,
@@ -298,17 +360,23 @@ func (d *Docker) createContainer(ctx context.Context, index int, task model.Task
 		logrus.Errorf("error applying service in docker unable to inspect container %s got error message  -%v", containerName, err)
 		return "", "", err
 	}
-	return containerName, data.NetworkSettings.Networks["space-cloud"].IPAddress, nil
+	if index == 0 {
+		return containerName, data.NetworkSettings.Networks[getNetworkName(d.clusterName)].IPAddress, nil
+	}
+	return "", "", nil
 }
 
 // DeleteService removes every docker container related to specified service id
 func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, version string) error {
-	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s--%s--%s", projectID, serviceID, version))
+
+	// list all service containers
+	networkArgs := filters.Arg("label", "app=service")
+	nameArgs := filters.Arg("name", getCurrentProjectServiceContainersName(projectID, serviceID, version, d.clusterName))
 	if serviceID == "" || version == "" {
-		args = filters.Arg("name", projectID)
+		nameArgs = filters.Arg("name", projectID)
 	}
 
-	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(nameArgs, networkArgs), All: true})
 	if err != nil {
 		logrus.Errorf("error deleting service in docker unable to list containers got error message - %v", err)
 		return err
@@ -355,8 +423,9 @@ func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, versio
 }
 
 func (d *Docker) checkIfLastService(ctx context.Context, projectID, serviceID string) (bool, error) {
-	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s--%s", projectID, serviceID))
-	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
+	networkArgs := filters.Arg("label", "app=service")
+	args := filters.Arg("name", getLastServiceNameLabel(projectID, serviceID, d.clusterName))
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args, networkArgs), All: true})
 	if err != nil {
 		logrus.Errorf("Could not list remaining containers got error message - %v", err)
 		return false, err
@@ -365,10 +434,79 @@ func (d *Docker) checkIfLastService(ctx context.Context, projectID, serviceID st
 	return len(containers) == 0, nil
 }
 
+func getServiceContainerName(projectID, serviceID, version, taskID, clusterID string, index int) string {
+	if clusterID == "default" {
+		return fmt.Sprintf("space-cloud-%s--%s--%s--%d--%s", projectID, serviceID, version, index, taskID)
+	}
+	return fmt.Sprintf("space-cloud-%s-%s--%s--%s--%d--%s", clusterID, projectID, serviceID, version, index, taskID)
+}
+
+func splitServiceContainerName(containerName string) (clusterID, projectID, serviceID, version, taskID string) {
+	// A container can be of 2 possible formats
+	// 1) space-cloud-projectName--serviceName--version--index--taskId
+	// 2) space-cloud-clusterName-projectName--serviceName--version--index--taskId
+	s := strings.Split(containerName, "--")
+	spaceCloudPrefixStr := strings.Split(s[0], "-")
+	if len(spaceCloudPrefixStr) == 3 {
+		// default cluster
+		return "default", spaceCloudPrefixStr[2], s[1], s[2], s[4]
+	}
+	return spaceCloudPrefixStr[2], spaceCloudPrefixStr[3], s[1], s[2], s[4]
+}
+
+func getReplicaID(containerName string) string {
+	// A container can be of 2 possible formats
+	// 1) space-cloud-projectName--serviceName--version--index--taskId
+	// 2) space-cloud-clusterName-projectName--serviceName--version--index--taskId
+	// replicaID only contains serviceName && version e.g -> serviceName--version
+	arr := strings.Split(containerName, "--")
+	if len(arr) != 5 {
+		utils.LogDebug("Length of container name not equal to 5 after splitting", "docker", "get-replica-id", nil)
+		return ""
+	}
+	return strings.Join(arr[1:3], "--")
+}
+
+func getRealReplicaID(cluterID, projectID, replicaID string) string {
+	if cluterID == "default" {
+		return fmt.Sprintf("space-cloud-%s--%s", projectID, replicaID)
+	}
+	return fmt.Sprintf("space-cloud-%s-%s--%s", cluterID, projectID, replicaID)
+}
+
+func getNetworkName(id string) string {
+	if id == "default" {
+		return "space-cloud"
+	}
+	return fmt.Sprintf("space-cloud-%s", id)
+}
+
+func getCurrentProjectServicesName(id, projectID string) string {
+	if id == "default" {
+		return fmt.Sprintf("space-cloud-%s", projectID)
+	}
+	return fmt.Sprintf("space-cloud-%s-%s", id, projectID)
+}
+
+func getCurrentProjectServiceContainersName(projectID, serviceID, version, clusterID string) string {
+	if clusterID == "default" {
+		return fmt.Sprintf("space-cloud-%s--%s--%s", projectID, serviceID, version)
+	}
+	return fmt.Sprintf("space-cloud-%s-%s--%s--%s", clusterID, projectID, serviceID, version)
+}
+
+func getLastServiceNameLabel(projectID, serviceID, clusterID string) string {
+	if clusterID == "default" {
+		return fmt.Sprintf("space-cloud-%s--%s", projectID, serviceID)
+	}
+	return fmt.Sprintf("space-cloud-%s-%s--%s", clusterID, projectID, serviceID)
+}
+
 // GetServices gets the specified service info from docker container
 func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
-	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s", projectID))
-	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
+	networkArgs := filters.Arg("label", "app=service")
+	args := filters.Arg("name", getCurrentProjectServicesName(d.clusterName, projectID))
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args, networkArgs), All: true})
 	if err != nil {
 		logrus.Errorf("error getting service in docker unable to list containers got error message - %v", err)
 		return nil, err
@@ -527,6 +665,91 @@ func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Se
 	}
 
 	return serviceArr, nil
+}
+
+// GetServiceStatus gets the status of service info from docker container
+func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error) {
+	networkArgs := filters.Arg("label", "app=service")
+	args := filters.Arg("name", getCurrentProjectServicesName(d.clusterName, projectID))
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(networkArgs, args), All: true})
+	if err != nil {
+		logrus.Errorf("error getting service in docker unable to list containers got error message - %v", err)
+		return nil, err
+	}
+
+	serviceMapper := make(map[string][]string)
+	for _, containerInfo := range containers {
+		//NOTE: the name starts with a forward slash
+		_, _, serviceID, version, _ := splitServiceContainerName(containerInfo.Names[0])
+
+		id := fmt.Sprintf("%s--%s", serviceID, version)
+		_, ok := serviceMapper[id]
+		if !ok {
+			serviceMapper[id] = []string{containerInfo.ID}
+			continue
+		}
+		serviceMapper[id] = append(serviceMapper[id], containerInfo.ID)
+	}
+
+	result := make([]*model.ServiceStatus, 0)
+	for service, containerIDs := range serviceMapper {
+		arr := strings.Split(service, "--")
+		serviceVersion := arr[1]
+		serviceID := arr[0]
+		var status string
+		var containerName string
+		for _, containerID := range containerIDs {
+			containerInspect, err := d.client.ContainerInspect(ctx, containerID)
+			if err != nil {
+				logrus.Errorf("error getting service in docker unable to inspect container - %v", err)
+				return nil, err
+			}
+			status = getBadStatus(status, containerInspect.State.Status)
+			containerName = containerInspect.Name
+		}
+		serviceStatus := &model.ServiceStatus{
+			ServiceID:       serviceID,
+			Version:         serviceVersion,
+			DesiredReplicas: 1,
+			Replicas: []*model.ReplicaInfo{
+				{
+					ID:     getReplicaID(containerName),
+					Status: mapDockerStatusToKubernetes(status),
+				},
+			},
+		}
+		result = append(result, serviceStatus)
+	}
+	return result, nil
+}
+
+func mapDockerStatusToKubernetes(status string) string {
+	var statuses = map[string]string{
+		"created":    "PENDING",
+		"restarting": "PENDING",
+		"running":    "RUNNING",
+		"paused":     "SUCCEEDED",
+		"exited":     "FAILED",
+		"removing":   "SUCCEEDED",
+		"dead":       "FAILED",
+	}
+	return statuses[status]
+}
+
+func getBadStatus(previousStatus, currentStatus string) string {
+	var statuses = map[string]int{
+		"created":    1,
+		"running":    2,
+		"restarting": 3,
+		"paused":     4,
+		"exited":     5,
+		"removing":   6,
+		"dead":       7,
+	}
+	if statuses[currentStatus] > statuses[previousStatus] {
+		return currentStatus
+	}
+	return previousStatus
 }
 
 // AdjustScale adjust the scale for docker instance

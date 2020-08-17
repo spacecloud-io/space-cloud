@@ -1,23 +1,49 @@
 package operations
 
 import (
+	"context"
+	"strings"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Commands is the list of commands the operations module exposes
 func Commands() []*cobra.Command {
+	clusterNameAutoComplete := func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		ctx := context.Background()
+		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		if err != nil {
+			utils.LogDebug("Unable to initialize docker client ", nil)
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+		connArr, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filters.Arg("name", "space-cloud"), filters.Arg("label", "service=gateway"))})
+		if err != nil {
+			utils.LogDebug("Unable to list space cloud containers ", nil)
+			return nil, cobra.ShellCompDirectiveDefault
+		}
+		accountIDs := []string{}
+		for _, v := range connArr {
+			arr := strings.Split(strings.Split(v.Names[0], "--")[0], "-")
+			if len(arr) != 4 {
+				// default gateway container
+				continue
+			}
+			accountIDs = append(accountIDs, arr[2])
+		}
+		return accountIDs, cobra.ShellCompDirectiveDefault
+	}
+
 	var setup = &cobra.Command{
 		Use:   "setup",
 		Short: "setup development environment",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			err := viper.BindPFlag("id", cmd.Flags().Lookup("id"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('id')", nil)
-			}
-			err = viper.BindPFlag("username", cmd.Flags().Lookup("username"))
+			err := viper.BindPFlag("username", cmd.Flags().Lookup("username"))
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('username')", nil)
 			}
@@ -57,19 +83,17 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('e')", nil)
 			}
-		},
-		RunE:          actionSetup,
-		SilenceErrors: true,
-	}
 
-	setup.Flags().StringP("id", "", "", "The unique id for the cluster")
-	err := viper.BindEnv("id", "CLUSTER_ID")
-	if err != nil {
-		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+			err = viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+		},
+		RunE: actionSetup,
 	}
 
 	setup.Flags().StringP("username", "", "", "The username used for login")
-	err = viper.BindEnv("username", "USER_NAME")
+	err := viper.BindEnv("username", "USER_NAME")
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('username') to environment variables", nil)
 	}
@@ -116,43 +140,107 @@ func Commands() []*cobra.Command {
 
 	setup.Flags().StringSliceP("env", "e", []string{}, "Environment variables to be provided to gateway")
 
-	var upgrade = &cobra.Command{
-		Use:           "upgrade",
-		Short:         "Upgrade development environment",
-		RunE:          actionUpgrade,
-		SilenceErrors: true,
-	}
-	var destroy = &cobra.Command{
-		Use:           "destroy",
-		Short:         "clean development environment & remove secrets",
-		RunE:          actionDestroy,
-		SilenceErrors: true,
-	}
-	var apply = &cobra.Command{
-		Use:           "apply",
-		Short:         "deploys service",
-		RunE:          actionApply,
-		SilenceErrors: true,
-	}
-	var start = &cobra.Command{
-		Use:           "start",
-		Short:         "Resumes the space-cloud docker environment",
-		RunE:          actionStart,
-		SilenceErrors: true,
-	}
-	var stop = &cobra.Command{
-		Use:           "stop",
-		Short:         "Stops the space-cloud docker environment",
-		RunE:          actionStop,
-		SilenceErrors: true,
+	setup.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
+	err = viper.BindEnv("cluster-name", "CLUSTER_NAME")
+	if err != nil {
+		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
 
+	if err := setup.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
+
+	var upgrade = &cobra.Command{
+		Use:   "upgrade",
+		Short: "Upgrade development environment",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+			if err := viper.BindPFlag("version", cmd.Flags().Lookup("version")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('version')", nil)
+			}
+		},
+		RunE: actionUpgrade,
+	}
+	upgrade.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
+	upgrade.Flags().StringP("version", "", "default", "version to use for upgrade")
+
+	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
+		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
+	}
+
+	if err := upgrade.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
+
+	var destroy = &cobra.Command{
+		Use:   "destroy",
+		Short: "clean development environment & remove secrets",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+		},
+		RunE: actionDestroy,
+	}
+	destroy.Flags().StringP("cluster-name", "", "default", "The name of  space-cloud cluster")
+	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
+		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
+	}
+
+	if err := destroy.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
+
+	var apply = &cobra.Command{
+		Use:   "apply",
+		Short: "deploys service",
+		RunE:  actionApply,
+	}
+
+	var start = &cobra.Command{
+		Use:   "start",
+		Short: "Resumes the space-cloud docker environment",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+		},
+		RunE: actionStart,
+	}
+	start.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
+	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
+		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
+	}
+
+	if err := start.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
+
+	var stop = &cobra.Command{
+		Use:   "stop",
+		Short: "Stops the space-cloud docker environment",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+		},
+		RunE: actionStop,
+	}
+	stop.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
+	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
+		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
+	}
+
+	if err := stop.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+	}
 	return []*cobra.Command{setup, upgrade, destroy, apply, start, stop}
 
 }
 
 func actionSetup(cmd *cobra.Command, args []string) error {
-	id := viper.GetString("id")
 	userName := viper.GetString("username")
 	key := viper.GetString("key")
 	config := viper.GetString("config")
@@ -163,16 +251,20 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 	portHTTPS := viper.GetInt64("port-https")
 	volumes := viper.GetStringSlice("volume")
 	environmentVariables := viper.GetStringSlice("env")
+	clusterName := viper.GetString("cluster-name")
 
-	return Setup(id, userName, key, config, version, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
+	return Setup(userName, key, config, version, secret, clusterName, local, portHTTP, portHTTPS, volumes, environmentVariables)
 }
 
 func actionUpgrade(cmd *cobra.Command, args []string) error {
-	return Upgrade()
+	clusterName := viper.GetString("cluster-name")
+	version := viper.GetString("version")
+	return Upgrade(clusterName, version)
 }
 
 func actionDestroy(cmd *cobra.Command, args []string) error {
-	return Destroy()
+	clusterName := viper.GetString("cluster-name")
+	return Destroy(clusterName)
 }
 
 func actionApply(cmd *cobra.Command, args []string) error {
@@ -185,9 +277,11 @@ func actionApply(cmd *cobra.Command, args []string) error {
 }
 
 func actionStart(cmd *cobra.Command, args []string) error {
-	return DockerStart()
+	clusterName := viper.GetString("cluster-name")
+	return DockerStart(clusterName)
 }
 
 func actionStop(cmd *cobra.Command, args []string) error {
-	return DockerStop()
+	clusterName := viper.GetString("cluster-name")
+	return DockerStop(clusterName)
 }

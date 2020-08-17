@@ -25,16 +25,16 @@ func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFee
 	readReq := model.ReadRequest{Find: data.Where, Operation: utils.All}
 
 	// Check if the user is authorised to make the request
-	actions, _, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, &readReq)
+	actions, reqParams, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, &readReq)
 	if err != nil {
 		return nil, err
 	}
 
-	return m.DoRealtimeSubscribe(ctx, clientID, data, actions, sendFeed)
+	return m.DoRealtimeSubscribe(ctx, clientID, data, actions, reqParams, sendFeed)
 }
 
 // DoRealtimeSubscribe makes the realtime query
-func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, actions *model.PostProcess, sendFeed model.SendFeed) ([]*model.FeedData, error) {
+func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, actions *model.PostProcess, reqParams model.RequestParams, sendFeed model.SendFeed) ([]*model.FeedData, error) {
 	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 	if data.Options.SkipInitial {
 		m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
@@ -44,7 +44,7 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 	ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	result, err := m.crud.Read(ctx2, data.DBType, data.Group, readReq)
+	result, err := m.crud.Read(ctx2, data.DBType, data.Group, readReq, reqParams)
 	if err != nil {
 		return nil, err
 	}

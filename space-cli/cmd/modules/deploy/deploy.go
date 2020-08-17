@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/spaceuptech/space-cli/cmd/modules/operations"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/operations"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 func deployService(dockerFilePath, serviceFilePath string) error {

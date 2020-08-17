@@ -36,7 +36,9 @@ func (m *Module) processIntents(t *time.Time) {
 		},
 	}}
 
-	results, err := m.crud.Read(ctx, dbAlias, col, &readRequest)
+	attr := map[string]string{"project": m.project, "db": dbAlias, "col": col}
+	reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
+	results, err := m.crud.Read(ctx, dbAlias, col, &readRequest, reqParams)
 	if err != nil {
 		logrus.Errorf("Eventing intent routine error - %s", err.Error())
 		return
@@ -84,8 +86,10 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &createEvent)
 
 		// Check if document exists in database
+		attr := map[string]string{"project": m.project, "db": createEvent.DBType, "col": createEvent.Col}
+		reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
 		readRequest := &model.ReadRequest{Operation: utils.One, Find: createEvent.Find.(map[string]interface{})}
-		if _, err := m.crud.Read(ctx, createEvent.DBType, createEvent.Col, readRequest); err != nil {
+		if _, err := m.crud.Read(ctx, createEvent.DBType, createEvent.Col, readRequest, reqParams); err != nil {
 
 			// Mark event as cancelled if it document doesn't exist
 			if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
@@ -112,7 +116,9 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		// Get the document from the database
 		timestamp := time.Now()
 		readRequest := &model.ReadRequest{Operation: utils.One, Find: updateEvent.Find.(map[string]interface{})}
-		result, err := m.crud.Read(ctx, updateEvent.DBType, updateEvent.Col, readRequest)
+		attr := map[string]string{"project": m.project, "db": updateEvent.DBType, "col": updateEvent.Col}
+		reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
+		result, err := m.crud.Read(ctx, updateEvent.DBType, updateEvent.Col, readRequest, reqParams)
 		if err != nil {
 			// Do nothing if there is an error while reading
 			return
@@ -145,7 +151,9 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		// Check if document exists in database
 		readRequest := &model.ReadRequest{Operation: utils.One, Find: deleteEvent.Find.(map[string]interface{})}
-		if _, err := m.crud.Read(ctx, deleteEvent.DBType, deleteEvent.Col, readRequest); err == nil {
+		attr := map[string]string{"project": m.project, "db": deleteEvent.DBType, "col": deleteEvent.Col}
+		reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
+		if _, err := m.crud.Read(ctx, deleteEvent.DBType, deleteEvent.Col, readRequest, reqParams); err == nil {
 
 			// Mark the event as cancelled if the document still exists
 			_ = m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID))

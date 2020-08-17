@@ -57,6 +57,7 @@ func (g *GCPStorage) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesRes
 
 // ReadFile reads a file from GCPStorage
 func (g *GCPStorage) ReadFile(path string) (*model.File, error) {
+	path = strings.TrimPrefix(path, "/")
 	u2 := uuid.NewV4()
 
 	tmpfile, err := ioutil.TempFile("", u2.String())

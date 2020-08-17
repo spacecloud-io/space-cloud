@@ -1,20 +1,18 @@
 package modules
 
 import (
+	"github.com/spaceuptech/space-cloud/gateway/managers"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
 	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
 	"github.com/spaceuptech/space-cloud/gateway/modules/functions"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global"
 	"github.com/spaceuptech/space-cloud/gateway/modules/realtime"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/modules/userman"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
-	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
-	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 // Modules is an object that sets up the modules
@@ -28,20 +26,35 @@ type Module struct {
 	eventing  *eventing.Module
 	graphql   *graphql.Module
 	schema    *schema.Schema
+
+	// Global Modules
+	GlobalMods *global.Global
+
+	// Managers
+	Managers *managers.Managers
 }
 
-func newModule(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module, driver *driver.Handler) *Module {
+func newModule(nodeID string, managers *managers.Managers, globalMods *global.Global) *Module {
+	// Get managers
+	adminMan := managers.Admin()
+	syncMan := managers.Sync()
+	integrationMan := managers.Integration()
+
+	// Get global mods
+	metrics := globalMods.Metrics()
+
 	c := crud.Init()
 	c.SetAdminManager(adminMan)
 	c.SetGetSecrets(syncMan.GetSecrets)
+	c.SetIntegrationManager(integrationMan)
 
 	s := schema.Init(c)
 	c.SetSchema(s)
 
-	a := auth.Init(nodeID, c)
+	a := auth.Init(nodeID, c, adminMan, integrationMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
-	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
+	fn := functions.Init(a, syncMan, integrationMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
 	f.SetGetSecrets(syncMan.GetSecrets)
 
@@ -61,5 +74,5 @@ func newModule(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager,
 	u := userman.Init(c, a)
 	graphqlMan := graphql.New(a, c, fn, s)
 
-	return &Module{auth: a, db: c, user: u, file: f, functions: fn, realtime: rt, eventing: e, graphql: graphqlMan, schema: s}
+	return &Module{auth: a, db: c, user: u, file: f, functions: fn, realtime: rt, eventing: e, graphql: graphqlMan, schema: s, Managers: managers, GlobalMods: globalMods}
 }
