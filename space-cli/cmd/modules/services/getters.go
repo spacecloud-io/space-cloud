@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
 // GetServicesRoutes gets services routes
@@ -14,7 +15,7 @@ func GetServicesRoutes(project, commandName string, params map[string]string) ([
 
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -56,7 +57,7 @@ func GetServicesSecrets(project, commandName string, params map[string]string) (
 
 	// Get the spec from the server
 	result := new(model.Response)
-	if err := utils.Get(http.MethodGet, url, params, result); err != nil {
+	if err := transport.Client.Get(http.MethodGet, url, params, result); err != nil {
 		return nil, err
 	}
 
@@ -86,7 +87,7 @@ func GetServices(project, commandName string, params map[string]string) ([]*mode
 	url := fmt.Sprintf("/v1/runner/%s/services", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 

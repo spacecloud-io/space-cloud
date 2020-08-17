@@ -56,7 +56,6 @@ type Crud interface {
 	Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error)
 	DescribeTable(ctc context.Context, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
-	RawExec(ctx context.Context, query string) error
 	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error)
 	GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, col string) error
@@ -105,7 +104,7 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection, dbName
 		}
 		return c, err
 	default:
-		return nil, utils.ErrInvalidParams
+		return nil, utils.LogError(fmt.Sprintf("provided database (%s) is not supported", dbType), "crud", "init-block", nil)
 	}
 }
 
@@ -125,7 +124,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		return errors.New("crud module cannot have more than 1 db")
 	}
 
-	m.closeBatchOperation()
 	m.project = project
 
 	// Reset all existing prepared query
@@ -150,12 +148,22 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
 		}
 
+		// check if connection string starts with secrets
+		secretName, isSecretExists := splitConnectionString(v.Conn)
+		connectionString := v.Conn
+		if isSecretExists {
+			var err error
+			connectionString, err = m.getSecrets(project, secretName, "CONN")
+			if err != nil {
+				return utils.LogError("cannot get secrets from runner", "crud", "setConfig", err)
+			}
+		}
+
 		if m.block != nil {
 			// Skip if the connection string is the same
-			if m.block.IsSame(v.Conn, v.DBName) {
-				break
+			if m.block.IsSame(connectionString, v.DBName) {
+				continue
 			}
-
 			// Close the previous database connection
 			if err := m.block.Close(); err != nil {
 				_ = utils.LogError("Unable to close database connections", "crud", "set-config", err)
@@ -165,17 +173,8 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		var c Crud
 		var err error
 
-		// check if connection string starts with secrets
-		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
-		if isSecretExists {
-			v.Conn, err = m.getSecrets(project, secretName, secretKey)
-			if err != nil {
-				return utils.LogError("cannot get secrets from runner", "crud", "setConfig", err)
-			}
-		}
-
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
-		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn, v.DBName)
+		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, connectionString, v.DBName)
 
 		if v.Enabled {
 			if err != nil {
@@ -189,17 +188,19 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
 	}
+
+	m.closeBatchOperation()
 	m.initBatchOperation(project, crud)
 	return nil
 }
 
 // splitConnectionString splits the connection string
-func splitConnectionString(connection string) (string, string, bool) {
+func splitConnectionString(connection string) (string, bool) {
 	s := strings.Split(connection, ".")
 	if s[0] == "secrets" {
-		return s[1], s[2], true
+		return s[1], true
 	}
-	return "", "", false
+	return "", false
 }
 
 // GetDBType returns the type of the db for the alias provided
@@ -217,4 +218,29 @@ func (m *Module) SetGetSecrets(function utils.GetSecrets) {
 	defer m.Unlock()
 
 	m.getSecrets = function
+}
+
+// CloseConfig close the rules and secret key required by the crud block
+func (m *Module) CloseConfig() error {
+	// Acquire a lock
+	m.Lock()
+	defer m.Unlock()
+
+	for k := range m.queries {
+		delete(m.queries, k)
+	}
+	for k := range m.dataLoader.loaderMap {
+		delete(m.dataLoader.loaderMap, k)
+	}
+
+	if m.block != nil {
+		err := m.block.Close()
+		if err != nil {
+			return utils.LogError("Unable to close block in crud", "crud", "CloseConfig", err)
+		}
+	}
+
+	m.closeBatchOperation()
+
+	return nil
 }

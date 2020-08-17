@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
 // GetRemoteServices gets remote services
@@ -14,7 +15,7 @@ func GetRemoteServices(project, commandName string, params map[string]string) ([
 
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 

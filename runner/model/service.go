@@ -2,16 +2,17 @@ package model
 
 // Service describes a service's configurations
 type Service struct {
-	ID        string            `json:"id,omitempty" yaml:"id,omitempty"`
-	Name      string            `json:"name,omitempty" yaml:"name,omitempty"`
-	ProjectID string            `json:"projectId,omitempty" yaml:"projectId,omitempty"`
-	Version   string            `json:"version,omitempty" yaml:"version,omitempty"`
-	Scale     ScaleConfig       `json:"scale" yaml:"scale"`
-	Labels    map[string]string `json:"labels" yaml:"labels"`
-	Tasks     []Task            `json:"tasks" yaml:"tasks"`
-	Affinity  []Affinity        `json:"affinity" yaml:"affinity"`
-	Whitelist []Whitelist       `json:"whitelists" yaml:"whitelists"`
-	Upstreams []Upstream        `json:"upstreams" yaml:"upstreams"`
+	ID                     string            `json:"id,omitempty" yaml:"id,omitempty"`
+	Name                   string            `json:"name,omitempty" yaml:"name,omitempty"`
+	ProjectID              string            `json:"projectId,omitempty" yaml:"projectId,omitempty"`
+	Version                string            `json:"version,omitempty" yaml:"version,omitempty"`
+	Scale                  ScaleConfig       `json:"scale" yaml:"scale"`
+	Labels                 map[string]string `json:"labels" yaml:"labels"`
+	Tasks                  []Task            `json:"tasks" yaml:"tasks"`
+	Affinity               []Affinity        `json:"affinity" yaml:"affinity"`
+	Whitelist              []Whitelist       `json:"whitelists" yaml:"whitelists"`
+	Upstreams              []Upstream        `json:"upstreams" yaml:"upstreams"`
+	StatsInclusionPrefixes string            `json:"statsInclusionPrefixes" yaml:"statsInclusionPrefixes"`
 }
 
 // ScaleConfig describes the config used to scale a service
@@ -133,4 +134,18 @@ type SpecObject struct {
 	Type string            `yaml:"type"`
 	Meta map[string]string `yaml:"meta"`
 	Spec interface{}       `yaml:"spec,omitempty"`
+}
+
+//ServiceStatus describes structure of service status
+type ServiceStatus struct {
+	ServiceID       string         `json:"serviceId" yaml:"serviceId"`
+	Version         string         `json:"version" yaml:"version"`
+	DesiredReplicas interface{}    `json:"desiredReplicas" yaml:"desiredReplicas"`
+	Replicas        []*ReplicaInfo `json:"replicas" yaml:"replicas"`
+}
+
+//ReplicaInfo describes structure of replica info
+type ReplicaInfo struct {
+	ID     string `json:"id" yaml:"id"`
+	Status string `json:"status" yaml:"status"`
 }

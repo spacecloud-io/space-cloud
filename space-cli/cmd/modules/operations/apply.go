@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Apply reads the config file(s) from the provided file / directory and applies it to the server
@@ -50,7 +50,7 @@ func Apply(applyName string) error {
 				// Apply all spec
 				for _, spec := range specs {
 					if err := ApplySpec(token, account, spec); err != nil {
-						return err
+						return utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
 					}
 				}
 			}
@@ -71,7 +71,7 @@ func Apply(applyName string) error {
 	// Apply all spec
 	for _, spec := range specs {
 		if err := ApplySpec(token, account, spec); err != nil {
-			return err
+			return utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
 		}
 	}
 
@@ -104,11 +104,16 @@ func ApplySpec(token string, account *model.Account, specObj *model.SpecObject) 
 	v := map[string]interface{}{}
 	_ = json.NewDecoder(resp.Body).Decode(&v)
 	utils.CloseTheCloser(req.Body)
-	if resp.StatusCode != 200 {
+
+	if resp.StatusCode == http.StatusAccepted {
+		// Make checker send this status
+		utils.LogInfo(fmt.Sprintf("Successfully queued %s", specObj.Type))
+	} else if resp.StatusCode == http.StatusOK {
+		utils.LogInfo(fmt.Sprintf("Successfully applied %s", specObj.Type))
+	} else {
 		_ = utils.LogError(fmt.Sprintf("error while applying service got http status code %s - %s", resp.Status, v["error"]), nil)
 		return fmt.Errorf("%v", v["error"])
 	}
-	utils.LogInfo(fmt.Sprintf("Successfully applied %s", specObj.Type))
 	return nil
 }
 

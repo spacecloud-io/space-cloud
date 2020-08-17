@@ -43,9 +43,10 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 		docs = []interface{}{v}
 	}
 
+	dbType, _ := s.crud.GetDBType(dbAlias)
 	var fieldsToProcess []fieldsToPostProcess
 	for columnName, columnValue := range tableInfo {
-		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime {
+		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime || (dbType == string(utils.MySQL) && columnValue.Kind == model.TypeBoolean) {
 			fieldsToProcess = append(fieldsToProcess, fieldsToPostProcess{kind: columnValue.Kind, name: columnName})
 		}
 	}
@@ -63,20 +64,33 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 
 				switch field.kind {
 				case model.TypeJSON:
-					data, ok := column.([]byte)
-					if !ok {
-						if column == nil {
-							continue
+					switch data := column.(type) {
+					case []byte:
+						var v interface{}
+						if err := json.Unmarshal(data, &v); err != nil {
+							logrus.Errorf("error crud post process in schema module unable unmarshal data (%s)", string(data))
+							return fmt.Errorf("unable to unmarshal json data for column (%s)", field.name)
 						}
-						logrus.Errorf("error crud post process in schema module unable to type assert interface to []byte it is of type (%T) for column (%s)", field.name, doc[field.name])
-						return fmt.Errorf("unable to type assert interface to []byte for column (%s)", field.name)
+						doc[field.name] = v
+
+					case string:
+						var v interface{}
+						if err := json.Unmarshal([]byte(data), &v); err != nil {
+							logrus.Errorf("error crud post process in schema module unable unmarshal data (%s)", string(data))
+							return fmt.Errorf("unable to unmarshal json data for column (%s)", field.name)
+						}
+						doc[field.name] = v
 					}
-					var v interface{}
-					if err := json.Unmarshal(data, &v); err != nil {
-						logrus.Errorf("error crud post process in schema module unable unmarshal data (%s)", string(data))
-						return fmt.Errorf("unable to unmarshal json data for column (%s)", field.name)
+
+				case model.TypeBoolean:
+					switch v := column.(type) {
+					case int64:
+						if v == int64(1) {
+							doc[field.name] = true
+						} else {
+							doc[field.name] = false
+						}
 					}
-					doc[field.name] = v
 
 				case model.TypeDateTime:
 					switch v := column.(type) {

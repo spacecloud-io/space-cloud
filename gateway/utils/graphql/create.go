@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -13,34 +14,34 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]*model.AllRequest, []interface{}, error) {
+func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (model.RequestParams, []*model.AllRequest, []interface{}, error) {
 	dbAlias, err := graph.GetDBAlias(field)
 	if err != nil {
-		return nil, nil, err
+		return model.RequestParams{}, nil, nil, err
 	}
 
 	col := strings.TrimPrefix(field.Name.Value, "insert_")
 
 	docs, err := extractDocs(field.Arguments, store)
 	if err != nil {
-		return nil, nil, err
+		return model.RequestParams{}, nil, nil, err
 	}
-
 	reqs, returningDocs, err := graph.processNestedFields(docs, dbAlias, col)
 	if err != nil {
-		return nil, nil, err
+		return model.RequestParams{}, nil, nil, err
 	}
 
 	// Check if the requests are authorised
+	var reqParams model.RequestParams
 	for _, req := range reqs {
 		r := &model.CreateRequest{Document: req.Document, Operation: req.Operation}
-		_, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, dbAlias, req.Col, token, r)
+		reqParams, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, req.DBAlias, req.Col, token, r)
 		if err != nil {
-			return nil, nil, err
+			return model.RequestParams{}, nil, nil, err
 		}
 	}
 
-	return reqs, returningDocs, nil
+	return reqParams, reqs, returningDocs, nil
 }
 
 func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields model.Fields) {
@@ -102,7 +103,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 	schemaFields, p := graph.schema.GetSchema(dbAlias, col)
 	if !p {
 		// Return the docs as is if no schema is available
-		return []*model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs}}, docs, nil
+		return []*model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs, DBAlias: dbAlias}}, docs, nil
 	}
 
 	returningDocs := make([]interface{}, len(docs))
@@ -165,7 +166,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 				// Each document is actually an object
 				linkedDoc := linkedDocTemp.(map[string]interface{})
 
-				linkedSchemaFields, p := graph.schema.GetSchema(dbAlias, fieldSchema.LinkedTable.Table)
+				linkedSchemaFields, p := graph.schema.GetSchema(fieldSchema.LinkedTable.DBType, fieldSchema.LinkedTable.Table)
 				if !p {
 					return nil, nil, fmt.Errorf("schema not provided for table (%s). Check the link directive for field (%s) in table (%s)", fieldSchema.LinkedTable.Table, fieldSchema.FieldName, col)
 				}
@@ -183,7 +184,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 				}
 			}
 
-			linkedCreateRequests, returningLinkedDocs, err := graph.processNestedFields(linkedDocs, dbAlias, fieldSchema.LinkedTable.Table)
+			linkedCreateRequests, returningLinkedDocs, err := graph.processNestedFields(linkedDocs, fieldSchema.LinkedTable.DBType, fieldSchema.LinkedTable.Table)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -203,7 +204,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 		}
 		returningDocs[i] = newDoc
 	}
-	createRequests = append(createRequests, &model.AllRequest{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs})
+	createRequests = append(createRequests, &model.AllRequest{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs, DBAlias: dbAlias})
 	return append(createRequests, afterRequests...), returningDocs, nil
 }
 
@@ -215,7 +216,11 @@ func extractDocs(args []*ast.Argument, store utils.M) ([]interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			return temp.([]interface{}), nil
+			arr, ok := temp.([]interface{})
+			if !ok {
+				return nil, errors.New("docs should be of type array []")
+			}
+			return arr, nil
 		}
 	}
 

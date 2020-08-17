@@ -8,11 +8,12 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // DockerStop stops the services which have been started
-func DockerStop() error {
+func DockerStop(clusterName string) error {
 
 	ctx := context.Background()
 
@@ -22,10 +23,10 @@ func DockerStop() error {
 		return utils.LogError("Unable to initialize docker client", err)
 	}
 
-	argsServices := filters.Arg("label", "app=service")
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsServices), All: true})
+	containers, err := utils.GetContainers(ctx, docker, clusterName, model.ServiceContainers)
 	if err != nil {
-		return utils.LogError("Unable to list space-cloud services containers", err)
+		_ = utils.LogError(fmt.Sprintf("Unable to list containers - %s", err.Error()), nil)
+		return err
 	}
 
 	for _, container := range containers {
@@ -36,7 +37,8 @@ func DockerStop() error {
 	}
 
 	argsSC := filters.Arg("label", "app=space-cloud")
-	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsSC), All: true})
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterName))
+	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsSC), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
 	}
@@ -49,7 +51,8 @@ func DockerStop() error {
 	}
 
 	argsAddOns := filters.Arg("label", "app=addon")
-	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsAddOns), All: true})
+	argsNetwork = filters.Arg("network", utils.GetNetworkName(clusterName))
+	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsAddOns), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
 	}

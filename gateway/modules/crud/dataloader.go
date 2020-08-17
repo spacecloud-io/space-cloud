@@ -139,7 +139,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 				req.Req.IsBatch = false      // NOTE: DO NOT REMOVE THIS
 				req.Req.Options.Select = nil // Need to make this nil so that we load all the fields data
 				// Execute the query
-				res, err := m.Read(ctx, dbAlias, req.Col, &req.Req)
+				res, err := m.Read(ctx, dbAlias, req.Col, &req.Req, req.ReqParams)
 				if err != nil {
 
 					// Cancel the context and add the error response to the result
@@ -170,7 +170,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 		// Prepare a merged request
 		req := model.ReadRequest{Find: map[string]interface{}{"$or": clauses}, Operation: utils.All, Options: &model.ReadOptions{}}
 		// Fire the merged request
-		res, err := m.Read(ctx, dbAlias, col, &req)
+		res, err := m.Read(ctx, dbAlias, col, &req, model.RequestParams{Resource: "db-read", Op: "access", Attributes: map[string]string{"project": m.project, "db": dbAlias, "col": col}})
 		if err != nil {
 			holder.fillErrorMessage(err)
 		} else {

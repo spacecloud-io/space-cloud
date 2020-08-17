@@ -65,18 +65,15 @@ func TestIsCreateOpAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{})
-	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+	auth := Init("1", &crud.Module{}, nil)
+	if er := auth.SetConfig(project, "", []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			r, err := (auth).IsCreateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
+			_, err := (auth).IsCreateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Received Error-", err, "Wanted Error-", test.IsErrExpected)
-			}
-			if !reflect.DeepEqual(r, test.status) {
-				t.Error("Received Status Code-", r, "Expected Status-", test.status)
 			}
 		})
 	}
@@ -135,18 +132,15 @@ func TestIsAggregateOpAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{})
-	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+	auth := Init("1", &crud.Module{}, nil)
+	if er := auth.SetConfig(project, "", []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			r, err := (auth).IsAggregateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
+			_, err := (auth).IsAggregateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Success GoErr", err, "Want Error", test.IsErrExpected)
-			}
-			if !reflect.DeepEqual(r, test.status) {
-				t.Error("Received Status Code-", r, "Expected Status-", test.status)
 			}
 		})
 	}
@@ -196,18 +190,15 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{})
-	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+	auth := Init("1", &crud.Module{}, nil)
+	if er := auth.SetConfig(project, "", []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			_, r, err := (auth).IsReadOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
+			_, _, err := (auth).IsReadOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Success GoErr", err, "Want Error", test.IsErrExpected)
-			}
-			if !reflect.DeepEqual(r, test.status) {
-				t.Error("Received Status Code-", r, "Expected Status-", test.status)
 			}
 		})
 	}
@@ -257,18 +248,15 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{})
-	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+	auth := Init("1", &crud.Module{}, nil)
+	if er := auth.SetConfig(project, "", []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			r, err := (auth).IsDeleteOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
+			_, err := (auth).IsDeleteOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Success GoErr", err, "Want Error", test.IsErrExpected)
-			}
-			if !reflect.DeepEqual(r, test.status) {
-				t.Error("Received Status Code-", r, "Expected Status-", test.status)
 			}
 		})
 	}
@@ -318,18 +306,15 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{})
-	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+	auth := Init("1", &crud.Module{}, nil)
+	if er := auth.SetConfig(project, "", []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			r, err := (auth).IsUpdateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
+			_, err := (auth).IsUpdateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Success GoErr", err, "Want Error", test.IsErrExpected)
-			}
-			if !reflect.DeepEqual(r, test.status) {
-				t.Error("Received Status Code-", r, "Expected Status-", test.status)
 			}
 		})
 	}
@@ -376,18 +361,15 @@ func TestIsPreparedQueryAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{})
-	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+	auth := Init("1", &crud.Module{}, nil)
+	if er := auth.SetConfig(project, "", []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			_, r, err := (auth).IsPreparedQueryAuthorised(context.Background(), test.project, test.dbType, test.id, test.token, &test.value)
+			_, _, err := (auth).IsPreparedQueryAuthorised(context.Background(), test.project, test.dbType, test.id, test.token, &test.value)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Success GoErr", err, "Want Error", test.IsErrExpected)
-			}
-			if !reflect.DeepEqual(r, test.status) {
-				t.Error("Received Status Code-", r, "Expected Status-", test.status)
 			}
 		})
 	}

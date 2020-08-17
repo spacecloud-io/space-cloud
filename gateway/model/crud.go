@@ -15,6 +15,7 @@ type ReadRequest struct {
 	Operation string                 `json:"op"`
 	Options   *ReadOptions           `json:"options"`
 	IsBatch   bool                   `json:"isBatch"`
+	Extras    map[string]interface{} `json:"extras"`
 }
 
 // ReadOptions is the options required for a read request
@@ -59,6 +60,8 @@ type AllRequest struct {
 	Find      map[string]interface{} `json:"find"`
 	Update    map[string]interface{} `json:"update"`
 	Type      string                 `json:"type"`
+	DBAlias   string                 `json:"dBAlias"`
+	Extras    map[string]interface{} `json:"extras"`
 }
 
 // BatchRequest is the http body for a batch request

@@ -33,7 +33,7 @@ func (m *mockCrudInterface) InternalCreate(ctx context.Context, dbAlias, project
 	return nil
 }
 
-func (m *mockCrudInterface) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest) (interface{}, error) {
+func (m *mockCrudInterface) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, error) {
 	c := m.Called(ctx, dbAlias, col, req)
 	if len(c) > 1 {
 		return c.Get(0).(interface{}), c.Error(1)
@@ -96,12 +96,9 @@ type mockAuthEventingInterface struct {
 	mock.Mock
 }
 
-func (m *mockAuthEventingInterface) IsEventingOpAuthorised(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
+func (m *mockAuthEventingInterface) IsEventingOpAuthorised(ctx context.Context, project, token string, event *model.QueueEventRequest) (model.RequestParams, error) {
 	c := m.Called(ctx, project, token, event)
-	if err := c.Error(0); err != nil {
-		return err
-	}
-	return nil
+	return c.Get(0).(model.RequestParams), c.Error(1)
 }
 
 func (m *mockAuthEventingInterface) GetSCAccessToken() (string, error) {
@@ -116,6 +113,10 @@ func (m *mockAuthEventingInterface) GetInternalAccessToken() (string, error) {
 
 type mockSchemaEventingInterface struct {
 	mock.Mock
+}
+
+func (m *mockSchemaEventingInterface) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
+	panic("implement me")
 }
 
 func (m *mockSchemaEventingInterface) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
@@ -136,6 +137,10 @@ func (m *mockSchemaEventingInterface) SchemaValidator(col string, collectionFiel
 func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
 	c := m.Called(ctx, dbAlias, logicalDBName, tables)
 	return c.Error(0)
+}
+func (m *mockSchemaEventingInterface) GetSchema(dbAlias, col string) (model.Fields, bool) {
+	c := m.Called(dbAlias, col)
+	return c.Get(0).(model.Fields), c.Bool(1)
 }
 
 type mockFileStoreEventingInterface struct {
