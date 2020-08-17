@@ -41,7 +41,7 @@ metadata:
   namespace: space-cloud
 rules:
   - apiGroups: [""]
-    resources: ["namespaces", "pods", "services", "configmaps", "secrets", "serviceaccounts"]
+    resources: ["namespaces", "pods", "pods/log", "services", "configmaps", "secrets", "serviceaccounts"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups:
       - "extensions"
