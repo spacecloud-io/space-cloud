@@ -233,13 +233,15 @@ func (headers Headers) UpdateHeader(reqHeaders http.Header) {
 
 // FileStore holds the config for the file store module
 type FileStore struct {
-	Enabled   bool        `json:"enabled" yaml:"enabled"`
-	StoreType string      `json:"storeType" yaml:"storeType"`
-	Conn      string      `json:"conn" yaml:"conn"`
-	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
-	Bucket    string      `json:"bucket" yaml:"bucket"`
-	Secret    string      `json:"secret" yaml:"secret"`
-	Rules     []*FileRule `json:"rules,omitempty" yaml:"rules"`
+	Enabled        bool        `json:"enabled" yaml:"enabled"`
+	StoreType      string      `json:"storeType" yaml:"storeType"`
+	Conn           string      `json:"conn" yaml:"conn"`
+	Endpoint       string      `json:"endpoint" yaml:"endpoint"`
+	Bucket         string      `json:"bucket" yaml:"bucket"`
+	Secret         string      `json:"secret" yaml:"secret"`
+	Rules          []*FileRule `json:"rules,omitempty" yaml:"rules"`
+	DisableSSL     *bool       `json:"disableSSL,omitempty" yaml:"disableSSL,omitempty"`
+	ForcePathStyle *bool       `json:"forcePathStyle,omitempty" yaml:"forcePathStyle,omitempty"`
 }
 
 // FileRule is the authorization object at the file rule level

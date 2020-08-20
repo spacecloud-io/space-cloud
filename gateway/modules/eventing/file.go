@@ -27,13 +27,18 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
+	path := req.Path
+	if req.Type == "file" {
+		path += "/" + req.Name
+	}
 	for _, rule := range rules {
 		eventDoc := m.generateQueueEventRequest(token, rule.ID,
 			batchID, utils.EventStatusIntent, &model.QueueEventRequest{
 				Type: utils.EventFileCreate,
 				Payload: &model.FilePayload{
 					Meta: req.Meta,
-					Path: req.Path,
+					Path: path,
+					Type: req.Type,
 				},
 			})
 		eventDocs = append(eventDocs, eventDoc)

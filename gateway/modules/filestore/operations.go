@@ -121,12 +121,12 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 
 	if err = m.store.CreateFile(req, reader); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
-		return http.StatusInternalServerError, nil
+		return http.StatusInternalServerError, utils.LogError("Unable to create file", "fileman", "create-file", err)
 	}
 
 	m.eventing.HookStage(ctx, intent, nil)
 	m.metricsHook(project, string(m.store.GetStoreType()), utils.Create)
-	return http.StatusOK, err
+	return http.StatusOK, nil
 }
 
 // DownloadFile downloads a file from the provided path

@@ -3,6 +3,7 @@ package amazons3
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -13,8 +14,12 @@ type AmazonS3 struct {
 }
 
 // Init initializes an amazon s3 driver
-func Init(region, endpoint, bucket string) (*AmazonS3, error) {
-	awsConf := &aws.Config{Region: aws.String(region)}
+func Init(region, endpoint, bucket string, disableSSL, forcePathStyle *bool) (*AmazonS3, error) {
+	awsConf := &aws.Config{
+		Region:           aws.String(region),
+		DisableSSL:       disableSSL,
+		S3ForcePathStyle: forcePathStyle,
+	}
 	if len(endpoint) > 0 {
 		awsConf.Endpoint = aws.String(endpoint)
 	}
