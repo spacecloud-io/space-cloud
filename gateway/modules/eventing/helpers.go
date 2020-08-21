@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/fatih/structs"
@@ -17,6 +18,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 )
 
 func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument) {
@@ -57,7 +59,7 @@ func (m *Module) generateBatchID() string {
 }
 
 func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest, batchID string) error {
-	return m.batchRequestsRaw(ctx, "", 0, requests, batchID)
+	return m.batchRequestsRaw(ctx, "", rand.Intn(utils.MaxEventTokens), requests, batchID)
 }
 func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token int, requests []*model.QueueEventRequest, batchID string) error {
 	// Create the meta information
@@ -214,8 +216,8 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 	return rows
 }
 
-func (m *Module) getMatchingRules(name string, options map[string]string) []config.EventingRule {
-	rules := make([]config.EventingRule, 0)
+func (m *Module) getMatchingRules(name string, options map[string]string) []*config.EventingRule {
+	rules := make([]*config.EventingRule, 0)
 
 	for n, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
@@ -252,14 +254,14 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 	return true
 }
 
-func (m *Module) selectRule(name string) (config.EventingRule, error) {
+func (m *Module) selectRule(name string) (*config.EventingRule, error) {
 	if rule, ok := m.config.Rules[name]; ok {
 		return rule, nil
 	}
 	if rule, ok := m.config.InternalRules[name]; ok {
 		return rule, nil
 	}
-	return config.EventingRule{}, fmt.Errorf("could not find rule with name %s", name)
+	return &config.EventingRule{}, fmt.Errorf("could not find rule with name %s", name)
 }
 
 func (m *Module) validate(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
@@ -278,4 +280,46 @@ func (m *Module) validate(ctx context.Context, project, token string, event *mod
 
 	_, err := m.schema.SchemaValidator(event.Type, schema, event.Payload.(map[string]interface{}))
 	return err
+}
+
+func (m *Module) createGoTemplate(kind, triggerName, tmpl string) error {
+	key := getGoTemplateKey(kind, triggerName)
+
+	// Create a new template object
+	t := template.New(key)
+	t = t.Funcs(tmpl2.CreateGoFuncMaps(nil))
+	val, err := t.Parse(tmpl)
+	if err != nil {
+		return utils.LogError("Invalid golang template provided", "eventing", "create-go-template", err)
+	}
+
+	m.templates[key] = val
+	return nil
+}
+
+func getGoTemplateKey(kind, triggerName string) string {
+	return fmt.Sprintf("%s---%s", kind, triggerName)
+}
+
+func (m *Module) adjustReqBody(trigger, token string, endpoint *config.EventingRule, auth, params interface{}) (interface{}, error) {
+	var req interface{}
+	var err error
+
+	switch endpoint.Tmpl {
+	case config.EndpointTemplatingEngineGo:
+		if tmpl, p := m.templates[getGoTemplateKey("trigger", trigger)]; p {
+			req, err = tmpl2.GoTemplate("eventing", "process-staged", tmpl, endpoint.OpFormat, token, auth, params)
+			if err != nil {
+				return nil, err
+			}
+		}
+	default:
+		utils.LogWarn(fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), "eventing", "adjust-req")
+		return params, nil
+	}
+
+	if req == nil {
+		return params, nil
+	}
+	return req, nil
 }

@@ -94,7 +94,7 @@ func (m *Module) SetConfig(project string, conf *config.FileStore) error {
 	}
 
 	// Create a new crud blocks
-	s, err := initBlock(utils.FileStoreType(conf.StoreType), conf.Conn, conf.Endpoint, conf.Bucket)
+	s, err := initBlock(conf)
 	if err != nil {
 		return err
 	}
@@ -152,14 +152,14 @@ func (m *Module) IsEnabled() bool {
 	return m.enabled
 }
 
-func initBlock(fileStoreType utils.FileStoreType, connection, endpoint, bucket string) (FileStore, error) {
-	switch fileStoreType {
+func initBlock(conf *config.FileStore) (FileStore, error) {
+	switch utils.FileStoreType(conf.StoreType) {
 	case utils.Local:
-		return local.Init(connection)
+		return local.Init(conf.Conn)
 	case utils.AmazonS3:
-		return amazons3.Init(connection, endpoint, bucket) // connection is the aws region code
+		return amazons3.Init(conf.Conn, conf.Endpoint, conf.Bucket, conf.DisableSSL, conf.ForcePathStyle) // connection is the aws region code
 	case utils.GCPStorage:
-		return gcpstorage.Init(bucket)
+		return gcpstorage.Init(conf.Bucket)
 	default:
 		return nil, utils.ErrInvalidParams
 	}

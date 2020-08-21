@@ -47,7 +47,7 @@ func New(clusterID, nodeID string, isMetricDisabled bool, adminMan *admin.Manage
 	return m, nil
 }
 
-//SetMetricsConfig sets metric config
+// SetMetricsConfig sets metric config
 func (c *Module) SetMetricsConfig(isEnabled bool) {
 	c.lock.Lock()
 	defer c.lock.Unlock()

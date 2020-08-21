@@ -6,6 +6,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig"
 	"github.com/ghodss/yaml"
 	"github.com/segmentio/ksuid"
 
@@ -51,14 +52,12 @@ type authModule interface {
 
 // CreateGoFuncMaps creates the helper functions that can be used in go templates
 func CreateGoFuncMaps(auth authModule) template.FuncMap {
-	m := template.FuncMap{
-		"hash":       utils.HashString,
-		"add":        func(a, b int) int { return a + b },
-		"generateId": func() string { return ksuid.New().String() },
-		"marshalJSON": func(a interface{}) (string, error) {
-			data, err := json.Marshal(a)
-			return string(data), err
-		},
+	m := sprig.TxtFuncMap()
+	m["hash"] = utils.HashString
+	m["generateId"] = func() string { return ksuid.New().String() }
+	m["marshalJSON"] = func(a interface{}) (string, error) {
+		data, err := json.Marshal(a)
+		return string(data), err
 	}
 	if auth != nil {
 		m["encrypt"] = auth.Encrypt
