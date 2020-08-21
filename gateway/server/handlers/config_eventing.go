@@ -44,7 +44,7 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = value
-		if status, err := syncMan.SetEventingRule(ctx, projectID, ruleName, value, reqParams); err != nil {
+		if status, err := syncMan.SetEventingRule(ctx, projectID, ruleName, &value, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}

@@ -6830,20 +6830,20 @@ metadata:
 rules:
   # For reading Istio resources
   - apiGroups: [
-    "authentication.istio.io",
-    "config.istio.io",
-    "networking.istio.io",
-    "rbac.istio.io",
-    "security.istio.io"]
+      "authentication.istio.io",
+      "config.istio.io",
+      "networking.istio.io",
+      "rbac.istio.io",
+      "security.istio.io"]
     resources: ["*"]
     verbs: ["get", "list", "watch"]
     # For updating Istio resource statuses
   - apiGroups: [
-    "authentication.istio.io",
-    "config.istio.io",
-    "networking.istio.io",
-    "rbac.istio.io",
-    "security.istio.io"]
+      "authentication.istio.io",
+      "config.istio.io",
+      "networking.istio.io",
+      "rbac.istio.io",
+      "security.istio.io"]
     resources: ["*/status"]
     verbs: ["update"]
 

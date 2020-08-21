@@ -2,10 +2,13 @@ package eventing
 
 import (
 	"errors"
+	"fmt"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
@@ -38,6 +41,9 @@ type Module struct {
 	eventChanMap sync.Map // key here is batchID
 	tickerIntent *time.Ticker
 	tickerStaged *time.Ticker
+
+	// Templates for body transformation
+	templates map[string]*template.Template
 }
 
 // synchronous event response
@@ -58,7 +64,8 @@ func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, sch
 		schemas:    map[string]model.Fields{},
 		fileStore:  file,
 		metricHook: hook,
-		config:     &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
+		config:     &config.Eventing{Enabled: false, InternalRules: map[string]*config.EventingRule{}},
+		templates:  map[string]*template.Template{},
 	}
 
 	// Start the internal processes
@@ -108,7 +115,31 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 
 	m.config.Rules = eventing.Rules
 	if m.config.Rules == nil {
-		m.config.Rules = map[string]config.EventingRule{}
+		m.config.Rules = map[string]*config.EventingRule{}
+	}
+
+	m.templates = map[string]*template.Template{}
+	for name, trigger := range m.config.Rules {
+		// Set default templating engine
+		if trigger.Tmpl == "" {
+			trigger.Tmpl = config.EndpointTemplatingEngineGo
+		}
+
+		// Set default output format
+		if trigger.OpFormat == "" {
+			trigger.OpFormat = "yaml"
+		}
+
+		switch trigger.Tmpl {
+		case config.EndpointTemplatingEngineGo:
+			if trigger.RequestTemplate != "" {
+				if err := m.createGoTemplate("trigger", name, trigger.RequestTemplate); err != nil {
+					return err
+				}
+			}
+		default:
+			return utils.LogError(fmt.Sprintf("Invalid templating engine (%s) provided", trigger.Tmpl), "eventing", "set-config", nil)
+		}
 	}
 
 	m.config.SecurityRules = eventing.SecurityRules
@@ -118,7 +149,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 
 	// `m.config.InternalRules` cannot be set by the eventing module. Its used by other modules only.
 	if m.config.InternalRules == nil {
-		m.config.InternalRules = map[string]config.EventingRule{}
+		m.config.InternalRules = map[string]*config.EventingRule{}
 	}
 
 	return nil

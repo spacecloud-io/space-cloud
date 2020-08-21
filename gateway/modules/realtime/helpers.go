@@ -23,9 +23,9 @@ func eventingToRealtimeEvent(event string) string {
 	}
 }
 
-func generateEventRules(crudConfig config.Crud, project, url string) []config.EventingRule {
+func generateEventRules(crudConfig config.Crud, project, url string) []*config.EventingRule {
 
-	var eventingRules []config.EventingRule
+	var eventingRules []*config.EventingRule
 
 	// Iterate over all dbTypes
 	for dbAlias, dbStub := range crudConfig {
@@ -41,7 +41,7 @@ func generateEventRules(crudConfig config.Crud, project, url string) []config.Ev
 
 					// Add a new event for each db event type
 					for _, eventType := range dbEvents {
-						rule := config.EventingRule{
+						rule := &config.EventingRule{
 							Type:    eventType,
 							URL:     url,
 							Options: map[string]string{"db": dbAlias, "col": col},

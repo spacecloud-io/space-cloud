@@ -17,7 +17,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (s *Module) logInvocation(ctx context.Context, eventID string, payload []byte, responseStatusCode int, responseBody, errorMsg string) error {
+func (m *Module) logInvocation(ctx context.Context, eventID string, payload []byte, responseStatusCode int, responseBody, errorMsg string) error {
 	invocationDoc := map[string]interface{}{
 		"event_id":             eventID,
 		"request_payload":      string(payload),
@@ -26,21 +26,21 @@ func (s *Module) logInvocation(ctx context.Context, eventID string, payload []by
 		"error_msg":            errorMsg,
 	}
 	createRequest := &model.CreateRequest{Document: invocationDoc, Operation: utils.One, IsBatch: true}
-	if err := s.crud.InternalCreate(ctx, s.config.DBAlias, s.project, utils.TableInvocationLogs, createRequest, false); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableInvocationLogs, createRequest, false); err != nil {
 		return errors.New("eventing module couldn't log the request - " + err.Error())
 	}
 	return nil
 }
 
 // MakeInvocationHTTPRequest fires an http request and returns a response
-func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTTPEventingInterface, method, url, eventID, token, scToken string, payload, vPtr interface{}) error {
+func (m *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTTPEventingInterface, method, url, eventID, token, scToken string, payload, vPtr interface{}) error {
 	// Marshal json into byte array
 	data, _ := json.Marshal(payload)
 
 	// Make a request object
 	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(data))
 	if err != nil {
-		if err := s.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
+		if err := m.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -62,7 +62,7 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTT
 	req = req.WithContext(ctx)
 	resp, err := client.Do(req)
 	if err != nil {
-		if err := s.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
+		if err := m.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -71,7 +71,7 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTT
 	defer utils.CloseTheCloser(resp.Body)
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		if err := s.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
+		if err := m.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -79,7 +79,7 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTT
 	}
 
 	if err := json.Unmarshal(responseBody, vPtr); err != nil {
-		if err := s.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), err.Error()); err != nil {
+		if err := m.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -87,14 +87,14 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTT
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		if err := s.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), errors.New("invalid status code received").Error()); err != nil {
+		if err := m.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), errors.New("invalid status code received").Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
 		return fmt.Errorf("service responded with status code - %s", strconv.Itoa(resp.StatusCode))
 	}
 
-	if err := s.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), ""); err != nil {
+	if err := m.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), ""); err != nil {
 		logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 		return err
 	}

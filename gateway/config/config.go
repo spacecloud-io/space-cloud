@@ -233,13 +233,15 @@ func (headers Headers) UpdateHeader(reqHeaders http.Header) {
 
 // FileStore holds the config for the file store module
 type FileStore struct {
-	Enabled   bool        `json:"enabled" yaml:"enabled"`
-	StoreType string      `json:"storeType" yaml:"storeType"`
-	Conn      string      `json:"conn" yaml:"conn"`
-	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
-	Bucket    string      `json:"bucket" yaml:"bucket"`
-	Secret    string      `json:"secret" yaml:"secret"`
-	Rules     []*FileRule `json:"rules,omitempty" yaml:"rules"`
+	Enabled        bool        `json:"enabled" yaml:"enabled"`
+	StoreType      string      `json:"storeType" yaml:"storeType"`
+	Conn           string      `json:"conn" yaml:"conn"`
+	Endpoint       string      `json:"endpoint" yaml:"endpoint"`
+	Bucket         string      `json:"bucket" yaml:"bucket"`
+	Secret         string      `json:"secret" yaml:"secret"`
+	Rules          []*FileRule `json:"rules,omitempty" yaml:"rules"`
+	DisableSSL     *bool       `json:"disableSSL,omitempty" yaml:"disableSSL,omitempty"`
+	ForcePathStyle *bool       `json:"forcePathStyle,omitempty" yaml:"forcePathStyle,omitempty"`
 }
 
 // FileRule is the authorization object at the file rule level
@@ -267,23 +269,25 @@ type StaticRoute struct {
 
 // Eventing holds the config for the eventing module (task queue)
 type Eventing struct {
-	Enabled       bool                    `json:"enabled" yaml:"enabled"`
-	DBAlias       string                  `json:"dbAlias" yaml:"dbAlias"`
-	Rules         map[string]EventingRule `json:"triggers,omitempty" yaml:"triggers"`
-	InternalRules map[string]EventingRule `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty"`
-	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
-	Schemas       map[string]SchemaObject `json:"schemas,omitempty" yaml:"schemas,omitempty"`
+	Enabled       bool                     `json:"enabled" yaml:"enabled"`
+	DBAlias       string                   `json:"dbAlias" yaml:"dbAlias"`
+	Rules         map[string]*EventingRule `json:"triggers,omitempty" yaml:"triggers"`
+	InternalRules map[string]*EventingRule `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty"`
+	SecurityRules map[string]*Rule         `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
+	Schemas       map[string]SchemaObject  `json:"schemas,omitempty" yaml:"schemas,omitempty"`
 }
 
 // EventingRule holds an eventing rule
 type EventingRule struct {
-	Type    string `json:"type" yaml:"type"`
-	Retries int    `json:"retries" yaml:"retries"`
-	// Timeout is in milliseconds
-	Timeout int               `json:"timeout" yaml:"timeout"`
-	ID      string            `json:"id" yaml:"id"`
-	URL     string            `json:"url" yaml:"url"`
-	Options map[string]string `json:"options" yaml:"options"`
+	Type            string                   `json:"type" yaml:"type"`
+	Retries         int                      `json:"retries" yaml:"retries"`
+	Timeout         int                      `json:"timeout" yaml:"timeout"` // Timeout is in milliseconds
+	ID              string                   `json:"id" yaml:"id"`
+	URL             string                   `json:"url" yaml:"url"`
+	Options         map[string]string        `json:"options" yaml:"options"`
+	Tmpl            EndpointTemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
+	RequestTemplate string                   `json:"requestTemplate,omitempty" yaml:"requestTemplate,omitempty"`
+	OpFormat        string                   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
 }
 
 // SchemaObject is the body of the request for adding schema
