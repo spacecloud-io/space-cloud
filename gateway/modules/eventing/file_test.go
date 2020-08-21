@@ -41,7 +41,7 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "no rules match",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: "not file create"}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: "not file create"}}}},
 			args: args{ctx: context.Background(), req: &model.CreateFileRequest{Meta: map[string]interface{}{}, Path: "path"}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -53,7 +53,7 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "error creating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventFileCreate}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventFileCreate}}}},
 			args: args{ctx: context.Background(), req: &model.CreateFileRequest{Meta: map[string]interface{}{}, Path: "path"}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -72,7 +72,7 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "file intent request handled",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventFileCreate}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventFileCreate}}}},
 			args: args{ctx: context.Background(), req: &model.CreateFileRequest{Meta: map[string]interface{}{}, Path: "path"}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -172,7 +172,7 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "no rules match",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: "not file delete"}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: "not file delete"}}}},
 			args: args{ctx: context.Background(), meta: map[string]interface{}{}, path: "path"},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -184,7 +184,7 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "error creating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventFileDelete}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventFileDelete}}}},
 			args: args{ctx: context.Background(), meta: map[string]interface{}{}, path: "path"},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -203,7 +203,7 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "file intent request handled",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventFileDelete}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventFileDelete}}}},
 			args: args{ctx: context.Background(), meta: map[string]interface{}{}, path: "path"},
 			syncmanMockArgs: []mockArgs{
 				{

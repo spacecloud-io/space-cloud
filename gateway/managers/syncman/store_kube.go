@@ -64,6 +64,9 @@ func onAddOrUpdateAdminConfig(obj interface{}, clusters []*config.Admin) {
 		logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
 		return
 	}
+	if clusters[0].ClusterConfig == nil {
+		clusters[0].ClusterConfig = getDefaultAdminConfig().ClusterConfig
+	}
 }
 
 func onAddOrUpdateProjects(obj interface{}, projectMap map[string]*config.Project) map[string]*config.Project {

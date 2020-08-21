@@ -80,7 +80,7 @@ func (m *Module) SendEventResponse(batchID string, payload interface{}) {
 }
 
 // SetRealtimeTriggers adds triggers which are used for space cloud internally
-func (m *Module) SetRealtimeTriggers(eventingRules []config.EventingRule) {
+func (m *Module) SetRealtimeTriggers(eventingRules []*config.EventingRule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 

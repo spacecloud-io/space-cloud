@@ -13,7 +13,7 @@ import (
 )
 
 // SetEventingRule sets the eventing rules
-func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string, value config.EventingRule, params model.RequestParams) (int, error) {
+func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string, value *config.EventingRule, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -25,7 +25,7 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 	}
 
 	if projectConfig.Modules.Eventing.Rules == nil {
-		projectConfig.Modules.Eventing.Rules = map[string]config.EventingRule{}
+		projectConfig.Modules.Eventing.Rules = map[string]*config.EventingRule{}
 	}
 	projectConfig.Modules.Eventing.Rules[ruleName] = value
 

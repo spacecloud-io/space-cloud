@@ -22,7 +22,7 @@ func TestManager_SetEventingRule(t *testing.T) {
 		ctx      context.Context
 		project  string
 		ruleName string
-		value    config.EventingRule
+		value    *config.EventingRule
 	}
 	tests := []struct {
 		name            string
@@ -34,14 +34,14 @@ func TestManager_SetEventingRule(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
-			args:    args{ctx: context.Background(), project: "2", ruleName: "rule", value: config.EventingRule{}},
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			args:    args{ctx: context.Background(), project: "2", ruleName: "rule", value: &config.EventingRule{}},
 			wantErr: true,
 		},
 		{
 			name: "unable to set eventing config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: config.EventingRule{}},
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetEventingConfig",
@@ -53,8 +53,8 @@ func TestManager_SetEventingRule(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: config.EventingRule{}},
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetEventingConfig",
@@ -73,8 +73,8 @@ func TestManager_SetEventingRule(t *testing.T) {
 		},
 		{
 			name: "eventing rules are set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: config.EventingRule{}},
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetEventingConfig",
@@ -93,7 +93,7 @@ func TestManager_SetEventingRule(t *testing.T) {
 		{
 			name: "eventing config is not set when config rules are nil",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: config.EventingRule{}},
+			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetEventingConfig",
@@ -106,7 +106,7 @@ func TestManager_SetEventingRule(t *testing.T) {
 		{
 			name: "eventing rules are not set when config rules are nil",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: config.EventingRule{}},
+			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetEventingConfig",
@@ -126,7 +126,7 @@ func TestManager_SetEventingRule(t *testing.T) {
 		{
 			name: "eventing rules are set when config rules are nil",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: config.EventingRule{}},
+			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetEventingConfig",
@@ -190,13 +190,13 @@ func TestManager_SetDeleteEventingRule(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
 			args:    args{ctx: context.Background(), project: "2", ruleName: "rule"},
 			wantErr: true,
 		},
 		{
 			name: "unable to set eventing config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
 			args: args{ctx: context.Background(), project: "1", ruleName: "rule"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -209,7 +209,7 @@ func TestManager_SetDeleteEventingRule(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
 			args: args{ctx: context.Background(), project: "1", ruleName: "rule"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -229,7 +229,7 @@ func TestManager_SetDeleteEventingRule(t *testing.T) {
 		},
 		{
 			name: "eventing rule deleted succesfully",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
 			args: args{ctx: context.Background(), project: "1", ruleName: "rule"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -738,27 +738,27 @@ func TestManager_GetEventingTriggerRules(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
 			args:    args{ctx: context.Background(), id: "rule", project: "2"},
 			wantErr: true,
 		},
 		{
 			name:    "id not present in config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
 			args:    args{ctx: context.Background(), id: "notRule", project: "1"},
 			wantErr: true,
 		},
 		{
 			name: "got trigger rule",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
 			args: args{ctx: context.Background(), id: "rule", project: "1"},
-			want: []interface{}{config.EventingRule{}},
+			want: []interface{}{&config.EventingRule{}},
 		},
 		{
 			name: "id is empty and got all trigger rules",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
 			args: args{ctx: context.Background(), id: "*", project: "1"},
-			want: []interface{}{config.EventingRule{}},
+			want: []interface{}{&config.EventingRule{}},
 		},
 	}
 	for _, tt := range tests {

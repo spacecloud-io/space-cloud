@@ -50,7 +50,7 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 						Eventing: config.Eventing{
 							Enabled: true,
 							DBAlias: "db",
-							Rules: map[string]config.EventingRule{
+							Rules: map[string]*config.EventingRule{
 								"type": {
 									Type: "type",
 								},
