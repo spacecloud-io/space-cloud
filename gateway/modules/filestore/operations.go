@@ -3,7 +3,6 @@ package filestore
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -21,7 +20,7 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 	// Check if the user is authorised to make this request
 	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
 	if err != nil {
-		return http.StatusForbidden, errors.New("You are not authorized to make this request")
+		return http.StatusForbidden, err
 	}
 
 	m.RLock()
@@ -52,7 +51,7 @@ func (m *Module) DeleteFile(ctx context.Context, project, token string, path str
 	// Check if the user is authorised to make this request
 	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileDelete, map[string]interface{}{})
 	if err != nil {
-		return http.StatusForbidden, errors.New("You are not authorized to make this request")
+		return http.StatusForbidden, err
 	}
 
 	m.RLock()
@@ -83,7 +82,7 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 	// Check if the user is authorised to make this request
 	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
-		return http.StatusForbidden, nil, fmt.Errorf("You are not authorized to make this request - %v", err)
+		return http.StatusForbidden, nil, err
 	}
 
 	m.RLock()
@@ -106,9 +105,9 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 	}
 
 	// Check if the user is authorised to make this request
-	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{"meta": req.Meta})
 	if err != nil {
-		return http.StatusForbidden, errors.New("You are not authorized to make this request")
+		return http.StatusForbidden, err
 	}
 
 	m.RLock()
@@ -139,7 +138,7 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 	// Check if the user is authorised to make this request
 	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
-		return http.StatusForbidden, nil, errors.New("You are not authorized to make this request")
+		return http.StatusForbidden, nil, err
 	}
 
 	m.RLock()
@@ -165,7 +164,7 @@ func (m *Module) DoesExists(ctx context.Context, project, token, path string) er
 	// Check if the user is authorised to make this request
 	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
-		return errors.New("You are not authorized to make this request")
+		return err
 	}
 
 	m.RLock()
