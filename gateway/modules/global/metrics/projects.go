@@ -100,13 +100,13 @@ func (m *Module) updateSCMetrics(id string, set, min map[string]interface{}) {
 	defer cancel()
 	result, err := m.sink.Upsert("config_metrics").Where(types.Cond("id", "==", id)).Set(set).Min(min).Apply(ctx)
 	if err != nil {
-		logrus.Errorf("error querying database got error")
+		logrus.Errorln("Unable to push metrics:", err)
 	}
 	if result == nil {
 		// when space api go is not able to connect to server, the result is empty
 		return
 	}
 	if result.Status != http.StatusOK {
-		logrus.Errorf("error querying database got status (%d) (%s)", result.Status, result.Error)
+		logrus.Errorf("Unable to push metrics - (%d) (%s)", result.Status, result.Error)
 	}
 }
