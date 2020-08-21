@@ -31,12 +31,12 @@ type InvocationDocument struct {
 
 // CloudEventPayload is the the JSON event spec by Cloud Events Specification
 type CloudEventPayload struct {
-	SpecVersion string      `json:"specversion"`
-	Type        string      `json:"type"`
-	Source      string      `json:"source"`
-	ID          string      `json:"id"`
-	Time        string      `json:"time"`
-	Data        interface{} `json:"data"`
+	SpecVersion string      `json:"specversion" structs:"specversion"`
+	Type        string      `json:"type" structs:"type"`
+	Source      string      `json:"source" structs:"source"`
+	ID          string      `json:"id" structs:"id"`
+	Time        string      `json:"time" structs:"time"`
+	Data        interface{} `json:"data" structs:"data"`
 }
 
 // EventResponse is struct response of events

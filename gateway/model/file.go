@@ -39,6 +39,7 @@ type ListFilesResponse struct {
 type FilePayload struct {
 	Meta map[string]interface{} `json:"meta"`
 	Path string                 `json:"path"`
+	Type string                 `json:"type,omitempty"`
 }
 
 // FileReader is a function type used for file streaming

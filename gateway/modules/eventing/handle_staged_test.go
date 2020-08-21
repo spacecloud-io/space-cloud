@@ -124,7 +124,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 	type args struct {
 		ctx        context.Context
 		client     model.HTTPEventingInterface
-		rule       config.EventingRule
+		rule       *config.EventingRule
 		eventDoc   *model.EventDocument
 		cloudEvent *model.CloudEventPayload
 	}
@@ -142,7 +142,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 		{
 			name: "error getting internal access token",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
+			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				{
 					method:         "GetInternalAccessToken",
@@ -154,7 +154,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 		{
 			name: "error getting sc access token",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
+			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				{
 					method:         "GetInternalAccessToken",
@@ -170,7 +170,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 		{
 			name: "error making invocation http request",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
+			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				{
 					method:         "GetInternalAccessToken",
@@ -198,7 +198,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 		{
 			name: "error getting space cloud url from id",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
+			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				{
 					method:         "GetInternalAccessToken",
@@ -237,7 +237,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 		{
 			name: "error making http request",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
+			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				{
 					method:         "GetInternalAccessToken",
@@ -280,8 +280,8 @@ func TestModule_invokeWebhook(t *testing.T) {
 		},
 		{
 			name: "no error making invocation http request and a valid response",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]config.EventingRule{}}},
-			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]*config.EventingRule{}}},
+			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				{
 					method:         "GetInternalAccessToken",
@@ -396,12 +396,12 @@ func TestModule_processStagedEvent(t *testing.T) {
 		},
 		{
 			name: "error selecting rule",
-			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"notSomeRule": {}}, InternalRules: map[string]config.EventingRule{"notSomeRule": {}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"notSomeRule": {}}, InternalRules: map[string]*config.EventingRule{"notSomeRule": {}}}},
 			args: args{eventDoc: &model.EventDocument{ID: "eventID", Type: "someType", RuleName: "someRule"}},
 		},
 		// {
 		// 	name: "error invoking webhook",
-		// 	m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"someRule": config.EventingRule{}}, InternalRules: map[string]config.EventingRule{"notSomeRule": config.EventingRule{}}}},
+		// 	m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"someRule": config.EventingRule{}}, InternalRules: map[string]*config.EventingRule{"notSomeRule": config.EventingRule{}}}},
 		// 	args: args{eventDoc: &model.EventDocument{ID: "eventID", Type: "someType", RuleName: "someRule", Payload: "payload"}},
 		// 	syncmanMockArgs: []mockArgs{
 		// 		mockArgs{
@@ -425,7 +425,7 @@ func TestModule_processStagedEvent(t *testing.T) {
 		// },
 		// {
 		// 	name: "error invoking webhook and error in internal update",
-		// 	m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"someRule": config.EventingRule{Retries: 2}}, InternalRules: map[string]config.EventingRule{"notSomeRule": config.EventingRule{}}}},
+		// 	m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"someRule": config.EventingRule{Retries: 2}}, InternalRules: map[string]*config.EventingRule{"notSomeRule": config.EventingRule{}}}},
 		// 	args: args{eventDoc: &model.EventDocument{ID: "eventID", Type: "someType", RuleName: "someRule", Payload: "payload"}},
 		// 	syncmanMockArgs: []mockArgs{
 		// 		mockArgs{

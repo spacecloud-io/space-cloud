@@ -28,32 +28,32 @@ func TestModule_selectRule(t *testing.T) {
 		name    string
 		m       *Module
 		args    args
-		want    config.EventingRule
+		want    *config.EventingRule
 		wantErr bool
 	}{
 		{
 			name: "event type is an internal type",
-			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"some-rule": {Type: "DB_INSERT", URL: "abc"}}}},
+			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingRule{"some-rule": {Type: "DB_INSERT", URL: "abc"}}}},
 			args: args{name: "some-rule", evType: "DB_INSERT"},
-			want: config.EventingRule{Type: "DB_INSERT", URL: "abc"},
+			want: &config.EventingRule{Type: "DB_INSERT", URL: "abc"},
 		},
 		{
 			name: "event type is found in rules",
-			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"some-rule": {Type: "event"}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"some-rule": {Type: "event"}}}},
 			args: args{name: "some-rule", evType: "event"},
-			want: config.EventingRule{Type: "event"},
+			want: &config.EventingRule{Type: "event"},
 		},
 		{
 			name: "event type is found in internal rules",
-			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"some-rule": {Type: "event"}}}},
+			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingRule{"some-rule": {Type: "event"}}}},
 			args: args{name: "some-rule", evType: "event"},
-			want: config.EventingRule{Type: "event"},
+			want: &config.EventingRule{Type: "event"},
 		},
 		{
 			name:    "event type is not found",
 			m:       &Module{config: &config.Eventing{}},
 			args:    args{name: "some-rule", evType: "event"},
-			want:    config.EventingRule{},
+			want:    &config.EventingRule{},
 			wantErr: true,
 		},
 	}
@@ -114,7 +114,7 @@ func TestModule_validate(t *testing.T) {
 	}{
 		{
 			name: "event type is an internal type",
-			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"some-rule": {Type: "DB_INSERT"}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"some-rule": {Type: "DB_INSERT"}}}},
 			args: args{event: &model.QueueEventRequest{Type: "DB_INSERT", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 		},
 		{
@@ -232,39 +232,39 @@ func TestModule_getMatchingRules(t *testing.T) {
 		name string
 		m    *Module
 		args args
-		want []config.EventingRule
+		want []*config.EventingRule
 	}{
 		{
 			name: "rule type is not equal to name",
 			m: &Module{config: &config.Eventing{
-				Rules:         map[string]config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
-				InternalRules: map[string]config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+				Rules:         map[string]*config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]*config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
 			args: args{name: "name", options: map[string]string{"option": "value"}},
-			want: []config.EventingRule{},
+			want: []*config.EventingRule{},
 		},
 		{
 			name: "rule options are not valid",
 			m: &Module{config: &config.Eventing{
-				Rules:         map[string]config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
-				InternalRules: map[string]config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+				Rules:         map[string]*config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]*config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
 			args: args{name: "rule", options: map[string]string{"wrongOption": "value"}},
-			want: []config.EventingRule{},
+			want: []*config.EventingRule{},
 		},
 		{
 			name: "rule matching in Rules",
 			m: &Module{config: &config.Eventing{
-				Rules:         map[string]config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
-				InternalRules: map[string]config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+				Rules:         map[string]*config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]*config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
 			args: args{name: "rule", options: map[string]string{"option": "value"}},
-			want: []config.EventingRule{{Type: "rule", Retries: 0, Timeout: 0, ID: "some-rule", Options: map[string]string{"option": "value"}}},
+			want: []*config.EventingRule{{Type: "rule", Retries: 0, Timeout: 0, ID: "some-rule", Options: map[string]string{"option": "value"}}},
 		},
 		{
 			name: "rule matching in InternalRules",
 			m: &Module{config: &config.Eventing{
-				Rules:         map[string]config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
-				InternalRules: map[string]config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+				Rules:         map[string]*config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]*config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
 			args: args{name: "internalRule", options: map[string]string{"option": "value"}},
-			want: []config.EventingRule{{Type: "internalRule", Retries: 0, Timeout: 0, ID: "some-internal-rule", Options: map[string]string{"option": "value"}}},
+			want: []*config.EventingRule{{Type: "internalRule", Retries: 0, Timeout: 0, ID: "some-internal-rule", Options: map[string]string{"option": "value"}}},
 		},
 	}
 	for _, tt := range tests {
@@ -762,7 +762,7 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 	}{
 		{
 			name: "internalCreate error",
-			m:    &Module{config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"some-rule": {Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
+			m:    &Module{config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingRule{"some-rule": {Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
 			args: args{ctx: context.Background(), eventDocID: mock.Anything, token: 50, batchID: mock.Anything, requests: []*model.QueueEventRequest{{Type: utils.EventDBCreate, Delay: 0, IsSynchronous: false, Options: map[string]string{}, Payload: "payload", Timestamp: time.Now().Format(time.RFC3339)}}},
 			crudMockArgs: []mockArgs{
 				{
@@ -775,7 +775,7 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 		},
 		{
 			name: "requests are batched",
-			m:    &Module{config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"some-rule": {Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
+			m:    &Module{config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingRule{"some-rule": {Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
 			args: args{ctx: context.Background(), eventDocID: mock.Anything, token: 50, batchID: mock.Anything, requests: []*model.QueueEventRequest{{Type: utils.EventDBCreate, Delay: 0, IsSynchronous: false, Options: map[string]string{}, Payload: "payload", Timestamp: time.Now().Format(time.RFC3339)}}},
 			crudMockArgs: []mockArgs{
 				{

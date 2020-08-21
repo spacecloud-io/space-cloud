@@ -62,7 +62,7 @@ func (m *Module) SetConfig(project, secretSource string, secrets []*config.Secre
 	// Store the secret
 	m.secrets = secrets
 	if secretSource == "admin" {
-		m.secrets = []*config.Secret{{Secret: m.adminMan.GetSecret(), IsPrimary: true}}
+		m.secrets = []*config.Secret{{Secret: m.adminMan.GetSecret(), IsPrimary: true, Alg: config.HS256}}
 	}
 
 	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
@@ -230,7 +230,7 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 			// Don't forget to validate the alg is what you expect:
 			if token.Method.Alg() != string(secret.Alg) {
-				return nil, ErrInvalidSigningMethod
+				return nil, fmt.Errorf("invalid signing type provided - wanted %s; got %s", secret.Alg, token.Method.Alg())
 			}
 			switch secret.Alg {
 			case config.RS256:
@@ -242,6 +242,7 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 			}
 		})
 		if err != nil {
+			utils.LogDebug("Unable to verify jwt token", "admin", "parse-token", map[string]interface{}{"token": token, "error": err.Error()})
 			continue
 		}
 
@@ -257,6 +258,7 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 
 			return obj, nil
 		}
+		utils.LogDebug("Unable to verify jwt token", "admin", "parse-token", map[string]interface{}{"token": token, "valid": tokenObj.Valid})
 	}
 	return nil, ErrTokenVerification
 }

@@ -2,6 +2,9 @@ module github.com/spaceuptech/space-cloud/gateway
 
 require (
 	cloud.google.com/go/storage v1.6.0
+	github.com/Masterminds/goutils v1.1.0 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/armon/go-metrics v0.3.3 // indirect
 	github.com/aws/aws-sdk-go v1.33.14
 	github.com/coreos/bbolt v1.3.3 // indirect
@@ -31,6 +34,7 @@ require (
 	github.com/hashicorp/go-msgpack v0.5.5 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/memberlist v0.1.5 // indirect
+	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/kr/pty v1.1.4 // indirect
@@ -38,6 +42,7 @@ require (
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mholt/certmagic v0.9.1
+	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/fatih/structs"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 
@@ -112,11 +113,18 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
 	eventDoc.Payload = doc
 
-	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: evType, Source: m.syncMan.GetEventSource(), ID: eventDoc.ID,
+	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0", Type: fmt.Sprintf("com.spaceuptech.%s", evType), Source: m.syncMan.GetEventSource(), ID: eventDoc.ID,
 		Time: eventDoc.Timestamp, Data: eventDoc.Payload}
 
+	doc = structs.Map(&cloudEvent)
+	doc, err = m.adjustReqBody(name, "", rule, nil, doc)
+	if err != nil {
+		_ = utils.LogError(fmt.Sprintf("Unable to adjust request body according to template for trigger (%s)", name), "eventing", "process-staged", err)
+		return
+	}
+
 	for {
-		if err := m.invokeWebhook(ctx, &http.Client{}, rule, eventDoc, &cloudEvent); err != nil {
+		if err := m.invokeWebhook(ctx, &http.Client{}, rule, eventDoc, doc); err != nil {
 			logrus.Errorf("Eventing staged event handler could not get response from service -%s", err.Error())
 
 			// Increment the retries. Exit the loop if max retries reached.
@@ -142,7 +150,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	}
 }
 
-func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInterface, rule config.EventingRule, eventDoc *model.EventDocument, cloudEvent *model.CloudEventPayload) error {
+func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInterface, rule *config.EventingRule, eventDoc *model.EventDocument, params interface{}) error {
 	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(rule.Timeout)*time.Millisecond)
 	defer cancel()
 	internalToken, err := m.auth.GetInternalAccessToken()
@@ -158,7 +166,7 @@ func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInt
 	}
 
 	var eventResponse model.EventResponse
-	if err := m.MakeInvocationHTTPRequest(ctxLocal, client, http.MethodPost, rule.URL, eventDoc.ID, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
+	if err := m.MakeInvocationHTTPRequest(ctxLocal, client, http.MethodPost, rule.URL, eventDoc.ID, internalToken, scToken, params, &eventResponse); err != nil {
 		logrus.Errorf("error invoking web hook in eventing unable to send http request to url %s - %s", rule.URL, err.Error())
 		return err
 	}
