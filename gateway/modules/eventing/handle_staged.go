@@ -113,7 +113,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
 	eventDoc.Payload = doc
 
-	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0", Type: fmt.Sprintf("com.spaceuptech.%s", evType), Source: m.syncMan.GetEventSource(), ID: eventDoc.ID,
+	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0", Type: evType, Source: m.syncMan.GetEventSource(), ID: eventDoc.ID,
 		Time: eventDoc.Timestamp, Data: eventDoc.Payload}
 
 	doc = structs.Map(&cloudEvent)
