@@ -77,7 +77,12 @@ func GetTokenFromHeader(r *http.Request) string {
 		tokens = []string{""}
 	}
 
-	return strings.TrimPrefix(tokens[0], "Bearer ")
+	arr := strings.Split(tokens[0], " ")
+	if strings.ToLower(arr[0]) == "bearer" {
+		return arr[1]
+	}
+
+	return ""
 }
 
 // CreateCorsObject creates a cors object with the required config
