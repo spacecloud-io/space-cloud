@@ -128,10 +128,9 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 		  AND ccu.table_schema = tc.table_schema
 		JOIN information_schema.referential_constraints AS rc
 		  ON tc.constraint_name = rc.constraint_name
-		  AND rc.unique_constraint_schema= $1
-	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $2  AND tc.table_name= $3
+	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
 	`
-		args = append(args, project, project, col)
+		args = append(args, project, col)
 	case utils.SQLServer:
 		queryString = `SELECT 
 		CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME, RC.DELETE_RULE,
