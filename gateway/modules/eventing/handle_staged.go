@@ -119,6 +119,13 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	doc = structs.Map(&cloudEvent)
 	doc, err = m.adjustReqBody(name, "", rule, nil, doc)
 	if err != nil {
+		if err := m.logInvocation(ctx, eventDoc.ID, []byte("{}"), 0, "", err.Error()); err != nil {
+			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
+			return
+		}
+		if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+			logrus.Errorf("Eventing staged event handler could not update event doc - %s", err.Error())
+		}
 		_ = utils.LogError(fmt.Sprintf("Unable to adjust request body according to template for trigger (%s)", name), "eventing", "process-staged", err)
 		return
 	}

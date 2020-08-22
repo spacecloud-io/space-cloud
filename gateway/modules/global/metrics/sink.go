@@ -63,10 +63,10 @@ func (m *Module) flushMetrics(docs []interface{}) {
 	defer cancel()
 	result, err := m.sink.Insert("operation_metrics").Docs(docs).Apply(ctx)
 	if err != nil {
-		logrus.Debugln("Unable to push metrics:", err)
+		logrus.Errorln("Unable to push metrics:", err)
 		return
 	}
 	if result.Status != http.StatusOK {
-		logrus.Debugln("Unable to push metrics:", result.Error)
+		logrus.Errorln("Unable to push metrics:", result.Error)
 	}
 }
