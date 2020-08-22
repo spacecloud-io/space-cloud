@@ -195,7 +195,7 @@ func Commands() []*cobra.Command {
 
 	var apply = &cobra.Command{
 		Use:   "apply",
-		Short: "deploys service",
+		Short: "Applies a config file or directory",
 		RunE:  actionApply,
 	}
 
