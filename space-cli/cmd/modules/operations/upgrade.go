@@ -14,11 +14,12 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/txn2/txeh"
 
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Upgrade upgrades the environment which has been setup
-func Upgrade(clusterName string, version string) error {
+func Upgrade(clusterName string, version string, imagePrefix string) error {
 
 	// Getting current version
 	result := make(map[string]interface{})
@@ -107,7 +108,7 @@ func Upgrade(clusterName string, version string) error {
 		portMapping    nat.PortMap
 	}{
 		{
-			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", latestVersion),
+			containerImage: utils.GetSCImageName(imagePrefix, latestVersion, model.ImageGateway),
 			containerName:  utils.GetScContainers(clusterName, "gateway"),
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			labels:         gatewayLabels,
@@ -119,7 +120,7 @@ func Upgrade(clusterName string, version string) error {
 
 		{
 			// runner
-			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", latestVersion),
+			containerImage: utils.GetSCImageName(imagePrefix, latestVersion, model.ImageRunner),
 			containerName:  utils.GetScContainers(clusterName, "runner"),
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			labels:         runnerLabels,

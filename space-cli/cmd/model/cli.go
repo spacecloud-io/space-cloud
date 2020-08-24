@@ -38,3 +38,12 @@ type Cluster struct {
 	ID  string `json:"id" yaml:"id"`
 	URL string `json:"url" yaml:"url"`
 }
+
+// ImageType a type for specifying sc image name
+type ImageType string
+
+// ImageRunner represent sc runner image type
+const ImageRunner ImageType = "runner"
+
+// ImageGateway represent sc gateway image type
+const ImageGateway ImageType = "gateway"

@@ -36,7 +36,7 @@ func generateRandomString(length int) string {
 }
 
 // Setup initializes development environment
-func Setup(username, key, config, version, secret, clusterName string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
+func Setup(username, key, config, version, secret, imagePrefix, clusterName string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
 	// TODO: old keys always remain in accounts.yaml file
 
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
@@ -187,7 +187,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 	}{
 		{
 			name:           "gateway",
-			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", version),
+			containerImage: utils.GetSCImageName(imagePrefix, version, model.ImageGateway),
 			containerName:  utils.GetScContainers(clusterName, "gateway"),
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           envs,
@@ -205,7 +205,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		{
 			// runner
 			name:           "runner",
-			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", version),
+			containerImage: utils.GetSCImageName(imagePrefix, version, model.ImageRunner),
 			containerName:  utils.GetScContainers(clusterName, "runner"),
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs:           runnerEnvs,
@@ -246,6 +246,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 	}
 
 	// First we create a network for space cloud
+
 	if _, err := cli.NetworkCreate(ctx, utils.GetNetworkName(clusterName), types.NetworkCreate{Driver: "bridge"}); err != nil {
 		return utils.LogError("Unable to create a network named space-cloud", err)
 	}
@@ -254,6 +255,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		utils.LogInfo(fmt.Sprintf("Starting container %s...", c.containerName))
 		// check if image already exists
 		if err := utils.PullImageIfNotExist(ctx, cli, c.containerImage); err != nil {
+			_ = Destroy(clusterName)
 			return utils.LogError(fmt.Sprintf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", c.containerImage), errors.New(""))
 		}
 
@@ -261,9 +263,11 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		args := filters.Arg("name", c.containerName)
 		containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 		if err != nil {
+			_ = Destroy(clusterName)
 			return utils.LogError("error deleting service in docker unable to list containers", err)
 		}
 		if len(containers) != 0 {
+			_ = Destroy(clusterName)
 			return utils.LogError(fmt.Sprintf("Container (%s) already exists", c.containerName), errors.New(""))
 		}
 
@@ -284,12 +288,14 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		}
 
 		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+			_ = Destroy(clusterName)
 			return utils.LogError(fmt.Sprintf("Unable to start container (%v)", c.containerName), err)
 		}
 
 		// get the ip address assigned to container
 		data, err := cli.ContainerInspect(ctx, c.containerName)
 		if err != nil {
+			_ = Destroy(clusterName)
 			return utils.LogError(fmt.Sprintf("Unable to inspect container (%v)", c.containerName), err)
 		}
 

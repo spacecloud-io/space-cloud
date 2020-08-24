@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 )
 
 // CheckPortAvailability checks if specified port is available on local machine
@@ -91,6 +93,22 @@ func ChangeSelectedAccount(clusterName string) error {
 	}
 
 	return nil
+}
+
+//GetSCImageName get the sc image name and add the image prefix when required
+func GetSCImageName(imagePrefix, version string, t model.ImageType) string {
+	if imagePrefix != "" && !strings.HasSuffix(imagePrefix,"/")  {
+		imagePrefix += "/"
+	}
+	switch t {
+	case model.ImageRunner:
+		return fmt.Sprintf("%s%s:%s", imagePrefix, "spaceuptech/runner", version)
+	case model.ImageGateway:
+		return fmt.Sprintf("%s%s:%s", imagePrefix, "spaceuptech/gateway", version)
+	default:
+		LogInfo("Invalid image type provided for getting sc image name with image prefix")
+		return ""
+	}
 }
 
 // GetNetworkName provides network name of particular cluster
