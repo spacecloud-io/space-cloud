@@ -44,12 +44,14 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = value
-		if status, err := syncMan.SetEventingRule(ctx, projectID, ruleName, &value, reqParams); err != nil {
+
+		status, err := syncMan.SetEventingRule(ctx, projectID, ruleName, &value, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -115,12 +117,14 @@ func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.M
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName, reqParams); err != nil {
+
+		status, err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -153,12 +157,14 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = c
-		if status, err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled, reqParams); err != nil {
+
+		status, err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -230,13 +236,15 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = c
-		if status, err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema, reqParams); err != nil {
+
+		status, err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema, reqParams)
+		if err != nil {
 			logrus.Errorf("Failed to set eventing schema - %s", err.Error())
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -304,13 +312,15 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType, reqParams); err != nil {
+
+		status, err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType, reqParams)
+		if err != nil {
 			logrus.Errorf("Failed to delete eventing schema - %s", err.Error())
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -345,13 +355,15 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = c
-		if status, err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c, reqParams); err != nil {
+
+		status, err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c, reqParams)
+		if err != nil {
 			logrus.Errorf("Failed to add eventing rules - %s", err.Error())
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -419,12 +431,14 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType, reqParams); err != nil {
+
+		status, err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType, reqParams)
+		if err != nil {
 			logrus.Errorf("Failed to delete eventing rules - %s", err.Error())
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }

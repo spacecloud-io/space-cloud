@@ -77,13 +77,14 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = projectConfig
-		statusCode, err := syncman.ApplyProjectConfig(ctx, &projectConfig, reqParams)
+
+		status, err := syncman.ApplyProjectConfig(ctx, &projectConfig, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, statusCode, err.Error())
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
