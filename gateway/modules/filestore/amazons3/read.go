@@ -78,6 +78,8 @@ func (a *AmazonS3) ReadFile(path string) (*model.File, error) {
 			Key:    aws.String(path),
 		})
 	if err != nil {
+		_ = tmpfile.Close()
+		_ = os.Remove(tmpfile.Name())
 		return nil, err
 	}
 	return &model.File{File: bufio.NewReader(tmpfile), Close: func() error {

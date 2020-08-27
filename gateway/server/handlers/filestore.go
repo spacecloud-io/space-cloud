@@ -72,6 +72,9 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 				return
 			}
 			defer utils.CloseTheCloser(file)
+			if contentType == contentTypeMultiPartForm {
+				defer func() { _ = r.MultipartForm.RemoveAll() }()
+			}
 
 			// Read file name from form if exists
 			fileName := header.Filename
