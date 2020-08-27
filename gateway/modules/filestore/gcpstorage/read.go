@@ -9,7 +9,6 @@ import (
 	"google.golang.org/api/iterator"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // ListDir lists a directory in GCPStorage
@@ -60,7 +59,6 @@ func (g *GCPStorage) ReadFile(path string) (*model.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer utils.CloseTheCloser(rc)
 
-	return &model.File{File: bufio.NewReader(rc), Close: func() error { return nil }}, nil
+	return &model.File{File: bufio.NewReader(rc), Close: func() error { return rc.Close() }}, nil
 }
