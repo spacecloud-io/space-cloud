@@ -35,7 +35,7 @@ func HandleRealtimeEvent(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }
 
@@ -66,6 +66,6 @@ func HandleRealtimeProcessRequest(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }

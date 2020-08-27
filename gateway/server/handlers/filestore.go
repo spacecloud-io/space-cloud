@@ -127,7 +127,7 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 				_ = utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
 				return
 			}
-			_ = utils.SendOkayResponse(w)
+			_ = utils.SendOkayResponse(w, http.StatusOK)
 			return
 		}
 
