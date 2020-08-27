@@ -148,7 +148,11 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		fileStore := modules.File()
-
+		fileTypeQuery, exists := r.URL.Query()["fileType"]
+		fileType := "file"
+		if exists {
+			fileType = fileTypeQuery[0]
+		}
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -158,13 +162,22 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-
-		status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
-		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
-			return
+		if fileType == "file" {
+			status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
+			if err != nil {
+				_ = utils.SendErrorResponse(w, status, err.Error())
+				return
+			}
+			_ = utils.SendResponse(w, status, map[string]string{})
+		} else if fileType == "folder" {
+			fmt.Println("if")
+			status, err := fileStore.DeleteDir(ctx, projectID, token, path, v)
+			if err != nil {
+				_ = utils.SendErrorResponse(w, status, err.Error())
+				return
+			}
+			_ = utils.SendResponse(w, status, map[string]string{})
 		}
-		_ = utils.SendResponse(w, status, map[string]string{})
 	}
 }
 
