@@ -45,12 +45,14 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = v
-		if status, err := syncMan.SetService(ctx, projectID, service, &v, reqParams); err != nil {
+
+		status, err := syncMan.SetService(ctx, projectID, service, &v, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -117,11 +119,13 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncMan.DeleteService(ctx, projectID, service, reqParams); err != nil {
+
+		status, err := syncMan.DeleteService(ctx, projectID, service, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
