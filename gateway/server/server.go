@@ -88,8 +88,10 @@ func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHos
 
 	logrus.Infoln("Starting http server on port: " + strconv.Itoa(port))
 
-	fmt.Println()
-	logrus.Infoln("\t Hosting mission control on http://localhost:" + strconv.Itoa(port) + "/mission-control/")
+	if staticPath != "" {
+		fmt.Println()
+		logrus.Infoln("\t Hosting mission control on http://localhost:" + strconv.Itoa(port) + "/mission-control/")
+	}
 	fmt.Println()
 
 	logrus.Infoln("Space cloud is running on the specified ports :D")
