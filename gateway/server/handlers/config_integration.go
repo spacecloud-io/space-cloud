@@ -47,12 +47,13 @@ func HandlePostIntegration(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		reqParams.Payload = req
 
 		// Enable the integration
-		if status, err := syncMan.EnableIntegration(ctx, req, reqParams); err != nil {
+		status, err := syncMan.EnableIntegration(ctx, req, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -84,12 +85,13 @@ func HandleDeleteIntegration(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		reqParams.Headers = r.Header
 
 		// remove the integration
-		if status, err := syncMan.RemoveIntegration(ctx, name, reqParams); err != nil {
+		status, err := syncMan.RemoveIntegration(ctx, name, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -192,12 +194,14 @@ func HandleAddIntegrationHook(adminMan *admin.Manager, syncMan *syncman.Manager)
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = req
-		if status, err := syncMan.AddIntegrationHook(ctx, name, req, reqParams); err != nil {
+
+		status, err := syncMan.AddIntegrationHook(ctx, name, req, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -238,12 +242,14 @@ func HandleDeleteIntegrationHook(adminMan *admin.Manager, syncMan *syncman.Manag
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncMan.RemoveIntegrationHook(ctx, name, hookID, reqParams); err != nil {
+
+		status, err := syncMan.RemoveIntegrationHook(ctx, name, hookID, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 

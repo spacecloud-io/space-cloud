@@ -46,12 +46,14 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = value
-		if status, err := syncMan.SetFileStore(ctx, projectID, value, reqParams); err != nil {
+
+		status, err := syncMan.SetFileStore(ctx, projectID, value, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -158,12 +160,14 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = value
-		if status, err := syncMan.SetFileRule(ctx, projectID, ruleName, value, reqParams); err != nil {
+
+		status, err := syncMan.SetFileRule(ctx, projectID, ruleName, value, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -231,11 +235,13 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName, reqParams); err != nil {
+
+		status, err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }

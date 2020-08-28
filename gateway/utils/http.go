@@ -106,8 +106,8 @@ func CloseTheCloser(c io.Closer) {
 }
 
 // SendOkayResponse sends an Okay http response
-func SendOkayResponse(w http.ResponseWriter) error {
-	return SendResponse(w, 200, map[string]string{})
+func SendOkayResponse(w http.ResponseWriter, status int) error {
+	return SendResponse(w, status, map[string]string{})
 }
 
 // SendErrorResponse sends an Error http response

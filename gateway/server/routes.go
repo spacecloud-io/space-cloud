@@ -173,8 +173,10 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/services/logs").HandlerFunc(s.managers.Sync().HandleRunnerGetServiceLogs(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/services/status").HandlerFunc(s.managers.Sync().HandleRunnerGetDeploymentStatus(s.managers.Admin()))
 
-	// Add handler for mission control
-	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
+	if staticPath != "" {
+		// Add handler for mission control
+		router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
+	}
 
 	// Add handler for routing module
 	router.PathPrefix("/").HandlerFunc(s.modules.Routing().HandleRoutes(s.modules))

@@ -66,7 +66,7 @@ func HandleEventResponse(modules *modules.Modules) http.HandlerFunc {
 		// Process the incoming events
 		eventing.SendEventResponse(req.BatchID, req.Response)
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }
 
@@ -107,7 +107,7 @@ func HandleProcessEvent(adminMan *admin.Manager, modules *modules.Modules) http.
 		// Process the incoming events
 		eventing.ProcessTransmittedEvents(eventDocs)
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }
 
@@ -153,6 +153,6 @@ func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 			_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"result": res})
 			return
 		}
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }

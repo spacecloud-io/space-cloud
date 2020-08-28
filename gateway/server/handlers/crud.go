@@ -117,7 +117,7 @@ func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Give positive acknowledgement
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }
 
@@ -225,7 +225,7 @@ func HandleCrudUpdate(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Give positive acknowledgement
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }
 
@@ -275,7 +275,7 @@ func HandleCrudDelete(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Give positive acknowledgement
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }
 
@@ -415,6 +415,6 @@ func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Give positive acknowledgement
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }

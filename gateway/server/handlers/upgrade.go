@@ -74,7 +74,7 @@ func HandleDownGrade(admin *admin.Manager) http.HandlerFunc {
 		admin.ResetQuotas()
 
 		utils.LogDebug(`Successfully removed license`, "syncman", "startOperation", nil)
-		utils.SendOkayResponse(w)
+		utils.SendOkayResponse(w, http.StatusOK)
 	}
 }
 

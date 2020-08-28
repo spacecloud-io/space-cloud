@@ -154,7 +154,7 @@ func (m *Manager) GetConfig() *config.Admin {
 }
 
 // LoadEnv gets the env
-func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string, string, string, string, string) {
+func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string, string, string, string, string, string, string) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -174,5 +174,5 @@ func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string, string, st
 		}
 	}
 
-	return m.isProd, m.plan, m.quotas, loginURL, m.clusterName, m.licenseRenewalDate, m.config.LicenseKey, m.config.LicenseValue
+	return m.isProd, m.plan, m.quotas, loginURL, m.clusterName, m.licenseRenewalDate, m.config.LicenseKey, m.config.LicenseValue, "", "online"
 }

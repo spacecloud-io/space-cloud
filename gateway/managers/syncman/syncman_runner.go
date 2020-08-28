@@ -370,7 +370,7 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 				return
 			}
 
-			_ = utils.SendOkayResponse(w)
+			_ = utils.SendOkayResponse(w, hookResponse.Status())
 			return
 		}
 
@@ -504,7 +504,7 @@ func (s *Manager) forwardRequestToRunner(ctx context.Context, w http.ResponseWri
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, hookResponse.Status())
 		return
 	}
 

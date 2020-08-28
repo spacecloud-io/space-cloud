@@ -124,6 +124,13 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Delete anonymous metric collection",
 		EnvVar: "DISABLE_METRICS",
 	},
+
+	// Flag to disable downloading mission-control
+	cli.BoolFlag{
+		Name:   "disable-ui",
+		Usage:  "Stop space-cloud from downloading and hosting mission control",
+		EnvVar: "DISABLE_UI",
+	},
 }
 
 func main() {
@@ -179,6 +186,9 @@ func actionRun(c *cli.Context) error {
 	storeType := c.String("store-type")
 	advertiseAddr := c.String("advertise-addr")
 
+	// Load ui flag
+	disableUI := c.Bool("disable-ui")
+
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = fmt.Sprintf("auto-%s-0", ksuid.New().String())
@@ -206,10 +216,13 @@ func actionRun(c *cli.Context) error {
 		return err
 	}
 
-	// Download and host mission control
-	staticPath, err := initMissionContol(utils.BuildVersion)
-	if err != nil {
-		return err
+	staticPath := ""
+	if !disableUI {
+		// Download and host mission control
+		staticPath, err = initMissionContol(utils.BuildVersion)
+		if err != nil {
+			return err
+		}
 	}
 
 	return s.Start(false, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))

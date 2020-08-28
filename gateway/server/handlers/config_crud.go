@@ -130,12 +130,14 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col, crud, reqParams); err != nil {
+
+		status, err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col, crud, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -167,12 +169,14 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = v
-		if status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams); err != nil {
+
+		status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -239,12 +243,14 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias, reqParams); err != nil {
+
+		status, err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -321,12 +327,14 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = &v
-		if status, err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v, reqParams); err != nil {
+
+		status, err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -356,12 +364,14 @@ func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manag
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncman.RemovePreparedQueries(ctx, projectID, dbAlias, id, reqParams); err != nil {
+
+		status, err := syncman.RemovePreparedQueries(ctx, projectID, dbAlias, id, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -396,12 +406,14 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = v
-		if status, err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
+
+		status, err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, &v, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -483,12 +495,14 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = v
-		if status, err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
+
+		status, err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -561,13 +575,14 @@ func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
+
 		status, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -615,12 +630,14 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s, reqParams); err != nil {
+
+		status, err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -651,12 +668,14 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		reqParams.Method = r.Method
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
-		if status, err := syncman.RemoveCollection(ctx, projectID, dbAlias, col, reqParams); err != nil {
+
+		status, err := syncman.RemoveCollection(ctx, projectID, dbAlias, col, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 
@@ -690,12 +709,14 @@ func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		reqParams.Path = r.URL.Path
 		reqParams.Headers = r.Header
 		reqParams.Payload = v
-		if status, err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v, reqParams); err != nil {
+
+		status, err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = utils.SendOkayResponse(w, status)
 	}
 }
 

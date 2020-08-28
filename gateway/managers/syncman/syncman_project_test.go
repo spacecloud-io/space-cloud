@@ -157,7 +157,7 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: http.StatusInternalServerError,
+			want: http.StatusOK,
 		},
 		{
 			name: "project doesn't exist and store type kube and project is set",
@@ -188,7 +188,7 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: http.StatusInternalServerError,
+			want: http.StatusOK,
 		},
 	}
 	for _, tt := range tests {
