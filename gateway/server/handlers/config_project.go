@@ -36,7 +36,7 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, project, err := syncMan.GetProjectConfig(ctx, projectID, reqParams)
 		if err != nil {
@@ -73,7 +73,7 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, projectConfig)
+		reqParams = utils.ExtractRequestParams(r, reqParams, projectConfig)
 
 		statusCode, err := syncman.ApplyProjectConfig(ctx, &projectConfig, reqParams)
 		if err != nil {
@@ -113,7 +113,7 @@ func HandleGetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, clusterConfig, err := syncMan.GetClusterConfig(ctx, reqParams)
 		if err != nil {
@@ -153,7 +153,7 @@ func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, req)
+		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
 		// Sync the Adminconfig
 		status, err := syncMan.SetClusterConfig(ctx, req, reqParams)

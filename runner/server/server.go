@@ -47,7 +47,7 @@ func New(c *Config) (*Server, error) {
 	// Add the proxy port to the driver config
 	proxyPort, err := strconv.Atoi(c.ProxyPort)
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("invalid proxy port (%s) provided", c.ProxyPort), err, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("invalid proxy port (%s) provided", c.ProxyPort), err, nil)
 	}
 	c.Driver.ProxyPort = uint32(proxyPort)
 
@@ -124,14 +124,14 @@ func (s *Server) Start() error {
 
 		// Start http server
 		corsObj := utils.CreateCorsObject()
-		helpers.Logger.LogInfo(helpers.GetInternalRequestID(), fmt.Sprintf("Starting server proxy on port %s", s.config.ProxyPort), nil)
+		helpers.Logger.LogInfo(helpers.GetRequestID(nil), fmt.Sprintf("Starting server proxy on port %s", s.config.ProxyPort), nil)
 		if err := http.ListenAndServe(":"+s.config.ProxyPort, corsObj.Handler(router)); err != nil {
-			helpers.Logger.LogFatal(helpers.GetInternalRequestID(), fmt.Sprintf("Proxy server failed: - %v", err), nil)
+			helpers.Logger.LogFatal(helpers.GetRequestID(nil), fmt.Sprintf("Proxy server failed: - %v", err), nil)
 		}
 	}()
 
 	// Start the http server
 	corsObj := utils.CreateCorsObject()
-	helpers.Logger.LogInfo(helpers.GetInternalRequestID(), fmt.Sprintf("Starting server on port %s", s.config.Port), nil)
-	return http.ListenAndServe(":"+s.config.Port, corsObj.Handler(s.router))
+	helpers.Logger.LogInfo(helpers.GetRequestID(nil), fmt.Sprintf("Starting server on port %s", s.config.Port), nil)
+	return http.ListenAndServe(":"+s.config.Port, corsObj.Handler(loggerMiddleWare(s.router)))
 }

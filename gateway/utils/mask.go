@@ -20,7 +20,7 @@ func HashString(stringValue string) string {
 func Encrypt(aesKey []byte, value string) (string, error) {
 	encrypted := make([]byte, len(value))
 	if err := encryptAESCFB(encrypted, []byte(value), aesKey, aesKey[:aes.BlockSize]); err != nil {
-		return "", helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to encrypt value in match encrypt", err, nil)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to encrypt value in match encrypt", err, nil)
 	}
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }

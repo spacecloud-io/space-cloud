@@ -35,11 +35,11 @@ func New() (*LetsEncrypt, error) {
 	case StoreKube:
 		c, err := NewKubeStore()
 		if err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to initialize kubernetes store for let encrypt", err, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to initialize kubernetes store for let encrypt", err, nil)
 		}
 		client.Storage = c
 	default:
-		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unsupported store type (%s) provided for lets encrypt", c.StoreType), nil, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unsupported store type (%s) provided for lets encrypt", c.StoreType), nil, nil)
 	}
 
 	return &LetsEncrypt{client: client, domains: domainMapping{}}, nil

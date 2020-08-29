@@ -87,7 +87,7 @@ func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batc
 			// safe operation since SetConfig will hold a lock preventing others from writing into this channel after its closed
 			close(addInsertToBatchCh)
 			close(done)
-			helpers.Logger.LogDebug(helpers.GetInternalRequestID(), fmt.Sprintf("closing batcher for database %s table %s", dbAlias, tableName), nil)
+			helpers.Logger.LogDebug(helpers.GetRequestID(nil), fmt.Sprintf("closing batcher for database %s table %s", dbAlias, tableName), nil)
 			return
 		case v := <-addInsertToBatchCh:
 			responseChannels = append(responseChannels, v.response)
@@ -114,8 +114,7 @@ func (m *Module) executeBatch(project, dbAlias, tableName string, batchRequests 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := m.InternalCreate(ctx, dbAlias, project, tableName, &model.CreateRequest{Operation: utils.All, Document: batchRequests}, true); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing batch request for database %s table %s", dbAlias, tableName), err, nil)
-		m.sendResponses(responseChannels, batchResponse{err: err})
+		m.sendResponses(responseChannels, batchResponse{err: helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing batch request for database %s table %s", dbAlias, tableName), err, nil)})
 		return
 	}
 	// send response to all client request

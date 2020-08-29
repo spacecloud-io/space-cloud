@@ -10,7 +10,7 @@ import (
 // DoesExists checks if the path exists
 func (g *GCPStorage) DoesExists(ctx context.Context, path string) error {
 	path = strings.TrimPrefix(path, "/")
-	if _, err := g.client.Bucket(g.bucket).Object(path).Attrs(context.TODO()); err != nil {
+	if _, err := g.client.Bucket(g.bucket).Object(path).Attrs(ctx); err != nil {
 		return err
 	}
 	return nil

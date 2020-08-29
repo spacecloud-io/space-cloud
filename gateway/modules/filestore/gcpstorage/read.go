@@ -19,7 +19,7 @@ func (g *GCPStorage) ListDir(ctx context.Context, req *model.ListFilesRequest) (
 		path = ""
 	}
 
-	it := g.client.Bucket(g.bucket).Objects(context.TODO(), &storage.Query{
+	it := g.client.Bucket(g.bucket).Objects(ctx, &storage.Query{
 		Prefix:    path,
 		Delimiter: "/",
 	})
@@ -52,10 +52,10 @@ func (g *GCPStorage) ListDir(ctx context.Context, req *model.ListFilesRequest) (
 }
 
 // ReadFile reads a file from GCPStorage
-func (g *GCPStorage) ReadFile(path string) (*model.File, error) {
+func (g *GCPStorage) ReadFile(ctx context.Context, path string) (*model.File, error) {
 	path = strings.TrimPrefix(path, "/")
 
-	rc, err := g.client.Bucket(g.bucket).Object(path).NewReader(context.TODO())
+	rc, err := g.client.Bucket(g.bucket).Object(path).NewReader(ctx)
 	if err != nil {
 		return nil, err
 	}

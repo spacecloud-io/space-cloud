@@ -77,7 +77,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	/******** Fire the request and get the response ********/
 
-	scToken, err := m.auth.GetSCAccessToken()
+	scToken, err := m.auth.GetSCAccessToken(ctx)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
@@ -237,7 +237,7 @@ func (m *Module) createGoTemplate(kind, serviceID, endpointID, tmpl string) erro
 	t = t.Funcs(tmpl2.CreateGoFuncMaps(m.auth))
 	val, err := t.Parse(tmpl)
 	if err != nil {
-		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Invalid golang template provided", err, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Invalid golang template provided", err, nil)
 	}
 
 	m.templates[key] = val

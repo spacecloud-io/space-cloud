@@ -138,7 +138,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 				}
 			}
 		default:
-			return helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Invalid templating engine (%s) provided", trigger.Tmpl), nil, map[string]interface{}{})
+			return helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Invalid templating engine (%s) provided", trigger.Tmpl), nil, map[string]interface{}{})
 		}
 	}
 

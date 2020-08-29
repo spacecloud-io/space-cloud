@@ -152,10 +152,10 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		}
 		_, isFollow := r.URL.Query()["follow"]
 
-		helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Get logs process started", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
+		helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Get logs process started", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
 		pipeReader, err := s.driver.GetLogs(r.Context(), isFollow, projectID, taskID, replicaID)
 		if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Failed to get service logs", err, nil)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Failed to get service logs", err, nil)
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -173,16 +173,16 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		for {
 			select {
 			case <-r.Context().Done():
-				helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Context deadline reached for client request", map[string]interface{}{})
+				helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Context deadline reached for client request", map[string]interface{}{})
 				return
 			default:
 				str, err := reader.ReadString('\n')
 				if err != nil {
 					if err == io.EOF && !isFollow {
-						helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "End of file reached for logs", map[string]interface{}{})
+						helpers.Logger.LogDebug(helpers.GetRequestID(nil), "End of file reached for logs", map[string]interface{}{})
 						return
 					}
-					helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "error occured while reading from pipe in hander", nil)
+					helpers.Logger.LogDebug(helpers.GetRequestID(nil), "error occured while reading from pipe in hander", nil)
 					_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
 					return
 				}

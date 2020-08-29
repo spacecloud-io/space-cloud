@@ -93,12 +93,12 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Cl
 	ctx, cancel := context.WithTimeout(ctxRoot, 5*time.Second)
 	defer cancel()
 
-	token, err := m.auth.GetInternalAccessToken()
+	token, err := m.auth.GetInternalAccessToken(ctx)
 	if err != nil {
 		return err
 	}
 
-	scToken, err := m.auth.GetSCAccessToken()
+	scToken, err := m.auth.GetSCAccessToken(ctx)
 	if err != nil {
 		return err
 	}

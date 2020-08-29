@@ -101,12 +101,12 @@ func (m *mockAuthEventingInterface) IsEventingOpAuthorised(ctx context.Context, 
 	return c.Get(0).(model.RequestParams), c.Error(1)
 }
 
-func (m *mockAuthEventingInterface) GetSCAccessToken() (string, error) {
+func (m *mockAuthEventingInterface) GetSCAccessToken(context.Context) (string, error) {
 	c := m.Called()
 	return mock.Anything, c.Error(1)
 }
 
-func (m *mockAuthEventingInterface) GetInternalAccessToken() (string, error) {
+func (m *mockAuthEventingInterface) GetInternalAccessToken(context.Context) (string, error) {
 	c := m.Called()
 	return c.String(0), c.Error(1)
 }

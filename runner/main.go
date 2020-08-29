@@ -121,6 +121,6 @@ func main() {
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
-		helpers.Logger.LogFatal(helpers.GetInternalRequestID(), fmt.Sprintf("Failed to start runner: %v", err), nil)
+		helpers.Logger.LogFatal(helpers.GetRequestID(nil), fmt.Sprintf("Failed to start runner: %v", err), nil)
 	}
 }

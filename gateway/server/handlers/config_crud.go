@@ -110,7 +110,7 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 
 		crud := modules.DB()
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 		status, err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col, crud, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -145,7 +145,7 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, v)
+		reqParams = utils.ExtractRequestParams(r, reqParams, v)
 		status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -182,7 +182,7 @@ func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias, reqParams)
 		if err != nil {
@@ -217,7 +217,7 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 		status, err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -258,7 +258,7 @@ func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) h
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, result, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id, reqParams)
 		if err != nil {
@@ -296,7 +296,7 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, &v)
 		status, err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -331,7 +331,7 @@ func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manag
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 		status, err := syncman.RemovePreparedQueries(ctx, projectID, dbAlias, id, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -368,7 +368,7 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, v)
+		reqParams = utils.ExtractRequestParams(r, reqParams, v)
 		status, err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, &v, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -414,7 +414,7 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col, format, reqParams)
 		if err != nil {
@@ -451,7 +451,7 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, v)
+		reqParams = utils.ExtractRequestParams(r, reqParams, v)
 		status, err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -493,7 +493,7 @@ func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, dbConfig, err := syncMan.GetCollectionRules(ctx, projectID, dbAlias, col, reqParams)
 		if err != nil {
@@ -527,7 +527,7 @@ func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, reqParams)
 		if err != nil {
@@ -575,7 +575,7 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 		status, err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -609,7 +609,7 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 		status, err := syncman.RemoveCollection(ctx, projectID, dbAlias, col, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -645,7 +645,7 @@ func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) ht
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, v)
+		reqParams = utils.ExtractRequestParams(r, reqParams, v)
 		status, err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())

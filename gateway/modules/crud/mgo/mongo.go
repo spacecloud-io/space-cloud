@@ -55,7 +55,7 @@ func (m *Mongo) IsClientSafe(context.Context) error {
 
 	if m.client == nil {
 		if err := m.connect(); err != nil {
-			helpers.Logger.LogInfo(helpers.GetInternalRequestID(), fmt.Sprintf("Error connecting to mongo %v", err.Error()), nil)
+			helpers.Logger.LogInfo(helpers.GetRequestID(nil), fmt.Sprintf("Error connecting to mongo %v", err.Error()), nil)
 			return utils.ErrDatabaseConnection
 		}
 	}

@@ -29,7 +29,7 @@ func Unzip(src string, dest string) error {
 
 		// Check for ZipSlip. More Info: http://bit.ly/2MsjAWE
 		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
-			return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Invalid file path provided", nil, nil)
+			return helpers.Logger.LogError(helpers.GetRequestID(nil), "Invalid file path provided", nil, nil)
 		}
 
 		if f.FileInfo().IsDir() {

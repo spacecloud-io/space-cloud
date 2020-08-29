@@ -141,8 +141,8 @@ func (m *Module) SetCrudConfig(projectID string, crud config.Crud) {
 }
 
 // GetInternalAccessToken returns the token that can be used internally by Space Cloud
-func (m *Module) GetInternalAccessToken() (string, error) {
-	return m.CreateToken(map[string]interface{}{
+func (m *Module) GetInternalAccessToken(ctx context.Context) (string, error) {
+	return m.CreateToken(ctx, map[string]interface{}{
 		"id":     utils.InternalUserID,
 		"nodeId": m.nodeID,
 		"role":   "SpaceCloud",
@@ -150,15 +150,15 @@ func (m *Module) GetInternalAccessToken() (string, error) {
 }
 
 // GetSCAccessToken returns the token that can be used to verify Space Cloud
-func (m *Module) GetSCAccessToken() (string, error) {
-	return m.CreateToken(map[string]interface{}{
+func (m *Module) GetSCAccessToken(ctx context.Context) (string, error) {
+	return m.CreateToken(ctx, map[string]interface{}{
 		"id":   m.nodeID,
 		"role": "SpaceCloud",
 	})
 }
 
 // CreateToken generates a new JWT Token with the token claims
-func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
+func (m *Module) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (string, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -193,7 +193,7 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 				}
 				return tokenString, nil
 			default:
-				return "", helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Invalid algorithm (%s) provided for creating token", s.Alg), err, nil)
+				return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid algorithm (%s) provided for creating token", s.Alg), err, nil)
 			}
 		}
 	}
@@ -227,7 +227,7 @@ func (m *Module) parseToken(ctx context.Context, token string) (map[string]inter
 		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 			// Don't forget to validate the alg is what you expect:
 			if token.Method.Alg() != string(secret.Alg) {
-				return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to verify jwt token", fmt.Errorf("invalid token algorithm provided wanted (%s) got (%s)", secret.Alg, token.Method.Alg()), nil)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to verify jwt token", fmt.Errorf("invalid token algorithm provided wanted (%s) got (%s)", secret.Alg, token.Method.Alg()), nil)
 			}
 			switch secret.Alg {
 			case config.RS256:
@@ -235,11 +235,11 @@ func (m *Module) parseToken(ctx context.Context, token string) (map[string]inter
 			case config.HS256, "":
 				return []byte(secret.Secret), nil
 			default:
-				return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to verify jwt token", fmt.Errorf("invalid token algorithm (%s) provided", secret.Alg), nil)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to verify jwt token", fmt.Errorf("invalid token algorithm (%s) provided", secret.Alg), nil)
 			}
 		})
 		if err != nil {
-			helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Unable to verify jwt token", map[string]interface{}{"token": token, "error": err.Error()})
+			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Unable to verify jwt token", map[string]interface{}{"token": token, "error": err.Error()})
 			continue
 		}
 
@@ -252,10 +252,10 @@ func (m *Module) parseToken(ctx context.Context, token string) (map[string]inter
 			for key, val := range claims {
 				obj[key] = val
 			}
-			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "auth"})
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "auth"})
 			return obj, nil
 		}
-		helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Token contains invalid claims", map[string]interface{}{"token": token, "valid": tokenObj.Valid})
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Token contains invalid claims", map[string]interface{}{"token": token, "valid": tokenObj.Valid})
 	}
 	return nil, ErrTokenVerification
 }

@@ -74,7 +74,7 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 	obj := args["args"].(map[string]interface{})
 	token := obj["token"].(string)
 
-	scToken, err := m.GetSCAccessToken()
+	scToken, err := m.GetSCAccessToken(ctx)
 	if err != nil {
 		return formatError(ctx, rule, err)
 	}
@@ -215,8 +215,7 @@ func (m *Module) matchEncrypt(ctx context.Context, rule *config.Rule, args map[s
 		} else if strings.HasPrefix(field, "args") {
 			loadedValue, err := utils.LoadValue(field, args)
 			if err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error loading value in matchEncrypt", err, nil)
-				return nil, formatError(ctx, rule, err)
+				return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error loading value in matchEncrypt", err, nil))
 			}
 			stringValue, ok := loadedValue.(string)
 			if !ok {
@@ -228,11 +227,10 @@ func (m *Module) matchEncrypt(ctx context.Context, rule *config.Rule, args map[s
 			}
 
 			if err = utils.StoreValue(ctx, field, encryptedValue, args); err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error storing value in matchEncrypt", err, nil)
-				return nil, formatError(ctx, rule, err)
+				return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error storing value in matchEncrypt", err, nil))
 			}
 		} else {
-			return nil, formatError(ctx, rule, fmt.Errorf("invalid field (%s) provided", field))
+			return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid field provided for rule encrypt it should either start from res. or args.", fmt.Errorf("invalid field (%s) provided", field), nil))
 		}
 	}
 	return actions, nil
@@ -247,8 +245,7 @@ func (m *Module) matchDecrypt(ctx context.Context, rule *config.Rule, args map[s
 		} else if strings.HasPrefix(field, "args") {
 			loadedValue, err := utils.LoadValue(field, args)
 			if err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error loading value in matchDecrypt", err, nil)
-				return nil, formatError(ctx, rule, err)
+				return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error loading value in matchDecrypt", err, nil))
 			}
 			stringValue, ok := loadedValue.(string)
 			if !ok {
@@ -261,13 +258,11 @@ func (m *Module) matchDecrypt(ctx context.Context, rule *config.Rule, args map[s
 			decrypted := make([]byte, len(decodedValue))
 			err1 := decryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
 			if err1 != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error decrypting value in matchDecrypt", err, nil)
-				return nil, formatError(ctx, rule, err1)
+				return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error decrypting value in matchDecrypt", err, nil))
 			}
 			er := utils.StoreValue(ctx, field, string(decrypted), args)
 			if er != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error storing value in matchDecrypt", err, nil)
-				return nil, formatError(ctx, rule, er)
+				return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error storing value in matchDecrypt", err, nil))
 			}
 		} else {
 			return nil, formatError(ctx, rule, fmt.Errorf("invalid field (%s) provided", field))
@@ -295,8 +290,7 @@ func matchHash(ctx context.Context, rule *config.Rule, args map[string]interface
 		} else if strings.HasPrefix(field, "args") {
 			loadedValue, err := utils.LoadValue(field, args)
 			if err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error loading value in matchHash", err, nil)
-				return nil, formatError(ctx, rule, err)
+				return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error loading value in matchHash", err, nil))
 			}
 			stringValue, ok := loadedValue.(string)
 			if !ok {
@@ -305,8 +299,7 @@ func matchHash(ctx context.Context, rule *config.Rule, args map[string]interface
 			hashed := utils.HashString(stringValue)
 			er := utils.StoreValue(ctx, field, hashed, args)
 			if er != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error storing value in matchHash", err, nil)
-				return nil, formatError(ctx, rule, er)
+				return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error storing value in matchHash", err, nil))
 			}
 		} else {
 			return nil, formatError(ctx, rule, fmt.Errorf("invalid field (%s) provided", field))

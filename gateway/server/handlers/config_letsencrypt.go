@@ -47,7 +47,7 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, value)
+		reqParams = utils.ExtractRequestParams(r, reqParams, value)
 		status, err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, value, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -79,7 +79,7 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, le, err := syncMan.GetLetsEncryptConfig(ctx, projectID, reqParams)
 		if err != nil {

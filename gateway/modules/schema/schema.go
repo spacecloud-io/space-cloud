@@ -126,7 +126,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 		for _, field := range v.(*ast.ObjectDefinition).Fields {
 
 			if field.Type == nil {
-				return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Type not provided for collection/table schema (%s) with field (%s)", collectionName, field.Name.Value), nil, nil)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Type not provided for collection/table schema (%s) with field (%s)", collectionName, field.Name.Value), nil, nil)
 			}
 
 			fieldTypeStuct := model.FieldType{
@@ -154,7 +154,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 							}
 						}
 						if fieldTypeStuct.Default == nil {
-							return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Default directive must be accompanied with value field", nil, nil)
+							return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Default directive must be accompanied with value field", nil, nil)
 						}
 					case model.DirectiveIndex, model.DirectiveUnique:
 						fieldTypeStuct.IsIndex = true
@@ -167,22 +167,22 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.IndexInfo.Group, ok = val.(string)
 								if !ok {
-									return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 							case "order":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.IndexInfo.Order, ok = val.(int)
 								if !ok {
-									return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected int", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected int", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 							case "sort":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								sort, ok := val.(string)
 								if !ok || (sort != "asc" && sort != "desc") {
 									if !ok {
-										return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+										return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 									}
-									return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unknow value provided for field (%s) directinve @(%s) argument (%s) got (%v) expected either (asc) or (desc)", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unknow value provided for field (%s) directinve @(%s) argument (%s) got (%v) expected either (asc) or (desc)", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 								fieldTypeStuct.IndexInfo.Sort = sort
 							}
@@ -219,7 +219,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 
 						// Throw an error if from and to are unavailable
 						if fieldTypeStuct.LinkedTable.From == "" || fieldTypeStuct.LinkedTable.To == "" {
-							return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Link directive must be accompanied with (to) and (from) arguments", nil, nil)
+							return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Link directive must be accompanied with (to) and (from) arguments", nil, nil)
 						}
 
 					case model.DirectiveForeign:
@@ -252,7 +252,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 						}
 						fieldTypeStuct.JointTable.ConstraintName = getConstraintName(collectionName, fieldTypeStuct.FieldName)
 					default:
-						return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unknown directive (%s) provided for field (%s)", directive.Name.Value, fieldTypeStuct.FieldName), nil, nil)
+						return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unknown directive (%s) provided for field (%s)", directive.Name.Value, fieldTypeStuct.FieldName), nil, nil)
 					}
 				}
 			}
@@ -268,7 +268,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 
 	// Throw an error if the collection wasn't found
 	if !isCollectionFound {
-		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Collection/Table (%s) not found in schema", collectionName), nil, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Collection/Table (%s) not found in schema", collectionName), nil, nil)
 	}
 	return fieldMap, nil
 }
@@ -281,7 +281,7 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *model.Field
 	case kinds.List:
 		// Lists are not allowed for primary and foreign keys
 		if fieldTypeStuct.IsPrimary || fieldTypeStuct.IsForeign {
-			return "", helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Primary and foreign keys directives cannot be added on field (%s) with type lists", fieldTypeStuct.FieldName), nil, nil)
+			return "", helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Primary and foreign keys directives cannot be added on field (%s) with type lists", fieldTypeStuct.FieldName), nil, nil)
 		}
 
 		fieldTypeStuct.IsList = true
@@ -321,6 +321,6 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *model.Field
 			return model.TypeObject, nil
 		}
 	default:
-		return "", helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Invalid field kind `%s` provided for field `%s`", fieldType.GetKind(), fieldTypeStuct.FieldName), nil, nil)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Invalid field kind `%s` provided for field `%s`", fieldType.GetKind(), fieldTypeStuct.FieldName), nil, nil)
 	}
 }

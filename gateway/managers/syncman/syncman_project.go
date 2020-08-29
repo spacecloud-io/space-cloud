@@ -142,7 +142,7 @@ func (s *Manager) GetTokenForMissionControl(ctx context.Context, projectID strin
 	a := s.modules.GetAuthModuleForSyncMan()
 
 	// Generate the token
-	token, err := a.GetMissionControlToken(params.Claims)
+	token, err := a.GetMissionControlToken(ctx, params.Claims)
 	if err != nil {
 		return http.StatusInternalServerError, "", err
 	}

@@ -43,7 +43,7 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, value)
+		reqParams = utils.ExtractRequestParams(r, reqParams, value)
 		status, err := syncMan.SetFileStore(ctx, projectID, value, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -75,7 +75,7 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		}
 
 		// Create a context of execution
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, fileConfig, err := syncMan.GetFileStoreConfig(ctx, projectID, reqParams)
 		if err != nil {
@@ -145,7 +145,7 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, value)
+		reqParams = utils.ExtractRequestParams(r, reqParams, value)
 		status, err := syncMan.SetFileRule(ctx, projectID, ruleName, value, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -183,7 +183,7 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		}
 
 		// Create a context of execution
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleID, reqParams)
 		if err != nil {
@@ -217,7 +217,7 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		}
 
 		// Create a context of execution
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		if status, err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName, reqParams); err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())

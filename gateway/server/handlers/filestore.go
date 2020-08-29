@@ -36,7 +36,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 		token, projectID, _ := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
 
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
 		defer cancel()
 
 		var err error
@@ -111,7 +111,7 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
 
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
 		defer cancel()
 
 		op := r.URL.Query().Get("op")
@@ -160,7 +160,7 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 		v := map[string]interface{}{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
 		defer cancel()
 
 		status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)

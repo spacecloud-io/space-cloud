@@ -52,13 +52,11 @@ func ArrayContains(array []interface{}, value interface{}) bool {
 }
 
 //ExtractRequestParams extract request info from http request & stores it in reqParam variable
-func ExtractRequestParams(r *http.Request, reqParams *model.RequestParams, body interface{}) {
-	if reqParams == nil {
-		reqParams = &model.RequestParams{}
-	}
+func ExtractRequestParams(r *http.Request, reqParams model.RequestParams, body interface{}) model.RequestParams {
 	reqParams.RequestID = r.Header.Get(helpers.HeaderRequestID)
 	reqParams.Method = r.Method
 	reqParams.Path = r.URL.Path
 	reqParams.Headers = r.Header
 	reqParams.Payload = body
+	return reqParams
 }

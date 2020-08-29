@@ -53,7 +53,7 @@ func LoadStringIfExists(value string, state map[string]interface{}) (string, err
 	}
 	tempString, ok := temp.(string)
 	if !ok {
-		return "", helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unexpected type found for space cloud variable (%s)", value), fmt.Errorf("variable (%s) is of incorrect type (%s) want (string)", value, reflect.TypeOf(temp)), nil)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unexpected type found for space cloud variable (%s)", value), fmt.Errorf("variable (%s) is of incorrect type (%s) want (string)", value, reflect.TypeOf(temp)), nil)
 	}
 	value = tempString
 	return value, nil
@@ -92,7 +92,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			case map[string]interface{}:
 				return int64(len(v)), nil
 			default:
-				return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Invalid type provided for space cloud internal function length", fmt.Errorf("got type (%s) want object or array", reflect.TypeOf(value)), nil)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Invalid type provided for space cloud internal function length", fmt.Errorf("got type (%s) want object or array", reflect.TypeOf(value)), nil)
 			}
 		}
 		if strings.HasPrefix(function, "now") {
@@ -151,7 +151,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			case "second":
 				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), param0.Minute(), param0.Second(), 0, param0.Location())
 			default:
-				return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Invalid parameter (%s) provided for space cloud internal function (utils.roundUpDate)", params1), nil, nil)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Invalid parameter (%s) provided for space cloud internal function (utils.roundUpDate)", params1), nil, nil)
 			}
 			return timeDate.Format(time.RFC3339), nil
 		}
@@ -161,7 +161,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 
 	scope, present := state[tempArray[0]]
 	if !present {
-		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Scope (%s) not present", tempArray[0]), nil, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Scope (%s) not present", tempArray[0]), nil, nil)
 	}
 
 	// obj, ok := scope.(map[string]interface{})
@@ -197,7 +197,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			case string:
 				k = v
 			default:
-				return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Key (%s) is of unknown type", reflect.TypeOf(subVal)), nil, nil)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Key (%s) is of unknown type", reflect.TypeOf(subVal)), nil, nil)
 			}
 		}
 
@@ -222,12 +222,12 @@ func getValue(key string, obj interface{}) (interface{}, error) {
 		// The key should be a number (index) if the object is an array
 		index, err := strconv.Atoi(key)
 		if err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Key (%s) provided instead of index", key), err, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Key (%s) provided instead of index", key), err, nil)
 		}
 
 		// Check if index is not out of bounds otherwise return value at that index
 		if index >= len(val) {
-			return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Index (%d) out of bounds", index), nil, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Index (%d) out of bounds", index), nil, nil)
 		}
 		return val[index], nil
 
@@ -235,12 +235,12 @@ func getValue(key string, obj interface{}) (interface{}, error) {
 		// Throw error if key is not present in state. Otherwise return value
 		tempObj, p := val[key]
 		if !p {
-			return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Key (%s) not present in state", key), nil, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Key (%s) not present in state", key), nil, nil)
 		}
 		return tempObj, nil
 
 	default:
-		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unsupported data type (%s)", reflect.TypeOf(obj)), nil, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unsupported data type (%s)", reflect.TypeOf(obj)), nil, nil)
 	}
 }
 
@@ -341,7 +341,7 @@ func StoreValue(ctx context.Context, key string, value interface{}, state map[st
 
 	obj, ok := scope.(map[string]interface{})
 	if !ok {
-		return helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("invalid type (%s) received for state", reflect.TypeOf(scope)), nil, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("invalid type (%s) received for state", reflect.TypeOf(scope)), nil, nil)
 	}
 
 	for i, k := range keyArray {
@@ -441,7 +441,7 @@ func DeleteValue(ctx context.Context, key string, state map[string]interface{}) 
 
 	obj, ok := scope.(map[string]interface{})
 	if !ok {
-		return helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("invalid type (%s) received for state", reflect.TypeOf(scope)), nil, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("invalid type (%s) received for state", reflect.TypeOf(scope)), nil, nil)
 	}
 
 	for i, k := range keyArray {

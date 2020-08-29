@@ -42,7 +42,7 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 
 		// Sync the config
-		utils.ExtractRequestParams(r, &reqParams, value)
+		reqParams = utils.ExtractRequestParams(r, reqParams, value)
 		status, err := syncMan.SetUserManagement(ctx, projectID, provider, value, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -78,7 +78,7 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, providers, err := syncMan.GetUserManagement(ctx, projectID, providerID, reqParams)
 		if err != nil {

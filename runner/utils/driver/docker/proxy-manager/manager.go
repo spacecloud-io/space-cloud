@@ -43,7 +43,7 @@ func New(path string) (*Manager, error) {
 func (m *Manager) loadConfigFromFile() error {
 	content, err := ioutil.ReadFile(m.path)
 	if err != nil {
-		helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Could not load service routing file. Resetting to default", nil)
+		helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Could not load service routing file. Resetting to default", nil)
 		m.serviceRoutes = model.Config{}
 		return nil
 	}

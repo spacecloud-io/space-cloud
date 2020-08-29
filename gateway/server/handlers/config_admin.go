@@ -36,19 +36,19 @@ func HandleGetCredentials(adminMan *admin.Manager) http.HandlerFunc {
 // HandleLoadEnv returns the handler to load the projects via a REST endpoint
 func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
 		defer utils.CloseTheCloser(r.Body)
 
-		clusterType, err := syncMan.GetClusterType(adminMan)
+		clusterType, err := syncMan.GetClusterType(ctx, adminMan)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		isProd, plan, quotas, loginURL, clusterName, licenseRenewal, licenseKey, licenseValue, sessionID, licenseMode := adminMan.LoadEnv()
-		_ = helpers.Response.SendResponse(r.Context(), w, http.StatusOK, map[string]interface{}{
+		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{
 			"isProd":       isProd,
 			"plan":         plan,
 			"quotas":       quotas,
@@ -132,7 +132,7 @@ func HandleGetPermissions(adminMan *admin.Manager) http.HandlerFunc {
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, permissions, err := adminMan.GetPermissions(ctx, reqParams)
 		if err != nil {

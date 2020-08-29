@@ -33,7 +33,7 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 		return http.StatusInternalServerError, err
 	}
 
-	if err = m.store.CreateDir(req); err != nil {
+	if err = m.store.CreateDir(ctx, req); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
 		return http.StatusInternalServerError, nil
 	}
@@ -64,7 +64,7 @@ func (m *Module) DeleteFile(ctx context.Context, project, token string, path str
 		return http.StatusInternalServerError, err
 	}
 
-	if err = m.store.DeleteFile(path); err != nil {
+	if err = m.store.DeleteFile(ctx, path); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
 		return http.StatusInternalServerError, err
 	}
@@ -120,7 +120,7 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 		return 500, err
 	}
 
-	if err = m.store.CreateFile(req, reader); err != nil {
+	if err = m.store.CreateFile(ctx, req, reader); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create file (%s)", req.Name), err, nil)
 	}
@@ -147,7 +147,7 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 	defer m.RUnlock()
 
 	// Read the file from file storage
-	file, err := m.store.ReadFile(path)
+	file, err := m.store.ReadFile(ctx, path)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}

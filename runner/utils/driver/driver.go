@@ -83,6 +83,6 @@ func initDriver(auth *auth.Module, c *Config) (Interface, error) {
 		return docker.NewDockerDriver(auth, c.ClusterName, c.ArtifactAddr)
 
 	default:
-		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("invalid driver type (%s) provided", c.DriverType), nil, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("invalid driver type (%s) provided", c.DriverType), nil, nil)
 	}
 }

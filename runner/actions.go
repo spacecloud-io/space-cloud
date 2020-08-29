@@ -37,12 +37,12 @@ func actionRunner(c *cli.Context) error {
 	artifactAddr := c.String("artifact-addr")
 	clusterID := c.String("cluster-id")
 	if clusterID == "" {
-		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Failed to setup runner: CLUSTER_ID environment variable not provided", nil, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Failed to setup runner: CLUSTER_ID environment variable not provided", nil, nil)
 	}
 	clusterName := strings.Split(clusterID, "--")[0]
 
 	if err := helpers.InitLogger(loglevel, logFormat, isDev); err != nil {
-		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to initialize loggers", err, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to initialize loggers", err, nil)
 	}
 
 	// Create a new runner object
@@ -64,7 +64,7 @@ func actionRunner(c *cli.Context) error {
 		},
 	})
 	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Failed to start runner", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Failed to start runner", err, nil)
 		os.Exit(-1)
 	}
 

@@ -19,7 +19,7 @@ func (r *Routing) createGoTemplate(kind, project, id, tmpl string) error {
 	t = t.Funcs(tmpl2.CreateGoFuncMaps(nil))
 	val, err := t.Parse(tmpl)
 	if err != nil {
-		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Invalid golang template provided", err, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Invalid golang template provided", err, nil)
 	}
 
 	r.goTemplates[key] = val

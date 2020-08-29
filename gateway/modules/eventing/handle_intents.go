@@ -173,7 +173,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &filePayload)
 		// Check if document exists in database
 
-		token, err := m.auth.GetInternalAccessToken()
+		token, err := m.auth.GetInternalAccessToken(ctx)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Error generating token in intent staging", err, nil)
 			return
@@ -202,7 +202,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		filePayload := model.FilePayload{}
 		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &filePayload)
 
-		token, err := m.auth.GetInternalAccessToken()
+		token, err := m.auth.GetInternalAccessToken(ctx)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Error generating token in intent staging", err, nil)
 			return

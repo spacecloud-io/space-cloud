@@ -35,7 +35,7 @@ func (l *Local) ListDir(ctx context.Context, req *model.ListFilesRequest) ([]*mo
 }
 
 // ReadFile reads a file from the path provided
-func (l *Local) ReadFile(path string) (*model.File, error) {
+func (l *Local) ReadFile(ctx context.Context, path string) (*model.File, error) {
 	ps := string(os.PathSeparator)
 	p := strings.TrimRight(l.rootPath, ps) + ps + strings.TrimLeft(path, ps)
 	f, err := os.Open(p)

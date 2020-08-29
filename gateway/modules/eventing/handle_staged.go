@@ -84,7 +84,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 
 	rule, err := m.selectRule(name)
 	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Error processing staged event", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Error processing staged event", err, nil)
 		return
 	}
 
@@ -160,12 +160,12 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInterface, rule *config.EventingRule, eventDoc *model.EventDocument, params interface{}) error {
 	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(rule.Timeout)*time.Millisecond)
 	defer cancel()
-	internalToken, err := m.auth.GetInternalAccessToken()
+	internalToken, err := m.auth.GetInternalAccessToken(ctx)
 	if err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "error invoking web hook in eventing unable to get internal access token", err, nil)
 	}
 
-	scToken, err := m.auth.GetSCAccessToken()
+	scToken, err := m.auth.GetSCAccessToken(ctx)
 	if err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "error invoking web hook in eventing unable to get sc access token", err, nil)
 	}

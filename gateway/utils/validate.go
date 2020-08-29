@@ -192,7 +192,7 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 				case "$in":
 					array, ok := v2.([]interface{})
 					if !ok {
-						_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Invalid value provided for $in clause (%v)", v2), nil, nil)
+						_ = helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Invalid value provided for $in clause (%v)", v2), nil, nil)
 						return false
 					}
 					return ArrayContains(array, val)
@@ -200,7 +200,7 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 				case "$nin":
 					array, ok := v2.([]interface{})
 					if !ok {
-						_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Invalid value provided for $nin clause (%v)", v2), nil, nil)
+						_ = helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Invalid value provided for $nin clause (%v)", v2), nil, nil)
 						return false
 					}
 					return !ArrayContains(array, val)
@@ -222,7 +222,7 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 					vString := val.(string)
 					r, err := regexp.Compile(regex)
 					if err != nil {
-						_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Couldn't compile regex (%s)", regex), nil, nil)
+						_ = helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Couldn't compile regex (%s)", regex), nil, nil)
 						return false
 					}
 					return r.MatchString(vString)
@@ -309,7 +309,7 @@ func checkIfObjContainsWhereObj(obj interface{}, where interface{}, isIterate bo
 			if ok {
 				for _, rowObj := range singleRowObj {
 					for _, whereArrValue := range whereObj {
-						helpers.Logger.LogInfo(helpers.GetInternalRequestID(), fmt.Sprintf("wherearr value %v row obj %v", whereArrValue, rowObj), nil)
+						helpers.Logger.LogInfo(helpers.GetRequestID(nil), fmt.Sprintf("wherearr value %v row obj %v", whereArrValue, rowObj), nil)
 						if reflect.TypeOf(whereObj) == reflect.TypeOf(rowObj) {
 							if checkIfObjContainsWhereObj(rowObj, whereArrValue, true) {
 								whereMatchCount++

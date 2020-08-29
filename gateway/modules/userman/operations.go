@@ -134,7 +134,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbAlias, project, email, passw
 	}
 	req["role"] = userObj["role"]
 
-	token, err := m.auth.CreateToken(req)
+	token, err := m.auth.CreateToken(ctx, req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, errors.New("Failed to create a JWT token")
 	}
@@ -198,7 +198,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 		"role":  role,
 		"id":    id.String()}
 
-	token, err := m.auth.CreateToken(tokenObj)
+	token, err := m.auth.CreateToken(ctx, tokenObj)
 	if err != nil {
 		return http.StatusInternalServerError, nil, errors.New("Failed to create a JWT token")
 	}
@@ -275,7 +275,7 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbAlias, project, 
 	req1["id"] = userObj[idString]
 	req1["role"] = userObj["role"]
 
-	token1, err := m.auth.CreateToken(req1)
+	token1, err := m.auth.CreateToken(ctx, req1)
 	if err != nil {
 		return http.StatusInternalServerError, nil, errors.New("Failed to create a JWT token")
 	}

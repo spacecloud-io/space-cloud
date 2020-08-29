@@ -32,7 +32,7 @@ func (m *Manager) parseToken(ctx context.Context, token string) (map[string]inte
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Invalid signing method type", nil, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid signing method type", nil, nil)
 		}
 
 		return []byte(m.user.Secret), nil
@@ -51,9 +51,9 @@ func (m *Manager) parseToken(ctx context.Context, token string) (map[string]inte
 		for key, val := range claims {
 			obj[key] = val
 		}
-		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "admin"})
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "admin"})
 		return obj, nil
 	}
 
-	return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Admin: JWT token could not be verified", nil, nil)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Admin: JWT token could not be verified", nil, nil)
 }

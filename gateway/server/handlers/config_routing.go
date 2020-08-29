@@ -41,7 +41,7 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, value)
+		reqParams = utils.ExtractRequestParams(r, reqParams, value)
 		status, err := syncMan.SetProjectRoute(ctx, projectID, id, value, reqParams)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling set project route in handlers unable to add route in project config got error message", err, nil)
@@ -78,7 +78,7 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, routes, err := syncMan.GetIngressRouting(ctx, projectID, routeID, reqParams)
 		if err != nil {
@@ -112,7 +112,7 @@ func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager)
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 		status, err := syncMan.DeleteProjectRoute(ctx, projectID, routeID, reqParams)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling delete project route in handlers unable to delete route in project config got error message", err, nil)
@@ -146,7 +146,7 @@ func HandleSetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, config)
+		reqParams = utils.ExtractRequestParams(r, reqParams, config)
 		status, err := syncMan.SetGlobalRouteConfig(ctx, projectID, config, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
@@ -178,7 +178,7 @@ func HandleGetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		status, c, err := syncMan.GetGlobalRouteConfig(ctx, projectID, reqParams)
 		if err != nil {

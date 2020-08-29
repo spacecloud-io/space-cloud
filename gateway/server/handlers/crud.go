@@ -48,7 +48,7 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, req)
+		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
 		// Perform the PreparedQuery operation
 		result, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
@@ -90,7 +90,7 @@ func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, req)
+		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
 		// Perform the write operation
 		err = crud.Create(ctx, meta.dbType, meta.col, &req, reqParams)
@@ -136,7 +136,7 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, req)
+		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
 		result, err := crud.Read(ctx, meta.dbType, meta.col, &req, reqParams)
 		// Perform the read operation
@@ -178,7 +178,7 @@ func HandleCrudUpdate(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, req)
+		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
 		// Perform the update operation
 		err = crud.Update(ctx, meta.dbType, meta.col, &req, reqParams)
@@ -218,7 +218,7 @@ func HandleCrudDelete(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, req)
+		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
 		// Perform the delete operation
 		err = crud.Delete(ctx, meta.dbType, meta.col, &req, reqParams)
@@ -257,7 +257,7 @@ func HandleCrudAggregate(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		utils.ExtractRequestParams(r, &reqParams, req)
+		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
 		// Perform the aggregate operation
 		result, err := crud.Aggregate(ctx, meta.dbType, meta.col, &req, reqParams)
@@ -336,7 +336,7 @@ func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		reqParams.Resource = "db-batch"
-		utils.ExtractRequestParams(r, &reqParams, txRequest)
+		reqParams = utils.ExtractRequestParams(r, reqParams, txRequest)
 
 		err := crud.Batch(ctx, meta.dbType, &txRequest, reqParams)
 		if err != nil {

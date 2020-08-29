@@ -11,7 +11,7 @@ import (
 func ActionGenerateServiceRouting(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {
-		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "incorrect number of arguments", nil, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(nil), "incorrect number of arguments", nil, nil)
 	}
 	dbruleConfigFile := argsArr[0]
 	dbrule, err := generateServiceRouting()

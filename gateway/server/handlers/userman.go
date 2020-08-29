@@ -25,7 +25,7 @@ func HandleProfile(modules *modules.Modules) http.HandlerFunc {
 		defer cancel()
 
 		var reqParams model.RequestParams
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		defer utils.CloseTheCloser(r.Body)
 
@@ -59,7 +59,7 @@ func HandleProfiles(modules *modules.Modules) http.HandlerFunc {
 		defer cancel()
 
 		var reqParams model.RequestParams
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		// Get the path parameters
 		vars := mux.Vars(r)
@@ -92,7 +92,7 @@ func HandleEmailSignIn(modules *modules.Modules) http.HandlerFunc {
 		defer cancel()
 
 		var reqParams model.RequestParams
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		// Get the path parameters
 		vars := mux.Vars(r)
@@ -125,7 +125,7 @@ func HandleEmailSignUp(modules *modules.Modules) http.HandlerFunc {
 		defer cancel()
 
 		var reqParams model.RequestParams
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		// Get the path parameters
 		vars := mux.Vars(r)
@@ -158,7 +158,7 @@ func HandleEmailEditProfile(modules *modules.Modules) http.HandlerFunc {
 		defer cancel()
 
 		var reqParams model.RequestParams
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		// Get the path parameters
 		vars := mux.Vars(r)

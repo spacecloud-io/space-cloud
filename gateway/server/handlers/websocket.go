@@ -50,7 +50,7 @@ func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 		ctx := r.Context()
 
 		var reqParams model.RequestParams
-		utils.ExtractRequestParams(r, &reqParams, nil)
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		socket, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {

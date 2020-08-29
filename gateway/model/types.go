@@ -40,15 +40,15 @@ type CrudEventingInterface interface {
 
 // AuthEventingInterface is an interface consisting of functions of auth module used by Eventing module
 type AuthEventingInterface interface {
-	GetInternalAccessToken() (string, error)
-	GetSCAccessToken() (string, error)
+	GetInternalAccessToken(ctx context.Context) (string, error)
+	GetSCAccessToken(ctx context.Context) (string, error)
 	IsEventingOpAuthorised(ctx context.Context, project, token string, event *QueueEventRequest) (RequestParams, error)
 }
 
 // AuthSyncManInterface is an interface consisting of functions of auth module used by sync man
 type AuthSyncManInterface interface {
-	GetIntegrationToken(id string) (string, error)
-	GetMissionControlToken(claims map[string]interface{}) (string, error)
+	GetIntegrationToken(ctx context.Context, id string) (string, error)
+	GetMissionControlToken(ctx context.Context, claims map[string]interface{}) (string, error)
 }
 
 // FilestoreEventingInterface is an interface consisting of functions of Filestore module used by Eventing module
@@ -63,7 +63,7 @@ type AuthFilestoreInterface interface {
 
 // AuthFunctionInterface is an interface consisting of functions of auth module used by Function module
 type AuthFunctionInterface interface {
-	GetSCAccessToken() (string, error)
+	GetSCAccessToken(ctx context.Context) (string, error)
 	Encrypt(value string) (string, error)
 }
 
@@ -76,8 +76,8 @@ type EventingRealtimeInterface interface {
 type AuthRealtimeInterface interface {
 	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, RequestParams, error)
 	PostProcessMethod(ctx context.Context, postProcess *PostProcess, result interface{}) error
-	GetInternalAccessToken() (string, error)
-	GetSCAccessToken() (string, error)
+	GetInternalAccessToken(ctx context.Context) (string, error)
+	GetSCAccessToken(ctx context.Context) (string, error)
 }
 
 // CrudRealtimeInterface is an interface consisting of functions of crud module used by RealTime module
@@ -105,7 +105,7 @@ type CrudUserInterface interface {
 type AuthUserInterface interface {
 	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, RequestParams, error)
 	PostProcessMethod(ctx context.Context, postProcess *PostProcess, result interface{}) error
-	CreateToken(tokenClaims TokenClaims) (string, error)
+	CreateToken(ctx context.Context, tokenClaims TokenClaims) (string, error)
 	IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *UpdateRequest) (RequestParams, error)
 }
 

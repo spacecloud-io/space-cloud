@@ -63,7 +63,7 @@ func (a *AmazonS3) ListDir(ctx context.Context, req *model.ListFilesRequest) ([]
 }
 
 // ReadFile reads a file from S3
-func (a *AmazonS3) ReadFile(path string) (*model.File, error) {
+func (a *AmazonS3) ReadFile(ctx context.Context, path string) (*model.File, error) {
 	u2 := uuid.NewV4()
 
 	tmpfile, err := ioutil.TempFile("", u2.String())
