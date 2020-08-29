@@ -32,7 +32,7 @@ func Destroy(clusterName string) error {
 
 	// Remove all container
 	for _, containerInfo := range containers {
-		if containerInfo.Labels["service"] == "runner" {
+		if containerInfo.Labels["service"] == string(model.ImageRunner) {
 			// Make sure the container is running before deleting secrets
 			if err := cli.ContainerStart(ctx, containerInfo.ID, types.ContainerStartOptions{}); err != nil {
 				return err

@@ -45,6 +45,7 @@ func StoreCredentials(account *model.Account) error {
 			logrus.Errorf("error in checking credentials unable to create accounts yaml file - %v", err)
 			return err
 		}
+		return nil
 	}
 	// file already exists, read data from accounts.yaml file
 	credential := new(model.Credential)

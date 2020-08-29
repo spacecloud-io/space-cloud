@@ -192,7 +192,6 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 				fmt.Fprint(w, str)
 				// Trigger "chunked" encoding and send a chunk...
 				flusher.Flush()
-				time.Sleep(500 * time.Millisecond)
 			}
 		}
 	}

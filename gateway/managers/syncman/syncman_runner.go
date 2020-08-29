@@ -424,7 +424,6 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 					if str != "\n" {
 						fmt.Fprintf(w, "%s", str)
 						flusher.Flush() // Trigger "chunked" encoding and send a chunk...
-						time.Sleep(500 * time.Millisecond)
 					}
 				}
 			}

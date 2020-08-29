@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"strings"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
@@ -33,12 +32,10 @@ func actionRunner(c *cli.Context) error {
 	isMetricDisabled := c.Bool("disable-metrics")
 
 	artifactAddr := c.String("artifact-addr")
-	clusterID := c.String("cluster-id")
-	if clusterID == "" {
-		logrus.Error("Failed to setup runner: CLUSTER_ID environment variable not provided")
-		return nil
+	clusterName := c.String("cluster-name")
+	if driverType == model.DockerType {
+		logrus.Infoln("Runner is starting in cluster ", clusterName)
 	}
-	clusterName := strings.Split(clusterID, "--")[0]
 	// Set the log level
 	setLogLevel(loglevel)
 

@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"github.com/stretchr/testify/mock"
 
@@ -121,7 +120,6 @@ func (d *def) GetLogs(url string) error {
 		}
 		if str != "\n" {
 			fmt.Print(str)
-			time.Sleep(500 * time.Millisecond)
 		}
 	}
 }

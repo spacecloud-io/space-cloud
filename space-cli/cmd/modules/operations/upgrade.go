@@ -14,11 +14,12 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/txn2/txeh"
 
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Upgrade upgrades the environment which has been setup
-func Upgrade(clusterName string, version string) error {
+func Upgrade(clusterName string, version string, imagePrefix string) error {
 
 	// Getting current version
 	result := make(map[string]interface{})
@@ -27,13 +28,14 @@ func Upgrade(clusterName string, version string) error {
 	}
 	currentVersion := result["version"].(string)
 
-	// Getting latest version
-	latestVersion, err := utils.GetLatestVersion(currentVersion)
-	if err != nil {
-		return err
-	}
-	if version != "" {
-		latestVersion = version
+	var err error
+	latestVersion := version
+	if latestVersion == "default" {
+		// Getting latest version
+		latestVersion, err = utils.GetLatestVersion(currentVersion)
+		if err != nil {
+			return err
+		}
 	}
 
 	if currentVersion == latestVersion {
@@ -68,7 +70,7 @@ func Upgrade(clusterName string, version string) error {
 	var runnerMounts []mount.Mount
 	var runnerLabels map[string]string
 
-	// Remove all container
+	// Remove gateway & runner container
 	for _, containerInfo := range containers {
 		containerInspect, err := cli.ContainerInspect(ctx, containerInfo.ID)
 		if err != nil {
@@ -76,7 +78,7 @@ func Upgrade(clusterName string, version string) error {
 		}
 
 		switch containerInspect.Config.Labels["service"] {
-		case "gateway":
+		case string(model.ImageGateway):
 			gatewayEnvs = containerInspect.Config.Env
 			gatewayMounts = containerInspect.HostConfig.Mounts
 			gatewayPorts = containerInspect.HostConfig.PortBindings
@@ -86,7 +88,7 @@ func Upgrade(clusterName string, version string) error {
 				return utils.LogError(fmt.Sprintf("Unable to remove container - %s", containerInfo.ID), err)
 			}
 
-		case "runner":
+		case string(model.ImageRunner):
 			runnerEnvs = containerInspect.Config.Env
 			runnerMounts = containerInspect.HostConfig.Mounts
 			runnerLabels = containerInspect.Config.Labels
@@ -107,8 +109,8 @@ func Upgrade(clusterName string, version string) error {
 		portMapping    nat.PortMap
 	}{
 		{
-			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", latestVersion),
-			containerName:  utils.GetScContainers(clusterName, "gateway"),
+			containerImage: utils.GetSCImageName(imagePrefix, latestVersion, model.ImageGateway),
+			containerName:  utils.GetScContainers(clusterName, string(model.ImageGateway)),
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			labels:         gatewayLabels,
 			envs:           gatewayEnvs,
@@ -119,8 +121,8 @@ func Upgrade(clusterName string, version string) error {
 
 		{
 			// runner
-			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", latestVersion),
-			containerName:  utils.GetScContainers(clusterName, "runner"),
+			containerImage: utils.GetSCImageName(imagePrefix, latestVersion, model.ImageRunner),
+			containerName:  utils.GetScContainers(clusterName, string(model.ImageRunner)),
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			labels:         runnerLabels,
 			envs:           runnerEnvs,
