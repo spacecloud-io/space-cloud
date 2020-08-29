@@ -111,13 +111,13 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 		crud := modules.DB()
 
 		utils.ExtractRequestParams(r, &reqParams, nil)
-
-		if status, err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col, crud, reqParams); err != nil {
+		status, err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col, crud, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -146,13 +146,13 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, v)
-
-		if status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams); err != nil {
+		status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -218,13 +218,13 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, nil)
-
-		if status, err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias, reqParams); err != nil {
+		status, err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -297,14 +297,13 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, nil)
-
-		reqParams.Payload = &v
-		if status, err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v, reqParams); err != nil {
+		status, err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -333,13 +332,13 @@ func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manag
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, nil)
-
-		if status, err := syncman.RemovePreparedQueries(ctx, projectID, dbAlias, id, reqParams); err != nil {
+		status, err := syncman.RemovePreparedQueries(ctx, projectID, dbAlias, id, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -370,13 +369,13 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, v)
-
-		if status, err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
+		status, err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, &v, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -453,13 +452,13 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, v)
-
-		if status, err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
+		status, err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -536,7 +535,7 @@ func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -577,13 +576,13 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, nil)
-
-		if status, err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s, reqParams); err != nil {
+		status, err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -611,13 +610,13 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, nil)
-
-		if status, err := syncman.RemoveCollection(ctx, projectID, dbAlias, col, reqParams); err != nil {
+		status, err := syncman.RemoveCollection(ctx, projectID, dbAlias, col, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -647,13 +646,13 @@ func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, v)
-
-		if status, err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v, reqParams); err != nil {
+		status, err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 

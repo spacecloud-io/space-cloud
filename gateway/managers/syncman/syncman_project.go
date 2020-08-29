@@ -73,7 +73,11 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	// We will ignore the error for the create project request
 	_ = s.modules.SetProjectConfig(project)
 
-	return http.StatusInternalServerError, s.store.SetProject(ctx, project)
+	if err := s.store.SetProject(ctx, project); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 }
 
 // DeleteProjectConfig applies delete project config command to the raft log

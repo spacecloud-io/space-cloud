@@ -88,7 +88,9 @@ func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHos
 
 	helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Starting http server on port: "+strconv.Itoa(port), nil)
 
-	helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Hosting mission control on http://localhost:"+strconv.Itoa(port)+"/mission-control/", nil)
+	if staticPath != "" {
+		helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Hosting mission control on http://localhost:"+strconv.Itoa(port)+"/mission-control/", nil)
+	}
 
 	helpers.Logger.LogInfo(helpers.GetInternalRequestID(), fmt.Sprintf("Space cloud is running on the specified ports :%v", port), nil)
 	return http.ListenAndServe(":"+strconv.Itoa(port), handler)

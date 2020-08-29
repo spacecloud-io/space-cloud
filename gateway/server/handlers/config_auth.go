@@ -43,14 +43,14 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		// Sync the config
 		utils.ExtractRequestParams(r, &reqParams, value)
-
-		if status, err := syncMan.SetUserManagement(ctx, projectID, provider, value, reqParams); err != nil {
+		status, err := syncMan.SetUserManagement(ctx, projectID, provider, value, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
 		// Give a positive acknowledgement
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 

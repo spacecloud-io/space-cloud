@@ -44,13 +44,13 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, value)
-
-		if status, err := syncMan.SetFileStore(ctx, projectID, value, reqParams); err != nil {
+		status, err := syncMan.SetFileStore(ctx, projectID, value, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -146,13 +146,13 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, value)
-
-		if status, err := syncMan.SetFileRule(ctx, projectID, ruleName, value, reqParams); err != nil {
+		status, err := syncMan.SetFileRule(ctx, projectID, ruleName, value, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 

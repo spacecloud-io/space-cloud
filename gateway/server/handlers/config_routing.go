@@ -42,14 +42,14 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, value)
-
-		if status, err := syncMan.SetProjectRoute(ctx, projectID, id, value, reqParams); err != nil {
+		status, err := syncMan.SetProjectRoute(ctx, projectID, id, value, reqParams)
+		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling set project route in handlers unable to add route in project config got error message", err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -113,8 +113,8 @@ func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager)
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, nil)
-
-		if status, err := syncMan.DeleteProjectRoute(ctx, projectID, routeID, reqParams); err != nil {
+		status, err := syncMan.DeleteProjectRoute(ctx, projectID, routeID, reqParams)
+		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling delete project route in handlers unable to delete route in project config got error message", err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
@@ -147,8 +147,8 @@ func HandleSetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, config)
-
-		if status, err := syncMan.SetGlobalRouteConfig(ctx, projectID, config, reqParams); err != nil {
+		status, err := syncMan.SetGlobalRouteConfig(ctx, projectID, config, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}

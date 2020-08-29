@@ -42,13 +42,13 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, value)
-
-		if status, err := syncMan.SetEventingRule(ctx, projectID, ruleName, &value, reqParams); err != nil {
+		status, err := syncMan.SetEventingRule(ctx, projectID, ruleName, &value, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -113,13 +113,13 @@ func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.M
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, nil)
-
-		if status, err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName, reqParams); err != nil {
+		status, err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -149,13 +149,13 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		_ = json.NewDecoder(r.Body).Decode(c)
 
 		utils.ExtractRequestParams(r, &reqParams, c)
-
-		if status, err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled, reqParams); err != nil {
+		status, err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -223,13 +223,13 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		_ = json.NewDecoder(r.Body).Decode(&c)
 
 		utils.ExtractRequestParams(r, &reqParams, c)
-
-		if status, err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema, reqParams); err != nil {
+		status, err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema, reqParams)
+		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -295,14 +295,14 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, nil)
-
-		if status, err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType, reqParams); err != nil {
+		status, err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType, reqParams)
+		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to delete eventing schema", err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -334,14 +334,14 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, c)
-
-		if status, err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c, reqParams); err != nil {
+		status, err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c, reqParams)
+		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to add eventing rules", err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -406,13 +406,13 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 		}
 
 		utils.ExtractRequestParams(r, &reqParams, nil)
-
-		if status, err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType, reqParams); err != nil {
+		status, err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType, reqParams)
+		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to delete eventing rules", err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }

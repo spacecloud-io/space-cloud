@@ -81,7 +81,7 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 			return
 		}
 
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, statusCode, w)
 	}
 }
 
