@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
@@ -63,8 +62,8 @@ func TestModule_ExecGraphQLQuery(t *testing.T) {
 
 			graph := graphql.New(&mockAuth, &mockCrud, &mockFunction, &mockSchema)
 
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
+			ctx := context.Background()
+
 			var wg sync.WaitGroup
 			var testOp interface{}
 			var testErr error

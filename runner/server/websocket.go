@@ -1,10 +1,11 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils"
@@ -14,9 +15,12 @@ var upgrader = websocket.Upgrader{}
 
 func (s *Server) handleWebsocketRequest() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		ctx := r.Context()
+
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			logrus.Errorln("Could not upgrade to websocket (autoscaler):", err)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Could not upgrade to websocket (autoscaler):", err, nil)
 			return
 		}
 		defer utils.CloseTheCloser(c)
@@ -24,7 +28,7 @@ func (s *Server) handleWebsocketRequest() http.HandlerFunc {
 		// Check if token is valid
 		claims, err := s.auth.VerifyProxyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to verify autoscaler socket connection - %s", err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to verify autoscaler socket connection", err, nil)
 			return
 		}
 
@@ -34,7 +38,7 @@ func (s *Server) handleWebsocketRequest() http.HandlerFunc {
 		serviceTemp, ok3 := claims["service"]
 		versionTemp, ok4 := claims["version"]
 		if !ok1 || !ok2 || !ok3 || !ok4 {
-			logrus.Errorln("Failed to establish autoscaler socket connection - token does not contain valid claims")
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to establish autoscaler socket connection - token does not contain valid claims", nil, nil)
 			return
 		}
 
@@ -46,7 +50,7 @@ func (s *Server) handleWebsocketRequest() http.HandlerFunc {
 		for {
 			msg := new(model.ProxyMessage)
 			if err := c.ReadJSON(msg); err != nil {
-				logrus.Errorf("Failed to receive message from proxy (%s:%s): %s", project, service, err.Error())
+				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Failed to receive message from proxy (%s:%s)", project, service), err, nil)
 				return
 			}
 

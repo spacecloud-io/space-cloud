@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -264,7 +265,7 @@ func TestStoreValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := StoreValue(tt.args.key, tt.args.value, tt.args.state); (err != nil) != tt.wantErr {
+			if err := StoreValue(context.Background(), tt.args.key, tt.args.value, tt.args.state); (err != nil) != tt.wantErr {
 				t.Errorf("StoreValue() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -487,7 +488,7 @@ func TestLoadBool(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := LoadBool(tt.args.key, tt.args.args)
+			got, err := LoadBool(context.Background(), tt.args.key, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LoadBool() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -586,7 +587,7 @@ func TestLoadNumber(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := LoadNumber(tt.args.key, tt.args.args)
+			got, err := LoadNumber(context.Background(), tt.args.key, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("LoadNumber() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1211,7 +1212,7 @@ func TestAdjust(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Adjust(tt.args.obj, tt.args.state); !reflect.DeepEqual(got, tt.want) {
+			if got := Adjust(context.Background(), tt.args.obj, tt.args.state); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Adjust() = %v, want %v", got, tt.want)
 			}
 		})
@@ -1358,7 +1359,7 @@ func TestDeleteValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := DeleteValue(tt.args.key, tt.args.state); (err != nil) != tt.wantErr {
+			if err := DeleteValue(context.Background(), tt.args.key, tt.args.state); (err != nil) != tt.wantErr {
 				t.Errorf("DeleteValue() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

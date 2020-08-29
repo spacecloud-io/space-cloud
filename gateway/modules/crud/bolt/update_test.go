@@ -203,7 +203,7 @@ func TestBolt_Update(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := b.Update(tt.args.ctx, tt.args.col, tt.args.req)
+			got, err := b.Update(context.Background(), tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -215,7 +215,7 @@ func TestBolt_Update(t *testing.T) {
 			if tt.args.req.Operation == utils.Upsert {
 				tt.args.req.Operation = utils.All
 			}
-			readCount, readResult, err := b.Read(tt.args.ctx, tt.args.col, &model.ReadRequest{Operation: tt.args.req.Operation, Find: tt.args.req.Find})
+			readCount, readResult, err := b.Read(context.Background(), tt.args.col, &model.ReadRequest{Operation: tt.args.req.Operation, Find: tt.args.req.Find})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 				return

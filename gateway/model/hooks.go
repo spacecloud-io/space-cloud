@@ -2,15 +2,13 @@ package model
 
 import (
 	"context"
-
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // MetricCrudHook is used to log a database operation
-type MetricCrudHook func(project, dbAlias, col string, count int64, op utils.OperationType)
+type MetricCrudHook func(project, dbAlias, col string, count int64, op OperationType)
 
 // MetricFileHook is used to log a file operation
-type MetricFileHook func(project, storeType string, op utils.OperationType)
+type MetricFileHook func(project, storeType string, op OperationType)
 
 // MetricFunctionHook is used to log a function operation
 type MetricFunctionHook func(project, service, function string)

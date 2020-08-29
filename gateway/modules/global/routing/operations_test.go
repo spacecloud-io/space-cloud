@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
@@ -58,7 +60,7 @@ func TestRouting_DeleteProjectRoutes(t *testing.T) {
 			}
 			r.DeleteProjectRoutes(tt.args.project)
 			if !reflect.DeepEqual(tt.want, tt.fields.routes) {
-				log.Println("Routing.deleteProjectRoutes()")
+				helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Routing.deleteProjectRoutes()", nil)
 
 				a, _ := json.MarshalIndent(tt.fields.routes, "", " ")
 				log.Printf("got= %s", string(a))
@@ -114,7 +116,7 @@ func TestRouting_SetProjectRoutes(t *testing.T) {
 			}
 			_ = r.SetProjectRoutes(tt.args.project, tt.args.routes)
 			if !reflect.DeepEqual(tt.fields.routes, tt.want) {
-				log.Println("Routing.addProjectRoutes()")
+				helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Routing.addProjectRoutes()", nil)
 
 				a, _ := json.MarshalIndent(tt.fields.routes, "", " ")
 				log.Printf("got= %s", string(a))

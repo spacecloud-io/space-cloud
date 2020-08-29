@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"reflect"
 	"testing"
 )
@@ -63,7 +64,7 @@ func TestRoute_SelectTarget(t *testing.T) {
 				Source:  tt.fields.Source,
 				Targets: tt.fields.Targets,
 			}
-			got, err := r.SelectTarget(tt.args.weight)
+			got, err := r.SelectTarget(context.Background(), tt.args.weight)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SelectTarget() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -1,9 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
@@ -11,18 +12,7 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/modules/secrets"
 )
 
-const (
-	loglevelDebug = "debug"
-	loglevelInfo  = "info"
-	logLevelError = "error"
-)
-
 func main() {
-
-	// Setup logrus
-	logrus.SetFormatter(&logrus.TextFormatter{})
-	logrus.SetOutput(os.Stdout)
-
 	app := cli.NewApp()
 	app.Name = "runner"
 	app.Version = model.Version
@@ -78,7 +68,13 @@ func main() {
 					Name:   "log-level",
 					EnvVar: "LOG_LEVEL",
 					Usage:  "Set the log level [debug | info | error]",
-					Value:  loglevelInfo,
+					Value:  helpers.LogLevelInfo,
+				},
+				cli.StringFlag{
+					Name:   "log-format",
+					EnvVar: "LOG_FORMAT",
+					Usage:  "Set the log format [json | console]",
+					Value:  helpers.LogFormatJSON,
 				},
 
 				// JWT config
@@ -125,6 +121,6 @@ func main() {
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
-		logrus.Fatalln("Failed to start runner:", err)
+		helpers.Logger.LogFatal(helpers.GetInternalRequestID(), fmt.Sprintf("Failed to start runner: %v", err), nil)
 	}
 }

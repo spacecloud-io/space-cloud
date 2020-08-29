@@ -20,13 +20,13 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		return
 	}
 
-	timeout, err := getFuncTimeout(field, store)
+	timeout, err := getFuncTimeout(ctx, field, store)
 	if err != nil {
 		cb(nil, err)
 		return
 	}
 
-	params, err := getFuncParams(field, store)
+	params, err := getFuncParams(ctx, field, store)
 	if err != nil {
 		cb(nil, err)
 		return
@@ -43,7 +43,7 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		defer cancel()
 
 		_, result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, reqParams, params)
-		_ = graph.auth.PostProcessMethod(actions, result)
+		_ = graph.auth.PostProcessMethod(ctx, actions, result)
 		cb(result, err)
 	}()
 }
@@ -77,7 +77,7 @@ func getFuncName(field *ast.Field) (string, error) {
 	return field.Name.Value, nil
 }
 
-func getFuncTimeout(field *ast.Field, store utils.M) (int, error) {
+func getFuncTimeout(ctx context.Context, field *ast.Field, store utils.M) (int, error) {
 	if len(field.Directives[0].Arguments) > 0 {
 		for _, v := range field.Directives[0].Arguments {
 			if v.Name.Value == "timeout" {
@@ -97,7 +97,7 @@ func getFuncTimeout(field *ast.Field, store utils.M) (int, error) {
 	return 5, nil
 }
 
-func getFuncParams(field *ast.Field, store utils.M) (map[string]interface{}, error) {
+func getFuncParams(ctx context.Context, field *ast.Field, store utils.M) (map[string]interface{}, error) {
 	obj := make(map[string]interface{}, len(field.Arguments))
 
 	for _, v := range field.Arguments {

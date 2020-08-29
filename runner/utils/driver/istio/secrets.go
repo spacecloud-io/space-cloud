@@ -7,27 +7,26 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	v1 "k8s.io/api/core/v1"
 	kubeErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
-	"github.com/spaceuptech/space-cloud/runner/utils"
 )
 
 // CreateSecret is used to upsert secret
 func (i *Istio) CreateSecret(ctx context.Context, projectID string, secretObj *model.Secret) error {
 	// check whether the oldSecret type is correct!
 	if secretObj.Type != model.FileType && secretObj.Type != model.EnvType && secretObj.Type != model.DockerType {
-		return fmt.Errorf("invalid oldSecret type (%s) provided", secretObj.Type)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid old secret type (%s) provided", secretObj.Type), nil, nil)
 	}
 
 	oldSecret, err := i.kube.CoreV1().Secrets(projectID).Get(ctx, secretObj.ID, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a new Secret
-		logrus.Debugf("Creating secret (%s)", secretObj.ID)
-		newSecret, err := generateSecret(projectID, secretObj)
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Creating secret (%s)", secretObj.ID), nil)
+		newSecret, err := generateSecret(ctx, projectID, secretObj)
 		if err != nil {
 			return err
 		}
@@ -37,20 +36,19 @@ func (i *Istio) CreateSecret(ctx context.Context, projectID string, secretObj *m
 
 	} else if err == nil {
 		// oldSecret already exists...update it!
-		logrus.Debugf("Updating secret (%s)", secretObj.ID)
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Updating secret (%s)", secretObj.ID), nil)
 		oldSecretType := oldSecret.Annotations["secretType"]
 		if oldSecret.Annotations["secretType"] != secretObj.Type {
-			return utils.LogError(fmt.Sprintf("Secret type mismatch. Wanted - %s; Got - %s", oldSecretType, secretObj.Type), "secrets", "apply", nil)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Secret type mismatch. Wanted - %s; Got - %s", oldSecretType, secretObj.Type), nil, nil)
 		}
-		newSecret, err := generateSecret(projectID, secretObj)
+		newSecret, err := generateSecret(ctx, projectID, secretObj)
 		if err != nil {
 			return err
 		}
 		_, err = i.kube.CoreV1().Secrets(projectID).Update(ctx, newSecret, metav1.UpdateOptions{})
 		return err
 	}
-	logrus.Errorf("Failed to create secret (%s) - %s", secretObj.ID, err)
-	return err
+	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Failed to create secret (%s)", secretObj.ID), err, nil)
 }
 
 // ListSecrets lists all the secrets in the provided name-space!
@@ -58,8 +56,7 @@ func (i *Istio) ListSecrets(ctx context.Context, projectID string) ([]*model.Sec
 	// List all secrets
 	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).List(ctx, metav1.ListOptions{LabelSelector: "app=space-cloud"})
 	if err != nil {
-		logrus.Errorf("Failed to fetch list of secrets - %s", err)
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to fetch list of secrets", err, nil)
 	}
 	listOfSecrets := make([]*model.Secret, len(kubeSecret.Items))
 
@@ -91,15 +88,13 @@ func (i *Istio) DeleteSecret(ctx context.Context, projectID string, secretName s
 	if kubeErrors.IsNotFound(err) || err == nil {
 		return nil
 	}
-	logrus.Errorf("Failed to delete secret (%s) - %s", secretName, err)
-	return err
+	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Failed to delete secret (%s)", secretName), err, nil)
 }
 
 // SetFileSecretRootPath is used to set the file secret root path
 func (i *Istio) SetFileSecretRootPath(ctx context.Context, projectID string, secretName, rootPath string) error {
 	if secretName == "" || rootPath == "" {
-		logrus.Errorf("empty secret name or root path provided")
-		return fmt.Errorf("empty secret name or root path provided got (%s,%s)", secretName, rootPath)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Empty secret name (%s) or root path (%s) provided", secretName, rootPath), nil, nil)
 	}
 	// Get secret and then check type
 	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(ctx, secretName, metav1.GetOptions{})
@@ -110,11 +105,11 @@ func (i *Istio) SetFileSecretRootPath(ctx context.Context, projectID string, sec
 	// update root path
 	switch kubeSecret.Type {
 	case v1.SecretTypeDockerConfigJson:
-		return fmt.Errorf("set root path operation cannot be performed on secrets with type docker")
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "set root path operation cannot be performed on secrets with type docker", nil, nil)
 	case v1.SecretTypeOpaque:
 		kubeSecret.Annotations["rootPath"] = rootPath
 	default:
-		return fmt.Errorf("invalid secret type - %s", kubeSecret.Type)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid secret type - %s", kubeSecret.Type), nil, nil)
 	}
 
 	// Update the secret
@@ -125,8 +120,7 @@ func (i *Istio) SetFileSecretRootPath(ctx context.Context, projectID string, sec
 // SetKey adds a new secret key-value pair
 func (i *Istio) SetKey(ctx context.Context, projectID string, secretName string, secretKey string, secretValObj *model.SecretValue) error {
 	if secretName == "" || secretValObj.Value == "" {
-		logrus.Errorf("Empty key/value provided. Key not set")
-		return fmt.Errorf("key/value not provided; got (%s,%s)", secretName, secretValObj.Value)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("key/value not provided; got (%s,%s)", secretName, secretValObj.Value), nil, nil)
 	}
 
 	// Get secret and then check type
@@ -138,14 +132,14 @@ func (i *Istio) SetKey(ctx context.Context, projectID string, secretName string,
 		// Add secret key-value
 		switch kubeSecret.Type {
 		case v1.SecretTypeDockerConfigJson:
-			return fmt.Errorf("set key operation cannot be performed on secrets with type docker")
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "set key operation cannot be performed on secrets with type docker", nil, nil)
 		case v1.SecretTypeOpaque:
 			if kubeSecret.Data == nil {
 				kubeSecret.Data = make(map[string][]byte, 1)
 			}
 			kubeSecret.Data[secretKey] = []byte(secretValObj.Value)
 		default:
-			return fmt.Errorf("invalid secret type - %s", kubeSecret.Type)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid secret type - %s", kubeSecret.Type), nil, nil)
 		}
 
 		// Update the secret
@@ -161,16 +155,16 @@ func (i *Istio) DeleteKey(ctx context.Context, projectID string, secretName stri
 	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(ctx, secretName, metav1.GetOptions{})
 
 	if kubeErrors.IsNotFound(err) {
-		return fmt.Errorf("secret with name (%s) does not exist- %s", secretName, err)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("secret with name (%s) does not exist", secretName), err, nil)
 	} else if err == nil {
 		// Check the type of secret (docker/opaque)
 		switch kubeSecret.Type {
 		case v1.SecretTypeDockerConfigJson:
-			return fmt.Errorf("delete key operation cannot be performed on secrets with type docker")
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "delete key operation cannot be performed on secrets with type docker", nil, nil)
 		case v1.SecretTypeOpaque:
 			delete(kubeSecret.Data, secretKey)
 		default:
-			return fmt.Errorf("invalid secret type - %s", kubeSecret.Type)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid secret type - %s", kubeSecret.Type), nil, nil)
 		}
 
 		// Update the secret
@@ -181,7 +175,7 @@ func (i *Istio) DeleteKey(ctx context.Context, projectID string, secretName stri
 }
 
 // helper function
-func generateSecret(projectID string, secret *model.Secret) (*v1.Secret, error) {
+func generateSecret(ctx context.Context, projectID string, secret *model.Secret) (*v1.Secret, error) {
 	encodedData := map[string][]byte{}
 	var typeOfSecret v1.SecretType
 
@@ -215,7 +209,7 @@ func generateSecret(projectID string, secret *model.Secret) (*v1.Secret, error) 
 		data, _ := json.Marshal(dockerJSON)
 		encodedData[v1.DockerConfigJsonKey] = []byte(data)
 	default:
-		return nil, fmt.Errorf("invalid secret type (%s) provided", secret.Type)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid secret type (%s) provided", secret.Type), nil, nil)
 	}
 	return &v1.Secret{
 		Type: typeOfSecret,

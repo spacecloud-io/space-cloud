@@ -1,11 +1,13 @@
 package routing
 
 import (
+	"context"
 	"fmt"
 	"text/template"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 )
 
@@ -17,7 +19,7 @@ func (r *Routing) createGoTemplate(kind, project, id, tmpl string) error {
 	t = t.Funcs(tmpl2.CreateGoFuncMaps(nil))
 	val, err := t.Parse(tmpl)
 	if err != nil {
-		return utils.LogError("Invalid golang template provided", module, "go-template", err)
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Invalid golang template provided", err, nil)
 	}
 
 	r.goTemplates[key] = val
@@ -28,7 +30,7 @@ func getGoTemplateKey(kind, project, id string) string {
 	return fmt.Sprintf("%s---%s---%s", project, id, kind)
 }
 
-func (r *Routing) adjustBody(kind, project, token string, route *config.Route, auth, params interface{}) (interface{}, error) {
+func (r *Routing) adjustBody(ctx context.Context, kind, project, token string, route *config.Route, auth, params interface{}) (interface{}, error) {
 	var req interface{}
 	var err error
 
@@ -41,7 +43,7 @@ func (r *Routing) adjustBody(kind, project, token string, route *config.Route, a
 			}
 		}
 	default:
-		utils.LogWarn(fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", route.Modify.Tmpl), module, "adjust-req")
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", route.Modify.Tmpl), map[string]interface{}{"project": project, "kind": kind, "route": route.ID})
 		return params, nil
 	}
 

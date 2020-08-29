@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
@@ -30,28 +31,25 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		_ = json.NewDecoder(r.Body).Decode(value)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "ingress-route", "modify", map[string]string{"project": projectID, "id": id})
-		if err != nil {
-			logrus.Errorf("error handling set project route in handlers unable to validate token got error message - %v", err)
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
-
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		reqParams.Payload = value
-		if status, err := syncMan.SetProjectRoute(ctx, projectID, id, value, reqParams); err != nil {
-			logrus.Errorf("error handling set project route in handlers unable to add route in project config got error message - %v", err)
-			_ = utils.SendErrorResponse(w, status, err.Error())
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "ingress-route", "modify", map[string]string{"project": projectID, "id": id})
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling set project route in handlers unable to validate token got error message", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		utils.ExtractRequestParams(r, &reqParams, value)
+
+		if status, err := syncMan.SetProjectRoute(ctx, projectID, id, value, reqParams); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling set project route in handlers unable to add route in project config got error message", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -71,25 +69,24 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			routeID = routesQuery[0]
 		}
 
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "ingress-route", "read", map[string]string{"project": projectID, "id": routeID})
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "ingress-route", "read", map[string]string{"project": projectID, "id": routeID})
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
+		utils.ExtractRequestParams(r, &reqParams, nil)
+
 		status, routes, err := syncMan.GetIngressRouting(ctx, projectID, routeID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: routes})
+		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, model.Response{Result: routes})
 	}
 }
 
@@ -105,26 +102,25 @@ func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 		defer utils.CloseTheCloser(r.Body)
 
-		reqParams, err := adminMan.IsTokenValid(token, "ingress-route", "modify", map[string]string{"project": projectID, "id": routeID})
-		if err != nil {
-			logrus.Errorf("error handling delete project route in handlers unable to validate token got error message - %v", err)
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		if status, err := syncMan.DeleteProjectRoute(ctx, projectID, routeID, reqParams); err != nil {
-			logrus.Errorf("error handling delete project route in handlers unable to delete route in project config got error message - %v", err)
-			_ = utils.SendErrorResponse(w, status, err.Error())
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "ingress-route", "modify", map[string]string{"project": projectID, "id": routeID})
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling delete project route in handlers unable to validate token got error message", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		utils.ExtractRequestParams(r, &reqParams, nil)
+
+		if status, err := syncMan.DeleteProjectRoute(ctx, projectID, routeID, reqParams); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling delete project route in handlers unable to delete route in project config got error message", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -139,30 +135,26 @@ func HandleSetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 		_ = json.NewDecoder(r.Body).Decode(config)
 		defer utils.CloseTheCloser(r.Body)
 
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
+
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r), "ingress-global", "modify", map[string]string{"project": projectID})
+		reqParams, err := adminMan.IsTokenValid(ctx, utils.GetTokenFromHeader(r), "ingress-global", "modify", map[string]string{"project": projectID})
 		if err != nil {
-			logrus.Errorf("error handling delete project route in handlers unable to validate token got error message - %v", err)
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling delete project route in handlers unable to validate token got error message", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		// Create a new context object
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		utils.ExtractRequestParams(r, &reqParams, config)
 
-		// Set the config
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		reqParams.Payload = config
 		if status, err := syncMan.SetGlobalRouteConfig(ctx, projectID, config, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
 		// Send an okay response
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -175,29 +167,26 @@ func HandleGetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 
 		defer utils.CloseTheCloser(r.Body)
 
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
+
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r), "ingress-global", "read", map[string]string{"project": projectID})
+		reqParams, err := adminMan.IsTokenValid(ctx, utils.GetTokenFromHeader(r), "ingress-global", "read", map[string]string{"project": projectID})
 		if err != nil {
-			logrus.Errorf("error handling delete project route in handlers unable to validate token got error message - %v", err)
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling delete project route in handlers unable to validate token got error message", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		// Create a new context object
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		utils.ExtractRequestParams(r, &reqParams, nil)
 
-		// Get the config from state
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
 		status, c, err := syncMan.GetGlobalRouteConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
 		// Send the repsonse back
-		_ = utils.SendResponse(w, status, model.Response{Result: []interface{}{c}})
+		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: []interface{}{c}})
 	}
 }

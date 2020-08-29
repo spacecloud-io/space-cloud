@@ -1,7 +1,7 @@
 package modules
 
 import (
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -21,55 +21,55 @@ func (m *Modules) SetProjectConfig(c *config.Project) error {
 		}
 	}
 
-	logrus.Debugln("Setting config of db module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of db module", nil)
 	if err := m.db.SetConfig(p.ID, p.Modules.Crud); err != nil {
-		logrus.Errorf("error setting db module config - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set db module config", err, nil)
 	}
 
-	logrus.Debugln("Setting config of schema module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of schema module", nil)
 	if err := m.schema.SetConfig(p.Modules.Crud, p.ID); err != nil {
-		logrus.Errorf("error setting schema module config - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set schema module config", err, nil)
 	}
 
-	logrus.Debugln("Setting config of auth module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of auth module", nil)
 	if err := m.auth.SetConfig(p.ID, p.SecretSource, p.Secrets, p.AESKey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
-		logrus.Errorf("error setting auth module config - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set auth module config", err, nil)
 	}
 
-	logrus.Debugln("Setting config of functions module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of functions module", nil)
 	if err := m.functions.SetConfig(p.ID, p.Modules.Services); err != nil {
-		logrus.Errorf("error setting remote services module config - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set remote services module config", err, nil)
 	}
 
-	logrus.Debugln("Setting config of user management module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of user management module", nil)
 	m.user.SetConfig(p.Modules.Auth)
 
-	logrus.Debugln("Setting config of file storage module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of file storage module", nil)
 	if err := m.file.SetConfig(p.ID, p.Modules.FileStore); err != nil {
-		logrus.Errorf("error setting filestore module config - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set filestore module config", err, nil)
 	}
 
-	logrus.Debugln("Setting config of eventing module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of eventing module", nil)
 	if err := m.eventing.SetConfig(p.ID, &p.Modules.Eventing); err != nil {
-		logrus.Errorf("error setting eventing module config - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set eventing module config", err, nil)
 	}
 
-	logrus.Debugln("Setting config of realtime module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of realtime module", nil)
 	if err := m.realtime.SetConfig(p.ID, p.Modules.Crud); err != nil {
-		logrus.Errorf("error setting realtime module config - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set realtime module config", err, nil)
 	}
 
-	logrus.Debugln("Setting config of graphql module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of graphql module", nil)
 	m.graphql.SetConfig(p.ID)
 
-	logrus.Debugln("Setting config of lets encrypt module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of lets encrypt module", nil)
 	if err := m.GlobalMods.LetsEncrypt().SetProjectDomains(p.ID, p.Modules.LetsEncrypt); err != nil {
-		logrus.Errorf("error setting letsencypt module config - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set letsencypt module config", err, nil)
 	}
 
-	logrus.Debugln("Setting config of ingress routing module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of ingress routing module", nil)
 	if err := m.GlobalMods.Routing().SetProjectRoutes(p.ID, p.Modules.Routes); err != nil {
-		logrus.Errorf("error setting routing module config - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set routing module config", err, nil)
 	}
 	m.GlobalMods.Routing().SetGlobalConfig(p.Modules.GlobalRoutes)
 
@@ -84,55 +84,50 @@ func (m *Modules) SetGlobalConfig(projectID, secretSource string, secrets []*con
 
 // SetCrudConfig sets the config of db, auth, schema and realtime modules
 func (m *Modules) SetCrudConfig(projectID string, crudConfig config.Crud) error {
-	logrus.Debugln("Setting config of db module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of db module", nil)
 	if err := m.db.SetConfig(projectID, crudConfig); err != nil {
-		logrus.Errorf("error setting db module config - %s", err.Error())
-		return err
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set db module config", err, nil)
 	}
-	logrus.Debugln("Setting config of auth module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of auth module", nil)
 	m.auth.SetCrudConfig(projectID, crudConfig)
 
-	logrus.Debugln("Setting config of schema module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of schema module", nil)
 	if err := m.schema.SetConfig(crudConfig, projectID); err != nil {
-		logrus.Errorf("error setting schema module config - %s", err.Error())
-		return err
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set schema module config", err, nil)
 	}
 	if err := m.realtime.SetConfig(projectID, crudConfig); err != nil {
-		logrus.Errorf("error setting realtime module config - %s", err.Error())
-		return err
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set realtime module config", err, nil)
 	}
-	logrus.Debugln("Setting config of file storage module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of file storage module", nil)
 	return nil
 }
 
 // SetServicesConfig sets the config of auth and functions modules
 func (m *Modules) SetServicesConfig(projectID string, services *config.ServicesModule) error {
-	logrus.Debugln("Setting config of auth module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of auth module", nil)
 	m.auth.SetServicesConfig(projectID, services)
 
-	logrus.Debugln("Setting config of remote services module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of remote services module", nil)
 	return m.functions.SetConfig(projectID, services)
 }
 
 // SetFileStoreConfig sets the config of auth and filestore modules
 func (m *Modules) SetFileStoreConfig(projectID string, fileStore *config.FileStore) error {
-	logrus.Debugln("Setting config of auth module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of auth module", nil)
 	m.auth.SetFileStoreConfig(projectID, fileStore)
 
-	logrus.Debugln("Setting config of file storage module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of file storage module", nil)
 	if err := m.file.SetConfig(projectID, fileStore); err != nil {
-		logrus.Errorf("error setting filestore module config - %s", err.Error())
-		return err
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set filestore module config", err, nil)
 	}
 	return nil
 }
 
 // SetEventingConfig sets the config of eventing module
 func (m *Modules) SetEventingConfig(projectID string, eventingConfig *config.Eventing) error {
-	logrus.Debugln("Setting config of eventing module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of eventing module", nil)
 	if err := m.eventing.SetConfig(projectID, eventingConfig); err != nil {
-		logrus.Errorf("error setting eventing module config - %s", err.Error())
-		return err
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to set eventing module config", err, nil)
 	}
 	m.auth.SetEventingConfig(eventingConfig.SecurityRules)
 	return nil
@@ -140,7 +135,7 @@ func (m *Modules) SetEventingConfig(projectID string, eventingConfig *config.Eve
 
 // SetUsermanConfig set the config of the userman module
 func (m *Modules) SetUsermanConfig(projectID string, auth config.Auth) error {
-	logrus.Debugln("Setting config of user management module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Setting config of user management module", nil)
 	m.user.SetConfig(auth)
 	return nil
 }

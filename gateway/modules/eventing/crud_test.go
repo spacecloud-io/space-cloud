@@ -80,6 +80,7 @@ func TestModule_processCreateDocs(t *testing.T) {
 			want: []*model.EventDocument{{BatchID: "batchid", Type: utils.EventDBCreate, RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: string(data), Status: utils.EventStatusIntent}},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -91,7 +92,7 @@ func TestModule_processCreateDocs(t *testing.T) {
 
 			tt.m.schema = &mockSchema
 
-			got := tt.m.processCreateDocs(tt.args.token, tt.args.batchID, tt.args.dbAlias, tt.args.col, tt.args.rows)
+			got := tt.m.processCreateDocs(context.Background(), tt.args.token, tt.args.batchID, tt.args.dbAlias, tt.args.col, tt.args.rows)
 			if got != nil && !reflect.DeepEqual(got, []*model.EventDocument{}) {
 				if !reflect.DeepEqual(got[0].BatchID, tt.want[0].BatchID) {
 					t.Errorf("Module.processCreateDocs() = %v, want %v", got[0].BatchID, tt.want[0].BatchID)
@@ -183,6 +184,7 @@ func TestModule_processUpdateDeleteHook(t *testing.T) {
 			want1: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -194,7 +196,7 @@ func TestModule_processUpdateDeleteHook(t *testing.T) {
 
 			tt.m.schema = &mockSchema
 
-			got, got1 := tt.m.processUpdateDeleteHook(tt.args.token, tt.args.eventType, tt.args.batchID, tt.args.dbAlias, tt.args.col, tt.args.find)
+			got, got1 := tt.m.processUpdateDeleteHook(context.Background(), tt.args.token, tt.args.eventType, tt.args.batchID, tt.args.dbAlias, tt.args.col, tt.args.find)
 			if got != nil && !reflect.DeepEqual(got, []*model.EventDocument{}) {
 				if !reflect.DeepEqual(got[0].BatchID, tt.want[0].BatchID) {
 					t.Errorf("Module.processCreateDocs() = %v, want %v", got[0].BatchID, tt.want[0].BatchID)
@@ -452,6 +454,7 @@ func TestModule_HookStage(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -478,7 +481,7 @@ func TestModule_HookStage(t *testing.T) {
 			tt.m.adminMan = &mockAdmin
 			tt.m.auth = &mockAuth
 
-			tt.m.HookStage(tt.args.ctx, tt.args.intent, tt.args.err)
+			tt.m.HookStage(context.Background(), tt.args.intent, tt.args.err)
 
 			mockCrud.AssertExpectations(t)
 			mockSyncman.AssertExpectations(t)
@@ -577,6 +580,7 @@ func TestModule_hookDBUpdateDeleteIntent(t *testing.T) {
 			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: "evType", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":null,"find":{}}`, Status: "intent"}}},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -598,7 +602,7 @@ func TestModule_hookDBUpdateDeleteIntent(t *testing.T) {
 			tt.m.schema = &mockSchema
 			tt.m.crud = &mockCrud
 
-			got, err := tt.m.hookDBUpdateDeleteIntent(tt.args.ctx, tt.args.eventType, tt.args.dbAlias, tt.args.col, tt.args.find)
+			got, err := tt.m.hookDBUpdateDeleteIntent(context.Background(), tt.args.eventType, tt.args.dbAlias, tt.args.col, tt.args.find)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.hookDBUpdateDeleteIntent() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -677,6 +681,7 @@ func TestModule_HookDBDeleteIntent(t *testing.T) {
 			want: &model.EventIntent{Invalid: true},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -688,7 +693,7 @@ func TestModule_HookDBDeleteIntent(t *testing.T) {
 
 			tt.m.syncMan = &mockSyncman
 
-			got, err := tt.m.HookDBDeleteIntent(tt.args.ctx, tt.args.dbAlias, tt.args.col, tt.args.req)
+			got, err := tt.m.HookDBDeleteIntent(context.Background(), tt.args.dbAlias, tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.HookDBDeleteIntent() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -739,6 +744,7 @@ func TestModule_HookDBUpdateIntent(t *testing.T) {
 			want: &model.EventIntent{Invalid: true},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -750,7 +756,7 @@ func TestModule_HookDBUpdateIntent(t *testing.T) {
 
 			tt.m.syncMan = &mockSyncman
 
-			got, err := tt.m.HookDBUpdateIntent(tt.args.ctx, tt.args.dbAlias, tt.args.col, tt.args.req)
+			got, err := tt.m.HookDBUpdateIntent(context.Background(), tt.args.dbAlias, tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.HookDBUpdateIntent() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -855,6 +861,7 @@ func TestModule_HookDBCreateIntent(t *testing.T) {
 			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: "DB_INSERT", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":{"key":"value"},"find":{}}`, Status: "intent"}}},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -876,7 +883,7 @@ func TestModule_HookDBCreateIntent(t *testing.T) {
 			tt.m.schema = &mockSchema
 			tt.m.crud = &mockCrud
 
-			got, err := tt.m.HookDBCreateIntent(tt.args.ctx, tt.args.dbAlias, tt.args.col, tt.args.req)
+			got, err := tt.m.HookDBCreateIntent(context.Background(), tt.args.dbAlias, tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.HookDBCreateIntent() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1071,6 +1078,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: "DB_DELETE", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":null,"find":{}}`, Status: "intent"}}},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -1094,7 +1102,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 			tt.m.schema = &mockSchema
 			tt.m.crud = &mockCrud
 
-			got, err := tt.m.HookDBBatchIntent(tt.args.ctx, tt.args.dbAlias, tt.args.req)
+			got, err := tt.m.HookDBBatchIntent(context.Background(), tt.args.dbAlias, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.HookDBBatchIntent() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -1,6 +1,8 @@
 package syncman
 
 import (
+	context2 "context"
+
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/net/context"
 
@@ -14,7 +16,7 @@ type mockAdminSyncmanInterface struct {
 	mock.Mock
 }
 
-func (m *mockAdminSyncmanInterface) IsTokenValid(token, resource, op string, attr map[string]string) (model.RequestParams, error) {
+func (m *mockAdminSyncmanInterface) IsTokenValid(ctx context2.Context, token, resource, op string, attr map[string]string) (model.RequestParams, error) {
 	c := m.Called(token, resource, op, attr)
 	return c.Get(0).(model.RequestParams), c.Error(1)
 }
@@ -152,7 +154,7 @@ func (m *mockSchemaEventingInterface) Parser(crud config.Crud) (model.Type, erro
 	return nil, c.Error(1)
 }
 
-func (m *mockSchemaEventingInterface) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+func (m *mockSchemaEventingInterface) SchemaValidator(ctx context2.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 	c := m.Called(col, collectionFields, doc)
 	return nil, c.Error(1)
 }

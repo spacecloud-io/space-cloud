@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestSQL_CreateDatabaseIfNotExist(t *testing.T) {
@@ -36,7 +36,7 @@ func TestSQL_CreateDatabaseIfNotExist(t *testing.T) {
 		},
 	}
 
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("CreateDatabaseIfNotExist() Couldn't establishing connection with database", dbType)
 	}
@@ -92,14 +92,14 @@ func TestSQL_GetConnectionState(t *testing.T) {
 		},
 	}
 
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("GetConnectionState() Couldn't establishing connection with database", dbType)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := db.GetConnectionState(tt.args.ctx); got != tt.want {
+			if got := db.GetConnectionState(ctx); got != tt.want {
 				t.Errorf("GetConnectionState() = %v, want %v", got, tt.want)
 			}
 		})
@@ -132,7 +132,7 @@ func TestSQL_RawBatch(t *testing.T) {
 		},
 	}
 
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("RawBatch() Couldn't establishing connection with database", dbType)
 	}
@@ -155,7 +155,7 @@ func TestSQL_RawBatch(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("RawBatch() Scanning error", err)
 				}
-				mysqlTypeCheck(utils.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 
@@ -199,17 +199,17 @@ func TestSQL_RawQuery(t *testing.T) {
 		},
 	}
 
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("RawQuery() Couldn't establishing connection with database", dbType)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if utils.DBType(*dbType) == utils.Postgres {
+			if model.DBType(*dbType) == model.Postgres {
 				tt.args.query = db.generateQueryPostgres(tt.args.query)
 			}
-			if utils.DBType(*dbType) == utils.SQLServer {
+			if model.DBType(*dbType) == model.SQLServer {
 				tt.args.query = db.generateQuerySQLServer(db.generateQueryPostgres(tt.args.query))
 			}
 			got, got1, err := db.RawQuery(tt.args.ctx, tt.args.query, tt.args.args)
@@ -236,7 +236,7 @@ func TestSQL_RawQuery(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("RawQuery() Scanning error", err)
 				}
-				mysqlTypeCheck(utils.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if !reflect.DeepEqual(tt.wantResult, readResult) {

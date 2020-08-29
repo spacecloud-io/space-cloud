@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Manager syncs the project config between folders
@@ -61,7 +62,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 	case "etcd":
 		s, err = NewETCDStore(nodeID, clusterID, advertiseAddr)
 	default:
-		return nil, fmt.Errorf("couldnt initialize syncaman, unknown store type (%v) provided", storeType)
+		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Cannot initialize syncaman as invalid store type (%v) provided", storeType), nil, nil)
 	}
 
 	if err != nil {
@@ -82,9 +83,9 @@ func (s *Manager) Start(port int) error {
 
 	adminConfig, err := s.store.GetAdminConfig(context.Background())
 	if err != nil {
-		return utils.LogError("Unable to fetch initial copy of admin config", "syncman", "Start", err)
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to fetch initial copy of admin config", err, map[string]interface{}{})
 	}
-	utils.LogDebug("Successfully loaded initial copy of config file", "syncman", "Start", nil)
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Successfully loaded initial copy of config file", map[string]interface{}{})
 	s.globalModules.SetMetricsConfig(adminConfig.ClusterConfig.EnableTelemetry)
 	if adminConfig.ClusterConfig.LetsEncryptEmail != "" {
 		s.modules.LetsEncrypt().SetLetsEncryptEmail(adminConfig.ClusterConfig.LetsEncryptEmail)
@@ -96,7 +97,7 @@ func (s *Manager) Start(port int) error {
 	if err := s.store.WatchProjects(func(projects []*config.Project) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
-		utils.LogDebug("Updating projects", "syncman", "Start", map[string]interface{}{"projects": projects})
+		helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Updating projects", map[string]interface{}{"projects": projects})
 		for _, p := range s.projectConfig.Projects {
 			doesNotExist := true
 			for _, q := range projects {
@@ -108,7 +109,7 @@ func (s *Manager) Start(port int) error {
 			if doesNotExist {
 				err := s.store.DeleteProject(context.Background(), p.ID)
 				if err != nil {
-					_ = utils.LogError("Unable to delete project", "syncman", "Start", err)
+					_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to delete project", err, map[string]interface{}{"project": p.ID})
 				}
 				s.modules.Delete(p.ID)
 			}
@@ -133,9 +134,9 @@ func (s *Manager) Start(port int) error {
 		s.projectConfig.Admin = cluster
 		s.lock.Unlock()
 
-		utils.LogDebug("Updating admin config", "syncman", "Start", map[string]interface{}{"admin config": clusters})
+		helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Updating admin config", nil)
 		if err := s.adminMan.SetConfig(cluster); err != nil {
-			_ = utils.LogError("Unable to apply admin config", "syncman", "Start", err)
+			_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
 			return
 		}
 		s.globalModules.SetMetricsConfig(cluster.ClusterConfig.EnableTelemetry)
@@ -149,7 +150,7 @@ func (s *Manager) Start(port int) error {
 	if err := s.store.WatchServices(func(services scServices) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
-		utils.LogDebug("Updating services", "syncman", "Start", map[string]interface{}{"services": services})
+		helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Updating services", map[string]interface{}{"services": services})
 
 		s.services = services
 	}); err != nil {

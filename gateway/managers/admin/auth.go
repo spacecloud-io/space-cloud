@@ -1,10 +1,11 @@
 package admin
 
 import (
-	"errors"
+	"context"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/spaceuptech/helpers"
 )
 
 func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error) {
@@ -26,12 +27,12 @@ func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error
 	return tokenString, nil
 }
 
-func (m *Manager) parseToken(token string) (map[string]interface{}, error) {
+func (m *Manager) parseToken(ctx context.Context, token string) (map[string]interface{}, error) {
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, errors.New("invalid signing method type")
+			return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Invalid signing method type", nil, nil)
 		}
 
 		return []byte(m.user.Secret), nil
@@ -50,9 +51,9 @@ func (m *Manager) parseToken(token string) (map[string]interface{}, error) {
 		for key, val := range claims {
 			obj[key] = val
 		}
-
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "admin"})
 		return obj, nil
 	}
 
-	return nil, errors.New("Admin: JWT token could not be verified")
+	return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Admin: JWT token could not be verified", nil, nil)
 }

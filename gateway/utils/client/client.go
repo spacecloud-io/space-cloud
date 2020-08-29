@@ -13,7 +13,7 @@ import (
 type Client interface {
 	Write(res *model.Message)
 	Read(cb DataCallback)
-	RoutineWrite()
+	RoutineWrite(ctx context.Context)
 	ClientID() string
 	Close()
 	Context() context.Context

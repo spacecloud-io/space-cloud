@@ -12,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 var dbType = flag.String("db_type", "", "db_type of test case to be run")
@@ -108,7 +108,7 @@ func TestMain(m *testing.M) {
 		return
 	}
 
-	if utils.DBType(*dbType) == utils.SQLServer {
+	if model.DBType(*dbType) == model.SQLServer {
 		companiesTable = mssqlCompaniesTable
 		ordersTable = mssqlOrdersTable
 		customerTable = mssqlCustomerTable
@@ -145,7 +145,7 @@ func TestMain(m *testing.M) {
 		log.Printf("Integration test couldn't create required tables in space cloud got status code %v - error (%v)", res.StatusCode, v["error"])
 		return
 	}
-	if utils.DBType(*dbType) == utils.MySQL {
+	if model.DBType(*dbType) == model.MySQL {
 		*connection += "myproject"
 	}
 
@@ -170,30 +170,30 @@ func TestMain(m *testing.M) {
 		return
 	}
 
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
-		log.Println("Create() Couldn't establishing connection with database", dbType)
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't establishing connection with database", dbType)
 		return
 	}
 	// clear data
 
-	switch utils.DBType(*dbType) {
-	case utils.MySQL:
+	switch model.DBType(*dbType) {
+	case model.MySQL:
 		if _, err := db.client.Exec("DROP DATABASE IF EXISTS myproject"); err != nil {
-			log.Println("Create() Couldn't truncate table", err)
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", err)
 		}
-	case utils.Postgres:
+	case model.Postgres:
 		if _, err := db.client.Exec("DROP SCHEMA myproject CASCADE "); err != nil {
-			log.Println("Create() Couldn't truncate table", err)
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", err)
 		}
-	case utils.SQLServer:
+	case model.SQLServer:
 		if _, err := db.client.Exec(`DROP TABLE IF EXISTS myproject.customers;
 											DROP TABLE IF EXISTS myproject.orders;
 											DROP TABLE IF EXISTS myproject.comapnies;
 											DROP TABLE IF EXISTS myproject.raw_batch;
 											DROP TABLE IF EXISTS myproject.raw_query;
 `); err != nil {
-			log.Println("Create() Couldn't truncate table", err)
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", err)
 		}
 
 	}

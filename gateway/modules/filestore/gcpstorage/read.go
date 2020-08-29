@@ -16,7 +16,7 @@ import (
 )
 
 // ListDir lists a directory in GCPStorage
-func (g *GCPStorage) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
+func (g *GCPStorage) ListDir(ctx context.Context, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
 	// path should not start with a backslash
 	path := strings.Trim(req.Path, "/") + "/"
 	if path == "/" {

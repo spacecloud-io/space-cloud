@@ -1,11 +1,13 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // ErrRuleNotFound is thrown when an error is not present in the auth object
@@ -18,17 +20,17 @@ var ErrIncorrectRuleFieldType = errors.New("auth: Incorrect rule field type")
 var ErrIncorrectMatch = errors.New("auth: The two fields do not match")
 
 // FormatError check whether error is provided in config.Rule
-func formatError(rule *config.Rule, err error) error {
+func formatError(ctx context.Context, rule *config.Rule, err error) error {
 	if err == nil {
 		return nil
 	}
 
 	name := rule.Name
 	if name == "" {
-		name = "no name"
+		name = "with no name"
 	}
 
-	_ = utils.LogError(fmt.Sprintf("Rule (%s) of type (%s) failed", name, rule.Rule), "auth", "match", err)
+	_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Rule (%s) of type (%s) failed", name, rule.Rule), err, map[string]interface{}{})
 
 	if rule.Error == "" {
 		return err

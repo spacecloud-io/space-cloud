@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // ApplyProjectConfig creates the config for the project
@@ -17,7 +18,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	defer s.lock.Unlock()
 
 	if !s.adminMan.ValidateProjectSyncOperation(s.projectConfig, project) {
-		return http.StatusUpgradeRequired, fmt.Errorf("upgrade your plan to create more projects")
+		return http.StatusUpgradeRequired, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Upgrade your plan to create more projects", nil, nil)
 	}
 
 	// set default context time
@@ -125,7 +126,7 @@ func (s *Manager) GetProjectConfig(ctx context.Context, projectID string, params
 	if len(v) > 0 || projectID == "*" {
 		return http.StatusOK, v, nil
 	}
-	return http.StatusBadRequest, []interface{}{}, utils.LogError(fmt.Sprintf("Project (%s) not present", projectID), "syncman", "get-projects", nil)
+	return http.StatusBadRequest, []interface{}{}, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Project (%s) not present in config", projectID), nil, nil)
 }
 
 // GetTokenForMissionControl returns the project token for internal use in mission control

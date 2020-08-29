@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -46,13 +48,13 @@ type FileStore interface {
 	CreateFile(req *model.CreateFileRequest, file io.Reader) error
 	CreateDir(req *model.CreateFileRequest) error
 
-	ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error)
+	ListDir(ctx context.Context, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error)
 	ReadFile(path string) (*model.File, error)
 
 	DeleteDir(path string) error
 	DeleteFile(path string) error
 
-	DoesExists(path string) error
+	DoesExists(ctx context.Context, path string) error
 	GetState(ctx context.Context) error
 
 	GetStoreType() utils.FileStoreType
@@ -86,10 +88,10 @@ func (m *Module) SetConfig(project string, conf *config.FileStore) error {
 	if isSecretExists {
 		value, err := m.getSecrets(project, secretName, secretKey)
 		if err != nil {
-			return utils.LogError("cannot get secrets from runner", "filestore", "setConfig", err)
+			return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to fetch secret from runner", err, nil)
 		}
 		if err := setFileSecret(utils.FileStoreType(conf.StoreType), secretKey, value); err != nil {
-			return utils.LogError("cannot set fileStore secrets", "filestore", "setConfig", err)
+			return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to create credential file in gateway", err, nil)
 		}
 	}
 

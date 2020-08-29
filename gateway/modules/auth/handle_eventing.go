@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
@@ -14,7 +16,7 @@ func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token stri
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, err := m.getEventingRule(event.Type)
+	rule, err := m.getEventingRule(ctx, event.Type)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -25,7 +27,7 @@ func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token stri
 
 	var auth map[string]interface{}
 	if rule.Rule != "allow" {
-		auth, err = m.parseToken(token)
+		auth, err = m.parseToken(ctx, token)
 		if err != nil {
 			return model.RequestParams{}, err
 		}
@@ -41,9 +43,9 @@ func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token stri
 	return model.RequestParams{Claims: auth, Resource: "eventing-queue", Op: "access", Attributes: attr}, nil
 }
 
-func (m *Module) getEventingRule(eventType string) (*config.Rule, error) {
+func (m *Module) getEventingRule(ctx context.Context, eventType string) (*config.Rule, error) {
 	if m.eventingRules == nil {
-		return nil, fmt.Errorf("rule not found for given event type (%s)", eventType)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Security rules not initialized for event type (%s)", eventType), nil, nil)
 	}
 	if rule, p := m.eventingRules[eventType]; p {
 		return rule, nil
@@ -51,5 +53,5 @@ func (m *Module) getEventingRule(eventType string) (*config.Rule, error) {
 	if rule, p := m.eventingRules["default"]; p {
 		return rule, nil
 	}
-	return nil, fmt.Errorf("rule not found for given event type (%s)", eventType)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("No security rule provided for event type (%s)", eventType), nil, nil)
 }

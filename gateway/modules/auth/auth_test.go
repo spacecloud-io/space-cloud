@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -43,11 +44,12 @@ func TestIsTokenInternal(t *testing.T) {
 		{testName: "Unsuccessful Test-Signature is Invalid", IsErrExpected: true, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.MKIZkrXy6nUMu5ejqiYKl7EOU1TxEoKTOww-eoQm6Lw"},
 		{testName: "Successful Test Case", IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
 	}
+
 	authModule := Init("1", &crud.Module{}, nil)
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.SetSecrets("", test.secretKeys)
-			err := authModule.IsTokenInternal(test.token)
+			err := authModule.IsTokenInternal(context.Background(), test.token)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got This ", err, "Wanted Error-", test.IsErrExpected)
 			}
@@ -78,7 +80,7 @@ func TestParseToken(t *testing.T) {
 			if err := authModule.SetConfig("default", "", test.secretKeys, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); err != nil {
 				t.Errorf("error setting config of auth module  - %s", err.Error())
 			}
-			tokenClaims, err := authModule.parseToken(test.token)
+			tokenClaims, err := authModule.parseToken(context.Background(), test.token)
 			if (err != nil) != test.IsErrExpected {
 				t.Error(test.name, ": Got:", err, "Wanted Error:", test.IsErrExpected)
 			}

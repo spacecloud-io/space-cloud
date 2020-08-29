@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 
 	"github.com/gorilla/mux"
@@ -32,33 +34,29 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
-		reqParams, err := adminMan.IsTokenValid(token, "remote-service", "modify", map[string]string{"project": projectID, "service": service})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		reqParams.Payload = v
-		if status, err := syncMan.SetService(ctx, projectID, service, &v, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "remote-service", "modify", map[string]string{"project": projectID, "service": service})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		utils.ExtractRequestParams(r, &reqParams, v)
+
+		if status, err := syncMan.SetService(ctx, projectID, service, &v, reqParams); err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
 // HandleGetService returns handler to get services of the project
 func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -72,22 +70,24 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			serviceID = serviceQuery[0]
 		}
 
-		reqParams, err := adminMan.IsTokenValid(token, "remote-service", "read", map[string]string{"project": projectID, "service": serviceID})
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
+
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "remote-service", "read", map[string]string{"project": projectID, "service": serviceID})
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
+		utils.ExtractRequestParams(r, &reqParams, nil)
+
 		status, services, err := syncMan.GetServices(ctx, projectID, serviceID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, status, model.Response{Result: services})
+		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: services})
 	}
 }
 
@@ -105,23 +105,22 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 
 		defer utils.CloseTheCloser(r.Body)
 
-		reqParams, err := adminMan.IsTokenValid(token, "remote-service", "modify", map[string]string{"project": projectID, "service": service})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		if status, err := syncMan.DeleteService(ctx, projectID, service, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "remote-service", "modify", map[string]string{"project": projectID, "service": service})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		utils.ExtractRequestParams(r, &reqParams, nil)
+
+		if status, err := syncMan.DeleteService(ctx, projectID, service, reqParams); err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }

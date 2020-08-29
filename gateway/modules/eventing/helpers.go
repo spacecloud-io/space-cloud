@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"strings"
 	"text/template"
@@ -13,7 +12,7 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/segmentio/ksuid"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -27,26 +26,25 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 
 	url, err := m.syncMan.GetAssignedSpaceCloudURL(ctx, m.project, eventToken)
 	if err != nil {
-		logrus.Errorln("Eventing module could not get space-cloud url:", err)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing module could not get space-cloud url", err, nil)
 		return
 	}
 
 	token, err := m.adminMan.GetInternalAccessToken()
 	if err != nil {
-		logrus.Errorln("Eventing module could not transmit event:", err)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing module could not transmit event", err, nil)
 		return
 	}
 
 	scToken, err := m.auth.GetSCAccessToken()
 	if err != nil {
-		logrus.Errorln("Eventing module could not transmit event:", err)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing module could not transmit event", err, nil)
 		return
 	}
 
 	var res interface{}
 	if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, scToken, eventDocs, &res); err != nil {
-		logrus.Errorln("Eventing module could not transmit event:", err)
-		log.Println(res)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing module could not transmit event", err, nil)
 	}
 }
 
@@ -76,7 +74,7 @@ func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token 
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.ID, batchID, utils.EventStatusStaged, req)
+			eventDoc := m.generateQueueEventRequest(ctx, token, r.ID, batchID, utils.EventStatusStaged, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -97,11 +95,11 @@ func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token 
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token int, name, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
-	return m.generateQueueEventRequestRaw(token, name, "", batchID, status, event)
+func (m *Module) generateQueueEventRequest(ctx context.Context, token int, name, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
+	return m.generateQueueEventRequestRaw(ctx, token, name, "", batchID, status, event)
 }
 
-func (m *Module) generateQueueEventRequestRaw(token int, name, eventDocID, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequestRaw(ctx context.Context, token int, name, eventDocID, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
 	timestamp := time.Now()
 
 	if eventDocID == "" {
@@ -113,7 +111,7 @@ func (m *Module) generateQueueEventRequestRaw(token int, name, eventDocID, batch
 	if err != nil {
 		// Log warning only if time stamp was provided in the request
 		if event.Timestamp != "" {
-			logrus.Warningf("Invalid timestamp format (%s) provided. Defaulting to current time.", event.Timestamp)
+			helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid timestamp format (%s) provided. Defaulting to current time.", event.Timestamp), nil)
 		}
 		eventTs = timestamp
 	}
@@ -194,7 +192,7 @@ func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocum
 	}
 
 	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, m.generateBatchID()); err != nil {
-		_ = utils.LogError(fmt.Sprintf("error queueing dlq event in eventing unable to batch requests - %s", err.Error()), "eventing", "triggerDLQEvent", err)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing was unable to queue dlq event to batch requests", err, map[string]interface{}{})
 		return err
 	}
 
@@ -261,7 +259,7 @@ func (m *Module) selectRule(name string) (*config.EventingRule, error) {
 	if rule, ok := m.config.InternalRules[name]; ok {
 		return rule, nil
 	}
-	return &config.EventingRule{}, fmt.Errorf("could not find rule with name %s", name)
+	return &config.EventingRule{}, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Could not find rule with name %s", name), nil, nil)
 }
 
 func (m *Module) validate(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
@@ -278,7 +276,7 @@ func (m *Module) validate(ctx context.Context, project, token string, event *mod
 		return nil
 	}
 
-	_, err := m.schema.SchemaValidator(event.Type, schema, event.Payload.(map[string]interface{}))
+	_, err := m.schema.SchemaValidator(ctx, event.Type, schema, event.Payload.(map[string]interface{}))
 	return err
 }
 
@@ -290,7 +288,7 @@ func (m *Module) createGoTemplate(kind, triggerName, tmpl string) error {
 	t = t.Funcs(tmpl2.CreateGoFuncMaps(nil))
 	val, err := t.Parse(tmpl)
 	if err != nil {
-		return utils.LogError("Invalid golang template provided", "eventing", "create-go-template", err)
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Invalid golang template provided", err, nil)
 	}
 
 	m.templates[key] = val
@@ -314,7 +312,7 @@ func (m *Module) adjustReqBody(trigger, token string, endpoint *config.EventingR
 			}
 		}
 	default:
-		utils.LogWarn(fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), "eventing", "adjust-req")
+		helpers.Logger.LogWarn(helpers.GetInternalRequestID(), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"trigger": token})
 		return params, nil
 	}
 

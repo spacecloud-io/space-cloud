@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/dataloader"
-
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -55,14 +54,14 @@ type Crud interface {
 	Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error)
 	Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error)
-	DescribeTable(ctc context.Context, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
+	DescribeTable(ctc context.Context, col string) ([]model.InspectorFieldType, []model.ForeignKeysType, []model.IndexType, error)
 	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error)
 	GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, col string) error
 	CreateDatabaseIfNotExist(ctx context.Context, name string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
-	GetDBType() utils.DBType
-	IsClientSafe() error
+	GetDBType() model.DBType
+	IsClientSafe(ctx context.Context) error
 	IsSame(conn, dbName string) bool
 	Close() error
 	GetConnectionState(ctx context.Context) bool
@@ -84,13 +83,13 @@ func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHoo
 	m.metricHook = metricHook
 }
 
-func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection, dbName string) (Crud, error) {
+func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName string) (Crud, error) {
 	switch dbType {
-	case utils.Mongo:
+	case model.Mongo:
 		return mgo.Init(enabled, connection, dbName)
-	case utils.EmbeddedDB:
+	case model.EmbeddedDB:
 		return bolt.Init(enabled, connection, dbName)
-	case utils.MySQL, utils.Postgres, utils.SQLServer:
+	case model.MySQL, model.Postgres, model.SQLServer:
 		c, err := sql.Init(dbType, enabled, connection, dbName)
 		if err == nil && enabled {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -99,12 +98,12 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection, dbName
 				return nil, err
 			}
 		}
-		if dbType == utils.MySQL {
+		if dbType == model.MySQL {
 			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, dbName), dbName)
 		}
 		return c, err
 	default:
-		return nil, utils.LogError(fmt.Sprintf("provided database (%s) is not supported", dbType), "crud", "init-block", nil)
+		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unsupported database (%s) provided", dbType), nil, map[string]interface{}{})
 	}
 }
 
@@ -112,7 +111,7 @@ func (m *Module) getCrudBlock(dbAlias string) (Crud, error) {
 	if m.block != nil && m.alias == dbAlias {
 		return m.block, nil
 	}
-	return nil, fmt.Errorf("crud module not initialized yet for %q", dbAlias)
+	return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to get database connection", fmt.Errorf("crud module not initialized yet for %q", dbAlias), nil)
 }
 
 // SetConfig set the rules and secret key required by the crud block
@@ -121,7 +120,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	defer m.Unlock()
 
 	if len(crud) > 1 {
-		return errors.New("crud module cannot have more than 1 db")
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Crud module cannot have more than 1 database", errors.New(""), map[string]interface{}{"project": project})
 	}
 
 	m.project = project
@@ -155,7 +154,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			var err error
 			connectionString, err = m.getSecrets(project, secretName, "CONN")
 			if err != nil {
-				return utils.LogError("cannot get secrets from runner", "crud", "setConfig", err)
+				return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to fetch secret from runner", err, map[string]interface{}{"project": project})
 			}
 		}
 
@@ -166,7 +165,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			}
 			// Close the previous database connection
 			if err := m.block.Close(); err != nil {
-				_ = utils.LogError("Unable to close database connections", "crud", "set-config", err)
+				return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to close database connections", err, map[string]interface{}{"project": project})
 			}
 		}
 
@@ -174,14 +173,13 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		var err error
 
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
-		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, connectionString, v.DBName)
+		c, err = m.initBlock(model.DBType(v.Type), v.Enabled, connectionString, v.DBName)
 
 		if v.Enabled {
 			if err != nil {
-				logrus.Errorf("Error connecting to " + k + " : " + err.Error())
-				return err
+				return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Cannot connect to database", err, map[string]interface{}{"project": project, "dbAlias": k, "dbType": v.Type, "conn": v.Conn, "logicalDbName": v.DBName})
 			}
-			logrus.Info("Successfully connected to " + k)
+			helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Successfully connected to database", map[string]interface{}{"project": project, "dbAlias": k, "dbType": v.Type})
 		}
 
 		m.dbType = v.Type
@@ -207,7 +205,7 @@ func splitConnectionString(connection string) (string, bool) {
 func (m *Module) GetDBType(dbAlias string) (string, error) {
 	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
 	if dbAlias != m.alias {
-		return "", fmt.Errorf("db (%s) not found", dbAlias)
+		return "", helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Cannot get db type as invalid db alias (%s) provided", dbAlias), nil, nil)
 	}
 	return m.dbType, nil
 }
@@ -236,7 +234,7 @@ func (m *Module) CloseConfig() error {
 	if m.block != nil {
 		err := m.block.Close()
 		if err != nil {
-			return utils.LogError("Unable to close block in crud", "crud", "CloseConfig", err)
+			return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to close database connection", err, map[string]interface{}{})
 		}
 	}
 

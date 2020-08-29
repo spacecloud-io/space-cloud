@@ -68,3 +68,23 @@ type AllRequest struct {
 type BatchRequest struct {
 	Requests []*AllRequest `json:"reqs"`
 }
+
+// DBType is the type of database used for a particular crud operation
+type DBType string
+
+const (
+	// Mongo is the type used for MongoDB
+	Mongo DBType = "mongo"
+
+	// EmbeddedDB is the type used for EmbeddedDB
+	EmbeddedDB DBType = "embedded"
+
+	// MySQL is the type used for MySQL
+	MySQL DBType = "mysql"
+
+	// Postgres is the type used for PostgresQL
+	Postgres DBType = "postgres"
+
+	// SQLServer is the type used for MsSQL
+	SQLServer DBType = "sqlserver"
+)

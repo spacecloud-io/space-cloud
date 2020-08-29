@@ -1,10 +1,12 @@
 package syncman
 
 import (
+	"context"
 	"fmt"
 	"math"
 
 	"github.com/getlantern/deepcopy"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -70,7 +72,7 @@ func (s *Manager) GetGatewayIndex() int {
 }
 
 // getConfigWithoutLock returns the config present in the state
-func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error) {
+func (s *Manager) getConfigWithoutLock(ctx context.Context, projectID string) (*config.Project, error) {
 	// Iterate over all projects stored
 	for _, p := range s.projectConfig.Projects {
 		if projectID == p.ID {
@@ -83,7 +85,7 @@ func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error
 		}
 	}
 
-	return nil, fmt.Errorf("given project (%s) is not present in state", projectID)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown project (%s) provided", projectID), nil, nil)
 }
 
 // GetNodeID returns node id assigned to sc
@@ -92,11 +94,11 @@ func (s *Manager) GetNodeID() string {
 }
 
 // GetSpaceCloudURLFromID returns addr for corresponding nodeID
-func (s *Manager) GetSpaceCloudURLFromID(nodeID string) (string, error) {
+func (s *Manager) GetSpaceCloudURLFromID(ctx context.Context, nodeID string) (string, error) {
 	for _, service := range s.services {
 		if nodeID == service.id {
 			return service.addr, nil
 		}
 	}
-	return "", fmt.Errorf("service with specified nodeID doesn't exists")
+	return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Space cloud service with nodeId (%s) doesn't exists", nodeID), nil, nil)
 }

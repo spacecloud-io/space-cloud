@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
@@ -43,7 +43,7 @@ func New(path string) (*Manager, error) {
 func (m *Manager) loadConfigFromFile() error {
 	content, err := ioutil.ReadFile(m.path)
 	if err != nil {
-		logrus.Info("Could not load service routing file. Resetting to default")
+		helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Could not load service routing file. Resetting to default", nil)
 		m.serviceRoutes = model.Config{}
 		return nil
 	}

@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // AddEventingType counts the number of time a particular event type is called
@@ -36,7 +36,7 @@ func (m *Module) AddFunctionOperation(project, service, function string) {
 }
 
 // AddDBOperation adds a operation to the database
-func (m *Module) AddDBOperation(project, dbType, col string, count int64, op utils.OperationType) {
+func (m *Module) AddDBOperation(project, dbType, col string, count int64, op model.OperationType) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	// Return if the metrics module is disabled
@@ -48,22 +48,22 @@ func (m *Module) AddDBOperation(project, dbType, col string, count int64, op uti
 	metrics := metricsTemp.(*metrics)
 
 	switch op {
-	case utils.Create:
+	case model.Create:
 		atomic.AddUint64(&metrics.crud.create, uint64(count))
 
-	case utils.Read:
+	case model.Read:
 		atomic.AddUint64(&metrics.crud.read, uint64(count))
 
-	case utils.Update:
+	case model.Update:
 		atomic.AddUint64(&metrics.crud.update, uint64(count))
 
-	case utils.Delete:
+	case model.Delete:
 		atomic.AddUint64(&metrics.crud.delete, uint64(count))
 	}
 }
 
 // AddFileOperation adds a operation to the database
-func (m *Module) AddFileOperation(project, storeType string, op utils.OperationType) {
+func (m *Module) AddFileOperation(project, storeType string, op model.OperationType) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -76,16 +76,16 @@ func (m *Module) AddFileOperation(project, storeType string, op utils.OperationT
 	metrics := metricsTemp.(*metrics)
 
 	switch op {
-	case utils.Create:
+	case model.Create:
 		atomic.AddUint64(&metrics.fileStore.create, uint64(1))
 
-	case utils.Read:
+	case model.Read:
 		atomic.AddUint64(&metrics.fileStore.read, uint64(1))
 
-	case utils.Delete:
+	case model.Delete:
 		atomic.AddUint64(&metrics.fileStore.delete, uint64(1))
 
-	case utils.List:
+	case model.List:
 		atomic.AddUint64(&metrics.fileStore.list, uint64(1))
 	}
 }

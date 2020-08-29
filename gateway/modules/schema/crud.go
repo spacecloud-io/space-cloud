@@ -7,11 +7,10 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 type fieldsToPostProcess struct {
@@ -26,8 +25,7 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 
 	colInfo, ok := s.SchemaDoc[dbAlias]
 	if !ok {
-		logrus.Errorf("error crud post process in schema module cannot find dbAlias (%s) in schemaDoc", dbAlias)
-		return fmt.Errorf("dbAlias (%s) not found in schema doc", dbAlias)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unkown db alias (%s) provided to schema module", dbAlias), nil, nil)
 	}
 	tableInfo, ok := colInfo[col]
 	if !ok {
@@ -46,7 +44,7 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 	dbType, _ := s.crud.GetDBType(dbAlias)
 	var fieldsToProcess []fieldsToPostProcess
 	for columnName, columnValue := range tableInfo {
-		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime || (dbType == string(utils.MySQL) && columnValue.Kind == model.TypeBoolean) {
+		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime || (dbType == string(model.MySQL) && columnValue.Kind == model.TypeBoolean) {
 			fieldsToProcess = append(fieldsToProcess, fieldsToPostProcess{kind: columnValue.Kind, name: columnName})
 		}
 	}
@@ -68,16 +66,14 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 					case []byte:
 						var v interface{}
 						if err := json.Unmarshal(data, &v); err != nil {
-							logrus.Errorf("error crud post process in schema module unable unmarshal data (%s)", string(data))
-							return fmt.Errorf("unable to unmarshal json data for column (%s)", field.name)
+							return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Database contains corrupted json data", err, map[string]interface{}{"type": "[]byte"})
 						}
 						doc[field.name] = v
 
 					case string:
 						var v interface{}
 						if err := json.Unmarshal([]byte(data), &v); err != nil {
-							logrus.Errorf("error crud post process in schema module unable unmarshal data (%s)", string(data))
-							return fmt.Errorf("unable to unmarshal json data for column (%s)", field.name)
+							return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Database contains corrupted json data", err, map[string]interface{}{"type": "string"})
 						}
 						doc[field.name] = v
 					}
@@ -108,12 +104,12 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 }
 
 // AdjustWhereClause adjusts where clause to take care of types
-func (s *Schema) AdjustWhereClause(dbAlias string, dbType utils.DBType, col string, find map[string]interface{}) error {
+func (s *Schema) AdjustWhereClause(ctx context.Context, dbAlias string, dbType model.DBType, col string, find map[string]interface{}) error {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	// Currently this is only required for mongo. Return if its any other database
-	if dbType != utils.Mongo {
+	if dbType != model.Mongo {
 		return nil
 	}
 
@@ -141,7 +137,7 @@ func (s *Schema) AdjustWhereClause(dbAlias string, dbType utils.DBType, col stri
 			case string:
 				t, err := time.Parse(time.RFC3339, param)
 				if err != nil {
-					return fmt.Errorf("invalid string format of datetime (%s) provided for field (%s)", param, k)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid string format of datetime (%s) provided for field (%s)", param, k), err, nil)
 				}
 				find[k] = t
 
@@ -156,13 +152,13 @@ func (s *Schema) AdjustWhereClause(dbAlias string, dbType utils.DBType, col stri
 					// Check if the value is string
 					paramString, ok := paramInterface.(string)
 					if !ok {
-						return fmt.Errorf("invalid format (%s) of datetime (%v) provided for field (%s)", reflect.TypeOf(paramInterface), paramInterface, k)
+						return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid format (%s) of datetime (%v) provided for field (%s)", reflect.TypeOf(paramInterface), paramInterface, k), nil, nil)
 					}
 
 					// Try parsing it to time.Time
 					t, err := time.Parse(time.RFC3339, paramString)
 					if err != nil {
-						return fmt.Errorf("invalid string format of datetime (%s) provided for field (%s)", param, k)
+						return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid string format of datetime (%s) provided for field (%s)", param, k), nil, nil)
 					}
 
 					// Store the value
@@ -171,7 +167,7 @@ func (s *Schema) AdjustWhereClause(dbAlias string, dbType utils.DBType, col stri
 			case time.Time:
 				break
 			default:
-				return fmt.Errorf("invalid format (%s) of datetime (%v) provided for field (%s)", reflect.TypeOf(param), param, k)
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid format (%s) of datetime (%v) provided for field (%s)", reflect.TypeOf(param), param, k), nil, nil)
 			}
 		}
 	}

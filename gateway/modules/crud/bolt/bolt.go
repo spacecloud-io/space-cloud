@@ -1,12 +1,12 @@
 package bolt
 
 import (
-	"fmt"
-	"log"
+	"context"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	"go.etcd.io/bbolt"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -44,14 +44,14 @@ func (b *Bolt) IsSame(conn, dbName string) bool {
 }
 
 // IsClientSafe checks whether database is enabled and connected
-func (b *Bolt) IsClientSafe() error {
+func (b *Bolt) IsClientSafe(ctx context.Context) error {
 	if !b.enabled {
 		return utils.ErrDatabaseDisabled
 	}
 
 	if b.client == nil {
 		if err := b.connect(); err != nil {
-			logrus.Errorf("Error connecting to bboltdb - %v", err)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to connect to bbbolt database", err, nil)
 			return utils.ErrDatabaseConnection
 		}
 	}
@@ -61,19 +61,19 @@ func (b *Bolt) IsClientSafe() error {
 
 func (b *Bolt) connect() error {
 	if err := b.Close(); err != nil {
-		return fmt.Errorf("error closing previous database connection in bbolt db")
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to close previous database connection in bbolt db", nil, nil)
 	}
 
 	client, err := bbolt.Open(b.connection, 0600, bbolt.DefaultOptions)
 	if err != nil {
 		return err
 	}
-	log.Println("successfully connected to bbolt database")
+	helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Successfully connected to bbolt database", nil)
 	b.client = client
 	return nil
 }
 
 // GetDBType returns the dbType of the crud block
-func (b *Bolt) GetDBType() utils.DBType {
-	return utils.EmbeddedDB
+func (b *Bolt) GetDBType() model.DBType {
+	return model.EmbeddedDB
 }

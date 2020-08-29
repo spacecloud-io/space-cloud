@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/helpers"
 )
 
 const metricsUpdaterInterval = 5 * time.Minute
@@ -26,7 +24,7 @@ func (m *Module) routineFlushMetricsToSink() {
 		if m.syncMan.GetRunnerAddr() != "" {
 			token, err := m.adminMan.GetInternalAccessToken()
 			if err != nil {
-				utils.LogDebug("Unable to get internal access token", "metrics", "routine-flush-metrics-to-sink", map[string]interface{}{"error": err})
+				helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Unable to get internal access token", map[string]interface{}{"error": err.Error()})
 				continue
 			}
 			result := struct {
@@ -35,7 +33,7 @@ func (m *Module) routineFlushMetricsToSink() {
 			}{}
 			url := fmt.Sprintf("http://%s/v1/runner/metrics", m.syncMan.GetRunnerAddr())
 			if err := m.syncMan.MakeHTTPRequest(context.Background(), http.MethodGet, url, token, "", map[string]interface{}{}, &result); err != nil {
-				utils.LogDebug("Unable to fetch metrics from runner", "metrics", "routine-flush-metrics-to-sink", map[string]interface{}{"error": err})
+				helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Unable to fetch metrics from runner", map[string]interface{}{"error": err.Error()})
 				continue
 			}
 			go m.flushMetrics(result.Result)
@@ -63,10 +61,10 @@ func (m *Module) flushMetrics(docs []interface{}) {
 	defer cancel()
 	result, err := m.sink.Insert("operation_metrics").Docs(docs).Apply(ctx)
 	if err != nil {
-		logrus.Errorln("Unable to push metrics:", err)
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to push metrics", err, nil)
 		return
 	}
 	if result.Status != http.StatusOK {
-		logrus.Errorln("Unable to push metrics:", result.Error)
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to push metrics", err, map[string]interface{}{"statusCode": result.Status})
 	}
 }

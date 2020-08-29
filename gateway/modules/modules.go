@@ -1,7 +1,8 @@
 package modules
 
 import (
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/managers"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
@@ -13,7 +14,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/modules/realtime"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/modules/userman"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
 )
 
@@ -83,23 +83,23 @@ func New(nodeID string, managers *managers.Managers, globalMods *global.Global) 
 // Delete deletes a project
 func (m *Modules) Delete(projectID string) {
 	// Close all the modules here
-	logrus.Debugln("closing config of db module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Closing config of db module", nil)
 	if err := m.db.CloseConfig(); err != nil {
-		_ = utils.LogError("error closing db module config", "modules", "Delete", err)
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Error closing db module config", err, map[string]interface{}{"project": projectID})
 	}
 
-	logrus.Debugln("closing config of filestore module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Closing config of filestore module", nil)
 	if err := m.file.CloseConfig(); err != nil {
-		_ = utils.LogError("error closing filestore module config", "modules", "Delete", err)
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Error closing filestore module config", err, map[string]interface{}{"project": projectID})
 	}
 
-	logrus.Debugln("closing config of eventing module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Closing config of eventing module", nil)
 	if err := m.eventing.CloseConfig(); err != nil {
-		_ = utils.LogError("error closing eventing module config", "modules", "Delete", err)
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Error closing eventing module config", err, map[string]interface{}{"project": projectID})
 	}
 
-	logrus.Debugln("closing config of realtime module")
+	helpers.Logger.LogDebug(helpers.GetInternalRequestID(), "Closing config of realtime module", nil)
 	if err := m.realtime.CloseConfig(); err != nil {
-		_ = utils.LogError("error closing realtime module config", "modules", "Delete", err)
+		_ = helpers.Logger.LogError(helpers.GetInternalRequestID(), "Error closing realtime module config", err, map[string]interface{}{"project": projectID})
 	}
 }

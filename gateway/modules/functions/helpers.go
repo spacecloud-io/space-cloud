@@ -10,6 +10,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/spaceuptech/helpers"
+
 	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -30,7 +32,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	/***************** Set the request url ******************/
 
 	// Adjust the endpointPath to account for variables
-	endpointPath, err := adjustPath(endpoint.Path, auth, params)
+	endpointPath, err := adjustPath(ctx, endpoint.Path, auth, params)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -50,7 +52,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		url = fmt.Sprintf("http://localhost:4122/v1/api/%s/graphql", m.project)
 
 	default:
-		return http.StatusBadRequest, nil, utils.LogError(fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), module, segmentCall, nil)
+		return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
 	}
 
 	/***************** Set the request method ***************/
@@ -68,7 +70,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	/***************** Set the request body *****************/
 
-	newParams, err := m.adjustReqBody(serviceID, endpointID, ogToken, endpoint, auth, params)
+	newParams, err := m.adjustReqBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, params)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -88,7 +90,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		Params: newParams,
 		Method: method, URL: url,
 		Token: token, SCToken: scToken,
-		Headers: prepareHeaders(endpoint.Headers, state),
+		Headers: prepareHeaders(ctx, endpoint.Headers, state),
 	}
 	status, err := utils.MakeHTTPRequest(ctx, req, &res)
 	if err != nil {
@@ -97,11 +99,11 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	/**************** Return the response body ****************/
 
-	res, err = m.adjustResBody(serviceID, endpointID, ogToken, endpoint, auth, res)
+	res, err = m.adjustResBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, res)
 	return status, res, err
 }
 
-func prepareHeaders(headers config.Headers, state map[string]interface{}) config.Headers {
+func prepareHeaders(ctx context.Context, headers config.Headers, state map[string]interface{}) config.Headers {
 	out := make([]config.Header, len(headers))
 	for i, header := range headers {
 		// First create a new header object
@@ -123,7 +125,7 @@ func prepareHeaders(headers config.Headers, state map[string]interface{}) config
 	return out
 }
 
-func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
+func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
 	var req, graph interface{}
 	var err error
 
@@ -142,7 +144,7 @@ func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint *co
 			}
 		}
 	default:
-		utils.LogWarn(fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), module, "adjust-req")
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"serviceId": serviceID, "endpointId": endpointID})
 		return params, nil
 	}
 
@@ -155,11 +157,11 @@ func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint *co
 	case config.EndpointKindPrepared:
 		return map[string]interface{}{"query": graph, "variables": req}, nil
 	default:
-		return nil, utils.LogError(fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), module, "adjust-req", nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
 	}
 }
 
-func (m *Module) adjustResBody(serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
+func (m *Module) adjustResBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
 	var res interface{}
 	var err error
 
@@ -172,7 +174,7 @@ func (m *Module) adjustResBody(serviceID, endpointID, token string, endpoint *co
 			}
 		}
 	default:
-		utils.LogWarn(fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), module, "adjust-res")
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"serviceId": serviceID, "endpointId": endpointID})
 		return params, nil
 	}
 
@@ -182,7 +184,7 @@ func (m *Module) adjustResBody(serviceID, endpointID, token string, endpoint *co
 	return res, nil
 }
 
-func adjustPath(path string, claims, params interface{}) (string, error) {
+func adjustPath(ctx context.Context, path string, claims, params interface{}) (string, error) {
 	newPath := path
 	for {
 		pre := strings.IndexRune(newPath, '{')
@@ -192,7 +194,7 @@ func adjustPath(path string, claims, params interface{}) (string, error) {
 		post := strings.IndexRune(newPath, '}')
 
 		key := strings.TrimSuffix(strings.TrimPrefix(newPath[pre:post], "{"), "}")
-		value, err := loadParam(key, claims, params)
+		value, err := loadParam(ctx, key, claims, params)
 		if err != nil {
 			return "", err
 		}
@@ -201,7 +203,7 @@ func adjustPath(path string, claims, params interface{}) (string, error) {
 	}
 }
 
-func loadParam(key string, claims, params interface{}) (string, error) {
+func loadParam(ctx context.Context, key string, claims, params interface{}) (string, error) {
 	val, err := utils.LoadValue(key, map[string]interface{}{"args": params, "auth": claims})
 	if err != nil {
 		return "", err
@@ -235,7 +237,7 @@ func (m *Module) createGoTemplate(kind, serviceID, endpointID, tmpl string) erro
 	t = t.Funcs(tmpl2.CreateGoFuncMaps(m.auth))
 	val, err := t.Parse(tmpl)
 	if err != nil {
-		return utils.LogError("Invalid golang template provided", module, segmentSetConfig, err)
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), "Invalid golang template provided", err, nil)
 	}
 
 	m.templates[key] = val

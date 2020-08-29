@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/api/watch"
@@ -26,19 +26,20 @@ type ConsulStore struct {
 
 // GetAdminConfig returns the admin config
 func (s *ConsulStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
-	kvPair, _, err := s.consulClient.KV().Get(fmt.Sprintf("sc/admin-config/%s", s.clusterID), &api.QueryOptions{})
+	key := fmt.Sprintf("sc/admin-config/%s", s.clusterID)
+	kvPair, _, err := s.consulClient.KV().Get(key, &api.QueryOptions{})
 	if err != nil {
-		return nil, utils.LogError("couldn't fetch key in consul", "syncman", "getAdminConfig", err)
+		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unable to fetch key (%s) from consul", key), err, map[string]interface{}{})
 	}
 
 	// kvPair will be nil if key doesn't exists
 	if kvPair == nil {
-		return nil, utils.LogError("specified key doesn't exists in consul", "syncman", "getAdminConfig", err)
+		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Specified key (%s) doesn't exists in consul", key), err, map[string]interface{}{})
 	}
 
 	var cluster *config.Admin
 	if err := json.Unmarshal(kvPair.Value, &cluster); err != nil {
-		return nil, utils.LogError("couldn't unmarshal cluster config to json", "syncman", "getAdminConfig", err)
+		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Unable to unmarshal cluster config of consul to json", err, map[string]interface{}{})
 	}
 
 	return cluster, nil
@@ -80,7 +81,7 @@ func (s *ConsulStore) Register() {
 		defer ticker.Stop()
 		for range ticker.C {
 			if _, _, err := session.Renew(id, opts); err != nil {
-				log.Println("Could not renew consul session:", err)
+				helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Could not renew consul session", map[string]interface{}{"error": err})
 				// register again
 				s.Register()
 				return
@@ -112,7 +113,7 @@ func (s *ConsulStore) WatchAdminConfig(cb func(cluster []*config.Admin)) error {
 
 		for _, kv := range kvPairs {
 			if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
-				log.Println("Sync manager: Could not parse project received -", err)
+				helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
 				continue
 			}
 		}
@@ -121,7 +122,7 @@ func (s *ConsulStore) WatchAdminConfig(cb func(cluster []*config.Admin)) error {
 
 	go func() {
 		if err := p.Run(""); err != nil {
-			log.Println("Sync Manager: could not start watcher -", err)
+			helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Sync Manager: could not start watcher", map[string]interface{}{"error": err})
 			os.Exit(-1)
 		}
 	}()
@@ -150,7 +151,7 @@ func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 			}
 			project := new(config.Project)
 			if err := json.Unmarshal(kv.Value, project); err != nil {
-				log.Println("Sync manager: Could not parse project received -", err)
+				helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
 				continue
 			}
 			projects = append(projects, project)
@@ -160,7 +161,7 @@ func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 
 	go func() {
 		if err := p.Run(""); err != nil {
-			log.Println("Sync Manager: could not start watcher -", err)
+			helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Sync Manager: could not start watcher", map[string]interface{}{"error": err})
 			os.Exit(-1)
 		}
 	}()
@@ -203,7 +204,7 @@ func (s *ConsulStore) WatchServices(cb func(scServices)) error {
 
 	go func() {
 		if err := p.Run(""); err != nil {
-			log.Println("Sync Manager: could not start watch -", err)
+			helpers.Logger.LogInfo(helpers.GetInternalRequestID(), "Sync Manager: could not start watch", map[string]interface{}{"error": err})
 			os.Exit(-1)
 		}
 	}()

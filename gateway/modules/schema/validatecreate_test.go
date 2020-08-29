@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -146,7 +147,7 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := s.ValidateCreateOperation(testCase.dbName, testCase.coll, &testCase.value)
+			err := s.ValidateCreateOperation(context.Background(), testCase.dbName, testCase.coll, &testCase.value)
 			if (err != nil) != testCase.IsErrExpected {
 				t.Errorf("\n ValidateCreateOperation() error = expected error-%v,got-%v)", testCase.IsErrExpected, err)
 			}
@@ -215,9 +216,10 @@ func TestSchema_SchemaValidate(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error while parsing schema:%v", err)
 	}
+
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			result, err := s.SchemaValidator(testCase.coll, s.SchemaDoc["mongo"][testCase.coll], testCase.Document)
+			result, err := s.SchemaValidator(context.Background(), testCase.coll, s.SchemaDoc["mongo"][testCase.coll], testCase.Document)
 			if (err != nil) != testCase.IsErrExpected {
 				t.Errorf("\n SchemaValidateOperation() error : expected error-%v, got-%v)", testCase.IsErrExpected, err)
 			}
@@ -442,11 +444,12 @@ func TestSchema_CheckType(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error while parsing schema:%v", err)
 	}
+
 	r := s.SchemaDoc["mongo"]["tweet"]
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			for key, value := range testCase.Document {
-				retval, err := s.checkType(testCase.coll, value, r[key])
+				retval, err := s.checkType(context.Background(), testCase.coll, value, r[key])
 				if (err != nil) != testCase.IsErrExpected {
 					t.Errorf("\n CheckType() error = Expected error-%v, got-%v)", testCase.IsErrExpected, err)
 				}

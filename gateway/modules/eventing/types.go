@@ -70,7 +70,7 @@ func (m *mockSyncmanEventingInterface) GetNodeID() string {
 	return c.String(0)
 }
 
-func (m *mockSyncmanEventingInterface) GetSpaceCloudURLFromID(nodeID string) (string, error) {
+func (m *mockSyncmanEventingInterface) GetSpaceCloudURLFromID(ctx context.Context, nodeID string) (string, error) {
 	c := m.Called(nodeID)
 	if len(c) > 1 {
 		return c.String(0), c.Error(1)
@@ -129,7 +129,7 @@ func (m *mockSchemaEventingInterface) Parser(crud config.Crud) (model.Type, erro
 	return nil, c.Error(1)
 }
 
-func (m *mockSchemaEventingInterface) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+func (m *mockSchemaEventingInterface) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 	c := m.Called(col, collectionFields, doc)
 	return nil, c.Error(1)
 }

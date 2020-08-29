@@ -3,9 +3,10 @@ package userman
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
 	"net/http"
 
+	"github.com/spaceuptech/helpers"
 	"golang.org/x/crypto/bcrypt"
 
 	uuid "github.com/satori/go.uuid"
@@ -26,8 +27,8 @@ func (m *Module) Profile(ctx context.Context, token, dbAlias, project, id string
 	if err != nil {
 		return 0, nil, err
 	}
-	switch utils.DBType(actualDbType) {
-	case utils.Mongo, utils.EmbeddedDB:
+	switch model.DBType(actualDbType) {
+	case model.Mongo, model.EmbeddedDB:
 		find["_id"] = id
 	default:
 		find["id"] = id
@@ -48,7 +49,7 @@ func (m *Module) Profile(ctx context.Context, token, dbAlias, project, id string
 		return http.StatusInternalServerError, nil, err
 	}
 
-	_ = m.auth.PostProcessMethod(actions, res)
+	_ = m.auth.PostProcessMethod(ctx, actions, res)
 
 	// Delete password from user object
 	delete(res.(map[string]interface{}), "pass")
@@ -78,7 +79,7 @@ func (m *Module) Profiles(ctx context.Context, token, dbAlias, project string) (
 		return http.StatusInternalServerError, nil, err
 	}
 
-	_ = m.auth.PostProcessMethod(actions, res)
+	_ = m.auth.PostProcessMethod(ctx, actions, res)
 
 	// Delete password from user object
 	if usersArray, ok := res.([]interface{}); ok {
@@ -102,6 +103,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbAlias, project, email, passw
 	attr := map[string]string{"project": project, "db": dbAlias, "col": "users"}
 	reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
+
 	user, err := m.crud.Read(ctx, dbAlias, "users", readReq, reqParams)
 	if err != nil {
 		return http.StatusNotFound, nil, errors.New("User not found")
@@ -125,7 +127,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbAlias, project, email, passw
 		return 0, nil, err
 	}
 	// Create a token
-	if actualDbType == string(utils.Mongo) || actualDbType == string(utils.EmbeddedDB) {
+	if actualDbType == string(model.Mongo) || actualDbType == string(model.EmbeddedDB) {
 		req["id"] = userObj["_id"]
 	} else {
 		req["id"] = userObj["id"]
@@ -150,7 +152,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 	var err error
 	password, err = hashPassword(password)
 	if err != nil {
-		log.Println("Err: ", err)
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error %v ", err), nil)
 		return http.StatusInternalServerError, nil, errors.New("Failed to hash password")
 	}
 
@@ -174,7 +176,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 	}
 	// Create a create request
 	id := uuid.NewV1()
-	if actualDbType == string(utils.Mongo) || actualDbType == string(utils.EmbeddedDB) {
+	if actualDbType == string(model.Mongo) || actualDbType == string(model.EmbeddedDB) {
 		req["_id"] = id.String()
 	} else {
 		req["id"] = id.String()
@@ -184,7 +186,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 	createReq := &model.CreateRequest{Operation: utils.One, Document: req}
 	err = m.crud.Create(ctx, dbAlias, "users", createReq, reqParams)
 	if err != nil {
-		log.Println("Err: ", err)
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error %v", err), nil)
 		return http.StatusInternalServerError, nil, errors.New("Failed to create user account")
 	}
 
@@ -217,7 +219,7 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbAlias, project, 
 	if err != nil {
 		return 0, nil, err
 	}
-	if actualDbType == string(utils.Mongo) || actualDbType == string(utils.EmbeddedDB) {
+	if actualDbType == string(model.Mongo) || actualDbType == string(model.EmbeddedDB) {
 		idString = "_id"
 	} else {
 		idString = "id"
@@ -237,7 +239,7 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbAlias, project, 
 		var err1 error
 		password, err1 = hashPassword(password)
 		if err1 != nil {
-			log.Println("Err: ", err1)
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error %v", err1), nil)
 			return http.StatusInternalServerError, nil, errors.New("Failed to hash password")
 		}
 		set["pass"] = password

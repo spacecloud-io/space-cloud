@@ -5,16 +5,15 @@ import (
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // SchemaCrudInterface is an interface consisting of functions of schema module used by auth module
 type SchemaCrudInterface interface {
 	SetConfig(conf config.Crud, project string) error
-	ValidateCreateOperation(dbType, col string, req *CreateRequest) error
-	ValidateUpdateOperation(dbType, col, op string, updateDoc, find map[string]interface{}) error
+	ValidateCreateOperation(ctx context.Context, dbType, col string, req *CreateRequest) error
+	ValidateUpdateOperation(ctx context.Context, dbType, col, op string, updateDoc, find map[string]interface{}) error
 	CrudPostProcess(ctx context.Context, dbAlias, col string, result interface{}) error
-	AdjustWhereClause(dbAlias string, dbType utils.DBType, col string, find map[string]interface{}) error
+	AdjustWhereClause(ctx context.Context, dbAlias string, dbType DBType, col string, find map[string]interface{}) error
 }
 
 // CrudAuthInterface is an interface consisting of functions of crud module used by auth module
@@ -26,7 +25,7 @@ type CrudAuthInterface interface {
 type SchemaEventingInterface interface {
 	CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool)
 	Parser(crud config.Crud) (Type, error)
-	SchemaValidator(col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
+	SchemaValidator(ctx context.Context, col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
 	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error
 	SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error)
 	GetSchema(dbAlias, col string) (Fields, bool)
@@ -59,7 +58,7 @@ type FilestoreEventingInterface interface {
 
 // AuthFilestoreInterface is an interface consisting of functions of auth module used by Filestore module
 type AuthFilestoreInterface interface {
-	IsFileOpAuthorised(ctx context.Context, project, token, path string, op utils.FileOpType, args map[string]interface{}) (*PostProcess, error)
+	IsFileOpAuthorised(ctx context.Context, project, token, path string, op FileOpType, args map[string]interface{}) (*PostProcess, error)
 }
 
 // AuthFunctionInterface is an interface consisting of functions of auth module used by Function module
@@ -76,7 +75,7 @@ type EventingRealtimeInterface interface {
 // AuthRealtimeInterface is an interface consisting of functions of auth module used by RealTime module
 type AuthRealtimeInterface interface {
 	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, RequestParams, error)
-	PostProcessMethod(postProcess *PostProcess, result interface{}) error
+	PostProcessMethod(ctx context.Context, postProcess *PostProcess, result interface{}) error
 	GetInternalAccessToken() (string, error)
 	GetSCAccessToken() (string, error)
 }
@@ -91,7 +90,7 @@ type CrudSchemaInterface interface {
 	GetDBType(dbAlias string) (string, error)
 	// CreateProjectIfNotExists(ctx context.Context, project, dbAlias string) error
 	RawBatch(ctx context.Context, dbAlias string, batchedQueries []string) error
-	DescribeTable(ctx context.Context, dbAlias, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
+	DescribeTable(ctx context.Context, dbAlias, col string) ([]InspectorFieldType, []ForeignKeysType, []IndexType, error)
 }
 
 // CrudUserInterface is an interface consisting of functions of crud module used by User module
@@ -105,7 +104,7 @@ type CrudUserInterface interface {
 // AuthUserInterface is an interface consisting of functions of auth module used by User module
 type AuthUserInterface interface {
 	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, RequestParams, error)
-	PostProcessMethod(postProcess *PostProcess, result interface{}) error
+	PostProcessMethod(ctx context.Context, postProcess *PostProcess, result interface{}) error
 	CreateToken(tokenClaims TokenClaims) (string, error)
 	IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *UpdateRequest) (RequestParams, error)
 }
@@ -115,7 +114,7 @@ type SyncmanEventingInterface interface {
 	GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error)
 	GetAssignedTokens() (start, end int)
 	GetEventSource() string
-	GetSpaceCloudURLFromID(nodeID string) (string, error)
+	GetSpaceCloudURLFromID(ctx context.Context, nodeID string) (string, error)
 	GetNodeID() string
 	MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
 }

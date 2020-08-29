@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules"
 
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
@@ -32,35 +33,30 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		_ = json.NewDecoder(r.Body).Decode(value)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "filestore-config", "modify", map[string]string{"project": projectID})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		reqParams.Payload = value
-		if status, err := syncMan.SetFileStore(ctx, projectID, value, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-config", "modify", map[string]string{"project": projectID})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		utils.ExtractRequestParams(r, &reqParams, value)
+
+		if status, err := syncMan.SetFileStore(ctx, projectID, value, reqParams); err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
 // HandleGetFileStore returns handler to get file store
 func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -68,24 +64,26 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
+
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "filestore-config", "read", map[string]string{"project": projectID})
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-config", "read", map[string]string{"project": projectID})
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		// get project config
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
+		// Create a context of execution
+		utils.ExtractRequestParams(r, &reqParams, nil)
+
 		status, fileConfig, err := syncMan.GetFileStoreConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, status, model.Response{Result: fileConfig})
+		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: fileConfig})
 	}
 }
 
@@ -102,24 +100,23 @@ func HandleGetFileState(adminMan *admin.Manager, modules *modules.Modules) http.
 
 		defer utils.CloseTheCloser(r.Body)
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
 		// Check if the request is authorised
-		_, err := adminMan.IsTokenValid(token, "filestore-config", "read", map[string]string{"project": projectID})
+		_, err := adminMan.IsTokenValid(ctx, token, "filestore-config", "read", map[string]string{"project": projectID})
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
 		file := modules.File()
 		if err := file.GetState(ctx); err != nil {
-			logrus.Errorf("error handling file get state got error - %s", err.Error())
-			_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: false, Error: err.Error()})
+			_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, model.Response{Result: false, Error: err.Error()})
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: true})
+		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, model.Response{Result: true})
 	}
 }
 
@@ -138,26 +135,24 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		_ = json.NewDecoder(r.Body).Decode(value)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		reqParams.Payload = value
-		if status, err := syncMan.SetFileRule(ctx, projectID, ruleName, value, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		utils.ExtractRequestParams(r, &reqParams, value)
+
+		if status, err := syncMan.SetFileRule(ctx, projectID, ruleName, value, reqParams); err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -177,27 +172,26 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 			ruleID = ruleName[0]
 		}
 
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "filestore-rule", "read", map[string]string{"project": projectID, "id": ruleID})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		// get project config
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		status, fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleID, reqParams)
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-rule", "read", map[string]string{"project": projectID, "id": ruleID})
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, status, model.Response{Result: fileRules})
+		// Create a context of execution
+		utils.ExtractRequestParams(r, &reqParams, nil)
+
+		status, fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleID, reqParams)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: fileRules})
 	}
 }
 
@@ -212,24 +206,24 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		projectID := vars["project"]
 		ruleName := vars["id"]
 
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		if status, err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		// Create a context of execution
+		utils.ExtractRequestParams(r, &reqParams, nil)
+
+		if status, err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName, reqParams); err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }

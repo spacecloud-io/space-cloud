@@ -2,13 +2,15 @@ package mgo
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"strings"
 	"time"
 
+	"github.com/spaceuptech/helpers"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -46,14 +48,14 @@ func (m *Mongo) IsSame(conn, dbName string) bool {
 }
 
 // IsClientSafe checks whether database is enabled and connected
-func (m *Mongo) IsClientSafe() error {
+func (m *Mongo) IsClientSafe(context.Context) error {
 	if !m.enabled {
 		return utils.ErrDatabaseDisabled
 	}
 
 	if m.client == nil {
 		if err := m.connect(); err != nil {
-			log.Println("Error connecting to mongo : " + err.Error())
+			helpers.Logger.LogInfo(helpers.GetInternalRequestID(), fmt.Sprintf("Error connecting to mongo %v", err.Error()), nil)
 			return utils.ErrDatabaseConnection
 		}
 	}
@@ -85,6 +87,6 @@ func (m *Mongo) connect() error {
 }
 
 // GetDBType returns the dbType of the crud block
-func (m *Mongo) GetDBType() utils.DBType {
-	return utils.Mongo
+func (m *Mongo) GetDBType() model.DBType {
+	return model.Mongo
 }

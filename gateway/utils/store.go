@@ -1,35 +1,38 @@
 package utils
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/spaceuptech/helpers"
 )
 
 // Adjust loads value from state if referenced
-func Adjust(obj interface{}, state map[string]interface{}) interface{} {
+func Adjust(ctx context.Context, obj interface{}, state map[string]interface{}) interface{} {
 	switch v := obj.(type) {
 	case map[string]interface{}:
 		newObj := map[string]interface{}{}
 		for key, valTemp := range v {
-			newObj[key] = Adjust(valTemp, state)
+			newObj[key] = Adjust(ctx, valTemp, state)
 		}
 		return newObj
 
 	case []interface{}:
 		newArray := []interface{}{}
 		for _, valTemp := range v {
-			newArray = append(newArray, Adjust(valTemp, state))
+			newArray = append(newArray, Adjust(ctx, valTemp, state))
 		}
 		return newArray
 
 	case string:
 		val, err := LoadValue(v, state)
 		if err == nil {
-			return Adjust(val, state)
+			return Adjust(ctx, val, state)
 		}
 
 		return v
@@ -50,7 +53,7 @@ func LoadStringIfExists(value string, state map[string]interface{}) (string, err
 	}
 	tempString, ok := temp.(string)
 	if !ok {
-		return "", fmt.Errorf("variable (%s) is of incorrect type (%s)", value, reflect.TypeOf(temp))
+		return "", helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unexpected type found for space cloud variable (%s)", value), fmt.Errorf("variable (%s) is of incorrect type (%s) want (string)", value, reflect.TypeOf(temp)), nil)
 	}
 	value = tempString
 	return value, nil
@@ -89,7 +92,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			case map[string]interface{}:
 				return int64(len(v)), nil
 			default:
-				return nil, fmt.Errorf("invalid type found for length")
+				return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), "Invalid type provided for space cloud internal function length", fmt.Errorf("got type (%s) want object or array", reflect.TypeOf(value)), nil)
 			}
 		}
 		if strings.HasPrefix(function, "now") {
@@ -148,7 +151,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			case "second":
 				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), param0.Minute(), param0.Second(), 0, param0.Location())
 			default:
-				return nil, fmt.Errorf("invalid parameter (%s) provided in `utils.roundUp`", params1)
+				return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Invalid parameter (%s) provided for space cloud internal function (utils.roundUpDate)", params1), nil, nil)
 			}
 			return timeDate.Format(time.RFC3339), nil
 		}
@@ -158,7 +161,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 
 	scope, present := state[tempArray[0]]
 	if !present {
-		return nil, fmt.Errorf("Scope (%s) not present", tempArray[0])
+		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Scope (%s) not present", tempArray[0]), nil, nil)
 	}
 
 	// obj, ok := scope.(map[string]interface{})
@@ -194,7 +197,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			case string:
 				k = v
 			default:
-				return nil, LogError(fmt.Sprintf("Key (%s) is of unknown type", reflect.TypeOf(subVal)), "utils", "load", nil)
+				return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Key (%s) is of unknown type", reflect.TypeOf(subVal)), nil, nil)
 			}
 		}
 
@@ -219,12 +222,12 @@ func getValue(key string, obj interface{}) (interface{}, error) {
 		// The key should be a number (index) if the object is an array
 		index, err := strconv.Atoi(key)
 		if err != nil {
-			return nil, LogError(fmt.Sprintf("Key (%s) provided instead of index", key), "utils", "load", err)
+			return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Key (%s) provided instead of index", key), err, nil)
 		}
 
 		// Check if index is not out of bounds otherwise return value at that index
 		if index >= len(val) {
-			return nil, LogError(fmt.Sprintf("Index (%d) out of bounds", index), "utils", "load", nil)
+			return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Index (%d) out of bounds", index), nil, nil)
 		}
 		return val[index], nil
 
@@ -232,17 +235,17 @@ func getValue(key string, obj interface{}) (interface{}, error) {
 		// Throw error if key is not present in state. Otherwise return value
 		tempObj, p := val[key]
 		if !p {
-			return nil, LogError(fmt.Sprintf("Key (%s) not present in state", key), "utils", "load", nil)
+			return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Key (%s) not present in state", key), nil, nil)
 		}
 		return tempObj, nil
 
 	default:
-		return nil, LogError(fmt.Sprintf("Unsupported data type (%s)", reflect.TypeOf(obj)), "utils", "load", nil)
+		return nil, helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Unsupported data type (%s)", reflect.TypeOf(obj)), nil, nil)
 	}
 }
 
 // LoadNumber loads a key as a float. Throws error
-func LoadNumber(key interface{}, args map[string]interface{}) (float64, error) {
+func LoadNumber(ctx context.Context, key interface{}, args map[string]interface{}) (float64, error) {
 	// Create a temporary copy of key
 	temp := key
 
@@ -270,7 +273,7 @@ func LoadNumber(key interface{}, args map[string]interface{}) (float64, error) {
 }
 
 // LoadBool loads a key as a float. Throws error
-func LoadBool(key interface{}, args map[string]interface{}) (bool, error) {
+func LoadBool(ctx context.Context, key interface{}, args map[string]interface{}) (bool, error) {
 	// Create a temporary copy of key
 	temp := key
 
@@ -323,7 +326,7 @@ func splitVariable(key string, delimiter rune) []string {
 }
 
 // StoreValue  -- stores a value in the provided state
-func StoreValue(key string, value interface{}, state map[string]interface{}) error {
+func StoreValue(ctx context.Context, key string, value interface{}, state map[string]interface{}) error {
 	keyArray := splitVariable(key, '.')
 	length := len(keyArray) - 1
 	if length == 0 {
@@ -338,7 +341,7 @@ func StoreValue(key string, value interface{}, state map[string]interface{}) err
 
 	obj, ok := scope.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("invalid type (%s) received for state", reflect.TypeOf(scope))
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("invalid type (%s) received for state", reflect.TypeOf(scope)), nil, nil)
 	}
 
 	for i, k := range keyArray {
@@ -423,7 +426,7 @@ func convertOrCreate(k string, obj map[string]interface{}) (map[string]interface
 }
 
 // DeleteValue  -- deletes a value in the provided state
-func DeleteValue(key string, state map[string]interface{}) error {
+func DeleteValue(ctx context.Context, key string, state map[string]interface{}) error {
 	keyArray := strings.Split(key, ".")
 
 	length := len(keyArray) - 1
@@ -438,7 +441,7 @@ func DeleteValue(key string, state map[string]interface{}) error {
 
 	obj, ok := scope.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("invalid type (%s) received for state", reflect.TypeOf(scope))
+		return helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("invalid type (%s) received for state", reflect.TypeOf(scope)), nil, nil)
 	}
 
 	for i, k := range keyArray {

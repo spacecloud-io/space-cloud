@@ -44,3 +44,17 @@ type FilePayload struct {
 
 // FileReader is a function type used for file streaming
 type FileReader func(io.Reader) (int, error)
+
+// FileOpType is the type of file operation being performed on the file store
+type FileOpType string
+
+const (
+	// FileRead is the type used for read operations
+	FileRead FileOpType = "read"
+
+	// FileCreate is the type used for create operations
+	FileCreate FileOpType = "create"
+
+	// FileDelete is the type used for delete operations
+	FileDelete FileOpType = "delete"
+)

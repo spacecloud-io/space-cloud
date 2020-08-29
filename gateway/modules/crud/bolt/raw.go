@@ -3,7 +3,8 @@ package bolt
 import (
 	"context"
 	"errors"
-	"fmt"
+
+	"github.com/spaceuptech/helpers"
 )
 
 // RawQuery query document(s) from the database
@@ -13,13 +14,13 @@ func (b *Bolt) RawQuery(ctx context.Context, query string, args []interface{}) (
 
 // CreateDatabaseIfNotExist creates a project if none exist
 func (b *Bolt) CreateDatabaseIfNotExist(ctx context.Context, project string) error {
-	return fmt.Errorf("error create project operation cannot be performed over selected database")
+	return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create database operation cannot be performed over selected database", nil, nil)
 }
 
 // RawBatch performs a batch operation for schema creation
 // NOTE: not to be exposed externally
 func (b *Bolt) RawBatch(ctx context.Context, batchedQueries []string) error {
-	return fmt.Errorf("error raw batchc cannot be performed over selected database")
+	return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create raw batch operation cannot be performed over selected database", nil, nil)
 }
 
 // GetConnectionState : function to check connection state

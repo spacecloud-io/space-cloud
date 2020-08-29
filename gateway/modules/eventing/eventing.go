@@ -7,9 +7,9 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -138,7 +138,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 				}
 			}
 		default:
-			return utils.LogError(fmt.Sprintf("Invalid templating engine (%s) provided", trigger.Tmpl), "eventing", "set-config", nil)
+			return helpers.Logger.LogError(helpers.GetInternalRequestID(), fmt.Sprintf("Invalid templating engine (%s) provided", trigger.Tmpl), nil, map[string]interface{}{})
 		}
 	}
 

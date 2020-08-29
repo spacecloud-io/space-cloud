@@ -3,10 +3,11 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -40,7 +41,7 @@ func (m *Module) processIntents(t *time.Time) {
 	reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
 	results, err := m.crud.Read(ctx, dbAlias, col, &readRequest, reqParams)
 	if err != nil {
-		logrus.Errorf("Eventing intent routine error - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing intent routine error", err, nil)
 		return
 	}
 
@@ -50,13 +51,13 @@ func (m *Module) processIntents(t *time.Time) {
 		// Parse event doc to EventDocument
 		eventDoc := new(model.EventDocument)
 		if err := mapstructure.Decode(doc, eventDoc); err != nil {
-			logrus.Errorf("Could not covert object (%v) as intent event doc - %s", doc, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Could not covert object (%v) as intent event doc", doc), err, nil)
 			continue
 		}
 
 		timestamp, err := time.Parse(time.RFC3339, eventDoc.EventTimestamp) // We are using event timestamp since intent are processed wrt the time the event was created
 		if err != nil {
-			logrus.Errorf("Could not parse (%s) in intent event doc (%s) as time - %s", eventDoc.EventTimestamp, eventDoc.ID, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Could not parse (%s) in intent event doc (%s) as time", eventDoc.EventTimestamp, eventDoc.ID), err, nil)
 			continue
 		}
 
@@ -93,14 +94,14 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 			// Mark event as cancelled if it document doesn't exist
 			if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
-				logrus.Errorf("Eventing: Couldn't cancel intent - %s", err.Error())
+				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Couldn't cancel intent", err, nil)
 			}
 			return
 		}
 
 		// Mark event as staged if document does exist
 		if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err != nil {
-			logrus.Errorf("Eventing: Couldn't update intent to staged - %s", err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Couldn't update intent to staged", err, nil)
 			return
 		}
 
@@ -174,7 +175,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		token, err := m.auth.GetInternalAccessToken()
 		if err != nil {
-			logrus.Errorf("Eventing: Error generating token in intent staging - %s", err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Error generating token in intent staging", err, nil)
 			return
 		}
 
@@ -182,14 +183,14 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 			// Mark event as cancelled if it document doesn't exist
 			if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
-				logrus.Errorf("Eventing: Couldn't cancel intent - %s", err.Error())
+				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Couldn't cancel intent", err, nil)
 			}
 			return
 		}
 
 		// Mark event as staged if document does exist
 		if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err != nil {
-			logrus.Errorf("Eventing: Couldn't update intent to staged - %s", err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Couldn't update intent to staged", err, nil)
 			return
 		}
 
@@ -203,7 +204,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		token, err := m.auth.GetInternalAccessToken()
 		if err != nil {
-			logrus.Errorf("Eventing: Error generating token in intent staging - %s", err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Error generating token in intent staging", err, nil)
 			return
 		}
 

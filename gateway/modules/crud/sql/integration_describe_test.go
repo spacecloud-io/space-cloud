@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func TestSQL_DescribeTable(t *testing.T) {
@@ -24,9 +23,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 		createQuery    []string
 		scQueries      []string
 		args           args
-		fields         []utils.FieldType
-		foreignKeys    []utils.ForeignKeysType
-		indexKeys      []utils.IndexType
+		fields         []model.InspectorFieldType
+		foreignKeys    []model.ForeignKeysType
+		indexKeys      []model.IndexType
 		isMssqlSkip    bool
 		isPostgresSkip bool
 		isMysqlSkip    bool
@@ -39,9 +38,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			fields:      []utils.FieldType{{FieldName: "column1", FieldType: getSQLType(*dbType, model.TypeID), FieldNull: "YES"}},
-			foreignKeys: []utils.ForeignKeysType{},
-			indexKeys:   []utils.IndexType{},
+			fields:      []model.InspectorFieldType{{FieldName: "column1", FieldType: getSQLType(*dbType, model.TypeID), FieldNull: "YES"}},
+			foreignKeys: []model.ForeignKeysType{},
+			indexKeys:   []model.IndexType{},
 			wantErr:     false,
 		},
 		{
@@ -51,9 +50,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			fields:      []utils.FieldType{{FieldName: "column1", FieldType: getSQLType(*dbType, model.TypeString), FieldNull: "YES"}},
-			foreignKeys: []utils.ForeignKeysType{},
-			indexKeys:   []utils.IndexType{},
+			fields:      []model.InspectorFieldType{{FieldName: "column1", FieldType: getSQLType(*dbType, model.TypeString), FieldNull: "YES"}},
+			foreignKeys: []model.ForeignKeysType{},
+			indexKeys:   []model.IndexType{},
 			wantErr:     false,
 		},
 		{
@@ -63,9 +62,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			foreignKeys: []utils.ForeignKeysType{},
-			indexKeys:   []utils.IndexType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeBoolean), FieldNull: "YES"}},
+			foreignKeys: []model.ForeignKeysType{},
+			indexKeys:   []model.IndexType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeBoolean), FieldNull: "YES"}},
 			wantErr:     false,
 		},
 		{
@@ -75,9 +74,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeInteger), FieldNull: "YES"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeInteger), FieldNull: "YES"}},
 			wantErr:     false,
 		},
 		{
@@ -87,9 +86,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeFloat), FieldNull: "YES"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeFloat), FieldNull: "YES"}},
 			wantErr:     false,
 		},
 		{
@@ -100,9 +99,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeJSON), FieldNull: "YES"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeJSON), FieldNull: "YES"}},
 			wantErr:     false,
 			isMssqlSkip: true,
 		},
@@ -113,9 +112,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeDateTime), FieldNull: "YES"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeDateTime), FieldNull: "YES"}},
 			wantErr:     false,
 		},
 		{
@@ -125,9 +124,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeID), FieldNull: "NO"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeID), FieldNull: "NO"}},
 			wantErr:     false,
 		},
 		{
@@ -137,9 +136,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeString), FieldNull: "NO"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeString), FieldNull: "NO"}},
 			wantErr:     false,
 		},
 		{
@@ -149,9 +148,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeBoolean), FieldNull: "NO"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeBoolean), FieldNull: "NO"}},
 			wantErr:     false,
 		},
 		{
@@ -161,9 +160,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeInteger), FieldNull: "NO"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeInteger), FieldNull: "NO"}},
 			wantErr:     false,
 		},
 		{
@@ -173,9 +172,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeFloat), FieldNull: "NO"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeFloat), FieldNull: "NO"}},
 			wantErr:     false,
 		},
 		{
@@ -185,9 +184,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeDateTime), FieldNull: "NO"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeDateTime), FieldNull: "NO"}},
 			wantErr:     false,
 		},
 		{
@@ -197,9 +196,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			indexKeys:   []utils.IndexType{},
-			foreignKeys: []utils.ForeignKeysType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeJSON), FieldNull: "NO"}},
+			indexKeys:   []model.IndexType{},
+			foreignKeys: []model.ForeignKeysType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeJSON), FieldNull: "NO"}},
 			wantErr:     false,
 			isMssqlSkip: true,
 		},
@@ -231,9 +230,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			foreignKeys: []utils.ForeignKeysType{},
-			indexKeys:   []utils.IndexType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeID), FieldNull: "NO", FieldDefault: "INDIA"}},
+			foreignKeys: []model.ForeignKeysType{},
+			indexKeys:   []model.IndexType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeID), FieldNull: "NO", FieldDefault: "INDIA"}},
 			wantErr:     false,
 		},
 		{
@@ -243,9 +242,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			foreignKeys: []utils.ForeignKeysType{},
-			indexKeys:   []utils.IndexType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeBoolean), FieldNull: "NO", FieldDefault: "true"}},
+			foreignKeys: []model.ForeignKeysType{},
+			indexKeys:   []model.IndexType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeBoolean), FieldNull: "NO", FieldDefault: "true"}},
 			wantErr:     false,
 			isMssqlSkip: true,
 		},
@@ -256,9 +255,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			foreignKeys:    []utils.ForeignKeysType{},
-			indexKeys:      []utils.IndexType{},
-			fields:         []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeBoolean), FieldNull: "NO", FieldDefault: "1"}},
+			foreignKeys:    []model.ForeignKeysType{},
+			indexKeys:      []model.IndexType{},
+			fields:         []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeBoolean), FieldNull: "NO", FieldDefault: "1"}},
 			wantErr:        false,
 			isPostgresSkip: true,
 			isMysqlSkip:    true,
@@ -270,9 +269,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			foreignKeys: []utils.ForeignKeysType{},
-			indexKeys:   []utils.IndexType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeInteger), FieldNull: "NO", FieldDefault: "100"}},
+			foreignKeys: []model.ForeignKeysType{},
+			indexKeys:   []model.IndexType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeInteger), FieldNull: "NO", FieldDefault: "100"}},
 			wantErr:     false,
 		},
 		{
@@ -282,9 +281,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			foreignKeys: []utils.ForeignKeysType{},
-			indexKeys:   []utils.IndexType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeFloat), FieldNull: "NO", FieldDefault: "9.8"}},
+			foreignKeys: []model.ForeignKeysType{},
+			indexKeys:   []model.IndexType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeFloat), FieldNull: "NO", FieldDefault: "9.8"}},
 			wantErr:     false,
 		},
 		{
@@ -294,9 +293,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			foreignKeys: []utils.ForeignKeysType{},
-			indexKeys:   []utils.IndexType{},
-			fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeDateTime), FieldNull: "NO", FieldDefault: "2020-05-30 00:42:05"}},
+			foreignKeys: []model.ForeignKeysType{},
+			indexKeys:   []model.IndexType{},
+			fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeDateTime), FieldNull: "NO", FieldDefault: "2020-05-30 00:42:05"}},
 			wantErr:     false,
 			isMssqlSkip: true,
 		},
@@ -307,9 +306,9 @@ func TestSQL_DescribeTable(t *testing.T) {
 				ctx: context.Background(),
 				col: "table1",
 			},
-			foreignKeys:    []utils.ForeignKeysType{},
-			indexKeys:      []utils.IndexType{},
-			fields:         []utils.FieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeDateTime), FieldNull: "NO", FieldDefault: "2020-05-30T00:42:05+00:00"}},
+			foreignKeys:    []model.ForeignKeysType{},
+			indexKeys:      []model.IndexType{},
+			fields:         []model.InspectorFieldType{{FieldName: firstColumn, FieldType: getSQLType(*dbType, model.TypeDateTime), FieldNull: "NO", FieldDefault: "2020-05-30T00:42:05+00:00"}},
 			wantErr:        false,
 			isMysqlSkip:    true,
 			isPostgresSkip: true,
@@ -1104,20 +1103,20 @@ func TestSQL_DescribeTable(t *testing.T) {
 		// },
 	}
 
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("DescribeTable() Couldn't establishing connection with database", dbType)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if *dbType == string(utils.MySQL) && tt.isMysqlSkip {
+			if *dbType == string(model.MySQL) && tt.isMysqlSkip {
 				return
 			}
-			if *dbType == string(utils.Postgres) && tt.isPostgresSkip {
+			if *dbType == string(model.Postgres) && tt.isPostgresSkip {
 				return
 			}
-			if *dbType == string(utils.SQLServer) && tt.isMssqlSkip {
+			if *dbType == string(model.SQLServer) && tt.isMssqlSkip {
 				return
 			}
 			// create table in db
@@ -1160,34 +1159,34 @@ func getSQLType(dbType, typename string) string {
 
 	switch typename {
 	case model.TypeID:
-		if dbType == string(utils.Postgres) {
+		if dbType == string(model.Postgres) {
 			return "character varying"
 		}
 		return "varchar(" + model.SQLTypeIDSize + ")"
 	case model.TypeString:
-		if dbType == string(utils.SQLServer) {
+		if dbType == string(model.SQLServer) {
 			return "varchar(max)"
 		}
 		return "text"
 	case model.TypeDateTime:
 		switch dbType {
-		case string(utils.MySQL):
+		case string(model.MySQL):
 			return "datetime"
-		case string(utils.SQLServer):
+		case string(model.SQLServer):
 			return "datetimeoffset"
 		default:
 			return "timestamp without time zone"
 		}
 	case model.TypeBoolean:
-		if dbType == string(utils.SQLServer) {
+		if dbType == string(model.SQLServer) {
 			return "bit"
 		}
-		if dbType == string(utils.MySQL) {
+		if dbType == string(model.MySQL) {
 			return "tinyint"
 		}
 		return "boolean"
 	case model.TypeFloat:
-		if dbType == string(utils.Postgres) {
+		if dbType == string(model.Postgres) {
 			return "double precision"
 		}
 		return "float"
@@ -1195,9 +1194,9 @@ func getSQLType(dbType, typename string) string {
 		return "bigint"
 	case model.TypeJSON:
 		switch dbType {
-		case string(utils.Postgres):
+		case string(model.Postgres):
 			return "jsonb"
-		case string(utils.MySQL):
+		case string(model.MySQL):
 			return "json"
 		}
 	}

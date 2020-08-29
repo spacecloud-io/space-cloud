@@ -69,7 +69,7 @@ func (m *mockGraphQLAuthInterface) IsFuncCallAuthorised(ctx context.Context, pro
 	args := m.Called(ctx, project, service, function, token, params)
 	return args.Get(0).(*model.PostProcess), args.Get(1).(model.RequestParams), args.Error(2)
 }
-func (m *mockGraphQLAuthInterface) PostProcessMethod(postProcess *model.PostProcess, result interface{}) error {
+func (m *mockGraphQLAuthInterface) PostProcessMethod(ctx context.Context, postProcess *model.PostProcess, result interface{}) error {
 	args := m.Called(postProcess, result)
 	return args.Error(0)
 }

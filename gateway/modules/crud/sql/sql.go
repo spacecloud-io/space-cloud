@@ -3,16 +3,18 @@ package sql
 import (
 	"context"
 	"database/sql"
-	"log"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/spaceuptech/helpers"
 
 	_ "github.com/denisenkom/go-mssqldb" // Import for MsSQL
 	_ "github.com/go-sql-driver/mysql"   // Import for MySQL
 	_ "github.com/lib/pq"                // Import for postgres
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -26,17 +28,17 @@ type SQL struct {
 }
 
 // Init initialises a new sql instance
-func Init(dbType utils.DBType, enabled bool, connection string, dbName string) (s *SQL, err error) {
+func Init(dbType model.DBType, enabled bool, connection string, dbName string) (s *SQL, err error) {
 	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil}
 
 	switch dbType {
-	case utils.Postgres:
+	case model.Postgres:
 		s.dbType = "postgres"
 
-	case utils.MySQL:
+	case model.MySQL:
 		s.dbType = "mysql"
 
-	case utils.SQLServer:
+	case model.SQLServer:
 		s.dbType = "sqlserver"
 
 	default:
@@ -70,28 +72,28 @@ func (s *SQL) Close() error {
 }
 
 // GetDBType returns the dbType of the crud block
-func (s *SQL) GetDBType() utils.DBType {
+func (s *SQL) GetDBType() model.DBType {
 	switch s.dbType {
 	case "postgres":
-		return utils.Postgres
+		return model.Postgres
 	case "mysql":
-		return utils.MySQL
+		return model.MySQL
 	case "sqlserver":
-		return utils.SQLServer
+		return model.SQLServer
 	}
 
-	return utils.MySQL
+	return model.MySQL
 }
 
 // IsClientSafe checks whether database is enabled and connected
-func (s *SQL) IsClientSafe() error {
+func (s *SQL) IsClientSafe(ctx context.Context) error {
 	if !s.enabled {
 		return utils.ErrDatabaseDisabled
 	}
 
 	if s.client == nil {
 		if err := s.connect(); err != nil {
-			log.Println("Error connecting to " + s.dbType + " : " + err.Error())
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error connecting to "+s.dbType+" : "+err.Error()), nil)
 			return utils.ErrDatabaseConnection
 		}
 	}

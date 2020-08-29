@@ -1339,7 +1339,8 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 				dbType:     tt.fields.dbType,
 				name:       tt.args.project,
 			}
-			got, got1, err := s.generateUpdateQuery(tt.args.ctx, tt.args.col, &tt.args.req, tt.args.op)
+
+			got, got1, err := s.generateUpdateQuery(context.Background(), tt.args.col, &tt.args.req, tt.args.op)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("name = %v, SQL.generateUpdateQuery() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return

@@ -4654,15 +4654,15 @@ func TestSQL_Read(t *testing.T) {
 		},
 	}
 
-	switch utils.DBType(*dbType) {
-	case utils.MySQL:
+	switch model.DBType(*dbType) {
+	case model.MySQL:
 		tests = mysqlCases
-	case utils.Postgres:
+	case model.Postgres:
 		tests = postgresCases
-	case utils.SQLServer:
+	case model.SQLServer:
 		tests = mssqlCases
 	}
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("Read() Couldn't establishing connection with database", dbType)
 	}
@@ -4671,7 +4671,7 @@ func TestSQL_Read(t *testing.T) {
 		t.Fatal("Read() Couldn't truncate orders table", err)
 		return
 	}
-	if utils.DBType(*dbType) == utils.SQLServer {
+	if model.DBType(*dbType) == model.SQLServer {
 		if _, err := db.client.Exec(`insert into myproject.orders (id,order_date,amount,is_prime,product_id,stars) values
 								('1','2001-11-01 14:29:36',10,1,'smart-phone',12.3),
 								('2','2001-11-12 14:29:36',19,0,'shoes',51.3),
@@ -4728,13 +4728,13 @@ func TestSQL_Read(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if *dbType == string(utils.MySQL) && tt.isMysqlSkip {
+			if *dbType == string(model.MySQL) && tt.isMysqlSkip {
 				return
 			}
-			if *dbType == string(utils.Postgres) && tt.isPostgresSkip {
+			if *dbType == string(model.Postgres) && tt.isPostgresSkip {
 				return
 			}
-			if *dbType == string(utils.SQLServer) && tt.isSQLServerSkip {
+			if *dbType == string(model.SQLServer) && tt.isSQLServerSkip {
 				return
 			}
 			gotCount, gotReadResult, gotErr := db.Read(tt.args.ctx, tt.args.col, tt.args.req)
