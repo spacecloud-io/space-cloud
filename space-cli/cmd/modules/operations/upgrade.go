@@ -28,6 +28,7 @@ func Upgrade(clusterName string, version string, imagePrefix string) error {
 	}
 	currentVersion := result["version"].(string)
 
+	var err error
 	latestVersion := version
 	if latestVersion == "default" {
 		// Getting latest version
