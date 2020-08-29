@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spaceuptech/helpers"
 
@@ -35,12 +35,11 @@ func actionRunner(c *cli.Context) error {
 	isMetricDisabled := c.Bool("disable-metrics")
 
 	artifactAddr := c.String("artifact-addr")
-	clusterID := c.String("cluster-id")
-	if clusterID == "" {
-		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Failed to setup runner: CLUSTER_ID environment variable not provided", nil, nil)
+	clusterName := c.String("cluster-name")
+	if driverType == model.DockerType {
+		helpers.Logger.LogInfo(helpers.GetRequestID(nil), fmt.Sprintf("Runner is starting in cluster (%s)", clusterName), nil)
 	}
-	clusterName := strings.Split(clusterID, "--")[0]
-
+	// Set the log level
 	if err := helpers.InitLogger(loglevel, logFormat, isDev); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to initialize loggers", err, nil)
 	}
