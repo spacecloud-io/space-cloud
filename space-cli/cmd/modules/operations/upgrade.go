@@ -28,11 +28,8 @@ func Upgrade(clusterName string, version string, imagePrefix string) error {
 	}
 	currentVersion := result["version"].(string)
 
-	var latestVersion string
-	var err error
-	if version != "" {
-		latestVersion = version
-	} else {
+	latestVersion := version
+	if latestVersion == "" {
 		// Getting latest version
 		latestVersion, err = utils.GetLatestVersion(currentVersion)
 		if err != nil {
