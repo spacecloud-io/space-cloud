@@ -143,7 +143,8 @@ func Setup(username, key, config, version, secret, imagePrefix, clusterName stri
 		"HOME_SECRETS_PATH=" + utils.GetMountTempSecretsDir(clusterName),
 		"HOSTS_FILE_PATH=" + utils.GetMountHostsFilePath(clusterName),
 		"ROUTING_FILE_PATH=" + "/routing-config.json",
-		"CLUSTER_ID=" + clusterID,
+		"CLUSTER_ID=" + clusterID,     // required for sending metrics
+		"CLUSTER_NAME=" + clusterName, // required for separating docker clusters locally
 		"PORT=4050",
 	}
 
@@ -186,9 +187,9 @@ func Setup(username, key, config, version, secret, imagePrefix, clusterName stri
 		portMapping    nat.PortMap
 	}{
 		{
-			name:           "gateway",
+			name:           string(model.ImageGateway),
 			containerImage: utils.GetSCImageName(imagePrefix, version, model.ImageGateway),
-			containerName:  utils.GetScContainers(clusterName, "gateway"),
+			containerName:  utils.GetScContainers(clusterName, string(model.ImageGateway)),
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           envs,
 			exposedPorts: nat.PortSet{
@@ -204,9 +205,9 @@ func Setup(username, key, config, version, secret, imagePrefix, clusterName stri
 
 		{
 			// runner
-			name:           "runner",
+			name:           string(model.ImageRunner),
 			containerImage: utils.GetSCImageName(imagePrefix, version, model.ImageRunner),
-			containerName:  utils.GetScContainers(clusterName, "runner"),
+			containerName:  utils.GetScContainers(clusterName, string(model.ImageRunner)),
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs:           runnerEnvs,
 			mount: []mount.Mount{

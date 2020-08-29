@@ -28,13 +28,16 @@ func Upgrade(clusterName string, version string, imagePrefix string) error {
 	}
 	currentVersion := result["version"].(string)
 
-	// Getting latest version
-	latestVersion, err := utils.GetLatestVersion(currentVersion)
-	if err != nil {
-		return err
-	}
+	var latestVersion string
+	var err error
 	if version != "" {
 		latestVersion = version
+	} else {
+		// Getting latest version
+		latestVersion, err = utils.GetLatestVersion(currentVersion)
+		if err != nil {
+			return err
+		}
 	}
 
 	if currentVersion == latestVersion {
@@ -69,7 +72,7 @@ func Upgrade(clusterName string, version string, imagePrefix string) error {
 	var runnerMounts []mount.Mount
 	var runnerLabels map[string]string
 
-	// Remove all container
+	// Remove gateway & runner container
 	for _, containerInfo := range containers {
 		containerInspect, err := cli.ContainerInspect(ctx, containerInfo.ID)
 		if err != nil {
@@ -77,7 +80,7 @@ func Upgrade(clusterName string, version string, imagePrefix string) error {
 		}
 
 		switch containerInspect.Config.Labels["service"] {
-		case "gateway":
+		case string(model.ImageGateway):
 			gatewayEnvs = containerInspect.Config.Env
 			gatewayMounts = containerInspect.HostConfig.Mounts
 			gatewayPorts = containerInspect.HostConfig.PortBindings
@@ -87,7 +90,7 @@ func Upgrade(clusterName string, version string, imagePrefix string) error {
 				return utils.LogError(fmt.Sprintf("Unable to remove container - %s", containerInfo.ID), err)
 			}
 
-		case "runner":
+		case string(model.ImageRunner):
 			runnerEnvs = containerInspect.Config.Env
 			runnerMounts = containerInspect.HostConfig.Mounts
 			runnerLabels = containerInspect.Config.Labels
@@ -109,7 +112,7 @@ func Upgrade(clusterName string, version string, imagePrefix string) error {
 	}{
 		{
 			containerImage: utils.GetSCImageName(imagePrefix, latestVersion, model.ImageGateway),
-			containerName:  utils.GetScContainers(clusterName, "gateway"),
+			containerName:  utils.GetScContainers(clusterName, string(model.ImageGateway)),
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			labels:         gatewayLabels,
 			envs:           gatewayEnvs,
@@ -121,7 +124,7 @@ func Upgrade(clusterName string, version string, imagePrefix string) error {
 		{
 			// runner
 			containerImage: utils.GetSCImageName(imagePrefix, latestVersion, model.ImageRunner),
-			containerName:  utils.GetScContainers(clusterName, "runner"),
+			containerName:  utils.GetScContainers(clusterName, string(model.ImageRunner)),
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			labels:         runnerLabels,
 			envs:           runnerEnvs,

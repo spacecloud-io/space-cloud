@@ -63,6 +63,12 @@ func main() {
 					Value:  "first-cluster",
 				},
 				cli.StringFlag{
+					Name:   "cluster-name",
+					EnvVar: "CLUSTER_NAME",
+					Usage:  "The cluster name to uniquely identify the docker clusters",
+					Value:  "default",
+				},
+				cli.StringFlag{
 					Name:   "port",
 					EnvVar: "PORT",
 					Usage:  "The port the runner will bind too",

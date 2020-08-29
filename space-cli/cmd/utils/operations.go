@@ -68,17 +68,11 @@ func ChangeSelectedAccount(clusterName string) error {
 	credential.SelectedAccount = ""
 	for _, v := range credential.Accounts {
 		// With version (v0.19.0) account id has a clusterName prefix separated by -- (default--someId)
-		clusterNameCumAccountID := strings.Split(v.ID, "--")[0]
-		if clusterNameCumAccountID == "" {
+		if v.ID == "" {
 			// this condition occurs when space cli is logged in with a remote server
 			continue
 		}
-		if clusterNameCumAccountID == clusterName {
-			credential.SelectedAccount = v.ID
-			break
-		}
-		// This is for compatibility with version (v0.18.0)
-		if clusterNameCumAccountID == v.ID {
+		if v.ID == clusterName {
 			credential.SelectedAccount = v.ID
 			break
 		}
@@ -97,18 +91,10 @@ func ChangeSelectedAccount(clusterName string) error {
 
 //GetSCImageName get the sc image name and add the image prefix when required
 func GetSCImageName(imagePrefix, version string, t model.ImageType) string {
-	if imagePrefix != "" && !strings.HasSuffix(imagePrefix,"/")  {
+	if !strings.HasSuffix(imagePrefix, "/") {
 		imagePrefix += "/"
 	}
-	switch t {
-	case model.ImageRunner:
-		return fmt.Sprintf("%s%s:%s", imagePrefix, "spaceuptech/runner", version)
-	case model.ImageGateway:
-		return fmt.Sprintf("%s%s:%s", imagePrefix, "spaceuptech/gateway", version)
-	default:
-		LogInfo("Invalid image type provided for getting sc image name with image prefix")
-		return ""
-	}
+	return fmt.Sprintf("%s%s:%s", imagePrefix, t, version)
 }
 
 // GetNetworkName provides network name of particular cluster

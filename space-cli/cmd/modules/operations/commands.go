@@ -147,7 +147,7 @@ func Commands() []*cobra.Command {
 	if err != nil {
 		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
-	setup.Flags().StringP("image-prefix", "", "", "Prefix to use for providing custom image names")
+	setup.Flags().StringP("image-prefix", "", "spaceuptech", "Prefix to use for providing custom image names")
 
 	if err := setup.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
 		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
@@ -171,7 +171,7 @@ func Commands() []*cobra.Command {
 	}
 	upgrade.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
 	upgrade.Flags().StringP("version", "", "default", "version to use for upgrade")
-	upgrade.Flags().StringP("image-prefix", "", "", "Prefix to use for providing custom image names")
+	upgrade.Flags().StringP("image-prefix", "", "spaceuptech", "Prefix to use for providing custom image names")
 
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
 		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
