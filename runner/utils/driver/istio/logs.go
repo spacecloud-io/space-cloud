@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/spaceuptech/helpers"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/spaceuptech/space-cloud/runner/utils"
 )

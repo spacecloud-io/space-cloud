@@ -29,17 +29,17 @@ func (s *ConsulStore) GetAdminConfig(ctx context.Context) (*config.Admin, error)
 	key := fmt.Sprintf("sc/admin-config/%s", s.clusterID)
 	kvPair, _, err := s.consulClient.KV().Get(key, &api.QueryOptions{})
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unable to fetch key (%s) from consul", key), err, map[string]interface{}{})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to fetch key (%s) from consul", key), err, map[string]interface{}{})
 	}
 
 	// kvPair will be nil if key doesn't exists
 	if kvPair == nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Specified key (%s) doesn't exists in consul", key), err, map[string]interface{}{})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Specified key (%s) doesn't exists in consul", key), err, map[string]interface{}{})
 	}
 
 	var cluster *config.Admin
 	if err := json.Unmarshal(kvPair.Value, &cluster); err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to unmarshal cluster config of consul to json", err, map[string]interface{}{})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to unmarshal cluster config of consul to json", err, map[string]interface{}{})
 	}
 
 	return cluster, nil
@@ -81,7 +81,7 @@ func (s *ConsulStore) Register() {
 		defer ticker.Stop()
 		for range ticker.C {
 			if _, _, err := session.Renew(id, opts); err != nil {
-				helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Could not renew consul session", map[string]interface{}{"error": err})
+				helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Could not renew consul session", map[string]interface{}{"error": err})
 				// register again
 				s.Register()
 				return
@@ -113,7 +113,7 @@ func (s *ConsulStore) WatchAdminConfig(cb func(cluster []*config.Admin)) error {
 
 		for _, kv := range kvPairs {
 			if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
-				helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
+				helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
 				continue
 			}
 		}
@@ -122,7 +122,7 @@ func (s *ConsulStore) WatchAdminConfig(cb func(cluster []*config.Admin)) error {
 
 	go func() {
 		if err := p.Run(""); err != nil {
-			helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Sync Manager: could not start watcher", map[string]interface{}{"error": err})
+			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Sync Manager: could not start watcher", map[string]interface{}{"error": err})
 			os.Exit(-1)
 		}
 	}()
@@ -151,7 +151,7 @@ func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 			}
 			project := new(config.Project)
 			if err := json.Unmarshal(kv.Value, project); err != nil {
-				helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
+				helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
 				continue
 			}
 			projects = append(projects, project)
@@ -161,7 +161,7 @@ func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 
 	go func() {
 		if err := p.Run(""); err != nil {
-			helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Sync Manager: could not start watcher", map[string]interface{}{"error": err})
+			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Sync Manager: could not start watcher", map[string]interface{}{"error": err})
 			os.Exit(-1)
 		}
 	}()
@@ -204,7 +204,7 @@ func (s *ConsulStore) WatchServices(cb func(scServices)) error {
 
 	go func() {
 		if err := p.Run(""); err != nil {
-			helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Sync Manager: could not start watch", map[string]interface{}{"error": err})
+			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Sync Manager: could not start watch", map[string]interface{}{"error": err})
 			os.Exit(-1)
 		}
 	}()

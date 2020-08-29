@@ -1,6 +1,7 @@
 package tmpl
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -20,7 +21,7 @@ func GoTemplate(module, segment string, tmpl *template.Template, format, token s
 	object := map[string]interface{}{"args": params, "auth": claims, "token": token}
 	var b strings.Builder
 	if err := tmpl.Execute(&b, object); err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to execute golang template", err, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to execute golang template", err, nil)
 	}
 
 	s := b.String()
@@ -32,16 +33,16 @@ func GoTemplate(module, segment string, tmpl *template.Template, format, token s
 
 	case "json":
 		if err := json.Unmarshal([]byte(s), &newParams); err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unable to marhsal templated output (%s) to JSON", s), err, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to marhsal templated output (%s) to JSON", s), err, nil)
 		}
 
 	case "yaml", "":
 		if err := yaml.Unmarshal([]byte(s), &newParams); err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unable to marhsal templated output (%s) to YAML", s), err, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to marhsal templated output (%s) to YAML", s), err, nil)
 		}
 
 	default:
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Invalid output format (%s) provided", format), nil, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid output format (%s) provided", format), nil, nil)
 	}
 
 	return newParams, nil

@@ -87,7 +87,7 @@ func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batc
 			// safe operation since SetConfig will hold a lock preventing others from writing into this channel after its closed
 			close(addInsertToBatchCh)
 			close(done)
-			helpers.Logger.LogDebug(helpers.GetRequestID(nil), fmt.Sprintf("closing batcher for database %s table %s", dbAlias, tableName), nil)
+			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("closing batcher for database %s table %s", dbAlias, tableName), nil)
 			return
 		case v := <-addInsertToBatchCh:
 			responseChannels = append(responseChannels, v.response)

@@ -26,7 +26,7 @@ func TestCreateToken(t *testing.T) {
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.SetSecrets("", test.secretKeys)
-			_, err := authModule.CreateToken(test.object, ctx)
+			_, err := authModule.CreateToken(context.Background(), test.object)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got Error", err, "Wanted Error ", test.IsErrExpected)
 			}

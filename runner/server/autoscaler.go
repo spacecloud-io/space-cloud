@@ -57,7 +57,7 @@ func (s *Server) aggregate() {
 
 	// Orchestrate the stream
 	if err := stream.Orchestrate(context.Background()); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Could start stream from badger:", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Could start stream from badger:", err, nil)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (s *Server) aggregate() {
 			defer cancel()
 
 			if err := s.driver.AdjustScale(ctx, &model.Service{ProjectID: project, ID: service, Version: version}, value); err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Could not adjust scale of service (%s:%s)", project, service), err, nil)
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Could not adjust scale of service (%s:%s)", project, service), err, nil)
 			}
 		}()
 
@@ -92,7 +92,7 @@ func (s *Server) aggregate() {
 			defer cancel()
 
 			if err := s.driver.AdjustScale(ctx, &model.Service{ProjectID: project, ID: service, Version: version}, value); err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Could not adjust scale of service (%s:%s)", project, service), err, nil)
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Could not adjust scale of service (%s:%s)", project, service), err, nil)
 			}
 		}()
 	})
@@ -113,7 +113,7 @@ func (s *Server) routineDumpDetails() {
 		case <-ticker.C:
 			if len(messages) > 0 {
 				if err := s.flushMetrics(messages); err != nil {
-					_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Could not flush metrics to disk:", err, nil)
+					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Could not flush metrics to disk:", err, nil)
 				}
 				messages = []*model.ProxyMessage{}
 			}

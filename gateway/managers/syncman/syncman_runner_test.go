@@ -1,6 +1,7 @@
 package syncman
 
 import (
+	"context"
 	"errors"
 	"testing"
 )
@@ -71,7 +72,7 @@ func TestManager_GetClusterType(t *testing.T) {
 
 			tt.args.admin = &mockAdmin
 
-			got, err := tt.s.GetClusterType(ctx, tt.args.admin)
+			got, err := tt.s.GetClusterType(context.Background(), tt.args.admin)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetClusterType() error = %v, wantErr %v", err, tt.wantErr)
 				return

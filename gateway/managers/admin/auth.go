@@ -55,5 +55,5 @@ func (m *Manager) parseToken(ctx context.Context, token string) (map[string]inte
 		return obj, nil
 	}
 
-	return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Admin: JWT token could not be verified", nil, nil)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Admin: JWT token could not be verified", nil, nil)
 }

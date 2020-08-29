@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -37,11 +38,11 @@ func actionRunner(c *cli.Context) error {
 	artifactAddr := c.String("artifact-addr")
 	clusterName := c.String("cluster-name")
 	if driverType == model.DockerType {
-		helpers.Logger.LogInfo(helpers.GetRequestID(nil), fmt.Sprintf("Runner is starting in cluster (%s)", clusterName), nil)
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Runner is starting in cluster (%s)", clusterName), nil)
 	}
 	// Set the log level
 	if err := helpers.InitLogger(loglevel, logFormat, isDev); err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to initialize loggers", err, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to initialize loggers", err, nil)
 	}
 
 	// Create a new runner object
@@ -63,7 +64,7 @@ func actionRunner(c *cli.Context) error {
 		},
 	})
 	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Failed to start runner", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Failed to start runner", err, nil)
 		os.Exit(-1)
 	}
 

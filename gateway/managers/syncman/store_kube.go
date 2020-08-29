@@ -55,12 +55,12 @@ func onAddOrUpdateAdminConfig(obj interface{}, clusters []*config.Admin) {
 	configMap := obj.(*v1.ConfigMap)
 	clusterJSONString, ok := configMap.Data["cluster"]
 	if !ok {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to watch kube store admin config as field (cluster) not found in config map", nil, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to watch kube store admin config as field (cluster) not found in config map", nil, nil)
 		return
 	}
 
 	if err := json.Unmarshal([]byte(clusterJSONString), clusters[0]); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to unmarshal config map data while watching kube store admin config", nil, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to unmarshal config map data while watching kube store admin config", nil, nil)
 		return
 	}
 	if clusters[0].ClusterConfig == nil {
@@ -72,13 +72,13 @@ func onAddOrUpdateProjects(obj interface{}, projectMap map[string]*config.Projec
 	configMap := obj.(*v1.ConfigMap)
 	projectJSONString, ok := configMap.Data["project"]
 	if !ok {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to watch kube store project as field (cluster) not found in config map", nil, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to watch kube store project as field (cluster) not found in config map", nil, nil)
 		return nil
 	}
 
 	v := new(config.Project)
 	if err := json.Unmarshal([]byte(projectJSONString), v); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to unmarshal config map data while watching kube store project", nil, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to unmarshal config map data while watching kube store project", nil, nil)
 		return nil
 	}
 	projectMap[v.ID] = v
@@ -115,7 +115,7 @@ func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 
 		go informer.Run(stopper)
 		<-stopper
-		helpers.Logger.LogDebug(helpers.GetRequestID(nil), "stopped watching over projects in kube store", nil)
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "stopped watching over projects in kube store", nil)
 	}()
 	return nil
 }
@@ -151,7 +151,7 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 				configMap := obj.(*v1.ConfigMap)
 				projectID, ok := configMap.Data["id"]
 				if !ok {
-					_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to delete project while watching kube store projects as field (id) not present in config map", nil, nil)
+					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to delete project while watching kube store projects as field (id) not present in config map", nil, nil)
 					return
 				}
 				delete(projectMap, projectID)
@@ -165,7 +165,7 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 
 		go informer.Run(stopper)
 		<-stopper
-		helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Stopped watching over projects in kube store", nil)
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Stopped watching over projects in kube store", nil)
 	}()
 	return nil
 }
@@ -176,10 +176,10 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 
 	// Ignore if pod isn't running
 	if pod.Status.Phase != v1.PodRunning || pod.Status.PodIP == "" {
-		helpers.Logger.LogDebug(helpers.GetRequestID(nil), fmt.Sprintf("Pod (%s) isn't running yet. Current status - %s", id, pod.Status.Phase), nil)
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Pod (%s) isn't running yet. Current status - %s", id, pod.Status.Phase), nil)
 		for index, service := range services {
 			if service.id == id {
-				helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Removing space cloud service from kubernetes", map[string]interface{}{"id": id})
+				helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Removing space cloud service from kubernetes", map[string]interface{}{"id": id})
 				services[index] = services[len(services)-1]
 				services = services[:len(services)-1]
 				break
@@ -193,7 +193,7 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 	doesExist := false
 	for _, service := range services {
 		if service.id == id {
-			helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Updating space cloud service in kubernetes", map[string]interface{}{"id": id, "addr": addr})
+			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating space cloud service in kubernetes", map[string]interface{}{"id": id, "addr": addr})
 			doesExist = true
 			service.addr = addr
 			break
@@ -202,7 +202,7 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 
 	// add service if it doesn't exist
 	if !doesExist {
-		helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Adding a space cloud service in kubernetes", map[string]interface{}{"id": id, "addr": addr})
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Adding a space cloud service in kubernetes", map[string]interface{}{"id": id, "addr": addr})
 		services = append(services, &service{id: id, addr: addr})
 	}
 	return services
@@ -232,7 +232,7 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 				for index, service := range services {
 					if service.id == id {
 						// remove service
-						helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Removing space cloud service from kubernetes", map[string]interface{}{"id": id})
+						helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Removing space cloud service from kubernetes", map[string]interface{}{"id": id})
 						services[index] = services[len(services)-1]
 						services = services[:len(services)-1]
 						break
@@ -250,7 +250,7 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 
 		go informer.Run(stopper)
 		<-stopper
-		helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Stopped watching over services in kube store channel closed", nil)
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Stopped watching over services in kube store channel closed", nil)
 	}()
 
 	return nil
@@ -260,7 +260,7 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) error {
 	projectJSONString, err := json.Marshal(project)
 	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to set project in kube store couldn't unmarshal project config", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set project in kube store couldn't unmarshal project config", err, nil)
 		return err
 	}
 
@@ -283,11 +283,11 @@ func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) err
 		}
 		_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Create(configMap)
 		if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to set project in kube store couldn't create config map", err, nil)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set project in kube store couldn't create config map", err, nil)
 		}
 		return err
 	} else if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to set project in kube store couldn't set config map", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set project in kube store couldn't set config map", err, nil)
 		return err
 	}
 
@@ -296,7 +296,7 @@ func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) err
 
 	_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Update(configMap)
 	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to set project in kube store couldn't update config map", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set project in kube store couldn't update config map", err, nil)
 	}
 	return err
 }
@@ -310,7 +310,7 @@ func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 		if kubeErrors.IsNotFound(err) {
 			return getDefaultAdminConfig(), nil
 		} else if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unable to fetch config map (%s) from kubernetes", name), err, map[string]interface{}{"namespace": spaceCloud})
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to fetch config map (%s) from kubernetes", name), err, map[string]interface{}{"namespace": spaceCloud})
 
 			// Sleep for 5 seconds then try again
 			time.Sleep(5 * time.Second)
@@ -319,12 +319,12 @@ func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 
 		clusterJSONString, ok := configMap.Data["cluster"]
 		if !ok {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Admin config data is corrupted", errors.New("key (cluster) not found in config map data object"), map[string]interface{}{})
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Admin config data is corrupted", errors.New("key (cluster) not found in config map data object"), map[string]interface{}{})
 		}
 
 		cluster := new(config.Admin)
 		if err := json.Unmarshal([]byte(clusterJSONString), cluster); err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Admin config data is corrupted", err, map[string]interface{}{})
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Admin config data is corrupted", err, map[string]interface{}{})
 		}
 
 		return cluster, nil
@@ -337,7 +337,7 @@ func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 func (s *KubeStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
 	clusterJSONString, err := json.Marshal(cluster)
 	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to set admin config in kube store couldn't unmarshal admin config data", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config in kube store couldn't unmarshal admin config data", err, nil)
 		return err
 	}
 
@@ -358,11 +358,11 @@ func (s *KubeStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) e
 		}
 		_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Create(configMap)
 		if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to set admin config in kube store couldn't create config map", err, nil)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config in kube store couldn't create config map", err, nil)
 		}
 		return err
 	} else if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to set admin config in kube store couldn't get config map", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config in kube store couldn't get config map", err, nil)
 		return err
 	}
 
@@ -370,7 +370,7 @@ func (s *KubeStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) e
 
 	_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Update(configMap)
 	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to set admin config in kube store couldn't update config map", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config in kube store couldn't update config map", err, nil)
 	}
 	return err
 }
@@ -381,7 +381,7 @@ func (s *KubeStore) DeleteProject(ctx context.Context, projectID string) error {
 	if kubeErrors.IsNotFound(err) {
 		return nil
 	} else if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to delete project in kube store couldn't get config map", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to delete project in kube store couldn't get config map", err, nil)
 	}
 	return err
 }

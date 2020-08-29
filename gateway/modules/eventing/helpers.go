@@ -259,7 +259,7 @@ func (m *Module) selectRule(name string) (*config.EventingRule, error) {
 	if rule, ok := m.config.InternalRules[name]; ok {
 		return rule, nil
 	}
-	return &config.EventingRule{}, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Could not find rule with name %s", name), nil, nil)
+	return &config.EventingRule{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Could not find rule with name %s", name), nil, nil)
 }
 
 func (m *Module) validate(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
@@ -288,7 +288,7 @@ func (m *Module) createGoTemplate(kind, triggerName, tmpl string) error {
 	t = t.Funcs(tmpl2.CreateGoFuncMaps(nil))
 	val, err := t.Parse(tmpl)
 	if err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Invalid golang template provided", err, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Invalid golang template provided", err, nil)
 	}
 
 	m.templates[key] = val
@@ -312,7 +312,7 @@ func (m *Module) adjustReqBody(trigger, token string, endpoint *config.EventingR
 			}
 		}
 	default:
-		helpers.Logger.LogWarn(helpers.GetRequestID(nil), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"trigger": token})
+		helpers.Logger.LogWarn(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"trigger": token})
 		return params, nil
 	}
 

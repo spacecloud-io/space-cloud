@@ -1,6 +1,8 @@
 package modules
 
 import (
+	"context"
+
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/managers"
@@ -83,23 +85,23 @@ func New(nodeID string, managers *managers.Managers, globalMods *global.Global) 
 // Delete deletes a project
 func (m *Modules) Delete(projectID string) {
 	// Close all the modules here
-	helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Closing config of db module", nil)
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of db module", nil)
 	if err := m.db.CloseConfig(); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Error closing db module config", err, map[string]interface{}{"project": projectID})
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing db module config", err, map[string]interface{}{"project": projectID})
 	}
 
-	helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Closing config of filestore module", nil)
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of filestore module", nil)
 	if err := m.file.CloseConfig(); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Error closing filestore module config", err, map[string]interface{}{"project": projectID})
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing filestore module config", err, map[string]interface{}{"project": projectID})
 	}
 
-	helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Closing config of eventing module", nil)
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of eventing module", nil)
 	if err := m.eventing.CloseConfig(); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Error closing eventing module config", err, map[string]interface{}{"project": projectID})
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing eventing module config", err, map[string]interface{}{"project": projectID})
 	}
 
-	helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Closing config of realtime module", nil)
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of realtime module", nil)
 	if err := m.realtime.CloseConfig(); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Error closing realtime module config", err, map[string]interface{}{"project": projectID})
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing realtime module config", err, map[string]interface{}{"project": projectID})
 	}
 }

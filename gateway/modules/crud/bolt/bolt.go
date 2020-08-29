@@ -60,14 +60,14 @@ func (b *Bolt) IsClientSafe(ctx context.Context) error {
 
 func (b *Bolt) connect() error {
 	if err := b.Close(); err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to close previous database connection in bbolt db", nil, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to close previous database connection in bbolt db", nil, nil)
 	}
 
 	client, err := bbolt.Open(b.connection, 0600, bbolt.DefaultOptions)
 	if err != nil {
 		return err
 	}
-	helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Successfully connected to bbolt database", nil)
+	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Successfully connected to bbolt database", nil)
 	b.client = client
 	return nil
 }

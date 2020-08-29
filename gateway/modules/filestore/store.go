@@ -88,10 +88,10 @@ func (m *Module) SetConfig(project string, conf *config.FileStore) error {
 	if isSecretExists {
 		value, err := m.getSecrets(project, secretName, secretKey)
 		if err != nil {
-			return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to fetch secret from runner", err, nil)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch secret from runner", err, nil)
 		}
 		if err := setFileSecret(utils.FileStoreType(conf.StoreType), secretKey, value); err != nil {
-			return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to create credential file in gateway", err, nil)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to create credential file in gateway", err, nil)
 		}
 	}
 

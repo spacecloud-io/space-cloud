@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -43,7 +44,7 @@ func New(path string) (*Manager, error) {
 func (m *Manager) loadConfigFromFile() error {
 	content, err := ioutil.ReadFile(m.path)
 	if err != nil {
-		helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Could not load service routing file. Resetting to default", nil)
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Could not load service routing file. Resetting to default", nil)
 		m.serviceRoutes = model.Config{}
 		return nil
 	}

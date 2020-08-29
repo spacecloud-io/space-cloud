@@ -237,7 +237,7 @@ func (m *Module) createGoTemplate(kind, serviceID, endpointID, tmpl string) erro
 	t = t.Funcs(tmpl2.CreateGoFuncMaps(m.auth))
 	val, err := t.Parse(tmpl)
 	if err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Invalid golang template provided", err, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Invalid golang template provided", err, nil)
 	}
 
 	m.templates[key] = val

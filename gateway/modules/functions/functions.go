@@ -1,6 +1,7 @@
 package functions
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"text/template"
@@ -45,7 +46,7 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 	defer m.lock.Unlock()
 
 	if c == nil {
-		helpers.Logger.LogWarn(helpers.GetRequestID(nil), "Empty config provided for functions module", map[string]interface{}{"project": project})
+		helpers.Logger.LogWarn(helpers.GetRequestID(context.TODO()), "Empty config provided for functions module", map[string]interface{}{"project": project})
 		return nil
 	}
 
@@ -91,7 +92,7 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 					}
 				}
 			default:
-				return helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Invalid templating engine (%s) provided", endpoint.Tmpl), nil, nil)
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided", endpoint.Tmpl), nil, nil)
 			}
 		}
 	}

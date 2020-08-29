@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/helpers"
 
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -23,9 +22,6 @@ func HandleProfile(modules *modules.Modules) http.HandlerFunc {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
-
-		var reqParams model.RequestParams
-		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		defer utils.CloseTheCloser(r.Body)
 
@@ -58,9 +54,6 @@ func HandleProfiles(modules *modules.Modules) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		var reqParams model.RequestParams
-		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
-
 		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
@@ -90,9 +83,6 @@ func HandleEmailSignIn(modules *modules.Modules) http.HandlerFunc {
 
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
-
-		var reqParams model.RequestParams
-		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		// Get the path parameters
 		vars := mux.Vars(r)
@@ -124,9 +114,6 @@ func HandleEmailSignUp(modules *modules.Modules) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		var reqParams model.RequestParams
-		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
-
 		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
@@ -156,9 +143,6 @@ func HandleEmailEditProfile(modules *modules.Modules) http.HandlerFunc {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
-
-		var reqParams model.RequestParams
-		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		// Get the path parameters
 		vars := mux.Vars(r)

@@ -103,7 +103,7 @@ func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName
 		}
 		return c, err
 	default:
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unsupported database (%s) provided", dbType), nil, map[string]interface{}{})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unsupported database (%s) provided", dbType), nil, map[string]interface{}{})
 	}
 }
 
@@ -111,7 +111,7 @@ func (m *Module) getCrudBlock(dbAlias string) (Crud, error) {
 	if m.block != nil && m.alias == dbAlias {
 		return m.block, nil
 	}
-	return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to get database connection", fmt.Errorf("crud module not initialized yet for %q", dbAlias), nil)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to get database connection", fmt.Errorf("crud module not initialized yet for %q", dbAlias), nil)
 }
 
 // SetConfig set the rules and secret key required by the crud block
@@ -120,7 +120,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	defer m.Unlock()
 
 	if len(crud) > 1 {
-		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Crud module cannot have more than 1 database", errors.New(""), map[string]interface{}{"project": project})
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Crud module cannot have more than 1 database", errors.New(""), map[string]interface{}{"project": project})
 	}
 
 	m.project = project
@@ -154,7 +154,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			var err error
 			connectionString, err = m.getSecrets(project, secretName, "CONN")
 			if err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to fetch secret from runner", err, map[string]interface{}{"project": project})
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch secret from runner", err, map[string]interface{}{"project": project})
 			}
 		}
 
@@ -165,7 +165,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			}
 			// Close the previous database connection
 			if err := m.block.Close(); err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to close database connections", err, map[string]interface{}{"project": project})
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to close database connections", err, map[string]interface{}{"project": project})
 			}
 		}
 
@@ -177,9 +177,9 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 		if v.Enabled {
 			if err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(nil), "Cannot connect to database", err, map[string]interface{}{"project": project, "dbAlias": k, "dbType": v.Type, "conn": v.Conn, "logicalDbName": v.DBName})
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Cannot connect to database", err, map[string]interface{}{"project": project, "dbAlias": k, "dbType": v.Type, "conn": v.Conn, "logicalDbName": v.DBName})
 			}
-			helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Successfully connected to database", map[string]interface{}{"project": project, "dbAlias": k, "dbType": v.Type})
+			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Successfully connected to database", map[string]interface{}{"project": project, "dbAlias": k, "dbType": v.Type})
 		}
 
 		m.dbType = v.Type
@@ -205,7 +205,7 @@ func splitConnectionString(connection string) (string, bool) {
 func (m *Module) GetDBType(dbAlias string) (string, error) {
 	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
 	if dbAlias != m.alias {
-		return "", helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Cannot get db type as invalid db alias (%s) provided", dbAlias), nil, nil)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot get db type as invalid db alias (%s) provided", dbAlias), nil, nil)
 	}
 	return m.dbType, nil
 }
@@ -234,7 +234,7 @@ func (m *Module) CloseConfig() error {
 	if m.block != nil {
 		err := m.block.Close()
 		if err != nil {
-			return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to close database connection", err, map[string]interface{}{})
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to close database connection", err, map[string]interface{}{})
 		}
 	}
 

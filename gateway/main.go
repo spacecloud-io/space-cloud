@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"os"
@@ -166,7 +167,7 @@ func actionRun(c *cli.Context) error {
 	logFormat := c.String("log-format")
 
 	if err := helpers.InitLogger(logLevel, logFormat, isDev); err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to initialize loggers", err, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to initialize loggers", err, nil)
 	}
 	// Load flag related to the port
 	port := c.Int("port")
@@ -235,7 +236,7 @@ func initMissionContol(version string) (string, error) {
 	uiPath := homeDir + "/.space-cloud/mission-control-v" + version
 	_, err := os.Stat(uiPath)
 	if os.IsNotExist(err) {
-		helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Could not find mission control", nil)
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Could not find mission control", nil)
 		_, err := os.Stat(homeDir + "/.space-cloud")
 		if err != nil && !os.IsNotExist(err) {
 			return "", err
@@ -246,17 +247,17 @@ func initMissionContol(version string) (string, error) {
 				return "", err
 			}
 		}
-		helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Downloading...", nil)
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Downloading...", nil)
 		err = utils.DownloadFileFromURL("https://storage.googleapis.com/space-cloud/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
 		if err != nil {
 			return "", err
 		}
-		helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Extracting...", nil)
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Extracting...", nil)
 		err = utils.Unzip(uiPath+".zip", uiPath)
 		if err != nil {
 			return "", err
 		}
-		helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Done...", nil)
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Done...", nil)
 		err = os.Remove(uiPath + ".zip")
 		if err != nil {
 			return "", err

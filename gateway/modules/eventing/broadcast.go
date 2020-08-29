@@ -1,6 +1,7 @@
 package eventing
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -22,7 +23,7 @@ func (m *Module) ProcessTransmittedEvents(eventDocs []*model.EventDocument) {
 		if eventDoc.Token >= start && eventDoc.Token <= end {
 			timestamp, err := time.Parse(time.RFC3339, eventDoc.Timestamp)
 			if err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Could not parse (%s) in event doc (%s) as time", eventDoc.Timestamp, eventDoc.ID), err, nil)
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Could not parse (%s) in event doc (%s) as time", eventDoc.Timestamp, eventDoc.ID), err, nil)
 				continue
 			}
 

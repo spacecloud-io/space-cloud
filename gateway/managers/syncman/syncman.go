@@ -62,7 +62,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 	case "etcd":
 		s, err = NewETCDStore(nodeID, clusterID, advertiseAddr)
 	default:
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Cannot initialize syncaman as invalid store type (%v) provided", storeType), nil, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot initialize syncaman as invalid store type (%v) provided", storeType), nil, nil)
 	}
 
 	if err != nil {
@@ -83,9 +83,9 @@ func (s *Manager) Start(port int) error {
 
 	adminConfig, err := s.store.GetAdminConfig(context.Background())
 	if err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to fetch initial copy of admin config", err, map[string]interface{}{})
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch initial copy of admin config", err, map[string]interface{}{})
 	}
-	helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Successfully loaded initial copy of config file", map[string]interface{}{})
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Successfully loaded initial copy of config file", map[string]interface{}{})
 	s.globalModules.SetMetricsConfig(adminConfig.ClusterConfig.EnableTelemetry)
 	if adminConfig.ClusterConfig.LetsEncryptEmail != "" {
 		s.modules.LetsEncrypt().SetLetsEncryptEmail(adminConfig.ClusterConfig.LetsEncryptEmail)
@@ -97,7 +97,7 @@ func (s *Manager) Start(port int) error {
 	if err := s.store.WatchProjects(func(projects []*config.Project) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
-		helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Updating projects", map[string]interface{}{"projects": projects})
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating projects", map[string]interface{}{"projects": projects})
 		for _, p := range s.projectConfig.Projects {
 			doesNotExist := true
 			for _, q := range projects {
@@ -109,7 +109,7 @@ func (s *Manager) Start(port int) error {
 			if doesNotExist {
 				err := s.store.DeleteProject(context.Background(), p.ID)
 				if err != nil {
-					_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to delete project", err, map[string]interface{}{"project": p.ID})
+					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to delete project", err, map[string]interface{}{"project": p.ID})
 				}
 				s.modules.Delete(p.ID)
 			}
@@ -134,9 +134,9 @@ func (s *Manager) Start(port int) error {
 		s.projectConfig.Admin = cluster
 		s.lock.Unlock()
 
-		helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Updating admin config", nil)
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating admin config", nil)
 		if err := s.adminMan.SetConfig(cluster); err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
 			return
 		}
 		s.globalModules.SetMetricsConfig(cluster.ClusterConfig.EnableTelemetry)
@@ -150,7 +150,7 @@ func (s *Manager) Start(port int) error {
 	if err := s.store.WatchServices(func(services scServices) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
-		helpers.Logger.LogDebug(helpers.GetRequestID(nil), "Updating services", map[string]interface{}{"services": services})
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services})
 
 		s.services = services
 	}); err != nil {

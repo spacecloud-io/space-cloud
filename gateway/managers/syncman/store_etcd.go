@@ -34,17 +34,17 @@ func (s *ETCDStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 	key := fmt.Sprintf("sc/admin-config/%s", s.clusterID)
 	res, err := s.kv.Get(ctx, key)
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unable to fetch key (%s) from etcd", key), err, map[string]interface{}{})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to fetch key (%s) from etcd", key), err, map[string]interface{}{})
 	}
 
 	if len(res.Kvs) == 0 {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Specified key (%s) doesn't exists in etcd", key), err, map[string]interface{}{})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Specified key (%s) doesn't exists in etcd", key), err, map[string]interface{}{})
 	}
 
 	// we will get the latest value at index 0, as we haven't specified any revision option in get method
 	var cluster *config.Admin
 	if err := json.Unmarshal(res.Kvs[0].Value, &cluster); err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to unmarshal cluster config of etcd to json", err, map[string]interface{}{})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to unmarshal cluster config of etcd to json", err, map[string]interface{}{})
 	}
 
 	return cluster, nil
@@ -61,12 +61,12 @@ type trackedItemMeta struct {
 func NewETCDStore(nodeID, clusterID, advertiseAddr string) (*ETCDStore, error) {
 	config, err := loadConfig()
 	if err != nil {
-		return &ETCDStore{}, helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to load etch config from environment variables", err, nil)
+		return &ETCDStore{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to load etch config from environment variables", err, nil)
 	}
 
 	client, err := clientv3.New(config)
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to initialize etcd client", err, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to initialize etcd client", err, nil)
 	}
 	return &ETCDStore{etcdClient: client, nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, kv: clientv3.NewKV(client)}, nil
 }
@@ -75,7 +75,7 @@ func NewETCDStore(nodeID, clusterID, advertiseAddr string) (*ETCDStore, error) {
 func loadConfig() (clientv3.Config, error) {
 	isSSL, err := strconv.ParseBool(os.Getenv("ETCD_HTTP_SSL"))
 	if err != nil {
-		return clientv3.Config{}, helpers.Logger.LogError(helpers.GetRequestID(nil), "Unable to parse ETCD_HTTP_SSL environment variable to bool", err, nil)
+		return clientv3.Config{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to parse ETCD_HTTP_SSL environment variable to bool", err, nil)
 	}
 
 	endpoints := os.Getenv("ETCD_ENDPOINTS")
@@ -86,21 +86,21 @@ func loadConfig() (clientv3.Config, error) {
 	privateKey := os.Getenv("ETCD_CLIENT_KEY")
 
 	if endpoints != "" {
-		return clientv3.Config{}, helpers.Logger.LogError(helpers.GetRequestID(nil), "ETCD endpoints cannot be empty", err, nil)
+		return clientv3.Config{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "ETCD endpoints cannot be empty", err, nil)
 	}
 
 	var client clientv3.Config
 	if isSSL {
 		caCert, err := ioutil.ReadFile(caCert)
 		if err != nil {
-			return clientv3.Config{}, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unable to read CA cert from path (%s)", caCert), err, nil)
+			return clientv3.Config{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to read CA cert from path (%s)", caCert), err, nil)
 		}
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)
 		// Read the key pair to create certificate
 		cert, err := tls.LoadX509KeyPair(publicKey, privateKey)
 		if err != nil {
-			return clientv3.Config{}, helpers.Logger.LogError(helpers.GetRequestID(nil), fmt.Sprintf("Unable to read public (%s) or private key (%s) from path", publicKey, privateKey), err, nil)
+			return clientv3.Config{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to read public (%s) or private key (%s) from path", publicKey, privateKey), err, nil)
 		}
 
 		client = clientv3.Config{
@@ -166,7 +166,7 @@ func (s *ETCDStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 	for _, kv := range res.Kvs {
 		// Get the id of the item
 		if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
-			helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
+			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
 			continue
 		}
 	}
@@ -186,7 +186,7 @@ func (s *ETCDStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 				switch event.Type {
 				case mvccpb.PUT:
 					if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
-						helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
+						helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
 						continue
 					}
 
@@ -214,7 +214,7 @@ func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 		id := strings.Split(string(kv.Key), "/")[idxID]
 		project := new(config.Project)
 		if err := json.Unmarshal(kv.Value, project); err != nil {
-			helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
+			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
 			continue
 		}
 		// Store the item
@@ -242,7 +242,7 @@ func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 				case mvccpb.PUT:
 					project := new(config.Project)
 					if err := json.Unmarshal(kv.Value, project); err != nil {
-						helpers.Logger.LogInfo(helpers.GetRequestID(nil), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
+						helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Sync manager: Could not parse project received", map[string]interface{}{"error": err})
 						continue
 					}
 					meta, p := itemsMeta[id]

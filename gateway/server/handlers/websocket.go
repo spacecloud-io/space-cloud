@@ -49,9 +49,6 @@ func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		var reqParams model.RequestParams
-		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
-
 		socket, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "upgrade:", map[string]interface{}{"error": err})

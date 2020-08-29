@@ -84,7 +84,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 
 	rule, err := m.selectRule(name)
 	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(nil), "Error processing staged event", err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error processing staged event", err, nil)
 		return
 	}
 

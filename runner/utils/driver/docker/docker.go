@@ -42,7 +42,7 @@ type Docker struct {
 func NewDockerDriver(auth *auth.Module, clusterName, artifactAddr string) (*Docker, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(nil), "error creating docker module instance in docker in docker unable to initialize docker client", err, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "error creating docker module instance in docker in docker unable to initialize docker client", err, nil)
 	}
 
 	secretPath := os.Getenv("SECRETS_PATH")
@@ -52,7 +52,7 @@ func NewDockerDriver(auth *auth.Module, clusterName, artifactAddr string) (*Dock
 
 	hostFilePath := os.Getenv("HOSTS_FILE_PATH")
 	if hostFilePath == "" {
-		helpers.Logger.LogFatal(helpers.GetRequestID(nil), "Failed to create docker driver: HOSTS_FILE_PATH environment variable not provided", nil)
+		helpers.Logger.LogFatal(helpers.GetRequestID(context.TODO()), "Failed to create docker driver: HOSTS_FILE_PATH environment variable not provided", nil)
 	}
 
 	manager, err := proxy_manager.New(os.Getenv("ROUTING_FILE_PATH"))

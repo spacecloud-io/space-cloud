@@ -1,6 +1,8 @@
 package secrets
 
 import (
+	"context"
+
 	"github.com/spaceuptech/helpers"
 	"github.com/urfave/cli"
 
@@ -11,7 +13,7 @@ import (
 func ActionGenerateSecret(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {
-		return helpers.Logger.LogError(helpers.GetRequestID(nil), "Incorrect number of arguments", nil, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Incorrect number of arguments", nil, nil)
 	}
 	dbruleConfigFile := argsArr[0]
 	dbrule, err := generateSecrets()
