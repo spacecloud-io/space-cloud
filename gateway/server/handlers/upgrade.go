@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -24,8 +26,8 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 		defer utils.CloseTheCloser(r.Body)
 
 		token := utils.GetTokenFromHeader(r)
-		if err := admin.CheckIfAdmin(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+		if err := admin.CheckIfAdmin(r.Context(), token); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -35,12 +37,12 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 
 		err := manager.ConvertToEnterprise(ctx, token, req.LicenseKey, req.LicenseValue, req.ClusterName)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.LogDebug(`Successfully upgraded gateway to enterprise`, "syncman", "startOperation", nil)
-		_ = utils.SendOkayResponse(w, http.StatusOK)
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), `Successfully upgraded gateway to enterprise`, nil)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -50,23 +52,23 @@ func HandleDownGrade(admin *admin.Manager) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		token := utils.GetTokenFromHeader(r)
-		if err := admin.CheckIfAdmin(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+		if err := admin.CheckIfAdmin(r.Context(), token); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
 		// Create a context of execution
-		_, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		if !admin.IsRegistered() {
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "Cannot remove license already running in open source mode")
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, "Cannot remove license already running in open source mode")
 			return
 		}
 		admin.ResetQuotas()
 
-		utils.LogDebug(`Successfully removed license`, "syncman", "startOperation", nil)
-		_ = utils.SendOkayResponse(w, http.StatusOK)
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), `Successfully removed license`, nil)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -77,8 +79,8 @@ func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		defer utils.CloseTheCloser(r.Body)
 
 		token := utils.GetTokenFromHeader(r)
-		if err := adminMan.CheckIfAdmin(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+		if err := adminMan.CheckIfAdmin(r.Context(), token); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -87,11 +89,11 @@ func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		defer cancel()
 
 		if err := syncMan.RenewLicense(ctx, token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w, http.StatusOK)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -106,8 +108,8 @@ func HandleSetOfflineLicense(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		defer utils.CloseTheCloser(r.Body)
 
 		token := utils.GetTokenFromHeader(r)
-		if err := adminMan.CheckIfAdmin(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+		if err := adminMan.CheckIfAdmin(r.Context(), token); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -116,10 +118,10 @@ func HandleSetOfflineLicense(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		defer cancel()
 
 		if err := syncMan.SetOfflineLicense(ctx, req.License); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w, http.StatusOK)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }

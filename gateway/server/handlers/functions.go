@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules"
@@ -59,19 +60,19 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		actions, reqParams, err := auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		status, result, err := functions.CallWithContext(ctx, service, function, token, reqParams, req.Params)
 		if err != nil {
-			_ = utils.LogError(fmt.Sprintf("Receieved error from service call (%s:%s)", service, function), "handlers", "service-call", err)
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Receieved error from service call (%s:%s)", service, function), err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = auth.PostProcessMethod(actions, result)
+		_ = auth.PostProcessMethod(ctx, actions, result)
 
-		_ = utils.SendResponse(w, status, result)
+		_ = helpers.Response.SendResponse(ctx, w, status, result)
 	}
 }

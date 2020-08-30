@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -222,7 +223,7 @@ func TestManager_IsTokenValid(t *testing.T) {
 				clusterID:      tt.fields.clusterID,
 				integrationMan: i,
 			}
-			if _, err := m.IsTokenValid(tt.args.token, "", "", nil); (err != nil) != tt.wantErr {
+			if _, err := m.IsTokenValid(context.Background(), tt.args.token, "", "", nil); (err != nil) != tt.wantErr {
 				t.Errorf("IsTokenValid() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
@@ -251,10 +252,11 @@ func TestManager_RefreshToken(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	m := New("", "", true, &config.AdminUser{Secret: "some-secret"})
+	m := New("", "", false, &config.AdminUser{Secret: "some-secret"})
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := m.RefreshToken(tt.args.token)
+			_, err := m.RefreshToken(context.Background(), tt.args.token)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RefreshToken() error = %v, wantErr %v", err, tt.wantErr)
 				return

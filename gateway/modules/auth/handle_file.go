@@ -13,7 +13,7 @@ import (
 )
 
 // IsFileOpAuthorised checks if the caller is authorized to make the request
-func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path string, op utils.FileOpType, args map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path string, op model.FileOpType, args map[string]interface{}) (*model.PostProcess, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -31,7 +31,7 @@ func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path st
 	}
 
 	var auth map[string]interface{}
-	auth, err = m.parseToken(token)
+	auth, err = m.parseToken(ctx, token)
 	if err != nil {
 		return nil, err
 	}

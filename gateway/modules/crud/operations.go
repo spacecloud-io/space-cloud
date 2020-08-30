@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -15,7 +15,7 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 	m.RLock()
 	defer m.RUnlock()
 
-	if err := m.schema.ValidateCreateOperation(dbAlias, col, req); err != nil {
+	if err := m.schema.ValidateCreateOperation(ctx, dbAlias, col, req); err != nil {
 		return err
 	}
 
@@ -36,7 +36,7 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 		return err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return err
 	}
 
@@ -49,7 +49,7 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 	var n int64
 	if req.IsBatch {
 		// add the request for batch operation
-		n, err = m.createBatch(m.project, dbAlias, col, req.Document)
+		n, err = m.createBatch(ctx, m.project, dbAlias, col, req.Document)
 	} else {
 		// Perform the create operation
 		n, err = crud.Create(ctx, col, req)
@@ -57,7 +57,7 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbAlias, col, n, utils.Create)
+		m.metricHook(m.project, dbAlias, col, n, model.Create)
 	}
 
 	// Invoke the stage hook
@@ -75,12 +75,12 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		return nil, err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return nil, err
 	}
 
 	// Adjust where clause
-	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
 		return nil, err
 	}
 
@@ -109,13 +109,12 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 
 	// Process the response
 	if err := m.schema.CrudPostProcess(ctx, dbAlias, col, result); err != nil {
-		logrus.Errorf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col)
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col), err, nil)
 	}
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbAlias, col, n, utils.Read)
+		m.metricHook(m.project, dbAlias, col, n, model.Read)
 	}
 
 	return result, err
@@ -126,7 +125,7 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 	m.RLock()
 	defer m.RUnlock()
 
-	if err := m.schema.ValidateUpdateOperation(dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
+	if err := m.schema.ValidateUpdateOperation(ctx, dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
 		return err
 	}
 
@@ -147,12 +146,12 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 		return err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return err
 	}
 
 	// Adjust where clause
-	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
 		return err
 	}
 
@@ -167,7 +166,7 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbAlias, col, n, utils.Update)
+		m.metricHook(m.project, dbAlias, col, n, model.Update)
 	}
 
 	// Invoke the stage hook
@@ -185,12 +184,12 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 		return err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return err
 	}
 
 	// Adjust where clause
-	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
 		return err
 	}
 
@@ -217,7 +216,7 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbAlias, col, n, utils.Delete)
+		m.metricHook(m.project, dbAlias, col, n, model.Delete)
 	}
 
 	// Invoke the stage hook
@@ -247,20 +246,20 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 		return nil, err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return nil, err
 	}
 
 	// Check if prepared query exists
 	preparedQuery, p := m.queries[getPreparedQueryKey(dbAlias, id)]
 	if !p {
-		return nil, fmt.Errorf("Prepared Query for given id (%s) does not exist", id)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Prepared Query for given id (%s) does not exist", id), nil, nil)
 	}
 
 	// Load the arguments
 	var args []interface{}
 	for i := 0; i < len(preparedQuery.Arguments); i++ {
-		arg, err := utils.LoadValue(preparedQuery.Arguments[i], map[string]interface{}{"args": req.Params, "auth": params.Claims})
+		arg, err := utils.LoadValue(preparedQuery.Arguments[i], map[string]interface{}{"args": req.Params, "auth": params})
 		if err != nil {
 			return nil, err
 		}
@@ -294,7 +293,7 @@ func (m *Module) Aggregate(ctx context.Context, dbAlias, col string, req *model.
 		return nil, err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return nil, err
 	}
 
@@ -308,15 +307,15 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 
 	for _, r := range req.Requests {
 		switch r.Type {
-		case string(utils.Create):
+		case string(model.Create):
 			v := &model.CreateRequest{Document: r.Document, Operation: r.Operation}
-			if err := m.schema.ValidateCreateOperation(dbAlias, r.Col, v); err != nil {
+			if err := m.schema.ValidateCreateOperation(ctx, dbAlias, r.Col, v); err != nil {
 				return err
 			}
 			r.Document = v.Document
 			r.Operation = v.Operation
-		case string(utils.Update):
-			if err := m.schema.ValidateUpdateOperation(dbAlias, r.Col, r.Operation, r.Update, r.Find); err != nil {
+		case string(model.Update):
+			if err := m.schema.ValidateUpdateOperation(ctx, dbAlias, r.Col, r.Operation, r.Update, r.Find); err != nil {
 				return err
 			}
 		}
@@ -339,7 +338,7 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 		return err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return err
 	}
 
@@ -355,7 +354,7 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
 		for i, r := range req.Requests {
-			m.metricHook(m.project, dbAlias, r.Col, counts[i], utils.OperationType(r.Type))
+			m.metricHook(m.project, dbAlias, r.Col, counts[i], model.OperationType(r.Type))
 		}
 	}
 
@@ -365,7 +364,7 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 }
 
 // DescribeTable performs a db operation for describing a table
-func (m *Module) DescribeTable(ctx context.Context, dbAlias, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error) {
+func (m *Module) DescribeTable(ctx context.Context, dbAlias, col string) ([]model.InspectorFieldType, []model.ForeignKeysType, []model.IndexType, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -374,7 +373,7 @@ func (m *Module) DescribeTable(ctx context.Context, dbAlias, col string) ([]util
 		return nil, nil, nil, err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return nil, nil, nil, err
 	}
 
@@ -391,7 +390,7 @@ func (m *Module) RawBatch(ctx context.Context, dbAlias string, batchedQueries []
 		return err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return err
 	}
 
@@ -408,7 +407,7 @@ func (m *Module) GetCollections(ctx context.Context, dbAlias string) ([]utils.Da
 		return nil, err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return nil, err
 	}
 
@@ -425,7 +424,7 @@ func (m *Module) GetConnectionState(ctx context.Context, dbAlias string) bool {
 		return false
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return false
 	}
 
@@ -442,7 +441,7 @@ func (m *Module) DeleteTable(ctx context.Context, dbAlias, col string) error {
 		return err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return err
 	}
 

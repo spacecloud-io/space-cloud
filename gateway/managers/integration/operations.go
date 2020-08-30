@@ -8,7 +8,7 @@ import (
 )
 
 // HandleConfigAuth handles the authentication of the config requests
-func (m *Manager) HandleConfigAuth(resource, op string, claims map[string]interface{}, attr map[string]string) config.IntegrationAuthResponse {
+func (m *Manager) HandleConfigAuth(ctx context.Context, resource, op string, claims map[string]interface{}, attr map[string]string) config.IntegrationAuthResponse {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -21,7 +21,7 @@ func (m *Manager) HandleConfigAuth(resource, op string, claims map[string]interf
 
 	// Set the value of the result
 	res.checkResponse = true
-	res.err = m.checkPermissions("config", resource, op, claims, attr)
+	res.err = m.checkPermissions(ctx, "config", resource, op, claims, attr)
 	return res
 }
 

@@ -3,12 +3,11 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -24,8 +23,7 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 
 		projectConfig, err := syncMan.GetConfig(projectID)
 		if err != nil {
-			logrus.Errorf("Error handling graphql query execution unable to get project config of %s - %s", projectID, err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -59,19 +57,19 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 			defer func() { ch <- struct{}{} }()
 			if err != nil {
 				errMes := map[string]interface{}{"message": err.Error()}
-				_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"errors": []interface{}{errMes}})
+				_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{"errors": []interface{}{errMes}})
 				return
 			}
-			_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"data": op})
+			_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{"data": op})
 		})
 
 		select {
 		case <-ch:
 			return
 		case <-time.After(time.Duration(projectConfig.ContextTimeGraphQL) * time.Second):
-			log.Println("GraphQL Handler: Request timed out")
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "GraphQL Handler: Request timed out", nil)
 			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
-			_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"errors": []interface{}{errMes}})
+			_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{"errors": []interface{}{errMes}})
 			return
 		}
 	}

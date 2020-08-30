@@ -1,16 +1,16 @@
 package modules
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers"
 	"github.com/spaceuptech/space-cloud/gateway/modules/global"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Modules is an object that sets up the modules
@@ -122,24 +122,24 @@ func (m *Modules) Delete(projectID string) {
 
 	if block, p := m.blocks[projectID]; p {
 		// Close all the modules here
-		logrus.Debugln("closing config of db module")
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of db module", nil)
 		if err := block.db.CloseConfig(); err != nil {
-			_ = utils.LogError("error closing db module config", "modules", "Delete", err)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing db module config", err, map[string]interface{}{"project": projectID})
 		}
 
-		logrus.Debugln("closing config of filestore module")
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of filestore module", nil)
 		if err := block.file.CloseConfig(); err != nil {
-			_ = utils.LogError("error closing filestore module config", "modules", "Delete", err)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing filestore module config", err, map[string]interface{}{"project": projectID})
 		}
 
-		logrus.Debugln("closing config of eventing module")
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of eventing module", nil)
 		if err := block.eventing.CloseConfig(); err != nil {
-			_ = utils.LogError("error closing eventing module config", "modules", "Delete", err)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing eventing module config", err, map[string]interface{}{"project": projectID})
 		}
 
-		logrus.Debugln("closing config of realtime module")
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of realtime module", nil)
 		if err := block.realtime.CloseConfig(); err != nil {
-			_ = utils.LogError("error closing realtime module config", "modules", "Delete", err)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing realtime module config", err, map[string]interface{}{"project": projectID})
 		}
 	}
 
@@ -167,7 +167,7 @@ func (m *Modules) newModule(config *config.Project) (*Module, error) {
 	defer m.lock.Unlock()
 
 	if ok := m.Managers.Admin().ValidateProjectSyncOperation(projects, config); !ok {
-		logrus.Println("Cannot create new project. Upgrade your plan")
+		helpers.Logger.LogWarn("", "Cannot create new project. Upgrade your plan", nil)
 		return nil, errors.New("upgrade your plan to create new project")
 	}
 

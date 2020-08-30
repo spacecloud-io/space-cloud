@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // SetProjectRoute adds a route in specified project config
@@ -29,7 +30,7 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *co
 	defer s.lock.Unlock()
 
 	c.ID = id
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -77,7 +78,7 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -100,7 +101,7 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 			return http.StatusOK, nil
 		}
 	}
-	return http.StatusNotFound, utils.LogError(fmt.Sprintf("Route (%s) not found", routeID), "syncman", "ingres-route-delete", nil)
+	return http.StatusNotFound, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Route (%s) not found in config", routeID), nil, map[string]interface{}{})
 }
 
 // GetIngressRouting gets ingress routing from config
@@ -121,7 +122,7 @@ func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -132,7 +133,7 @@ func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string
 				return http.StatusOK, []interface{}{value}, nil
 			}
 		}
-		return http.StatusBadRequest, nil, fmt.Errorf("route id (%s) not present in config", routeID)
+		return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("route with id (%s) does not exists in ingress routing", routeID), nil, nil)
 	}
 
 	routes := []interface{}{}
@@ -161,7 +162,7 @@ func (s *Manager) SetGlobalRouteConfig(ctx context.Context, project string, glob
 	defer s.lock.Unlock()
 
 	// Get the provided project's config
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -199,7 +200,7 @@ func (s *Manager) GetGlobalRouteConfig(ctx context.Context, project string, para
 	defer s.lock.Unlock()
 
 	// Get the provided project's config
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}

@@ -1,7 +1,10 @@
 package integration
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -23,13 +26,13 @@ func isIntegrationRequest(claims map[string]interface{}) bool {
 	return true
 }
 
-func (m *Manager) checkPermissions(kind, resource, op string, claims map[string]interface{}, attr map[string]string) error {
+func (m *Manager) checkPermissions(ctx context.Context, kind, resource, op string, claims map[string]interface{}, attr map[string]string) error {
 	// Extract the necessary claims
 	id := claims["id"]
 
 	i, p := m.config[id.(string)]
 	if !p {
-		return utils.LogError(fmt.Sprintf("Integration (%s) not found", id), module, checkAuth, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) not found", id), nil, nil)
 	}
 
 	// Get the write permission block
@@ -40,7 +43,7 @@ func (m *Manager) checkPermissions(kind, resource, op string, claims map[string]
 	case "api":
 		permissions = i.APIPermissions
 	default:
-		return utils.LogError(fmt.Sprintf("Invalid permission type (%s) provided", kind), module, checkAuth, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid permission type (%s) provided", kind), nil, nil)
 	}
 
 	// Check if the integration has the required permission
@@ -76,5 +79,5 @@ func (m *Manager) checkPermissions(kind, resource, op string, claims map[string]
 		return nil
 	}
 
-	return utils.LogError(fmt.Sprintf("Integration (%s) does not have the required permissions", id), module, checkAuth, nil)
+	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) does not have the required permissions", id), nil, nil)
 }

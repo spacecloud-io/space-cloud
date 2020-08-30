@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // InternalCreate inserts a documents (or multiple when op is "all") into the database based on dbAlias.
@@ -14,7 +13,7 @@ func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col strin
 	defer m.RUnlock()
 
 	// First step is to validate the create operation
-	if err := m.schema.ValidateCreateOperation(dbAlias, col, req); err != nil {
+	if err := m.schema.ValidateCreateOperation(ctx, dbAlias, col, req); err != nil {
 		return err
 	}
 
@@ -23,21 +22,21 @@ func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col strin
 		return err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return err
 	}
 
 	var n int64
 	// Perform the create operation
 	if req.IsBatch {
-		n, err = m.createBatch(project, dbAlias, col, req.Document)
+		n, err = m.createBatch(ctx, project, dbAlias, col, req.Document)
 	} else {
 		n, err = crud.Create(ctx, col, req)
 	}
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil && !isIgnoreMetrics {
-		m.metricHook(m.project, dbAlias, col, n, utils.Create)
+		m.metricHook(m.project, dbAlias, col, n, model.Create)
 	}
 
 	return err
@@ -50,7 +49,7 @@ func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col strin
 	defer m.RUnlock()
 
 	// First step is to validate the update operation
-	if err := m.schema.ValidateUpdateOperation(dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
+	if err := m.schema.ValidateUpdateOperation(ctx, dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
 		return err
 	}
 
@@ -59,12 +58,12 @@ func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col strin
 		return err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return err
 	}
 
 	// Adjust where clause
-	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
 		return err
 	}
 
@@ -73,7 +72,7 @@ func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col strin
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbAlias, col, n, utils.Update)
+		m.metricHook(m.project, dbAlias, col, n, model.Update)
 	}
 
 	return err
@@ -90,12 +89,12 @@ func (m *Module) InternalDelete(ctx context.Context, dbAlias, project, col strin
 		return err
 	}
 
-	if err := crud.IsClientSafe(); err != nil {
+	if err := crud.IsClientSafe(ctx); err != nil {
 		return err
 	}
 
 	// Adjust where clause
-	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
 		return err
 	}
 
@@ -104,7 +103,7 @@ func (m *Module) InternalDelete(ctx context.Context, dbAlias, project, col strin
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbAlias, col, n, utils.Update)
+		m.metricHook(m.project, dbAlias, col, n, model.Update)
 	}
 
 	return err

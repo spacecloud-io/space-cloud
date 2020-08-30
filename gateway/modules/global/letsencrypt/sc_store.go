@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sync"
 	"time"
 
 	"github.com/mholt/certmagic"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	apigo "github.com/spaceuptech/space-api-go"
 	"github.com/spaceuptech/space-api-go/db"
 	"github.com/spaceuptech/space-api-go/types"
@@ -60,12 +61,10 @@ func (s *Storage) Store(key string, value []byte) error {
 
 	response, err := s.db.Upsert(s.collection).Set(m).Apply(ctx)
 	if err != nil {
-		logrus.Errorf("error while storing in lets encrypt - %v", err)
-		return err
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "error while storing in lets encrypt", err, nil)
 	}
 	if response.Status != http.StatusOK {
-		logrus.Errorf("error while storing in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
-		return fmt.Errorf("error while storing in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to store lets encrypt config database service responded with status code (%v)", response.Status), fmt.Errorf(response.Error), nil)
 	}
 	return nil
 }
@@ -77,46 +76,39 @@ func (s *Storage) Load(key string) ([]byte, error) {
 
 	response, err := s.db.GetOne(s.collection).Where(types.M{"_id": key}).Apply(ctx)
 	if err != nil {
-		logrus.Errorf("error while getting data in lets encrypting %v", err)
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to fetch lets encrypt key (%s)", key), err, map[string]interface{}{"collection": s.collection})
 	}
 	if response.Status != http.StatusOK {
-		logrus.Errorf("error while getting data in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
-		return nil, fmt.Errorf("error while getting data in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to fetch lets encrypt key (%s) database service responded with status code (%v)", key, response.Status), fmt.Errorf(response.Error), nil)
 	}
 
 	result, ok := response.Data["result"]
 	if !ok {
-		logrus.Errorf("error while getting data in lets encrypt unable to find field result in response body")
-		return nil, fmt.Errorf("error while getting data in lets encrypt unable to find field result in response body")
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid data found while fetching lets encypt key (%s)", key), fmt.Errorf("field (result) not found in data object"), nil)
 	}
 	data, ok := result.(map[string]interface{})
 	if !ok {
-		logrus.Errorf("error while getting data in lets encrypt unable to assert result to map")
-		return nil, fmt.Errorf("error while getting data in lets encrypt unable to assert result to map")
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid data type found for lets encypt key (%s)", key), fmt.Errorf("field (result) is of type (%v) but wanted object", reflect.TypeOf(result)), nil)
 	}
 	value, ok := data["value"]
 	if !ok {
-		logrus.Errorf("error while getting data in lets encrypt unable to find field value in received data")
-		return nil, fmt.Errorf("error while getting data in lets encrypt unable to find field value in received data")
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid data found for lets encypt key (%s)", key), fmt.Errorf("field (value) not found in result object"), nil)
 	}
 
 	return base64.StdEncoding.DecodeString(value.(string))
 }
 
-// Delete deletes specifed key from space cloud storage
+// Delete deletes specified key from space cloud storage
 func (s *Storage) Delete(key string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	response, err := s.db.Delete(s.collection).Where(types.M{"_id": key}).Apply(ctx)
 	if err != nil {
-		logrus.Errorf("error while deleting in lets encrypt - %v", err)
-		return err
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to delete lets encrypt key (%s)", key), err, nil)
 	}
 	if response.Status != http.StatusOK {
-		logrus.Errorf("error while deleting lets encrypt got http status %v with error message - %v", response.Status, response.Error)
-		return fmt.Errorf("error while deleting lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to delete lets encrypt key (%s) database service responded with status (%v)", key, response.Status), err, nil)
 	}
 	return nil
 }
@@ -128,21 +120,21 @@ func (s *Storage) Exists(key string) bool {
 
 	response, err := s.db.Get(s.collection).Where(types.M{"_id": key}).Apply(ctx)
 	if err != nil {
-		logrus.Errorf("error while checking existence in lets encrypt - %v", err)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable check if lets encrypt key (%s) exists", key), err, nil)
 		return false
 	}
 	if response.Status != http.StatusOK {
-		logrus.Errorf("error while checking existence of in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable check if lets encrypt key (%s) exists database service responded with status code (%v)", key, response.Status), err, nil)
 		return false
 	}
 	result, ok := response.Data["result"]
 	if !ok {
-		logrus.Errorf("error while checking existence in lets encrypt unable to find field result in response body")
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid data found while checking for existence of lets encypt key (%s)", key), fmt.Errorf("field (result) not found in data object"), nil)
 		return false
 	}
 	data, ok := result.([]interface{})
 	if !ok {
-		logrus.Errorf("error while checking existence in lets encrypt unable to assert result to array")
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid data found while checking for existence of lets encypt key (%s)", key), fmt.Errorf("field (result) is not an array got (%v)", reflect.TypeOf(result)), nil)
 		return false
 	}
 	if len(data) > 0 {
@@ -158,30 +150,25 @@ func (s *Storage) List(prefix string, recursive bool) ([]string, error) {
 
 	response, err := s.db.Get(s.collection).Where(types.Cond("_id", "regex", fmt.Sprintf("^%s", prefix))).Apply(ctx)
 	if err != nil {
-		logrus.Errorf("error while listing in lets encrypt - %v", err)
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to lists lets encypt keys with prefix (%s)", prefix), err, map[string]interface{}{"isRecursive": recursive})
 	}
 	if response.Status != http.StatusOK {
-		logrus.Errorf("error while listing response of lets encrypt got http status %v with error message - %v", response.Status, response.Error)
-		return nil, fmt.Errorf("error while listing response of lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to lists lets encypt keys with prefix (%s) database service responded with status code (%v)", prefix, response.Status), err, map[string]interface{}{"isRecursive": recursive})
 	}
 
 	result, ok := response.Data["result"]
 	if !ok {
-		logrus.Errorf("error while listing in lets encrypt unable to find field result in response body")
-		return nil, fmt.Errorf("error while listing in lets encrypt unable to find field result in response body")
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid data found while listing lets encypt keys with prefix (%s)", prefix), fmt.Errorf("field (result) not found in data object"), nil)
 	}
 	data, ok := result.([]interface{})
 	if !ok {
-		logrus.Errorf("error while listing in lets encrypt unable to assert result to array")
-		return nil, fmt.Errorf("error while listing in lets encrypt unable to assert result to array")
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid data found while listing lets encypt keys with prefix (%s)", prefix), fmt.Errorf("field (result) is not an array got (%v)", reflect.TypeOf(result)), nil)
 	}
 	prefixArr := []string{}
 	for _, v := range data {
 		key, ok := v.(map[string]interface{})["_id"]
 		if !ok {
-			logrus.Errorf("error while listing in lets encrypt unable to find _id field in received data")
-			return nil, fmt.Errorf("error while listing in lets encrypt unable to find _id field in received data")
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid data found while listing lets encypt keys with prefix (%s)", prefix), fmt.Errorf("field (_id) not found in data object"), nil)
 		}
 		prefixArr = append(prefixArr, key.(string))
 	}
@@ -195,17 +182,15 @@ func (s *Storage) Stat(key string) (certmagic.KeyInfo, error) {
 
 	response, err := s.db.GetOne(s.collection).Where(types.M{"_id": key}).Apply(ctx)
 	if err != nil {
-		logrus.Errorf("error while getting stats in lets encrypt - %v", err)
-		return certmagic.KeyInfo{}, err
+		return certmagic.KeyInfo{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to get stats of lets encrypt key (%s)", key), err, nil)
 	}
 	if response.Status != http.StatusOK {
-		logrus.Errorf("error while getting stats in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
-		return certmagic.KeyInfo{}, fmt.Errorf("error while getting stats in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		return certmagic.KeyInfo{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to get stats of lets encrypt key (%s) database service responded with status code (%v)", key, response.Status), fmt.Errorf(response.Error), nil)
 	}
 
 	modifiedTime, err := time.Parse(time.RFC3339, response.Data["modified"].(string))
 	if err != nil {
-		return certmagic.KeyInfo{}, fmt.Errorf("error getting stats in lets encrypt unable to parse string to time - %v", err)
+		return certmagic.KeyInfo{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to parse (modified) field of lets encrypt key (%s) time to string ", key), err, nil)
 	}
 
 	return certmagic.KeyInfo{
@@ -244,19 +229,17 @@ func (s *Storage) Lock(key string) error {
 
 		if err.Error() != lockFileExists {
 			// unexpected error
-			logrus.Errorf("error creating lock file in lets encrypt - %v", err)
-			return fmt.Errorf("error creating lock file in lets encrypt - %v", err)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to create lock file in lets encrypt", err, nil)
 		}
 
 		// lock file already exists
 		info, err := s.Stat(lockFile)
 		switch {
 		case err != nil:
-			logrus.Errorf("error getting stats of lock file in lets encrypt - %v", err)
-			return fmt.Errorf("error getting stats of lock file in lets encrypt - %v", err)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to get stats of lock file in lets encrypt", err, nil)
 
 		case s.fileLockIsStale(info):
-			logrus.Printf("error in lets encrypt lock file is in stale state removing and trying again")
+			helpers.Logger.LogWarn(helpers.GetRequestID(context.TODO()), "lets encrypt lock file is in stale state removing and trying again", nil)
 			if err := s.deleteLockFile(lockFile); err != nil {
 				return err
 			}
@@ -264,8 +247,7 @@ func (s *Storage) Lock(key string) error {
 
 		case time.Since(start) > staleLockDuration*2:
 			// should never happen, hopefully
-			logrus.Errorf("possible deadlock: %s passed trying to obtain lock for %s", time.Since(start), key)
-			return fmt.Errorf("possible deadlock: %s passed trying to obtain lock for %s", time.Since(start), key)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Lets encrypt dead lock by passing", fmt.Errorf("possible deadlock: %s passed trying to obtain lock for %s", time.Since(start), key), nil)
 
 		default:
 			// lockfile exists and is not stale;
@@ -305,7 +287,7 @@ func (s *Storage) createLockFile(filename string) error {
 
 	err := s.Store(filename, []byte("lock"))
 	if err != nil {
-		logrus.Errorf("error while creating lock file in lets encrypt - %v", err)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to create lock file in lets encrypt", err, nil)
 	}
 	return err
 }
@@ -313,8 +295,7 @@ func (s *Storage) createLockFile(filename string) error {
 func (s *Storage) deleteLockFile(keyPath string) error {
 	err := s.Delete(keyPath)
 	if err != nil {
-		logrus.Errorf("error while deleting lock file in lets encrypt - %v", err)
-		return fmt.Errorf("error while deleting lock file in lets encrypt - %v", err)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to delete lock file of lets encrypt", err, nil)
 	}
 	return nil
 }

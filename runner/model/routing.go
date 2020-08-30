@@ -1,8 +1,11 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
+
+	"github.com/spaceuptech/helpers"
 )
 
 // Routes describes the configuration for the routing module
@@ -16,7 +19,7 @@ type Route struct {
 }
 
 // SelectTarget returns a target based on the weights assigned
-func (r *Route) SelectTarget(weight int32) (RouteTarget, error) {
+func (r *Route) SelectTarget(ctx context.Context, weight int32) (RouteTarget, error) {
 
 	// Generate a random float in the range 0 to 1 if provided weight in lesser than zero
 	if weight < 0 {
@@ -34,7 +37,7 @@ func (r *Route) SelectTarget(weight int32) (RouteTarget, error) {
 	}
 
 	// Return error if no targets match
-	return RouteTarget{}, fmt.Errorf("no target found for route (%s) - make sure you have defined atleast one target with proper weights", r.Source.URL)
+	return RouteTarget{}, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("No target found for route (%s) - make sure you have defined atleast one target with proper weights", r.Source.URL), nil, nil)
 }
 
 // RouteSource is the source of routing

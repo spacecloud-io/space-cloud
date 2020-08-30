@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -29,7 +29,7 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -42,8 +42,7 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 	projectConfig.Modules.FileStore.Secret = value.Secret
 
 	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
-		logrus.Errorf("error setting file store config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting file store config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -72,7 +71,7 @@ func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *co
 	defer s.lock.Unlock()
 
 	value.ID = id
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -90,8 +89,7 @@ func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *co
 	}
 
 	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
-		logrus.Errorf("error setting file store config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting file store config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -119,7 +117,7 @@ func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename strin
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -134,8 +132,7 @@ func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename strin
 	projectConfig.Modules.FileStore.Rules = temp
 
 	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
-		logrus.Errorf("error setting file store config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting file store config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -163,7 +160,7 @@ func (s *Manager) GetFileStoreConfig(ctx context.Context, project string, params
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -196,7 +193,7 @@ func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string,
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -207,7 +204,7 @@ func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string,
 				return http.StatusOK, []interface{}{value}, nil
 			}
 		}
-		return http.StatusBadRequest, nil, fmt.Errorf("file rule (%s) not present in config", ruleID)
+		return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Security rule (%s) of file store does not exists", ruleID), fmt.Errorf("security rule not found in config"), nil)
 	}
 
 	fileRules := []interface{}{}

@@ -104,21 +104,3 @@ func CreateCorsObject() *cors.Cors {
 func CloseTheCloser(c io.Closer) {
 	_ = c.Close()
 }
-
-// SendOkayResponse sends an Okay http response
-func SendOkayResponse(w http.ResponseWriter, status int) error {
-	return SendResponse(w, status, map[string]string{})
-}
-
-// SendErrorResponse sends an Error http response
-func SendErrorResponse(w http.ResponseWriter, status int, message string) error {
-	return SendResponse(w, status, map[string]string{"error": message})
-}
-
-// SendResponse sends an http response
-func SendResponse(w http.ResponseWriter, status int, body interface{}) error {
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(body)
-}

@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/integration"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *config.IntegrationConfig, params model.RequestParams) (int, error) {
@@ -34,14 +35,14 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 	}
 
 	// Create a project if it doesn't already exist
-	utils.LogDebug(fmt.Sprintf("Creating a new project for integration (%s)", integrationConfig.ID), "syncman", "enable-integration", nil)
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Creating a new project for integration (%s)", integrationConfig.ID), nil)
 
 	// Seed the random byte generator
 	rand.Seed(time.Now().UnixNano())
 
 	// We need runner enabled for this one. We need to create a new project, secret and deployment in runner
 	if s.runnerAddr == "" {
-		return http.StatusBadRequest, utils.LogError("Runner must be enabled for integrations to work", "syncman", "enable-integration", nil)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Runner must be enabled for integrations to work", nil, nil)
 	}
 
 	// Generate internal access token
@@ -73,7 +74,7 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 	// Instruct runner to create deployment
 	license, err := s.adminMan.ParseLicense(integrationConfig.License)
 	if err != nil {
-		return http.StatusBadRequest, utils.LogError("Unable to parse integration license", "syncman", "enable-integration", err)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse integration license", err, nil)
 	}
 	integrationConfig.Deployments = license["deployments"].([]interface{})
 	for _, service := range integrationConfig.Deployments {
@@ -86,7 +87,7 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 	// Generate AES key for integration project
 	key := make([]byte, 32)
 	if _, err := rand.Read(key); err != nil {
-		return http.StatusInternalServerError, utils.LogError("Unable to create new aes key for integration", "syncman", "enable-integration", nil)
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create new aes key for integration", nil, nil)
 	}
 
 	// Check if integration already exists
@@ -128,7 +129,7 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 	if proj != nil {
 		s.projectConfig.Projects = append(s.projectConfig.Projects, proj)
 		if err := s.modules.SetProjectConfig(proj); err != nil {
-			return http.StatusInternalServerError, utils.LogError("Unable to create new project for integration", "syncman", "enable-integration", nil)
+			return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create new project for integration", nil, nil)
 		}
 
 		// Update the store
@@ -237,7 +238,7 @@ func (s *Manager) GetIntegrations(ctx context.Context, id string, params model.R
 		return http.StatusOK, result, nil
 	}
 
-	return http.StatusBadRequest, nil, utils.LogError(fmt.Sprintf("Integration (%s) not found", id), "syncman", "get-integrations", nil)
+	return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) not found", id), nil, nil)
 }
 
 // AddIntegrationHook adds an integration hook
@@ -267,12 +268,12 @@ func (s *Manager) AddIntegrationHook(ctx context.Context, integrationID string, 
 	}
 
 	if integrationConfig == nil {
-		return http.StatusBadRequest, utils.LogError(fmt.Sprintf("Integration (%s) does not exist", integrationID), "syncman", "add-hook", nil)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) does not exist", integrationID), nil, nil)
 	}
 
 	// Check if the integration has the permissions to create this hook
 	if !integration.HasPermissionForHook(integrationConfig, hookConfig) {
-		return http.StatusBadRequest, utils.LogError(fmt.Sprintf("Integration (%s) does not have necessary permissions to create the hook", integrationID), "syncman", "add-hook", nil)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) does not have necessary permissions to create the hook", integrationID), nil, nil)
 	}
 
 	// Create an empty map if nil
@@ -320,7 +321,7 @@ func (s *Manager) RemoveIntegrationHook(ctx context.Context, integrationID, hook
 
 	// Throw error if hook does not exist
 	if integrationConfig == nil {
-		return http.StatusBadRequest, utils.LogError(fmt.Sprintf("Integration (%s) does not exist", integrationID), "syncman", "remove-hook", nil)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) does not exist", integrationID), nil, nil)
 	}
 
 	// Delete the hook
@@ -363,14 +364,14 @@ func (s *Manager) GetIntegrationHooks(ctx context.Context, integrationID, hookID
 
 	// Throw error if hook does not exist
 	if integrationConfig == nil {
-		return http.StatusBadRequest, nil, utils.LogError(fmt.Sprintf("Integration (%s) does not exist", integrationID), "syncman", "get-hook", nil)
+		return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) does not exist", integrationID), nil, nil)
 	}
 
 	// Return the provided hook if id is present
 	if hookID != "*" {
 		hook, p := integrationConfig.Hooks[hookID]
 		if !p {
-			return http.StatusBadRequest, nil, utils.LogError(fmt.Sprintf("Integration hook (%s) does not exist", hookID), "syncman", "get-hook", nil)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration hook (%s) does not exist", hookID), nil, nil)
 		}
 
 		hook.ID = hookID
@@ -391,29 +392,29 @@ func (s *Manager) GetIntegrationHooks(ctx context.Context, integrationID, hookID
 }
 
 // GetIntegrationTokens returns the tokens required for an integration
-func (s *Manager) GetIntegrationTokens(id, key string) (int, interface{}, error) {
+func (s *Manager) GetIntegrationTokens(ctx context.Context, id, key string) (int, interface{}, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	// Check if an integration by that id exists
 	if s.projectConfig.Admin.Integrations == nil {
-		return http.StatusNotFound, nil, utils.LogError(fmt.Sprintf("Integration (%s) not found", id), "syncman", "integration-tokens", nil)
+		return http.StatusNotFound, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) not found", id), nil, nil)
 	}
 
 	i, p := s.projectConfig.Admin.Integrations.Get(id)
 	if !p {
-		return http.StatusNotFound, nil, utils.LogError(fmt.Sprintf("Integration (%s) not found", id), "syncman", "integration-tokens", nil)
+		return http.StatusNotFound, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) not found", id), nil, nil)
 	}
 
 	// Check if the credentials are right
 	if i.Key != key {
-		return http.StatusNotFound, nil, utils.LogError(fmt.Sprintf("Invalid credentials provided for integration (%s)", id), "syncman", "integration-tokens", nil)
+		return http.StatusNotFound, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid credentials provided for integration (%s)", id), nil, nil)
 	}
 
 	// Create the admin token
 	adminToken, err := s.adminMan.GetIntegrationToken(id)
 	if err != nil {
-		return http.StatusInternalServerError, nil, utils.LogError(fmt.Sprintf("Unable to create admin token for integration (%s)", id), "syncman", "integration-tokens", err)
+		return http.StatusInternalServerError, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create admin token for integration (%s)", id), err, nil)
 	}
 
 	// Create a token for each project
@@ -427,13 +428,13 @@ func (s *Manager) GetIntegrationTokens(id, key string) (int, interface{}, error)
 		// Get auth module of that project
 		a, err := s.modules.GetAuthModuleForSyncMan(p.ID)
 		if err != nil {
-			return http.StatusInternalServerError, nil, utils.LogError(fmt.Sprintf("Unable to get auth module of project (%s) for integration (%s)", p.ID, id), "syncman", "integration-tokens", err)
+			return http.StatusInternalServerError, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get auth module of project (%s) for integration (%s)", p.ID, id), err, nil)
 		}
 
 		// Create the token for the project
-		projects[p.ID], err = a.GetIntegrationToken(id)
+		projects[p.ID], err = a.GetIntegrationToken(ctx, id)
 		if err != nil {
-			return http.StatusInternalServerError, nil, utils.LogError(fmt.Sprintf("Unable to create token for project (%s) for integration (%s)", p.ID, id), "syncman", "integration-tokens", err)
+			return http.StatusInternalServerError, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create token for project (%s) for integration (%s)", p.ID, id), err, nil)
 		}
 	}
 

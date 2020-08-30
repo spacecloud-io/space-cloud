@@ -5,7 +5,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	"go.etcd.io/bbolt"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -29,8 +29,7 @@ func (b *Bolt) GetCollections(ctx context.Context) ([]utils.DatabaseCollections,
 		return nil
 	})
 	if err != nil {
-		logrus.Errorf("could not get all collections for given project and database - %s", err.Error())
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "could not get all collections for given project and database", err, nil)
 	}
 	dbCols := make([]utils.DatabaseCollections, 0)
 	for col := range keys {
@@ -54,15 +53,13 @@ func (b *Bolt) DeleteCollection(ctx context.Context, col string) error {
 		for key, _ := c.Seek(prefix); key != nil && bytes.HasPrefix(key, prefix); key, _ = c.Next() {
 			err := b.Delete(key)
 			if err != nil {
-				logrus.Errorf("error deleting collection from embedded db - %s", err.Error())
-				return err
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), "error deleting collection from embedded db", err, nil)
 			}
 		}
 		return nil
 	})
 	if err != nil {
-		logrus.Errorf("error deleting collection from embedded db - %s", err.Error())
-		return err
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "error deleting collection from embedded db", err, nil)
 	}
 	return nil
 }

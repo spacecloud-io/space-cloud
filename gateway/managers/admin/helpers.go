@@ -14,9 +14,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/mitchellh/mapstructure"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func (m *Manager) fetchPublicKeyWithLock() error {
@@ -38,12 +38,12 @@ func (m *Manager) licenseRenewalRoutine() {
 				if m.checkIfLeaderGateway() && licenseMode == "online" {
 					// Fetch the public key periodically
 					if err := m.RenewLicense(false); err != nil {
-						_ = utils.LogError("Unable to renew license. Has your subscription expired?", "admin", "licenseRenewalRoutine", err)
+						_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to renew license. Has your subscription expired?", err, nil)
 						break
 					}
 					go func() {
 						if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
-							_ = utils.LogError("Unable to save admin config", "admin", "licenseRenewalRoutine", err)
+							_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to save admin config", err, nil)
 						}
 					}()
 				} else {
@@ -66,7 +66,7 @@ func (m *Manager) fetchPublicKeyRoutine() {
 		if m.isEnterpriseMode() && licenseMode == "online" {
 			// Fetch the public key periodically
 			if err := m.fetchPublicKeyWithLock(); err != nil {
-				_ = utils.LogError("Could not fetch public key for license file", "admin", "fetch-license-routine", err)
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Could not fetch public key for license file", err, nil)
 				break
 			}
 		}
@@ -125,7 +125,7 @@ func (m *Manager) ValidateLicense() error {
 
 	if _, err := m.decryptLicense(m.config.License); err != nil {
 		m.ResetQuotas()
-		return utils.LogError("Unable to validate license key", "admin", "ValidateLicense", err)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to validate license key", err, nil)
 	}
 
 	return nil
@@ -158,11 +158,11 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 		},
 		"timeout": 10,
 	})
-	utils.LogDebug(`Renewing admin license`, "admin", "renewLicenseWithoutLock", map[string]interface{}{"clusterId": m.config.LicenseKey, "clusterKey": m.config.LicenseValue, "sessionId": m.sessionID})
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), `Renewing admin license`, map[string]interface{}{"clusterId": m.config.LicenseKey, "clusterKey": m.config.LicenseValue, "sessionId": m.sessionID})
 	// Fire the request
 	res, err := http.Post("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/renewLicense", "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return utils.LogError("Unable to contact server to fetch license file from server", "admin", "renewLicenseWithoutLock", err)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to contact server to fetch license file from server", err, nil)
 	}
 	defer func() { _ = res.Body.Close() }()
 
@@ -175,15 +175,15 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return utils.LogError("Invalid status code received in response", "admin", "renewLicenseWithoutLock", errors.New(v.Error))
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Invalid status code received in response", errors.New(v.Error), nil)
 	}
 
 	// Check if response is valid
 	if v.Status != http.StatusOK {
 		m.licenseFetchErrorCount++
-		_ = utils.LogError(fmt.Sprintf("Unable to fetch license file. Retry count - %d", m.licenseFetchErrorCount), "admin", "renewLicenseWithoutLock", errors.New(v.Message))
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to fetch license file. Retry count - %d", m.licenseFetchErrorCount), errors.New(v.Message), nil)
 		if m.licenseFetchErrorCount > maxLicenseFetchErrorCount || force {
-			utils.LogInfo("Max retry limit hit.", "admin", "renewLicenseWithoutLock")
+			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Max retry limit hit.", nil)
 			m.ResetQuotas()
 			return fmt.Errorf("%s-%s", v.Message, v.Error)
 		}
@@ -197,7 +197,7 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 }
 
 func (m *Manager) ResetQuotas() {
-	utils.LogInfo("Resetting space cloud to run in open source model. You will have to re-register the cluster again.", "admin", "resetQuotas")
+	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Resetting space cloud to run in open source model. You will have to re-register the cluster again.", nil)
 	m.quotas.MaxProjects = 1
 	m.quotas.MaxDatabases = 1
 	m.quotas.IntegrationLevel = 0
@@ -214,7 +214,7 @@ func (m *Manager) ResetQuotas() {
 
 	go func() {
 		if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
-			_ = utils.LogError("Unable to save admin config", "admin", "resetQuotas", err)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to save admin config", err, nil)
 		}
 	}()
 }
@@ -222,16 +222,16 @@ func (m *Manager) ResetQuotas() {
 func (m *Manager) setQuotas(license string) error {
 	if m.publicKey == nil {
 		if err := m.fetchPublicKeyWithoutLock(); err != nil {
-			return utils.LogError("Unable to fetch public key", "admin", "setQuotas", err)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch public key", err, nil)
 		}
 	}
 	licenseObj, err := m.decryptLicense(license)
 	if err != nil {
-		return utils.LogError("Unable to decrypt license key", "admin", "setQuotas", err)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to decrypt license key", err, nil)
 	}
 
 	if licenseMode == "offline" && m.sessionID != licenseObj.SessionID {
-		_ = utils.LogError("Invalid license key provided. Make sure you use the license key for this cluster.", "admin", "set-quotas", nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Invalid license key provided. Make sure you use the license key for this cluster.", nil, nil)
 		m.ResetQuotas()
 	}
 

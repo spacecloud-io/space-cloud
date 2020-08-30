@@ -1,10 +1,12 @@
 package admin
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // GetIntegrationToken returns the admin token required by an intergation
@@ -51,13 +53,13 @@ func (m *Manager) ValidateIntegrationSyncOperation(integrations config.Integrati
 		// Return error if license does not belong to integration
 		if obj["id"] != i.ID {
 			m.config.Integrations = removeIntegration(m.config.Integrations, i.ID)
-			return utils.LogError(fmt.Sprintf("Integration (%s) has an invlaid license", i.ID), "admin", "validate-integration", nil)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Integration (%s) has an invlaid license", i.ID), nil, nil)
 		}
 
 		// Check if the level is larger than the licensed level
 		if obj["level"].(float64) > m.quotas.IntegrationLevel {
 			m.config.Integrations = removeIntegration(m.config.Integrations, i.ID)
-			return utils.LogError(fmt.Sprintf("Integration (%s) cannot be used with the current plan", i.ID), "admin", "validate-integration", nil)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Integration (%s) cannot be used with the current plan", i.ID), nil, nil)
 		}
 	}
 

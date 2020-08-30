@@ -80,6 +80,7 @@ func TestManager_GetNodesInCluster(t *testing.T) {
 }
 
 func TestManager_GetAssignedSpaceCloudURL(t *testing.T) {
+
 	type args struct {
 		ctx     context.Context
 		project string
@@ -101,7 +102,7 @@ func TestManager_GetAssignedSpaceCloudURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetAssignedSpaceCloudURL(tt.args.ctx, tt.args.project, tt.args.token)
+			got, err := tt.s.GetAssignedSpaceCloudURL(context.Background(), tt.args.project, tt.args.token)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetAssignedSpaceCloudURL() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -193,6 +194,7 @@ func TestManager_GetAssignedTokens(t *testing.T) {
 }
 
 func TestManager_setProject(t *testing.T) {
+
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -246,7 +248,7 @@ func TestManager_setProject(t *testing.T) {
 
 			tt.s.store = &mockStore
 
-			if err := tt.s.setProject(tt.args.ctx, tt.args.project); (err != nil) != tt.wantErr {
+			if err := tt.s.setProject(context.Background(), tt.args.project); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.setProject() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

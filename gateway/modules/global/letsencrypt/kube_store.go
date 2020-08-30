@@ -1,6 +1,7 @@
 package letsencrypt
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,7 +10,7 @@ import (
 	"time"
 
 	"github.com/mholt/certmagic"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	v1 "k8s.io/api/core/v1"
 	kubeErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,14 +33,12 @@ func NewKubeStore() (*KubeStore, error) {
 	}
 	restConfig, err := rest.InClusterConfig()
 	if err != nil {
-		logrus.Errorf("error in kubernetes store of lets encrypt unable to create in cluster config - %s", err.Error())
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to create in cluster config for kubernetes store of lets encrypt", err, nil)
 	}
 	// Create the kubernetes client
 	kube, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
-		logrus.Errorf("error in kubernetes store of lets encrypt unable to create kubernetes client - %s", err.Error())
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to create kubernetes client in kubernetes store of lets encrypt", err, nil)
 	}
 
 	return &KubeStore{kubeClient: kube, projectID: scProject, path: "certmagic"}, nil
@@ -51,22 +50,22 @@ func (s *KubeStore) Store(key string, value []byte) error {
 	_, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a new Secret
-		logrus.Debugf("Creating secret (%s)", key)
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Creating secret (%s)", key), nil)
 		_, err = s.kubeClient.CoreV1().Secrets(s.projectID).Create(s.generateSecretValue(key, value))
 		if err != nil {
-			logrus.Errorf("error in kubernetes store of lets encrypt unable to create secret for key (%s) - %s", key, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("unable to create secret for key (%s) in kubernetes store of lets encrypt", key), err, nil)
 		}
 		return err
 	} else if err == nil {
 		// secret already exists...update it!
-		logrus.Debugf("Updating secret (%s)", key)
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Updating secret (%s)", key), nil)
 		_, err = s.kubeClient.CoreV1().Secrets(s.projectID).Update(s.generateSecretValue(key, value))
 		if err != nil {
-			logrus.Errorf("error in kubernetes store of lets encrypt unable to update secret for key (%s) - %s", key, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("unable to update secret for key (%s) in kubernetes store of lets encrypt", key), err, nil)
 		}
 		return err
 	}
-	logrus.Errorf("error in kubernetes store of lets encrypt unable to set secret for key (%s) - %s", key, err.Error())
+	_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to set secret for key (%s) in kubernetes store of lets encrypt", key), err, nil)
 	return err
 }
 
@@ -75,8 +74,7 @@ func (s *KubeStore) Load(key string) ([]byte, error) {
 	key = s.makeKey(key)
 	secret, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
 	if err != nil {
-		logrus.Errorf("error in kubernetes store of lets encrypt unable to get secret for key (%s) - %s", key, err.Error())
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to get secret for key (%s) in kubernetes store of lets encrypt", key), err, nil)
 	}
 	return secret.Data["value"], nil
 }
@@ -88,8 +86,7 @@ func (s *KubeStore) Delete(key string) error {
 	if kubeErrors.IsNotFound(err) || err == nil {
 		return nil
 	}
-	logrus.Errorf("error in kubernetes store of lets encrypt unable to delete secret for key (%s) - %s", key, err.Error())
-	return err
+	return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to delete secret for key (%s) in kubernetes store of lets encrypt", key), err, nil)
 }
 
 // Exists check if specified key exists in kube store
@@ -97,7 +94,7 @@ func (s *KubeStore) Exists(key string) bool {
 	key = s.makeKey(key)
 	_, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
 	if err != nil {
-		logrus.Errorf("error in kubernetes store of lets encrypt unable to check secret if exists (%s) - %s", key, err.Error())
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to check secret if exists (%s) in kubernetes store of lets encrypt", key), err, nil)
 		return false
 	}
 	return true
@@ -108,8 +105,7 @@ func (s *KubeStore) List(prefix string, recursive bool) ([]string, error) {
 	// List all secrets
 	kubeSecret, err := s.kubeClient.CoreV1().Secrets(s.projectID).List(metav1.ListOptions{LabelSelector: "app=letsencrypt"})
 	if err != nil {
-		logrus.Errorf("error in kubernetes store of lets encrypt unable to list secrets - %s", err.Error())
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to list secrets in kubernetes store of lets encrypt", err, map[string]interface{}{"prefix": prefix, "recursive": recursive})
 	}
 	keys := make([]string, len(kubeSecret.Items))
 
@@ -133,13 +129,11 @@ func (s *KubeStore) Stat(key string) (certmagic.KeyInfo, error) {
 
 	modifiedTime, err := time.Parse(time.RFC3339, string(secret.Data["modified"]))
 	if err != nil {
-		logrus.Errorf("error in kubernetes store of lets encrypt unable to parse string to time for key (%s) - %s", key, err.Error())
-		return certmagic.KeyInfo{}, fmt.Errorf("unable to parse string to time - %v", err)
+		return certmagic.KeyInfo{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to get stat of key (%s) in kubernetes store of lets encrypt cannot parse string to time", key), err, nil)
 	}
 	size, err := strconv.Atoi(string(secret.Data["size"]))
 	if err != nil {
-		logrus.Errorf("error in kubernetes store of lets encrypt unable to convert string to integer for key (%s) - %s", key, err.Error())
-		return certmagic.KeyInfo{}, fmt.Errorf("unable to convert string to integer - %v", err)
+		return certmagic.KeyInfo{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to get stat of key (%s) in kubernetes store of lets encrypt cannot conver string to integer", key), err, nil)
 	}
 
 	return certmagic.KeyInfo{
@@ -164,15 +158,14 @@ func (s *KubeStore) Lock(key string) error {
 
 		if err.Error() != lockFileExists {
 			// unexpected error
-			logrus.Errorf("error in kubernetes store of lets encrypt - %s", err.Error())
-			return fmt.Errorf("creating lock file: %+v", err)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to create locker file in kubernetes store of lets encrypt", err, nil)
 		}
 
 		// lock file already exists
 		info, err := s.Stat(lockFile)
 		switch {
 		case err != nil:
-			return fmt.Errorf("accessing lock file: %v", err)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to access lock file with key (%s) in kubernetes store of lets encrypt", key), err, nil)
 
 		case s.fileLockIsStale(info):
 			_ = s.deleteLockFile(lockFile)
@@ -180,7 +173,7 @@ func (s *KubeStore) Lock(key string) error {
 
 		case time.Since(start) > staleLockDuration*2:
 			// should never happen, hopefully
-			return fmt.Errorf("possible deadlock: %s passed trying to obtain lock for %s", time.Since(start), key)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("possible deadlock: %s passed trying to obtain lock for %s", time.Since(start), key), err, nil)
 
 		default:
 			// lockfile exists and is not stale;
@@ -215,12 +208,12 @@ func (s *KubeStore) fileLockIsStale(info certmagic.KeyInfo) bool {
 func (s *KubeStore) createLockFile(filename string) error {
 	exists := s.Exists(filename)
 	if exists {
-		return fmt.Errorf(lockFileExists)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), lockFileExists, nil, nil)
 	}
 
 	err := s.Store(filename, []byte("lock"))
 	if err != nil {
-		logrus.Errorf("error while creating lock file in lets encrypt - %v", err)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to create lock file in kubernetes store of lets encrypt", nil, nil)
 	}
 	return err
 }
@@ -228,8 +221,7 @@ func (s *KubeStore) createLockFile(filename string) error {
 func (s *KubeStore) deleteLockFile(keyPath string) error {
 	err := s.Delete(keyPath)
 	if err != nil {
-		logrus.Errorf("error while deleting lock file in lets encrypt - %v", err)
-		return fmt.Errorf("error while deleting lock file in lets encrypt - %v", err)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to delete lock file in lets encrypt", err, nil)
 	}
 	return nil
 }

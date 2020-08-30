@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -144,8 +146,8 @@ func (m *Module) SetCrudConfig(projectID string, crud config.Crud) {
 }
 
 // GetInternalAccessToken returns the token that can be used internally by Space Cloud
-func (m *Module) GetInternalAccessToken() (string, error) {
-	return m.CreateToken(map[string]interface{}{
+func (m *Module) GetInternalAccessToken(ctx context.Context) (string, error) {
+	return m.CreateToken(ctx, map[string]interface{}{
 		"id":     utils.InternalUserID,
 		"nodeId": m.nodeID,
 		"role":   "SpaceCloud",
@@ -153,15 +155,15 @@ func (m *Module) GetInternalAccessToken() (string, error) {
 }
 
 // GetSCAccessToken returns the token that can be used to verify Space Cloud
-func (m *Module) GetSCAccessToken() (string, error) {
-	return m.CreateToken(map[string]interface{}{
+func (m *Module) GetSCAccessToken(ctx context.Context) (string, error) {
+	return m.CreateToken(ctx, map[string]interface{}{
 		"id":   m.nodeID,
 		"role": "SpaceCloud",
 	})
 }
 
 // CreateToken generates a new JWT Token with the token claims
-func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
+func (m *Module) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (string, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -196,7 +198,7 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 				}
 				return tokenString, nil
 			default:
-				return "", fmt.Errorf("invalid algorithm (%s) provided", s.Alg)
+				return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid algorithm (%s) provided for creating token", s.Alg), err, nil)
 			}
 		}
 	}
@@ -204,11 +206,11 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 }
 
 // IsTokenInternal checks if the provided token is internally generated
-func (m *Module) IsTokenInternal(token string) error {
+func (m *Module) IsTokenInternal(ctx context.Context, token string) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	claims, err := m.parseToken(token)
+	claims, err := m.parseToken(ctx, token)
 	if err != nil {
 		return err
 	}
@@ -221,7 +223,7 @@ func (m *Module) IsTokenInternal(token string) error {
 	return errors.New("token has not been created internally")
 }
 
-func (m *Module) parseToken(token string) (map[string]interface{}, error) {
+func (m *Module) parseToken(ctx context.Context, token string) (map[string]interface{}, error) {
 	for _, secret := range m.secrets {
 		if string(secret.Alg) == "" {
 			secret.Alg = config.HS256
@@ -230,7 +232,7 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 			// Don't forget to validate the alg is what you expect:
 			if token.Method.Alg() != string(secret.Alg) {
-				return nil, fmt.Errorf("invalid signing type provided - wanted %s; got %s", secret.Alg, token.Method.Alg())
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to verify jwt token", fmt.Errorf("invalid token algorithm provided wanted (%s) got (%s)", secret.Alg, token.Method.Alg()), nil)
 			}
 			switch secret.Alg {
 			case config.RS256:
@@ -238,11 +240,11 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 			case config.HS256, "":
 				return []byte(secret.Secret), nil
 			default:
-				return nil, fmt.Errorf("invalid algorithm (%s) provided", secret.Alg)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to verify jwt token", fmt.Errorf("invalid token algorithm (%s) provided", secret.Alg), nil)
 			}
 		})
 		if err != nil {
-			utils.LogDebug("Unable to verify jwt token", "admin", "parse-token", map[string]interface{}{"token": token, "error": err.Error()})
+			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Unable to verify jwt token", map[string]interface{}{"token": token, "error": err.Error()})
 			continue
 		}
 
@@ -255,10 +257,10 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 			for key, val := range claims {
 				obj[key] = val
 			}
-
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "auth"})
 			return obj, nil
 		}
-		utils.LogDebug("Unable to verify jwt token", "admin", "parse-token", map[string]interface{}{"token": token, "valid": tokenObj.Valid})
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Token contains invalid claims", map[string]interface{}{"token": token, "valid": tokenObj.Valid})
 	}
 	return nil, ErrTokenVerification
 }

@@ -8,7 +8,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func TestGetFileRule(t *testing.T) {
@@ -102,7 +101,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 	var authMatchQuery = []struct {
 		module                         *Module
 		testName, project, token, path string
-		op                             utils.FileOpType
+		op                             model.FileOpType
 		args                           map[string]interface{}
 		IsErrExpected                  bool
 		result                         *model.PostProcess

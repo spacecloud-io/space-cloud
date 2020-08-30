@@ -9,7 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestModule_createCrudDocuments(t *testing.T) {
@@ -31,10 +31,10 @@ func TestModule_createCrudDocuments(t *testing.T) {
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Create, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Read, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Update, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Delete, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": model.Create, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": model.Read, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": model.Update, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": model.Delete, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 		{
@@ -45,8 +45,8 @@ func TestModule_createCrudDocuments(t *testing.T) {
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Create, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Delete, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": model.Create, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": model.Delete, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 	}
@@ -83,7 +83,7 @@ func TestModule_createDocument(t *testing.T) {
 		driver  string
 		subType string
 		module  string
-		op      utils.OperationType
+		op      model.OperationType
 		count   uint64
 		t       string
 	}
@@ -124,7 +124,7 @@ func TestModule_createEventDocument(t *testing.T) {
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": eventingModule, "type": utils.OperationType("event-name"), "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": notApplicable, "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": eventingModule, "type": model.OperationType("event-name"), "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": notApplicable, "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 		{
@@ -184,10 +184,10 @@ func TestModule_createFileDocuments(t *testing.T) {
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Create, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Read, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Delete, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.List, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": model.Create, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": model.Read, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": model.Delete, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": model.List, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 		{
@@ -198,8 +198,8 @@ func TestModule_createFileDocuments(t *testing.T) {
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Create, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Delete, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": model.Create, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": model.Delete, "sub_type": notApplicable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 	}
@@ -249,7 +249,7 @@ func TestModule_createFunctionDocument(t *testing.T) {
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": remoteServiceModule, "type": utils.OperationType("calls"), "sub_type": "function", "ts": mock.Anything, "count": uint64(100), "driver": "service", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": remoteServiceModule, "type": model.OperationType("calls"), "sub_type": "function", "ts": mock.Anything, "count": uint64(100), "driver": "service", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 		{

@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // DescribeTable return a description of sql table & foreign keys in table
 // NOTE: not to be exposed externally
-func (s *SQL) DescribeTable(ctx context.Context, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error) {
+func (s *SQL) DescribeTable(ctx context.Context, col string) ([]model.InspectorFieldType, []model.ForeignKeysType, []model.IndexType, error) {
 	fields, err := s.getDescribeDetails(ctx, s.name, col)
 	if err != nil {
 		return nil, nil, nil, err
@@ -26,11 +26,11 @@ func (s *SQL) DescribeTable(ctx context.Context, col string) ([]utils.FieldType,
 	return fields, foreignKeys, index, nil
 }
 
-func (s *SQL) getDescribeDetails(ctx context.Context, project, col string) ([]utils.FieldType, error) {
+func (s *SQL) getDescribeDetails(ctx context.Context, project, col string) ([]model.InspectorFieldType, error) {
 	queryString := ""
 	args := []interface{}{}
-	switch utils.DBType(s.dbType) {
-	case utils.MySQL:
+	switch model.DBType(s.dbType) {
+	case model.MySQL:
 		queryString = `select column_name as 'Field',is_nullable as 'Null',column_key as 'Key',
 case when data_type = 'varchar' then concat(DATA_TYPE,'(',CHARACTER_MAXIMUM_LENGTH,')') else DATA_TYPE end as 'Type',
 CASE 
@@ -42,7 +42,7 @@ from information_schema.columns
 where (table_name,table_schema) = (?,?);`
 		args = append(args, col, project)
 
-	case utils.Postgres:
+	case model.Postgres:
 		queryString = `SELECT isc.column_name AS "Field", SPLIT_PART(REPLACE(coalesce(column_default,''),'''',''), '::', 1) AS "Default" ,isc.data_type AS "Type",isc.is_nullable AS "Null",
 CASE
     WHEN t.constraint_type = 'PRIMARY KEY' THEN 'PRI'
@@ -59,7 +59,7 @@ WHERE (isc.table_schema, isc.table_name) = ($2, $1)
 ORDER BY isc.ordinal_position;`
 
 		args = append(args, col, project)
-	case utils.SQLServer:
+	case model.SQLServer:
 
 		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' , 
     case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')') else C.DATA_TYPE end as 'Type',
@@ -84,11 +84,11 @@ WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
 	}
 	defer func() { _ = rows.Close() }()
 
-	result := []utils.FieldType{}
+	result := []model.InspectorFieldType{}
 	count := 0
 	for rows.Next() {
 		count++
-		fieldType := new(utils.FieldType)
+		fieldType := new(model.InspectorFieldType)
 
 		if err := rows.StructScan(fieldType); err != nil {
 			return nil, err
@@ -102,15 +102,15 @@ WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
 	return result, nil
 }
 
-func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]utils.ForeignKeysType, error) {
+func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]model.ForeignKeysType, error) {
 	queryString := ""
 	args := []interface{}{}
-	switch utils.DBType(s.dbType) {
+	switch model.DBType(s.dbType) {
 
-	case utils.MySQL:
+	case model.MySQL:
 		queryString = "select KCU.TABLE_NAME, KCU.COLUMN_NAME, KCU.CONSTRAINT_NAME, RC.DELETE_RULE, KCU.REFERENCED_TABLE_NAME, KCU.REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC ON RC.CONSTRAINT_NAME=KCU.CONSTRAINT_NAME WHERE KCU.REFERENCED_TABLE_SCHEMA = ? and KCU.TABLE_NAME = ?"
 		args = append(args, project, col)
-	case utils.Postgres:
+	case model.Postgres:
 		queryString = `SELECT
 		tc.table_name AS "TABLE_NAME", 
 		kcu.column_name AS "COLUMN_NAME", 
@@ -131,7 +131,7 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
 	`
 		args = append(args, project, col)
-	case utils.SQLServer:
+	case model.SQLServer:
 		queryString = `SELECT 
 		CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME, RC.DELETE_RULE,
 		isnull(KCU.TABLE_NAME,'') AS 'REFERENCED_TABLE_NAME', isnull(KCU.COLUMN_NAME,'') AS 'REFERENCED_COLUMN_NAME'
@@ -149,9 +149,9 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 	}
 	defer func() { _ = rows.Close() }()
 
-	result := []utils.ForeignKeysType{}
+	result := []model.ForeignKeysType{}
 	for rows.Next() {
-		foreignKey := new(utils.ForeignKeysType)
+		foreignKey := new(model.ForeignKeysType)
 
 		if err := rows.StructScan(foreignKey); err != nil {
 			return nil, err
@@ -162,17 +162,17 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 	return result, nil
 }
 
-func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]utils.IndexType, error) {
+func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]model.IndexType, error) {
 	queryString := ""
-	switch utils.DBType(s.dbType) {
+	switch model.DBType(s.dbType) {
 
-	case utils.MySQL:
+	case model.MySQL:
 		queryString = `SELECT 
 		TABLE_NAME, COLUMN_NAME, INDEX_NAME, SEQ_IN_INDEX, 
 		(case when NON_UNIQUE = 0 then "yes" else "no" end) as IS_UNIQUE,
 		(case when COLLATION = "A" then "asc" else "desc" end) as SORT 
 		from INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME REGEXP '^index_'`
-	case utils.Postgres:
+	case model.Postgres:
 		queryString = `select
     	t.relname as "TABLE_NAME",
     	a.attname as "COLUMN_NAME",
@@ -194,7 +194,7 @@ func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]utils
     		t.relname,
     		i.relname,
     		array_position(ix.indkey, a.attnum)`
-	case utils.SQLServer:
+	case model.SQLServer:
 		queryString = `SELECT 
     	TABLE_NAME = t.name,
     	COLUMN_NAME = col.name,
@@ -221,9 +221,9 @@ func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]utils
 	}
 	defer func() { _ = rows.Close() }()
 
-	result := []utils.IndexType{}
+	result := []model.IndexType{}
 	for rows.Next() {
-		indexKey := new(utils.IndexType)
+		indexKey := new(model.IndexType)
 
 		if err := rows.StructScan(indexKey); err != nil {
 			return nil, err

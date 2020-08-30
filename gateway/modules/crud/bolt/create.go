@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/spaceuptech/helpers"
 	"go.etcd.io/bbolt"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -19,13 +20,13 @@ func (b *Bolt) Create(ctx context.Context, col string, req *model.CreateRequest)
 		if req.Operation == utils.One {
 			doc, ok := req.Document.(map[string]interface{})
 			if !ok {
-				return 0, fmt.Errorf("error inserting into bboltdb cannot assert document to map")
+				return 0, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to insert data into bboltdb cannot assert document to map", nil, nil)
 			}
 			objs = append(objs, doc)
 		} else {
 			docs, ok := req.Document.([]interface{})
 			if !ok {
-				return 0, fmt.Errorf("error inserting into bboltdb cannot assert document to slice of interface")
+				return 0, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to insert data into bboltdb cannot assert document to slice of interface", nil, nil)
 			}
 			objs = docs
 		}
@@ -36,7 +37,7 @@ func (b *Bolt) Create(ctx context.Context, col string, req *model.CreateRequest)
 				// get _id from create request
 				id, ok := objToSet.(map[string]interface{})["_id"]
 				if !ok {
-					return fmt.Errorf("error creating _id not found in create request")
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to insert data _id not found in create request", nil, nil)
 				}
 				// check if specified already exists in database
 				count, _, err := b.Read(ctx, col, &model.ReadRequest{
@@ -46,26 +47,26 @@ func (b *Bolt) Create(ctx context.Context, col string, req *model.CreateRequest)
 					Operation: utils.Count,
 				})
 				if err != nil {
-					return fmt.Errorf("error reading existing data - %s", err.Error())
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to read existing data", err, nil)
 				}
 				if count > 0 {
-					return fmt.Errorf("error inserting into bboltdb data already exists - %v", count)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to insert data already exists", nil, nil)
 				}
 
 				b, err := tx.CreateBucketIfNotExists([]byte(b.bucketName))
 				if err != nil {
-					return fmt.Errorf("error creating bucket in bboltdb while inserting- %v", err)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error creating bucket in bboltdb while inserting- %v", err), nil, nil)
 				}
 
 				// store value as json string
 				value, err := json.Marshal(&objToSet)
 				if err != nil {
-					return fmt.Errorf("error marshalling while inserting in bboltdb - %v", err)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error marshalling while inserting in bboltdb - %v", err), nil, nil)
 				}
 
 				// insert document in bucket
 				if err = b.Put([]byte(fmt.Sprintf("%s/%s", col, id)), value); err != nil {
-					return fmt.Errorf("error inserting in bbolt db - %v", err)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error inserting in bbolt db - %v", err), nil, nil)
 				}
 			}
 			return nil

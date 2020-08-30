@@ -14,7 +14,7 @@ type mockIntegrationManager struct {
 	mock.Mock
 }
 
-func (m *mockIntegrationManager) HandleConfigAuth(resource, op string, claims map[string]interface{}, attr map[string]string) config.IntegrationAuthResponse {
+func (m *mockIntegrationManager) HandleConfigAuth(_ context.Context, resource, op string, claims map[string]interface{}, attr map[string]string) config.IntegrationAuthResponse {
 	return m.Called(resource, op, claims, attr).Get(0).(config.IntegrationAuthResponse)
 }
 

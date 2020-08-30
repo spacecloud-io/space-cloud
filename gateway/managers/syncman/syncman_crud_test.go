@@ -13,6 +13,7 @@ import (
 )
 
 // func TestManager_SetDeleteCollection(t *testing.T) {
+//
 // 	type mockArgs struct {
 // 		method         string
 // 		args           []interface{}
@@ -114,7 +115,7 @@ import (
 // 			tt.s.store = &mockStore
 // 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 //
-// 			if err := tt.s.SetDeleteCollection(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, &crud.Module{}, model.RequestParams{}); (err != nil) != tt.wantErr {
+// 			if err := tt.s.SetDeleteCollection(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, &crud.Module{}); (err != nil) != tt.wantErr {
 // 				t.Errorf("Manager.SetDeleteCollection() error = %v, wantErr %v", err, tt.wantErr)
 // 			}
 //
@@ -125,6 +126,7 @@ import (
 // }
 
 func TestManager_SetDatabaseConnection(t *testing.T) {
+
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -272,7 +274,7 @@ func TestManager_SetDatabaseConnection(t *testing.T) {
 			tt.s.store = &mockStore
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			if _, err := tt.s.SetDatabaseConnection(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetDatabaseConnection(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetDatabaseConnection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -283,6 +285,7 @@ func TestManager_SetDatabaseConnection(t *testing.T) {
 }
 
 func TestManager_RemoveDatabaseConfig(t *testing.T) {
+
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -377,7 +380,7 @@ func TestManager_RemoveDatabaseConfig(t *testing.T) {
 			tt.s.store = &mockStore
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			if _, err := tt.s.RemoveDatabaseConfig(tt.args.ctx, tt.args.project, tt.args.dbAlias, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.RemoveDatabaseConfig(context.Background(), tt.args.project, tt.args.dbAlias, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.RemoveDatabaseConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -388,6 +391,7 @@ func TestManager_RemoveDatabaseConfig(t *testing.T) {
 }
 
 func TestManager_GetLogicalDatabaseName(t *testing.T) {
+
 	type args struct {
 		ctx     context.Context
 		project string
@@ -421,7 +425,7 @@ func TestManager_GetLogicalDatabaseName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetLogicalDatabaseName(tt.args.ctx, tt.args.project, tt.args.dbAlias)
+			got, err := tt.s.GetLogicalDatabaseName(context.Background(), tt.args.project, tt.args.dbAlias)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetLogicalDatabaseName() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -434,6 +438,7 @@ func TestManager_GetLogicalDatabaseName(t *testing.T) {
 }
 
 func TestManager_GetPreparedQuery(t *testing.T) {
+
 	type args struct {
 		ctx     context.Context
 		project string
@@ -487,7 +492,7 @@ func TestManager_GetPreparedQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
-			_, got, err := tt.s.GetPreparedQuery(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.id, model.RequestParams{})
+			_, got, err := tt.s.GetPreparedQuery(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.id, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetPreparedQuery() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -500,6 +505,7 @@ func TestManager_GetPreparedQuery(t *testing.T) {
 }
 
 func TestManager_SetPreparedQueries(t *testing.T) {
+
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -602,7 +608,7 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 			tt.s.store = &mockStore
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			if _, err := tt.s.SetPreparedQueries(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.id, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetPreparedQueries(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.id, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetPreparedQueries() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -613,6 +619,7 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 }
 
 func TestManager_RemovePreparedQueries(t *testing.T) {
+
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -714,7 +721,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 			tt.s.store = &mockStore
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			if _, err := tt.s.RemovePreparedQueries(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.id, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.RemovePreparedQueries(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.id, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.RemovePreparedQueries() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -725,6 +732,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 }
 
 // func TestManager_SetModifySchema(t *testing.T) {
+//
 // 	type mockArgs struct {
 // 		method         string
 // 		args           []interface{}
@@ -930,7 +938,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 // 			tt.s.modules = &mockModules
 // 			tt.s.store = &mockStore
 //
-// 			if err := tt.s.SetModifySchema(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, &config.TableRule{Schema: tt.args.schema}, model.RequestParams{}); (err != nil) != tt.wantErr {
+// 			if err := tt.s.SetModifySchema(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, &config.TableRule{Schema: tt.args.schema}); (err != nil) != tt.wantErr {
 // 				t.Errorf("Manager.SetModifySchema() error = %v, wantErr %v", err, tt.wantErr)
 // 			}
 //
@@ -941,6 +949,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 // }
 
 func TestManager_SetCollectionRules(t *testing.T) {
+
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -1134,7 +1143,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 			tt.s.store = &mockStore
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			if _, err := tt.s.SetCollectionRules(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetCollectionRules(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetCollectionRules() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -1203,6 +1212,7 @@ func TestManager_GetSecrets(t *testing.T) {
 }
 
 func TestManager_GetSchemas(t *testing.T) {
+
 	mockSchema := mockSchemaEventingInterface{}
 	type mockArgs struct {
 		method         string
@@ -1355,7 +1365,7 @@ func TestManager_GetSchemas(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			_, got, err := tt.s.GetSchemas(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.format, model.RequestParams{})
+			_, got, err := tt.s.GetSchemas(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.format, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetSchemas() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1370,6 +1380,7 @@ func TestManager_GetSchemas(t *testing.T) {
 }
 
 // func TestManager_SetReloadSchema(t *testing.T) {
+//
 // 	project := "1"
 // 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"create": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
 // 	s := schema.Init(crud.Init())
@@ -1485,7 +1496,7 @@ func TestManager_GetSchemas(t *testing.T) {
 // 			tt.s.modules = &mockModules
 // 			tt.s.store = &mockStore
 //
-// 			got, err := tt.s.SetReloadSchema(tt.args.ctx, tt.args.dbAlias, tt.args.project, model.RequestParams{})
+// 			got, err := tt.s.SetReloadSchema(context.Background(), tt.args.dbAlias, tt.args.project)
 // 			if (err != nil) != tt.wantErr {
 // 				t.Errorf("Manager.SetReloadSchema() error = %v, wantErr %v", err, tt.wantErr)
 // 				return
@@ -1501,6 +1512,7 @@ func TestManager_GetSchemas(t *testing.T) {
 // }
 
 func TestManager_SetSchemaInspection(t *testing.T) {
+
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -1707,7 +1719,7 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 			tt.s.store = &mockStore
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			if _, err := tt.s.SetSchemaInspection(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.schema, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetSchemaInspection(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.schema, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetSchemaInspection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -1718,6 +1730,7 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 }
 
 func TestManager_RemoveSchemaInspection(t *testing.T) {
+
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -1824,7 +1837,7 @@ func TestManager_RemoveSchemaInspection(t *testing.T) {
 			tt.s.store = &mockStore
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			if _, err := tt.s.RemoveCollection(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.RemoveCollection(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.RemoveCollection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -1835,6 +1848,7 @@ func TestManager_RemoveSchemaInspection(t *testing.T) {
 }
 
 func TestManager_applySchemas(t *testing.T) {
+
 	mockSchema := mockSchemaEventingInterface{}
 	mockErrorSchema := mockSchemaEventingInterface{}
 	type mockArgs struct {
@@ -2001,7 +2015,7 @@ func TestManager_applySchemas(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			if err := tt.s.applySchemas(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.projectConfig, tt.args.v); (err != nil) != tt.wantErr {
+			if err := tt.s.applySchemas(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.projectConfig, tt.args.v); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.applySchemas() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -2013,6 +2027,7 @@ func TestManager_applySchemas(t *testing.T) {
 }
 
 func TestManager_SetModifyAllSchema(t *testing.T) {
+
 	mockSchema := mockSchemaEventingInterface{}
 	type mockArgs struct {
 		method         string
@@ -2130,7 +2145,7 @@ func TestManager_SetModifyAllSchema(t *testing.T) {
 			tt.s.store = &mockStore
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			if _, err := tt.s.SetModifyAllSchema(tt.args.ctx, tt.args.dbAlias, tt.args.project, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetModifyAllSchema(context.Background(), tt.args.dbAlias, tt.args.project, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetModifyAllSchema() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -2142,6 +2157,7 @@ func TestManager_SetModifyAllSchema(t *testing.T) {
 }
 
 func TestManager_GetDatabaseConfig(t *testing.T) {
+
 	type args struct {
 		ctx     context.Context
 		project string
@@ -2182,7 +2198,7 @@ func TestManager_GetDatabaseConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
-			_, got, err := tt.s.GetDatabaseConfig(tt.args.ctx, tt.args.project, tt.args.dbAlias, model.RequestParams{})
+			_, got, err := tt.s.GetDatabaseConfig(context.Background(), tt.args.project, tt.args.dbAlias, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetDatabaseConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -2195,6 +2211,7 @@ func TestManager_GetDatabaseConfig(t *testing.T) {
 }
 
 func TestManager_GetCollectionRules(t *testing.T) {
+
 	type args struct {
 		ctx     context.Context
 		project string
@@ -2242,7 +2259,7 @@ func TestManager_GetCollectionRules(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
-			_, got, err := tt.s.GetCollectionRules(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{})
+			_, got, err := tt.s.GetCollectionRules(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetCollectionRules() error = %v, wantErr %v", err, tt.wantErr)
 				return

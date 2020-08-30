@@ -2,9 +2,9 @@ package client
 
 import (
 	"context"
-	"log"
 
 	"github.com/gorilla/websocket"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -20,11 +20,11 @@ type WebsocketClient struct {
 }
 
 // RoutineWrite starts a json writer routine
-func (c *WebsocketClient) RoutineWrite() {
+func (c *WebsocketClient) RoutineWrite(ctx context.Context) {
 	for res := range c.channel {
 		err := c.socket.WriteJSON(res)
 		if err != nil {
-			log.Println(err)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to write json in socket", err, nil)
 			return
 		}
 	}

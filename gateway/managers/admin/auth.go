@@ -1,25 +1,25 @@
 package admin
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/helpers"
 )
 
 // GenerateToken creates a token with the appropriate claims
-func (m *Manager) GenerateToken(token string, tokenClaims map[string]interface{}) (string, error) {
+func (m *Manager) GenerateToken(ctx context.Context, token string, tokenClaims map[string]interface{}) (string, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	claims, err := m.parseToken(token)
+	claims, err := m.parseToken(ctx, token)
 	if err != nil {
 		return "", err
 	}
 
-	res := m.integrationMan.HandleConfigAuth("admin-token", "create", claims, nil)
+	res := m.integrationMan.HandleConfigAuth(ctx, "admin-token", "create", claims, nil)
 	if res.CheckResponse() {
 		if err := res.Error(); err != nil {
 			return "", err
@@ -50,12 +50,12 @@ func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error
 	return tokenString, nil
 }
 
-func (m *Manager) parseToken(token string) (map[string]interface{}, error) {
+func (m *Manager) parseToken(ctx context.Context, token string) (map[string]interface{}, error) {
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, errors.New("invalid signing method type")
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid signing method type", nil, nil)
 		}
 
 		return []byte(m.user.Secret), nil
@@ -74,9 +74,9 @@ func (m *Manager) parseToken(token string) (map[string]interface{}, error) {
 		for key, val := range claims {
 			obj[key] = val
 		}
-
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "admin"})
 		return obj, nil
 	}
 
-	return nil, utils.LogError("Unable to verify JWT token", "admin", "parse-token", nil)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Admin: JWT token could not be verified", nil, nil)
 }

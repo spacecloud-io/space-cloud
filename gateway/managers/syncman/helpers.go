@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/getlantern/deepcopy"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func (s *Manager) setProjectConfig(conf *config.Project) {
@@ -76,7 +76,7 @@ func (s *Manager) GetGatewayIndex() int {
 }
 
 // getConfigWithoutLock returns the config present in the state
-func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error) {
+func (s *Manager) getConfigWithoutLock(ctx context.Context, projectID string) (*config.Project, error) {
 	// Iterate over all projects stored
 	for _, p := range s.projectConfig.Projects {
 		if projectID == p.ID {
@@ -89,7 +89,7 @@ func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error
 		}
 	}
 
-	return nil, fmt.Errorf("given project (%s) is not present in state", projectID)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown project (%s) provided", projectID), nil, nil)
 }
 func (s *Manager) checkIfLeaderGateway(nodeID string) bool {
 	return strings.HasSuffix(nodeID, "-0")
@@ -113,7 +113,7 @@ func (s *Manager) PingLeader() error {
 
 		service, err := s.getLeaderGateway()
 		if err != nil {
-			_ = utils.LogError("Unable to ping server", "syncman", "PingLeader", err)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to ping server", err, nil)
 
 			// Sleep for 5 seconds before trying again
 			time.Sleep(5 * time.Second)
@@ -121,7 +121,7 @@ func (s *Manager) PingLeader() error {
 		}
 
 		if err := s.MakeHTTPRequest(ctx, "GET", fmt.Sprintf("http://%s/v1/config/env", service.addr), "", "", struct{}{}, &map[string]interface{}{}); err != nil {
-			_ = utils.LogError("Unable to ping server", "syncman", "PingLeader", err)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to ping server", err, nil)
 
 			// Sleep for 5 seconds before trying again
 			time.Sleep(5 * time.Second)
@@ -140,11 +140,11 @@ func (s *Manager) GetNodeID() string {
 }
 
 // GetSpaceCloudURLFromID returns addr for corresponding nodeID
-func (s *Manager) GetSpaceCloudURLFromID(nodeID string) (string, error) {
+func (s *Manager) GetSpaceCloudURLFromID(ctx context.Context, nodeID string) (string, error) {
 	for _, service := range s.services {
 		if nodeID == service.id {
 			return service.addr, nil
 		}
 	}
-	return "", fmt.Errorf("service with specified nodeID doesn't exists")
+	return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Space cloud service with nodeId (%s) doesn't exists", nodeID), nil, nil)
 }

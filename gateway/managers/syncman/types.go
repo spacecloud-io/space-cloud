@@ -12,7 +12,7 @@ import (
 // AdminSyncmanInterface is an interface consisting of functions of admin module used by eventing module
 type AdminSyncmanInterface interface {
 	GetInternalAccessToken() (string, error)
-	IsTokenValid(token, resource, op string, attr map[string]string) (model.RequestParams, error)
+	IsTokenValid(ctx context.Context, token, resource, op string, attr map[string]string) (model.RequestParams, error)
 	IsRegistered() bool
 	GetSessionID() string
 	RenewLicense(bool) error

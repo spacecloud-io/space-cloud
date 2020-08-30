@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func (s *Manager) SetOfflineLicense(ctx context.Context, license string) error {
-	utils.LogDebug(`Upgrading gateway to enterprise...`, "syncman", "set-offline-license", nil)
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), `Upgrading gateway to enterprise...`, nil)
 
 	oldConfig := s.adminMan.GetConfig()
 	oldConfig.License = license
@@ -18,9 +19,9 @@ func (s *Manager) SetOfflineLicense(ctx context.Context, license string) error {
 }
 
 func (s *Manager) RenewLicense(ctx context.Context, token string) error {
-	utils.LogDebug(`Force renewing the license key...`, "syncman", "RenewLicense", map[string]interface{}{})
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), `Force renewing the license key...`, nil)
 	if !s.adminMan.IsRegistered() {
-		return utils.LogError("Only registered clusters can force renew", "syncman", "RenewLicense", nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Only registered clusters can force renew", nil, nil)
 	}
 	// A follower will forward this request to leader gateway
 	if !s.checkIfLeaderGateway(s.nodeID) {
@@ -31,7 +32,7 @@ func (s *Manager) RenewLicense(ctx context.Context, token string) error {
 
 		url := fmt.Sprintf("http://%s/v1/config/renew-license", service.addr)
 		params := map[string]string{}
-		utils.LogDebug("Forwarding force renew request to leader", "syncman", "RenewLicense", map[string]interface{}{"leader": service.addr})
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Forwarding force renew request to leader", map[string]interface{}{"leader": service.addr})
 		return s.MakeHTTPRequest(ctx, http.MethodPost, url, token, "", params, &map[string]interface{}{})
 	}
 
@@ -43,9 +44,9 @@ func (s *Manager) RenewLicense(ctx context.Context, token string) error {
 }
 
 func (s *Manager) ConvertToEnterprise(ctx context.Context, token, licenseKey, licenseValue, clusterName string) error {
-	utils.LogDebug(`Upgrading gateway to enterprise...`, "syncman", "convert-to-enterprise", map[string]interface{}{"LicenseKey": licenseKey, "LicenseValue": licenseValue, "clusterName": clusterName})
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), `Upgrading gateway to enterprise...`, map[string]interface{}{"LicenseKey": licenseKey, "LicenseValue": licenseValue, "clusterName": clusterName})
 	if s.adminMan.IsRegistered() {
-		return utils.LogError("Unable to upgrade, already running in enterprise mode", "syncman", "convert-to-enterprise", nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to upgrade, already running in enterprise mode", nil, nil)
 	}
 
 	// A follower will forward this request to leader gateway
@@ -57,7 +58,7 @@ func (s *Manager) ConvertToEnterprise(ctx context.Context, token, licenseKey, li
 
 		url := fmt.Sprintf("http://%s/v1/config/upgrade", service.addr)
 		params := map[string]string{"licenseKey": licenseKey, "licenseValue": licenseValue}
-		utils.LogDebug("Forwarding upgrade request to leader", "syncman", "convert-to-enterprise", map[string]interface{}{"leader": service.addr})
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Forwarding upgrade request to leader", map[string]interface{}{"leader": service.addr})
 		return s.MakeHTTPRequest(ctx, http.MethodPost, url, token, "", params, &map[string]interface{}{})
 	}
 

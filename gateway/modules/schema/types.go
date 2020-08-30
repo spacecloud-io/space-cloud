@@ -3,8 +3,9 @@ package schema
 import (
 	"context"
 
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 type mockCrudSchemaInterface struct {
@@ -16,7 +17,7 @@ func (m *mockCrudSchemaInterface) GetDBType(dbAlias string) (string, error) {
 	return c.String(0), nil
 }
 
-func (m *mockCrudSchemaInterface) DescribeTable(ctx context.Context, dbAlias, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error) {
+func (m *mockCrudSchemaInterface) DescribeTable(ctx context.Context, dbAlias, col string) ([]model.InspectorFieldType, []model.ForeignKeysType, []model.IndexType, error) {
 	return nil, nil, nil, nil
 }
 

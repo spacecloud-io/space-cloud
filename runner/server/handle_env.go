@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils"
 )
@@ -16,7 +18,7 @@ func (s *Server) handleGetClusterType() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -33,7 +35,7 @@ func (s *Server) handleGetMetrics() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
 			return
 		}
 

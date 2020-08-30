@@ -6,10 +6,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/net/context"
+
+	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_ApplyProjectConfig(t *testing.T) {

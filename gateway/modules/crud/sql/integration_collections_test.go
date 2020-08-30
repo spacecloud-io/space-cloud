@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -36,14 +37,14 @@ func TestSQL_GetCollections(t *testing.T) {
 		},
 	}
 
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("GetCollections() Couldn't establishing connection with database", dbType)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := db.GetCollections(tt.args.ctx)
+			got, err := db.GetCollections(ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetCollections() error = %v, wantErr %v", err, tt.wantErr)
 			}

@@ -1,12 +1,13 @@
 package utils
 
 import (
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha256"
 	"encoding/base64"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 )
 
 // HashString hashes a string value and base64 encodes the result
@@ -20,8 +21,7 @@ func HashString(stringValue string) string {
 func Encrypt(aesKey []byte, value string) (string, error) {
 	encrypted := make([]byte, len(value))
 	if err := encryptAESCFB(encrypted, []byte(value), aesKey, aesKey[:aes.BlockSize]); err != nil {
-		logrus.Errorln("error encrypting value in matchEncrypt: ", err)
-		return "", err
+		return "", helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to encrypt value in match encrypt", err, nil)
 	}
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }

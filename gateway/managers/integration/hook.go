@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -20,7 +22,7 @@ func (m *Manager) invokeHooks(ctx context.Context, params model.RequestParams) a
 		callerID = params.Claims["id"].(string)
 	}
 
-	utils.LogDebug("Inside invoke hooks", "integration", "invoke-hook", map[string]interface{}{"resource": params.Resource, "verb": params.Op})
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Inside invoke hooks", map[string]interface{}{"resource": params.Resource, "verb": params.Op})
 	// TODO: Make the iteration happen in parallel
 	for integrationID, integration := range m.config {
 		// Skip if the integration is the caller
@@ -58,12 +60,12 @@ func (m *Manager) invokeHooks(ctx context.Context, params model.RequestParams) a
 			// Get the admin token
 			scToken, err := m.adminMan.GetInternalAccessToken()
 			if err != nil {
-				_ = utils.LogError(fmt.Sprintf("Unable to make sc token for invoking hook (%s) in integration (%s)", hookID, integrationID), "integration", "invoke-hook", err)
+				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to make sc token for invoking hook (%s) in integration (%s)", hookID, integrationID), err, nil)
 				continue
 			}
 
 			// Invoke the hook
-			utils.LogDebug("Invoking hook", "integration", "invoke-hook", map[string]interface{}{
+			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Invoking hook", map[string]interface{}{
 				"url":      hook.URL,
 				"resource": params.Resource,
 				"verb":     params.Op,
@@ -72,7 +74,7 @@ func (m *Manager) invokeHooks(ctx context.Context, params model.RequestParams) a
 			req := &utils.HTTPRequest{URL: hook.URL, Params: params, Method: http.MethodPost, SCToken: scToken}
 			status, err := utils.MakeHTTPRequest(ctx, req, &res)
 			if err != nil {
-				err = utils.LogError(fmt.Sprintf("Unable to make request to hook (%s) in integration (%s)", hookID, integrationID), "integration", "invoke-hook", err)
+				err = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to make request to hook (%s) in integration (%s)", hookID, integrationID), err, nil)
 
 				// Return error if this was a hook with hijack permission
 				if hook.Kind == "hijack" {
@@ -83,12 +85,12 @@ func (m *Manager) invokeHooks(ctx context.Context, params model.RequestParams) a
 				continue
 			}
 
-			utils.LogDebug(fmt.Sprintf("Hook (%s) in integration (%s) responded with action (%s)", hookID, integrationID, res.Action), "integration", "invoke-hook", nil)
+			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Hook (%s) in integration (%s) responded with action (%s)", hookID, integrationID, res.Action), nil)
 
 			switch res.Action {
 			case config.ErrorHookResponse:
 				// Simply log the error. No big deal. The hook can always hijack and throw error if this was serious
-				_ = utils.LogError(fmt.Sprintf("Hook (%s) in integration (%s) sent error response - %s", hookID, integrationID, res.Error), "integration", "invoke-hook", err)
+				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Hook (%s) in integration (%s) sent error response - %s", hookID, integrationID, res.Error), err, nil)
 
 			case config.IgnoreHookResponse:
 				// Do nothing
@@ -97,13 +99,13 @@ func (m *Manager) invokeHooks(ctx context.Context, params model.RequestParams) a
 			case config.HijackHookResponse:
 				// Check if hook hook has permission to hijack
 				if hook.Kind != "hijack" {
-					utils.LogWarn(fmt.Sprintf("Hook (%s) in integration (%s) does not has permission to hijack", hookID, integrationID), "integration", "invoke-hook")
+					helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Hook (%s) in integration (%s) does not has permission to hijack", hookID, integrationID), nil)
 					break
 				}
 
 				// We will skip hijack responses if a previous hook has already claimed this
 				if hookResponse.checkResponse {
-					utils.LogWarn(fmt.Sprintf("Cannot process highjack action of hook (%s) in integration (%s) since it has already been claimed by integration (%s)", hookID, integrationID, hookResponse.integration), "integration", "invoke-hook")
+					helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot process highjack action of hook (%s) in integration (%s) since it has already been claimed by integration (%s)", hookID, integrationID, hookResponse.integration), nil)
 					break
 				}
 
@@ -124,7 +126,7 @@ func (m *Manager) invokeHooks(ctx context.Context, params model.RequestParams) a
 		}
 	}
 
-	utils.LogDebug("Exiting invoke hooks", "integration", "invoke-hook", map[string]interface{}{"resource": params.Resource, "verb": params.Op})
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Exiting invoke hooks", map[string]interface{}{"resource": params.Resource, "verb": params.Op})
 
 	return hookResponse
 }

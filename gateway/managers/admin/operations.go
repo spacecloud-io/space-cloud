@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -20,7 +22,7 @@ func (m *Manager) GetInternalAccessToken() (string, error) {
 }
 
 // IsTokenValid checks if the token is valid
-func (m *Manager) IsTokenValid(token, resource, op string, attr map[string]string) (model.RequestParams, error) {
+func (m *Manager) IsTokenValid(ctx context.Context, token, resource, op string, attr map[string]string) (model.RequestParams, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -28,13 +30,13 @@ func (m *Manager) IsTokenValid(token, resource, op string, attr map[string]strin
 		return model.RequestParams{}, nil
 	}
 
-	claims, err := m.parseToken(token)
+	claims, err := m.parseToken(ctx, token)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
 
 	// Check if its an integration request and return the integration response if its an integration request
-	res := m.integrationMan.HandleConfigAuth(resource, op, claims, attr)
+	res := m.integrationMan.HandleConfigAuth(ctx, resource, op, claims, attr)
 	if res.CheckResponse() && res.Error() != nil {
 		return model.RequestParams{}, res.Error()
 	}
@@ -44,7 +46,7 @@ func (m *Manager) IsTokenValid(token, resource, op string, attr map[string]strin
 }
 
 // CheckIfAdmin simply checks the token
-func (m *Manager) CheckIfAdmin(token string) error {
+func (m *Manager) CheckIfAdmin(ctx context.Context, token string) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -52,7 +54,7 @@ func (m *Manager) CheckIfAdmin(token string) error {
 		return nil
 	}
 
-	claims, err := m.parseToken(token)
+	claims, err := m.parseToken(ctx, token)
 	if err != nil {
 		return err
 	}
@@ -60,11 +62,11 @@ func (m *Manager) CheckIfAdmin(token string) error {
 	// Check if role is admin
 	role, p := claims["role"]
 	if !p {
-		return utils.LogError("Invalid token provided. Claim `role` is absent.", "admin", "check-if-admin", nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid token provided. Claim `role` is absent.", nil, nil)
 	}
 
 	if !strings.Contains(role.(string), "admin") {
-		return utils.LogError("Only admins are authorised to make this request.", "admin", "check-if-admin", nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Only admins are authorised to make this request.", nil, nil)
 	}
 
 	return nil
@@ -123,11 +125,11 @@ func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config
 }
 
 // RefreshToken is used to create a new token based on an existing one
-func (m *Manager) RefreshToken(token string) (string, error) {
+func (m *Manager) RefreshToken(ctx context.Context, token string) (string, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	// Parse the token to get userID and userRole
-	tokenClaims, err := m.parseToken(token)
+	tokenClaims, err := m.parseToken(ctx, token)
 	if err != nil {
 		return "", err
 	}

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -38,7 +39,7 @@ func TestMatchString(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			gotErr := matchString(testCase.rule, map[string]interface{}{"args": testCase.args})
+			gotErr := matchString(context.Background(), testCase.rule, map[string]interface{}{"args": testCase.args})
 			if (gotErr != nil) != testCase.isErrExpected {
 				t.Errorf("got %v wanted %v", gotErr, testCase.isErrExpected)
 			}
@@ -76,9 +77,10 @@ func TestMatchNumber(t *testing.T) {
 		{testName: "Error Match number != field does not exist", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: 1.0, F2: "args.num1"}},
 		{testName: "Error Match number != field is of incorrect type", isErrExpected: true, args: map[string]interface{}{"num1": "wrong type"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: 1.0, F2: "args.num1"}},
 	}
+
 	for _, test := range authMatchNumber {
 		t.Run(test.testName, func(t *testing.T) {
-			err := matchNumber(test.rule, map[string]interface{}{"args": test.args})
+			err := matchNumber(context.Background(), test.rule, map[string]interface{}{"args": test.args})
 			if (err != nil) != test.isErrExpected {
 				t.Error("| Got This |", err, "| Wanted Error |", test.isErrExpected)
 			}
@@ -104,7 +106,7 @@ func TestMatchBool(t *testing.T) {
 
 	for _, test := range authMatchBool {
 		t.Run(test.testName, func(t *testing.T) {
-			err := matchBool(test.rule, test.args)
+			err := matchBool(context.Background(), test.rule, test.args)
 			if (err != nil) != test.isErrExpected {
 				t.Error("| Got This |", err, "| Wanted Error |", test.isErrExpected)
 			}
@@ -143,7 +145,7 @@ func TestMatchdate(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			gotErr := matchdate(testCase.rule, map[string]interface{}{"args": testCase.args})
+			gotErr := matchDate(context.Background(), testCase.rule, map[string]interface{}{"args": testCase.args})
 			if (gotErr != nil) != testCase.isErrExpected {
 				t.Errorf("name %v -got %v wanted %v", testCase.name, gotErr, testCase.isErrExpected)
 			}

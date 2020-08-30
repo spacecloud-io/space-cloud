@@ -1,6 +1,7 @@
 package syncman
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -324,7 +325,7 @@ func TestManager_getConfigWithoutLock(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.getConfigWithoutLock(tt.args.projectID)
+			got, err := tt.s.getConfigWithoutLock(context.Background(), tt.args.projectID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.getConfigWithoutLock() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -363,7 +364,7 @@ func TestManager_GetSpaceCloudURLFromID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetSpaceCloudURLFromID(tt.args.nodeID)
+			got, err := tt.s.GetSpaceCloudURLFromID(context.Background(), tt.args.nodeID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetSpaceCloudURLFromID() error = %v, wantErr %v", err, tt.wantErr)
 				return

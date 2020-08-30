@@ -1,14 +1,14 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"strings"
 
 	"github.com/ghodss/yaml"
-
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/helpers"
 )
 
 // StoreConfigToFile stores the config file to disk
@@ -21,7 +21,7 @@ func StoreConfigToFile(conf *Config, path string) error {
 	} else if strings.HasSuffix(path, ".json") {
 		data, err = json.Marshal(conf)
 	} else {
-		return utils.LogError(fmt.Sprintf("Invalid config file type (%s) provided", path), "config", "StoreConfigToFile", nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid config file type (%s) provided", path), nil, nil)
 	}
 
 	// Check if error occured while marshaling

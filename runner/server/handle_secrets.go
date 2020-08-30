@@ -1,14 +1,12 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils"
@@ -20,13 +18,14 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		ctx := r.Context()
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -38,27 +37,26 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 		// Parse request body
 		reqBody := new(request)
 		if err := json.NewDecoder(r.Body).Decode(reqBody); err != nil {
-			logrus.Errorf("Failed to set file secret root path - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to set file secret root patt", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
 			return
 		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
 
 		// set file secret root path
 		if err := s.driver.SetFileSecretRootPath(ctx, projectID, secretName, reqBody.RootPath); err != nil {
-			logrus.Errorf("Failed to create secret - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create secret", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
 func (s *Server) handleApplySecret() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		ctx := r.Context()
 
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
@@ -66,8 +64,8 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -79,38 +77,36 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 		// Parse request body
 		secretObj := new(model.Secret)
 		if err := json.NewDecoder(r.Body).Decode(secretObj); err != nil {
-			logrus.Errorf("Failed to create secret - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create secret", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
 			return
 		}
 
 		secretObj.ID = name
 
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
-
 		// create/update secret
 		if err := s.driver.CreateSecret(ctx, projectID, secretObj); err != nil {
-			logrus.Errorf("Failed to create secret - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create secret", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
 func (s *Server) handleListSecrets() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		ctx := r.Context()
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -118,14 +114,11 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		projectID := vars["project"]
 		name, exists := r.URL.Query()["id"]
 
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
-
 		// list all secrets
 		secrets, err := s.driver.ListSecrets(ctx, projectID)
 		if err != nil {
-			logrus.Errorf("Failed to list secret - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to list secret", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -154,14 +147,15 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 func (s *Server) handleDeleteSecret() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		ctx := r.Context()
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -170,31 +164,29 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 		projectID := vars["project"]
 		name := vars["id"]
 
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
-
 		// list all secrets
 		if err := s.driver.DeleteSecret(ctx, projectID, name); err != nil {
-			logrus.Errorf("Failed to delete secret - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to delete secret", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
 func (s *Server) handleSetSecretKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		ctx := r.Context()
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -207,36 +199,34 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 		// body will only contain "value": secretValue (not-encoded!)
 		secretVal := new(model.SecretValue)
 		if err := json.NewDecoder(r.Body).Decode(secretVal); err != nil {
-			logrus.Errorf("Failed to set secret key - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to set secret ket", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
 			return
 		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
 
 		// setSecretKey
 		if err := s.driver.SetKey(ctx, projectID, name, key, secretVal); err != nil {
-			logrus.Errorf("Failed to list secret - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to list secret", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
 func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		ctx := r.Context()
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -246,15 +236,12 @@ func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 		key := vars["key"] // secret-key
 		// setSecretKey
 
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
-
 		if err := s.driver.DeleteKey(ctx, projectID, name, key); err != nil {
-			logrus.Errorf("Failed to list secret - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to list secret", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }

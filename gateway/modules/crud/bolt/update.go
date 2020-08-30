@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	"go.etcd.io/bbolt"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -28,14 +28,13 @@ func (b *Bolt) Update(ctx context.Context, col string, req *model.UpdateRequest)
 			for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
 				currentObj := map[string]interface{}{}
 				if err := json.Unmarshal(v, &currentObj); err != nil {
-					logrus.Errorf("error un marshalling while reading from bboltdb - %v", err)
-					return err
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to unmarshal data read from bbbolt db", err, nil)
 				}
 				// if valid then update
 				if utils.Validate(req.Find, currentObj) {
 					objToSet, ok := req.Update["$set"].(map[string]interface{})
 					if !ok {
-						return fmt.Errorf("error unable to update in bbolt - $set db operator not found or the operator value is not map")
+						return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to update in bbolt - $set db operator not found or the operator value is not map", nil, nil)
 					}
 
 					for objToSetKey, objToSetValue := range objToSet {
@@ -43,8 +42,7 @@ func (b *Bolt) Update(ctx context.Context, col string, req *model.UpdateRequest)
 					}
 					value, err := json.Marshal(&currentObj)
 					if err != nil {
-						logrus.Errorf("error marshalling while updating in bboltdb - %v", err)
-						return err
+						return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to unmarshal data updated from bbbolt db", err, nil)
 					}
 
 					// over ride the data
@@ -67,7 +65,7 @@ func (b *Bolt) Update(ctx context.Context, col string, req *model.UpdateRequest)
 		if req.Operation == utils.Upsert && count == 0 {
 			objToSet, ok := req.Update["$set"].(map[string]interface{})
 			if !ok {
-				return 0, fmt.Errorf("error unable to update in bbolt - $set db operator not found or the operator value is not map")
+				return 0, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to update in bbolt - $set db operator not found or the operator value is not map", nil, nil)
 			}
 
 			for findName, findValue := range req.Find {
@@ -78,7 +76,7 @@ func (b *Bolt) Update(ctx context.Context, col string, req *model.UpdateRequest)
 			}
 			rowsAffected, err := b.Create(ctx, col, &model.CreateRequest{Operation: utils.One, Document: objToSet})
 			if err != nil || rowsAffected == 0 {
-				return 0, fmt.Errorf("error while upserting in bbolt db - %v rows affected %v", err, rowsAffected)
+				return 0, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to upsert in bbolt db - %v rows affected %v", err, rowsAffected), nil, nil)
 			}
 			count = rowsAffected
 		}

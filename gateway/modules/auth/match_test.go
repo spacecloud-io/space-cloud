@@ -343,9 +343,10 @@ func TestModule_matchEncrypt(t *testing.T) {
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.matchEncrypt(tt.args.rule, tt.args.args)
+			got, err := tt.m.matchEncrypt(context.Background(), tt.args.rule, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.matchEncrypt() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -400,9 +401,10 @@ func TestModule_matchDecrypt(t *testing.T) {
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.matchDecrypt(tt.args.rule, tt.args.args)
+			got, err := tt.m.matchDecrypt(context.Background(), tt.args.rule, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.matchDecrypt() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -480,9 +482,10 @@ func Test_matchHash(t *testing.T) {
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := matchHash(tt.args.rule, tt.args.args)
+			got, err := matchHash(context.Background(), tt.args.rule, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("matchHash() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	bolt "go.etcd.io/bbolt"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +27,7 @@ func newCache(kube *kubernetes.Clientset) (*cache, error) {
 }
 
 // TODO: Move the update deployment logic in here
-func (c *cache) setDeployment(ns, name string, deployment *v1.Deployment) error {
+func (c *cache) setDeployment(ctx context.Context, ns, name string, deployment *v1.Deployment) error {
 	return c.db.Update(func(tx *bolt.Tx) error {
 		// There will be a bucket for each namespace
 		bucket, err := tx.CreateBucketIfNotExists([]byte(ns))
@@ -38,8 +38,7 @@ func (c *cache) setDeployment(ns, name string, deployment *v1.Deployment) error 
 		// Marshal the deployment
 		data, err := proto.Marshal(deployment)
 		if err != nil {
-			logrus.Errorf("Could not cache deployment (%s) in namespace (%s) - %s", name, ns, err.Error())
-			return err
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Could not cache deployment (%s) in namespace (%s)", name, ns), err, nil)
 		}
 
 		// Store it in the bucket
@@ -72,7 +71,7 @@ func (c *cache) getDeployment(ctx context.Context, ns, name string) (*v1.Deploym
 		// If an error occurred in the unmarshal process, simply log the error. We will return nil in this case as well or else
 		// the error will be propagated to the client as well. For now we simply read the config again directly from kubernetes
 		if err := proto.Unmarshal(val, deployment); err != nil {
-			logrus.Errorf("Could not unmarshal deployment (%s) in namespace (%s) - %s", name, ns, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Could not unmarshal deployment (%s) in namespace (%s)", name, ns), err, nil)
 			return nil
 		}
 		foundInCache = true
@@ -83,7 +82,7 @@ func (c *cache) getDeployment(ctx context.Context, ns, name string) (*v1.Deploym
 
 	// Query kubernetes if the deployment wasn't found in the cache. Also, update the cache with the deployment received.
 	if !foundInCache {
-		logrus.Debugf("Service (%s) not found in cache... Querying kubernetes", name)
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Service (%s) not found in cache... Querying kubernetes", name), nil)
 		deployment, err = c.kube.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
@@ -91,7 +90,7 @@ func (c *cache) getDeployment(ctx context.Context, ns, name string) (*v1.Deploym
 
 		// Attempt to set the deployment in the cache. We are ignoring the error since it's okay if some error occurred.
 		// The deployment will eventually get cached so it's alright
-		_ = c.setDeployment(ns, name, deployment)
+		_ = c.setDeployment(ctx, ns, name, deployment)
 	}
 
 	return deployment, nil

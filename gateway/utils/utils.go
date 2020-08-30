@@ -1,6 +1,13 @@
 package utils
 
-import "strconv"
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/spaceuptech/helpers"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
+)
 
 // AcceptableIDType converts a provied id to string
 func AcceptableIDType(id interface{}) (string, bool) {
@@ -27,7 +34,7 @@ func AcceptableIDType(id interface{}) (string, bool) {
 // GetIDVariable gets the id variable for the provided db type
 func GetIDVariable(dbAlias string) string {
 	idVar := "id"
-	if DBType(dbAlias) == Mongo {
+	if model.DBType(dbAlias) == model.Mongo {
 		idVar = "_id"
 	}
 
@@ -42,4 +49,14 @@ func ArrayContains(array []interface{}, value interface{}) bool {
 		}
 	}
 	return false
+}
+
+//ExtractRequestParams extract request info from http request & stores it in reqParam variable
+func ExtractRequestParams(r *http.Request, reqParams model.RequestParams, body interface{}) model.RequestParams {
+	reqParams.RequestID = r.Header.Get(helpers.HeaderRequestID)
+	reqParams.Method = r.Method
+	reqParams.Path = r.URL.Path
+	reqParams.Headers = r.Header
+	reqParams.Payload = body
+	return reqParams
 }

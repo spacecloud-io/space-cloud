@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -15,7 +17,7 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, err := m.getFunctionRule(service, function)
+	rule, err := m.getFunctionRule(ctx, service, function)
 	if err != nil {
 		return nil, model.RequestParams{}, err
 	}
@@ -26,7 +28,7 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 
 	var auth map[string]interface{}
 	if rule.Rule != "allow" {
-		auth, err = m.parseToken(token)
+		auth, err = m.parseToken(ctx, token)
 		if err != nil {
 			return nil, model.RequestParams{}, err
 		}
@@ -60,9 +62,9 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 	return actions, reqParams, nil
 }
 
-func (m *Module) getFunctionRule(service, function string) (*config.Rule, error) {
+func (m *Module) getFunctionRule(ctx context.Context, service, function string) (*config.Rule, error) {
 	if m.funcRules == nil {
-		return nil, fmt.Errorf("no rule has been provided for endpoint (%s) in service (%s)", function, service)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("No security rule has been initialized for endpoint (%s) of remote service (%s)", function, service), nil, nil)
 	}
 	if serviceStub, p := m.funcRules.InternalServices[service]; p && serviceStub.Endpoints != nil {
 		if funcStub, p := serviceStub.Endpoints[function]; p && funcStub.Rule != nil {
@@ -74,5 +76,5 @@ func (m *Module) getFunctionRule(service, function string) (*config.Rule, error)
 		}
 	}
 
-	return nil, fmt.Errorf("no rule has been provided for endpoint (%s) in service (%s)", function, service)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("No security rule has been provided for endpoint (%s) of remote service (%s)", function, service), nil, nil)
 }

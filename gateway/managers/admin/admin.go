@@ -9,11 +9,10 @@ import (
 	"time"
 
 	"github.com/segmentio/ksuid"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 var licenseMode = "online"
@@ -61,25 +60,25 @@ func New(nodeID, clusterID string, isDev bool, adminUserInfo *config.AdminUser) 
 	go m.licenseRenewalRoutine()
 	go m.fetchPublicKeyRoutine()
 
-	utils.LogInfo(fmt.Sprintf("Starting gateway in %s licensing mode", licenseMode), "admin", "new")
+	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Starting gateway in %s licensing mode", licenseMode), nil)
 
 	return m
 }
 
 func (m *Manager) startOperation(license string, isInitialCall bool) error {
-	logrus.Infoln("Starting gateway in enterprise mode")
+	helpers.Logger.LogInfo("", "Starting gateway in enterprise mode", nil)
 
 	// Fetch the public key if it does't already exist
 	if m.publicKey == nil {
 		if err := m.fetchPublicKeyWithoutLock(); err != nil {
-			return utils.LogError("Unable to fetch public key", "admin", "startOperation", err)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch public key", err, nil)
 		}
 	}
 
 	// Parse the license
 	licenseObj, err := m.decryptLicense(license)
 	if err != nil {
-		return utils.LogError("Unable to decrypt license key", "admin", "startOperation", err)
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to decrypt license key", err, nil)
 	}
 
 	// We have a problem if our session id does not match with the license's session id
@@ -89,7 +88,7 @@ func (m *Manager) startOperation(license string, isInitialCall bool) error {
 		if !isInitialCall {
 
 			// Reset quotas and admin config to defaults
-			_ = utils.LogError("Invalid license file provided. Did you change the license key yourself?", "admin", "startOperation", errors.New("session id mismatch while setting admin config"))
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Invalid license file provided. Did you change the license key yourself?", errors.New("session id mismatch while setting admin config"), nil)
 			m.ResetQuotas()
 			return nil
 		}
@@ -139,18 +138,18 @@ func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 			m.config.LicenseKey = ksuid.New().String()
 			m.config.LicenseValue = ksuid.New().String()
 
-			utils.LogDebug("Setting session id", "admin", "set-config", map[string]interface{}{"key": m.config.LicenseKey, "value": m.config.LicenseValue})
+			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting session id", map[string]interface{}{"key": m.config.LicenseKey, "value": m.config.LicenseValue})
 
 			go func() {
 				if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
-					_ = utils.LogError("Unable to set admin config with session id", "admin", "set-config", nil)
+					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config with session id", nil, nil)
 				}
 			}()
 			return nil
 		}
 
 		m.sessionID = m.config.LicenseKey + m.config.LicenseValue
-		utils.LogDebug("Successfully set session id", "admin", "set-config", map[string]interface{}{"sessionId": m.sessionID})
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Successfully set session id", map[string]interface{}{"sessionId": m.sessionID})
 	}
 
 	// Check if the cluster is registered
@@ -163,7 +162,7 @@ func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 		}
 	}
 
-	utils.LogInfo("Gateway running in open source mode", "admin", "SetConfig")
+	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Gateway running in open source mode", nil)
 	// Reset quotas defaults
 	m.quotas.MaxProjects = 1
 	m.quotas.MaxDatabases = 1

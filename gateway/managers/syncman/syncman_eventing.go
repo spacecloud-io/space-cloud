@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -31,7 +31,7 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 	defer s.lock.Unlock()
 
 	value.ID = ruleName
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -42,8 +42,7 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 	projectConfig.Modules.Eventing.Rules[ruleName] = value
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
-		logrus.Errorf("error setting eventing config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -71,7 +70,7 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -79,8 +78,7 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 	delete(projectConfig.Modules.Eventing.Rules, ruleName)
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
-		logrus.Errorf("error setting eventing config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -108,22 +106,21 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
 
 	_, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok && enabled {
-		return http.StatusBadRequest, fmt.Errorf("unknown db (%s) provided while setting eventing config", dbAlias)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown db alias (%s) provided while setting eventing config", dbAlias), nil, nil)
 	}
 
 	projectConfig.Modules.Eventing.DBAlias = dbAlias
 	projectConfig.Modules.Eventing.Enabled = enabled
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
-		logrus.Errorf("error setting eventing config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
 	if enabled {
@@ -169,7 +166,7 @@ func (s *Manager) GetEventingConfig(ctx context.Context, project string, params 
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -196,7 +193,7 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -210,8 +207,7 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 	}
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
-		logrus.Errorf("error setting eventing config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -239,7 +235,7 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -247,8 +243,7 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 	delete(projectConfig.Modules.Eventing.Schemas, evType)
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
-		logrus.Errorf("error setting eventing config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -277,7 +272,7 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 	defer s.lock.Unlock()
 
 	rule.ID = evType
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -291,8 +286,7 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 	}
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
-		logrus.Errorf("error setting eventing config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -320,7 +314,7 @@ func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, e
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -328,8 +322,7 @@ func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, e
 	delete(projectConfig.Modules.Eventing.SecurityRules, evType)
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
-		logrus.Errorf("error setting eventing config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -357,7 +350,7 @@ func (s *Manager) GetEventingTriggerRules(ctx context.Context, project, id strin
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -365,7 +358,7 @@ func (s *Manager) GetEventingTriggerRules(ctx context.Context, project, id strin
 	if id != "*" {
 		service, ok := projectConfig.Modules.Eventing.Rules[id]
 		if !ok {
-			return http.StatusBadRequest, nil, fmt.Errorf("id (%s) not present in config", id)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Trigger rule (%s) does not exists for eventing config", id), nil, nil)
 		}
 		return http.StatusOK, []interface{}{service}, nil
 	}
@@ -395,7 +388,7 @@ func (s *Manager) GetEventingSchema(ctx context.Context, project, id string, par
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -403,7 +396,7 @@ func (s *Manager) GetEventingSchema(ctx context.Context, project, id string, par
 	if id != "*" {
 		service, ok := projectConfig.Modules.Eventing.Schemas[id]
 		if !ok {
-			return http.StatusBadRequest, nil, fmt.Errorf("id (%s) not present in config", id)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Schema (%s) does not exists in eventing config", id), nil, nil)
 		}
 		return http.StatusOK, []interface{}{service}, nil
 	}
@@ -433,7 +426,7 @@ func (s *Manager) GetEventingSecurityRules(ctx context.Context, project, id stri
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -441,7 +434,7 @@ func (s *Manager) GetEventingSecurityRules(ctx context.Context, project, id stri
 	if id != "*" {
 		service, ok := projectConfig.Modules.Eventing.SecurityRules[id]
 		if !ok {
-			return http.StatusBadRequest, nil, fmt.Errorf("id (%s) not present in config", id)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Security rule (%s) does not exists for eventing config", id), nil, nil)
 		}
 
 		return http.StatusOK, []interface{}{service}, nil

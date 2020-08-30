@@ -1,10 +1,13 @@
 package manager
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils"
@@ -32,12 +35,12 @@ func getServiceAndProject(req *http.Request) (string, string) {
 	return getProjectAndServiceID(host)
 }
 
-func (m *Manager) getRoute(projectID, serviceID string, port int32) (*model.Route, error) {
+func (m *Manager) getRoute(ctx context.Context, projectID, serviceID string, port int32) (*model.Route, error) {
 
 	// Check if the service id exists
 	routes, p := m.serviceRoutes[getConfigKey(projectID, serviceID)]
 	if !p {
-		return nil, fmt.Errorf("no routes found for service (%s) in project (%s)", serviceID, projectID)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("no routes found for service (%s) in project (%s)", serviceID, projectID), nil, nil)
 	}
 
 	// Select the correct route based on the port
@@ -46,16 +49,16 @@ func (m *Manager) getRoute(projectID, serviceID string, port int32) (*model.Rout
 			return route, nil
 		}
 	}
-	return nil, fmt.Errorf("no routes found for port (%d) for service (%s) in project (%s)", port, serviceID, projectID)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("no routes found for port (%d) for service (%s) in project (%s)", port, serviceID, projectID), nil, nil)
 }
 
-func setRequest(request *http.Request, route *model.Route, projectID, serviceID string) error {
+func setRequest(ctx context.Context, request *http.Request, route *model.Route, projectID, serviceID string) error {
 	// http: Request.RequestURI can't be set in client requests.
 	// http://golang.org/src/pkg/net/http/client.go
 	request.RequestURI = ""
 
 	// Change the request with the destination host, port and url
-	target, err := route.SelectTarget(-1) // pass a -ve weight to randomly generate
+	target, err := route.SelectTarget(ctx, -1) // pass a -ve weight to randomly generate
 	if err != nil {
 		return err
 	}

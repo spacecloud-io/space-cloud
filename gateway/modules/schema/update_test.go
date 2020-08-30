@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -599,7 +600,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 
 	for _, testcase := range tests {
 		t.Run(testcase.name, func(t *testing.T) {
-			err := s.ValidateUpdateOperation(testcase.args.dbType, testcase.args.col, utils.All, testcase.args.updateDoc, nil)
+			err := s.ValidateUpdateOperation(context.Background(), testcase.args.dbType, testcase.args.col, utils.All, testcase.args.updateDoc, nil)
 			if (err != nil) != testcase.IsErrExpected {
 				t.Errorf("\n ValidateUpdateOperation() error = expected error-%v, got-%v)", testcase.IsErrExpected, err)
 			}

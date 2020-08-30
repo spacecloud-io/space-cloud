@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -169,6 +170,7 @@ func TestPostProcessMethod(t *testing.T) {
 			finalResult: map[string]interface{}{"password": hash("password")},
 		},
 	}
+
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
 	s := schema.Init(crud.Init())
@@ -182,7 +184,7 @@ func TestPostProcessMethod(t *testing.T) {
 			auth.aesKey = base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")
 		}
 		t.Run(test.testName, func(t *testing.T) {
-			err := (auth).PostProcessMethod(test.postProcess, test.result)
+			err := (auth).PostProcessMethod(context.Background(), test.postProcess, test.result)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Success GoErr", err, "Want Error", test.IsErrExpected)
 				return

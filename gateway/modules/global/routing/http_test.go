@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -119,9 +120,10 @@ func Test_setRequest(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_ = setRequest(tt.args.request, tt.args.route, tt.args.url)
+			_ = setRequest(context.Background(), tt.args.request, tt.args.route, tt.args.url)
 			if !reflect.DeepEqual(tt.args.request, tt.want) {
 				t.Errorf("Routing.addProjectRoutes(): wanted - %v; got - %v", tt.want, tt.args.request)
 

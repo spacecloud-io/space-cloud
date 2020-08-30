@@ -18,7 +18,6 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		config    config.Crud
 	}
 	type args struct {
-		ctx           context.Context
 		dbAlias       string
 		tableName     string
 		project       string
@@ -3458,7 +3457,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				project:   tt.fields.project,
 				config:    tt.fields.config,
 			}
-			got, err := s.generateCreationQueries(tt.args.ctx, tt.args.dbAlias, tt.args.tableName, tt.args.project, tt.args.parsedSchema, tt.args.currentSchema)
+			got, err := s.generateCreationQueries(context.Background(), tt.args.dbAlias, tt.args.tableName, tt.args.project, tt.args.parsedSchema, tt.args.currentSchema)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("dbAlias : %v name = %v, Schema.generateCreationQueries()\n error = %v,\n wantErr %v", tt.args.dbAlias, tt.name, err, tt.wantErr)
 				return

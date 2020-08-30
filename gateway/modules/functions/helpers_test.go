@@ -1,6 +1,9 @@
 package functions
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func Test_adjustPath(t *testing.T) {
 	type args struct {
@@ -29,9 +32,10 @@ func Test_adjustPath(t *testing.T) {
 			params: map[string]interface{}{}}, wantErr: true},
 		{name: "nil params", args: args{path: "/abc/{args.p1}/def/{args.p2}"}, wantErr: true},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := adjustPath(tt.args.path, tt.args.claims, tt.args.params)
+			got, err := adjustPath(context.Background(), tt.args.path, tt.args.claims, tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("adjustPath() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -2,11 +2,12 @@ package manager
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/utils"
 )
@@ -27,20 +28,20 @@ func (m *Manager) handleHTTPRequest(port int32) http.HandlerFunc {
 		projectID, serviceID := getServiceAndProject(request)
 
 		// Select a proper route
-		route, err := m.getRoute(projectID, serviceID, port)
+		route, err := m.getRoute(request.Context(), projectID, serviceID, port)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		logrus.Debugf("selected route (%v) for projectID (%s), serviceID (%s) and port (%d)", route, projectID, serviceID, port)
+		helpers.Logger.LogDebug(helpers.GetRequestID(request.Context()), fmt.Sprintf("selected route (%v) for projectID (%s), serviceID (%s) and port (%d)", route, projectID, serviceID, port), nil)
 
 		// Proxy the request
-		if err := setRequest(request, route, projectID, serviceID); err != nil {
+		if err := setRequest(request.Context(), request, route, projectID, serviceID); err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
-			logrus.Errorf("Failed set request for route (%v) - %s", route, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(request.Context()), fmt.Sprintf("Failed set request for route (%v)", route), err, nil)
 			return
 		}
 
@@ -48,7 +49,7 @@ func (m *Manager) handleHTTPRequest(port int32) http.HandlerFunc {
 		if err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
-			logrus.Errorf("Failed to make request for route (%v) - %s", route, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(request.Context()), fmt.Sprintf("Failed to make request for route (%v)", route), err, nil)
 			return
 		}
 		defer utils.CloseTheCloser(response.Body)
@@ -62,9 +63,9 @@ func (m *Manager) handleHTTPRequest(port int32) http.HandlerFunc {
 		// Copy the body
 		n, err := io.Copy(writer, response.Body)
 		if err != nil {
-			logrus.Errorf("Failed to copy upstream (%s) response to downstream - %s", request.URL.String(), err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(request.Context()), fmt.Sprintf("Failed to copy upstream (%s) response to downstream", request.URL.String()), err, nil)
 		}
 
-		logrus.Debugf("Successfully copied %d bytes from upstream server (%s)", n, request.URL.String())
+		helpers.Logger.LogDebug(helpers.GetRequestID(request.Context()), fmt.Sprintf("Successfully copied %d bytes from upstream server (%s)", n, request.URL.String()), nil)
 	}
 }

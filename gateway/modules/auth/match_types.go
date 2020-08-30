@@ -1,15 +1,18 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func matchString(rule *config.Rule, args map[string]interface{}) error {
+func matchString(ctx context.Context, rule *config.Rule, args map[string]interface{}) error {
 	var f2String []interface{}
 	var f2 string
 	f1String, ok := rule.F1.(string)
@@ -32,7 +35,7 @@ func matchString(rule *config.Rule, args map[string]interface{}) error {
 			if !ok {
 				f2String, ok = temp.([]interface{})
 				if !ok {
-					return fmt.Errorf("invalid second field (%v) provided - wanted array of string", temp)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid second field (%v) provided - wanted array of string", temp), nil, nil)
 				}
 			}
 
@@ -53,17 +56,17 @@ func matchString(rule *config.Rule, args map[string]interface{}) error {
 				return nil
 			}
 		case "in":
-			return matchIn(f2String, f1, args)
+			return matchIn(ctx, f2String, f1, args)
 		case "notin":
-			return matchNotIn(f2String, f1, args)
+			return matchNotIn(ctx, f2String, f1, args)
 		}
 	case []interface{}:
 		f2String = v
 		switch rule.Eval {
 		case "in":
-			return matchIn(f2String, f1, args)
+			return matchIn(ctx, f2String, f1, args)
 		case "notin":
-			return matchNotIn(f2String, f1, args)
+			return matchNotIn(ctx, f2String, f1, args)
 		}
 	default:
 		return ErrIncorrectRuleFieldType
@@ -71,7 +74,7 @@ func matchString(rule *config.Rule, args map[string]interface{}) error {
 	return ErrIncorrectMatch
 }
 
-func matchIn(f2 []interface{}, f1 interface{}, state map[string]interface{}) error {
+func matchIn(ctx context.Context, f2 []interface{}, f1 interface{}, state map[string]interface{}) error {
 	for _, Field2 := range f2 {
 		switch v := Field2.(type) {
 		case string:
@@ -83,7 +86,7 @@ func matchIn(f2 []interface{}, f1 interface{}, state map[string]interface{}) err
 				return nil
 			}
 		case float64, int, int32, int64, float32:
-			f2, err := utils.LoadNumber(v, state)
+			f2, err := utils.LoadNumber(ctx, v, state)
 			if err != nil {
 				return err
 			}
@@ -95,7 +98,7 @@ func matchIn(f2 []interface{}, f1 interface{}, state map[string]interface{}) err
 	return ErrIncorrectMatch
 }
 
-func matchNotIn(f2 []interface{}, f1 interface{}, state map[string]interface{}) error {
+func matchNotIn(ctx context.Context, f2 []interface{}, f1 interface{}, state map[string]interface{}) error {
 	for _, Field2 := range f2 {
 		switch v := Field2.(type) {
 		case string:
@@ -107,7 +110,7 @@ func matchNotIn(f2 []interface{}, f1 interface{}, state map[string]interface{}) 
 				return ErrIncorrectMatch
 			}
 		case float64, int, int32, int64, float32:
-			f2, err := utils.LoadNumber(v, state)
+			f2, err := utils.LoadNumber(ctx, v, state)
 			if err != nil {
 				return err
 			}
@@ -119,14 +122,14 @@ func matchNotIn(f2 []interface{}, f1 interface{}, state map[string]interface{}) 
 	return nil
 }
 
-func matchNumber(rule *config.Rule, args map[string]interface{}) error {
+func matchNumber(ctx context.Context, rule *config.Rule, args map[string]interface{}) error {
 	var f2Number []interface{}
 	var f2 float64
-	f1, err := utils.LoadNumber(rule.F1, args)
+	f1, err := utils.LoadNumber(ctx, rule.F1, args)
 	if err != nil {
 		return err
 	}
-	f2, err = utils.LoadNumber(rule.F2, args)
+	f2, err = utils.LoadNumber(ctx, rule.F2, args)
 	if err != nil {
 		switch v := rule.F2.(type) {
 		case string:
@@ -139,7 +142,7 @@ func matchNumber(rule *config.Rule, args map[string]interface{}) error {
 				if !ok {
 					tArr, ok := temp.([]interface{})
 					if !ok {
-						return fmt.Errorf("invalid second field (%v) provided - wanted array of numbers", temp)
+						return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid second field (%v) provided - wanted array of numbers", temp), nil, nil)
 					}
 					f2Number = tArr
 				}
@@ -184,22 +187,22 @@ func matchNumber(rule *config.Rule, args map[string]interface{}) error {
 			return nil
 		}
 	case "in":
-		return matchIn(f2Number, f1, args)
+		return matchIn(ctx, f2Number, f1, args)
 	case "notin":
-		return matchNotIn(f2Number, f1, args)
+		return matchNotIn(ctx, f2Number, f1, args)
 	}
 
 	return ErrIncorrectMatch
 }
 
-func matchBool(rule *config.Rule, args map[string]interface{}) error {
+func matchBool(ctx context.Context, rule *config.Rule, args map[string]interface{}) error {
 
-	f1, err := utils.LoadBool(rule.F1, args)
+	f1, err := utils.LoadBool(ctx, rule.F1, args)
 	if err != nil {
 		return err
 	}
 
-	f2, err := utils.LoadBool(rule.F2, args)
+	f2, err := utils.LoadBool(ctx, rule.F2, args)
 	if err != nil {
 		return err
 	}
@@ -220,7 +223,7 @@ func matchBool(rule *config.Rule, args map[string]interface{}) error {
 	return ErrIncorrectRuleFieldType
 }
 
-func matchdate(rule *config.Rule, args map[string]interface{}) error {
+func matchDate(ctx context.Context, rule *config.Rule, args map[string]interface{}) error {
 	f1String, ok := rule.F1.(string)
 	if !ok {
 		return ErrIncorrectRuleFieldType
