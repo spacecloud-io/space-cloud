@@ -35,7 +35,7 @@ func (m *Manager) licenseRenewalRoutine() {
 		case <-ticker.C:
 			// Operate if in enterprise mode
 			if m.isEnterpriseMode() {
-				if m.checkIfLeaderGateway() {
+				if m.checkIfLeaderGateway() && licenseMode == "online" {
 					// Fetch the public key periodically
 					if err := m.RenewLicense(false); err != nil {
 						_ = utils.LogError("Unable to renew license. Has your subscription expired?", "admin", "licenseRenewalRoutine", err)
@@ -63,7 +63,7 @@ func (m *Manager) fetchPublicKeyRoutine() {
 	select {
 	case <-ticker.C:
 		// Operate if in enterprise mode
-		if m.isEnterpriseMode() {
+		if m.isEnterpriseMode() && licenseMode == "online" {
 			// Fetch the public key periodically
 			if err := m.fetchPublicKeyWithLock(); err != nil {
 				_ = utils.LogError("Could not fetch public key for license file", "admin", "fetch-license-routine", err)
@@ -74,6 +74,19 @@ func (m *Manager) fetchPublicKeyRoutine() {
 }
 
 func (m *Manager) fetchPublicKeyWithoutLock() error {
+	// Check if offline licensing mode is used
+	if licenseMode == "offline" {
+		// Marshal the public key
+		publicKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(licensePublicKey))
+		if err != nil {
+			return err
+		}
+
+		// Set the public key
+		m.publicKey = publicKey
+		return nil
+	}
+
 	// Fire the http request
 	body := map[string]interface{}{
 		"timeout": 10,
@@ -124,6 +137,11 @@ func (m *Manager) RenewLicense(force bool) error {
 
 	if !m.checkIfLeaderGateway() {
 		return errors.New("only the leader can fetch the license")
+	}
+
+	// Throw error if licensing mode is set to offline
+	if licenseMode == "offline" {
+		return errors.New("cannot renew license in offline licensing mode")
 	}
 
 	return m.renewLicenseWithoutLock(force)
@@ -179,15 +197,17 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 }
 
 func (m *Manager) ResetQuotas() {
-	// TODO set sync man
 	utils.LogInfo("Resetting space cloud to run in open source model. You will have to re-register the cluster again.", "admin", "resetQuotas")
 	m.quotas.MaxProjects = 1
 	m.quotas.MaxDatabases = 1
 	m.quotas.IntegrationLevel = 0
 	m.plan = "space-cloud-open--monthly"
 
-	m.config.LicenseKey = ""
-	m.config.LicenseValue = ""
+	if licenseMode == "online" {
+		m.config.LicenseKey = ""
+		m.config.LicenseValue = ""
+	}
+
 	m.config.License = ""
 
 	m.clusterName = ""
@@ -210,6 +230,11 @@ func (m *Manager) setQuotas(license string) error {
 		return utils.LogError("Unable to decrypt license key", "admin", "setQuotas", err)
 	}
 
+	if licenseMode == "offline" && m.sessionID != licenseObj.SessionID {
+		_ = utils.LogError("Invalid license key provided. Make sure you use the license key for this cluster.", "admin", "set-quotas", nil)
+		m.ResetQuotas()
+	}
+
 	// set quotas
 	m.quotas.MaxProjects = licenseObj.Meta.ProductMeta.MaxProjects
 	m.quotas.MaxDatabases = licenseObj.Meta.ProductMeta.MaxDatabases
@@ -225,7 +250,7 @@ func (m *Manager) isEnterpriseMode() bool {
 }
 
 func (m *Manager) isRegistered() bool {
-	return m.config.LicenseKey != "" && m.config.LicenseValue != ""
+	return m.config.LicenseKey != "" && m.config.LicenseValue != "" && m.config.License != ""
 }
 
 func (m *Manager) decryptLicense(license string) (*model.License, error) {

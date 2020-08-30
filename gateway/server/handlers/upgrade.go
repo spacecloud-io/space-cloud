@@ -8,7 +8,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -20,18 +19,15 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 		ClusterName  string `json:"clusterName"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		req := new(request)
+		_ = json.NewDecoder(r.Body).Decode(req)
 		defer utils.CloseTheCloser(r.Body)
 
 		token := utils.GetTokenFromHeader(r)
 		if err := admin.CheckIfAdmin(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
-
-		req := new(request)
-		_ = json.NewDecoder(r.Body).Decode(req)
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -39,15 +35,12 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 
 		err := manager.ConvertToEnterprise(ctx, token, req.LicenseKey, req.LicenseValue, req.ClusterName)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		utils.LogDebug(`Successfully upgraded gateway to enterprise`, "syncman", "startOperation", nil)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }
 
@@ -58,7 +51,6 @@ func HandleDownGrade(admin *admin.Manager) http.HandlerFunc {
 
 		token := utils.GetTokenFromHeader(r)
 		if err := admin.CheckIfAdmin(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -68,13 +60,13 @@ func HandleDownGrade(admin *admin.Manager) http.HandlerFunc {
 		defer cancel()
 
 		if !admin.IsRegistered() {
-			utils.SendErrorResponse(w, http.StatusBadRequest, "Cannot remove license already running in open source mode")
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "Cannot remove license already running in open source mode")
 			return
 		}
 		admin.ResetQuotas()
 
 		utils.LogDebug(`Successfully removed license`, "syncman", "startOperation", nil)
-		utils.SendOkayResponse(w, http.StatusOK)
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }
 
@@ -86,7 +78,6 @@ func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		token := utils.GetTokenFromHeader(r)
 		if err := adminMan.CheckIfAdmin(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -96,13 +87,39 @@ func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		defer cancel()
 
 		if err := syncMan.RenewLicense(ctx, token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{})
+		_ = utils.SendOkayResponse(w, http.StatusOK)
+	}
+}
+
+// HandleSetOfflineLicense returns the handler to set offline licenses
+func HandleSetOfflineLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	type request struct {
+		License string `json:"license"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := new(request)
+		_ = json.NewDecoder(r.Body).Decode(req)
+		defer utils.CloseTheCloser(r.Body)
+
+		token := utils.GetTokenFromHeader(r)
+		if err := adminMan.CheckIfAdmin(token); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		if err := syncMan.SetOfflineLicense(ctx, req.License); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		_ = utils.SendOkayResponse(w, http.StatusOK)
 	}
 }

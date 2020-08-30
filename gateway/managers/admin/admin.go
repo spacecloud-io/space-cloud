@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -14,6 +15,9 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
+
+var licenseMode = "online"
+var licensePublicKey = ""
 
 const maxLicenseFetchErrorCount = 5
 
@@ -57,6 +61,8 @@ func New(nodeID, clusterID string, isDev bool, adminUserInfo *config.AdminUser) 
 	go m.licenseRenewalRoutine()
 	go m.fetchPublicKeyRoutine()
 
+	utils.LogInfo(fmt.Sprintf("Starting gateway in %s licensing mode", licenseMode), "admin", "new")
+
 	return m
 }
 
@@ -79,7 +85,7 @@ func (m *Manager) startOperation(license string, isInitialCall bool) error {
 	// We have a problem if our session id does not match with the license's session id
 	if m.sessionID != licenseObj.SessionID {
 
-		// There cannot be a mismatch unless the gateway just started. For anytime else, throw an error.
+		// There cannot be a mismatch unless the gateway just started while being in online mode. For anytime else, throw an error.
 		if !isInitialCall {
 
 			// Reset quotas and admin config to defaults
@@ -126,9 +132,30 @@ func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 	// Set the admin config
 	m.config = config
 
+	// Create a unique session id if in offline mode
+	if licenseMode == "offline" {
+		if m.config.LicenseKey == "" || m.config.LicenseValue == "" {
+			// Set the licenseKey and value with unique values
+			m.config.LicenseKey = ksuid.New().String()
+			m.config.LicenseValue = ksuid.New().String()
+
+			utils.LogDebug("Setting session id", "admin", "set-config", map[string]interface{}{"key": m.config.LicenseKey, "value": m.config.LicenseValue})
+
+			go func() {
+				if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
+					_ = utils.LogError("Unable to set admin config with session id", "admin", "set-config", nil)
+				}
+			}()
+			return nil
+		}
+
+		m.sessionID = m.config.LicenseKey + m.config.LicenseValue
+		utils.LogDebug("Successfully set session id", "admin", "set-config", map[string]interface{}{"sessionId": m.sessionID})
+	}
+
 	// Check if the cluster is registered
 	if m.isRegistered() {
-		if m.checkIfLeaderGateway() {
+		if m.checkIfLeaderGateway() && licenseMode == "online" {
 			// Only the leader gateway can handle licensing information
 			return m.startOperation(config.License, isInitialCall)
 		} else {
@@ -174,5 +201,5 @@ func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string, string, st
 		}
 	}
 
-	return m.isProd, m.plan, m.quotas, loginURL, m.clusterName, m.licenseRenewalDate, m.config.LicenseKey, m.config.LicenseValue, "", "online"
+	return m.isProd, m.plan, m.quotas, loginURL, m.clusterName, m.licenseRenewalDate, m.config.LicenseKey, m.config.LicenseValue, m.sessionID, licenseMode
 }

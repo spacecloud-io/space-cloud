@@ -9,6 +9,14 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
+func (s *Manager) SetOfflineLicense(ctx context.Context, license string) error {
+	utils.LogDebug(`Upgrading gateway to enterprise...`, "syncman", "set-offline-license", nil)
+
+	oldConfig := s.adminMan.GetConfig()
+	oldConfig.License = license
+	return s.SetAdminConfig(ctx, oldConfig)
+}
+
 func (s *Manager) RenewLicense(ctx context.Context, token string) error {
 	utils.LogDebug(`Force renewing the license key...`, "syncman", "RenewLicense", map[string]interface{}{})
 	if !s.adminMan.IsRegistered() {
