@@ -67,7 +67,9 @@ func (s *LocalStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 // SetAdminConfig maintains consistency between all instances of sc
 func (s *LocalStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
 	s.globalConfig.Admin = adminConfig
-	go s.watchAdminCB([]*config.Admin{s.globalConfig.Admin})
+	if s.watchAdminCB != nil {
+		go s.watchAdminCB([]*config.Admin{s.globalConfig.Admin})
+	}
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)
 }
 
