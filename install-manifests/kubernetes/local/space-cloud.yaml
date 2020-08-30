@@ -199,7 +199,7 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: spaceuptech/runner:0.19.1
+          image: spaceuptech/runner:0.19.2
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "LOG_LEVEL"
@@ -210,6 +210,8 @@ spec:
               value: "some-secret"
             - name: "JWT_PROXY_SECRET"
               value: "some-proxy-secret"
+            - name: "CLUSTER_ID"
+              value: "first-cluster"
           ports:
             - containerPort: 4050
             - containerPort: 4055
@@ -377,7 +379,7 @@ spec:
       containers:
         - name: gateway
           command: ["./app", "run"]
-          image: spaceuptech/gateway:0.19.1
+          image: spaceuptech/gateway:0.19.2
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "NODE_ID"

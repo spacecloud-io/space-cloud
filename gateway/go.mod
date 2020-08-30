@@ -37,9 +37,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
-	github.com/kr/pty v1.1.4 // indirect
 	github.com/lib/pq v1.2.0
-	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mholt/certmagic v0.9.1
 	github.com/mitchellh/copystructure v1.0.0 // indirect
@@ -66,7 +64,6 @@ require (
 	golang.org/x/net v0.0.0-20200222125558-5a598a2470a0
 	golang.org/x/sys v0.0.0-20200824131525-c12d262b63d8 // indirect
 	google.golang.org/api v0.18.0
-	gopkg.in/AlecAivazis/survey.v1 v1.8.5 // indirect
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2

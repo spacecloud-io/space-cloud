@@ -40,6 +40,7 @@ func actionRunner(c *cli.Context) error {
 	if driverType == model.DockerType {
 		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Runner is starting in cluster (%s)", clusterName), nil)
 	}
+
 	// Set the log level
 	if err := helpers.InitLogger(loglevel, logFormat, isDev); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to initialize loggers", err, nil)
