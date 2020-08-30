@@ -14,6 +14,7 @@ import (
 )
 
 func TestModule_logInvocation(t *testing.T) {
+	ctx := context.Background()
 	type args struct {
 		ctx                context.Context
 		eventID            string
@@ -40,7 +41,7 @@ func TestModule_logInvocation(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:        "InternalCreate",
-					args:          []interface{}{context.Background(), "dbtype", "abc", "invocation_logs", &model.CreateRequest{Document: map[string]interface{}{"error_msg": "error", "event_id": "eventID", "request_payload": "", "response_body": "body", "response_status_code": 200}, Operation: "one", IsBatch: true}, false},
+					args:          []interface{}{ctx, "dbtype", "abc", "invocation_logs", &model.CreateRequest{Document: map[string]interface{}{"error_msg": "error", "event_id": "eventID", "request_payload": "", "response_body": "body", "response_status_code": 200}, Operation: "one", IsBatch: true}, false},
 					paramReturned: []interface{}{nil},
 				},
 			},
@@ -53,7 +54,7 @@ func TestModule_logInvocation(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:        "InternalCreate",
-					args:          []interface{}{context.Background(), "dbtype", "abc", "invocation_logs", &model.CreateRequest{Document: map[string]interface{}{"error_msg": "error", "event_id": "eventID", "request_payload": "", "response_body": "body", "response_status_code": 200}, Operation: "one", IsBatch: true}, false},
+					args:          []interface{}{ctx, "dbtype", "abc", "invocation_logs", &model.CreateRequest{Document: map[string]interface{}{"error_msg": "error", "event_id": "eventID", "request_payload": "", "response_body": "body", "response_status_code": 200}, Operation: "one", IsBatch: true}, false},
 					paramReturned: []interface{}{errors.New("eventing module couldn't log the request - ")},
 				},
 			},
@@ -72,7 +73,7 @@ func TestModule_logInvocation(t *testing.T) {
 
 			tt.s.crud = &mockCrud
 
-			if err := tt.s.logInvocation(tt.args.ctx, tt.args.eventID, tt.args.payload, tt.args.responseStatusCode, tt.args.responseBody, tt.args.errorMsg); (err != nil) != tt.wantErr {
+			if err := tt.s.logInvocation(context.Background(), tt.args.eventID, tt.args.payload, tt.args.responseStatusCode, tt.args.responseBody, tt.args.errorMsg); (err != nil) != tt.wantErr {
 				t.Errorf("Module.logInvocation() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -82,6 +83,8 @@ func TestModule_logInvocation(t *testing.T) {
 }
 
 func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
+	ctx := context.Background()
+
 	var eventResponse model.EventResponse
 	type mockArgs struct {
 		method         string
@@ -136,11 +139,11 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		{
 			name: "error doing the request and invocation is logged",
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
-			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
+			args: args{ctx: ctx, method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "some error"}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{ctx, mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "some error"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -154,11 +157,11 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		{
 			name: "error doing the request and invocation is not logged",
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
-			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
+			args: args{ctx: ctx, method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "some error"}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{ctx, mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "some error"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
@@ -172,11 +175,11 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		{
 			name: "error unmarshalling and invocation is logged",
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
-			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
+			args: args{ctx: ctx, method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{ctx, mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -190,11 +193,11 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		{
 			name: "error unmarshalling and invocation is not logged",
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
-			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
+			args: args{ctx: ctx, method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{ctx, mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
@@ -208,11 +211,11 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		{
 			name: "no error and invocation is logged",
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
-			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: &eventResponse},
+			args: args{ctx: ctx, method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: &eventResponse},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{ctx, mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -229,11 +232,11 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		{
 			name: "no error and invocation is not logged",
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
-			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: &eventResponse},
+			args: args{ctx: ctx, method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: &eventResponse},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{ctx, mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},

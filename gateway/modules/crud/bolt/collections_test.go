@@ -41,7 +41,7 @@ func TestBolt_GetCollections(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.b.GetCollections(tt.args.ctx)
+			got, err := tt.b.GetCollections(context.Background())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Bolt.GetCollections() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -92,10 +92,10 @@ func TestBolt_DeleteCollection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := b.DeleteCollection(tt.args.ctx, tt.args.col); (err != nil) != tt.wantErr {
+			if err := b.DeleteCollection(context.Background(), tt.args.col); (err != nil) != tt.wantErr {
 				t.Errorf("Bolt.DeleteCollection() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			got, err := b.GetCollections(tt.args.ctx)
+			got, err := b.GetCollections(context.Background())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Bolt.DeleteCollection() error = %v, wantErr %v", err, tt.wantErr)
 				return

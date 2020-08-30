@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"strings"
 
-	goqu "github.com/doug-martin/goqu/v8"
+	"github.com/doug-martin/goqu/v8"
+	"github.com/spaceuptech/helpers"
 
 	_ "github.com/denisenkom/go-mssqldb"                // Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -24,7 +24,6 @@ import (
 func (s *SQL) Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error) {
 	tx, err := s.client.BeginTxx(ctx, nil) // TODO - Write *sqlx.TxOption instead of nil
 	if err != nil {
-		fmt.Println("Error in initiating Batch")
 		return 0, err
 	}
 	count, err := s.update(ctx, col, req, tx)
@@ -51,7 +50,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 				if err != nil {
 					return 0, err
 				}
-				logrus.Debugln("Update Query", sqlQuery)
+				helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Update Query", map[string]interface{}{"sqlQuery": sqlQuery, "queryArgs": sqlQuery})
 				res, err := doExecContext(ctx, sqlQuery, args, executor)
 				if err != nil {
 					return 0, err
@@ -95,7 +94,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 					return 0, utils.ErrInvalidParams
 				}
 				if op == "$currentDate" {
-					err := s.flattenForDate(&m)
+					err := s.flattenForDate(ctx, &m)
 					if err != nil {
 						return 0, err
 					}
@@ -139,15 +138,15 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 	// Generate a prepared query builder
 
 	dbType := s.dbType
-	if dbType == string(utils.SQLServer) {
-		dbType = string(utils.Postgres)
+	if dbType == string(model.SQLServer) {
+		dbType = string(model.Postgres)
 	}
 	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getDBName(col)).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object
-		query, _ = s.generateWhereClause(query, req.Find)
+		query, _ = s.generateWhereClause(ctx, query, req.Find)
 	}
 
 	if req.Update == nil {
@@ -159,7 +158,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 	}
 
 	if op == "$currentDate" {
-		err := s.flattenForDate(&m)
+		err := s.flattenForDate(ctx, &m)
 		if err != nil {
 			return "", nil, err
 		}
@@ -167,22 +166,20 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 
 	record, err := generateRecord(req.Update[op])
 	if err != nil {
-		logrus.Errorf("error generating update query unable to generate record %s", op)
-		return "", nil, err
+		return "", nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error generating update query unable to generate record %s", op), err, nil)
 	}
 
 	// Generate SQL string and arguments
 	sqlString, args, err := query.Update().Set(record).ToSQL()
 	if err != nil {
-		logrus.Errorf("Error generating update query unable generate sql string - %s", err)
-		return "", nil, err
+		return "", nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error generating update query unable generate sql string", err, nil)
 	}
 
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 	switch op {
 	case "$set":
 		for k := range m {
-			if s.dbType == string(utils.Postgres) {
+			if s.dbType == string(model.Postgres) {
 				arr := strings.Split(k, ".")
 				if len(arr) >= 2 {
 					sqlString = strings.Replace(sqlString, k+"=$", fmt.Sprintf("%s=jsonb_set(%s, '{%s}', $", arr[0], arr[0], strings.Join(arr[1:], ",")), -1)
@@ -196,13 +193,13 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 			if err != nil {
 				return "", nil, err
 			}
-			if s.dbType == string(utils.MySQL) {
+			if s.dbType == string(model.MySQL) {
 				sqlString = strings.Replace(sqlString, k+"=?", k+"="+k+"+?", -1)
 			}
-			if s.dbType == string(utils.Postgres) {
+			if s.dbType == string(model.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"+$", -1)
 			}
-			if s.dbType == string(utils.SQLServer) {
+			if s.dbType == string(model.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"+$", -1)
 			}
 
@@ -214,13 +211,13 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 			if err != nil {
 				return "", nil, err
 			}
-			if dbType == string(utils.MySQL) {
+			if dbType == string(model.MySQL) {
 				sqlString = strings.Replace(sqlString, k+"=?", k+"="+k+"*?", -1)
 			}
-			if dbType == string(utils.Postgres) {
+			if dbType == string(model.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"*$", -1)
 			}
-			if dbType == string(utils.SQLServer) {
+			if dbType == string(model.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"*$", -1)
 			}
 
@@ -232,13 +229,13 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 			if err != nil {
 				return "", nil, err
 			}
-			if s.dbType == string(utils.MySQL) {
+			if s.dbType == string(model.MySQL) {
 				sqlString = strings.Replace(sqlString, k+"=?", k+"=GREATEST("+k+","+"?"+")", -1)
 			}
-			if s.dbType == string(utils.Postgres) {
+			if s.dbType == string(model.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"=GREATEST("+k+","+"$"+"", -1)
 			}
-			if s.dbType == string(utils.SQLServer) {
+			if s.dbType == string(model.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"=GREATEST("+k+","+"$"+"", -1)
 			}
 		}
@@ -250,13 +247,13 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 			if err != nil {
 				return "", nil, err
 			}
-			if dbType == string(utils.MySQL) {
+			if dbType == string(model.MySQL) {
 				sqlString = strings.Replace(sqlString, k+"=?", k+"=LEAST("+k+","+"?"+")", -1)
 			}
-			if dbType == string(utils.Postgres) {
+			if dbType == string(model.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"=LEAST("+k+","+"$", -1)
 			}
-			if s.dbType == string(utils.SQLServer) {
+			if s.dbType == string(model.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"=LEAST("+k+","+"$", -1)
 			}
 		}
@@ -268,13 +265,13 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 			if !ok {
 				return "", nil, utils.ErrInvalidParams
 			}
-			if dbType == string(utils.MySQL) {
+			if dbType == string(model.MySQL) {
 				sqlString = strings.Replace(sqlString, k+"=?", k+"="+val, -1)
 			}
-			if dbType == string(utils.Postgres) {
+			if dbType == string(model.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+val, -1)
 			}
-			if dbType == string(utils.SQLServer) {
+			if dbType == string(model.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+val, -1)
 			}
 
@@ -286,7 +283,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 		return "", nil, utils.ErrInvalidParams
 	}
 
-	if s.dbType == string(utils.SQLServer) {
+	if s.dbType == string(model.SQLServer) {
 		sqlString = s.generateQuerySQLServer(sqlString)
 	}
 
@@ -308,28 +305,28 @@ func checkIfNum(v interface{}) (string, error) {
 	return "", errors.New("invalid data format provided")
 }
 
-func (s *SQL) flattenForDate(m *map[string]interface{}) error {
+func (s *SQL) flattenForDate(ctx context.Context, m *map[string]interface{}) error {
 	for k, v := range *m {
 		mm, ok := v.(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("invalid current date format (%v) provided", reflect.TypeOf(v))
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid current date format (%v) provided", reflect.TypeOf(v)), nil, nil)
 		}
 		for _, valTemp := range mm {
 			val, ok := valTemp.(string)
 			if !ok {
-				return fmt.Errorf("invalid current date type (%v) provided", valTemp)
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid current date type (%v) provided", valTemp), nil, nil)
 			}
 			switch val {
 			case "date":
 				(*m)[k] = "CURRENT_DATE"
 				// CURRENT_DATE is not supported in sql-server
-				if utils.DBType(s.dbType) == utils.SQLServer {
+				if model.DBType(s.dbType) == model.SQLServer {
 					(*m)[k] = "CAST( GETDATE() AS date )"
 				}
 			case "timestamp":
 				(*m)[k] = "CURRENT_TIMESTAMP"
 			default:
-				return fmt.Errorf("invalid current date value (%s) provided", val)
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid current date value (%s) provided", val), nil, nil)
 			}
 		}
 	}
@@ -338,7 +335,7 @@ func (s *SQL) flattenForDate(m *map[string]interface{}) error {
 
 func (s *SQL) sanitiseUpdateQuery(sqlString string) string {
 	var placeholder byte
-	if (utils.DBType(s.dbType) == utils.Postgres) || (utils.DBType(s.dbType) == utils.SQLServer) {
+	if (model.DBType(s.dbType) == model.Postgres) || (model.DBType(s.dbType) == model.SQLServer) {
 		placeholder = '$'
 	}
 	var start bool
@@ -389,7 +386,7 @@ func (s *SQL) sanitiseUpdateQuery2(sqlString string) string {
 	}
 
 	// reduces the parameter $ and @p value by no. of stamps occurrence
-	if utils.DBType(s.dbType) == utils.Postgres || utils.DBType(s.dbType) == utils.SQLServer {
+	if model.DBType(s.dbType) == model.Postgres || model.DBType(s.dbType) == model.SQLServer {
 		for i := 1; i < len(sqlString); i++ {
 			c, _ := strconv.Atoi(string(sqlString[i]))
 			if c > 1 && (sqlString[i-1] == '$' || (sqlString[i-1] == 'p' && sqlString[i-2] == '@')) {

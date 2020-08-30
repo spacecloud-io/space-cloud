@@ -8,23 +8,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestSchema_CrudPostProcess(t *testing.T) {
+
 	b, err := json.Marshal(model.ReadRequest{Operation: "hello"})
 	if err != nil {
-		logrus.Errorf("err=%v", err)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.Background()), "err", err, nil)
 	}
 	var v interface{}
 	err = json.Unmarshal(b, &v)
 	if err != nil {
-		logrus.Errorf("err=%v", err)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.Background()), "err", err, nil)
 	}
 	type mockArgs struct {
 		method         string
@@ -35,7 +36,6 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 		SchemaDoc model.Type
 	}
 	type args struct {
-		ctx     context.Context
 		dbAlias string
 		col     string
 		result  interface{}
@@ -256,7 +256,7 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 
 			s.crud = &mockCrud
 
-			err := s.CrudPostProcess(tt.args.ctx, tt.args.dbAlias, tt.args.col, tt.args.result)
+			err := s.CrudPostProcess(context.Background(), tt.args.dbAlias, tt.args.col, tt.args.result)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Schema.CrudPostProcess() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -270,18 +270,19 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 func returntime(s string) time.Time {
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		fmt.Printf("invalid string format of datetime (%s)", s)
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("invalid string format of datetime (%s)", s), map[string]interface{}{"error": err})
 		return time.Now()
 	}
 	return t
 }
 func TestSchema_AdjustWhereClause(t *testing.T) {
+
 	type fields struct {
 		SchemaDoc model.Type
 	}
 	type args struct {
 		dbAlias string
-		dbType  utils.DBType
+		dbType  model.DBType
 		col     string
 		find    map[string]interface{}
 	}
@@ -434,12 +435,13 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Schema{
 				SchemaDoc: tt.fields.SchemaDoc,
 			}
-			err := s.AdjustWhereClause(tt.args.dbAlias, tt.args.dbType, tt.args.col, tt.args.find)
+			err := s.AdjustWhereClause(context.Background(), tt.args.dbAlias, tt.args.dbType, tt.args.col, tt.args.find)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Schema.AdjustWhereClause() error = %v, wantErr %v", err, tt.wantErr)
 			}

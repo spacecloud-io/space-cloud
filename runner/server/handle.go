@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils"
@@ -29,8 +29,8 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to create project - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create project", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -40,8 +40,8 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		// Parse request body
 		project := new(model.Project)
 		if err := json.NewDecoder(r.Body).Decode(project); err != nil {
-			logrus.Errorf("Failed to create project - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create project", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -49,12 +49,12 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 
 		// Apply the service config
 		if err := s.driver.CreateProject(ctx, project); err != nil {
-			logrus.Errorf("Failed to create project - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create project", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -70,8 +70,8 @@ func (s *Server) handleDeleteProject() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to create project - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create project", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -79,12 +79,12 @@ func (s *Server) handleDeleteProject() http.HandlerFunc {
 		projectID := vars["project"]
 		// Apply the service config
 		if err := s.driver.DeleteProject(ctx, projectID); err != nil {
-			logrus.Errorf("Failed to create project - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create project", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -100,8 +100,8 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -113,8 +113,8 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		// Parse request body
 		service := new(model.Service)
 		if err := json.NewDecoder(r.Body).Decode(service); err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -126,12 +126,12 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 
 		// Apply the service config
 		if err := s.driver.ApplyService(ctx, service); err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -140,7 +140,6 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
-		defer logrus.Println("Closing handle of runner for logs")
 		// get query params
 		vars := mux.Vars(r)
 		projectID := vars["project"]
@@ -148,16 +147,16 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		taskID := r.URL.Query().Get("taskId")
 		replicaID := r.URL.Query().Get("replicaId")
 		if replicaID == "" {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "replica id not provided in query param")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, "replica id not provided in query param")
 			return
 		}
 		_, isFollow := r.URL.Query()["follow"]
 
-		utils.LogDebug("Get logs process started", "handler", "get-logs", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Get logs process started", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
 		pipeReader, err := s.driver.GetLogs(r.Context(), isFollow, projectID, taskID, replicaID)
 		if err != nil {
-			logrus.Errorf("Failed to get service logs - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Failed to get service logs", err, nil)
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		defer utils.CloseTheCloser(pipeReader)
@@ -166,7 +165,7 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		// implement http flusher
 		flusher, ok := w.(http.Flusher)
 		if !ok {
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "expected http.ResponseWriter to be an http.Flusher")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, "expected http.ResponseWriter to be an http.Flusher")
 			return
 		}
 		w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -174,17 +173,17 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		for {
 			select {
 			case <-r.Context().Done():
-				utils.LogDebug("Context deadline reached for client request", "istio", "GetLogs", map[string]interface{}{})
+				helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Context deadline reached for client request", map[string]interface{}{})
 				return
 			default:
 				str, err := reader.ReadString('\n')
 				if err != nil {
 					if err == io.EOF && !isFollow {
-						utils.LogDebug("End of file reached for logs", "istio", "GetLogs", map[string]interface{}{})
+						helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "End of file reached for logs", map[string]interface{}{})
 						return
 					}
-					utils.LogDebug("error occured while reading from pipe in hander", "", "", nil)
-					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+					helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "error occured while reading from pipe in hander", nil)
+					_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
 					return
 				}
 				// starting 8 bytes of data contains some meta data regarding each log that docker sends
@@ -209,8 +208,8 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -220,12 +219,12 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 		version := vars["version"]
 
 		if err := s.driver.DeleteService(ctx, projectID, serviceID, version); err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -241,8 +240,8 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -253,8 +252,8 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 
 		services, err := s.driver.GetServices(ctx, projectID)
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -308,8 +307,8 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -321,8 +320,8 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 
 		result, err := s.driver.GetServiceStatus(ctx, projectID)
 		if err != nil {
-			logrus.Errorf("Failed to get service status - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to get service status", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -372,8 +371,8 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to set service routes - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to set service routes", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -386,12 +385,12 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 
 		err = s.driver.ApplyServiceRoutes(ctx, projectID, serviceID, req.Routes)
 		if err != nil {
-			logrus.Errorf("Failed to apply service routing rules - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service routing rules", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -408,8 +407,8 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to get service routes - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to get service routes", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -419,8 +418,8 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 		serviceRoutes, err := s.driver.GetServiceRoutes(ctx, projectID)
 		if err != nil {
-			logrus.Errorf("Failed to get service routing rules - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to get service routing rules", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -453,6 +452,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 func (s *Server) handleProxy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
@@ -482,7 +482,7 @@ func (s *Server) handleProxy() http.HandlerFunc {
 		// Set the url scheme to http
 		r.URL.Scheme = "http"
 
-		logrus.Debugf("Proxy is making request to host (%s) port (%s)", ogHost, ogPort)
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Proxy is making request to host (%s) port (%s)", ogHost, ogPort), nil)
 
 		// Add to active request count
 		// TODO: add support for multiple versions
@@ -495,7 +495,7 @@ func (s *Server) handleProxy() http.HandlerFunc {
 		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s", project, service), func() error {
 			return s.driver.WaitForService(ctx, &model.Service{ProjectID: project, ID: service, Version: ogVersion})
 		}); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusServiceUnavailable, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err.Error())
 			return
 		}
 
@@ -505,7 +505,7 @@ func (s *Server) handleProxy() http.HandlerFunc {
 			var err error
 			res, err = http.DefaultClient.Do(r)
 			if err != nil {
-				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 				return
 			}
 

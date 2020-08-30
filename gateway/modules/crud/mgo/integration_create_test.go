@@ -5,9 +5,10 @@ package mgo
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"reflect"
 	"testing"
+
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -124,7 +125,7 @@ func TestSQL_Create(t *testing.T) {
 
 	// ensure that the table is empty
 	coll := db.client.Database("myproject").Collection("customers")
-
+	ctx := context.Background()
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			// clear data
@@ -145,16 +146,16 @@ func TestSQL_Create(t *testing.T) {
 			// query the database to ensure that data is inserted in database
 			results := []interface{}{}
 			findOptions := options.Find()
-			cur, err := coll.Find(tt.args.ctx, tt.find, findOptions)
+			cur, err := coll.Find(context.Background(), tt.find, findOptions)
 			if err != nil {
 				t.Log("Create() got error", err)
 			}
-			defer func() { _ = cur.Close(tt.args.ctx) }()
+			defer func() { _ = cur.Close(ctx) }()
 
 			var count int64
 			// Finding multiple documents returns a cursor
 			// Iterating through the cursor allows us to decode documents one at a time
-			for cur.Next(tt.args.ctx) {
+			for cur.Next(ctx) {
 				// Increment the counter
 				count++
 

@@ -7,7 +7,8 @@ import (
 	"io"
 	"strings"
 
-	"k8s.io/api/core/v1"
+	"github.com/spaceuptech/helpers"
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/spaceuptech/space-cloud/runner/utils"
 )
@@ -17,7 +18,7 @@ func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, r
 	if taskID == "" {
 		arr := strings.Split(replica, "-")
 		if len(arr) < 2 {
-			return nil, utils.LogError("Invalid replica id", "k8s", "get-logs", nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid replica id", nil, nil)
 		}
 		taskID = arr[0]
 	}
@@ -34,7 +35,7 @@ func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, r
 	}
 
 	pipeReader, pipeWriter := io.Pipe()
-	utils.LogDebug("Sending logs to client", "k8s", "get-logs", map[string]interface{}{})
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Sending logs to client", map[string]interface{}{})
 	go func() {
 		defer utils.CloseTheCloser(b)
 		defer utils.CloseTheCloser(pipeWriter)
@@ -44,10 +45,10 @@ func (i *Istio) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, r
 			str, err := rd.ReadString('\n')
 			if err != nil {
 				if err == io.EOF && !isFollow {
-					utils.LogDebug("End of file reached for logs", "k8s", "get-logs", map[string]interface{}{})
+					helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "End of file reached for logs", map[string]interface{}{})
 					return
 				}
-				_ = utils.LogError("Unable to read logs from container", "k8s", "get-logs", err)
+				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to read logs from container", err, nil)
 				return
 			}
 			fmt.Fprint(pipeWriter, str)

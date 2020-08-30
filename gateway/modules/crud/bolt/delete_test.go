@@ -96,7 +96,7 @@ func TestBolt_Delete(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := b.Delete(tt.args.ctx, tt.args.col, tt.args.req)
+			got, err := b.Delete(context.Background(), tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
 				return

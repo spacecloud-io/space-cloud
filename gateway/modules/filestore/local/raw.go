@@ -3,13 +3,14 @@ package local
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"strings"
+
+	"github.com/spaceuptech/helpers"
 )
 
 // DoesExists checks if the path exists
-func (l *Local) DoesExists(path string) error {
+func (l *Local) DoesExists(ctx context.Context, path string) error {
 	// check if file / folder exists
 	ps := string(os.PathSeparator)
 	path = strings.TrimRight(l.rootPath, ps) + ps + strings.TrimLeft(path, ps)
@@ -24,7 +25,7 @@ func (l *Local) DoesExists(path string) error {
 // GetState check if root path is valid
 func (l *Local) GetState(ctx context.Context) error {
 	if _, err := os.Stat(l.rootPath); os.IsNotExist(err) {
-		return fmt.Errorf("root path does not exists")
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid root path provided for file store", err, nil)
 	}
 	return nil
 }

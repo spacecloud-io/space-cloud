@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -345,10 +346,11 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 		},
 	}
 	routeObj := New()
+
 	for _, tt := range tests {
 		routeObj.routes = tt.r
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := routeObj.selectRoute(tt.args.host, tt.args.method, tt.args.url)
+			got, err := routeObj.selectRoute(context.Background(), tt.args.host, tt.args.method, tt.args.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("routeMapping.selectRoute() error = %v, wantErr %v", err, tt.wantErr)
 				return

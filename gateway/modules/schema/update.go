@@ -1,64 +1,59 @@
 package schema
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // ValidateUpdateOperation validates the types of schema during a update request
-func (s *Schema) ValidateUpdateOperation(dbAlias, col, op string, updateDoc, find map[string]interface{}) error {
+func (s *Schema) ValidateUpdateOperation(ctx context.Context, dbAlias, col, op string, updateDoc, find map[string]interface{}) error {
 	if len(updateDoc) == 0 {
 		return nil
 	}
 	schemaDb, ok := s.SchemaDoc[dbAlias]
 	if !ok {
-		logrus.Errorf("error validating update operation in schema module dbAlias (%s) not found in schemaDoc of schema module", dbAlias)
-		return fmt.Errorf("%s is not present in schema", dbAlias)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to validate update operation in schema module dbAlias (%s) not found in schema module", dbAlias), nil, nil)
 	}
 	SchemaDoc, ok := schemaDb[col]
 	if !ok {
-		logrus.Infof("validating update operation in schema module collection (%s) not found in schemaDoc where dbAlias (%s)", col, dbAlias)
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Validating update operation in schema module collection (%s) not found in schemaDoc where dbAlias (%s)", col, dbAlias), nil)
 		return nil
 	}
 
 	for key, doc := range updateDoc {
 		switch key {
 		case "$unset":
-			return s.validateUnsetOperation(dbAlias, col, doc, SchemaDoc)
+			return s.validateUnsetOperation(ctx, dbAlias, col, doc, SchemaDoc)
 		case "$set":
-			newDoc, err := s.validateSetOperation(col, doc, SchemaDoc)
+			newDoc, err := s.validateSetOperation(ctx, col, doc, SchemaDoc)
 			if err != nil {
-				logrus.Errorf("error validating set operation in schema module unable to validate (%s) data", key)
-				return err
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error validating set operation in schema module unable to validate (%s) data", key), err, nil)
 			}
 			updateDoc[key] = newDoc
 		case "$push":
-			err := s.validateArrayOperations(col, doc, SchemaDoc)
+			err := s.validateArrayOperations(ctx, col, doc, SchemaDoc)
 			if err != nil {
-				logrus.Errorf("error validating array operation in schema module unable to validate (%s) data", key)
-				return err
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error validating array operation in schema module unable to validate (%s) data", key), err, nil)
 			}
 		case "$inc", "$min", "$max", "$mul":
-			if err := validateMathOperations(col, doc, SchemaDoc); err != nil {
-				logrus.Errorf("error validating math operation in schema module unable to validate (%s) data", key)
-				return err
+			if err := validateMathOperations(ctx, col, doc, SchemaDoc); err != nil {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error validating math operation in schema module unable to validate (%s) data", key), err, nil)
 			}
 		case "$currentDate":
-			err := validateDateOperations(col, doc, SchemaDoc)
+			err := validateDateOperations(ctx, col, doc, SchemaDoc)
 			if err != nil {
-				logrus.Errorf("error validating date operation in schema module unable to validate (%s) data", key)
-				return err
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error validating date operation in schema module unable to validate (%s) data", key), err, nil)
 			}
 		default:
-			logrus.Errorf("error validating update operation in schema module unknown update operator provided (%s)", key)
-			return fmt.Errorf("%s update operator is not supported", key)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to validate update operation unknown update operator (%s) provided", key), nil, nil)
 		}
 	}
 
@@ -68,7 +63,7 @@ func (s *Schema) ValidateUpdateOperation(dbAlias, col, op string, updateDoc, fin
 			if _, isFieldPresentInFind := find[fieldName]; isFieldPresentInFind || isFieldPresentInUpdate(fieldName, updateDoc) {
 				continue
 			}
-			return fmt.Errorf("required field (%s) not present during upsert", fieldName)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("As per the schema of (%s) field (%s) is mandatory, but it is not present in current upsert operation", col, fieldName), nil, nil)
 		}
 	}
 
@@ -86,54 +81,54 @@ func isFieldPresentInUpdate(field string, updateDoc map[string]interface{}) bool
 	return false
 }
 
-func (s *Schema) validateArrayOperations(col string, doc interface{}, SchemaDoc model.Fields) error {
+func (s *Schema) validateArrayOperations(ctx context.Context, col string, doc interface{}, SchemaDoc model.Fields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("document not of type object in collection %s", col)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Document not of type object in collection %s", col), nil, nil)
 	}
 
 	for fieldKey, fieldValue := range v {
 
 		schemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
-			return fmt.Errorf("field %s from collection %s is not defined in the schema", fieldKey, col)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Field %s from collection %s is not defined in the schema", fieldKey, col), nil, nil)
 		}
 
 		switch t := fieldValue.(type) {
 		case []interface{}:
 			if schemaDocValue.IsForeign && !schemaDocValue.IsList {
-				return fmt.Errorf("invalid type provided for field %s in collection %s", fieldKey, col)
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type provided for field %s in collection %s", fieldKey, col), nil, nil)
 			}
 			for _, value := range t {
-				if _, err := s.checkType(col, value, schemaDocValue); err != nil {
+				if _, err := s.checkType(ctx, col, value, schemaDocValue); err != nil {
 					return err
 				}
 			}
 			return nil
 		case interface{}:
-			if _, err := s.checkType(col, t, schemaDocValue); err != nil {
+			if _, err := s.checkType(ctx, col, t, schemaDocValue); err != nil {
 				return err
 			}
 		default:
-			return fmt.Errorf("invalid type provided for field %s in collection %s", fieldKey, col)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type provided for field %s in collection %s", fieldKey, col), nil, nil)
 		}
 	}
 
 	return nil
 }
 
-func validateMathOperations(col string, doc interface{}, SchemaDoc model.Fields) error {
+func validateMathOperations(ctx context.Context, col string, doc interface{}, SchemaDoc model.Fields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("document not of type object in collection %s", col)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Document not of type object in collection (%s)", col), nil, nil)
 	}
 
 	for fieldKey, fieldValue := range v {
 		schemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
-			return fmt.Errorf("field %s from collection %s is not defined in the schema", fieldKey, col)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Field %s from collection %s is not defined in the schema", fieldKey, col), nil, nil)
 		}
 		if schemaDocValue.Kind == model.TypeInteger && reflect.TypeOf(fieldValue).Kind() == reflect.Float64 {
 			fieldValue = int(fieldValue.(float64))
@@ -141,48 +136,48 @@ func validateMathOperations(col string, doc interface{}, SchemaDoc model.Fields)
 		switch fieldValue.(type) {
 		case int:
 			if schemaDocValue.Kind != model.TypeInteger && schemaDocValue.Kind != model.TypeFloat {
-				return fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Integer", fieldKey, col, schemaDocValue.Kind)
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type received for field %s in collection %s - wanted %s got Integer", fieldKey, col, schemaDocValue.Kind), nil, nil)
 			}
 			return nil
 		case float32, float64:
 			if schemaDocValue.Kind != model.TypeFloat {
-				return fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Float", fieldKey, col, schemaDocValue.Kind)
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type received for field %s in collection %s - wanted %s got Float", fieldKey, col, schemaDocValue.Kind), nil, nil)
 			}
 			return nil
 		default:
-			return fmt.Errorf("invalid type received for field %s in collection %s - wanted %s", fieldKey, col, schemaDocValue.Kind)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type received for field %s in collection %s - wanted %s", fieldKey, col, schemaDocValue.Kind), nil, nil)
 		}
 	}
 
 	return nil
 }
 
-func validateDateOperations(col string, doc interface{}, SchemaDoc model.Fields) error {
+func validateDateOperations(ctx context.Context, col string, doc interface{}, SchemaDoc model.Fields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("document not of type object in collection %s", col)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Document not of type object in collection (%s)", col), nil, nil)
 	}
 
 	for fieldKey := range v {
 
 		schemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
-			return fmt.Errorf("field %s from collection %s is not defined in the schema", fieldKey, col)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Field %s from collection %s is not defined in the schema", fieldKey, col), nil, nil)
 		}
 
 		if schemaDocValue.Kind != model.TypeDateTime {
-			return fmt.Errorf("invalid type received for field %s in collection %s - wanted %s", fieldKey, col, schemaDocValue.Kind)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type received for field %s in collection %s - wanted %s", fieldKey, col, schemaDocValue.Kind), nil, nil)
 		}
 	}
 
 	return nil
 }
 
-func (s *Schema) validateUnsetOperation(dbAlias, col string, doc interface{}, schemaDoc model.Fields) error {
+func (s *Schema) validateUnsetOperation(ctx context.Context, dbAlias, col string, doc interface{}, schemaDoc model.Fields) error {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("document not of type object in collection %s", col)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Document not of type object in collection (%s)", col), nil, nil)
 	}
 
 	// Get the db type
@@ -192,37 +187,37 @@ func (s *Schema) validateUnsetOperation(dbAlias, col string, doc interface{}, sc
 	}
 
 	// For mongo we need to check if the field to be removed is required
-	if dbType == string(utils.Mongo) {
+	if dbType == string(model.Mongo) {
 		for fieldName := range v {
 			columnInfo, ok := schemaDoc[strings.Split(fieldName, ".")[0]]
 			if ok {
 				if columnInfo.IsFieldTypeRequired {
-					return fmt.Errorf("cannot use $unset on field which is required")
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Cannot use $unset on field which is required/mandatory", nil, nil)
 				}
 			}
 		}
 		return nil
 	}
 
-	if dbType == string(utils.Postgres) || dbType == string(utils.MySQL) || dbType == string(utils.SQLServer) {
+	if dbType == string(model.Postgres) || dbType == string(model.MySQL) || dbType == string(model.SQLServer) {
 		for fieldName := range v {
 			columnInfo, ok := schemaDoc[strings.Split(fieldName, ".")[0]]
 			if ok {
 				if columnInfo.Kind == model.TypeJSON {
-					return fmt.Errorf("cannot use $unset on field which has type (%s)", model.TypeJSON)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot use $unset on field which has type (%s)", model.TypeJSON), nil, nil)
 				}
 			} else {
-				return fmt.Errorf("specified column (%s) doesn't exists in schema of (%s)", fieldName, col)
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Field (%s) doesn't exists in schema of (%s)", fieldName, col), nil, nil)
 			}
 		}
 	}
 	return nil
 }
 
-func (s *Schema) validateSetOperation(col string, doc interface{}, SchemaDoc model.Fields) (interface{}, error) {
+func (s *Schema) validateSetOperation(ctx context.Context, col string, doc interface{}, SchemaDoc model.Fields) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("document not of type object in collection %s", col)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Document not of type object in collection (%s)", col), nil, nil)
 	}
 
 	newMap := map[string]interface{}{}
@@ -231,10 +226,10 @@ func (s *Schema) validateSetOperation(col string, doc interface{}, SchemaDoc mod
 		// types in postgres. However, no such key would be present in the schema. Hence take the top level key to validate the schema
 		SchemaDocValue, ok := SchemaDoc[strings.Split(key, ".")[0]]
 		if !ok {
-			return nil, fmt.Errorf("field %s from collection %s is not defined in the schema", key, col)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Field (%s) from collection (%s) is not defined in the schema", key, col), nil, nil)
 		}
 		// check type
-		newDoc, err := s.checkType(col, value, SchemaDocValue)
+		newDoc, err := s.checkType(ctx, col, value, SchemaDocValue)
 		if err != nil {
 			return nil, err
 		}

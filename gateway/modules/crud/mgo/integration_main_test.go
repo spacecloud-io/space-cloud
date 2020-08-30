@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/spaceuptech/helpers"
 )
 
 var dbType = flag.String("db_type", "", "db_type of test case to be run")
@@ -106,12 +108,12 @@ func TestMain(m *testing.M) {
 
 	db, err := Init(true, *connection, "myproject")
 	if err != nil {
-		log.Println("Create() Couldn't establishing connection with database", dbType)
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't establishing connection with database", dbType)
 		return
 	}
 	// clear data
 	if err := db.client.Database("myproject").Drop(context.Background()); err != nil {
-		log.Println("Create() Couldn't truncate table", err)
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", err)
 	}
 
 	os.Exit(exitVal)

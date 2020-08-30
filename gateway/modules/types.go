@@ -12,14 +12,14 @@ import (
 type RealtimeInterface interface {
 	RemoveClient(clientID string)
 	Subscribe(clientID string, data *model.RealtimeRequest, sendFeed model.SendFeed) ([]*model.FeedData, error)
-	Unsubscribe(clientID string, data *model.RealtimeRequest) error
+	Unsubscribe(ctx context.Context, data *model.RealtimeRequest, clientID string) error
 
 	HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.CloudEventPayload) error
-	ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) error
+	ProcessRealtimeRequests(ctx context.Context, eventDoc *model.CloudEventPayload) error
 }
 
 // GraphQLInterface is used to mock the graphql module
 type GraphQLInterface interface {
-	GetDBAlias(field *ast.Field) (string, error)
+	GetDBAlias(ctx context.Context, field *ast.Field) (string, error)
 	ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb model.GraphQLCallback)
 }

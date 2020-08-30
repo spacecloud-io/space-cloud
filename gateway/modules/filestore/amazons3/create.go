@@ -1,6 +1,7 @@
 package amazons3
 
 import (
+	"context"
 	"io"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,7 +13,7 @@ import (
 )
 
 // CreateFile creates a file in S3
-func (a *AmazonS3) CreateFile(req *model.CreateFileRequest, file io.Reader) error {
+func (a *AmazonS3) CreateFile(ctx context.Context, req *model.CreateFileRequest, file io.Reader) error {
 	uploader := s3manager.NewUploader(a.client)
 	_, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(a.bucket),
@@ -23,7 +24,7 @@ func (a *AmazonS3) CreateFile(req *model.CreateFileRequest, file io.Reader) erro
 }
 
 // CreateDir creates a directory in S3
-func (a *AmazonS3) CreateDir(req *model.CreateFileRequest) error {
+func (a *AmazonS3) CreateDir(ctx context.Context, req *model.CreateFileRequest) error {
 	// back slash at the end is important, if not then file will be created of that name
 	svc := s3.New(a.client)
 	request := &s3.PutObjectInput{

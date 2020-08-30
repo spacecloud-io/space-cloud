@@ -12,14 +12,14 @@ import (
 )
 
 // ListDir lists a directory in GCPStorage
-func (g *GCPStorage) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
+func (g *GCPStorage) ListDir(ctx context.Context, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
 	// path should not start with a backslash
 	path := strings.Trim(req.Path, "/") + "/"
 	if path == "/" {
 		path = ""
 	}
 
-	it := g.client.Bucket(g.bucket).Objects(context.TODO(), &storage.Query{
+	it := g.client.Bucket(g.bucket).Objects(ctx, &storage.Query{
 		Prefix:    path,
 		Delimiter: "/",
 	})
@@ -52,10 +52,10 @@ func (g *GCPStorage) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesRes
 }
 
 // ReadFile reads a file from GCPStorage
-func (g *GCPStorage) ReadFile(path string) (*model.File, error) {
+func (g *GCPStorage) ReadFile(ctx context.Context, path string) (*model.File, error) {
 	path = strings.TrimPrefix(path, "/")
 
-	rc, err := g.client.Bucket(g.bucket).Object(path).NewReader(context.TODO())
+	rc, err := g.client.Bucket(g.bucket).Object(path).NewReader(ctx)
 	if err != nil {
 		return nil, err
 	}

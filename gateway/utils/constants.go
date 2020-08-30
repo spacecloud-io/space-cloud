@@ -27,26 +27,6 @@ const (
 	Upsert string = "upsert"
 )
 
-// DBType is the type of database used for a particular crud operation
-type DBType string
-
-const (
-	// Mongo is the type used for MongoDB
-	Mongo DBType = "mongo"
-
-	// EmbeddedDB is the type used for EmbeddedDB
-	EmbeddedDB DBType = "embedded"
-
-	// MySQL is the type used for MySQL
-	MySQL DBType = "mysql"
-
-	// Postgres is the type used for PostgresQL
-	Postgres DBType = "postgres"
-
-	// SQLServer is the type used for MsSQL
-	SQLServer DBType = "sqlserver"
-)
-
 // Broker is the type of broker used by Space Cloud
 type Broker string
 
@@ -67,51 +47,6 @@ const (
 
 	// GCPStorage is the type used for the GCP storage
 	GCPStorage FileStoreType = "gcp-storage"
-)
-
-// FileOpType is the type of file operation being performed on the file store
-type FileOpType string
-
-const (
-	// PayloadSize is the size of the payload(in bytes) in file upload and download
-	PayloadSize int = 256 * 1024 // 256 kB
-)
-
-const (
-	// FileRead is the type used for read operations
-	FileRead FileOpType = "read"
-
-	// FileCreate is the type used for create operations
-	FileCreate FileOpType = "create"
-
-	// FileDelete is the type used for delete operations
-	FileDelete FileOpType = "delete"
-)
-
-// OperationType is the type of operation being performed on the database
-type OperationType string
-
-const (
-	// Create is the type used for insert operations
-	Create OperationType = "create"
-
-	// Read is the type used for query operation
-	Read OperationType = "read"
-
-	// List is the type used for file store list operation
-	List OperationType = "list"
-
-	// Update is the type used ofr update operations
-	Update OperationType = "update"
-
-	// Delete is the type used for delete operations
-	Delete OperationType = "delete"
-
-	// Batch is the type used for batch operations
-	Batch OperationType = "batch"
-
-	// Aggregation is the type used for aggregations
-	Aggregation OperationType = "aggr"
 )
 
 const (
@@ -193,35 +128,6 @@ const GraphQLGroupByArgument = "group"
 // GraphQLAggregate is used by graphql aggregate clause
 const GraphQLAggregate = "aggregate"
 
-// FieldType is the type for storing sql inspection information
-type FieldType struct {
-	FieldName    string `db:"Field"`
-	FieldType    string `db:"Type"`
-	FieldNull    string `db:"Null"`
-	FieldKey     string `db:"Key"`
-	FieldDefault string `db:"Default"`
-}
-
-// ForeignKeysType is the type for storing  foreignkeys information of sql inspection
-type ForeignKeysType struct {
-	TableName      string `db:"TABLE_NAME"`
-	ColumnName     string `db:"COLUMN_NAME"`
-	ConstraintName string `db:"CONSTRAINT_NAME"`
-	DeleteRule     string `db:"DELETE_RULE"`
-	RefTableName   string `db:"REFERENCED_TABLE_NAME"`
-	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
-}
-
-// IndexType is the type use to indexkey information of sql inspection
-type IndexType struct {
-	TableName  string `db:"TABLE_NAME"`
-	ColumnName string `db:"COLUMN_NAME"`
-	IndexName  string `db:"INDEX_NAME"`
-	Order      int    `db:"SEQ_IN_INDEX"`
-	Sort       string `db:"SORT"`
-	IsUnique   string `db:"IS_UNIQUE"`
-}
-
 // DatabaseCollections stores all callections of sql or postgres or mongo
 type DatabaseCollections struct {
 	TableName string `db:"table_name" json:"tableName"`
@@ -283,3 +189,6 @@ type TypeMakeHTTPRequest func(ctx context.Context, method, url, token, scToken s
 
 // GetSecrets gets fileStore and database secrets from runner
 type GetSecrets func(project, secretName, key string) (string, error)
+
+//DefaultContextTime used for creating default context time for endpoints
+const DefaultContextTime = 10

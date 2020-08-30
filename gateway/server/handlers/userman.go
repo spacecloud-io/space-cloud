@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -19,8 +20,9 @@ func HandleProfile(modules *modules.Modules) http.HandlerFunc {
 		userManagement := modules.User()
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Get the path parameters
@@ -35,10 +37,10 @@ func HandleProfile(modules *modules.Modules) http.HandlerFunc {
 		status, result, err := userManagement.Profile(ctx, token, dbAlias, projectID, id)
 
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, status, map[string]interface{}{"user": result})
+		_ = helpers.Response.SendResponse(ctx, w, status, map[string]interface{}{"user": result})
 	}
 }
 
@@ -49,7 +51,7 @@ func HandleProfiles(modules *modules.Modules) http.HandlerFunc {
 		userManagement := modules.User()
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -64,10 +66,10 @@ func HandleProfiles(modules *modules.Modules) http.HandlerFunc {
 		status, result, err := userManagement.Profiles(ctx, token, dbAlias, projectID)
 
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, status, result)
+		_ = helpers.Response.SendResponse(ctx, w, status, result)
 	}
 }
 
@@ -78,7 +80,8 @@ func HandleEmailSignIn(modules *modules.Modules) http.HandlerFunc {
 		userManagement := modules.User()
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -94,10 +97,10 @@ func HandleEmailSignIn(modules *modules.Modules) http.HandlerFunc {
 		status, result, err := userManagement.EmailSignIn(ctx, dbAlias, projectID, req["email"].(string), req["pass"].(string))
 
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, status, result)
+		_ = helpers.Response.SendResponse(ctx, w, status, result)
 	}
 }
 
@@ -108,7 +111,7 @@ func HandleEmailSignUp(modules *modules.Modules) http.HandlerFunc {
 		userManagement := modules.User()
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -124,10 +127,10 @@ func HandleEmailSignUp(modules *modules.Modules) http.HandlerFunc {
 		status, result, err := userManagement.EmailSignUp(ctx, dbAlias, projectID, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
 
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, status, result)
+		_ = helpers.Response.SendResponse(ctx, w, status, result)
 	}
 }
 
@@ -138,7 +141,7 @@ func HandleEmailEditProfile(modules *modules.Modules) http.HandlerFunc {
 		userManagement := modules.User()
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -158,9 +161,9 @@ func HandleEmailEditProfile(modules *modules.Modules) http.HandlerFunc {
 		status, result, err := userManagement.EmailEditProfile(ctx, token, dbAlias, projectID, id, req["email"].(string), req["name"].(string), req["pass"].(string))
 
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, status, result)
+		_ = helpers.Response.SendResponse(ctx, w, status, result)
 	}
 }

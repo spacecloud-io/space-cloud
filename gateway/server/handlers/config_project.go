@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
@@ -25,26 +26,25 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "project", "read", map[string]string{"project": projectID})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		status, project, err := syncMan.GetProjectConfig(ctx, projectID, reqParams)
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "project", "read", map[string]string{"project": projectID})
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, status, model.Response{Result: project})
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+
+		status, project, err := syncMan.GetProjectConfig(ctx, projectID, reqParams)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: project})
 	}
 }
 
@@ -63,28 +63,25 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 
 		projectConfig.ID = projectID
 
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "project", "modify", map[string]string{"project": projectID})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		reqParams.Payload = projectConfig
-
-		status, err := syncman.ApplyProjectConfig(ctx, &projectConfig, reqParams)
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "project", "modify", map[string]string{"project": projectID})
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w, status)
+		reqParams = utils.ExtractRequestParams(r, reqParams, projectConfig)
+
+		statusCode, err := syncman.ApplyProjectConfig(ctx, &projectConfig, reqParams)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, statusCode, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, statusCode, w)
 	}
 }
 
@@ -95,7 +92,7 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 		defer utils.CloseTheCloser(r.Body)
 
 		// Give negative acknowledgement
-		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "Operation not supported")
+		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, "Operation not supported")
 	}
 }
 
@@ -106,26 +103,25 @@ func HandleGetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "cluster", "read", map[string]string{})
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "cluster", "read", map[string]string{})
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+
 		status, clusterConfig, err := syncMan.GetClusterConfig(ctx, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, status, model.Response{Result: clusterConfig})
+		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: clusterConfig})
 	}
 }
 
@@ -143,30 +139,29 @@ func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 
 		// Throw error if request was of incorrect type
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "Admin Config was of invalid type - "+err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, "Admin Config was of invalid type - "+err.Error())
 			return
 		}
 
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "cluster", "modify", map[string]string{})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		reqParams.Payload = req
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "cluster", "modify", map[string]string{})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		reqParams = utils.ExtractRequestParams(r, reqParams, req)
+
 		// Sync the Adminconfig
 		status, err := syncMan.SetClusterConfig(ctx, req, reqParams)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, status, map[string]interface{}{})
+		_ = helpers.Response.SendResponse(ctx, w, status, map[string]interface{}{})
 	}
 }

@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 type creationModule struct {
@@ -29,13 +28,13 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, logical
 	}
 
 	// Return gracefully if db type is mongo
-	if dbType == string(utils.Mongo) || dbType == string(utils.EmbeddedDB) {
+	if dbType == string(model.Mongo) || dbType == string(model.EmbeddedDB) {
 		return nil
 	}
 
 	currentSchema, err := s.Inspector(ctx, dbAlias, dbType, logicalDBName, tableName)
 	if err != nil {
-		logrus.Debugln("Schema Inspector Error", err)
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Schema Inspector Error", map[string]interface{}{"error": err})
 	}
 
 	queries, err := s.generateCreationQueries(ctx, dbAlias, tableName, logicalDBName, parsedSchema, currentSchema)
@@ -73,7 +72,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 	currentTableInfo, ok := currentSchema[realTableName]
 	if !ok {
 		// create table with primary key
-		query, err := s.addNewTable(logicalDBName, dbType, dbAlias, realTableName, realTableInfo)
+		query, err := s.addNewTable(ctx, logicalDBName, dbType, dbAlias, realTableName, realTableInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -93,11 +92,11 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 	}
 
 	// Get index maps for each table
-	realIndexMap, err := getIndexMap(realTableInfo)
+	realIndexMap, err := getIndexMap(ctx, realTableInfo)
 	if err != nil {
 		return nil, err
 	}
-	currentIndexMap, err := getIndexMap(currentTableInfo)
+	currentIndexMap, err := getIndexMap(ctx, currentTableInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +122,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 					schemaModule:      s,
 				}
 				if c.currentColumnInfo.IsPrimary {
-					return nil, utils.LogError(fmt.Sprintf("Field (%s) with primary key cannot be removed, Delete the table to change primary key", c.ColumnName), "schema", "generateCreationQueries", nil)
+					return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Field (%s) with primary key cannot be removed, Delete the table to change primary key", c.ColumnName), nil, nil)
 				}
 				batchedQueries = append(batchedQueries, c.removeColumn(dbType)...)
 			}
@@ -135,7 +134,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		if realColumnInfo.IsLinked {
 			continue
 		}
-		if err := checkErrors(realColumnInfo); err != nil {
+		if err := checkErrors(ctx, realColumnInfo); err != nil {
 			return nil, err
 		}
 
@@ -149,7 +148,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		}
 
 		currentColumnInfo, ok := currentTableInfo[realColumnName]
-		columnType, err := getSQLType(dbType, realColumnInfo.Kind)
+		columnType, err := getSQLType(ctx, dbType, realColumnInfo.Kind)
 		if err != nil {
 			return nil, err
 		}
@@ -178,14 +177,14 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 				if c.realColumnInfo.Kind != c.currentColumnInfo.Kind {
 					// As we are making sure that tables can only be created with primary key, this condition will occur if primary key is removed from a field
 					if !c.realColumnInfo.IsPrimary && c.currentColumnInfo.IsPrimary {
-						return nil, utils.LogError(fmt.Sprintf(`Cannot change type of field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), "schema", "generateCreationQueries", nil)
+						return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Cannot change type of field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), nil, nil)
 					}
 					// for changing the type of column, drop the column then add new column
 					queries := c.modifyColumnType(dbType)
 					batchedQueries = append(batchedQueries, queries...)
 				}
 				if c.currentColumnInfo.IsPrimary && (!c.realColumnInfo.IsPrimary || c.realColumnInfo.IsForeign || !c.realColumnInfo.IsFieldTypeRequired || c.realColumnInfo.IsDefault) {
-					return nil, utils.LogError(fmt.Sprintf(`Mutation is not allowed on field ("%s") with primary key, Delete the table to change primary key`, c.ColumnName), "schema", "generateCreationQueries", nil)
+					return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Mutation is not allowed on field ("%s") with primary key, Delete the table to change primary key`, c.ColumnName), nil, nil)
 				}
 				// make changes according to the changes in directives
 				queries := c.modifyColumn(dbType)
@@ -196,7 +195,6 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 
 	for indexName, currentFields := range currentIndexMap {
 		if _, ok := realIndexMap[indexName]; !ok {
-			logrus.Println("current index", currentFields, "a", realIndexMap)
 			batchedQueries = append(batchedQueries, s.removeIndex(dbType, dbAlias, logicalDBName, tableName, currentFields.IndexName))
 		}
 	}

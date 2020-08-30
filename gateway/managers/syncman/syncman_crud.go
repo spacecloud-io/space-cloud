@@ -7,11 +7,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -22,7 +21,7 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -30,14 +29,13 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 	// remove collection from config
 	coll, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		return http.StatusBadRequest, errors.New("specified database not present in config")
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to set delete collection provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
 	delete(coll.Collections, col)
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
 	if err := module.DeleteTable(ctx, dbAlias, col); err != nil {
@@ -57,7 +55,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -73,8 +71,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -90,7 +87,7 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -99,8 +96,8 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 	delete(projectConfig.Modules.Crud, dbAlias)
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -112,13 +109,13 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 
 // GetLogicalDatabaseName gets logical database name for provided db alias
 func (s *Manager) GetLogicalDatabaseName(ctx context.Context, project, dbAlias string) (string, error) {
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return "", err
 	}
 	collection, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		return "", errors.New("specified database not present in config")
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get logical database name provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 	return collection.DBName, nil
 }
@@ -129,7 +126,7 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -137,13 +134,13 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 	if dbAlias != "*" {
 		databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
 		if !ok {
-			return http.StatusBadRequest, nil, fmt.Errorf("specified database (%s) not present in config", dbAlias)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get prepared query provided db alias (%s) does not exists", dbAlias), nil, nil)
 		}
 
 		if id != "*" {
 			preparedQuery, ok := databaseConfig.PreparedQueries[id]
 			if !ok {
-				return http.StatusBadRequest, nil, fmt.Errorf("Prepared Queries for id (%s) not present in config for dbAlias (%s) )", id, dbAlias)
+				return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Prepared Queries with id (%s) not present in config", id), nil, nil)
 			}
 			return http.StatusOK, []interface{}{&preparedQueryResponse{ID: id, DBAlias: dbAlias, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments, Rule: preparedQuery.Rule}}, nil
 		}
@@ -171,7 +168,7 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 	defer s.lock.Unlock()
 
 	v.ID = id
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -179,7 +176,7 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 	// update database PreparedQueries
 	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		return http.StatusBadRequest, fmt.Errorf("specified database (%s) not present in config", dbAlias)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to set prepared query provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
 	if databaseConfig.PreparedQueries == nil {
@@ -188,8 +185,7 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 	databaseConfig.PreparedQueries[id] = v
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -205,22 +201,21 @@ func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, i
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
 
 	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		return http.StatusBadRequest, fmt.Errorf("specified database (%s) not present in config", dbAlias)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to remove prepared query provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
 	// update database reparedQueries
 	delete(databaseConfig.PreparedQueries, id)
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -236,7 +231,7 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col str
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -244,7 +239,7 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col str
 	// update schema in config
 	collection, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		return http.StatusBadRequest, errors.New("specified database not present in config")
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to modify schema provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
 	// Modify the schema
@@ -264,8 +259,7 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col str
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -281,7 +275,7 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col 
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -293,7 +287,7 @@ func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.
 	// update collection rules & is realtime in config
 	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		return http.StatusBadRequest, errors.New("specified database not present in config")
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to set collection rules provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
 	collection, ok := databaseConfig.Collections[col]
@@ -309,8 +303,7 @@ func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -329,7 +322,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 	// Get the schema module
 	schemaMod := s.modules.GetSchemaModuleForSyncMan()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -355,8 +348,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -372,7 +364,7 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -394,8 +386,7 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusBadRequest, err
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting crud config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -411,7 +402,7 @@ func (s *Manager) RemoveCollection(ctx context.Context, project, dbAlias, col st
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -429,8 +420,7 @@ func (s *Manager) RemoveCollection(ctx context.Context, project, dbAlias, col st
 	delete(collection.Collections, col)
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting crud config", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -446,7 +436,7 @@ func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project strin
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -488,8 +478,7 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
-		logrus.Errorf("error setting crud config - %s", err.Error())
-		return err
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting crud config", err, nil)
 	}
 
 	return nil
@@ -501,14 +490,14 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
 	if dbAlias != "*" {
 		dbConfig, ok := projectConfig.Modules.Crud[dbAlias]
 		if !ok {
-			return http.StatusBadRequest, nil, fmt.Errorf("specified dbAlias (%s) not present in config", dbAlias)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("specified dbAlias (%s) not present in config", dbAlias), nil, nil)
 		}
 		return http.StatusOK, []interface{}{config.Crud{dbAlias: {Enabled: dbConfig.Enabled, Conn: dbConfig.Conn, Type: dbConfig.Type, DBName: dbConfig.DBName}}}, nil
 	}
@@ -525,14 +514,14 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
 	if dbAlias != "*" && col != "*" {
 		collectionInfo, ok := projectConfig.Modules.Crud[dbAlias].Collections[col]
 		if !ok {
-			return http.StatusBadRequest, nil, fmt.Errorf("specified collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("specified collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
 		}
 		return http.StatusOK, []interface{}{map[string]*dbRulesResponse{fmt.Sprintf("%s-%s", dbAlias, col): {IsRealTimeEnabled: collectionInfo.IsRealTimeEnabled, Rules: collectionInfo.Rules}}}, nil
 	} else if dbAlias != "*" {
@@ -563,7 +552,7 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -573,7 +562,7 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 		if dbAlias != "*" && col != "*" {
 			collectionInfo, p := a.GetSchema(dbAlias, col)
 			if !p {
-				return http.StatusBadRequest, nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
+				return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
 			}
 			fields := []*model.FieldType{}
 			for _, v := range collectionInfo {
@@ -611,7 +600,7 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 	if dbAlias != "*" && col != "*" {
 		collectionInfo, ok := projectConfig.Modules.Crud[dbAlias].Collections[col]
 		if !ok {
-			return http.StatusBadRequest, nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
 		}
 
 		return http.StatusOK, []interface{}{map[string]*dbSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Schema: collectionInfo.Schema}}}, nil
@@ -651,7 +640,7 @@ func (s *Manager) GetSecrets(project, secretName, key string) (string, error) {
 	// Generate internal access token
 	token, err := s.adminMan.GetInternalAccessToken()
 	if err != nil {
-		return "", utils.LogError("cannot get internal access token", "syncman", "GetSecrets", err)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to get internal access token", err, map[string]interface{}{})
 	}
 
 	// makes http request to get secrets from runner

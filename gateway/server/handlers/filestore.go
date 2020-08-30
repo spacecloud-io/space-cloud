@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules"
@@ -35,7 +36,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 		token, projectID, _ := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
 		defer cancel()
 
 		var err error
@@ -46,7 +47,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 			err = r.ParseForm()
 		}
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("Could not parse form: %s", err.Error()))
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, fmt.Sprintf("Could not parse form: %s", err.Error()))
 			return
 		}
 
@@ -60,7 +61,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 		if makeAllString != "" {
 			makeAll, err = strconv.ParseBool(makeAllString)
 			if err != nil {
-				_ = utils.SendErrorResponse(w, http.StatusBadRequest, "Incorrect value for makeAll")
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, "Incorrect value for makeAll")
 				return
 			}
 		}
@@ -68,7 +69,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 		if fileType == "file" {
 			file, header, err := r.FormFile("file")
 			if err != nil {
-				_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Incorrect value for file: %s", err))
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, fmt.Sprintf("Incorrect value for file: %s", err))
 				return
 			}
 			defer utils.CloseTheCloser(file)
@@ -84,18 +85,18 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 
 			status, err := fileStore.UploadFile(ctx, projectID, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
 			if err != nil {
-				_ = utils.SendErrorResponse(w, status, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 				return
 			}
-			_ = utils.SendResponse(w, status, map[string]string{})
+			_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})
 		} else {
 			name := r.FormValue("name")
 			status, err := fileStore.CreateDir(ctx, projectID, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
 			if err != nil {
-				_ = utils.SendErrorResponse(w, status, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 				return
 			}
-			_ = utils.SendResponse(w, status, map[string]string{})
+			_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})
 		}
 	}
 }
@@ -110,7 +111,7 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
 		defer cancel()
 
 		op := r.URL.Query().Get("op")
@@ -120,24 +121,24 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 			mode := r.URL.Query().Get("mode")
 			status, res, err := fileStore.ListFiles(ctx, projectID, token, &model.ListFilesRequest{Path: path, Type: mode})
 			if err != nil {
-				_ = utils.SendErrorResponse(w, status, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 				return
 			}
-			_ = utils.SendResponse(w, status, map[string]interface{}{"result": res})
+			_ = helpers.Response.SendResponse(ctx, w, status, map[string]interface{}{"result": res})
 			return
 		} else if op == "exist" {
 			if err := fileStore.DoesExists(ctx, projectID, token, path); err != nil {
-				_ = utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusNotFound, err.Error())
 				return
 			}
-			_ = utils.SendOkayResponse(w, http.StatusOK)
+			_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 			return
 		}
 
 		// Read the file from file storage
 		status, file, err := fileStore.DownloadFile(ctx, projectID, token, path)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
 		defer func() { _ = file.Close() }()
@@ -159,15 +160,15 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 		v := map[string]interface{}{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
 		defer cancel()
 
 		status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}
-		_ = utils.SendResponse(w, status, map[string]string{})
+		_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})
 	}
 }
 

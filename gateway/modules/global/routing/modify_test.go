@@ -2,6 +2,7 @@ package routing
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -99,6 +100,7 @@ func TestRouting_modifyResponse(t *testing.T) {
 			wantHeaders: map[string][]string{},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Make an instance of the routing module
@@ -124,7 +126,7 @@ func TestRouting_modifyResponse(t *testing.T) {
 			// Make an instance of the response object
 			res := &http.Response{Body: ioutil.NopCloser(bytes.NewBuffer([]byte(tt.args.res))), Header: tt.args.headers}
 
-			if err := r.modifyResponse(res, route, "", tt.args.auth); (err != nil) != tt.wantErr {
+			if err := r.modifyResponse(context.Background(), res, route, "", tt.args.auth); (err != nil) != tt.wantErr {
 				t.Errorf("modifyResponse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}

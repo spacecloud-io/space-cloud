@@ -1032,14 +1032,14 @@ func TestSQL_Update(t *testing.T) {
 		},
 	}
 
-	switch utils.DBType(*dbType) {
-	case utils.MySQL, utils.Postgres:
+	switch model.DBType(*dbType) {
+	case model.MySQL, model.Postgres:
 		testCases = tests
-	case utils.SQLServer:
+	case model.SQLServer:
 		testCases = mssqlCases
 	}
 
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("Update() Couldn't establishing connection with database", dbType)
 	}
@@ -1047,13 +1047,13 @@ func TestSQL_Update(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 
-			if *dbType == string(utils.MySQL) && tt.isMysqlSkip {
+			if *dbType == string(model.MySQL) && tt.isMysqlSkip {
 				return
 			}
-			if *dbType == string(utils.Postgres) && tt.isPostgresSkip {
+			if *dbType == string(model.Postgres) && tt.isPostgresSkip {
 				return
 			}
-			if *dbType == string(utils.SQLServer) && tt.isSQLServerSkip {
+			if *dbType == string(model.SQLServer) && tt.isSQLServerSkip {
 				return
 			}
 			// clear the mutated data in db
@@ -1088,7 +1088,7 @@ func TestSQL_Update(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("Update() Scanning error", err)
 				}
-				mysqlTypeCheck(utils.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if !reflect.DeepEqual(tt.readResult, readResult) {
