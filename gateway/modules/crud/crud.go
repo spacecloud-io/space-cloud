@@ -239,7 +239,7 @@ func (m *Module) GetDBType(dbAlias string) (string, error) {
 	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
 	block, p := m.blocks[dbAlias]
 	if !p {
-		return "", helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot get db type as invalid db alias (%s) provided", dbAlias), nil, nil)
+		return "", fmt.Errorf("cannot get db type as invalid db alias (%s) provided", dbAlias)
 	}
 
 	return string(block.GetDBType()), nil
