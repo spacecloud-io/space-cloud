@@ -1,37 +1,38 @@
 package schema
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // GetSQLType return sql type
-func getSQLType(dbType, typename string) (string, error) {
+func getSQLType(ctx context.Context, dbType, typename string) (string, error) {
 
 	switch typename {
 	case model.TypeID:
 		return "varchar(" + model.SQLTypeIDSize + ")", nil
 	case model.TypeString:
-		if dbType == string(utils.SQLServer) {
+		if dbType == string(model.SQLServer) {
 			return "varchar(max)", nil
 		}
 		return "text", nil
 	case model.TypeDateTime:
 		switch dbType {
-		case string(utils.MySQL):
+		case string(model.MySQL):
 			return "datetime", nil
-		case string(utils.SQLServer):
+		case string(model.SQLServer):
 			return "datetimeoffset", nil
 		default:
 			return "timestamp", nil
 		}
 	case model.TypeBoolean:
-		if dbType == string(utils.SQLServer) {
+		if dbType == string(model.SQLServer) {
 			return "bit", nil
 		}
 		return "boolean", nil
@@ -41,40 +42,40 @@ func getSQLType(dbType, typename string) (string, error) {
 		return "bigint", nil
 	case model.TypeJSON:
 		switch dbType {
-		case string(utils.Postgres):
+		case string(model.Postgres):
 			return "jsonb", nil
-		case string(utils.MySQL):
+		case string(model.MySQL):
 			return "json", nil
 		default:
-			return "", fmt.Errorf("jsonb not supported for database %s", dbType)
+			return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("json not supported for database %s", dbType), nil, nil)
 		}
 	default:
-		return "", fmt.Errorf("%s type not allowed", typename)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid schema type (%s) provided", typename), fmt.Errorf("%s type not allowed", typename), nil)
 	}
 }
 
-func checkErrors(realFieldStruct *model.FieldType) error {
+func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 	if realFieldStruct.IsList && !realFieldStruct.IsLinked { // array without directive relation not allowed
-		return fmt.Errorf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName), nil)
 	}
 	if realFieldStruct.Kind == model.TypeObject {
-		return fmt.Errorf("invalid type for field %s - object type not supported in sql creation", realFieldStruct.FieldName)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("invalid type for field %s - object type not supported in sql creation", realFieldStruct.FieldName), nil)
 	}
 
 	if realFieldStruct.IsPrimary && !realFieldStruct.IsFieldTypeRequired {
-		return errors.New("primary key must be required")
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("primary key must be required"), nil)
 	}
 
 	if realFieldStruct.IsPrimary && realFieldStruct.Kind != model.TypeID {
-		return errors.New("primary key should be of type ID")
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("primary key should be of type ID"), nil)
 	}
 
 	if realFieldStruct.Kind == model.TypeJSON && (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked || realFieldStruct.IsIndex) {
-		return fmt.Errorf("cannot set index with type json")
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("cannot set index with type json"), nil)
 	}
 
 	if (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
-		return errors.New("cannot set default directive with other constraints")
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("cannot set default directive with other constraints"), nil)
 	}
 
 	return nil
@@ -87,12 +88,12 @@ func (c *creationModule) addNotNull() string {
 	}
 
 	c.currentColumnInfo.IsFieldTypeRequired = true // Mark the field as processed
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
+	switch model.DBType(dbType) {
+	case model.MySQL:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " MODIFY " + c.ColumnName + " " + c.columnType + " NOT NULL"
-	case utils.Postgres:
+	case model.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " SET NOT NULL"
-	case utils.SQLServer:
+	case model.SQLServer:
 		if strings.HasPrefix(c.columnType, "varchar") {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS NOT NULL"
 		}
@@ -107,12 +108,12 @@ func (c *creationModule) removeNotNull() string {
 		return ""
 	}
 
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
+	switch model.DBType(dbType) {
+	case model.MySQL:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " MODIFY " + c.ColumnName + " " + c.columnType + " NULL"
-	case utils.Postgres:
+	case model.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " DROP NOT NULL"
-	case utils.SQLServer:
+	case model.SQLServer:
 		if strings.HasPrefix(c.columnType, "varchar") {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS NULL"
 		}
@@ -127,12 +128,12 @@ func (c *creationModule) addNewColumn() string {
 		return ""
 	}
 
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
+	switch model.DBType(dbType) {
+	case model.MySQL:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType
-	case utils.Postgres:
+	case model.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD COLUMN " + c.ColumnName + " " + c.columnType
-	case utils.SQLServer:
+	case model.SQLServer:
 		if c.columnType == "timestamp" && !c.realColumnInfo.IsFieldTypeRequired {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType + " NULL"
 		}
@@ -209,7 +210,7 @@ func (c *creationModule) typeSwitch() string {
 	case string:
 		return "'" + fmt.Sprintf("%v", v) + "'"
 	case bool:
-		if utils.DBType(dbType) == utils.SQLServer {
+		if model.DBType(dbType) == model.SQLServer {
 			if v {
 				return "1"
 			}
@@ -229,12 +230,12 @@ func (c *creationModule) addDefaultKey() string {
 
 	c.currentColumnInfo.IsDefault = true // Mark the field as processed
 	c.currentColumnInfo.Default = c.realColumnInfo.Default
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
+	switch model.DBType(dbType) {
+	case model.MySQL:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER " + c.ColumnName + " SET DEFAULT " + c.typeSwitch()
-	case utils.SQLServer:
+	case model.SQLServer:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD CONSTRAINT c_" + c.ColumnName + " DEFAULT " + c.typeSwitch() + " FOR " + c.ColumnName
-	case utils.Postgres:
+	case model.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " SET DEFAULT " + c.typeSwitch()
 	}
 	return ""
@@ -245,12 +246,12 @@ func (c *creationModule) removeDefaultKey() string {
 	if err != nil {
 		return ""
 	}
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
+	switch model.DBType(dbType) {
+	case model.MySQL:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER " + c.ColumnName + " DROP DEFAULT"
-	case utils.Postgres:
+	case model.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " DROP DEFAULT"
-	case utils.SQLServer:
+	case model.SQLServer:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " DROP CONSTRAINT c_" + c.ColumnName
 	}
 	return ""
@@ -263,18 +264,18 @@ func (c *creationModule) removeForeignKey() []string {
 	}
 
 	c.currentColumnInfo.IsForeign = false
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
+	switch model.DBType(dbType) {
+	case model.MySQL:
 		return []string{"ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " DROP FOREIGN KEY " + c.currentColumnInfo.JointTable.ConstraintName, "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " DROP INDEX " + c.currentColumnInfo.JointTable.ConstraintName}
-	case utils.Postgres:
+	case model.Postgres:
 		return []string{"ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " DROP CONSTRAINT " + c.currentColumnInfo.JointTable.ConstraintName}
-	case utils.SQLServer:
+	case model.SQLServer:
 		return []string{"ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " DROP CONSTRAINT " + c.currentColumnInfo.JointTable.ConstraintName}
 	}
 	return nil
 }
 
-func (s *Schema) addNewTable(logicalDBName, dbType, dbAlias, realColName string, realColValue model.Fields) (string, error) {
+func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias, realColName string, realColValue model.Fields) (string, error) {
 
 	var query, primaryKeyQuery string
 	doesPrimaryKeyExists := false
@@ -284,10 +285,10 @@ func (s *Schema) addNewTable(logicalDBName, dbType, dbAlias, realColName string,
 		if realFieldStruct.IsLinked {
 			continue
 		}
-		if err := checkErrors(realFieldStruct); err != nil {
+		if err := checkErrors(ctx, realFieldStruct); err != nil {
 			return "", err
 		}
-		sqlType, err := getSQLType(dbType, realFieldStruct.Kind)
+		sqlType, err := getSQLType(ctx, dbType, realFieldStruct.Kind)
 		if err != nil {
 			return "", nil
 		}
@@ -300,7 +301,7 @@ func (s *Schema) addNewTable(logicalDBName, dbType, dbAlias, realColName string,
 
 		query += realFieldKey + " " + sqlType
 
-		if (utils.DBType(dbType) == utils.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
+		if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
 			query += " collate Latin1_General_CS_AS"
 		}
 
@@ -311,17 +312,17 @@ func (s *Schema) addNewTable(logicalDBName, dbType, dbAlias, realColName string,
 		query += " ,"
 	}
 	if !doesPrimaryKeyExists {
-		return "", utils.LogError("Primary key not found, make sure there is a primary key on a field with type (ID)", "schema", "addNewTable", nil)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key not found, make sure there is a primary key on a field with type (ID)", nil, nil)
 	}
-	if utils.DBType(dbType) == utils.MySQL {
+	if model.DBType(dbType) == model.MySQL {
 		return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `) COLLATE Latin1_General_CS;`, nil
 	}
 	return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `);`, nil
 }
 
 func (s *Schema) getTableName(dbType, logicalDBName, table string) string {
-	switch utils.DBType(dbType) {
-	case utils.Postgres, utils.SQLServer:
+	switch model.DBType(dbType) {
+	case model.Postgres, model.SQLServer:
 		return fmt.Sprintf("%s.%s", logicalDBName, table)
 	}
 	return table
@@ -342,7 +343,7 @@ func (c *creationModule) addColumn(dbType string) []string {
 
 	if c.realColumnInfo.IsFieldTypeRequired {
 		// make the new column not null
-		if dbType == string(utils.SQLServer) && c.columnType == "timestamp" {
+		if dbType == string(model.SQLServer) && c.columnType == "timestamp" {
 		} else {
 			queries = append(queries, c.addNotNull())
 		}
@@ -462,12 +463,12 @@ func (s *Schema) addIndex(dbType, dbAlias, logicalDBName, tableName, indexName s
 
 func (s *Schema) removeIndex(dbType, dbAlias, logicalDBName, tableName, indexName string) string {
 
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
+	switch model.DBType(dbType) {
+	case model.MySQL:
 		return "DROP INDEX " + indexName + " ON " + s.getTableName(dbType, logicalDBName, tableName)
-	case utils.SQLServer:
+	case model.SQLServer:
 		return "DROP INDEX " + indexName + " ON " + s.getTableName(dbType, logicalDBName, tableName)
-	case utils.Postgres:
+	case model.Postgres:
 		indexname := indexName
 		return "DROP INDEX " + s.getTableName(dbType, logicalDBName, indexname)
 	}
@@ -488,7 +489,7 @@ type indexStruct struct {
 	IndexName     string
 }
 
-func getIndexMap(tableInfo model.Fields) (map[string]*indexStruct, error) {
+func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*indexStruct, error) {
 	indexMap := make(map[string]*indexStruct)
 
 	// Iterate over each column of table
@@ -518,7 +519,7 @@ func getIndexMap(tableInfo model.Fields) (map[string]*indexStruct, error) {
 		indexValue.IndexMap = v
 		for i, column := range indexValue.IndexMap {
 			if i+1 != column.IndexInfo.Order {
-				return nil, fmt.Errorf("invalid order sequence proveded for index (%s)", indexName)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid order sequence proveded for index (%s)", indexName), nil, nil)
 			}
 		}
 	}

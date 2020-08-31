@@ -28,7 +28,7 @@ func (i *Istio) applyDeployment(ctx context.Context, ns string, deployment *apps
 		if _, err := i.kube.AppsV1().Deployments(ns).Create(ctx, deployment, metav1.CreateOptions{}); err != nil {
 			return err
 		}
-		return i.cache.setDeployment(ns, deployment.Name, deployment)
+		return i.cache.setDeployment(ctx, ns, deployment.Name, deployment)
 	}
 	if err != nil {
 		return err
@@ -42,7 +42,7 @@ func (i *Istio) applyDeployment(ctx context.Context, ns string, deployment *apps
 		return err
 	}
 	// Update the deployment cache
-	if err := i.cache.setDeployment(ns, deployment.Name, prevDeployment); err != nil {
+	if err := i.cache.setDeployment(ctx, ns, deployment.Name, prevDeployment); err != nil {
 		return err
 	}
 

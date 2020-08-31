@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
 	"github.com/spaceuptech/space-cloud/runner/utils/driver/docker"
@@ -81,6 +83,6 @@ func initDriver(auth *auth.Module, c *Config) (Interface, error) {
 		return docker.NewDockerDriver(auth, c.ClusterName, c.ArtifactAddr)
 
 	default:
-		return nil, fmt.Errorf("invalid driver type (%s) provided", c.DriverType)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("invalid driver type (%s) provided", c.DriverType), nil, nil)
 	}
 }

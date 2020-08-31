@@ -2,7 +2,7 @@ package utils
 
 import (
 	"archive/zip"
-	"fmt"
+	"context"
 	"io"
 	"net/http"
 	"os"
@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/spaceuptech/helpers"
 	"github.com/spaceuptech/space-api-go/utils"
 )
 
@@ -29,7 +30,7 @@ func Unzip(src string, dest string) error {
 
 		// Check for ZipSlip. More Info: http://bit.ly/2MsjAWE
 		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
-			return fmt.Errorf("%s: illegal file path", fpath)
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Invalid file path provided", nil, nil)
 		}
 
 		if f.FileInfo().IsDir() {

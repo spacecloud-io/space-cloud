@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 
 	"github.com/docker/docker/api/types"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
@@ -33,8 +33,7 @@ func (d *Docker) pullImage(ctx context.Context, projectID string, taskDocker mod
 	if taskDocker.Secret != "" {
 		data, err := ioutil.ReadFile(fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, taskDocker.Secret))
 		if err != nil {
-			logrus.Errorf("error in docker unable to read file name (%s) required for pulling image from private repository - %v", taskDocker.Secret, err.Error())
-			return err
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error in docker unable to read file name (%s) required for pulling image from private repository", taskDocker.Secret), err, nil)
 		}
 		secret := new(model.Secret)
 		if err := json.Unmarshal(data, secret); err != nil {
@@ -56,8 +55,7 @@ func (d *Docker) pullImage(ctx context.Context, projectID string, taskDocker mod
 	// pull image from repository
 	out, err := d.client.ImagePull(ctx, taskDocker.Image, options)
 	if err != nil {
-		logrus.Errorf("error in docker unable to pull private image with id (%s) - %s", taskDocker.Image, err.Error())
-		return err
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error in docker unable to pull private image with id (%s)", taskDocker.Image), err, nil)
 	}
 	_, _ = io.Copy(ioutil.Discard, out)
 	return nil

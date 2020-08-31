@@ -6,10 +6,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/net/context"
+
+	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_ApplyProjectConfig(t *testing.T) {
@@ -157,7 +158,7 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: http.StatusInternalServerError,
+			want: http.StatusOK,
 		},
 		{
 			name: "project doesn't exist and store type kube and project is set",
@@ -188,7 +189,7 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: http.StatusInternalServerError,
+			want: http.StatusOK,
 		},
 	}
 	for _, tt := range tests {

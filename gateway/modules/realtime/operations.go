@@ -3,11 +3,11 @@ package realtime
 import (
 	"context"
 	"errors"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -43,7 +43,7 @@ func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFee
 		return nil, err
 	}
 
-	_ = m.auth.PostProcessMethod(actions, result)
+	_ = m.auth.PostProcessMethod(ctx, actions, result)
 
 	feedData := make([]*model.FeedData, 0)
 	array, ok := result.([]interface{})
@@ -73,8 +73,8 @@ func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFee
 }
 
 // Unsubscribe performs the realtime unsubscribe operation.
-func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) error {
-	return m.RemoveLiveQuery(data.DBType, data.Group, clientID, data.ID)
+func (m *Module) Unsubscribe(ctx context.Context, data *model.RealtimeRequest, clientID string) error {
+	return m.RemoveLiveQuery(ctx, data.DBType, data.Group, clientID, data.ID)
 }
 
 // HandleRealtimeEvent handles an incoming realtime event from the eventing module
@@ -93,12 +93,12 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Cl
 	ctx, cancel := context.WithTimeout(ctxRoot, 5*time.Second)
 	defer cancel()
 
-	token, err := m.auth.GetInternalAccessToken()
+	token, err := m.auth.GetInternalAccessToken(ctx)
 	if err != nil {
 		return err
 	}
 
-	scToken, err := m.auth.GetSCAccessToken()
+	scToken, err := m.auth.GetSCAccessToken(ctx)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Cl
 	select {
 	case err := <-errCh:
 		cancel()
-		log.Println("Realtime Module: Event handler error -", err)
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Realtime Module: Event handler error", map[string]interface{}{"error": err})
 		return err
 
 	case <-successCh:
@@ -132,11 +132,11 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Cl
 }
 
 // ProcessRealtimeRequests handles an incoming realtime process event
-func (m *Module) ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) error {
+func (m *Module) ProcessRealtimeRequests(ctx context.Context, eventDoc *model.CloudEventPayload) error {
 
 	dbEvent := new(model.DatabaseEventMessage)
 	if err := mapstructure.Decode(eventDoc.Data, dbEvent); err != nil {
-		log.Println("Realtime Module Request Handler Error:", err)
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Realtime Module Request Handler Error", map[string]interface{}{"error": err})
 		return err
 	}
 
@@ -150,7 +150,7 @@ func (m *Module) ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) erro
 		Find:      dbEvent.Find,
 	}
 
-	m.helperSendFeed(feedData)
+	m.helperSendFeed(ctx, feedData)
 
 	return nil
 }

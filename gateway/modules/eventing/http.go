@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
+	"github.com/spaceuptech/helpers"
 	"golang.org/x/net/context"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -41,8 +39,7 @@ func (m *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTT
 	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(data))
 	if err != nil {
 		if err := m.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
-			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
-			return err
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to log invocation request", err, nil)
 		}
 		return err
 	}
@@ -63,8 +60,7 @@ func (m *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTT
 	resp, err := client.Do(req)
 	if err != nil {
 		if err := m.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
-			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
-			return err
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to log invocation request", err, nil)
 		}
 		return err
 	}
@@ -72,31 +68,27 @@ func (m *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTT
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		if err := m.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
-			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
-			return err
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to log invocation request", err, nil)
 		}
 		return err
 	}
 
 	if err := json.Unmarshal(responseBody, vPtr); err != nil {
 		if err := m.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), err.Error()); err != nil {
-			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
-			return err
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to log invocation request", err, nil)
 		}
 		return err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		if err := m.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), errors.New("invalid status code received").Error()); err != nil {
-			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
-			return err
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to log invocation request", err, nil)
 		}
-		return fmt.Errorf("service responded with status code - %s", strconv.Itoa(resp.StatusCode))
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invocation service responded with status code - %v", resp.StatusCode), nil, nil)
 	}
 
 	if err := m.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), ""); err != nil {
-		logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
-		return err
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to log invocation request", err, nil)
 	}
 
 	return nil

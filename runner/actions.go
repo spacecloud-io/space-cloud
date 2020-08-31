@@ -1,14 +1,16 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"os"
-	"strings"
+
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
 	"github.com/spaceuptech/space-cloud/runner/utils/driver"
 
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/runner/server"
@@ -19,6 +21,7 @@ func actionRunner(c *cli.Context) error {
 	port := c.String("port")
 	proxyPort := c.String("proxy-port")
 	loglevel := c.String("log-level")
+	logFormat := c.String("log-format")
 
 	// Get jwt config
 	jwtSecret := c.String("jwt-secret")
@@ -33,14 +36,15 @@ func actionRunner(c *cli.Context) error {
 	isMetricDisabled := c.Bool("disable-metrics")
 
 	artifactAddr := c.String("artifact-addr")
-	clusterID := c.String("cluster-id")
-	if clusterID == "" {
-		logrus.Error("Failed to setup runner: CLUSTER_ID environment variable not provided")
-		return nil
+	clusterName := c.String("cluster-name")
+	if driverType == model.DockerType {
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Runner is starting in cluster (%s)", clusterName), nil)
 	}
-	clusterName := strings.Split(clusterID, "--")[0]
+
 	// Set the log level
-	setLogLevel(loglevel)
+	if err := helpers.InitLogger(loglevel, logFormat, isDev); err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to initialize loggers", err, nil)
+	}
 
 	// Create a new runner object
 	r, err := server.New(&server.Config{
@@ -61,24 +65,9 @@ func actionRunner(c *cli.Context) error {
 		},
 	})
 	if err != nil {
-		logrus.Errorf("Failed to start runner - %s", err.Error())
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Failed to start runner", err, nil)
 		os.Exit(-1)
 	}
 
 	return r.Start()
-}
-
-func setLogLevel(loglevel string) {
-	switch loglevel {
-	case loglevelDebug:
-		logrus.SetLevel(logrus.DebugLevel)
-	case loglevelInfo:
-		logrus.SetLevel(logrus.InfoLevel)
-	case logLevelError:
-		logrus.SetLevel(logrus.ErrorLevel)
-	default:
-		logrus.Errorf("Invalid log level (%s) provided", loglevel)
-		logrus.Infoln("Defaulting to `info` level")
-		logrus.SetLevel(logrus.InfoLevel)
-	}
 }

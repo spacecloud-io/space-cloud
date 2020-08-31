@@ -2,6 +2,7 @@ package graphql_test
 
 import (
 	"errors"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -3237,14 +3238,14 @@ var mutationTestCases = []tests{
 							Col:       "trainers",
 							Document:  []interface{}{map[string]interface{}{"id": "1", "name": "ash"}},
 							Operation: string(utils.All),
-							Type:      string(utils.Create),
+							Type:      string(model.Create),
 						},
 						{
 							DBAlias:   "db",
 							Col:       "pokemons",
 							Document:  []interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "combat_power": 200, "trainer_id": "1"}, map[string]interface{}{"id": "2", "name": "charmender", "combat_power": 150, "trainer_id": "1"}},
 							Operation: string(utils.All),
-							Type:      string(utils.Create),
+							Type:      string(model.Create),
 						},
 					},
 				}, model.RequestParams{Resource: "db-batch"}},
@@ -4316,7 +4317,7 @@ var transactionTestCases = []tests{
 							Col:       "caught_pokemons",
 							Document:  []interface{}{map[string]interface{}{"id": "5", "name": "chalizard"}, map[string]interface{}{"id": "6", "name": "squirtle"}},
 							Operation: utils.All,
-							Type:      string(utils.Create),
+							Type:      string(model.Create),
 						},
 						{
 							DBAlias: "db",
@@ -4325,7 +4326,7 @@ var transactionTestCases = []tests{
 								"id": "4",
 							},
 							Operation: utils.All,
-							Type:      string(utils.Delete),
+							Type:      string(model.Delete),
 						},
 					},
 				}, model.RequestParams{Resource: "db-batch"}},

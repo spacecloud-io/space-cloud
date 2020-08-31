@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func Test_generateInspection(t *testing.T) {
@@ -15,9 +14,9 @@ func Test_generateInspection(t *testing.T) {
 	type args struct {
 		dbType      string
 		col         string
-		fields      []utils.FieldType
-		foreignKeys []utils.ForeignKeysType
-		indexKeys   []utils.IndexType
+		fields      []model.InspectorFieldType
+		foreignKeys []model.ForeignKeysType
+		indexKeys   []model.IndexType
 	}
 	tests := []struct {
 		name    string
@@ -40,8 +39,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "YES"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "YES"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, Kind: model.TypeID}}},
 			wantErr: false,
@@ -51,8 +50,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "YES"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "YES"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, Kind: model.TypeString}}},
 			wantErr: false,
@@ -62,8 +61,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "YES"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "YES"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, Kind: model.TypeBoolean}}},
 			wantErr: false,
@@ -73,8 +72,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "YES"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "YES"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, Kind: model.TypeInteger}}},
 			wantErr: false,
@@ -84,8 +83,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "YES"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "YES"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, Kind: model.TypeFloat}}},
 			wantErr: false,
@@ -95,8 +94,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "YES"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "YES"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, Kind: model.TypeJSON}}},
 			wantErr: false,
@@ -106,8 +105,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "YES"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "YES"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, Kind: model.TypeDateTime}}},
 			wantErr: false,
@@ -117,8 +116,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "wrongType", FieldNull: "YES"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "wrongType", FieldNull: "YES"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			wantErr: true,
 		},
@@ -127,8 +126,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeID}}},
 			wantErr: false,
@@ -138,8 +137,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeString}}},
 			wantErr: false,
@@ -149,8 +148,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeBoolean}}},
 			wantErr: false,
@@ -160,8 +159,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeInteger}}},
 			wantErr: false,
@@ -171,8 +170,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeFloat}}},
 			wantErr: false,
@@ -182,8 +181,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeDateTime}}},
 			wantErr: false,
@@ -193,8 +192,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeJSON}}},
 			wantErr: false,
@@ -228,8 +227,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", FieldDefault: "INDIA"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", FieldDefault: "INDIA"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeID, Default: "\"INDIA\""}}},
 			wantErr: false,
@@ -239,8 +238,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO", FieldDefault: "INDIA"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO", FieldDefault: "INDIA"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeString, Default: "\"INDIA\""}}},
 			wantErr: false,
@@ -250,8 +249,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "true"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "true"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeBoolean, Default: "true"}}},
 			wantErr: false,
@@ -261,8 +260,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO", FieldDefault: "100"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO", FieldDefault: "100"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeInteger, Default: "100"}}},
 			wantErr: false,
@@ -272,8 +271,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldDefault: "9.8"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldDefault: "9.8"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeFloat, Default: "9.8"}}},
 			wantErr: false,
@@ -283,8 +282,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO", FieldDefault: "2020-05-30T00:42:05+00:00"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO", FieldDefault: "2020-05-30T00:42:05+00:00"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeDateTime, Default: "\"2020-05-30T00:42:05+00:00\""}}},
 			wantErr: false,
@@ -294,8 +293,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO", FieldDefault: `{"id":"zerfvnex","name":"john"}`}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO", FieldDefault: `{"id":"zerfvnex","name":"john"}`}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeJSON, Default: `{"id":"zerfvnex","name":"john"}`}}},
 			wantErr: false,
@@ -305,8 +304,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "PRI"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "PRI"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeID, IsPrimary: true}}},
 			wantErr: false,
@@ -316,8 +315,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "MUL"}},
-				foreignKeys: []utils.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignKeys: []model.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeID, IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION"}}}},
 			wantErr: false,
@@ -327,8 +326,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO", FieldKey: "MUL"}},
-				foreignKeys: []utils.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignKeys: []model.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeString, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
@@ -338,8 +337,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO", FieldKey: "MUL"}},
-				foreignKeys: []utils.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignKeys: []model.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeInteger, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
@@ -349,8 +348,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldKey: "MUL"}},
-				foreignKeys: []utils.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignKeys: []model.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeFloat, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
@@ -360,8 +359,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO", FieldKey: "MUL"}},
-				foreignKeys: []utils.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignKeys: []model.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
@@ -371,8 +370,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO", FieldKey: "MUL"}},
-				foreignKeys: []utils.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignKeys: []model.ForeignKeysType{{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeJSON, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
@@ -382,9 +381,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeID, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -394,9 +393,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeString, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -406,9 +405,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeInteger, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -418,9 +417,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeFloat, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -430,9 +429,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeBoolean, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -442,9 +441,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeDateTime, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -454,9 +453,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeJSON, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -466,9 +465,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -484,9 +483,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "text", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -502,9 +501,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "bigint", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -520,9 +519,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "float", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -538,9 +537,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "boolean", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -556,9 +555,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "datetime", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -574,9 +573,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "json", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -592,9 +591,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeID, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -604,9 +603,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeString, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -616,9 +615,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeInteger, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -628,9 +627,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeFloat, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -640,9 +639,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeBoolean, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -652,9 +651,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeDateTime, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -664,9 +663,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeJSON, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -676,9 +675,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -694,9 +693,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "text", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -712,9 +711,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "bigint", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -730,9 +729,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "float", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -748,9 +747,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "boolean", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -766,9 +765,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "datetime", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -784,9 +783,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "json", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
 				},
@@ -802,9 +801,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeID, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -814,9 +813,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeString, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -826,9 +825,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeInteger, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -838,9 +837,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeFloat, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -850,9 +849,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeBoolean, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -862,9 +861,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeDateTime, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -874,9 +873,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeJSON, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
@@ -886,9 +885,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -904,9 +903,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "text", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -922,9 +921,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "bigint", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -940,9 +939,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "float", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -958,9 +957,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "boolean", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -976,9 +975,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "datetime", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -994,9 +993,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "json", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -1012,9 +1011,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeID, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -1024,9 +1023,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeString, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -1036,9 +1035,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeInteger, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -1048,9 +1047,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeFloat, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -1060,9 +1059,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeBoolean, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -1072,9 +1071,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeDateTime, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -1084,9 +1083,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys:   []model.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"}},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsIndex: true, Kind: model.TypeJSON, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
 			wantErr: false,
@@ -1096,9 +1095,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -1114,9 +1113,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "text", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -1132,9 +1131,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "bigint", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -1150,9 +1149,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "float", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -1168,9 +1167,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "boolean", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -1186,9 +1185,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "datetime", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -1204,9 +1203,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "json", FieldNull: "NO"}},
-				foreignKeys: []utils.ForeignKeysType{},
-				indexKeys: []utils.IndexType{
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignKeys: []model.ForeignKeysType{},
+				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "no"},
 					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "no"},
 				},
@@ -1222,8 +1221,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(5550)", FieldNull: "NO", FieldKey: "PRI"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(5550)", FieldNull: "NO", FieldKey: "PRI"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
 			wantErr: false,
@@ -1234,8 +1233,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "character varying", FieldNull: "NO", FieldDefault: "'INDIA'::text"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "character varying", FieldNull: "NO", FieldDefault: "'INDIA'::text"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeID, IsDefault: true, Default: "\"INDIA\""}}},
 			wantErr: false,
@@ -1245,8 +1244,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO", FieldDefault: "'INDIA'::text"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO", FieldDefault: "'INDIA'::text"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeString, IsDefault: true, Default: "\"INDIA\""}}},
 			wantErr: false,
@@ -1256,8 +1255,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO", FieldDefault: "100"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO", FieldDefault: "100"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeInteger, IsDefault: true, Default: "100"}}},
 			wantErr: false,
@@ -1267,8 +1266,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldDefault: "9.8"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldDefault: "9.8"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeFloat, IsDefault: true, Default: "9.8"}}},
 			wantErr: false,
@@ -1278,8 +1277,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "true"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "true"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeBoolean, IsDefault: true, Default: "true"}}},
 			wantErr: false,
@@ -1289,8 +1288,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "timestamp", FieldNull: "NO", FieldDefault: "'2020-05-30T00:42:05+00:00'::datetime"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "timestamp", FieldNull: "NO", FieldDefault: "'2020-05-30T00:42:05+00:00'::datetime"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeDateTime, IsDefault: true, Default: "\"2020-05-30T00:42:05+00:00\""}}},
 			wantErr: false,
@@ -1300,7 +1299,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "postgres",
 				col:    "table1",
-				fields: []utils.FieldType{{FieldName: firstColumn, FieldType: "some-type", FieldNull: "NO", FieldDefault: "'2020-05-30T00:42:05+00:00'::datetime"}},
+				fields: []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "some-type", FieldNull: "NO", FieldDefault: "'2020-05-30T00:42:05+00:00'::datetime"}},
 			},
 			wantErr: true,
 		},
@@ -1309,8 +1308,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "jsonb", FieldNull: "NO", FieldDefault: `{"id":"zerfvnex","name":"john"}`}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "jsonb", FieldNull: "NO", FieldDefault: `{"id":"zerfvnex","name":"john"}`}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeJSON, Default: `{"id":"zerfvnex","name":"john"}`}}},
 			wantErr: false,
@@ -1321,8 +1320,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", FieldDefault: "((INDIA))"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", FieldDefault: "((INDIA))"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeID, Default: "\"INDIA\""}}},
 			wantErr: false,
@@ -1332,8 +1331,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(-1)", FieldNull: "NO", FieldDefault: "((INDIA))"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "varchar(-1)", FieldNull: "NO", FieldDefault: "((INDIA))"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeString, Default: "\"INDIA\""}}},
 			wantErr: false,
@@ -1343,8 +1342,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "((1))"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "((1))"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeBoolean, Default: "true"}}},
 			wantErr: false,
@@ -1354,8 +1353,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "((0))"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "((0))"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeBoolean, Default: "false"}}},
 			wantErr: false,
@@ -1365,8 +1364,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO", FieldDefault: "((100))"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO", FieldDefault: "((100))"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeInteger, Default: "100"}}},
 			wantErr: false,
@@ -1376,8 +1375,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldDefault: "((9.8))"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldDefault: "((9.8))"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeFloat, Default: "9.8"}}},
 			wantErr: false,
@@ -1387,8 +1386,8 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO", FieldDefault: "((2020-05-30T00:42:05+00:00))"}},
-				foreignKeys: []utils.ForeignKeysType{},
+				fields:      []model.InspectorFieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO", FieldDefault: "((2020-05-30T00:42:05+00:00))"}},
+				foreignKeys: []model.ForeignKeysType{},
 			},
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeDateTime, Default: "\"2020-05-30T00:42:05+00:00\""}}},
 			wantErr: false,

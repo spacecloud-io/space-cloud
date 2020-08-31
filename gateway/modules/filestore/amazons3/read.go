@@ -2,6 +2,7 @@ package amazons3
 
 import (
 	"bufio"
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,13 +12,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	uuid "github.com/satori/go.uuid"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // ListDir lists a directory in S3
-func (a *AmazonS3) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
+func (a *AmazonS3) ListDir(ctx context.Context, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
 	svc := s3.New(a.client)
 
 	req.Path = strings.TrimPrefix(req.Path, "/")
@@ -36,13 +37,10 @@ func (a *AmazonS3) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesRespo
 	}
 
 	if len(resp.Contents) == 0 {
-		utils.LogDebug("AWS list response is empty", "amazons3", "list-dir", nil)
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "AWS list response is empty", map[string]interface{}{"path": req.Path, "type": req.Type})
 		return []*model.ListFilesResponse{}, nil
 	}
 
-	if req.Path != "" {
-		resp.Contents = resp.Contents[1:]
-	}
 	result := make([]*model.ListFilesResponse, 0)
 
 	for _, key := range resp.Contents {
@@ -62,7 +60,7 @@ func (a *AmazonS3) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesRespo
 }
 
 // ReadFile reads a file from S3
-func (a *AmazonS3) ReadFile(path string) (*model.File, error) {
+func (a *AmazonS3) ReadFile(ctx context.Context, path string) (*model.File, error) {
 	u2 := uuid.NewV4()
 
 	tmpfile, err := ioutil.TempFile("", u2.String())
@@ -78,6 +76,8 @@ func (a *AmazonS3) ReadFile(path string) (*model.File, error) {
 			Key:    aws.String(path),
 		})
 	if err != nil {
+		_ = tmpfile.Close()
+		_ = os.Remove(tmpfile.Name())
 		return nil, err
 	}
 	return &model.File{File: bufio.NewReader(tmpfile), Close: func() error {

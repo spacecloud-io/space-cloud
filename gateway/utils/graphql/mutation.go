@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/graphql-go/graphql/language/ast"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -30,7 +31,7 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, dbAli
 			if err != nil {
 				return model.RequestParams{}, nil, nil, err
 			}
-			result.Type = string(utils.Delete)
+			result.Type = string(model.Delete)
 			result.Col = col
 			result.DBAlias = dbAlias
 			return reqParams, []*model.AllRequest{result}, nil, nil
@@ -44,30 +45,30 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, dbAli
 			if err != nil {
 				return reqParams, nil, nil, err
 			}
-			result.Type = string(utils.Update)
+			result.Type = string(model.Update)
 			result.Col = col
 			result.DBAlias = dbAlias
 			return reqParams, []*model.AllRequest{result}, nil, nil
 
 		}
 	}
-	return model.RequestParams{}, nil, nil, fmt.Errorf("target database not provided for field %s", getFieldName(field))
+	return model.RequestParams{}, nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Target database not provided for field %s", getFieldName(field)), nil, nil)
 }
 
 func (graph *Module) execAllReq(ctx context.Context, dbAlias, project string, req *model.BatchRequest, params model.RequestParams) (map[string]interface{}, error) {
 	if len(req.Requests) == 1 {
 		r := req.Requests[0]
 		switch r.Type {
-		case string(utils.Create):
+		case string(model.Create):
 			t := model.CreateRequest{Operation: r.Operation, Document: r.Document}
 			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Create(ctx, dbAlias, r.Col, &t, params)
 
-		case string(utils.Delete):
+		case string(model.Delete):
 
 			t := model.DeleteRequest{Operation: r.Operation, Find: r.Find}
 			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Delete(ctx, dbAlias, r.Col, &t, params)
 
-		case string(utils.Update):
+		case string(model.Update):
 
 			t := model.UpdateRequest{Operation: r.Operation, Find: r.Find, Update: r.Update}
 			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Update(ctx, dbAlias, r.Col, &t, params)
@@ -101,7 +102,7 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 		field := v.(*ast.Field)
 
 		// for query insert_... @db {} -> dbAlias is "db"
-		dbAlias, err := graph.GetDBAlias(field)
+		dbAlias, err := graph.GetDBAlias(ctx, field)
 		if err != nil {
 			cb(nil, err)
 			return

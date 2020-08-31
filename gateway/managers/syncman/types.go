@@ -1,6 +1,8 @@
 package syncman
 
 import (
+	"context"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/global/letsencrypt"
@@ -10,7 +12,7 @@ import (
 // AdminSyncmanInterface is an interface consisting of functions of admin module used by eventing module
 type AdminSyncmanInterface interface {
 	GetInternalAccessToken() (string, error)
-	IsTokenValid(token, resource, op string, attr map[string]string) (model.RequestParams, error)
+	IsTokenValid(ctx context.Context, token, resource, op string, attr map[string]string) (model.RequestParams, error)
 	ValidateProjectSyncOperation(c *config.Config, project *config.Project) bool
 	SetConfig(admin *config.Admin) error
 	GetConfig() *config.Admin

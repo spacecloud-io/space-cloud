@@ -666,7 +666,7 @@ func (m *mockRealtimeModule) Subscribe(clientID string, data *model.RealtimeRequ
 	return c.Get(0).([]*model.FeedData), nil
 }
 
-func (m *mockRealtimeModule) Unsubscribe(clientID string, data *model.RealtimeRequest) error {
+func (m *mockRealtimeModule) Unsubscribe(ctx context.Context, data *model.RealtimeRequest, clientID string) error {
 	m.Called(clientID, data)
 	return nil
 }
@@ -675,7 +675,7 @@ func (m *mockRealtimeModule) HandleRealtimeEvent(ctx context.Context, eventDoc *
 	return m.Called(ctx, eventDoc).Error(0)
 }
 
-func (m *mockRealtimeModule) ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) error {
+func (m *mockRealtimeModule) ProcessRealtimeRequests(ctx context.Context, eventDoc *model.CloudEventPayload) error {
 	return m.Called(eventDoc).Error(0)
 }
 
@@ -683,7 +683,7 @@ type mockGraphQLModule struct {
 	mock.Mock
 }
 
-func (m *mockGraphQLModule) GetDBAlias(field *ast.Field) (string, error) {
+func (m *mockGraphQLModule) GetDBAlias(ctx context.Context, field *ast.Field) (string, error) {
 	c := m.Called(field)
 	return c.String(0), c.Error(1)
 }

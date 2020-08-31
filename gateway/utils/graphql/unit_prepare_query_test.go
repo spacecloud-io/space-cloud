@@ -2,6 +2,7 @@ package graphql_test
 
 import (
 	"errors"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"

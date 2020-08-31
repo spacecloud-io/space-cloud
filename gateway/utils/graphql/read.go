@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/graphql-go/graphql/language/ast"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -20,13 +21,13 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
-	req.GroupBy, err = extractGroupByClause(field.Arguments, store)
+	req.GroupBy, err = extractGroupByClause(ctx, field.Arguments, store)
 	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
 
-	req.Aggregate, err = extractAggregate(field)
+	req.Aggregate, err = extractAggregate(ctx, field)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -40,14 +41,14 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		}
 		req.Options.HasOptions = false
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
-		_ = graph.auth.PostProcessMethod(actions, result)
+		_ = graph.auth.PostProcessMethod(ctx, actions, result)
 
 		cb(dbAlias, col, result, err)
 	}()
 }
 
 func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
-	dbAlias, err := graph.GetDBAlias(field)
+	dbAlias, err := graph.GetDBAlias(ctx, field)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -58,7 +59,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		cb("", "", nil, err)
 		return
 	}
-	req, hasOptions, err := generateReadRequest(field, store)
+	req, hasOptions, err := generateReadRequest(ctx, field, store)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -81,13 +82,13 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		req.IsBatch = !(len(req.Aggregate) > 0)
 		req.Options.HasOptions = hasOptions
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
-		_ = graph.auth.PostProcessMethod(actions, result)
+		_ = graph.auth.PostProcessMethod(ctx, actions, result)
 		cb(dbAlias, col, result, err)
 	}()
 }
 
 func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
-	dbAlias, err := graph.GetDBAlias(field)
+	dbAlias, err := graph.GetDBAlias(ctx, field)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -95,7 +96,7 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 
 	id := field.Name.Value
 
-	params, err := getFuncParams(field, store)
+	params, err := getFuncParams(ctx, field, store)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -110,34 +111,34 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 
 	go func() {
 		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
-		_ = graph.auth.PostProcessMethod(actions, result)
+		_ = graph.auth.PostProcessMethod(ctx, actions, result)
 		cb(dbAlias, id, result, err)
 	}()
 }
 
-func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, bool, error) {
+func generateReadRequest(ctx context.Context, field *ast.Field, store utils.M) (*model.ReadRequest, bool, error) {
 	var err error
 
 	// Create a read request object
 	readRequest := model.ReadRequest{Operation: utils.All, Options: new(model.ReadOptions)}
 
-	readRequest.Find, err = ExtractWhereClause(field.Arguments, store)
+	readRequest.Find, err = ExtractWhereClause(ctx, field.Arguments, store)
 	if err != nil {
 		return nil, false, err
 	}
 
-	readRequest.GroupBy, err = extractGroupByClause(field.Arguments, store)
+	readRequest.GroupBy, err = extractGroupByClause(ctx, field.Arguments, store)
 	if err != nil {
 		return nil, false, err
 	}
 
-	readRequest.Aggregate, err = extractAggregate(field)
+	readRequest.Aggregate, err = extractAggregate(ctx, field)
 	if err != nil {
 		return nil, false, err
 	}
 
 	var hasOptions bool
-	readRequest.Options, hasOptions, err = generateOptions(field.Arguments, store)
+	readRequest.Options, hasOptions, err = generateOptions(ctx, field.Arguments, store)
 	if err != nil {
 		return nil, false, err
 	}
@@ -147,12 +148,12 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 	}
 
 	// Get extra arguments
-	readRequest.Extras = generateArguments(field, store)
+	readRequest.Extras = generateArguments(ctx, field, store)
 
 	return &readRequest, hasOptions, nil
 }
 
-func generateArguments(field *ast.Field, store utils.M) map[string]interface{} {
+func generateArguments(ctx context.Context, field *ast.Field, store utils.M) map[string]interface{} {
 	obj := map[string]interface{}{}
 	for _, arg := range field.Arguments {
 		switch arg.Name.Value {
@@ -165,7 +166,7 @@ func generateArguments(field *ast.Field, store utils.M) map[string]interface{} {
 		default:
 			val, err := utils.ParseGraphqlValue(arg.Value, store)
 			if err != nil {
-				utils.LogWarn(fmt.Sprintf("Unable to extract field (%s)", arg.Name.Value), "graph", "read")
+				helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to extract argument from graphql query (%s)", arg.Name.Value), map[string]interface{}{"argValue": arg.Value.GetValue()})
 				continue
 			}
 
@@ -199,7 +200,7 @@ func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string) 
 	return selectMap
 }
 
-func extractAggregate(v *ast.Field) (map[string][]string, error) {
+func extractAggregate(ctx context.Context, v *ast.Field) (map[string][]string, error) {
 	functionMap := make(map[string][]string)
 	aggregateFound := false
 	if v.SelectionSet == nil {
@@ -211,7 +212,7 @@ func extractAggregate(v *ast.Field) (map[string][]string, error) {
 			continue
 		}
 		if aggregateFound {
-			return nil, utils.LogError("GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field", "graphql", "extractAggregate", nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field", nil, nil)
 		}
 		aggregateFound = true
 		// get function name
@@ -219,7 +220,7 @@ func extractAggregate(v *ast.Field) (map[string][]string, error) {
 			functionField := selection.(*ast.Field)
 			_, ok := functionMap[functionField.Name.Value]
 			if ok {
-				return nil, utils.LogError(fmt.Sprintf("Cannot repeat the same function (%s) twice. Specify all columns within single function field", functionField.Name.Value), "graphql", "extractAggregate", nil)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot repeat the same function (%s) twice. Specify all columns within single function field", functionField.Name.Value), nil, nil)
 			}
 
 			if functionField.Name.Value == "count" && functionField.SelectionSet == nil {
@@ -242,7 +243,7 @@ func extractAggregate(v *ast.Field) (map[string][]string, error) {
 	return functionMap, nil
 }
 
-func extractGroupByClause(args []*ast.Argument, store utils.M) ([]interface{}, error) {
+func extractGroupByClause(ctx context.Context, args []*ast.Argument, store utils.M) ([]interface{}, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case utils.GraphQLGroupByArgument:
@@ -253,7 +254,7 @@ func extractGroupByClause(args []*ast.Argument, store utils.M) ([]interface{}, e
 			if obj, ok := temp.([]interface{}); ok {
 				return obj, nil
 			}
-			return nil, utils.LogError(fmt.Sprintf("GraphQL (%s) argument is of type %v, but it should be of type array ([])", utils.GraphQLGroupByArgument, reflect.TypeOf(temp)), "graphql", "extractGroupByClause", nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("GraphQL (%s) argument is of type %v, but it should be of type array ([])", utils.GraphQLGroupByArgument, reflect.TypeOf(temp)), nil, nil)
 		}
 	}
 
@@ -261,7 +262,7 @@ func extractGroupByClause(args []*ast.Argument, store utils.M) ([]interface{}, e
 }
 
 // ExtractWhereClause return the where arg of graphql schema
-func ExtractWhereClause(args []*ast.Argument, store utils.M) (map[string]interface{}, error) {
+func ExtractWhereClause(ctx context.Context, args []*ast.Argument, store utils.M) (map[string]interface{}, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "where":
@@ -282,7 +283,7 @@ func ExtractWhereClause(args []*ast.Argument, store utils.M) (map[string]interfa
 	return utils.M{}, nil
 }
 
-func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, bool, error) {
+func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (*model.ReadOptions, bool, error) {
 	hasOptions := false // Flag to see if options exist
 	options := model.ReadOptions{}
 	for _, v := range args {
@@ -329,14 +330,14 @@ func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, b
 
 			tempInt, ok := temp.([]interface{})
 			if !ok {
-				return nil, hasOptions, fmt.Errorf("Invalid type (%s) for sort", reflect.TypeOf(temp))
+				return nil, hasOptions, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type provided for (sort) expecting array got (%v)", reflect.TypeOf(temp)), nil, nil)
 			}
 
 			sortArray := make([]string, len(tempInt))
 			for i, value := range tempInt {
 				valueString, ok := value.(string)
 				if !ok {
-					return nil, hasOptions, fmt.Errorf("Invalid type (%s) for sort", reflect.TypeOf(value))
+					return nil, hasOptions, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type provided for (sort) each value in array should be string got (%v)", reflect.TypeOf(value)), nil, nil)
 				}
 				sortArray[i] = valueString
 			}

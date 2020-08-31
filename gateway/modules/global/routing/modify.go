@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -28,7 +30,7 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 		}
 
 		if err := json.Unmarshal(data, &params); err != nil {
-			utils.LogWarn("Unable to unmarshal body to JSON", module, handleRequest)
+			helpers.Logger.LogWarn(helpers.GetRequestID(ctx), "Unable to unmarshal request body to JSON ", map[string]interface{}{"route": route.ID})
 			req.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 		}
 	}
@@ -44,12 +46,12 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 	// Set the headers
 	state := map[string]interface{}{"args": params, "auth": auth}
 	headers := append(r.globalConfig.RequestHeaders, route.Modify.RequestHeaders...)
-	prepareHeaders(headers, state).UpdateHeader(req.Header)
+	prepareHeaders(ctx, headers, state).UpdateHeader(req.Header)
 
 	// Don't forget to reset the body
 	if params != nil {
 		// Generate new request body if template was provided
-		newParams, err := r.adjustBody("request", route.Project, token, route, auth, params)
+		newParams, err := r.adjustBody(ctx, "request", route.Project, token, route, auth, params)
 		if err != nil {
 			return "", nil, http.StatusBadRequest, err
 		}
@@ -64,7 +66,7 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 	return token, auth, http.StatusOK, err
 }
 
-func (r *Routing) modifyResponse(res *http.Response, route *config.Route, token string, auth interface{}) error {
+func (r *Routing) modifyResponse(ctx context.Context, res *http.Response, route *config.Route, token string, auth interface{}) error {
 	// Extract the params only if content-type is `application/json` and a response template is provided
 	var params interface{}
 	var data []byte
@@ -77,7 +79,7 @@ func (r *Routing) modifyResponse(res *http.Response, route *config.Route, token 
 		}
 
 		if err := json.Unmarshal(data, &params); err != nil {
-			utils.LogWarn("Unable to unmarshal response body to JSON", module, handleResponse)
+			helpers.Logger.LogWarn(helpers.GetRequestID(ctx), "Unable to unmarshal response body to JSON ", map[string]interface{}{"route": route.ID})
 			res.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 		}
 	}
@@ -85,11 +87,11 @@ func (r *Routing) modifyResponse(res *http.Response, route *config.Route, token 
 	// Set the headers
 	state := map[string]interface{}{"args": params, "auth": auth}
 	headers := append(r.globalConfig.ResponseHeaders, route.Modify.ResponseHeaders...)
-	prepareHeaders(headers, state).UpdateHeader(res.Header)
+	prepareHeaders(ctx, headers, state).UpdateHeader(res.Header)
 
 	// If params is not nil we need to template the response
 	if params != nil {
-		newParams, err := r.adjustBody("response", route.Project, token, route, auth, params)
+		newParams, err := r.adjustBody(ctx, "response", route.Project, token, route, auth, params)
 		if err != nil {
 			return err
 		}

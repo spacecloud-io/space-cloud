@@ -122,13 +122,13 @@ func TestSQL_Delete(t *testing.T) {
 		},
 	}
 
-	if utils.DBType(*dbType) == utils.SQLServer {
+	if model.DBType(*dbType) == model.SQLServer {
 		testCases = mssqlCases
 	} else {
 		testCases = sqlCases
 	}
 
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("Delete() Couldn't establishing connection with database", dbType)
 	}
@@ -161,7 +161,7 @@ func TestSQL_Delete(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("Delete() Scanning error", err)
 				}
-				mysqlTypeCheck(utils.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if !reflect.DeepEqual(tt.wantReadResult, readResult) {
@@ -201,7 +201,7 @@ func TestSQL_DeleteCollection(t *testing.T) {
 			wantResult: []interface{}{},
 		},
 	}
-	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("DeleteCollection Couldn't establishing connection with database", dbType)
 	}
@@ -232,7 +232,7 @@ func TestSQL_DeleteCollection(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("DeleteCollection Scanning error", err)
 				}
-				mysqlTypeCheck(utils.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if !reflect.DeepEqual(tt.wantResult, readResult) {

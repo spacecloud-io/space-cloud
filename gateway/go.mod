@@ -24,7 +24,7 @@ require (
 	github.com/google/go-cmp v0.5.0
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.3
-	github.com/gorilla/websocket v1.4.1
+	github.com/gorilla/websocket v1.4.2
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
 	github.com/graphql-go/graphql v0.7.8
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0 // indirect
@@ -37,19 +37,18 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
-	github.com/kr/pty v1.1.4 // indirect
 	github.com/lib/pq v1.2.0
-	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mholt/certmagic v0.9.1
 	github.com/mitchellh/copystructure v1.0.0 // indirect
-	github.com/mitchellh/mapstructure v1.1.2
+	github.com/mitchellh/mapstructure v1.3.3
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0
-	github.com/segmentio/ksuid v1.0.2
-	github.com/sirupsen/logrus v1.4.2
+	github.com/segmentio/ksuid v1.0.3
+	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
-	github.com/spaceuptech/space-api-go v0.17.3
+	github.com/spaceuptech/helpers v0.1.1
+	github.com/spaceuptech/space-api-go v0.18.1
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1
 	github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51 // indirect
@@ -61,11 +60,10 @@ require (
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.3.3
 	go.mongodb.org/mongo-driver v1.1.1
-	go.uber.org/zap v1.15.0 // indirect
 	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4
 	golang.org/x/net v0.0.0-20200222125558-5a598a2470a0
+	golang.org/x/sys v0.0.0-20200824131525-c12d262b63d8 // indirect
 	google.golang.org/api v0.18.0
-	gopkg.in/AlecAivazis/survey.v1 v1.8.5
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2

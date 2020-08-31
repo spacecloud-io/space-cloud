@@ -1,18 +1,19 @@
 package routing
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 const (
-	module         string = "ingress-route"
-	handleRequest  string = "handle-request"
-	handleResponse string = "handle-response"
+	module string = "ingress-route"
 )
 
 func (r *Routing) addProjectRoutes(project string, routes config.Routes) {
@@ -31,7 +32,7 @@ func (r *Routing) deleteProjectRoutes(project string) {
 	r.routes = newRoutes
 }
 
-func (r *Routing) selectRoute(host, method, url string) (*config.Route, error) {
+func (r *Routing) selectRoute(ctx context.Context, host, method, url string) (*config.Route, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -58,9 +59,9 @@ func (r *Routing) selectRoute(host, method, url string) (*config.Route, error) {
 				return route, nil
 			}
 		default:
-			return nil, fmt.Errorf("invalid type (%s) provided for url matching", route.Source.Type)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type (%s) provided for url matching", route.Source.Type), nil, nil)
 		}
 	}
 
-	return nil, fmt.Errorf("route not found for provided host (%s), method (%s) and url (%s)", host, method, url)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Route not found for provided host (%s), method (%s) and url (%s)", host, method, url), nil, nil)
 }

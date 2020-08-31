@@ -1,9 +1,11 @@
 package eventing
 
 import (
+	"context"
+	"fmt"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
@@ -21,7 +23,7 @@ func (m *Module) ProcessTransmittedEvents(eventDocs []*model.EventDocument) {
 		if eventDoc.Token >= start && eventDoc.Token <= end {
 			timestamp, err := time.Parse(time.RFC3339, eventDoc.Timestamp)
 			if err != nil {
-				logrus.Errorf("Could not parse (%s) in event doc (%s) as time - %s", eventDoc.Timestamp, eventDoc.ID, err.Error())
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Could not parse (%s) in event doc (%s) as time", eventDoc.Timestamp, eventDoc.ID), err, nil)
 				continue
 			}
 

@@ -83,10 +83,12 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('e')", nil)
 			}
-
 			err = viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name"))
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+			if err := viper.BindPFlag("image-prefix", cmd.Flags().Lookup("image-prefix")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('image-prefix')", nil)
 			}
 		},
 		RunE: actionSetup,
@@ -145,6 +147,7 @@ func Commands() []*cobra.Command {
 	if err != nil {
 		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
+	setup.Flags().StringP("image-prefix", "", "spaceuptech", "Prefix to use for providing custom image names")
 
 	if err := setup.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
 		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
@@ -160,11 +163,15 @@ func Commands() []*cobra.Command {
 			if err := viper.BindPFlag("version", cmd.Flags().Lookup("version")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('version')", nil)
 			}
+			if err := viper.BindPFlag("image-prefix", cmd.Flags().Lookup("image-prefix")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('image-prefix')", nil)
+			}
 		},
 		RunE: actionUpgrade,
 	}
 	upgrade.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
 	upgrade.Flags().StringP("version", "", "default", "version to use for upgrade")
+	upgrade.Flags().StringP("image-prefix", "", "spaceuptech", "Prefix to use for providing custom image names")
 
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
 		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
@@ -252,14 +259,16 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 	volumes := viper.GetStringSlice("volume")
 	environmentVariables := viper.GetStringSlice("env")
 	clusterName := viper.GetString("cluster-name")
+	imagePrefix := viper.GetString("image-prefix")
 
-	return Setup(userName, key, config, version, secret, clusterName, local, portHTTP, portHTTPS, volumes, environmentVariables)
+	return Setup(userName, key, config, version, secret, imagePrefix, clusterName, local, portHTTP, portHTTPS, volumes, environmentVariables)
 }
 
 func actionUpgrade(cmd *cobra.Command, args []string) error {
 	clusterName := viper.GetString("cluster-name")
 	version := viper.GetString("version")
-	return Upgrade(clusterName, version)
+	imagePrefix := viper.GetString("image-prefix")
+	return Upgrade(clusterName, version, imagePrefix)
 }
 
 func actionDestroy(cmd *cobra.Command, args []string) error {

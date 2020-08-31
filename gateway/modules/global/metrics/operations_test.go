@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func testFuncIsEqual(t *testing.T, x, y interface{}) {
@@ -53,7 +53,7 @@ func testFuncGenerateFileSyncMapData(key string) *sync.Map {
 	return &v
 }
 
-func testFuncIsMetricOpEqual(t *testing.T, gotValue, wantValue interface{}, op utils.OperationType, module string) {
+func testFuncIsMetricOpEqual(t *testing.T, gotValue, wantValue interface{}, op model.OperationType, module string) {
 	gotMetrics := gotValue.(*metrics)
 	wantMetrics := wantValue.(*metrics)
 	switch module {
@@ -63,24 +63,24 @@ func testFuncIsMetricOpEqual(t *testing.T, gotValue, wantValue interface{}, op u
 		testFuncIsEqual(t, gotMetrics.function, wantMetrics.function)
 	case fileModule:
 		switch op {
-		case utils.Create:
+		case model.Create:
 			testFuncIsEqual(t, gotMetrics.fileStore.create, wantMetrics.fileStore.create)
-		case utils.Read:
+		case model.Read:
 			testFuncIsEqual(t, gotMetrics.fileStore.read, wantMetrics.fileStore.read)
-		case utils.List:
+		case model.List:
 			testFuncIsEqual(t, gotMetrics.fileStore.list, wantMetrics.fileStore.list)
-		case utils.Delete:
+		case model.Delete:
 			testFuncIsEqual(t, gotMetrics.fileStore.delete, wantMetrics.fileStore.delete)
 		}
 	case databaseModule:
 		switch op {
-		case utils.Create:
+		case model.Create:
 			testFuncIsEqual(t, gotMetrics.crud.create, wantMetrics.crud.create)
-		case utils.Read:
+		case model.Read:
 			testFuncIsEqual(t, gotMetrics.crud.read, wantMetrics.crud.read)
-		case utils.Update:
+		case model.Update:
 			testFuncIsEqual(t, gotMetrics.crud.update, wantMetrics.crud.update)
-		case utils.Delete:
+		case model.Delete:
 			testFuncIsEqual(t, gotMetrics.crud.delete, wantMetrics.crud.delete)
 		}
 	}
@@ -91,7 +91,7 @@ func TestModule_AddDBOperation(t *testing.T) {
 		dbAlias string
 		col     string
 		count   int64
-		op      utils.OperationType
+		op      model.OperationType
 	}
 	tests := []struct {
 		name   string
@@ -106,7 +106,7 @@ func TestModule_AddDBOperation(t *testing.T) {
 				dbAlias: "dbAlias",
 				col:     "table",
 				count:   100,
-				op:      utils.Create,
+				op:      model.Create,
 			},
 			fields: &Module{},
 			want:   testFuncGenerateDatabaseSyncMapData(generateDatabaseKey("projectID", "dbAlias", "table"), 100, 0, 0, 0),
@@ -118,7 +118,7 @@ func TestModule_AddDBOperation(t *testing.T) {
 				dbAlias: "dbAlias",
 				col:     "table",
 				count:   100,
-				op:      utils.Read,
+				op:      model.Read,
 			},
 			fields: &Module{},
 			want:   testFuncGenerateDatabaseSyncMapData(generateDatabaseKey("projectID", "dbAlias", "table"), 0, 100, 0, 0),
@@ -130,7 +130,7 @@ func TestModule_AddDBOperation(t *testing.T) {
 				dbAlias: "dbAlias",
 				col:     "table",
 				count:   100,
-				op:      utils.Update,
+				op:      model.Update,
 			},
 			fields: &Module{},
 			want:   testFuncGenerateDatabaseSyncMapData(generateDatabaseKey("projectID", "dbAlias", "table"), 0, 0, 100, 0),
@@ -142,7 +142,7 @@ func TestModule_AddDBOperation(t *testing.T) {
 				dbAlias: "dbAlias",
 				col:     "table",
 				count:   100,
-				op:      utils.Delete,
+				op:      model.Delete,
 			},
 			fields: &Module{},
 			want:   testFuncGenerateDatabaseSyncMapData(generateDatabaseKey("projectID", "dbAlias", "table"), 0, 0, 0, 100),
@@ -223,7 +223,7 @@ func TestModule_AddFileOperation(t *testing.T) {
 	type args struct {
 		project   string
 		storeType string
-		op        utils.OperationType
+		op        model.OperationType
 	}
 	tests := []struct {
 		name   string
@@ -236,7 +236,7 @@ func TestModule_AddFileOperation(t *testing.T) {
 			args: args{
 				project:   "projectID",
 				storeType: "local",
-				op:        utils.Create,
+				op:        model.Create,
 			},
 			fields: &Module{},
 			want:   testFuncGenerateFileSyncMapData(generateFileKey("projectID", "local")),
@@ -246,7 +246,7 @@ func TestModule_AddFileOperation(t *testing.T) {
 			args: args{
 				project:   "projectID",
 				storeType: "local",
-				op:        utils.Read,
+				op:        model.Read,
 			},
 			fields: &Module{},
 			want:   testFuncGenerateFileSyncMapData(generateFileKey("projectID", "local")),
@@ -256,7 +256,7 @@ func TestModule_AddFileOperation(t *testing.T) {
 			args: args{
 				project:   "projectID",
 				storeType: "local",
-				op:        utils.List,
+				op:        model.List,
 			},
 			fields: &Module{},
 			want:   testFuncGenerateFileSyncMapData(generateFileKey("projectID", "local")),
@@ -266,7 +266,7 @@ func TestModule_AddFileOperation(t *testing.T) {
 			args: args{
 				project:   "projectID",
 				storeType: "local",
-				op:        utils.Delete,
+				op:        model.Delete,
 			},
 			fields: &Module{},
 			want:   testFuncGenerateFileSyncMapData(generateFileKey("projectID", "local")),

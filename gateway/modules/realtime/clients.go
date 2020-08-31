@@ -1,8 +1,11 @@
 package realtime
 
 import (
+	"context"
 	"fmt"
 	"sync"
+
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
@@ -35,11 +38,11 @@ func (m *Module) AddLiveQuery(id, _, dbAlias, group, clientID string, whereObj m
 }
 
 // RemoveLiveQuery removes a particular live query
-func (m *Module) RemoveLiveQuery(dbAlias, group, clientID, queryID string) error {
+func (m *Module) RemoveLiveQuery(ctx context.Context, dbAlias, group, clientID, queryID string) error {
 	// Load clients in a particular group
 	clientsTemp, ok := m.groups.Load(createGroupKey(dbAlias, group))
 	if !ok {
-		return fmt.Errorf("no subscription found on db (%s) and col (%s)", dbAlias, group)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("No subscription found on database with alias (%s) and col (%s)", dbAlias, group), nil, nil)
 	}
 
 	clients := clientsTemp.(*clientsStub)
@@ -47,7 +50,7 @@ func (m *Module) RemoveLiveQuery(dbAlias, group, clientID, queryID string) error
 	// Load the queries of a particular client
 	queriesTemp, ok := clients.clients.Load(clientID)
 	if !ok {
-		return fmt.Errorf("no subscription found for client (%s)", clientID)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("No subscription found for client (%s)", clientID), nil, nil)
 	}
 	queries := queriesTemp.(*sync.Map)
 

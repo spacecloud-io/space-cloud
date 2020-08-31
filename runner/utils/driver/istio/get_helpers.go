@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	"istio.io/client-go/pkg/apis/networking/v1alpha3"
 	appsv1 "k8s.io/api/apps/v1"
 	kubeErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -54,13 +54,13 @@ func (i *Istio) getAllVersionScaleConfig(ctx context.Context, ns, serviceID stri
 
 	// Throw error if the deployment contains no config at all
 	if len(deployments.Items) == 0 {
-		return nil, fmt.Errorf("no versions of service (%s) has been deployed", serviceID)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("no versions of service (%s) has been deployed", serviceID), nil, nil)
 	}
 
 	// Load the scale config of each version
 	c := make(map[string]model.ScaleConfig, len(deployments.Items))
 	for _, deployment := range deployments.Items {
-		scale, err := getScaleConfigFromDeployment(deployment)
+		scale, err := getScaleConfigFromDeployment(ctx, deployment)
 		if err != nil {
 			return nil, err
 		}
@@ -70,21 +70,18 @@ func (i *Istio) getAllVersionScaleConfig(ctx context.Context, ns, serviceID stri
 	return c, nil
 }
 
-func getScaleConfigFromDeployment(deployment appsv1.Deployment) (model.ScaleConfig, error) {
+func getScaleConfigFromDeployment(ctx context.Context, deployment appsv1.Deployment) (model.ScaleConfig, error) {
 	concurrency, err := strconv.Atoi(deployment.Annotations["concurrency"])
 	if err != nil {
-		logrus.Errorf("Error getting service in istio - unable convert string to int annotation concurrency - %v", err)
-		return model.ScaleConfig{}, err
+		return model.ScaleConfig{}, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error getting service in istio - unable convert string to int annotation concurrency", err, nil)
 	}
 	minReplicas, err := strconv.Atoi(deployment.Annotations["minReplicas"])
 	if err != nil {
-		logrus.Errorf("Error getting service in istio - unable convert string to int annotation minReplicas - %v", err)
-		return model.ScaleConfig{}, err
+		return model.ScaleConfig{}, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error getting service in istio - unable convert string to int annotation minReplicas", err, nil)
 	}
 	maxReplicas, err := strconv.Atoi(deployment.Annotations["maxReplicas"])
 	if err != nil {
-		logrus.Errorf("Error getting service in istio - unable convert string to int annotation maxReplicas - %v", err)
-		return model.ScaleConfig{}, err
+		return model.ScaleConfig{}, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error getting service in istio - unable convert string to int annotation maxReplicas", err, nil)
 	}
 
 	mode := deployment.Annotations["mode"]

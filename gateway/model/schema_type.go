@@ -89,3 +89,32 @@ const (
 	// DefaultIndexOrder specifies default order of order
 	DefaultIndexOrder int = 1
 )
+
+// InspectorFieldType is the type for storing sql inspection information
+type InspectorFieldType struct {
+	FieldName    string `db:"Field"`
+	FieldType    string `db:"Type"`
+	FieldNull    string `db:"Null"`
+	FieldKey     string `db:"Key"`
+	FieldDefault string `db:"Default"`
+}
+
+// ForeignKeysType is the type for storing  foreignkeys information of sql inspection
+type ForeignKeysType struct {
+	TableName      string `db:"TABLE_NAME"`
+	ColumnName     string `db:"COLUMN_NAME"`
+	ConstraintName string `db:"CONSTRAINT_NAME"`
+	DeleteRule     string `db:"DELETE_RULE"`
+	RefTableName   string `db:"REFERENCED_TABLE_NAME"`
+	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
+}
+
+// IndexType is the type use to indexkey information of sql inspection
+type IndexType struct {
+	TableName  string `db:"TABLE_NAME"`
+	ColumnName string `db:"COLUMN_NAME"`
+	IndexName  string `db:"INDEX_NAME"`
+	Order      int    `db:"SEQ_IN_INDEX"`
+	Sort       string `db:"SORT"`
+	IsUnique   string `db:"IS_UNIQUE"`
+}

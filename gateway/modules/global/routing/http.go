@@ -1,13 +1,14 @@
 package routing
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
@@ -28,7 +29,7 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 		host, url := getHostAndURL(request)
 
 		// Select a route based on host and url
-		route, err := r.selectRoute(host, request.Method, url)
+		route, err := r.selectRoute(request.Context(), host, request.Method, url)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
@@ -42,7 +43,7 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 			return
 		}
 
-		logrus.Debugf("selected route (%v) for request (%s)", route, request.URL.String())
+		helpers.Logger.LogDebug(helpers.GetRequestID(request.Context()), fmt.Sprintf("selected route (%v) for request (%s)", route, request.URL.String()), nil)
 
 		// Apply the rewrite url if provided. It is the users responsibility to make sure both url
 		// and rewrite url starts with a '/'
@@ -50,10 +51,10 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 
 		// Proxy the request
 
-		if err := setRequest(request, route, url); err != nil {
+		if err := setRequest(request.Context(), request, route, url); err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
-			logrus.Errorf("Failed set request for route (%v) - %s", route, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(request.Context()), fmt.Sprintf("Failed set request for route (%v)", route), err, nil)
 			return
 		}
 
@@ -62,12 +63,12 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 		if err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
-			logrus.Errorf("Failed to make request for route (%v) - %s", route, err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(request.Context()), fmt.Sprintf("Failed to make request for route (%v)", route), err, nil)
 			return
 		}
 		defer utils.CloseTheCloser(response.Body)
 
-		if err := r.modifyResponse(response, route, token, auth); err != nil {
+		if err := r.modifyResponse(request.Context(), response, route, token, auth); err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
 			return
@@ -82,10 +83,10 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 		// Copy the body
 		n, err := io.Copy(writer, response.Body)
 		if err != nil {
-			logrus.Errorf("Failed to copy upstream (%s) response to downstream - %s", request.URL.String(), err.Error())
+			_ = helpers.Logger.LogError(helpers.GetRequestID(request.Context()), fmt.Sprintf("Failed to copy upstream (%s) response to downstream", request.URL.String()), err, nil)
 		}
 
-		logrus.Debugf("Successfully copied %d bytes from upstream server (%s)", n, request.URL.String())
+		helpers.Logger.LogDebug(helpers.GetRequestID(request.Context()), fmt.Sprintf("Successfully copied %d bytes from upstream server (%s)", n, request.URL.String()), nil)
 	}
 }
 
@@ -104,13 +105,13 @@ func rewriteURL(url string, route *config.Route) string {
 	return url
 }
 
-func setRequest(request *http.Request, route *config.Route, url string) error {
+func setRequest(ctx context.Context, request *http.Request, route *config.Route, url string) error {
 	// http: Request.RequestURI can't be set in client requests.
 	// http://golang.org/src/pkg/net/http/client.go
 	request.RequestURI = ""
 
 	// Change the request with the destination host, port and url
-	target, err := route.SelectTarget(-1) // pass a -ve weight to randomly generate
+	target, err := route.SelectTarget(ctx, -1) // pass a -ve weight to randomly generate
 	if err != nil {
 		return err
 	}
@@ -127,7 +128,7 @@ func setRequest(request *http.Request, route *config.Route, url string) error {
 	return nil
 }
 
-func prepareHeaders(headers config.Headers, state map[string]interface{}) config.Headers {
+func prepareHeaders(ctx context.Context, headers config.Headers, state map[string]interface{}) config.Headers {
 	out := make([]config.Header, len(headers))
 	for i, header := range headers {
 		// First create a new header object

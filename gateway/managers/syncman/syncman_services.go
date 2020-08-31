@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -18,7 +18,7 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	defer s.lock.Unlock()
 
 	value.ID = service
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -29,7 +29,6 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	projectConfig.Modules.Services.Services[service] = value
 
 	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
-		logrus.Errorf("error setting services config - %s", err.Error())
 		return http.StatusInternalServerError, err
 	}
 
@@ -46,7 +45,7 @@ func (s *Manager) DeleteService(ctx context.Context, project, service string, pa
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -54,7 +53,6 @@ func (s *Manager) DeleteService(ctx context.Context, project, service string, pa
 	delete(projectConfig.Modules.Services.Services, service)
 
 	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
-		logrus.Errorf("error setting services config - %s", err.Error())
 		return http.StatusInternalServerError, err
 	}
 
@@ -71,14 +69,14 @@ func (s *Manager) GetServices(ctx context.Context, project, serviceID string, pa
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
 	if serviceID != "*" {
 		service, ok := projectConfig.Modules.Services.Services[serviceID]
 		if !ok {
-			return http.StatusBadRequest, nil, fmt.Errorf("serviceID (%s) not present in config", serviceID)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("service with id (%s) does not exists", serviceID), nil, nil)
 		}
 		return http.StatusOK, []interface{}{service}, nil
 	}

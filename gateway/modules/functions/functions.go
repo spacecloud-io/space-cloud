@@ -1,14 +1,16 @@
 package functions
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"text/template"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Module is responsible for functions
@@ -35,8 +37,6 @@ func Init(auth model.AuthFunctionInterface, manager *syncman.Manager, hook model
 
 const (
 	module            string = "remote-services"
-	segmentSetConfig  string = "set-config"
-	segmentCall       string = "call"
 	segmentGoTemplate string = "goTemplate"
 )
 
@@ -46,7 +46,7 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 	defer m.lock.Unlock()
 
 	if c == nil {
-		utils.LogWarn("Empty config module provided", module, segmentSetConfig)
+		helpers.Logger.LogWarn(helpers.GetRequestID(context.TODO()), "Empty config provided for functions module", map[string]interface{}{"project": project})
 		return nil
 	}
 
@@ -92,7 +92,7 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 					}
 				}
 			default:
-				return utils.LogError(fmt.Sprintf("Invalid templating engine (%s) provided", endpoint.Tmpl), module, segmentSetConfig, nil)
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided", endpoint.Tmpl), nil, nil)
 			}
 		}
 	}

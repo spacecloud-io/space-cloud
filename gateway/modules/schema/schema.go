@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
@@ -11,6 +11,7 @@ import (
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -80,7 +81,6 @@ func (s *Schema) parseSchema(crud config.Crud) error {
 
 // Parser function parses the schema im module
 func (s *Schema) Parser(crud config.Crud) (model.Type, error) {
-
 	schema := make(model.Type, len(crud))
 	for dbName, v := range crud {
 		collection := model.Collection{}
@@ -127,7 +127,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 		for _, field := range v.(*ast.ObjectDefinition).Fields {
 
 			if field.Type == nil {
-				return nil, fmt.Errorf("type not provided for the field (%s)", field.Name.Value)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Type not provided for collection/table schema (%s) with field (%s)", collectionName, field.Name.Value), nil, nil)
 			}
 
 			fieldTypeStuct := model.FieldType{
@@ -155,7 +155,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 							}
 						}
 						if fieldTypeStuct.Default == nil {
-							return nil, fmt.Errorf("default directive must be accompanied with value field")
+							return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Default directive must be accompanied with value field", nil, nil)
 						}
 					case model.DirectiveIndex, model.DirectiveUnique:
 						fieldTypeStuct.IsIndex = true
@@ -168,19 +168,22 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.IndexInfo.Group, ok = val.(string)
 								if !ok {
-									return nil, fmt.Errorf("invalid variable type (%s) provided for %s in %s", reflect.TypeOf(val), arg.Name.Value, fieldTypeStuct.FieldName)
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 							case "order":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.IndexInfo.Order, ok = val.(int)
 								if !ok {
-									return nil, fmt.Errorf("invalid variable type (%s) provided for %s in %s", reflect.TypeOf(val), arg.Name.Value, fieldTypeStuct.FieldName)
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected int", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 							case "sort":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								sort, ok := val.(string)
 								if !ok || (sort != "asc" && sort != "desc") {
-									return nil, fmt.Errorf("invalid value (%v) provided for argument (sort) in field (%s)", val, fieldTypeStuct.FieldName)
+									if !ok {
+										return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+									}
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unknow value provided for field (%s) directinve @(%s) argument (%s) got (%v) expected either (asc) or (desc)", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 								fieldTypeStuct.IndexInfo.Sort = sort
 							}
@@ -217,7 +220,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 
 						// Throw an error if from and to are unavailable
 						if fieldTypeStuct.LinkedTable.From == "" || fieldTypeStuct.LinkedTable.To == "" {
-							return nil, errors.New("link directive must be accompanied with to and from fields")
+							return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Link directive must be accompanied with (to) and (from) arguments", nil, nil)
 						}
 
 					case model.DirectiveForeign:
@@ -250,7 +253,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 						}
 						fieldTypeStuct.JointTable.ConstraintName = getConstraintName(collectionName, fieldTypeStuct.FieldName)
 					default:
-						return nil, fmt.Errorf("unknow directive (%s) provided for field (%s)", directive.Name.Value, fieldTypeStuct.FieldName)
+						return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unknown directive (%s) provided for field (%s)", directive.Name.Value, fieldTypeStuct.FieldName), nil, nil)
 					}
 				}
 			}
@@ -266,7 +269,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 
 	// Throw an error if the collection wasn't found
 	if !isCollectionFound {
-		return nil, fmt.Errorf("collection %s could not be found in schema", collectionName)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Collection/Table (%s) not found in schema", collectionName), nil, nil)
 	}
 	return fieldMap, nil
 }
@@ -279,7 +282,7 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *model.Field
 	case kinds.List:
 		// Lists are not allowed for primary and foreign keys
 		if fieldTypeStuct.IsPrimary || fieldTypeStuct.IsForeign {
-			return "", fmt.Errorf("invalid type for field %s - primary and foreign keys cannot be made on lists", fieldTypeStuct.FieldName)
+			return "", helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Primary and foreign keys directives cannot be added on field (%s) with type lists", fieldTypeStuct.FieldName), nil, nil)
 		}
 
 		fieldTypeStuct.IsList = true
@@ -319,6 +322,6 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *model.Field
 			return model.TypeObject, nil
 		}
 	default:
-		return "", fmt.Errorf("invalid field kind `%s` provided for field `%s`", fieldType.GetKind(), fieldTypeStuct.FieldName)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid field kind `%s` provided for field `%s`", fieldType.GetKind(), fieldTypeStuct.FieldName), nil, nil)
 	}
 }

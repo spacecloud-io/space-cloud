@@ -4,9 +4,10 @@ package mgo
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"reflect"
 	"testing"
+
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -128,11 +129,12 @@ func TestSQL_Delete(t *testing.T) {
 	if err := coll.Drop(context.Background()); err != nil {
 		t.Log("Create() Couldn't truncate table", err)
 	}
+	ctx := context.Background()
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			// insert data in db
-			if _, err := coll.InsertMany(tt.args.ctx, tt.insertQuery); err != nil {
+			if _, err := coll.InsertMany(context.Background(), tt.insertQuery); err != nil {
 				t.Errorf("Delete() cannot insert data error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
@@ -148,16 +150,16 @@ func TestSQL_Delete(t *testing.T) {
 
 			results := []interface{}{}
 			findOptions := options.Find()
-			cur, err := coll.Find(tt.args.ctx, tt.find, findOptions)
+			cur, err := coll.Find(context.Background(), tt.find, findOptions)
 			if err != nil {
 				t.Log("Create() got error", err)
 			}
-			defer func() { _ = cur.Close(tt.args.ctx) }()
+			defer func() { _ = cur.Close(ctx) }()
 
 			var count int64
 			// Finding multiple documents returns a cursor
 			// Iterating through the cursor allows us to decode documents one at a time
-			for cur.Next(tt.args.ctx) {
+			for cur.Next(ctx) {
 				// Increment the counter
 				count++
 
@@ -217,11 +219,12 @@ func TestSQL_DeleteCollection(t *testing.T) {
 		t.Fatal("DeleteCollection Couldn't establishing connection with database", dbType)
 	}
 	coll := db.client.Database("myproject").Collection("companies")
+	ctx := context.Background()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// create table
-			if _, err := db.client.Database("myproject").Collection(tt.collection).InsertOne(tt.args.ctx, tt.createQuery); err != nil {
+			if _, err := db.client.Database("myproject").Collection(tt.collection).InsertOne(context.Background(), tt.createQuery); err != nil {
 				t.Errorf("DeleteCollection couldn't insert rows got error - (%v)", err)
 			}
 
@@ -231,7 +234,7 @@ func TestSQL_DeleteCollection(t *testing.T) {
 			}
 
 			// check if table is actually deleted
-			collections, err := db.client.Database("myproject").ListCollectionNames(tt.args.ctx, map[string]interface{}{})
+			collections, err := db.client.Database("myproject").ListCollectionNames(ctx, map[string]interface{}{})
 			if err != nil {
 				t.Error("DeleteCollection query error", err)
 				return

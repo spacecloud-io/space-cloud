@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/helpers"
 )
 
 // Login handles the admin login operation
@@ -20,5 +20,5 @@ func (m *Manager) Login(ctx context.Context, user, pass string) (int, string, er
 		return http.StatusOK, token, nil
 	}
 
-	return http.StatusUnauthorized, "", utils.LogError("Invalid credentials provided", "admin", "login", nil)
+	return http.StatusUnauthorized, "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid username or password provided", nil, map[string]interface{}{"user": user, "pass": pass})
 }

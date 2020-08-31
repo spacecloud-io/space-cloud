@@ -3,27 +3,23 @@ package gcpstorage
 import (
 	"bufio"
 	"context"
-	"io/ioutil"
-	"os"
 	"strings"
 
 	"cloud.google.com/go/storage"
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/api/iterator"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // ListDir lists a directory in GCPStorage
-func (g *GCPStorage) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
+func (g *GCPStorage) ListDir(ctx context.Context, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
 	// path should not start with a backslash
 	path := strings.Trim(req.Path, "/") + "/"
 	if path == "/" {
 		path = ""
 	}
 
-	it := g.client.Bucket(g.bucket).Objects(context.TODO(), &storage.Query{
+	it := g.client.Bucket(g.bucket).Objects(ctx, &storage.Query{
 		Prefix:    path,
 		Delimiter: "/",
 	})
@@ -56,37 +52,13 @@ func (g *GCPStorage) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesRes
 }
 
 // ReadFile reads a file from GCPStorage
-func (g *GCPStorage) ReadFile(path string) (*model.File, error) {
+func (g *GCPStorage) ReadFile(ctx context.Context, path string) (*model.File, error) {
 	path = strings.TrimPrefix(path, "/")
-	u2 := uuid.NewV4()
 
-	tmpfile, err := ioutil.TempFile("", u2.String())
+	rc, err := g.client.Bucket(g.bucket).Object(path).NewReader(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	rc, err := g.client.Bucket(g.bucket).Object(path).NewReader(context.TODO())
-	if err != nil {
-		return nil, err
-	}
-	defer utils.CloseTheCloser(rc)
-
-	data, err := ioutil.ReadAll(rc)
-	if err != nil {
-		return nil, err
-	}
-	err = ioutil.WriteFile(tmpfile.Name(), data, 0644)
-	if err != nil {
-		return nil, err
-	}
-
-	tmpfile, err = os.Open(tmpfile.Name())
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.File{File: bufio.NewReader(tmpfile), Close: func() error {
-		defer func() { _ = os.Remove(tmpfile.Name()) }()
-		return tmpfile.Close()
-	}}, nil
+	return &model.File{File: bufio.NewReader(rc), Close: func() error { return rc.Close() }}, nil
 }

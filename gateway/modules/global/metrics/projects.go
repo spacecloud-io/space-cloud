@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	"github.com/spaceuptech/space-api-go/types"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -100,13 +100,13 @@ func (m *Module) updateSCMetrics(id string, set, min map[string]interface{}) {
 	defer cancel()
 	result, err := m.sink.Upsert("config_metrics").Where(types.Cond("id", "==", id)).Set(set).Min(min).Apply(ctx)
 	if err != nil {
-		logrus.Errorln("Unable to push metrics:", err)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to push metrics", err, nil)
 	}
 	if result == nil {
 		// when space api go is not able to connect to server, the result is empty
 		return
 	}
 	if result.Status != http.StatusOK {
-		logrus.Errorf("Unable to push metrics - (%d) (%s)", result.Status, result.Error)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to push metrics", fmt.Errorf(result.Error), map[string]interface{}{"statusCode": result.Status})
 	}
 }

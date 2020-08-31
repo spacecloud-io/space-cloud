@@ -1,6 +1,7 @@
 package bolt
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -17,7 +18,7 @@ func TestBolt_Create(t *testing.T) {
 	for _, tt := range generateCreateTestCases() {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, err := b.Create(tt.args.ctx, tt.args.col, tt.args.req)
+			got, err := b.Create(context.Background(), tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 				return

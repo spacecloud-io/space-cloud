@@ -1,12 +1,13 @@
 package crud
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 )
 
-func (m *Module) createBatch(project, dbAlias, col string, doc interface{}) (int64, error) {
+func (m *Module) createBatch(ctx context.Context, project, dbAlias, col string, doc interface{}) (int64, error) {
 	response := make(batchResponseChan, 1)
 	defer close(response)
 
@@ -20,7 +21,7 @@ func (m *Module) createBatch(project, dbAlias, col string, doc interface{}) (int
 		docsInserted = int64(len(docType))
 		docArray = docType
 	default:
-		return 0, fmt.Errorf("unknown documents type %T", docType)
+		return 0, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot create batch request unkownd doc type (%T) provided)", docType), nil, nil)
 	}
 
 	// Simply return if 0 docs are to be inserted
@@ -30,8 +31,7 @@ func (m *Module) createBatch(project, dbAlias, col string, doc interface{}) (int
 
 	ch, ok := m.batchMapTableToChan[project][dbAlias][col] // get channel for specified table
 	if !ok {
-		logrus.Errorf("error converting insert request to batch request unable to find channel for database %s & collection %s", dbAlias, col)
-		return 0, fmt.Errorf("cannot find channel for database %s & collection %s", dbAlias, col)
+		return 0, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Cannot convert insert request to batch request", fmt.Errorf("cannot find channel for database %s & collection %s", dbAlias, col), nil)
 	}
 	ch.request <- batchRequest{documents: docArray, response: response}
 	result := <-response

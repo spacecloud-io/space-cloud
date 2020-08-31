@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/doug-martin/goqu/v8"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	_ "github.com/denisenkom/go-mssqldb"                // Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
@@ -23,7 +23,7 @@ func (s *SQL) Create(ctx context.Context, col string, req *model.CreateRequest) 
 		return 0, err
 	}
 
-	logrus.Debugf("Executing create query (%v): %s - %v", req, sqlQuery, args)
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Executing create query", map[string]interface{}{"sqlQuery": sqlQuery, "queryArgs": args})
 	res, err := doExecContext(ctx, sqlQuery, args, s.client)
 	if err != nil {
 		return 0, err
@@ -35,8 +35,8 @@ func (s *SQL) Create(ctx context.Context, col string, req *model.CreateRequest) 
 func (s *SQL) generateCreateQuery(col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dbType := s.dbType
-	if dbType == string(utils.SQLServer) {
-		dbType = string(utils.Postgres)
+	if dbType == string(model.SQLServer) {
+		dbType = string(model.Postgres)
 	}
 
 	dialect := goqu.Dialect(dbType)
@@ -72,7 +72,7 @@ func (s *SQL) generateCreateQuery(col string, req *model.CreateRequest) (string,
 	}
 
 	sqlQuery = strings.Replace(sqlQuery, "\"", "", -1)
-	if s.dbType == string(utils.SQLServer) {
+	if s.dbType == string(model.SQLServer) {
 		sqlQuery = s.generateQuerySQLServer(sqlQuery)
 	}
 	return sqlQuery, args, nil

@@ -3,11 +3,13 @@ package filestore
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // CreateDir creates a directory at the provided path
@@ -18,7 +20,7 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 	}
 
 	// Check if the user is authorised to make this request
-	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, model.FileCreate, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -31,13 +33,13 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 		return http.StatusInternalServerError, err
 	}
 
-	if err = m.store.CreateDir(req); err != nil {
+	if err = m.store.CreateDir(ctx, req); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
 		return http.StatusInternalServerError, nil
 	}
 
 	m.eventing.HookStage(ctx, intent, nil)
-	m.metricsHook(project, string(m.store.GetStoreType()), utils.Create)
+	m.metricsHook(project, string(m.store.GetStoreType()), model.Create)
 	return http.StatusOK, err
 }
 
@@ -79,7 +81,7 @@ func (m *Module) DeleteFile(ctx context.Context, project, token string, path str
 	}
 
 	// Check if the user is authorised to make this request
-	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileDelete, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, model.FileDelete, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -92,13 +94,13 @@ func (m *Module) DeleteFile(ctx context.Context, project, token string, path str
 		return http.StatusInternalServerError, err
 	}
 
-	if err = m.store.DeleteFile(path); err != nil {
+	if err = m.store.DeleteFile(ctx, path); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
 		return http.StatusInternalServerError, err
 	}
 
 	m.eventing.HookStage(ctx, intent, nil)
-	m.metricsHook(project, string(m.store.GetStoreType()), utils.Delete)
+	m.metricsHook(project, string(m.store.GetStoreType()), model.Delete)
 	return http.StatusOK, err
 }
 
@@ -110,7 +112,7 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 	}
 
 	// Check if the user is authorised to make this request
-	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileRead, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, model.FileRead, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, nil, err
 	}
@@ -118,12 +120,12 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 	m.RLock()
 	defer m.RUnlock()
 
-	res, err := m.store.ListDir(req)
+	res, err := m.store.ListDir(ctx, req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
 
-	m.metricsHook(project, string(m.store.GetStoreType()), utils.List)
+	m.metricsHook(project, string(m.store.GetStoreType()), model.List)
 	return http.StatusOK, res, nil
 }
 
@@ -135,7 +137,7 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 	}
 
 	// Check if the user is authorised to make this request
-	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{"meta": req.Meta})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, model.FileCreate, map[string]interface{}{"meta": req.Meta})
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -148,13 +150,13 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 		return 500, err
 	}
 
-	if err = m.store.CreateFile(req, reader); err != nil {
+	if err = m.store.CreateFile(ctx, req, reader); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
-		return http.StatusInternalServerError, utils.LogError("Unable to create file", "fileman", "create-file", err)
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create file (%s)", req.Name), err, nil)
 	}
 
 	m.eventing.HookStage(ctx, intent, nil)
-	m.metricsHook(project, string(m.store.GetStoreType()), utils.Create)
+	m.metricsHook(project, string(m.store.GetStoreType()), model.Create)
 	return http.StatusOK, nil
 }
 
@@ -166,7 +168,7 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 	}
 
 	// Check if the user is authorised to make this request
-	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, model.FileRead, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, nil, err
 	}
@@ -175,12 +177,12 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 	defer m.RUnlock()
 
 	// Read the file from file storage
-	file, err := m.store.ReadFile(path)
+	file, err := m.store.ReadFile(ctx, path)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
 
-	m.metricsHook(project, string(m.store.GetStoreType()), utils.Read)
+	m.metricsHook(project, string(m.store.GetStoreType()), model.Read)
 	return http.StatusOK, file, nil
 }
 
@@ -192,7 +194,7 @@ func (m *Module) DoesExists(ctx context.Context, project, token, path string) er
 	}
 
 	// Check if the user is authorised to make this request
-	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, model.FileRead, map[string]interface{}{})
 	if err != nil {
 		return err
 	}
@@ -201,7 +203,7 @@ func (m *Module) DoesExists(ctx context.Context, project, token, path string) er
 	defer m.RUnlock()
 
 	// Read the file from file storage
-	return m.store.DoesExists(path)
+	return m.store.DoesExists(ctx, path)
 }
 
 // GetState checks if selected storage is active
