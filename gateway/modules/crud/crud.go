@@ -205,7 +205,7 @@ func splitConnectionString(connection string) (string, bool) {
 func (m *Module) GetDBType(dbAlias string) (string, error) {
 	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
 	if dbAlias != m.alias {
-		return "", helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot get db type as invalid db alias (%s) provided", dbAlias), nil, nil)
+		return "", fmt.Errorf("cannot get db type as invalid db alias (%s) provided", dbAlias)
 	}
 	return m.dbType, nil
 }
