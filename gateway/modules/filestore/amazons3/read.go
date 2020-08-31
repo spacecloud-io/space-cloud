@@ -41,9 +41,6 @@ func (a *AmazonS3) ListDir(ctx context.Context, req *model.ListFilesRequest) ([]
 		return []*model.ListFilesResponse{}, nil
 	}
 
-	if req.Path != "" {
-		resp.Contents = resp.Contents[1:]
-	}
 	result := make([]*model.ListFilesResponse, 0)
 
 	for _, key := range resp.Contents {
