@@ -193,7 +193,12 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	}
 
 	m.config.License = v.Result.License
-	return m.setQuotas(v.Result.License)
+	if err := m.setQuotas(v.Result.License); err != nil {
+		return err
+	}
+
+	go func() { _ = m.syncMan.SetAdminConfig(context.TODO(), m.config) }()
+	return nil
 }
 
 func (m *Manager) ResetQuotas() {

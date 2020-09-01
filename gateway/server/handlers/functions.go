@@ -51,7 +51,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		// Set a default timeout value
 		if req.Timeout == 0 {
-			req.Timeout = 10 // set default context to 10 second
+			req.Timeout = 60 // set default context to 10 second
 		}
 
 		// Create a new context
