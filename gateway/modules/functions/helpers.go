@@ -49,7 +49,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		url = endpointPath
 
 	case config.EndpointKindPrepared:
-		url = fmt.Sprintf("http://localhost:4122/v1/api/%s/graphql", m.project)
+		url = fmt.Sprintf("http://localhost:4122/v1/api/%s/graphql", m.getProject())
 
 	default:
 		return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
@@ -126,6 +126,9 @@ func prepareHeaders(ctx context.Context, headers config.Headers, state map[strin
 }
 
 func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	var req, graph interface{}
 	var err error
 
@@ -162,6 +165,9 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 }
 
 func (m *Module) adjustResBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	var res interface{}
 	var err error
 
@@ -222,11 +228,21 @@ func loadParam(ctx context.Context, key string, claims, params interface{}) (str
 }
 
 func (m *Module) loadService(service string) *config.Service {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	if s, p := m.config.InternalServices[service]; p {
 		return s
 	}
 
 	return m.config.Services[service]
+}
+
+func (m *Module) getProject() string {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	return m.project
 }
 
 func (m *Module) createGoTemplate(kind, serviceID, endpointID, tmpl string) error {

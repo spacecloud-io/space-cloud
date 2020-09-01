@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/metrics"
@@ -68,6 +69,10 @@ func New(c *Config) (*Server, error) {
 	debounce := utils.NewDebounce()
 
 	opts := badger.DefaultOptions("/tmp/runner.db")
+	badgerLogger := logrus.New()
+	badgerLogger.SetOutput(ioutil.Discard)
+	opts.Logger = badgerLogger
+
 	// The default logger used by badger is log, so we are disabling all the logs done by log package
 	log.SetOutput(ioutil.Discard)
 	db, err := badger.Open(opts)
