@@ -25,7 +25,7 @@ func loggerMiddleWare(next http.Handler) http.Handler {
 			r.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody))
 		}
 
-		helpers.Logger.LogInfo(requestID, "Request", map[string]interface{}{"url": r.URL.Path, "queryVars": r.URL.Query(), "body": string(reqBody)})
+		helpers.Logger.LogInfo(requestID, "Request", map[string]interface{}{"method": r.Method, "url": r.URL.Path, "queryVars": r.URL.Query(), "body": string(reqBody)})
 		next.ServeHTTP(w, r.WithContext(helpers.CreateContext(r)))
 
 	})
