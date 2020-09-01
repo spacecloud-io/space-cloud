@@ -93,8 +93,9 @@ func generateCreateTestCases() []creatTestData {
 }
 
 func createDatabaseWithTestData(b *Bolt) error {
+
 	for _, tt := range generateCreateTestCases() {
-		got, err := b.Create(tt.args.ctx, tt.args.col, tt.args.req)
+		got, err := b.Create(context.Background(), tt.args.col, tt.args.req)
 		if (err != nil) != tt.wantErr {
 			return fmt.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 		}

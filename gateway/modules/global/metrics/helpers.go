@@ -6,7 +6,7 @@ import (
 
 	"github.com/segmentio/ksuid"
 
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 const (
@@ -65,19 +65,19 @@ func (m *Module) createFileDocuments(key string, metrics *metricOperations, t st
 	docs := make([]interface{}, 0)
 	module, projectName, storeType := parseFileKey(key)
 	if metrics.create > 0 {
-		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, utils.Create, metrics.create, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, model.Create, metrics.create, t))
 	}
 
 	if metrics.read > 0 {
-		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, utils.Read, metrics.read, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, model.Read, metrics.read, t))
 	}
 
 	if metrics.delete > 0 {
-		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, utils.Delete, metrics.delete, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, model.Delete, metrics.delete, t))
 	}
 
 	if metrics.list > 0 {
-		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, utils.List, metrics.list, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, model.List, metrics.list, t))
 	}
 
 	return docs
@@ -87,19 +87,19 @@ func (m *Module) createCrudDocuments(key string, value *metricOperations, t stri
 	docs := make([]interface{}, 0)
 	module, projectName, dbAlias, tableName := parseDatabaseKey(key)
 	if value.create > 0 {
-		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, utils.Create, value.create, t))
+		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, model.Create, value.create, t))
 	}
 
 	if value.read > 0 {
-		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, utils.Read, value.read, t))
+		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, model.Read, value.read, t))
 	}
 
 	if value.update > 0 {
-		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, utils.Update, value.update, t))
+		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, model.Update, value.update, t))
 	}
 
 	if value.delete > 0 {
-		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, utils.Delete, value.delete, t))
+		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, model.Delete, value.delete, t))
 	}
 
 	return docs
@@ -109,7 +109,7 @@ func (m *Module) createEventDocument(key string, count uint64, t string) []inter
 	module, projectName, eventingType := parseEventingKey(key)
 	docs := make([]interface{}, 0)
 	if count > 0 {
-		docs = append(docs, m.createDocument(projectName, notApplicable, notApplicable, module, utils.OperationType(eventingType), count, t))
+		docs = append(docs, m.createDocument(projectName, notApplicable, notApplicable, module, model.OperationType(eventingType), count, t))
 	}
 	return docs
 }
@@ -123,7 +123,7 @@ func (m *Module) createFunctionDocument(key string, count uint64, t string) []in
 	return docs
 }
 
-func (m *Module) createDocument(project, driver, subType, module string, op utils.OperationType, count uint64, t string) interface{} {
+func (m *Module) createDocument(project, driver, subType, module string, op model.OperationType, count uint64, t string) interface{} {
 	return map[string]interface{}{
 		"id":         ksuid.New().String(),
 		"project_id": project,

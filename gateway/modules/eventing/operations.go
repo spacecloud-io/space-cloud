@@ -2,10 +2,11 @@ package eventing
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -30,8 +31,7 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	defer m.lock.RUnlock()
 
 	if err := m.validate(ctx, project, token, req); err != nil {
-		logrus.Errorf("error queueing event in eventing unable to validate - %s", err.Error())
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to queue event validation failed", err, nil)
 	}
 
 	batchID := m.generateBatchID()
@@ -43,8 +43,7 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	defer m.eventChanMap.Delete(batchID)
 
 	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
-		logrus.Errorf("error queueing event in eventing unable to batch requests - %s", err.Error())
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to queue event cannot batch requests", err, nil)
 	}
 
 	// if true then wait for event response
@@ -66,11 +65,11 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 }
 
 // SendEventResponse sends response to client via channel
-func (m *Module) SendEventResponse(batchID string, payload interface{}) {
+func (m *Module) SendEventResponse(ctx context.Context, batchID string, payload interface{}) {
 	// get channel from map
 	value, ok := m.eventChanMap.Load(batchID)
 	if !ok {
-		logrus.Warnf("Event source (%s) not accepting any responses", batchID)
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Event source (%s) not accepting any responses", batchID), nil)
 		return
 	}
 	result := value.(eventResponse)

@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -76,9 +77,10 @@ func TestManager_parseToken(t *testing.T) {
 		},
 	}
 	m := New("", "clusterID", false, &config.AdminUser{Secret: "some-secret"})
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := m.parseToken(tt.args.token)
+			got, err := m.parseToken(context.Background(), tt.args.token)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseToken() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -1,24 +1,24 @@
 package sql
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	goqu "github.com/doug-martin/goqu/v8"
+	"github.com/doug-martin/goqu/v8"
 
-	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
-func (s *SQL) generator(find map[string]interface{}) (goqu.Expression, []string) {
+func (s *SQL) generator(ctx context.Context, find map[string]interface{}) (goqu.Expression, []string) {
 	var regxarr []string
 	array := []goqu.Expression{}
 	for k, v := range find {
@@ -26,7 +26,7 @@ func (s *SQL) generator(find map[string]interface{}) (goqu.Expression, []string)
 			orArray := v.([]interface{})
 			orFinalArray := []goqu.Expression{}
 			for _, item := range orArray {
-				exp, a := s.generator(item.(map[string]interface{}))
+				exp, a := s.generator(ctx, item.(map[string]interface{}))
 				orFinalArray = append(orFinalArray, exp)
 				regxarr = append(regxarr, a...)
 			}
@@ -53,16 +53,16 @@ func (s *SQL) generator(find map[string]interface{}) (goqu.Expression, []string)
 				case "$contains":
 					data, err := json.Marshal(v2)
 					if err != nil {
-						logrus.Errorf("error marshalling data $contains data (%s)", err.Error())
+						_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error marshalling data $contains data", err, nil)
 						break
 					}
 					switch s.dbType {
-					case string(utils.MySQL):
+					case string(model.MySQL):
 						array = append(array, goqu.L(fmt.Sprintf("json_contains(%s,?)", k), string(data)))
-					case string(utils.Postgres):
+					case string(model.Postgres):
 						array = append(array, goqu.L(fmt.Sprintf("%s @> ?", k), string(data)))
 					default:
-						logrus.Errorf("_contains not supported for database (%s)", s.dbType)
+						_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("_contains not supported for database (%s)", s.dbType), nil, nil)
 					}
 				case "$gt":
 					array = append(array, goqu.I(k).Gt(v2))
@@ -90,12 +90,12 @@ func (s *SQL) generator(find map[string]interface{}) (goqu.Expression, []string)
 	return goqu.And(array...), regxarr
 }
 
-func (s *SQL) generateWhereClause(q *goqu.SelectDataset, find map[string]interface{}) (query *goqu.SelectDataset, arr []string) {
+func (s *SQL) generateWhereClause(ctx context.Context, q *goqu.SelectDataset, find map[string]interface{}) (query *goqu.SelectDataset, arr []string) {
 	query = q
 	if len(find) == 0 {
 		return
 	}
-	exp, arr := s.generator(find)
+	exp, arr := s.generator(ctx, find)
 	query = query.Where(exp)
 	return query, arr
 }
@@ -114,8 +114,8 @@ func generateRecord(temp interface{}) (goqu.Record, error) {
 }
 
 func (s *SQL) getDBName(col string) string {
-	switch utils.DBType(s.dbType) {
-	case utils.Postgres, utils.SQLServer:
+	switch model.DBType(s.dbType) {
+	case model.Postgres, model.SQLServer:
 		return fmt.Sprintf("%s.%s", s.name, col)
 	}
 	return col
@@ -125,7 +125,7 @@ func (s *SQL) generateQuerySQLServer(query string) string {
 	return strings.Replace(query, "$", "@p", -1)
 }
 
-func mysqlTypeCheck(dbType utils.DBType, types []*sql.ColumnType, mapping map[string]interface{}) {
+func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.ColumnType, mapping map[string]interface{}) {
 	var err error
 	for _, colType := range types {
 		typeName := colType.DatabaseTypeName()
@@ -140,20 +140,20 @@ func mysqlTypeCheck(dbType utils.DBType, types []*sql.ColumnType, mapping map[st
 			case "TINYINT":
 				mapping[colType.Name()], err = strconv.ParseBool(string(v))
 				if err != nil {
-					log.Println("Error:", err)
+					helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error:%v", err), nil)
 				}
 			case "BIGINT", "INT", "SMALLINT":
 				mapping[colType.Name()], err = strconv.ParseInt(string(v), 10, 64)
 				if err != nil {
-					log.Println("Error:", err)
+					helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error:%v", err), nil)
 				}
 			case "DECIMAL", "NUMERIC", "FLOAT":
 				mapping[colType.Name()], err = strconv.ParseFloat(string(v), 64)
 				if err != nil {
-					log.Println("Error:", err)
+					helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error:%v", err), nil)
 				}
 			case "DATE", "DATETIME":
-				if dbType == utils.MySQL {
+				if dbType == model.MySQL {
 					d, _ := time.Parse("2006-01-02 15:04:05", string(v))
 					mapping[colType.Name()] = d.Format(time.RFC3339)
 					continue

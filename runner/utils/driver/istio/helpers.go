@@ -1,6 +1,7 @@
 package istio
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/segmentio/ksuid"
+	"github.com/spaceuptech/helpers"
 	networkingv1alpha3 "istio.io/api/networking/v1alpha3"
 	securityv1beta1 "istio.io/api/security/v1beta1"
 	v1beta12 "istio.io/api/type/v1beta1"
@@ -179,7 +181,7 @@ func prepareServicePorts(tasks []model.Task) []v1.ServicePort {
 	return ports
 }
 
-func prepareVirtualServiceHTTPRoutes(projectID, serviceID string, services map[string]model.ScaleConfig, routes model.Routes, proxyPort uint32) ([]*networkingv1alpha3.HTTPRoute, error) {
+func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID string, services map[string]model.ScaleConfig, routes model.Routes, proxyPort uint32) ([]*networkingv1alpha3.HTTPRoute, error) {
 	var httpRoutes []*networkingv1alpha3.HTTPRoute
 
 	for _, route := range routes {
@@ -201,7 +203,7 @@ func prepareVirtualServiceHTTPRoutes(projectID, serviceID string, services map[s
 				// Check if config for version exists
 				versionScaleConfig, p := services[target.Version]
 				if !p {
-					return nil, fmt.Errorf("version (%s) not found for service (%s)", target.Version, serviceID)
+					return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("version (%s) not found for service (%s)", target.Version, serviceID), nil, nil)
 				}
 
 				// Prepare variables
@@ -244,7 +246,7 @@ func prepareVirtualServiceHTTPRoutes(projectID, serviceID string, services map[s
 					Weight: target.Weight,
 				})
 			default:
-				return nil, fmt.Errorf("invalid target type (%s) provided", target.Type)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid target type (%s) provided", target.Type), nil, nil)
 			}
 		}
 
@@ -530,9 +532,9 @@ func (i *Istio) updateVirtualService(service *model.Service, prevVirtualService 
 		},
 	}
 }
-func (i *Istio) generateVirtualServiceBasedOnRoutes(projectID, serviceID string, scaleConfig map[string]model.ScaleConfig, routes model.Routes, prevVirtualService *v1alpha3.VirtualService) (*v1alpha3.VirtualService, error) {
+func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, projectID, serviceID string, scaleConfig map[string]model.ScaleConfig, routes model.Routes, prevVirtualService *v1alpha3.VirtualService) (*v1alpha3.VirtualService, error) {
 	// Generate the httpRoutes based on the routes provided
-	httpRoutes, err := prepareVirtualServiceHTTPRoutes(projectID, serviceID, scaleConfig, routes, i.config.ProxyPort)
+	httpRoutes, err := prepareVirtualServiceHTTPRoutes(ctx, projectID, serviceID, scaleConfig, routes, i.config.ProxyPort)
 	if err != nil {
 		return nil, err
 	}

@@ -328,6 +328,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 			adminMockArgs: []mockArgs{},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -359,7 +360,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 			tt.m.syncMan = &mockSyncman
 			tt.m.adminMan = &mockAdmin
 
-			if err := tt.m.invokeWebhook(tt.args.ctx, tt.args.client, tt.args.rule, tt.args.eventDoc, tt.args.cloudEvent); (err != nil) != tt.wantErr {
+			if err := tt.m.invokeWebhook(context.Background(), tt.args.client, tt.args.rule, tt.args.eventDoc, tt.args.cloudEvent); (err != nil) != tt.wantErr {
 				t.Errorf("Module.invokeWebhook() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	"go.etcd.io/bbolt"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -31,8 +31,7 @@ func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (in
 			for k, v := cursor.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = cursor.Next() {
 				result := map[string]interface{}{}
 				if err := json.Unmarshal(v, &result); err != nil {
-					logrus.Errorf("error un marshalling while reading from bboltdb - %v", err)
-					return err
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to unmarshal while reading from bbolt db", err, nil)
 				}
 				if utils.Validate(req.Find, result) {
 					results = append(results, result)
@@ -48,7 +47,7 @@ func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (in
 		}
 		if req.Operation == utils.One {
 			if count == 0 {
-				return 0, nil, fmt.Errorf("error reading from bbolt db no match found for specifed find clause")
+				return 0, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "No match found for specified find clause", nil, nil)
 			}
 			if count == 1 {
 				return count, results[0], nil

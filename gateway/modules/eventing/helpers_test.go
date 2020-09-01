@@ -80,7 +80,7 @@ func (new *a) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]inte
 func (new *a) Parser(crud config.Crud) (model.Type, error) {
 	return nil, nil
 }
-func (new *a) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+func (new *a) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 	return nil, nil
 }
 func (new *a) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
@@ -153,11 +153,12 @@ func TestModule_validate(t *testing.T) {
 			args: args{ctx: context.Background(), project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "event", Delay: 0, Payload: make(map[string]interface{}), Options: make(map[string]string)}},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.m.auth = authModule
 
-			if err := tt.m.validate(tt.args.ctx, tt.args.project, tt.args.token, tt.args.event); (err != nil) != tt.wantErr {
+			if err := tt.m.validate(context.Background(), tt.args.project, tt.args.token, tt.args.event); (err != nil) != tt.wantErr {
 				t.Errorf("Module.validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -706,9 +707,10 @@ func TestModule_generateQueueEventRequestRaw(t *testing.T) {
 			want: &model.EventDocument{ID: "eventDocID", BatchID: "batchID", Type: "DB_INSERT", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: "\"payload\"", Status: "ok"},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.m.generateQueueEventRequestRaw(tt.args.token, tt.args.name, tt.args.eventDocID, tt.args.batchID, tt.args.status, tt.args.event)
+			got := tt.m.generateQueueEventRequestRaw(context.Background(), tt.args.token, tt.args.name, tt.args.eventDocID, tt.args.batchID, tt.args.status, tt.args.event)
 			if got != nil {
 				if !reflect.DeepEqual(got.BatchID, tt.want.BatchID) {
 					t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
@@ -812,6 +814,7 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -838,7 +841,7 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 			tt.m.adminMan = &mockAdmin
 			tt.m.auth = &mockAuth
 
-			if err := tt.m.batchRequestsRaw(tt.args.ctx, tt.args.eventDocID, tt.args.token, tt.args.requests, tt.args.batchID); (err != nil) != tt.wantErr {
+			if err := tt.m.batchRequestsRaw(context.Background(), tt.args.eventDocID, tt.args.token, tt.args.requests, tt.args.batchID); (err != nil) != tt.wantErr {
 				t.Errorf("Module.batchRequests() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

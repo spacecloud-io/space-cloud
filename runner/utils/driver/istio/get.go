@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -17,8 +17,7 @@ import (
 func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
 	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error getting service in istio - unable to find deployment", err, nil)
 	}
 	services := []*model.Service{}
 	for _, deployment := range deploymentList.Items {
@@ -28,7 +27,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 		service.Version = deployment.Labels["version"]
 
 		// Get scale config
-		scale, err := getScaleConfigFromDeployment(deployment)
+		scale, err := getScaleConfigFromDeployment(ctx, deployment)
 		if err != nil {
 			return nil, err
 		}
@@ -133,7 +132,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 				for _, serv := range rule.Source.Principals {
 					whitelistArr := strings.Split(serv, "/")
 					if len(whitelistArr) != 5 {
-						logrus.Error("error getting service in istio length of whitelist array is not equal to 5")
+						_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error getting service in istio length of whitelist array is not equal to 5", nil, nil)
 						continue
 					}
 					service.Whitelist = append(service.Whitelist, model.Whitelist{ProjectID: whitelistArr[2], Service: whitelistArr[4]})
@@ -166,8 +165,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error) {
 	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error getting service in istio - unable to find deployment", err, nil)
 	}
 	result := make([]*model.ServiceStatus, 0)
 	for _, deployment := range deploymentList.Items {
@@ -176,8 +174,7 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]*mode
 
 		podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s,version=%s", serviceID, serviceVersion)})
 		if err != nil {
-			logrus.Errorf("Error getting service in istio - unable to find pods - %v", err)
-			return nil, err
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error getting service in istio - unable to find pods", err, nil)
 		}
 		replicas := make([]*model.ReplicaInfo, 0)
 		for _, p := range podlist.Items {

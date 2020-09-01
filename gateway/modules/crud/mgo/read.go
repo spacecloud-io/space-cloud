@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spaceuptech/helpers"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -93,7 +94,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 					case "count":
 						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, "*")
 					default:
-						return 0, nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion %s`, function), "mgo", "Read", nil)
+						return 0, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Unknown aggregate funcion %s`, function), nil, map[string]interface{}{})
 					}
 					for _, field := range req.Options.Sort {
 						if sortValue := generateSortFields(field, column, asColumnName); sortValue != "" {

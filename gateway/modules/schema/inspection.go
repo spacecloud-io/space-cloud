@@ -8,7 +8,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // SchemaInspection returns the schema in schema definition language (SDL)
@@ -41,7 +40,7 @@ func (s *Schema) Inspector(ctx context.Context, dbAlias, dbType, project, col st
 	return generateInspection(dbType, col, fields, foreignkeys, indexes)
 }
 
-func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType, indexes []utils.IndexType) (model.Collection, error) {
+func generateInspection(dbType, col string, fields []model.InspectorFieldType, foreignkeys []model.ForeignKeysType, indexes []model.IndexType) (model.Collection, error) {
 	inspectionCollection := model.Collection{}
 	inspectionFields := model.Fields{}
 
@@ -54,7 +53,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 		}
 
 		// field type
-		if utils.DBType(dbType) == utils.Postgres {
+		if model.DBType(dbType) == model.Postgres {
 			if err := inspectionPostgresCheckFieldType(field.FieldType, &fieldDetails); err != nil {
 				return nil, err
 			}
@@ -67,7 +66,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 		// default key
 		if field.FieldDefault != "" {
 			fieldDetails.IsDefault = true
-			if utils.DBType(dbType) == utils.SQLServer {
+			if model.DBType(dbType) == model.SQLServer {
 				// replace (( or )) with nothing e.g -> ((9.8)) -> 9.8
 				field.FieldDefault = strings.Replace(strings.Replace(field.FieldDefault, "(", "", -1), ")", "", -1)
 				if fieldDetails.Kind == model.TypeBoolean {
@@ -79,7 +78,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 				}
 			}
 
-			if utils.DBType(dbType) == utils.Postgres {
+			if model.DBType(dbType) == model.Postgres {
 				// split "'default-value'::text" to "default-value"
 				s := strings.Split(field.FieldDefault, "::")
 				field.FieldDefault = s[0]

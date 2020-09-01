@@ -9,7 +9,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func TestIsCreateOpAuthorised(t *testing.T) {
@@ -400,9 +399,10 @@ func Test_authenticatePreparedQueryRequest(t *testing.T) {
 			wantErr:  true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotRule, gotAuth, err := (tt.module).authenticatePreparedQueryRequest(tt.dbAlias, tt.id, tt.token)
+			gotRule, gotAuth, err := (tt.module).authenticatePreparedQueryRequest(context.Background(), tt.dbAlias, tt.id, tt.token)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.authenticatePreparedQueryRequest() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -445,9 +445,10 @@ func Test_getPrepareQueryRule(t *testing.T) {
 			wantErr: false,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := (tt.module).getPrepareQueryRule(tt.dbAlias, tt.id)
+			got, err := (tt.module).getPrepareQueryRule(context.Background(), tt.dbAlias, tt.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.getPrepareQueryRule() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -466,7 +467,7 @@ func TestModule_getCrudRule(t *testing.T) {
 	type args struct {
 		dbAlias string
 		col     string
-		query   utils.OperationType
+		query   model.OperationType
 	}
 	tests := []struct {
 		name    string
@@ -506,12 +507,13 @@ func TestModule_getCrudRule(t *testing.T) {
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
 				rules: map[string]*config.CrudStub{"db": {Collections: tt.fields.rules}},
 			}
-			got, err := m.getCrudRule(tt.args.dbAlias, tt.args.col, tt.args.query)
+			got, err := m.getCrudRule(context.Background(), tt.args.dbAlias, tt.args.col, tt.args.query)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getCrudRule() error = %v, wantErr %v", err, tt.wantErr)
 				return

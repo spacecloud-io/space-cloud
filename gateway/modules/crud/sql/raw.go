@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -18,7 +19,7 @@ func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
 		return nil
 	}
 
-	logrus.Debugf("Executing sql raw query - %v", queries)
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Executing sql raw query", map[string]interface{}{"queries": queries})
 
 	tx, err := s.client.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -58,18 +59,18 @@ func (s *SQL) GetConnectionState(ctx context.Context) bool {
 // CreateDatabaseIfNotExist creates a schema / database
 func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, name string) error {
 	var sql string
-	switch utils.DBType(s.dbType) {
-	case utils.MySQL:
+	switch model.DBType(s.dbType) {
+	case model.MySQL:
 		sql = "create database if not exists " + name
-	case utils.Postgres:
+	case model.Postgres:
 		sql = "create schema if not exists " + name
-	case utils.SQLServer:
+	case model.SQLServer:
 		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + name + `')) 
 					BEGIN
     					EXEC ('CREATE SCHEMA [` + name + `]')
 					END`
 	default:
-		return fmt.Errorf("invalid db type (%s) provided", s.dbType)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create logical database", fmt.Errorf("invalid database (%s) provided", s.dbType), nil)
 	}
 	return s.RawBatch(ctx, []string{sql})
 }

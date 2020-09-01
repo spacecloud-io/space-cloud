@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -25,17 +27,17 @@ func HandleRealtimeEvent(modules *modules.Modules) http.HandlerFunc {
 		token := utils.GetTokenFromHeader(r)
 
 		// Check if the token is valid
-		if err := auth.IsTokenInternal(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
+		if err := auth.IsTokenInternal(r.Context(), token); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		if err := realtime.HandleRealtimeEvent(r.Context(), &eventDoc); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(r.Context(), http.StatusOK, w)
 	}
 }
 
@@ -56,16 +58,16 @@ func HandleRealtimeProcessRequest(modules *modules.Modules) http.HandlerFunc {
 		token := utils.GetTokenFromHeader(r)
 
 		// Check if the token is valid
-		if err := auth.IsTokenInternal(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
+		if err := auth.IsTokenInternal(r.Context(), token); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err.Error())
 			return
 		}
 
-		if err := realtime.ProcessRealtimeRequests(&eventDoc); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
+		if err := realtime.ProcessRealtimeRequests(r.Context(), &eventDoc); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		_ = helpers.Response.SendOkayResponse(r.Context(), http.StatusOK, w)
 	}
 }

@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/segmentio/ksuid"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -15,18 +16,18 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-const (
-	loglevelDebug = "debug"
-	loglevelInfo  = "info"
-	logLevelError = "error"
-)
-
 var essentialFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:   "log-level",
 		EnvVar: "LOG_LEVEL",
 		Usage:  "Set the log level [debug | info | error]",
-		Value:  loglevelInfo,
+		Value:  helpers.LogLevelInfo,
+	},
+	cli.StringFlag{
+		Name:   "log-format",
+		EnvVar: "LOG_FORMAT",
+		Usage:  "Set the log format [json | console]",
+		Value:  helpers.LogFormatJSON,
 	},
 	cli.StringFlag{
 		Name:   "id",
@@ -124,6 +125,13 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Disable anonymous metric collection",
 		EnvVar: "DISABLE_METRICS",
 	},
+
+	// Flag to disable downloading mission-control
+	cli.BoolFlag{
+		Name:   "disable-ui",
+		Usage:  "Stop space-cloud from downloading and hosting mission control",
+		EnvVar: "DISABLE_UI",
+	},
 }
 
 func main() {
@@ -139,11 +147,6 @@ func main() {
 			Action: actionRun,
 			Flags:  essentialFlags,
 		},
-		{
-			Name:   "init",
-			Usage:  "creates a config file with sensible defaults",
-			Action: actionInit,
-		},
 	}
 
 	err := app.Run(os.Args)
@@ -153,13 +156,19 @@ func main() {
 }
 
 func actionRun(c *cli.Context) error {
+	// NOTE: we have disable all the logs made by log package
+	log.SetOutput(ioutil.Discard)
+
 	// Load cli flags
 	nodeID := c.String("id")
 	isDev := c.Bool("dev")
 	profiler := c.Bool("profiler")
 	logLevel := c.String("log-level")
-	setLogLevel(logLevel)
+	logFormat := c.String("log-format")
 
+	if err := helpers.InitLogger(logLevel, logFormat, isDev); err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to initialize loggers", err, nil)
+	}
 	// Load flag related to the port
 	port := c.Int("port")
 
@@ -179,6 +188,9 @@ func actionRun(c *cli.Context) error {
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
 	advertiseAddr := c.String("advertise-addr")
+
+	// Load ui flag
+	disableUI := c.Bool("disable-ui")
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
@@ -207,17 +219,16 @@ func actionRun(c *cli.Context) error {
 		return err
 	}
 
-	// Download and host mission control
-	staticPath, err := initMissionContol(utils.BuildVersion)
-	if err != nil {
-		return err
+	staticPath := ""
+	if !disableUI {
+		// Download and host mission control
+		staticPath, err = initMissionContol(utils.BuildVersion)
+		if err != nil {
+			return err
+		}
 	}
 
 	return s.Start(profiler, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
-}
-
-func actionInit(*cli.Context) error {
-	return config.GenerateConfig("none")
 }
 
 func initMissionContol(version string) (string, error) {
@@ -225,7 +236,7 @@ func initMissionContol(version string) (string, error) {
 	uiPath := homeDir + "/.space-cloud/mission-control-v" + version
 	_, err := os.Stat(uiPath)
 	if os.IsNotExist(err) {
-		fmt.Println("Could not find mission control")
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Could not find mission control", nil)
 		_, err := os.Stat(homeDir + "/.space-cloud")
 		if err != nil && !os.IsNotExist(err) {
 			return "", err
@@ -236,17 +247,17 @@ func initMissionContol(version string) (string, error) {
 				return "", err
 			}
 		}
-		fmt.Println("Downloading...")
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Downloading...", nil)
 		err = utils.DownloadFileFromURL("https://storage.googleapis.com/space-cloud/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
 		if err != nil {
 			return "", err
 		}
-		fmt.Println("Extracting...")
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Extracting...", nil)
 		err = utils.Unzip(uiPath+".zip", uiPath)
 		if err != nil {
 			return "", err
 		}
-		fmt.Println("Done...")
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Done...", nil)
 		err = os.Remove(uiPath + ".zip")
 		if err != nil {
 			return "", err
@@ -257,19 +268,4 @@ func initMissionContol(version string) (string, error) {
 		return "", err
 	}
 	return uiPath + "/build", nil
-}
-
-func setLogLevel(loglevel string) {
-	switch loglevel {
-	case loglevelDebug:
-		logrus.SetLevel(logrus.DebugLevel)
-	case loglevelInfo:
-		logrus.SetLevel(logrus.InfoLevel)
-	case logLevelError:
-		logrus.SetLevel(logrus.ErrorLevel)
-	default:
-		logrus.Errorf("Invalid log level (%s) provided", loglevel)
-		logrus.Infoln("Defaulting to `info` level")
-		logrus.SetLevel(logrus.InfoLevel)
-	}
 }

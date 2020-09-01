@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -14,7 +16,7 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Create)
+	rule, auth, err := m.authenticateCrudRequest(ctx, dbAlias, col, token, model.Create)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -48,7 +50,7 @@ func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, 
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Read)
+	rule, auth, err := m.authenticateCrudRequest(ctx, dbAlias, col, token, model.Read)
 	if err != nil {
 		return nil, model.RequestParams{}, err
 	}
@@ -68,7 +70,7 @@ func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Update)
+	rule, auth, err := m.authenticateCrudRequest(ctx, dbAlias, col, token, model.Update)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -88,7 +90,7 @@ func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Delete)
+	rule, auth, err := m.authenticateCrudRequest(ctx, dbAlias, col, token, model.Delete)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -108,7 +110,7 @@ func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbAlias, 
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Aggregation)
+	rule, auth, err := m.authenticateCrudRequest(ctx, dbAlias, col, token, model.Aggregation)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -128,7 +130,7 @@ func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticatePreparedQueryRequest(dbAlias, id, token)
+	rule, auth, err := m.authenticatePreparedQueryRequest(ctx, dbAlias, id, token)
 	if err != nil {
 		return nil, model.RequestParams{}, err
 	}
@@ -143,9 +145,9 @@ func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias
 	return actions, model.RequestParams{Claims: auth, Resource: "db-prepared-query", Op: "access", Attributes: attr}, nil
 }
 
-func (m *Module) authenticateCrudRequest(dbAlias, col, token string, op utils.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {
+func (m *Module) authenticateCrudRequest(ctx context.Context, dbAlias, col, token string, op model.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {
 	// Get rule
-	rule, err = m.getCrudRule(dbAlias, col, op)
+	rule, err = m.getCrudRule(ctx, dbAlias, col, op)
 	if err != nil {
 		return
 	}
@@ -156,13 +158,13 @@ func (m *Module) authenticateCrudRequest(dbAlias, col, token string, op utils.Op
 	}
 
 	// Parse token
-	auth, err = m.parseToken(token)
+	auth, err = m.parseToken(ctx, token)
 	return
 }
 
-func (m *Module) authenticatePreparedQueryRequest(dbAlias, id, token string) (rule *config.Rule, auth map[string]interface{}, err error) {
+func (m *Module) authenticatePreparedQueryRequest(ctx context.Context, dbAlias, id, token string) (rule *config.Rule, auth map[string]interface{}, err error) {
 	// Get rule
-	rule, err = m.getPrepareQueryRule(dbAlias, id)
+	rule, err = m.getPrepareQueryRule(ctx, dbAlias, id)
 	if err != nil {
 		return
 	}
@@ -173,11 +175,11 @@ func (m *Module) authenticatePreparedQueryRequest(dbAlias, id, token string) (ru
 	}
 
 	// Parse token
-	auth, err = m.parseToken(token)
+	auth, err = m.parseToken(ctx, token)
 	return
 }
 
-func (m *Module) getCrudRule(dbAlias, col string, query utils.OperationType) (*config.Rule, error) {
+func (m *Module) getCrudRule(ctx context.Context, dbAlias, col string, query model.OperationType) (*config.Rule, error) {
 	if dbRules, p1 := m.rules[dbAlias]; p1 {
 		if collection, p2 := dbRules.Collections[col]; p2 {
 			if rule, p3 := collection.Rules[string(query)]; p3 {
@@ -190,13 +192,13 @@ func (m *Module) getCrudRule(dbAlias, col string, query utils.OperationType) (*c
 			}
 		}
 	}
-	return nil, fmt.Errorf("no rule found for collection (%s) in database (%s)", col, dbAlias)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Security rule not defined for collection/table (%s) in database (%s). Ensure your table has correct access rights", col, dbAlias), nil, nil)
 }
 
-func (m *Module) getPrepareQueryRule(dbAlias, id string) (*config.Rule, error) {
+func (m *Module) getPrepareQueryRule(ctx context.Context, dbAlias, id string) (*config.Rule, error) {
 	dbRules, p1 := m.rules[dbAlias]
 	if !p1 {
-		return nil, fmt.Errorf("given database (%s) does not exist", dbAlias)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to get security rule of prepared query", fmt.Errorf("db alias (%s) does not exist", dbAlias), nil)
 	}
 	if dbPreparedQuery, p2 := dbRules.PreparedQueries[id]; p2 && dbPreparedQuery.Rule != nil {
 		return dbPreparedQuery.Rule, nil
@@ -204,5 +206,5 @@ func (m *Module) getPrepareQueryRule(dbAlias, id string) (*config.Rule, error) {
 	if defaultPreparedQuery, p2 := dbRules.PreparedQueries["default"]; p2 && defaultPreparedQuery.Rule != nil {
 		return defaultPreparedQuery.Rule, nil
 	}
-	return nil, fmt.Errorf("no rule found for Prepared Query (%s) in database (%s)", id, dbAlias)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("No security rule found for prepared Query (%s) in database with alias (%s)", id, dbAlias), nil, nil)
 }

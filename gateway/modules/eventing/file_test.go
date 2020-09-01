@@ -90,6 +90,7 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: utils.EventFileCreate, RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"meta":{},"path":"path"}`, Status: "intent"}}},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -106,7 +107,7 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 			tt.m.syncMan = &mockSyncman
 			tt.m.crud = &mockCrud
 
-			got, err := tt.m.CreateFileIntentHook(tt.args.ctx, tt.args.req)
+			got, err := tt.m.CreateFileIntentHook(context.Background(), tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.CreateFileIntentHook() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -221,6 +222,7 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: utils.EventFileDelete, RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"meta":{},"path":"path"}`, Status: "intent"}}},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -237,7 +239,7 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 			tt.m.syncMan = &mockSyncman
 			tt.m.crud = &mockCrud
 
-			got, err := tt.m.DeleteFileIntentHook(tt.args.ctx, tt.args.path, tt.args.meta)
+			got, err := tt.m.DeleteFileIntentHook(context.Background(), tt.args.path, tt.args.meta)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.DeleteFileIntentHook() error = %v, wantErr %v", err, tt.wantErr)
 				return

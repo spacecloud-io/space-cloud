@@ -2,6 +2,7 @@ package local
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"io"
 	"os"
@@ -12,7 +13,7 @@ import (
 )
 
 // CreateFile creates a file in the path provided
-func (l *Local) CreateFile(req *model.CreateFileRequest, file io.Reader) error {
+func (l *Local) CreateFile(ctx context.Context, req *model.CreateFileRequest, file io.Reader) error {
 	ps := string(os.PathSeparator)
 	path := strings.TrimRight(l.rootPath, ps) + ps + strings.TrimLeft(req.Path, ps)
 
@@ -42,7 +43,7 @@ func (l *Local) CreateFile(req *model.CreateFileRequest, file io.Reader) error {
 }
 
 // CreateDir creates a directory in the path provided
-func (l *Local) CreateDir(req *model.CreateFileRequest) error {
+func (l *Local) CreateDir(ctx context.Context, req *model.CreateFileRequest) error {
 	ps := string(os.PathSeparator)
 	path := strings.TrimRight(l.rootPath, ps) + ps + strings.TrimLeft(req.Path, ps)
 	if !isPathDir(path) && !req.MakeAll {

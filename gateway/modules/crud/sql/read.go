@@ -9,7 +9,7 @@ import (
 
 	"github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	_ "github.com/denisenkom/go-mssqldb"                // Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postfres
@@ -21,10 +21,10 @@ import (
 )
 
 // generateReadQuery makes a query for read operation
-func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []interface{}, error) {
+func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dbType := s.dbType
-	if dbType == string(utils.SQLServer) {
-		dbType = string(utils.Postgres)
+	if dbType == string(model.SQLServer) {
+		dbType = string(model.Postgres)
 	}
 
 	dialect := goqu.Dialect(dbType)
@@ -32,7 +32,7 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 	var tarr []string
 	if req.Find != nil {
 		// Get the where clause from query object
-		query, tarr = s.generateWhereClause(query, req.Find)
+		query, tarr = s.generateWhereClause(ctx, query, req.Find)
 	}
 
 	selArray := []interface{}{}
@@ -98,7 +98,7 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 				case "count":
 					selArray = append(selArray, goqu.COUNT("*").As(asColumnName))
 				default:
-					return "", nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion "%s"`, function), "sql", "generateReadQuery", nil)
+					return "", nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown aggregate funcion (%s)", function), nil, map[string]interface{}{})
 				}
 			}
 		}
@@ -127,7 +127,7 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 
 	}
 
-	if s.dbType == string(utils.SQLServer) {
+	if s.dbType == string(model.SQLServer) {
 		sqlString = s.generateQuerySQLServer(sqlString)
 	}
 	return sqlString, args, nil
@@ -150,12 +150,14 @@ func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int
 }
 
 func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, error) {
-	sqlString, args, err := s.generateReadQuery(col, req)
+	sqlString, args, err := s.generateReadQuery(ctx, col, req)
 	if err != nil {
 		return 0, nil, err
 	}
 
-	logrus.Debugf("Executing sql read query: %s - %v", sqlString, args)
+	if col != utils.TableInvocationLogs && col != utils.TableEventingLogs {
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Executing sql read query", map[string]interface{}{"sqlQuery": sqlString, "queryArgs": args})
+	}
 
 	return s.readexec(ctx, sqlString, args, req.Operation, executor, len(req.Aggregate) > 0)
 }
@@ -176,7 +178,7 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 	var rowTypes []*sql.ColumnType
 
 	switch s.GetDBType() {
-	case utils.MySQL, utils.Postgres, utils.SQLServer:
+	case model.MySQL, model.Postgres, model.SQLServer:
 		rowTypes, _ = rows.ColumnTypes()
 	}
 
@@ -193,8 +195,8 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 		}
 
 		switch s.GetDBType() {
-		case utils.MySQL, utils.Postgres, utils.SQLServer:
-			mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
+		case model.MySQL, model.Postgres, model.SQLServer:
+			mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
 		}
 
 		for _, v := range mapping {
@@ -215,8 +217,8 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 		}
 
 		switch s.GetDBType() {
-		case utils.MySQL, utils.Postgres, utils.SQLServer:
-			mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
+		case model.MySQL, model.Postgres, model.SQLServer:
+			mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
 		}
 
 		return 1, mapping, nil
@@ -235,8 +237,8 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 				return 0, nil, err
 			}
 			switch s.GetDBType() {
-			case utils.MySQL, utils.Postgres, utils.SQLServer:
-				mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
+			case model.MySQL, model.Postgres, model.SQLServer:
+				mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
 			}
 			if isAggregate {
 				funcMap := map[string]interface{}{}

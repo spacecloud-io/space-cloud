@@ -6,7 +6,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Batch performs the provided operations in a single Batch
@@ -21,7 +20,7 @@ func (m *Mongo) Batch(ctx context.Context, req *model.BatchRequest) ([]int64, er
 			col := req.Col
 
 			switch req.Type {
-			case string(utils.Create):
+			case string(model.Create):
 				doc := req.Document
 				op := req.Operation
 
@@ -30,7 +29,7 @@ func (m *Mongo) Batch(ctx context.Context, req *model.BatchRequest) ([]int64, er
 					_ = session.AbortTransaction(session)
 					return err
 				}
-			case string(utils.Update):
+			case string(model.Update):
 				find := req.Find
 				op := req.Operation
 				update := req.Update
@@ -40,7 +39,7 @@ func (m *Mongo) Batch(ctx context.Context, req *model.BatchRequest) ([]int64, er
 					_ = session.AbortTransaction(session)
 					return err
 				}
-			case string(utils.Delete):
+			case string(model.Delete):
 				find := req.Find
 				op := req.Operation
 

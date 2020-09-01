@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/graphql-go/graphql/language/ast"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -31,7 +32,7 @@ func getFieldName(field *ast.Field) string {
 }
 
 // GetDBAlias returns the dbAlias of the request
-func (graph *Module) GetDBAlias(field *ast.Field) (string, error) {
+func (graph *Module) GetDBAlias(ctx context.Context, field *ast.Field) (string, error) {
 	if len(field.Directives) == 0 {
 		return "", errors.New("database / service directive not provided")
 	}
@@ -41,7 +42,7 @@ func (graph *Module) GetDBAlias(field *ast.Field) (string, error) {
 		return dbAlias, nil
 	}
 
-	return "", fmt.Errorf("provided db alias (%s) does not exists", dbAlias)
+	return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Provided db alias (@%s) does not exists. Ensure you are using the alias provided while db setup", dbAlias), nil, nil)
 }
 
 func getCollection(field *ast.Field) (string, error) {

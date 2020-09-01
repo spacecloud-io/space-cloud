@@ -45,9 +45,10 @@ func TestModule_getEventingRule(t *testing.T) {
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.getEventingRule(tt.args.eventType)
+			got, err := tt.m.getEventingRule(context.Background(), tt.args.eventType)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.getEventingRule() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -107,9 +108,10 @@ func TestModule_IsEventingOpAuthorised(t *testing.T) {
 			wantErr: true,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := tt.m.IsEventingOpAuthorised(tt.args.ctx, tt.args.project, tt.args.token, tt.args.event); (err != nil) != tt.wantErr {
+			if _, err := tt.m.IsEventingOpAuthorised(context.Background(), tt.args.project, tt.args.token, tt.args.event); (err != nil) != tt.wantErr {
 				t.Errorf("Module.IsEventingOpAuthorised() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

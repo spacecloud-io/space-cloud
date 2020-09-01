@@ -1,17 +1,20 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/metrics"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils"
@@ -45,7 +48,7 @@ func New(c *Config) (*Server, error) {
 	// Add the proxy port to the driver config
 	proxyPort, err := strconv.Atoi(c.ProxyPort)
 	if err != nil {
-		return nil, fmt.Errorf("invalid proxy port (%s) provided", c.ProxyPort)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("invalid proxy port (%s) provided", c.ProxyPort), err, nil)
 	}
 	c.Driver.ProxyPort = uint32(proxyPort)
 
@@ -65,7 +68,8 @@ func New(c *Config) (*Server, error) {
 	debounce := utils.NewDebounce()
 
 	opts := badger.DefaultOptions("/tmp/runner.db")
-	opts.Logger = &logrus.Logger{Out: ioutil.Discard}
+	// The default logger used by badger is log, so we are disabling all the logs done by log package
+	log.SetOutput(ioutil.Discard)
 	db, err := badger.Open(opts)
 	if err != nil {
 		return nil, err
@@ -121,14 +125,14 @@ func (s *Server) Start() error {
 
 		// Start http server
 		corsObj := utils.CreateCorsObject()
-		logrus.Infof("Starting server proxy on port %s", s.config.ProxyPort)
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Starting server proxy on port %s", s.config.ProxyPort), nil)
 		if err := http.ListenAndServe(":"+s.config.ProxyPort, corsObj.Handler(router)); err != nil {
-			logrus.Fatalln("Proxy server failed:", err)
+			helpers.Logger.LogFatal(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Proxy server failed: - %v", err), nil)
 		}
 	}()
 
 	// Start the http server
 	corsObj := utils.CreateCorsObject()
-	logrus.Infof("Starting server on port %s", s.config.Port)
-	return http.ListenAndServe(":"+s.config.Port, corsObj.Handler(s.router))
+	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Starting server on port %s", s.config.Port), nil)
+	return http.ListenAndServe(":"+s.config.Port, corsObj.Handler(loggerMiddleWare(s.router)))
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
@@ -16,7 +18,7 @@ func (s *Manager) SetUserManagement(ctx context.Context, project, provider strin
 	defer s.lock.Unlock()
 
 	value.ID = provider
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -39,7 +41,7 @@ func (s *Manager) GetUserManagement(ctx context.Context, project, providerID str
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -47,7 +49,7 @@ func (s *Manager) GetUserManagement(ctx context.Context, project, providerID str
 	if providerID != "*" {
 		auth, ok := projectConfig.Modules.Auth[providerID]
 		if !ok {
-			return http.StatusBadRequest, nil, fmt.Errorf("providerID (%s) not present in config", providerID)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("provider with id (%s) does not exist in user management config", providerID), nil, nil)
 		}
 
 		return http.StatusOK, []interface{}{auth}, nil

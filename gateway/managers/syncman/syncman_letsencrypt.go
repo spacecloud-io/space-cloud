@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -16,7 +16,7 @@ func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project stri
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -24,8 +24,7 @@ func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project stri
 	// Update the projects domains
 	projectConfig.Modules.LetsEncrypt = c
 	if err := s.modules.LetsEncrypt().SetProjectDomains(project, c); err != nil {
-		logrus.Errorf("error setting letsencrypt project domains - %s", err.Error())
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting letsencrypt project domains", err, nil)
 	}
 
 	if err := s.setProject(ctx, projectConfig); err != nil {
@@ -40,7 +39,7 @@ func (s *Manager) GetLetsEncryptConfig(ctx context.Context, project string, para
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	projectConfig, err := s.getConfigWithoutLock(project)
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, config.LetsEncrypt{}, err
 	}

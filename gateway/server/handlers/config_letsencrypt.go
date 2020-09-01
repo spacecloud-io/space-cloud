@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 
 	"github.com/gorilla/mux"
@@ -30,31 +32,29 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		value := config.LetsEncrypt{}
 		defer utils.CloseTheCloser(r.Body)
 		if err := json.NewDecoder(r.Body).Decode(&value); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err.Error())
 			return
 		}
 		value.ID = id
 
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "letsencrypt", "modify", map[string]string{"project": projectID})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		reqParams.Payload = value
-		if status, err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, value, reqParams); err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "letsencrypt", "modify", map[string]string{"project": projectID})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendOkayResponse(w)
+		reqParams = utils.ExtractRequestParams(r, reqParams, value)
+		status, err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, value, reqParams)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 
@@ -69,26 +69,24 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(token, "letsencrypt", "read", map[string]string{"project": projectID})
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		// get project config
-		reqParams.Method = r.Method
-		reqParams.Path = r.URL.Path
-		reqParams.Headers = r.Header
-		status, le, err := syncMan.GetLetsEncryptConfig(ctx, projectID, reqParams)
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "letsencrypt", "read", map[string]string{"project": projectID})
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, status, model.Response{Result: []interface{}{le}})
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+
+		status, le, err := syncMan.GetLetsEncryptConfig(ctx, projectID, reqParams)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: []interface{}{le}})
 	}
 }

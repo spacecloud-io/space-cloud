@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/aes"
 	"crypto/sha256"
 	"encoding/base64"
@@ -8,13 +9,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // PostProcessMethod to do processing on result
-func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interface{}) error {
+func (m *Module) PostProcessMethod(ctx context.Context, postProcess *model.PostProcess, result interface{}) error {
 	// Gracefully exits if the result is nil
 	if result == nil || postProcess == nil {
 		return nil
@@ -36,44 +38,41 @@ func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interf
 			// apply Action on all elements
 			switch field.Action {
 			case "force":
-				if err := utils.StoreValue(field.Field, field.Value, map[string]interface{}{"res": doc}); err != nil {
+				if err := utils.StoreValue(ctx, field.Field, field.Value, map[string]interface{}{"res": doc}); err != nil {
 					return err
 				}
 
 			case "remove":
-				if err := utils.DeleteValue(field.Field, map[string]interface{}{"res": doc}); err != nil {
+				if err := utils.DeleteValue(ctx, field.Field, map[string]interface{}{"res": doc}); err != nil {
 					return err
 				}
 
 			case "encrypt":
 				loadedValue, err := utils.LoadValue(field.Field, map[string]interface{}{"res": doc})
 				if err != nil {
-					logrus.Errorln("error loading value in postProcessMethod: ", err)
-					return err
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to load value in post process", err, nil)
 				}
 				stringValue, ok := loadedValue.(string)
 				if !ok {
-					return fmt.Errorf("Value should be of type string and not %T", loadedValue)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid data type found", fmt.Errorf("value should be of type string got (%T)", loadedValue), nil)
 				}
 				encryptedValue, err := utils.Encrypt(m.aesKey, stringValue)
 				if err != nil {
-					return utils.LogError("Unable to encrypt string", "auth", "post-process", err)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to encrypt string in post process", err, map[string]interface{}{"valueToEncrypt": stringValue})
 				}
-				er := utils.StoreValue(field.Field, encryptedValue, map[string]interface{}{"res": doc})
+				er := utils.StoreValue(ctx, field.Field, encryptedValue, map[string]interface{}{"res": doc})
 				if er != nil {
-					logrus.Errorln("error storing value in postProcessMethod: ", er)
-					return er
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to store value in post process", er, nil)
 				}
 
 			case "decrypt":
 				loadedValue, err := utils.LoadValue(field.Field, map[string]interface{}{"res": doc})
 				if err != nil {
-					logrus.Errorln("error loading value in postProcessMethod: ", err)
-					return err
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to load value in post process", err, map[string]interface{}{"decrypt": true})
 				}
 				stringValue, ok := loadedValue.(string)
 				if !ok {
-					return fmt.Errorf("Value should be of type string and not %T", loadedValue)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid data type found", fmt.Errorf("value should be of type string got (%T)", loadedValue), map[string]interface{}{"decrypt": true})
 				}
 				decodedValue, err := base64.StdEncoding.DecodeString(stringValue)
 				if err != nil {
@@ -82,37 +81,33 @@ func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interf
 				decrypted := make([]byte, len(decodedValue))
 				err1 := decryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
 				if err1 != nil {
-					logrus.Errorln("error decrypting value in postProcessMethod: ", err1)
-					return err1
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to decrypt string in post process", err1, map[string]interface{}{"valueToDecrypt": decodedValue})
 				}
-				er := utils.StoreValue(field.Field, string(decrypted), map[string]interface{}{"res": doc})
+				er := utils.StoreValue(ctx, field.Field, string(decrypted), map[string]interface{}{"res": doc})
 				if er != nil {
-					logrus.Errorln("error storing value in postProcessMethod: ", er)
-					return er
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to store value in post process", er, map[string]interface{}{"decrypt": true})
 				}
 
 			case "hash":
 				loadedValue, err := utils.LoadValue(field.Field, map[string]interface{}{"res": doc})
 				if err != nil {
-					logrus.Errorln("error loading value in postProcessMethod: ", err)
-					return err
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to load value in post process", err, map[string]interface{}{"hash": true})
 				}
 				stringValue, ok := loadedValue.(string)
 				if !ok {
-					return fmt.Errorf("Value should be of type string and not %T", loadedValue)
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid data type found", fmt.Errorf("value should be of type string got (%T)", loadedValue), map[string]interface{}{"hash": true})
 				}
 				h := sha256.New()
 				_, _ = h.Write([]byte(stringValue))
 				hashed := hex.EncodeToString(h.Sum(nil))
-				er := utils.StoreValue(field.Field, hashed, map[string]interface{}{"res": doc})
+				er := utils.StoreValue(ctx, field.Field, hashed, map[string]interface{}{"res": doc})
 				if er != nil {
-					logrus.Errorln("error storing value in matchHash: ", er)
-					return er
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to store value in post process", er, map[string]interface{}{"hash": true})
+
 				}
 
 			default:
-				err := fmt.Errorf("invalid action (%s) received in post processing read op", field.Action)
-				return err
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid action (%s) received in post processing read op", field.Action), nil, nil)
 			}
 		}
 	}

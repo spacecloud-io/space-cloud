@@ -18,7 +18,7 @@ func (m *Manager) GetInternalAccessToken() (string, error) {
 }
 
 // IsTokenValid checks if the token is valid
-func (m *Manager) IsTokenValid(token, resource, op string, attr map[string]string) (model.RequestParams, error) {
+func (m *Manager) IsTokenValid(ctx context.Context, token, resource, op string, attr map[string]string) (model.RequestParams, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -26,7 +26,7 @@ func (m *Manager) IsTokenValid(token, resource, op string, attr map[string]strin
 		return model.RequestParams{}, nil
 	}
 
-	claims, err := m.parseToken(token)
+	claims, err := m.parseToken(ctx, token)
 	return model.RequestParams{Resource: resource, Op: op, Attributes: attr, Claims: claims}, err
 }
 
@@ -45,11 +45,11 @@ func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config
 }
 
 // RefreshToken is used to create a new token based on an existing one
-func (m *Manager) RefreshToken(token string) (string, error) {
+func (m *Manager) RefreshToken(ctx context.Context, token string) (string, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	// Parse the token to get userID and userRole
-	tokenClaims, err := m.parseToken(token)
+	tokenClaims, err := m.parseToken(ctx, token)
 	if err != nil {
 		return "", err
 	}
