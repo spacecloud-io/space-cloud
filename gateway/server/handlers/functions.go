@@ -22,7 +22,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		serviceID := vars["serviceID"]
+		serviceID := vars["service"]
 		function := vars["func"]
 
 		auth := modules.Auth()
@@ -36,11 +36,8 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		service := functions.GetService(serviceID)
-		timeOut := service.Endpoints[function].Timeout
-
 		// Create a new context
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(timeOut))
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(functions.GetEndpointContextTimeout(serviceID, function))*time.Second)
 		defer cancel()
 
 		actions, reqParams, err := auth.IsFuncCallAuthorised(ctx, projectID, serviceID, function, token, req.Params)

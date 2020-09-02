@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/spaceuptech/helpers"
 
@@ -31,7 +30,7 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	// Check timeout field and add default value if not present
 	for _, val := range value.Endpoints {
 		if val.Timeout == 0 {
-			val.Timeout = int(10 * time.Second)
+			val.Timeout = 60
 		}
 	}
 
