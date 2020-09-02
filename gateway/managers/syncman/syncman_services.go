@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/spaceuptech/helpers"
 
@@ -26,6 +27,14 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	if projectConfig.Modules.Services.Services == nil {
 		projectConfig.Modules.Services.Services = config.Services{}
 	}
+
+	// Check timeout field and add default value if not present
+	for _, val := range value.Endpoints {
+		if val.Timeout == 0 {
+			val.Timeout = int(10 * time.Second)
+		}
+	}
+
 	projectConfig.Modules.Services.Services[service] = value
 
 	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {

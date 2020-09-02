@@ -98,3 +98,8 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 	}
 	return nil
 }
+
+// GetService returns the particular remote-service
+func (m *Module) GetService(service string) *config.Service {
+	return m.config.Services[service]
+}
