@@ -100,6 +100,10 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 }
 
 // GetEndpointContextTimeout returns the endpoint timeout of particular remote-service
-func (m *Module) GetEndpointContextTimeout(service, function string) int {
-	return m.config.Services[service].Endpoints[function].Timeout
+func (m *Module) GetEndpointContextTimeout(service, function string) (int, error) {
+	endpoint, ok := m.config.Services[service].Endpoints[function]
+	if ok {
+		return endpoint.Timeout, nil
+	}
+	return 0, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Could not find endpoint (%s) for service (%s)", function, service), nil, nil)
 }

@@ -36,8 +36,15 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		timeOut, err := functions.GetEndpointContextTimeout(serviceID, function)
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), fmt.Sprintf("Could not find endpoint (%s) for service (%s)", serviceID, function), err, nil)
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		// Create a new context
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(functions.GetEndpointContextTimeout(serviceID, function))*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(timeOut)*time.Second)
 		defer cancel()
 
 		actions, reqParams, err := auth.IsFuncCallAuthorised(ctx, projectID, serviceID, function, token, req.Params)
