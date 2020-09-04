@@ -388,6 +388,8 @@ spec:
                   fieldPath: metadata.name
             - name: "RUNNER_ADDR"
               value: "runner.space-cloud.svc.cluster.local:4050"
+            - name: "GOOGLE_APPLICATION_CREDENTIALS"
+              value: "/root/.gcp/credentials.json"
             - name: "ADMIN_USER"
               value: "admin"
             - name: "ADMIN_PASS"
