@@ -27,13 +27,6 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 		projectConfig.Modules.Services.Services = config.Services{}
 	}
 
-	// Check timeout field and add default value if not present
-	for _, val := range value.Endpoints {
-		if val.Timeout == 0 {
-			val.Timeout = 60
-		}
-	}
-
 	projectConfig.Modules.Services.Services[service] = value
 
 	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {

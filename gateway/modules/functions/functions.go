@@ -74,6 +74,10 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 				endpoint.OpFormat = "yaml"
 			}
 
+			if endpoint.Timeout == 0 {
+				endpoint.Timeout = 60
+			}
+
 			switch endpoint.Tmpl {
 			case config.EndpointTemplatingEngineGo:
 				if endpoint.ReqTmpl != "" {
@@ -100,10 +104,12 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 }
 
 // GetEndpointContextTimeout returns the endpoint timeout of particular remote-service
-func (m *Module) GetEndpointContextTimeout(service, function string) (int, error) {
-	endpoint, ok := m.config.Services[service].Endpoints[function]
-	if ok {
-		return endpoint.Timeout, nil
+func (m *Module) GetEndpointContextTimeout(ctx context.Context, service, function string) (int, error) {
+
+	if serviceVal, ok := m.config.Services[service]; ok {
+		if endpoint, ok := serviceVal.Endpoints[function]; ok {
+			return endpoint.Timeout, nil
+		}
 	}
-	return 0, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Could not find endpoint (%s) for service (%s)", function, service), nil, nil)
+	return 0, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Could not find endpoint (%s) for service (%s)", function, service), nil, nil)
 }
