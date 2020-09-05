@@ -105,23 +105,23 @@ func TestMatch_Rule(t *testing.T) {
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
 		{name: "match-remove rule", IsErrExpected: false, project: "default",
-			rule: &config.Rule{Rule: "remove", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default"},
+			rule: &config.Rule{Rule: "remove", Fields: []interface{}{"args.token"}},
 			args: map[string]interface{}{"args": map[string]interface{}{"token": "interface1"}},
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
 		{name: "match-encrypt rule", IsErrExpected: false, project: "default",
-			rule: &config.Rule{Rule: "encrypt", Fields: []string{"args.username"}},
+			rule: &config.Rule{Rule: "encrypt", Fields: []interface{}{"args.username"}},
 			args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}},
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
 		{name: "match-decrypt rule", IsErrExpected: false, project: "default",
-			rule: &config.Rule{Rule: "decrypt", Fields: []string{"args.username"}},
+			rule: &config.Rule{Rule: "decrypt", Fields: []interface{}{"args.username"}},
 			args: map[string]interface{}{"args": map[string]interface{}{"username": base64.StdEncoding.EncodeToString([]byte("username1"))}},
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
 		{
 			name: "match-hash rule", IsErrExpected: false, project: "default",
-			rule: &config.Rule{Rule: "hash", Fields: []string{"args.password"}},
+			rule: &config.Rule{Rule: "hash", Fields: []interface{}{"args.password"}},
 			args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}},
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
@@ -231,9 +231,18 @@ func TestMatchRemove_Rule(t *testing.T) {
 	}{
 		{name: "res", isErrExpected: false,
 			checkPostProcess: true, checkArgs: false,
-			rule:   &config.Rule{Rule: "remove", Fields: []string{"res.age"}},
+			rule:   &config.Rule{Rule: "remove", Fields: []interface{}{"res.age"}},
 			args:   map[string]interface{}{"res": map[string]interface{}{"age": "12"}},
 			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
+		},
+		{
+			name:             "Provide values to remove fields from args object",
+			isErrExpected:    false,
+			checkPostProcess: true,
+			checkArgs:        false,
+			rule:             &config.Rule{Rule: "remove", Fields: "args.auth.obj"},
+			args:             map[string]interface{}{"res": map[string]interface{}{"age": "12"}, "args": map[string]interface{}{"auth": map[string]interface{}{"obj": []interface{}{"res.age"}}}},
+			result:           &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
 		},
 		{name: "invalid field provided", isErrExpected: true, checkPostProcess: false, checkArgs: false,
 			rule: &config.Rule{Rule: "remove", Fields: []string{"args:age"}},
@@ -244,7 +253,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
 		},
 		{name: "remove multiple args", isErrExpected: false, checkPostProcess: false, checkArgs: true,
-			rule:       &config.Rule{Rule: "remove", Fields: []string{"args.age", "args.exp"}},
+			rule:       &config.Rule{Rule: "remove", Fields: []interface{}{"args.age", "args.exp"}},
 			args:       map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
 			wantedargs: map[string]interface{}{"args": map[string]interface{}{}},
 		},
@@ -259,6 +268,22 @@ func TestMatchRemove_Rule(t *testing.T) {
 		{name: "invalid prefix", isErrExpected: true, checkPostProcess: false, checkArgs: false,
 			rule: &config.Rule{Rule: "remove", Fields: []string{"arg.age.exp"}},
 			args: map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
+		},
+		{
+			name:             "Invalid value provide for get fields",
+			isErrExpected:    true,
+			checkPostProcess: false,
+			checkArgs:        false,
+			rule:             &config.Rule{Rule: "remove", Fields: 1},
+			args:             map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
+		},
+		{
+			name:             "Throw error if fields field contains a value which is not string",
+			isErrExpected:    true,
+			checkPostProcess: false,
+			checkArgs:        false,
+			rule:             &config.Rule{Rule: "remove", Fields: []interface{}{1}},
+			args:             map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
 		},
 		{
 			name: "rule clause - allow",
@@ -333,13 +358,31 @@ func TestModule_matchEncrypt(t *testing.T) {
 		{
 			name: "valid res",
 			m:    &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
-			args: args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
+			args: args{rule: &config.Rule{Rule: "encrypt", Fields: []interface{}{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
+			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "encrypt", Field: "res.username"}}},
+		},
+		{
+			name: "Provide values to encrypt fields from args object",
+			m:    &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args: args{rule: &config.Rule{Rule: "encrypt", Fields: "args.auth.obj"}, args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"obj": []interface{}{"res.username"}}}, "res": map[string]interface{}{"username": "username1"}}},
 			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "encrypt", Field: "res.username"}}},
 		},
 		{
 			name:    "invalid field prefix",
 			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"abc.username"}}, args: map[string]interface{}{"abc": map[string]interface{}{"username": "username1"}}},
+			wantErr: true,
+		},
+		{
+			name:    "Invalid value provide for get fields",
+			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: 1}, args: map[string]interface{}{"abc": map[string]interface{}{"username": "username1"}}},
+			wantErr: true,
+		},
+		{
+			name:    "Throw error if fields field contains a value which is not string",
+			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: []interface{}{"res.username", 1}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
 	}
@@ -391,13 +434,31 @@ func TestModule_matchDecrypt(t *testing.T) {
 		{
 			name: "valid res",
 			m:    &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
-			args: args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
+			args: args{rule: &config.Rule{Rule: "decrypt", Fields: []interface{}{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
+			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "decrypt", Field: "res.username"}}},
+		},
+		{
+			name: "Provide values to decrypt fields from args object",
+			m:    &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args: args{rule: &config.Rule{Rule: "encrypt", Fields: "args.auth.obj"}, args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"obj": []interface{}{"res.username"}}}, "res": map[string]interface{}{"username": "username1"}}},
 			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "decrypt", Field: "res.username"}}},
 		},
 		{
 			name:    "invalid field prefix",
 			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args:    args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"abc.username"}}, args: map[string]interface{}{"abc": map[string]interface{}{"username": "username1"}}},
+			wantErr: true,
+		},
+		{
+			name:    "Invalid value provide for get fields",
+			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: 1}, args: map[string]interface{}{"abc": map[string]interface{}{"username": "username1"}}},
+			wantErr: true,
+		},
+		{
+			name:    "Throw error if fields field contains a value which is not string",
+			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: []interface{}{"res.username", 1}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
 	}
@@ -459,33 +520,56 @@ func Test_matchHash(t *testing.T) {
 		name    string
 		args    args
 		want    *model.PostProcess
+		m       *Module
 		wantErr bool
 	}{
 		{
 			name:    "invalid field",
+			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args:    args{rule: &config.Rule{Rule: "hash", Fields: []string{"args.abc"}}, args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}}},
 			wantErr: true,
 		},
 		{
 			name: "valid res",
-			args: args{rule: &config.Rule{Rule: "hash", Fields: []string{"res.password"}}, args: map[string]interface{}{"res": map[string]interface{}{"password": "password"}}},
+			m:    &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args: args{rule: &config.Rule{Rule: "hash", Fields: []interface{}{"res.password"}}, args: map[string]interface{}{"res": map[string]interface{}{"password": "password"}}},
 			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "hash", Field: "res.password"}}},
 		},
 		{
+			name: "Provide values to hash fields from args object",
+			m:    &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args: args{rule: &config.Rule{Rule: "encrypt", Fields: "args.auth.obj"}, args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"obj": []interface{}{"res.username"}}}, "res": map[string]interface{}{"username": "username1"}}},
+			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "hash", Field: "res.username"}}},
+		},
+		{
 			name:    "invalid value type",
+			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args:    args{rule: &config.Rule{Rule: "hash", Fields: []string{"args.password"}}, args: map[string]interface{}{"args": map[string]interface{}{"password": 123456}}},
 			wantErr: true,
 		},
 		{
 			name:    "invalid field prefix",
+			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args:    args{rule: &config.Rule{Rule: "hash", Fields: []string{"abc.password"}}, args: map[string]interface{}{"abc": map[string]interface{}{"password": "password"}}},
+			wantErr: true,
+		},
+		{
+			name:    "Invalid value provide for get fields",
+			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: 1}, args: map[string]interface{}{"abc": map[string]interface{}{"username": "username1"}}},
+			wantErr: true,
+		},
+		{
+			name:    "Throw error if fields field contains a value which is not string",
+			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: []interface{}{"res.username", 1}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := matchHash(context.Background(), tt.args.rule, tt.args.args)
+			got, err := tt.m.matchHash(context.Background(), tt.args.rule, tt.args.args)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("matchHash() error = %v, wantErr %v", err, tt.wantErr)
 				return

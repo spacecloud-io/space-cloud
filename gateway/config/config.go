@@ -136,7 +136,7 @@ type Rule struct {
 	Col     string                 `json:"col,omitempty" yaml:"col,omitempty"`
 	Find    map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty"`
 	URL     string                 `json:"url,omitempty" yaml:"url,omitempty"`
-	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty"`
+	Fields  interface{}            `json:"fields,omitempty" yaml:"fields,omitempty"`
 	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
 	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
 	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`

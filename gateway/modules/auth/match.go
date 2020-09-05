@@ -63,7 +63,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return m.matchDecrypt(ctx, rule, args)
 
 	case "hash":
-		return matchHash(ctx, rule, args)
+		return m.matchHash(ctx, rule, args)
 
 	default:
 		return nil, formatError(ctx, rule, fmt.Errorf("invalid rule type (%s) provided", rule.Rule))
@@ -189,7 +189,15 @@ func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config
 		}
 	}
 	actions := &model.PostProcess{}
-	for _, field := range rule.Fields {
+	fields, err := m.getFields(ctx, rule.Fields, args)
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Remove)", err, nil)
+	}
+	for _, value := range fields {
+		field, ok := value.(string)
+		if !ok {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Remove) array contains a value which is not string", err, map[string]interface{}{})
+		}
 		// "res" - add field to structure for post processing || "args" - delete field from args
 		if strings.HasPrefix(field, "res") {
 			addToStruct := model.PostProcessAction{Action: "remove", Field: field, Value: nil}
@@ -208,7 +216,15 @@ func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config
 
 func (m *Module) matchEncrypt(ctx context.Context, rule *config.Rule, args map[string]interface{}) (*model.PostProcess, error) {
 	actions := &model.PostProcess{}
-	for _, field := range rule.Fields {
+	fields, err := m.getFields(ctx, rule.Fields, args)
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Encrypt)", err, nil)
+	}
+	for _, value := range fields {
+		field, ok := value.(string)
+		if !ok {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Encrypt) array contains a value which is not string", err, map[string]interface{}{})
+		}
 		if strings.HasPrefix(field, "res") {
 			addToStruct := model.PostProcessAction{Action: "encrypt", Field: field}
 			actions.PostProcessAction = append(actions.PostProcessAction, addToStruct)
@@ -238,7 +254,15 @@ func (m *Module) matchEncrypt(ctx context.Context, rule *config.Rule, args map[s
 
 func (m *Module) matchDecrypt(ctx context.Context, rule *config.Rule, args map[string]interface{}) (*model.PostProcess, error) {
 	actions := &model.PostProcess{}
-	for _, field := range rule.Fields {
+	fields, err := m.getFields(ctx, rule.Fields, args)
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Decrypt)", err, nil)
+	}
+	for _, value := range fields {
+		field, ok := value.(string)
+		if !ok {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Decrypt) array contains a value which is not string", err, map[string]interface{}{})
+		}
 		if strings.HasPrefix(field, "res") {
 			addToStruct := model.PostProcessAction{Action: "decrypt", Field: field}
 			actions.PostProcessAction = append(actions.PostProcessAction, addToStruct)
@@ -281,9 +305,17 @@ func decryptAESCFB(dst, src, key, iv []byte) error {
 	return nil
 }
 
-func matchHash(ctx context.Context, rule *config.Rule, args map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) matchHash(ctx context.Context, rule *config.Rule, args map[string]interface{}) (*model.PostProcess, error) {
 	actions := &model.PostProcess{}
-	for _, field := range rule.Fields {
+	fields, err := m.getFields(ctx, rule.Fields, args)
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Hash)", err, nil)
+	}
+	for _, value := range fields {
+		field, ok := value.(string)
+		if !ok {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Hash) array contains a value which is not string", err, map[string]interface{}{})
+		}
 		if strings.HasPrefix(field, "res") {
 			addToStruct := model.PostProcessAction{Action: "hash", Field: field}
 			actions.PostProcessAction = append(actions.PostProcessAction, addToStruct)
