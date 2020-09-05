@@ -142,6 +142,7 @@ type Rule struct {
 	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
 	Name    string                 `json:"name,omitempty" yaml:"name,omitempty"`
 	Error   string                 `json:"error,omitempty" yaml:"error,omitempty"`
+	Store   string                 `json:"store,omitempty" yaml:"store,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method

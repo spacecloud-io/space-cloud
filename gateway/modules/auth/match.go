@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/spaceuptech/helpers"
@@ -80,7 +81,18 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 	}
 
 	var result interface{}
-	return formatError(ctx, rule, MakeHTTPRequest(ctx, "POST", rule.URL, token, scToken, obj, &result))
+	if err := formatError(ctx, rule, MakeHTTPRequest(ctx, http.MethodPost, rule.URL, token, scToken, obj, &result)); err != nil {
+		return err
+	}
+
+	if rule.Store != "" {
+		if err := utils.StoreValue(ctx, rule.Store, result, args); err != nil {
+			return formatError(ctx, rule, err)
+		}
+		return nil
+	}
+
+	return formatError(ctx, rule, utils.StoreValue(ctx, "args.result", result, args))
 }
 
 func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Rule, crud model.CrudAuthInterface, args, auth map[string]interface{}) (*model.PostProcess, error) {
@@ -96,9 +108,14 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 	if err != nil {
 		return nil, formatError(ctx, rule, err)
 	}
-	err = utils.StoreValue(ctx, "args.result", data, args)
-	if err != nil {
-		return nil, formatError(ctx, rule, err)
+	if rule.Store != "" {
+		if err := utils.StoreValue(ctx, rule.Store, data, args); err != nil {
+			return nil, formatError(ctx, rule, err)
+		}
+	} else {
+		if err := utils.StoreValue(ctx, "args.result", data, args); err != nil {
+			return nil, formatError(ctx, rule, err)
+		}
 	}
 
 	postProcess, err := m.matchRule(ctx, project, rule.Clause, args, nil)
