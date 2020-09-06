@@ -47,7 +47,7 @@ require (
 	github.com/segmentio/ksuid v1.0.3
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
-	github.com/spaceuptech/helpers v0.1.1
+	github.com/spaceuptech/helpers v0.1.2
 	github.com/spaceuptech/space-api-go v0.18.1
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1
