@@ -57,13 +57,13 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return m.matchRemove(ctx, project, rule, args, auth)
 
 	case "encrypt":
-		return m.matchEncrypt(ctx, rule, args)
+		return m.matchEncrypt(ctx, project, rule, args, auth)
 
 	case "decrypt":
-		return m.matchDecrypt(ctx, rule, args)
+		return m.matchDecrypt(ctx, project, rule, args, auth)
 
 	case "hash":
-		return m.matchHash(ctx, rule, args)
+		return m.matchHash(ctx, project, rule, args, auth)
 
 	default:
 		return nil, formatError(ctx, rule, fmt.Errorf("invalid rule type (%s) provided", rule.Rule))
@@ -214,8 +214,16 @@ func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config
 	return actions, nil
 }
 
-func (m *Module) matchEncrypt(ctx context.Context, rule *config.Rule, args map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) matchEncrypt(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
 	actions := &model.PostProcess{}
+	if rule.Clause != nil && rule.Clause.Rule != "" {
+		// Match clause with rule!
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		if err != nil {
+			return actions, nil
+		}
+	}
+
 	fields, err := m.getFields(ctx, rule.Fields, args)
 	if err != nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Encrypt)", err, nil)
@@ -252,8 +260,16 @@ func (m *Module) matchEncrypt(ctx context.Context, rule *config.Rule, args map[s
 	return actions, nil
 }
 
-func (m *Module) matchDecrypt(ctx context.Context, rule *config.Rule, args map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) matchDecrypt(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
 	actions := &model.PostProcess{}
+	if rule.Clause != nil && rule.Clause.Rule != "" {
+		// Match clause with rule!
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		if err != nil {
+			return actions, nil
+		}
+	}
+
 	fields, err := m.getFields(ctx, rule.Fields, args)
 	if err != nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Decrypt)", err, nil)
@@ -305,8 +321,16 @@ func decryptAESCFB(dst, src, key, iv []byte) error {
 	return nil
 }
 
-func (m *Module) matchHash(ctx context.Context, rule *config.Rule, args map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) matchHash(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
 	actions := &model.PostProcess{}
+	if rule.Clause != nil && rule.Clause.Rule != "" {
+		// Match clause with rule!
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		if err != nil {
+			return actions, nil
+		}
+	}
+
 	fields, err := m.getFields(ctx, rule.Fields, args)
 	if err != nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Hash)", err, nil)
