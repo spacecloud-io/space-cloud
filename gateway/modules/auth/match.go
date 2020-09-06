@@ -7,13 +7,16 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
+	"text/template"
 
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 )
 
 func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
@@ -71,8 +74,39 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 }
 
 func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPRequest utils.TypeMakeHTTPRequest, args map[string]interface{}) error {
-	obj := args["args"].(map[string]interface{})
-	token := obj["token"].(string)
+	newArgs := args["args"].(map[string]interface{})
+
+	var token string
+	var claims interface{}
+	var err error
+	if len(rule.Claims) > 0 {
+		token, err = m.CreateToken(ctx, rule.Claims)
+		if err != nil {
+			return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create new token used by the webhook url in security rule (Webhook)", err, nil))
+		}
+		claims = rule.Claims
+		newArgs["auth"] = rule.Claims
+	} else {
+		claims = newArgs["auth"]
+		token = newArgs["token"].(string)
+	}
+
+	var obj interface{}
+	if rule.Template != "" {
+		// Create a new template object
+		t := template.New(rule.Name)
+		t = t.Funcs(tmpl2.CreateGoFuncMaps(m))
+		t, err = t.Parse(rule.Template)
+		if err != nil {
+			return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse provided template in security rule (Webhook)", err, nil))
+		}
+		obj, err = tmpl2.GoTemplate(ctx, t, "json", token, claims, args["args"])
+		if err != nil {
+			return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to execute provided template in security rule (Webhook)", err, nil))
+		}
+	} else {
+		obj = newArgs
+	}
 
 	scToken, err := m.GetSCAccessToken(ctx)
 	if err != nil {
@@ -80,7 +114,7 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 	}
 
 	var result interface{}
-	return formatError(ctx, rule, MakeHTTPRequest(ctx, "POST", rule.URL, token, scToken, obj, &result))
+	return formatError(ctx, rule, MakeHTTPRequest(ctx, http.MethodPost, rule.URL, token, scToken, obj, &result))
 }
 
 func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Rule, crud model.CrudAuthInterface, args, auth map[string]interface{}) (*model.PostProcess, error) {

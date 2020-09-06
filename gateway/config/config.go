@@ -125,23 +125,25 @@ type TableRule struct {
 
 // Rule is the authorisation object at the query level
 type Rule struct {
-	ID      string                 `json:"id,omitempty" yaml:"id,omitempty"`
-	Rule    string                 `json:"rule" yaml:"rule"`
-	Eval    string                 `json:"eval,omitempty" yaml:"eval,omitempty"`
-	Type    string                 `json:"type,omitempty" yaml:"type,omitempty"`
-	F1      interface{}            `json:"f1,omitempty" yaml:"f1,omitempty"`
-	F2      interface{}            `json:"f2,omitempty" yaml:"f2,omitempty"`
-	Clauses []*Rule                `json:"clauses,omitempty" yaml:"clauses,omitempty"`
-	DB      string                 `json:"db,omitempty" yaml:"db,omitempty"`
-	Col     string                 `json:"col,omitempty" yaml:"col,omitempty"`
-	Find    map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty"`
-	URL     string                 `json:"url,omitempty" yaml:"url,omitempty"`
-	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty"`
-	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
-	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
-	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
-	Name    string                 `json:"name,omitempty" yaml:"name,omitempty"`
-	Error   string                 `json:"error,omitempty" yaml:"error,omitempty"`
+	ID       string                 `json:"id,omitempty" yaml:"id,omitempty"`
+	Rule     string                 `json:"rule" yaml:"rule"`
+	Eval     string                 `json:"eval,omitempty" yaml:"eval,omitempty"`
+	Type     string                 `json:"type,omitempty" yaml:"type,omitempty"`
+	F1       interface{}            `json:"f1,omitempty" yaml:"f1,omitempty"`
+	F2       interface{}            `json:"f2,omitempty" yaml:"f2,omitempty"`
+	Clauses  []*Rule                `json:"clauses,omitempty" yaml:"clauses,omitempty"`
+	DB       string                 `json:"db,omitempty" yaml:"db,omitempty"`
+	Col      string                 `json:"col,omitempty" yaml:"col,omitempty"`
+	Find     map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty"`
+	URL      string                 `json:"url,omitempty" yaml:"url,omitempty"`
+	Fields   []string               `json:"fields,omitempty" yaml:"fields,omitempty"`
+	Field    string                 `json:"field,omitempty" yaml:"field,omitempty"`
+	Value    interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
+	Clause   *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
+	Name     string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	Error    string                 `json:"error,omitempty" yaml:"error,omitempty"`
+	Claims   map[string]interface{} `json:"claims,omitempty" yaml:"claims,omitempty"`
+	Template string                 `json:"template,omitempty" yaml:"template,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method

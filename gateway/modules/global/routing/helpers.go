@@ -37,7 +37,7 @@ func (r *Routing) adjustBody(ctx context.Context, kind, project, token string, r
 	switch route.Modify.Tmpl {
 	case config.EndpointTemplatingEngineGo:
 		if tmpl, p := r.goTemplates[getGoTemplateKey(kind, project, route.ID)]; p {
-			req, err = tmpl2.GoTemplate(module, "go-template", tmpl, route.Modify.OpFormat, token, auth, params)
+			req, err = tmpl2.GoTemplate(ctx, tmpl, route.Modify.OpFormat, token, auth, params)
 			if err != nil {
 				return nil, err
 			}

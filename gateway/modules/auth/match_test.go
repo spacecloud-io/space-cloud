@@ -4,12 +4,16 @@ import (
 	"context"
 	"crypto/aes"
 	"encoding/base64"
+	"errors"
 	"reflect"
 	"testing"
+
+	context2 "golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func TestMatch_Rule(t *testing.T) {
@@ -492,6 +496,111 @@ func Test_matchHash(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("matchHash() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestModule_matchFunc(t *testing.T) {
+	type params struct {
+		url, token        string
+		params            interface{}
+		shouldRequestFail bool
+		skipTokenCheck    bool
+	}
+	type args struct {
+		rule       *config.Rule
+		httpParams params
+		args       map[string]interface{}
+	}
+	tests := []struct {
+		name    string
+		m       *Module
+		args    args
+		want    *model.PostProcess
+		wantErr bool
+	}{
+		{
+			name: "Normal webhook call validation should pass",
+			m:    &Module{secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args: args{
+				httpParams: params{
+					url:    "http://localhost/validate",
+					token:  "loremparis",
+					params: map[string]interface{}{"auth": map[string]interface{}{"role": "admin"}, "token": "loremparis"},
+				},
+				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate"},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"role": "admin"}, "token": "loremparis"}}},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "Normal webhook call validation should fail",
+			m:    &Module{secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args: args{
+				httpParams: params{
+					shouldRequestFail: true,
+				},
+				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate"},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{}, "token": "loremparis"}},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Normal webhook call with custom claims",
+			m:    &Module{secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args: args{
+				httpParams: params{
+					skipTokenCheck: true,
+					url:            "http://localhost/validate",
+					token:          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTk5OTE4NTUsInJvbGUiOiJhZG1pbiJ9.aD7WU0MJTsYajhkelu2MgOrjlFHiWenYBkueE6haHOY",
+					params:         map[string]interface{}{"auth": map[string]interface{}{"role": "admin"}, "token": "loremparis"},
+				},
+				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: map[string]interface{}{"role": "admin"}},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{}, "token": "loremparis"}}},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "Normal webhook call with custom claims and template",
+			m:    &Module{secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args: args{
+				httpParams: params{
+					skipTokenCheck: true,
+					url:            "http://localhost/validate",
+					token:          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTk5OTE4NTUsInJvbGUiOiJhZG1pbiJ9.aD7WU0MJTsYajhkelu2MgOrjlFHiWenYBkueE6haHOY",
+					params:         map[string]interface{}{"service": "http://localhost:9000/"},
+				},
+				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: map[string]interface{}{"role": "admin", "serviceAddr": "http://localhost:9000/"}, Template: `{"service":"{{.args.auth.serviceAddr}}"}`},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{}, "token": "loremparis"}}},
+			want:    nil,
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var HTTPCall utils.TypeMakeHTTPRequest = func(ctx context2.Context, method, url, token, scToken string, params, vPtr interface{}) error {
+				if tt.args.httpParams.shouldRequestFail {
+					return errors.New("Cannot make http request to web hook url")
+				}
+				if tt.args.httpParams.url != url {
+					t.Errorf("matchFunc() Url mis match in makeHTTPRequest wanted (%s) got (%s)", tt.args.httpParams.url, url)
+					return nil
+				}
+				if !tt.args.httpParams.skipTokenCheck && tt.args.httpParams.token != token {
+					t.Errorf("matchFunc() Url token mis match in makeHTTPRequest wanted (%s) got (%s)", tt.args.httpParams.token, token)
+					return nil
+				}
+				if !reflect.DeepEqual(tt.args.httpParams.params, params) {
+					t.Errorf("matchFunc() Url body params mis match in makeHTTPRequest wanted (%s) got (%s)", tt.args.httpParams.params, params)
+					return nil
+				}
+				return nil
+			}
+			if err := tt.m.matchFunc(context.Background(), tt.args.rule, HTTPCall, tt.args.args); (err != nil) != tt.wantErr {
+				t.Errorf("matchFunc() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

@@ -35,11 +35,6 @@ func Init(auth model.AuthFunctionInterface, manager *syncman.Manager, hook model
 	return &Module{auth: auth, manager: manager, metricHook: hook}
 }
 
-const (
-	module            string = "remote-services"
-	segmentGoTemplate string = "goTemplate"
-)
-
 // SetConfig sets the configuration of the functions module
 func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 	m.lock.Lock()

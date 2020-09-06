@@ -16,7 +16,7 @@ import (
 )
 
 // GoTemplate executes a go template
-func GoTemplate(module, segment string, tmpl *template.Template, format, token string, claims, params interface{}) (interface{}, error) {
+func GoTemplate(ctx context.Context, tmpl *template.Template, format, token string, claims, params interface{}) (interface{}, error) {
 	// Prepare the object
 	object := map[string]interface{}{"args": params, "auth": claims, "token": token}
 	var b strings.Builder

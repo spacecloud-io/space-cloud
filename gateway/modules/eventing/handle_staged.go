@@ -117,7 +117,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		Time: eventDoc.Timestamp, Data: eventDoc.Payload}
 
 	doc = structs.Map(&cloudEvent)
-	doc, err = m.adjustReqBody(name, "", rule, nil, doc)
+	doc, err = m.adjustReqBody(ctx, name, "", rule, nil, doc)
 	if err != nil {
 		if err := m.logInvocation(ctx, eventDoc.ID, []byte("{}"), 0, "", err.Error()); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "eventing module couldn't log the invocation ", err, nil)
