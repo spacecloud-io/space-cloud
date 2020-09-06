@@ -38,7 +38,6 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		timeOut, err := functions.GetEndpointContextTimeout(r.Context(), serviceID, function)
 		if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), fmt.Sprintf("Could not find endpoint (%s) for service (%s)", serviceID, function), err, nil)
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -52,6 +51,8 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
 			return
 		}
+
+		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
 		status, result, err := functions.CallWithContext(ctx, serviceID, function, token, reqParams, req.Params)
 		if err != nil {
