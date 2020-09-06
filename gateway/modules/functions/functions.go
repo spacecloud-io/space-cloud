@@ -69,6 +69,10 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 				endpoint.OpFormat = "yaml"
 			}
 
+			if endpoint.Timeout == 0 {
+				endpoint.Timeout = 60
+			}
+
 			switch endpoint.Tmpl {
 			case config.EndpointTemplatingEngineGo:
 				if endpoint.ReqTmpl != "" {

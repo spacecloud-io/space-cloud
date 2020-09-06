@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	context2 "golang.org/x/net/context"
+	"github.com/getlantern/deepcopy"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -163,7 +163,7 @@ func TestMatchForce_Rule(t *testing.T) {
 		wantedargs       map[string]interface{}
 	}{
 		{name: "res directly passing value", isErrExpected: false, checkPostProcess: true, checkArgs: false,
-			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
+			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{{Action: "force", Field: "res.age", Value: "1234"}}},
 			rule:   &config.Rule{Rule: "force", Value: "1234", Field: "res.age"},
 			args:   map[string]interface{}{"string1": "interface1", "string2": "interface2"},
 		},
@@ -172,7 +172,7 @@ func TestMatchForce_Rule(t *testing.T) {
 			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
 		},
 		{name: "res indirectly passing value", isErrExpected: false, checkPostProcess: true, checkArgs: false,
-			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
+			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{{Action: "force", Field: "res.age", Value: "1234"}}},
 			rule:   &config.Rule{Rule: "force", Value: "args.string2", Field: "res.age"},
 			args:   map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "1234"}},
 		},
@@ -237,7 +237,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 			checkPostProcess: true, checkArgs: false,
 			rule:   &config.Rule{Rule: "remove", Fields: []string{"res.age"}},
 			args:   map[string]interface{}{"res": map[string]interface{}{"age": "12"}},
-			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
+			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{{Action: "remove", Field: "res.age", Value: nil}}},
 		},
 		{name: "invalid field provided", isErrExpected: true, checkPostProcess: false, checkArgs: false,
 			rule: &config.Rule{Rule: "remove", Fields: []string{"args:age"}},
@@ -310,11 +310,12 @@ func TestModule_matchEncrypt(t *testing.T) {
 		args map[string]interface{}
 	}
 	tests := []struct {
-		name    string
-		m       *Module
-		args    args
-		want    *model.PostProcess
-		wantErr bool
+		name         string
+		m            *Module
+		args         args
+		want         *model.PostProcess
+		shouldChange bool
+		wantErr      bool
 	}{
 		{
 			name:    "invalid field",
@@ -335,26 +336,57 @@ func TestModule_matchEncrypt(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "valid res",
-			m:    &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
-			args: args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
-			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "encrypt", Field: "res.username"}}},
-		},
-		{
 			name:    "invalid field prefix",
 			m:       &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"abc.username"}}, args: map[string]interface{}{"abc": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
+		{
+			name:         "valid args",
+			m:            &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:         args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"args.username"}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}}},
+			want:         &model.PostProcess{},
+			shouldChange: true,
+		},
+		{
+			name:         "valid res",
+			m:            &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:         args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
+			want:         &model.PostProcess{PostProcessAction: []model.PostProcessAction{{Action: "encrypt", Field: "res.username"}}},
+			shouldChange: false,
+		},
+		{
+			name:         "valid args with rule allow",
+			m:            &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:         args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"args.username"}, Clause: &config.Rule{Rule: "allow"}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}}},
+			want:         &model.PostProcess{},
+			shouldChange: true,
+		},
+		{
+			name:         "valid args with rule deny",
+			m:            &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:         args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"args.username"}, Clause: &config.Rule{Rule: "deny"}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}}},
+			want:         &model.PostProcess{},
+			shouldChange: false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.matchEncrypt(context.Background(), tt.args.rule, tt.args.args)
+			args := map[string]interface{}{}
+			_ = deepcopy.Copy(&args, tt.args.args)
+
+			got, err := tt.m.matchEncrypt(context.Background(), "", tt.args.rule, args, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.matchEncrypt() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
+			if !tt.wantErr && tt.shouldChange == reflect.DeepEqual(args, tt.args.args) {
+				t.Errorf("Module.matchEncrypt() args = %v, ogArgs = %v, shouldChange = %v", args, tt.args.args, tt.shouldChange)
+				return
+			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Module.matchEncrypt() = %v, want %v", got, tt.want)
 			}
@@ -368,11 +400,12 @@ func TestModule_matchDecrypt(t *testing.T) {
 		args map[string]interface{}
 	}
 	tests := []struct {
-		name    string
-		m       *Module
-		args    args
-		want    *model.PostProcess
-		wantErr bool
+		name         string
+		m            *Module
+		args         args
+		want         *model.PostProcess
+		shouldChange bool
+		wantErr      bool
 	}{
 		{
 			name:    "invalid field",
@@ -393,10 +426,17 @@ func TestModule_matchDecrypt(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name:         "valid args",
+			m:            &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:         args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"args.username"}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "BXioRN4GyvZs"}}},
+			want:         &model.PostProcess{},
+			shouldChange: true,
+		},
+		{
 			name: "valid res",
 			m:    &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
-			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "decrypt", Field: "res.username"}}},
+			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{{Action: "decrypt", Field: "res.username"}}},
 		},
 		{
 			name:    "invalid field prefix",
@@ -404,15 +444,38 @@ func TestModule_matchDecrypt(t *testing.T) {
 			args:    args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"abc.username"}}, args: map[string]interface{}{"abc": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
+		{
+			name:         "valid args with rule allow",
+			m:            &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:         args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"args.username"}, Clause: &config.Rule{Rule: "allow"}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "BXioRN4GyvZs"}}},
+			want:         &model.PostProcess{},
+			shouldChange: true,
+		},
+		{
+			name:         "valid args with rule deny",
+			m:            &Module{aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:         args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"args.username"}, Clause: &config.Rule{Rule: "deny"}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "BXioRN4GyvZs"}}},
+			want:         &model.PostProcess{},
+			shouldChange: false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.matchDecrypt(context.Background(), tt.args.rule, tt.args.args)
+			args := map[string]interface{}{}
+			_ = deepcopy.Copy(&args, tt.args.args)
+
+			got, err := tt.m.matchDecrypt(context.Background(), "", tt.args.rule, tt.args.args, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.matchDecrypt() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
+			if !tt.wantErr && tt.shouldChange == reflect.DeepEqual(args, tt.args.args) {
+				t.Errorf("Module.matchDecrypt() args = %v, ogArgs = %v, shouldChange = %v", args, tt.args.args, tt.shouldChange)
+				return
+			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Module.matchDecrypt() = %v, want %v", got, tt.want)
 			}
@@ -439,7 +502,7 @@ func Test_decryptAESCFB(t *testing.T) {
 		},
 		{
 			name: "decryption takes place",
-			args: args{dst: make([]byte, len("username1")), src: []byte{5, 120, 168, 68, 222, 6, 202, 246, 108}, key: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="), iv: []byte(base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="))[:aes.BlockSize]},
+			args: args{dst: make([]byte, len("username1")), src: []byte{5, 120, 168, 68, 222, 6, 202, 246, 108}, key: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="), iv: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")[:aes.BlockSize]},
 		},
 	}
 	for _, tt := range tests {
@@ -460,10 +523,12 @@ func Test_matchHash(t *testing.T) {
 		args map[string]interface{}
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    *model.PostProcess
-		wantErr bool
+		name         string
+		m            *Module
+		args         args
+		want         *model.PostProcess
+		shouldChange bool
+		wantErr      bool
 	}{
 		{
 			name:    "invalid field",
@@ -471,9 +536,15 @@ func Test_matchHash(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name:         "valid args",
+			args:         args{rule: &config.Rule{Rule: "hash", Fields: []string{"args.password"}}, args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}}},
+			want:         &model.PostProcess{},
+			shouldChange: true,
+		},
+		{
 			name: "valid res",
 			args: args{rule: &config.Rule{Rule: "hash", Fields: []string{"res.password"}}, args: map[string]interface{}{"res": map[string]interface{}{"password": "password"}}},
-			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "hash", Field: "res.password"}}},
+			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{{Action: "hash", Field: "res.password"}}},
 		},
 		{
 			name:    "invalid value type",
@@ -485,15 +556,37 @@ func Test_matchHash(t *testing.T) {
 			args:    args{rule: &config.Rule{Rule: "hash", Fields: []string{"abc.password"}}, args: map[string]interface{}{"abc": map[string]interface{}{"password": "password"}}},
 			wantErr: true,
 		},
+		{
+			name:         "valid args with rule allow",
+			args:         args{rule: &config.Rule{Rule: "hash", Fields: []string{"args.password"}, Clause: &config.Rule{Rule: "allow"}}, args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}}},
+			want:         &model.PostProcess{},
+			shouldChange: true,
+		},
+		{
+			name:         "valid args with rule deny",
+			args:         args{rule: &config.Rule{Rule: "hash", Fields: []string{"args.password"}, Clause: &config.Rule{Rule: "deny"}}, args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}}},
+			want:         &model.PostProcess{},
+			shouldChange: false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := matchHash(context.Background(), tt.args.rule, tt.args.args)
+			args := map[string]interface{}{}
+			_ = deepcopy.Copy(&args, tt.args.args)
+
+			m := &Module{}
+			got, err := m.matchHash(context.Background(), "", tt.args.rule, tt.args.args, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("matchHash() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
+			if !tt.wantErr && tt.shouldChange == reflect.DeepEqual(args, tt.args.args) {
+				t.Errorf("Module.matchDecrypt() args = %v, ogArgs = %v, shouldChange = %v", args, tt.args.args, tt.shouldChange)
+				return
+			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("matchHash() = %v, want %v", got, tt.want)
 			}
@@ -581,7 +674,7 @@ func TestModule_matchFunc(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var HTTPCall utils.TypeMakeHTTPRequest = func(ctx context2.Context, method, url, token, scToken string, params, vPtr interface{}) error {
+			var HTTPCall utils.TypeMakeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 				if tt.args.httpParams.shouldRequestFail {
 					return errors.New("Cannot make http request to web hook url")
 				}
