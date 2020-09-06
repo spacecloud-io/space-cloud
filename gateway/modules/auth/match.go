@@ -203,7 +203,7 @@ func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config
 	actions := &model.PostProcess{}
 	fields, err := m.getFields(ctx, rule.Fields, args)
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Remove)", err, nil)
+		return nil, err
 	}
 	for _, value := range fields {
 		field, ok := value.(string)
@@ -238,7 +238,7 @@ func (m *Module) matchEncrypt(ctx context.Context, projectID string, rule *confi
 
 	fields, err := m.getFields(ctx, rule.Fields, args)
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Encrypt)", err, nil)
+		return nil, err
 	}
 	for _, value := range fields {
 		field, ok := value.(string)
@@ -284,7 +284,7 @@ func (m *Module) matchDecrypt(ctx context.Context, projectID string, rule *confi
 
 	fields, err := m.getFields(ctx, rule.Fields, args)
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Decrypt)", err, nil)
+		return nil, err
 	}
 	for _, value := range fields {
 		field, ok := value.(string)
@@ -345,7 +345,7 @@ func (m *Module) matchHash(ctx context.Context, projectID string, rule *config.R
 
 	fields, err := m.getFields(ctx, rule.Fields, args)
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (Fields) in security rules where rule is (Hash)", err, nil)
+		return nil, err
 	}
 	for _, value := range fields {
 		field, ok := value.(string)
