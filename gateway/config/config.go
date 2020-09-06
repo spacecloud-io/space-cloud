@@ -184,6 +184,7 @@ type Endpoint struct {
 	Path      string                   `json:"path" yaml:"path"`
 	Rule      *Rule                    `json:"rule,omitempty" yaml:"rule,omitempty"`
 	Headers   Headers                  `json:"headers,omitempty" yaml:"headers,omitempty"`
+	Timeout   int                      `json:"timeout,omitempty" yaml:"timeout,omitempty"` // Timeout is in seconds
 }
 
 // EndpointKind describes the type of endpoint. Default value - internal
