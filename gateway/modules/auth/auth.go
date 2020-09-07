@@ -162,6 +162,10 @@ func (m *Module) CreateToken(ctx context.Context, tokenClaims model.TokenClaims)
 	m.RLock()
 	defer m.RUnlock()
 
+	return m.createTokenWithoutLock(ctx, tokenClaims)
+}
+
+func (m *Module) createTokenWithoutLock(ctx context.Context, tokenClaims model.TokenClaims) (string, error) {
 	claims := jwt.MapClaims{}
 	for k, v := range tokenClaims {
 		claims[k] = v

@@ -77,17 +77,13 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 	newArgs := args["args"].(map[string]interface{})
 
 	var token string
-	var claims interface{}
 	var err error
 	if len(rule.Claims) > 0 {
-		token, err = m.CreateToken(ctx, rule.Claims)
+		token, err = m.createTokenWithoutLock(ctx, rule.Claims)
 		if err != nil {
 			return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create new token used by the webhook url in security rule (Webhook)", err, nil))
 		}
-		claims = rule.Claims
-		newArgs["auth"] = rule.Claims
 	} else {
-		claims = newArgs["auth"]
 		token = newArgs["token"].(string)
 	}
 
@@ -105,7 +101,7 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 			if rule.OpFormat == "" {
 				rule.OpFormat = "json"
 			}
-			obj, err = tmpl2.GoTemplate(ctx, t, rule.OpFormat, token, claims, args["args"])
+			obj, err = tmpl2.GoTemplate(ctx, t, rule.OpFormat, newArgs["token"].(string), newArgs["auth"], args["args"])
 			if err != nil {
 				return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to execute provided template in security rule (Webhook)", err, nil))
 			}

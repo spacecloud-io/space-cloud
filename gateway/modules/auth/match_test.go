@@ -679,10 +679,10 @@ func Test_matchHash(t *testing.T) {
 
 func TestModule_matchFunc(t *testing.T) {
 	type params struct {
-		url, token        string
+		url               string
+		claims            map[string]interface{}
 		params            interface{}
 		shouldRequestFail bool
-		skipTokenCheck    bool
 	}
 	type args struct {
 		rule       *config.Rule
@@ -702,11 +702,11 @@ func TestModule_matchFunc(t *testing.T) {
 			args: args{
 				httpParams: params{
 					url:    "http://localhost/validate",
-					token:  "loremparis",
-					params: map[string]interface{}{"auth": map[string]interface{}{"role": "admin"}, "token": "loremparis"},
+					claims: map[string]interface{}{},
+					params: map[string]interface{}{"auth": map[string]interface{}{"role": "admin"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"},
 				},
 				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate"},
-				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"role": "admin"}, "token": "loremparis"}}},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"role": "admin"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"}}},
 			want:    nil,
 			wantErr: false,
 		},
@@ -728,13 +728,12 @@ func TestModule_matchFunc(t *testing.T) {
 			m:    &Module{secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{
 				httpParams: params{
-					skipTokenCheck: true,
-					url:            "http://localhost/validate",
-					token:          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTk5OTE4NTUsInJvbGUiOiJhZG1pbiJ9.aD7WU0MJTsYajhkelu2MgOrjlFHiWenYBkueE6haHOY",
-					params:         map[string]interface{}{"auth": map[string]interface{}{"role": "admin"}, "token": "loremparis"},
+					url:    "http://localhost/validate",
+					claims: map[string]interface{}{"role": "admin"},
+					params: map[string]interface{}{"auth": map[string]interface{}{}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"},
 				},
 				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: map[string]interface{}{"role": "admin"}},
-				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{}, "token": "loremparis"}}},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"}}},
 			want:    nil,
 			wantErr: false,
 		},
@@ -743,13 +742,12 @@ func TestModule_matchFunc(t *testing.T) {
 			m:    &Module{secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{
 				httpParams: params{
-					skipTokenCheck: true,
-					url:            "http://localhost/validate",
-					token:          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTk5OTE4NTUsInJvbGUiOiJhZG1pbiJ9.aD7WU0MJTsYajhkelu2MgOrjlFHiWenYBkueE6haHOY",
-					params:         map[string]interface{}{"service": "http://localhost:9000/"},
+					url:    "http://localhost/validate",
+					claims: map[string]interface{}{"role": "admin"},
+					params: map[string]interface{}{"service": "http://localhost:9000/"},
 				},
-				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: map[string]interface{}{"role": "admin", "serviceAddr": "http://localhost:9000/"}, ReqTmpl: `{"service":"{{.args.auth.serviceAddr}}"}`, Template: config.TemplatingEngineGo},
-				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{}, "token": "loremparis"}}},
+				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: map[string]interface{}{"role": "admin"}, ReqTmpl: `{"service":"{{.args.auth.serviceAddr}}"}`, Template: config.TemplatingEngineGo},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"serviceAddr": "http://localhost:9000/"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"}}},
 			want:    nil,
 			wantErr: false,
 		},
@@ -765,10 +763,17 @@ func TestModule_matchFunc(t *testing.T) {
 					t.Errorf("matchFunc() Url mis match in makeHTTPRequest wanted (%s) got (%s)", tt.args.httpParams.url, url)
 					return nil
 				}
-				if !tt.args.httpParams.skipTokenCheck && tt.args.httpParams.token != token {
-					t.Errorf("matchFunc() Url token mis match in makeHTTPRequest wanted (%s) got (%s)", tt.args.httpParams.token, token)
+				claims, err := tt.m.parseToken(ctx, token)
+				if err != nil {
+					t.Errorf("matchFunc() cannot parse token (%s)", token)
 					return nil
 				}
+				delete(claims, "exp")
+				if !reflect.DeepEqual(tt.args.httpParams.claims, claims) {
+					t.Errorf("matchFunc() token claims mis match in makeHTTPRequest wanted (%s) got (%s)", tt.args.httpParams.claims, claims)
+					return nil
+				}
+
 				if !reflect.DeepEqual(tt.args.httpParams.params, params) {
 					t.Errorf("matchFunc() Url body params mis match in makeHTTPRequest wanted (%s) got (%s)", tt.args.httpParams.params, params)
 					return nil
