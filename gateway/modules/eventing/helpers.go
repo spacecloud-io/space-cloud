@@ -304,7 +304,7 @@ func (m *Module) adjustReqBody(ctx context.Context, trigger, token string, endpo
 	var err error
 
 	switch endpoint.Tmpl {
-	case config.EndpointTemplatingEngineGo:
+	case config.TemplatingEngineGo:
 		if tmpl, p := m.templates[getGoTemplateKey("trigger", trigger)]; p {
 			req, err = tmpl2.GoTemplate(ctx, tmpl, endpoint.OpFormat, token, auth, params)
 			if err != nil {
