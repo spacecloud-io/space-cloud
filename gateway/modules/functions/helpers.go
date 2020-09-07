@@ -133,15 +133,15 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 	var err error
 
 	switch endpoint.Tmpl {
-	case config.EndpointTemplatingEngineGo:
+	case config.TemplatingEngineGo:
 		if tmpl, p := m.templates[getGoTemplateKey("request", serviceID, endpointID)]; p {
-			req, err = tmpl2.GoTemplate(module, segmentGoTemplate, tmpl, endpoint.OpFormat, token, auth, params)
+			req, err = tmpl2.GoTemplate(ctx, tmpl, endpoint.OpFormat, token, auth, params)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if tmpl, p := m.templates[getGoTemplateKey("graph", serviceID, endpointID)]; p {
-			graph, err = tmpl2.GoTemplate(module, segmentGoTemplate, tmpl, "string", token, auth, params)
+			graph, err = tmpl2.GoTemplate(ctx, tmpl, "string", token, auth, params)
 			if err != nil {
 				return nil, err
 			}
@@ -172,9 +172,9 @@ func (m *Module) adjustResBody(ctx context.Context, serviceID, endpointID, token
 	var err error
 
 	switch endpoint.Tmpl {
-	case config.EndpointTemplatingEngineGo:
+	case config.TemplatingEngineGo:
 		if tmpl, p := m.templates[getGoTemplateKey("response", serviceID, endpointID)]; p {
-			res, err = tmpl2.GoTemplate(module, segmentGoTemplate, tmpl, endpoint.OpFormat, token, auth, params)
+			res, err = tmpl2.GoTemplate(ctx, tmpl, endpoint.OpFormat, token, auth, params)
 			if err != nil {
 				return nil, err
 			}

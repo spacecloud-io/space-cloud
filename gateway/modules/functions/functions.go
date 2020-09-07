@@ -35,11 +35,6 @@ func Init(auth model.AuthFunctionInterface, manager *syncman.Manager, hook model
 	return &Module{auth: auth, manager: manager, metricHook: hook}
 }
 
-const (
-	module            string = "remote-services"
-	segmentGoTemplate string = "goTemplate"
-)
-
 // SetConfig sets the configuration of the functions module
 func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 	m.lock.Lock()
@@ -66,7 +61,7 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 
 			// Set default templating engine
 			if endpoint.Tmpl == "" {
-				endpoint.Tmpl = config.EndpointTemplatingEngineGo
+				endpoint.Tmpl = config.TemplatingEngineGo
 			}
 
 			// Set default output format
@@ -79,7 +74,7 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 			}
 
 			switch endpoint.Tmpl {
-			case config.EndpointTemplatingEngineGo:
+			case config.TemplatingEngineGo:
 				if endpoint.ReqTmpl != "" {
 					if err := m.createGoTemplate("request", serviceID, endpointID, endpoint.ReqTmpl); err != nil {
 						return err

@@ -9,12 +9,14 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"text/template"
 
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 )
 
 func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
@@ -72,8 +74,44 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 }
 
 func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPRequest utils.TypeMakeHTTPRequest, args map[string]interface{}) error {
-	obj := args["args"].(map[string]interface{})
-	token := obj["token"].(string)
+	newArgs := args["args"].(map[string]interface{})
+
+	var token string
+	var err error
+	if len(rule.Claims) > 0 {
+		token, err = m.createTokenWithoutLock(ctx, rule.Claims)
+		if err != nil {
+			return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create new token used by the webhook url in security rule (Webhook)", err, nil))
+		}
+	} else {
+		token = newArgs["token"].(string)
+	}
+
+	var obj interface{}
+	if rule.ReqTmpl != "" {
+		switch rule.Template {
+		case config.TemplatingEngineGo:
+			// Create a new template object
+			t := template.New(rule.Name)
+			t = t.Funcs(tmpl2.CreateGoFuncMaps(m))
+			t, err = t.Parse(rule.ReqTmpl)
+			if err != nil {
+				return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse provided template in security rule (Webhook)", err, nil))
+			}
+			if rule.OpFormat == "" {
+				rule.OpFormat = "json"
+			}
+			obj, err = tmpl2.GoTemplate(ctx, t, rule.OpFormat, newArgs["token"].(string), newArgs["auth"], args["args"])
+			if err != nil {
+				return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to execute provided template in security rule (Webhook)", err, nil))
+			}
+		default:
+			helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step for security rule (Webhook) & using the default body.", rule.Template), nil)
+			obj = newArgs
+		}
+	} else {
+		obj = newArgs
+	}
 
 	scToken, err := m.GetSCAccessToken(ctx)
 	if err != nil {

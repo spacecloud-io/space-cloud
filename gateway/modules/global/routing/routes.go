@@ -12,10 +12,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-const (
-	module string = "ingress-route"
-)
-
 func (r *Routing) addProjectRoutes(project string, routes config.Routes) {
 	r.deleteProjectRoutes(project)
 	r.routes = append(r.routes, routes...)
