@@ -175,7 +175,7 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 				return
 			}
 			_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})
-		} else if fileType == "folder" {
+		} else if fileType == "dir" {
 			status, err := fileStore.DeleteDir(ctx, projectID, token, path, v)
 			if err != nil {
 				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())

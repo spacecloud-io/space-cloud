@@ -2,6 +2,7 @@ package amazons3
 
 import (
 	"context"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -26,7 +27,7 @@ func (a *AmazonS3) DeleteFile(ctx context.Context, path string) error {
 func (a *AmazonS3) DeleteDir(ctx context.Context, path string) error {
 	// TODO: Consider AWS operation limit
 	svc := s3.New(a.client)
-	path = path[1:]
+	path = strings.TrimPrefix(path, "/")
 	// Setup BatchDeleteIterator to iterate through a list of objects.
 	iter := s3manager.NewDeleteListIterator(svc, &s3.ListObjectsInput{
 		Bucket: aws.String(a.bucket),
