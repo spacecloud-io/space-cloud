@@ -51,7 +51,7 @@ func extractRequiredServiceAffinityObject(arr []v1.PodAffinityTerm) []model.Affi
 		}
 		affinities = append(affinities, model.Affinity{
 			Type:             model.AffinityTypeService,
-			Weight:           -1, // TODO: For operator required we don't store weight
+			Weight:           -100,
 			Operator:         model.AffinityOperatorRequired,
 			TopologyKey:      preferredSchedulingTerm.TopologyKey,
 			Projects:         preferredSchedulingTerm.Namespaces,
