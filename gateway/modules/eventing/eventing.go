@@ -123,7 +123,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	for name, trigger := range m.config.Rules {
 		// Set default templating engine
 		if trigger.Tmpl == "" {
-			trigger.Tmpl = config.EndpointTemplatingEngineGo
+			trigger.Tmpl = config.TemplatingEngineGo
 		}
 
 		// Set default output format
@@ -132,7 +132,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		}
 
 		switch trigger.Tmpl {
-		case config.EndpointTemplatingEngineGo:
+		case config.TemplatingEngineGo:
 			if trigger.RequestTemplate != "" {
 				if err := m.createGoTemplate("trigger", name, trigger.RequestTemplate); err != nil {
 					return err
