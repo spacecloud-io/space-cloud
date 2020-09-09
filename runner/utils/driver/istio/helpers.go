@@ -453,46 +453,50 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 	}
 
 	var nodeAffinity *v1.NodeAffinity
-	if len(service.Affinity) > 0 {
-		nodeAffinity = &v1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
-				NodeSelectorTerms: []v1.NodeSelectorTerm{},
-			},
-		}
-	}
-	podAffinity := &v1.PodAffinity{}
-	podAntiAffinity := &v1.PodAntiAffinity{}
+	var podAffinity *v1.PodAffinity
+	var podAntiAffinity *v1.PodAntiAffinity
 	for _, affinity := range service.Affinity {
 		switch affinity.Type {
 		case model.AffinityTypeService:
 			// affinity
 			if affinity.Weight > 0 {
-				required, preferred := getServiceAffinityObject(affinity)
-				if len(preferred) > 0 {
-					podAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(podAffinity.PreferredDuringSchedulingIgnoredDuringExecution, preferred...)
+				if podAffinity == nil {
+					podAffinity = &v1.PodAffinity{}
 				}
-				if len(required) > 0 {
-					podAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(podAffinity.RequiredDuringSchedulingIgnoredDuringExecution, required...)
+				required, preferred := getServiceAffinityObject(affinity, 1)
+				if preferred != nil {
+					podAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(podAffinity.PreferredDuringSchedulingIgnoredDuringExecution, *preferred)
+				}
+				if required != nil {
+					podAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(podAffinity.RequiredDuringSchedulingIgnoredDuringExecution, *required)
 				}
 			} else {
-				affinityObj := affinity
-				affinityObj.Weight = -1 * affinityObj.Weight // make the weight positive
-				required, preferred := getServiceAffinityObject(affinityObj)
-				if len(preferred) > 0 {
-					podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, preferred...)
+				if podAntiAffinity == nil {
+					podAntiAffinity = &v1.PodAntiAffinity{}
 				}
-				if len(required) > 0 {
-					podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution, required...)
+				required, preferred := getServiceAffinityObject(affinity, -1)
+				if preferred != nil {
+					podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, *preferred)
+				}
+				if required != nil {
+					podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution, *required)
 				}
 			}
 		case model.AffinityTypeNode:
 			// affinity
-			required, preferred := getNodeAffinityObject(affinity)
-			if len(preferred) > 0 {
-				nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, preferred...)
+			if nodeAffinity == nil {
+				nodeAffinity = &v1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+						NodeSelectorTerms: []v1.NodeSelectorTerm{},
+					},
+				}
 			}
-			if len(required.NodeSelectorTerms) > 0 {
-				nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, required.NodeSelectorTerms...)
+			required, preferred := getNodeAffinityObject(affinity)
+			if preferred != nil {
+				nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, *preferred)
+			}
+			if required != nil {
+				nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, *required)
 			}
 		}
 	}
@@ -537,10 +541,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 	}
 }
 
-func getServiceAffinityObject(affinity model.Affinity) ([]v1.PodAffinityTerm, []v1.WeightedPodAffinityTerm) {
-	required := []v1.PodAffinityTerm{}
-	preferred := []v1.WeightedPodAffinityTerm{}
-
+func getServiceAffinityObject(affinity model.Affinity, multiplier int32) (*v1.PodAffinityTerm, *v1.WeightedPodAffinityTerm) {
 	expressions := []metav1.LabelSelectorRequirement{}
 	for _, expression := range affinity.MatchExpressions {
 		expressions = append(expressions, metav1.LabelSelectorRequirement{
@@ -551,17 +552,17 @@ func getServiceAffinityObject(affinity model.Affinity) ([]v1.PodAffinityTerm, []
 	}
 	switch affinity.Operator {
 	case model.AffinityOperatorRequired:
-		required = append(required, v1.PodAffinityTerm{
+		return &v1.PodAffinityTerm{
 			LabelSelector: &metav1.LabelSelector{
 				MatchLabels:      nil,
 				MatchExpressions: expressions,
 			},
 			Namespaces:  affinity.Projects,
 			TopologyKey: affinity.TopologyKey,
-		})
+		}, nil
 	case model.AffinityOperatorPreferred:
-		preferred = append(preferred, v1.WeightedPodAffinityTerm{
-			Weight: affinity.Weight,
+		return nil, &v1.WeightedPodAffinityTerm{
+			Weight: affinity.Weight * multiplier,
 			PodAffinityTerm: v1.PodAffinityTerm{
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels:      nil,
@@ -570,17 +571,12 @@ func getServiceAffinityObject(affinity model.Affinity) ([]v1.PodAffinityTerm, []
 				Namespaces:  affinity.Projects,
 				TopologyKey: affinity.TopologyKey,
 			},
-		})
+		}
 	}
-	return required, preferred
+	return nil, nil
 }
 
-func getNodeAffinityObject(affinity model.Affinity) (*v1.NodeSelector, []v1.PreferredSchedulingTerm) {
-	required := &v1.NodeSelector{
-		NodeSelectorTerms: []v1.NodeSelectorTerm{},
-	}
-	preferred := []v1.PreferredSchedulingTerm{}
-
+func getNodeAffinityObject(affinity model.Affinity) (*v1.NodeSelectorTerm, *v1.PreferredSchedulingTerm) {
 	expressions := []v1.NodeSelectorRequirement{}
 	for _, expression := range affinity.MatchExpressions {
 		expressions = append(expressions, v1.NodeSelectorRequirement{
@@ -591,19 +587,17 @@ func getNodeAffinityObject(affinity model.Affinity) (*v1.NodeSelector, []v1.Pref
 	}
 	switch affinity.Operator {
 	case model.AffinityOperatorRequired:
-		required.NodeSelectorTerms = append(required.NodeSelectorTerms, v1.NodeSelectorTerm{
-			MatchExpressions: expressions,
-		})
+		return &v1.NodeSelectorTerm{MatchExpressions: expressions}, nil
 	case model.AffinityOperatorPreferred:
-		preferred = append(preferred, v1.PreferredSchedulingTerm{
-			Weight: (affinity.Weight),
+		return nil, &v1.PreferredSchedulingTerm{
+			Weight: affinity.Weight,
 			Preference: v1.NodeSelectorTerm{
 				MatchExpressions: expressions,
 				MatchFields:      nil,
 			},
-		})
+		}
 	}
-	return required, preferred
+	return nil, nil
 }
 
 func generateGeneralService(service *model.Service) *v1.Service {

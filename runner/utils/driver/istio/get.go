@@ -13,7 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-func extractPreferredServiceAffinityObject(arr []v1.WeightedPodAffinityTerm) []model.Affinity {
+func extractPreferredServiceAffinityObject(arr []v1.WeightedPodAffinityTerm, multiplier int32) []model.Affinity {
 	affinities := []model.Affinity{}
 	for _, preferredSchedulingTerm := range arr {
 		matchExpression := []model.MatchExpressions{}
@@ -27,7 +27,7 @@ func extractPreferredServiceAffinityObject(arr []v1.WeightedPodAffinityTerm) []m
 		}
 		affinities = append(affinities, model.Affinity{
 			Type:             model.AffinityTypeService,
-			Weight:           preferredSchedulingTerm.Weight,
+			Weight:           preferredSchedulingTerm.Weight * multiplier,
 			Operator:         model.AffinityOperatorPreferred,
 			TopologyKey:      preferredSchedulingTerm.PodAffinityTerm.TopologyKey,
 			Projects:         preferredSchedulingTerm.PodAffinityTerm.Namespaces,
@@ -37,7 +37,7 @@ func extractPreferredServiceAffinityObject(arr []v1.WeightedPodAffinityTerm) []m
 	return affinities
 }
 
-func extractRequiredServiceAffinityObject(arr []v1.PodAffinityTerm) []model.Affinity {
+func extractRequiredServiceAffinityObject(arr []v1.PodAffinityTerm, multiplier int32) []model.Affinity {
 	affinities := []model.Affinity{}
 	for _, preferredSchedulingTerm := range arr {
 		matchExpression := []model.MatchExpressions{}
@@ -51,7 +51,7 @@ func extractRequiredServiceAffinityObject(arr []v1.PodAffinityTerm) []model.Affi
 		}
 		affinities = append(affinities, model.Affinity{
 			Type:             model.AffinityTypeService,
-			Weight:           -100,
+			Weight:           100 * multiplier,
 			Operator:         model.AffinityOperatorRequired,
 			TopologyKey:      preferredSchedulingTerm.TopologyKey,
 			Projects:         preferredSchedulingTerm.Namespaces,
@@ -106,27 +106,27 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 			}
 			service.Affinity = append(service.Affinity, model.Affinity{
 				Type:             model.AffinityTypeNode,
-				Operator:         model.AffinityOperatorPreferred,
+				Operator:         model.AffinityOperatorRequired,
 				MatchExpressions: matchExpression,
 			})
 		}
 
 		// service affinity
-		affinities := extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution)
+		affinities := extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution, 1)
 		if len(affinities) > 0 {
 			service.Affinity = append(service.Affinity, affinities...)
 		}
-		affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
+		affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution, 1)
 		if len(affinities) > 0 {
 			service.Affinity = append(service.Affinity, affinities...)
 		}
 
 		// service anti affinity
-		affinities = extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution)
+		affinities = extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, -1)
 		if len(affinities) > 0 {
 			service.Affinity = append(service.Affinity, affinities...)
 		}
-		affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
+		affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution, -1)
 		if len(affinities) > 0 {
 			service.Affinity = append(service.Affinity, affinities...)
 		}
