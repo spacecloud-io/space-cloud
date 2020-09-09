@@ -50,12 +50,12 @@ type Route struct {
 	Targets []RouteTarget `json:"targets" yaml:"targets"`
 	Rule    *Rule         `json:"rule" yaml:"rule"`
 	Modify  struct {
-		Tmpl            EndpointTemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
-		ReqTmpl         string                   `json:"requestTemplate" yaml:"requestTemplate"`
-		ResTmpl         string                   `json:"responseTemplate" yaml:"responseTemplate"`
-		OpFormat        string                   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
-		RequestHeaders  Headers                  `json:"headers" yaml:"headers"`
-		ResponseHeaders Headers                  `json:"resHeaders" yaml:"resHeaders"`
+		Tmpl            TemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
+		ReqTmpl         string           `json:"requestTemplate" yaml:"requestTemplate"`
+		ResTmpl         string           `json:"responseTemplate" yaml:"responseTemplate"`
+		OpFormat        string           `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
+		RequestHeaders  Headers          `json:"headers" yaml:"headers"`
+		ResponseHeaders Headers          `json:"resHeaders" yaml:"resHeaders"`
 	} `json:"modify" yaml:"modify"`
 }
 

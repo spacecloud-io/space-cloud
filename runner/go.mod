@@ -24,7 +24,7 @@ require (
 	github.com/rs/cors v1.7.0
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.2
-	github.com/spaceuptech/helpers v0.1.1
+	github.com/spaceuptech/helpers v0.1.2
 	github.com/spaceuptech/space-api-go v0.17.3
 	github.com/txn2/txeh v1.3.0
 	github.com/urfave/cli v1.22.2

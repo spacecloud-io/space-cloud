@@ -299,14 +299,14 @@ func getGoTemplateKey(kind, triggerName string) string {
 	return fmt.Sprintf("%s---%s", kind, triggerName)
 }
 
-func (m *Module) adjustReqBody(trigger, token string, endpoint *config.EventingRule, auth, params interface{}) (interface{}, error) {
+func (m *Module) adjustReqBody(ctx context.Context, trigger, token string, endpoint *config.EventingRule, auth, params interface{}) (interface{}, error) {
 	var req interface{}
 	var err error
 
 	switch endpoint.Tmpl {
-	case config.EndpointTemplatingEngineGo:
+	case config.TemplatingEngineGo:
 		if tmpl, p := m.templates[getGoTemplateKey("trigger", trigger)]; p {
-			req, err = tmpl2.GoTemplate("eventing", "process-staged", tmpl, endpoint.OpFormat, token, auth, params)
+			req, err = tmpl2.GoTemplate(ctx, tmpl, endpoint.OpFormat, token, auth, params)
 			if err != nil {
 				return nil, err
 			}

@@ -21,7 +21,7 @@ func (r *Routing) SetProjectRoutes(project string, routes config.Routes) error {
 	// Add projects to the routes object and generate go templates
 	for _, route := range routes {
 		route.Project = project
-		route.Modify.Tmpl = config.EndpointTemplatingEngineGo
+		route.Modify.Tmpl = config.TemplatingEngineGo
 
 		// Parse request template
 		if route.Modify.ReqTmpl != "" {
