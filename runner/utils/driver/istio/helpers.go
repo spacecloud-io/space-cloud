@@ -451,13 +451,60 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 	if strings.Contains(service.StatsInclusionPrefixes, "http.inbound") {
 		service.StatsInclusionPrefixes += ",http.inbound"
 	}
+
+	var nodeAffinity *v1.NodeAffinity
+	if len(service.Affinity) > 0 {
+		nodeAffinity = &v1.NodeAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+				NodeSelectorTerms: []v1.NodeSelectorTerm{},
+			},
+		}
+	}
+	podAffinity := &v1.PodAffinity{}
+	podAntiAffinity := &v1.PodAntiAffinity{}
+	for _, affinity := range service.Affinity {
+		switch affinity.Type {
+		case model.AffinityTypeService:
+			// affinity
+			if affinity.Weight > 0 {
+				required, preferred := getServiceAffinityObject(affinity)
+				if len(preferred) > 0 {
+					podAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(podAffinity.PreferredDuringSchedulingIgnoredDuringExecution, preferred...)
+				}
+				if len(required) > 0 {
+					podAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(podAffinity.RequiredDuringSchedulingIgnoredDuringExecution, required...)
+				}
+			} else {
+				affinityObj := affinity
+				affinityObj.Weight = -1 * affinityObj.Weight // make the weight positive
+				required, preferred := getServiceAffinityObject(affinityObj)
+				if len(preferred) > 0 {
+					podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, preferred...)
+				}
+				if len(required) > 0 {
+					podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution, required...)
+				}
+			}
+		case model.AffinityTypeNode:
+			// affinity
+			required, preferred := getNodeAffinityObject(affinity)
+			if len(preferred) > 0 {
+				nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, preferred...)
+			}
+			if len(required.NodeSelectorTerms) > 0 {
+				nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, required.NodeSelectorTerms...)
+			}
+		}
+	}
+
+	labels := service.Labels
+	labels["app"] = service.ID
+	labels["version"] = service.Version
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: getDeploymentName(service.ID, service.Version),
-			Labels: map[string]string{
-				"app":     service.ID,
-				"version": service.Version,
-			},
+			Name:   getDeploymentName(service.ID, service.Version),
+			Labels: labels,
 			Annotations: map[string]string{
 				"concurrency": strconv.Itoa(int(service.Scale.Concurrency)),
 				"minReplicas": strconv.Itoa(int(service.Scale.MinReplicas)),
@@ -472,18 +519,91 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"sidecar.istio.io/statsInclusionPrefixes": service.StatsInclusionPrefixes},
-					Labels:      map[string]string{"app": service.ID, "version": service.Version},
+					Labels:      labels,
 				},
 				Spec: v1.PodSpec{
 					ServiceAccountName: getServiceAccountName(service.ID),
 					Containers:         preparedContainer,
 					Volumes:            volumes,
 					ImagePullSecrets:   imagePull,
-					// TODO: Add config for affinity
+					Affinity: &v1.Affinity{
+						NodeAffinity:    nodeAffinity,
+						PodAffinity:     podAffinity,
+						PodAntiAffinity: podAntiAffinity,
+					},
 				},
 			},
 		},
 	}
+}
+
+func getServiceAffinityObject(affinity model.Affinity) ([]v1.PodAffinityTerm, []v1.WeightedPodAffinityTerm) {
+	required := []v1.PodAffinityTerm{}
+	preferred := []v1.WeightedPodAffinityTerm{}
+
+	expressions := []metav1.LabelSelectorRequirement{}
+	for _, expression := range affinity.MatchExpressions {
+		expressions = append(expressions, metav1.LabelSelectorRequirement{
+			Key:      expression.Key,
+			Operator: metav1.LabelSelectorOperator(expression.Operator),
+			Values:   expression.Values,
+		})
+	}
+	switch affinity.Operator {
+	case model.AffinityOperatorRequired:
+		required = append(required, v1.PodAffinityTerm{
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels:      nil,
+				MatchExpressions: expressions,
+			},
+			Namespaces:  affinity.Projects,
+			TopologyKey: affinity.TopologyKey,
+		})
+	case model.AffinityOperatorPreferred:
+		preferred = append(preferred, v1.WeightedPodAffinityTerm{
+			Weight: affinity.Weight,
+			PodAffinityTerm: v1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels:      nil,
+					MatchExpressions: expressions,
+				},
+				Namespaces:  affinity.Projects,
+				TopologyKey: affinity.TopologyKey,
+			},
+		})
+	}
+	return required, preferred
+}
+
+func getNodeAffinityObject(affinity model.Affinity) (*v1.NodeSelector, []v1.PreferredSchedulingTerm) {
+	required := &v1.NodeSelector{
+		NodeSelectorTerms: []v1.NodeSelectorTerm{},
+	}
+	preferred := []v1.PreferredSchedulingTerm{}
+
+	expressions := []v1.NodeSelectorRequirement{}
+	for _, expression := range affinity.MatchExpressions {
+		expressions = append(expressions, v1.NodeSelectorRequirement{
+			Key:      expression.Key,
+			Operator: v1.NodeSelectorOperator(expression.Operator),
+			Values:   expression.Values,
+		})
+	}
+	switch affinity.Operator {
+	case model.AffinityOperatorRequired:
+		required.NodeSelectorTerms = append(required.NodeSelectorTerms, v1.NodeSelectorTerm{
+			MatchExpressions: expressions,
+		})
+	case model.AffinityOperatorPreferred:
+		preferred = append(preferred, v1.PreferredSchedulingTerm{
+			Weight: (affinity.Weight),
+			Preference: v1.NodeSelectorTerm{
+				MatchExpressions: expressions,
+				MatchFields:      nil,
+			},
+		})
+	}
+	return required, preferred
 }
 
 func generateGeneralService(service *model.Service) *v1.Service {
