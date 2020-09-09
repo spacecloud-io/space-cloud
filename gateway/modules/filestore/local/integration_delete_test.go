@@ -15,7 +15,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
-func TestSQL_DeleteFile(t *testing.T) {
+func Test_DeleteFile(t *testing.T) {
 	ctx := context.Background()
 	path := fmt.Sprintf("%s/space_cloud_test", os.ExpandEnv("$HOME"))
 	file, err := Init(path)

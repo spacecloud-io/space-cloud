@@ -18,7 +18,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
-func TestSQL_CreateFile(t *testing.T) {
+func Test_CreateFile(t *testing.T) {
 	ctx := context.Background()
 	type args struct {
 		req  *model.CreateFileRequest
@@ -163,7 +163,7 @@ func TestSQL_CreateFile(t *testing.T) {
 	}
 }
 
-func TestSQL_CreateFolder(t *testing.T) {
+func Test_CreateFolder(t *testing.T) {
 	ctx := context.Background()
 	type args struct {
 		req  *model.CreateFileRequest
