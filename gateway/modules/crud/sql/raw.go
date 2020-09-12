@@ -61,7 +61,7 @@ func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, name string) error {
 	var sql string
 	switch model.DBType(s.dbType) {
 	case model.MySQL:
-		sql = "create database if not exists " + name
+		sql = fmt.Sprintf("create database if not exists `%s`", name)
 	case model.Postgres:
 		sql = "create schema if not exists " + name
 	case model.SQLServer:
