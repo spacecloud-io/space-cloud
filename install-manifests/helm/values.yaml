@@ -1,0 +1,25 @@
+# Default values for space-cloud.
+
+dev_mode: "true" # Turn this to false for production mode
+cluster_id: "first-cluster"
+
+gateway:
+  image_name: "spaceuptech/gateway"
+  image_version: 0.19.2
+  replicas: 3
+  restricted_hosts: "*" # Comma seperated IPs for restricting access to admin UI
+  ssl_enable: "true"
+  custom_ssl_secret: "" # If required change this to the Kubernetes secret name containing custom SSL cert
+  custom_ssl_cert_key: "" # Secret key containing SSL public certificate
+  custom_ssl_private_key: "" # Secret key containing SSL private key
+
+runner:
+  image_name: "spaceuptech/runner"
+  image_version: 0.19.2
+  replicas: 1
+  jwt_proxy_secret: "some-proxy-secret"
+
+admin:
+  user: "admin"
+  password: "1234"
+  secret: "some-secret"

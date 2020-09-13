@@ -1,0 +1,7 @@
+apiVersion: v2
+name: space-cloud
+description: Helm Chart to install Space Cloud
+type: application
+
+version: 0.1.0 # Chart version
+appVersion: 0.19.3 # Space Cloud version
