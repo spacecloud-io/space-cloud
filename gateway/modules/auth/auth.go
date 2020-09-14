@@ -65,12 +65,12 @@ func (m *Module) SetConfig(project, secretSource string, secrets []*config.Secre
 	// Check if secrets have been changed
 	if !reflect.DeepEqual(m.secrets, secrets) {
 		for _, secret := range secrets {
-			if secret.Alg == config.JwkWithoutUrl {
+			if secret.Alg == config.JwkWithoutURL {
 				if secret.IsPrimary {
 					return helpers.Logger.LogError("", "Secret with out jwk url and only public key cannot be a primary secret", nil, nil)
 				}
 			}
-			if secret.Alg == config.JwkWithUrl {
+			if secret.Alg == config.JwkWithURL {
 				tempObj, ok := m.jsonWebKeys[secret.KID]
 				if ok {
 					// close the previous refetch/refresh jwk go routing
@@ -99,7 +99,8 @@ func (m *Module) SetConfig(project, secretSource string, secrets []*config.Secre
 							ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 							set, _, err := m.fetchJWKKeys(ctx, secret.JwkURL)
 							if err != nil {
-								_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to refresh JwkWithUrl keys for url (%s) with id (%s)", secret.JwkURL, secret.KID), err, nil)
+								_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to refresh JwkWithURL keys for url (%s) with id (%s)", secret.JwkURL, secret.KID), err, nil)
+								cancel()
 								continue
 							}
 							jwks.Set = set
@@ -320,10 +321,9 @@ func (m *Module) parseToken(ctx context.Context, token string) (map[string]inter
 	kid, ok := parsedToken.Header["kid"]
 	helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Token kid", map[string]interface{}{"kid": kid})
 	for _, secret := range m.secrets {
-		var err error
 		if ok {
-			// Check if JwkWithUrl token
-			if secret.Alg == config.JwkWithUrl {
+			// Check if JwkWithURL token
+			if secret.Alg == config.JwkWithURL {
 				jwkSet, ok := m.getJWKSet(secret.KID)
 				if !ok {
 					// there can be multiple jwk secret
@@ -340,16 +340,13 @@ func (m *Module) parseToken(ctx context.Context, token string) (map[string]inter
 					return nil, err
 				}
 				return m.verifyTokenSignature(ctx, token, &config.Secret{Alg: config.JWTAlg(key[0].Algorithm()), JwkKey: raw, JwkURL: secret.JwkURL})
-			} else if secret.Alg == config.JwkWithoutUrl {
+			} else if secret.Alg == config.JwkWithoutURL {
 				return m.verifyTokenSignature(ctx, token, &config.Secret{Alg: config.RS256, PublicKey: secret.PublicKey})
 			} else if secret.KID == kid {
 				// normal token with kid
 				return m.verifyTokenSignature(ctx, token, secret)
 			}
 			continue
-		}
-		if ok {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse token", err, nil)
 		}
 		// normal token
 		if string(secret.Alg) == "" {
@@ -360,7 +357,7 @@ func (m *Module) parseToken(ctx context.Context, token string) (map[string]inter
 			return claims, nil
 		}
 	}
-	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Authentication secrets not set in space cloud config", nil, nil)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Authentication secrets not set in space cloud config", err, nil)
 }
 
 // SetMakeHTTPRequest sets the http request
