@@ -58,11 +58,11 @@ const (
 	// RS256 is method used for signing token
 	RS256 JWTAlg = "RS256"
 
-	// JwkWithURL is the method for identifying a secret that has to be validated against secret kes fetched from url
-	JwkWithURL JWTAlg = "JwkWithURL"
+	// JwkURL is the method for identifying a secret that has to be validated against secret kes fetched from url
+	JwkURL JWTAlg = "jwk-url"
 
-	// JwkWithoutURL is the method for identifying a secret that has to be validated against with a public key
-	JwkWithoutURL JWTAlg = "JwkWithoutURL"
+	// RS256Public is the method for identifying a secret that has to be validated against with a public key
+	RS256Public JWTAlg = "rs256-public"
 )
 
 // Admin holds the admin config
