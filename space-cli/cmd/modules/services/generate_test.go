@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/input"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestGenerateService(t *testing.T) {
@@ -99,33 +100,6 @@ func TestGenerateService(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "error surveying docker image name",
-			args: args{projectID: "projectID", dockerImage: notAutoDockerImage},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Port", Default: "8080"}, &port, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &notAutoDockerImage, mock.Anything},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "error getting project config",
 			args: args{projectID: "projectID", dockerImage: "auto"},
 			surveyMockArgs: []mockArgs{
@@ -168,11 +142,6 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Docker Image Name"}, &notAutoDockerImage, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-				{
-					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
@@ -196,11 +165,6 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service Port", Default: "8080"}, &port, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Docker Image Name"}, &notAutoDockerImage, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -237,11 +201,6 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Docker Image Name"}, &notAutoDockerImage, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-				{
-					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "N"},
 				},
@@ -270,11 +229,6 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service Port", Default: "8080"}, &port, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Docker Image Name"}, &notAutoDockerImage, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -312,11 +266,6 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service Port", Default: "8080"}, &port, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Docker Image Name"}, &notAutoDockerImage, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -363,11 +312,6 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Docker Image Name"}, &notAutoDockerImage, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-				{
-					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "N"},
 				},
@@ -410,11 +354,6 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Docker Image Name"}, &notAutoDockerImage, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-				{
-					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "N"},
 				},
@@ -438,7 +377,7 @@ func TestGenerateService(t *testing.T) {
 		},
 		{
 			name: "spec object created",
-			args: args{projectID: "projectID", dockerImage: notAutoDockerImage},
+			args: args{projectID: "projectID", dockerImage: "image"},
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
@@ -454,11 +393,6 @@ func TestGenerateService(t *testing.T) {
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service Port", Default: "8080"}, &port, mock.Anything},
 					paramsReturned: []interface{}{nil, "8080"},
-				},
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Docker Image Name"}, &notAutoDockerImage, mock.Anything},
-					paramsReturned: []interface{}{nil, "image"},
 				},
 				{
 					method:         "AskOne",
