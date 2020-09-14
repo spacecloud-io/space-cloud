@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
 
@@ -30,6 +31,7 @@ type Module struct {
 	rules           config.Crud
 	nodeID          string
 	secrets         []*config.Secret
+	jsonWebKeys     map[string]*jsonWebKeySet
 	crud            model.CrudAuthInterface
 	fileRules       []*config.FileRule
 	funcRules       *config.ServicesModule
@@ -45,7 +47,7 @@ type Module struct {
 
 // Init creates a new instance of the auth object
 func Init(nodeID string, crud model.CrudAuthInterface, adminMan adminMan) *Module {
-	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud, adminMan: adminMan}
+	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud, adminMan: adminMan, jsonWebKeys: map[string]*jsonWebKeySet{}}
 }
 
 // SetConfig set the rules and secret key required by the auth block
@@ -60,7 +62,55 @@ func (m *Module) SetConfig(project, secretSource string, secrets []*config.Secre
 	m.project = project
 	m.rules = rules
 
-	// Store the secret
+	// Check if secrets have been changed
+	if !reflect.DeepEqual(m.secrets, secrets) {
+		for _, secret := range secrets {
+			if secret.Alg == config.JwkWithoutUrl {
+				if secret.IsPrimary {
+					return helpers.Logger.LogError("", "Secret with out jwk url and only public key cannot be a primary secret", nil, nil)
+				}
+			}
+			if secret.Alg == config.JwkWithUrl {
+				tempObj, ok := m.jsonWebKeys[secret.KID]
+				if ok {
+					// close the previous refetch/refresh jwk go routing
+					tempObj.Closer <- struct{}{}
+				}
+
+				// fetch the latest keys with refresh time
+				jwks, err := m.getJWKRefreshTime(secret)
+				if err != nil {
+					return err
+				}
+
+				// make a closer chan to close the go routines
+				jwks.Closer = make(chan struct{})
+				m.jsonWebKeys[secret.KID] = jwks
+
+				go func(secret *config.Secret) {
+					tick := time.NewTicker(time.Duration(jwks.TimeStamp) * time.Second)
+					fmt.Println("Time", jwks.TimeStamp, secret.KID)
+					for {
+						select {
+						case <-jwks.Closer:
+							tick.Stop()
+							return
+						case <-tick.C:
+							ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+							set, _, err := m.fetchJWKKeys(ctx, secret.JwkURL)
+							if err != nil {
+								_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to refresh JwkWithUrl keys for url (%s) with id (%s)", secret.JwkURL, secret.KID), err, nil)
+								continue
+							}
+							jwks.Set = set
+							cancel()
+						}
+					}
+				}(secret)
+			}
+		}
+	}
+
 	m.secrets = secrets
 	if secretSource == "admin" {
 		m.secrets = []*config.Secret{{Secret: m.adminMan.GetSecret(), IsPrimary: true, Alg: config.HS256}}
@@ -222,46 +272,95 @@ func (m *Module) IsTokenInternal(ctx context.Context, token string) error {
 	return errors.New("token has not been created internally")
 }
 
+func (m *Module) verifyTokenSignature(ctx context.Context, token string, secret *config.Secret) (map[string]interface{}, error) {
+	// Parse the JWT token
+	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		// Don't forget to validate the alg is what you expect:
+		if token.Method.Alg() != string(secret.Alg) {
+			return nil, fmt.Errorf("invalid token algorithm provided wanted (%s) got (%s)", secret.Alg, token.Method.Alg())
+		}
+
+		if secret.JwkURL != "" {
+			return secret.JwkKey, nil
+		}
+
+		switch secret.Alg {
+		case config.RS256:
+			return jwt.ParseRSAPublicKeyFromPEM([]byte(secret.PublicKey))
+		case config.HS256, "":
+			return []byte(secret.Secret), nil
+		default:
+			return nil, fmt.Errorf("invalid token algorithm (%s) provided", secret.Alg)
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the claims
+	if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
+		if err := claims.Valid(); err != nil {
+			return nil, err
+		}
+		obj := make(TokenClaims, len(claims))
+		for key, val := range claims {
+			obj[key] = val
+		}
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "auth"})
+		return obj, nil
+	}
+	return nil, ErrTokenVerification
+}
+
 func (m *Module) parseToken(ctx context.Context, token string) (map[string]interface{}, error) {
+	parsedToken, err := jwt.Parse(token, nil)
+	if err.(*jwt.ValidationError).Errors == jwt.ValidationErrorMalformed {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse token, token is malformed", err, nil)
+	}
+	kid, ok := parsedToken.Header["kid"]
+	helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Token kid", map[string]interface{}{"kid": kid})
 	for _, secret := range m.secrets {
+		var err error
+		if ok {
+			// Check if JwkWithUrl token
+			if secret.Alg == config.JwkWithUrl {
+				jwkSet, ok := m.getJWKSet(secret.KID)
+				if !ok {
+					// there can be multiple jwk secret
+					err = errors.New("secret with jwk url doesn't exists in auth config")
+					continue
+				}
+				key := jwkSet.Set.LookupKeyID(kid.(string))
+				if len(key) == 0 {
+					err = errors.New("token has a invalid kid which doesn't match with the kid from the jwk url")
+					continue
+				}
+				var raw interface{}
+				if err := key[0].Raw(&raw); err != nil {
+					return nil, err
+				}
+				return m.verifyTokenSignature(ctx, token, &config.Secret{Alg: config.JWTAlg(key[0].Algorithm()), JwkKey: raw, JwkURL: secret.JwkURL})
+			} else if secret.Alg == config.JwkWithoutUrl {
+				return m.verifyTokenSignature(ctx, token, &config.Secret{Alg: config.RS256, PublicKey: secret.PublicKey})
+			} else if secret.KID == kid {
+				// normal token with kid
+				return m.verifyTokenSignature(ctx, token, secret)
+			}
+			continue
+		}
+		if ok {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse token", err, nil)
+		}
+		// normal token
 		if string(secret.Alg) == "" {
 			secret.Alg = config.HS256
 		}
-		// Parse the JWT token
-		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-			// Don't forget to validate the alg is what you expect:
-			if token.Method.Alg() != string(secret.Alg) {
-				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to verify jwt token", fmt.Errorf("invalid token algorithm provided wanted (%s) got (%s)", secret.Alg, token.Method.Alg()), nil)
-			}
-			switch secret.Alg {
-			case config.RS256:
-				return jwt.ParseRSAPublicKeyFromPEM([]byte(secret.PublicKey))
-			case config.HS256, "":
-				return []byte(secret.Secret), nil
-			default:
-				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to verify jwt token", fmt.Errorf("invalid token algorithm (%s) provided", secret.Alg), nil)
-			}
-		})
-		if err != nil {
-			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Unable to verify jwt token", map[string]interface{}{"token": token, "error": err.Error()})
-			continue
+		claims, err := m.verifyTokenSignature(ctx, token, secret)
+		if err == nil {
+			return claims, nil
 		}
-
-		// Get the claims
-		if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
-			if err := claims.Valid(); err != nil {
-				return nil, err
-			}
-			obj := make(TokenClaims, len(claims))
-			for key, val := range claims {
-				obj[key] = val
-			}
-			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "auth"})
-			return obj, nil
-		}
-		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Token contains invalid claims", map[string]interface{}{"token": token, "valid": tokenObj.Valid})
 	}
-	return nil, ErrTokenVerification
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Authentication secrets not set in space cloud config", nil, nil)
 }
 
 // SetMakeHTTPRequest sets the http request

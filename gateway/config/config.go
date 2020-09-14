@@ -32,9 +32,18 @@ type Project struct {
 
 // Secret describes the a secret object
 type Secret struct {
-	IsPrimary  bool   `json:"isPrimary" yaml:"isPrimary"`
-	Secret     string `json:"secret" yaml:"secret"`
-	Alg        JWTAlg `json:"alg" yaml:"alg"`
+	IsPrimary bool   `json:"isPrimary" yaml:"isPrimary"` // used by the frontend & backend to generate token out of multiple secrets
+	Alg       JWTAlg `json:"alg" yaml:"alg"`             // RSA256 or HMAC256
+
+	KID string `json:"kid" yaml:"kid"` // uniquely identifies a secret
+
+	JwkURL string      `json:"jwkUrl" yaml:"jwkUrl"`
+	JwkKey interface{} `json:"-" yaml:"-"`
+
+	// Used for HMAC256 secret
+	Secret string `json:"secret" yaml:"secret"`
+
+	// Use for RSA256
 	PublicKey  string `json:"publicKey" yaml:"publicKey"`
 	PrivateKey string `json:"privateKey" yaml:"privateKey"`
 }
@@ -48,6 +57,12 @@ const (
 
 	// RS256 is method used for signing token
 	RS256 JWTAlg = "RS256"
+
+	// JwkWithUrl
+	JwkWithUrl JWTAlg = "JwkWithUrl"
+
+	// JwkWithoutUrl
+	JwkWithoutUrl JWTAlg = "JwkWithoutUrl"
 )
 
 // Admin holds the admin config
