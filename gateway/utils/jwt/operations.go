@@ -89,7 +89,7 @@ func (j *JWT) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (s
 				return tokenString, nil
 			case config.HS256, "":
 				token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-				token.Header = map[string]interface{}{"alg": config.HS256, "kid": s.KID}
+				token.Header["kid"] = s.KID
 				tokenString, err = token.SignedString([]byte(s.Secret))
 				if err != nil {
 					return "", err
