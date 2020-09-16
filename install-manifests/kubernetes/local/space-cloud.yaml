@@ -2,13 +2,14 @@
 #############################################################################################
 ################################ Set some global parameters  ################################
 #############################################################################################
-apiVersion: "authentication.istio.io/v1alpha1"
-kind: "MeshPolicy"
+apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
 metadata:
   name: "default"
+  namespace: "istio-system"
 spec:
-  peers:
-    - mtls: {}
+  mtls:
+    mode: STRICT
 ---
 apiVersion: v1
 kind: Namespace
@@ -230,18 +231,6 @@ spec:
       app: gateway
   rules:
     - {}
----
-apiVersion: "authentication.istio.io/v1alpha1"
-kind: "Policy"
-metadata:
-  name: "gateway-policy"
-  namespace: space-cloud
-spec:
-  targets:
-    - name: gateway
-  peers:
-    - mtls:
-        mode: PERMISSIVE
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
