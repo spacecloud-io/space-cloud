@@ -59,10 +59,10 @@ const (
 	RS256 JWTAlg = "RS256"
 
 	// JwkURL is the method for identifying a secret that has to be validated against secret kes fetched from url
-	JwkURL JWTAlg = "jwk-url"
+	JwkURL JWTAlg = "JWK_URL"
 
 	// RS256Public is the method for identifying a secret that has to be validated against with a public key
-	RS256Public JWTAlg = "rs256-public"
+	RS256Public JWTAlg = "RS256_PUBLIC"
 )
 
 // Admin holds the admin config

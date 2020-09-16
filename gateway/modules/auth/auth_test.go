@@ -25,7 +25,7 @@ func TestCreateToken(t *testing.T) {
 	authModule := Init("1", &crud.Module{}, nil)
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
-			authModule.SetSecrets("", test.secretKeys)
+			_ = authModule.SetConfig("", "", test.secretKeys, "", nil, nil, nil, &config.Eventing{})
 			_, err := authModule.CreateToken(context.Background(), test.object)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got Error", err, "Wanted Error ", test.IsErrExpected)
@@ -48,7 +48,7 @@ func TestIsTokenInternal(t *testing.T) {
 	authModule := Init("1", &crud.Module{}, nil)
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
-			authModule.SetSecrets("", test.secretKeys)
+			_ = authModule.SetConfig("", "", test.secretKeys, "", nil, nil, nil, &config.Eventing{})
 			err := authModule.IsTokenInternal(context.Background(), test.token)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got This ", err, "Wanted Error-", test.IsErrExpected)
@@ -164,7 +164,7 @@ ASagEwagcvqKhYXbDyc4s2iechFqKq50Au5e9DlwWzgTCeG7dWupvtb29TBJhkOd
 			if err := authModule.SetConfig("default", "", test.secretKeys, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); err != nil {
 				t.Errorf("error setting config of auth module  - %s", err.Error())
 			}
-			tokenClaims, err := authModule.parseToken(context.Background(), test.token)
+			tokenClaims, err := authModule.jwt.ParseToken(context.Background(), test.token)
 			if (err != nil) != test.IsErrExpected {
 				t.Error(test.name, ": Got:", err, "Wanted Error:", test.IsErrExpected)
 			}

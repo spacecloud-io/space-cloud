@@ -78,12 +78,6 @@ func (m *Modules) SetProjectConfig(c *config.Project) error {
 	return nil
 }
 
-// SetGlobalConfig sets the auth secret and AESKey
-func (m *Modules) SetGlobalConfig(projectID, secretSource string, secrets []*config.Secret, aesKey string) error {
-	m.auth.SetSecrets(secretSource, secrets)
-	return m.auth.SetAESKey(aesKey)
-}
-
 // SetCrudConfig sets the config of db, auth, schema and realtime modules
 func (m *Modules) SetCrudConfig(projectID string, crudConfig config.Crud) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting config of db module", nil)
