@@ -77,7 +77,7 @@ func (j *JWT) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (s
 			switch s.Alg {
 			case config.RS256:
 				token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-				token.Header = map[string]interface{}{"alg": config.RS256, "kid": s.KID}
+				token.Header["kid"] = s.KID
 				signKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(s.PrivateKey))
 				if err != nil {
 					return "", err
