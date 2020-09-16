@@ -144,17 +144,11 @@ func (m *Module) GetSCAccessToken(ctx context.Context) (string, error) {
 
 // CreateToken generates a new JWT Token with the token claims
 func (m *Module) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (string, error) {
-	m.RLock()
-	defer m.RUnlock()
-
 	return m.jwt.CreateToken(ctx, tokenClaims)
 }
 
 // IsTokenInternal checks if the provided token is internally generated
 func (m *Module) IsTokenInternal(ctx context.Context, token string) error {
-	m.RLock()
-	defer m.RUnlock()
-
 	claims, err := m.jwt.ParseToken(ctx, token)
 	if err != nil {
 		return err

@@ -15,6 +15,9 @@ import (
 
 // ParseToken verifies the token
 func (j *JWT) ParseToken(ctx context.Context, token string) (map[string]interface{}, error) {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+
 	parser := jwt.Parser{}
 	parsedToken, _, err := parser.ParseUnverified(token, jwt.MapClaims{})
 	if err != nil {
@@ -36,7 +39,7 @@ func (j *JWT) ParseToken(ctx context.Context, token string) (map[string]interfac
 			}
 			return j.verifyTokenSignature(ctx, token, obj)
 		}
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "", nil, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "No secret with given kid found", nil, map[string]interface{}{"kid": kid})
 	}
 
 	for _, secret := range j.staticSecrets {
@@ -58,6 +61,9 @@ func (j *JWT) ParseToken(ctx context.Context, token string) (map[string]interfac
 
 // CreateToken create a token with primary secret
 func (j *JWT) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (string, error) {
+	j.lock.RLock()
+	defer j.lock.RUnlock()
+
 	claims := jwt.MapClaims{}
 	for k, v := range tokenClaims {
 		claims[k] = v
@@ -71,6 +77,7 @@ func (j *JWT) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (s
 			switch s.Alg {
 			case config.RS256:
 				token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+				token.Header = map[string]interface{}{"alg": config.RS256, "kid": s.KID}
 				signKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(s.PrivateKey))
 				if err != nil {
 					return "", err
@@ -82,7 +89,7 @@ func (j *JWT) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (s
 				return tokenString, nil
 			case config.HS256, "":
 				token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
+				token.Header = map[string]interface{}{"alg": config.HS256, "kid": s.KID}
 				tokenString, err = token.SignedString([]byte(s.Secret))
 				if err != nil {
 					return "", err

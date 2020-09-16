@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/lestrrat-go/jwx/jwk"
@@ -13,6 +14,7 @@ import (
 
 // JWT holds the required fields for jwt package
 type JWT struct {
+	lock                 sync.RWMutex
 	staticSecrets        map[string]*config.Secret
 	jwkSecrets           map[string]*jwkSecret
 	mapJwkKidToSecretKid map[string]string
@@ -28,19 +30,15 @@ const defaultRefreshTime = 1 * time.Hour
 
 // New initializes the package
 func New() *JWT {
-	j := new(JWT)
+	j := &JWT{
+		staticSecrets:        map[string]*config.Secret{},
+		jwkSecrets:           map[string]*jwkSecret{},
+		mapJwkKidToSecretKid: map[string]string{},
+	}
 	go func() {
 		tick := time.NewTicker(defaultRefreshTime)
 		for t := range tick.C {
-			for kid, secret := range j.jwkSecrets {
-				if secret.refreshTime.After(t) {
-					jwkSecretInfo, err := getJWKRefreshTime(secret.url)
-					if err != nil {
-						_ = helpers.Logger.LogError("", fmt.Sprintf("Unable to refresh jwk keys having kid (%s) and url (%s)", kid, secret.url), err, nil)
-					}
-					j.jwkSecrets[kid] = jwkSecretInfo
-				}
-			}
+			j.fetchJWKRoutine(t)
 		}
 	}()
 	return j
@@ -48,6 +46,9 @@ func New() *JWT {
 
 // SetSecrets set the internal fields of jwt struct
 func (j *JWT) SetSecrets(secrets []*config.Secret) error {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
 	newJwkSecrets := map[string]*jwkSecret{}
 	newKidMap := map[string]string{}
 	newStaticSecretMap := map[string]*config.Secret{}

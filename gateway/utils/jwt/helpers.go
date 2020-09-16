@@ -144,3 +144,19 @@ func (j *JWT) parseJwkSecret(ctx context.Context, kid, token string) (map[string
 	}
 	return nil, errors.New("kid doesn't exists in internal jwk mapping of keys")
 }
+
+func (j *JWT) fetchJWKRoutine(t time.Time) {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	for kid, secret := range j.jwkSecrets {
+		if secret.refreshTime.Before(t) {
+			jwkSecretInfo, err := getJWKRefreshTime(secret.url)
+			if err != nil {
+				_ = helpers.Logger.LogError("", fmt.Sprintf("Unable to refresh jwk keys having kid (%s) and url (%s)", kid, secret.url), err, nil)
+				continue
+			}
+			j.jwkSecrets[kid] = jwkSecretInfo
+		}
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +27,7 @@ func extractPreferredServiceAffinityObject(arr []v1.WeightedPodAffinityTerm, mul
 			})
 		}
 		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
 			Type:             model.AffinityTypeService,
 			Weight:           preferredSchedulingTerm.Weight * multiplier,
 			Operator:         model.AffinityOperatorPreferred,
@@ -50,6 +52,7 @@ func extractRequiredServiceAffinityObject(arr []v1.PodAffinityTerm, multiplier i
 			})
 		}
 		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
 			Type:             model.AffinityTypeService,
 			Weight:           100 * multiplier,
 			Operator:         model.AffinityOperatorRequired,
@@ -74,6 +77,7 @@ func extractPreferredNodeAffinityObject(arr []v1.PreferredSchedulingTerm) []mode
 			})
 		}
 		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
 			Type:             model.AffinityTypeNode,
 			Weight:           preferredSchedulingTerm.Weight,
 			Operator:         model.AffinityOperatorPreferred,
@@ -96,6 +100,7 @@ func extractRequiredNodeAffinityObject(arr []v1.NodeSelectorTerm) []model.Affini
 			})
 		}
 		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
 			Type:             model.AffinityTypeNode,
 			Operator:         model.AffinityOperatorRequired,
 			MatchExpressions: matchExpression,
@@ -280,7 +285,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 			service.Upstreams = append(service.Upstreams, model.Upstream{ProjectID: a[0], Service: a[1]})
 		}
 
-		// todo labels, serviceName, affinity, runtime
+		// todo serviceName, runtime
 		services = append(services, service)
 	}
 
