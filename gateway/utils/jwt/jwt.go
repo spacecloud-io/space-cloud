@@ -80,7 +80,13 @@ func (j *JWT) SetSecrets(secrets []*config.Secret) error {
 				}
 			}
 
-		case config.RS256, config.HS256, config.RS256Public, "":
+		case config.RS256Public:
+			if secret.IsPrimary {
+				return helpers.Logger.LogError("internal", "RSA algorithms without private keys cannot be used as a primary secret", nil, nil)
+			}
+			newStaticSecretMap[secret.KID] = secret
+
+		case config.RS256, config.HS256, "":
 			newStaticSecretMap[secret.KID] = secret
 		default:
 			return helpers.Logger.LogError("internal", fmt.Sprintf("Invalid token algorithm provided (%s)", secret.Alg), nil, nil)

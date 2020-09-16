@@ -20,8 +20,8 @@ func (j *JWT) ParseToken(ctx context.Context, token string) (map[string]interfac
 	if err != nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse token, token is malformed", err, nil)
 	}
-	kid, ok := parsedToken.Header["kid"]
-	if ok {
+	kid, isKIDPresent := parsedToken.Header["kid"]
+	if isKIDPresent {
 		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Token kid", map[string]interface{}{"kid": kid})
 		// check if kid belongs to a jwk secret
 		claims, err := j.parseJwkSecret(ctx, kid.(string), token)
