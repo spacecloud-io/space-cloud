@@ -17,6 +17,8 @@ func (integrations Integrations) Get(id string) (*IntegrationConfig, bool) {
 type IntegrationConfig struct {
 	ID                  string                      `json:"id" yaml:"id"`
 	Name                string                      `json:"name" yaml:"name"`
+	Details             string                      `json:"details" yaml:"details"`
+	Description         string                      `json:"description" yaml:"description"`
 	Key                 string                      `json:"key" yaml:"key"`         // Used for fetching tokens
 	License             string                      `json:"license" yaml:"license"` // Used to store level and id
 	Version             string                      `json:"version" yaml:"version"`
