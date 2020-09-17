@@ -22,7 +22,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		service := vars["service"]
+		serviceID := vars["service"]
 		function := vars["func"]
 
 		auth, err := modules.Auth(projectID)
@@ -49,24 +49,27 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		// Set a default timeout value
-		if req.Timeout == 0 {
-			req.Timeout = 60 // set default context to 10 second
+		timeOut, err := functions.GetEndpointContextTimeout(r.Context(), serviceID, function)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err.Error())
+			return
 		}
 
 		// Create a new context
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(req.Timeout)*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(timeOut)*time.Second)
 		defer cancel()
 
-		actions, reqParams, err := auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params)
+		actions, reqParams, err := auth.IsFuncCallAuthorised(ctx, projectID, serviceID, function, token, req.Params)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
 			return
 		}
 
-		status, result, err := functions.CallWithContext(ctx, service, function, token, reqParams, req.Params)
+		reqParams = utils.ExtractRequestParams(r, reqParams, req)
+
+		status, result, err := functions.CallWithContext(ctx, serviceID, function, token, reqParams, req.Params)
 		if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Receieved error from service call (%s:%s)", service, function), err, nil)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Receieved error from service call (%s:%s)", serviceID, function), err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
 		}

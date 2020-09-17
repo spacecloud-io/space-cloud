@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -157,9 +156,6 @@ func main() {
 }
 
 func actionRun(c *cli.Context) error {
-	// NOTE: we have disable all the logs made by log package
-	log.SetOutput(ioutil.Discard)
-
 	// Load cli flags
 	nodeID := c.String("id")
 	isDev := c.Bool("dev")

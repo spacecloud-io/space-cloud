@@ -43,6 +43,36 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 	return http.StatusOK, err
 }
 
+// DeleteDir deletes a directory at the provided path
+func (m *Module) DeleteDir(ctx context.Context, project, token string, path string, meta map[string]interface{}) (int, error) {
+	// Exit if file storage is not enabled
+	if !m.IsEnabled() {
+		return http.StatusNotFound, errors.New("This feature isn't enabled")
+	}
+	// Check if the user is authorised to make this request
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, model.FileDelete, map[string]interface{}{})
+	if err != nil {
+		return http.StatusForbidden, errors.New("You are not authorized to make this request")
+	}
+
+	m.RLock()
+	defer m.RUnlock()
+
+	intent, err := m.eventing.DeleteFileIntentHook(ctx, path, meta)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if err = m.store.DeleteDir(ctx, path); err != nil {
+		m.eventing.HookStage(ctx, intent, err)
+		return http.StatusInternalServerError, err
+	}
+
+	m.eventing.HookStage(ctx, intent, nil)
+	m.metricsHook(project, string(m.store.GetStoreType()), model.Delete)
+	return http.StatusOK, err
+}
+
 // DeleteFile deletes a file at the provided path
 func (m *Module) DeleteFile(ctx context.Context, project, token string, path string, meta map[string]interface{}) (int, error) {
 	// Exit if file storage is not enabled

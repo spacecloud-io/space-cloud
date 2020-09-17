@@ -36,12 +36,6 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 		return nil, err
 	}
 
-	if dockerImage != "auto" {
-		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Docker Image Name"}, &dockerImage); err != nil {
-			return nil, err
-		}
-	}
-
 	if dockerImage == "auto" {
 		p, err := project.GetProjectConfig(projectID, "project", nil)
 		if err != nil {

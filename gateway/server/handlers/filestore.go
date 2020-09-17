@@ -159,6 +159,13 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 // HandleDelete creates read file and list directory endpoint
 func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		fileTypeQuery, exists := r.URL.Query()["fileType"]
+		fileType := "file"
+		if exists {
+			fileType = fileTypeQuery[0]
+		}
+
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -177,12 +184,21 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
 		defer cancel()
 
-		status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
-		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
-			return
+		if fileType == "file" {
+			status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
+			if err != nil {
+				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+				return
+			}
+			_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})
+		} else if fileType == "dir" {
+			status, err := fileStore.DeleteDir(ctx, projectID, token, path, v)
+			if err != nil {
+				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+				return
+			}
+			_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})
 		}
-		_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})
 	}
 }
 
