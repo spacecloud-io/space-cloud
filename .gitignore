@@ -16,6 +16,7 @@ test
 
 # sh file for bash completion
 *.sh
+!space-cli/install/install.sh
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
