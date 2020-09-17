@@ -79,7 +79,7 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 	var token string
 	var err error
 	if len(rule.Claims) > 0 {
-		token, err = m.createTokenWithoutLock(ctx, rule.Claims)
+		token, err = m.jwt.CreateToken(ctx, rule.Claims)
 		if err != nil {
 			return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create new token used by the webhook url in security rule (Webhook)", err, nil))
 		}

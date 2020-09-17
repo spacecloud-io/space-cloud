@@ -158,7 +158,7 @@ func (m *Module) authenticateCrudRequest(ctx context.Context, dbAlias, col, toke
 	}
 
 	// Parse token
-	auth, err = m.parseToken(ctx, token)
+	auth, err = m.jwt.ParseToken(ctx, token)
 	return
 }
 
@@ -175,7 +175,7 @@ func (m *Module) authenticatePreparedQueryRequest(ctx context.Context, dbAlias, 
 	}
 
 	// Parse token
-	auth, err = m.parseToken(ctx, token)
+	auth, err = m.jwt.ParseToken(ctx, token)
 	return
 }
 
