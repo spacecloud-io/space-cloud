@@ -3,6 +3,7 @@ package istio
 import (
 	"sync"
 
+	kedaVersionedClient "github.com/kedacore/keda/pkg/generated/clientset/versioned"
 	versionedclient "istio.io/client-go/pkg/clientset/versioned"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -26,6 +27,7 @@ type Istio struct {
 	// Drivers to talk to k8s and istio
 	kube  *kubernetes.Clientset
 	istio *versionedclient.Clientset
+	keda  *kedaVersionedClient.Clientset
 
 	// For caching deployments
 	cache *cache
@@ -57,13 +59,18 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 		return nil, err
 	}
 
+	kedaClient, err := kedaVersionedClient.NewForConfig(restConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create a cache
 	cache, err := newCache(kube)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Istio{auth: auth, config: c, kube: kube, istio: istio, cache: cache}, nil
+	return &Istio{auth: auth, config: c, kube: kube, istio: istio, keda: kedaClient, cache: cache}, nil
 }
 
 func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {

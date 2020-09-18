@@ -6,7 +6,8 @@ type Service struct {
 	Name                   string            `json:"name,omitempty" yaml:"name,omitempty"`
 	ProjectID              string            `json:"projectId,omitempty" yaml:"projectId,omitempty"`
 	Version                string            `json:"version,omitempty" yaml:"version,omitempty"`
-	Scale                  ScaleConfig       `json:"scale" yaml:"scale"`
+	Scale                  *ScaleConfig      `json:"scale" yaml:"scale"`
+	AutoScale              *AutoScaleConfig  `json:"autoScale" yaml:"autoScale"`
 	Labels                 map[string]string `json:"labels" yaml:"labels"`
 	Tasks                  []Task            `json:"tasks" yaml:"tasks"`
 	Affinity               []Affinity        `json:"affinity" yaml:"affinity"`
@@ -22,6 +23,37 @@ type ScaleConfig struct {
 	MaxReplicas int32  `json:"maxReplicas" yaml:"maxReplicas"`
 	Concurrency int32  `json:"concurrency" yaml:"concurrency"`
 	Mode        string `json:"mode" yaml:"mode"`
+}
+
+// AutoScaleConfig describes the config used to scale a service
+type AutoScaleConfig struct {
+	PollingInterval  int32 `json:"pollingInterval" yaml:"pollingInterval"` // Default 15 (in seconds)
+	CoolDownInterval int32 `json:"coolDown" yaml:"coolDownInterval"`       // Default 120 (in seconds)
+
+	MinReplicas int32 `json:"minReplicas" yaml:"minReplicas"` // Default 1
+	MaxReplicas int32 `json:"maxReplicas" yaml:"maxReplicas"` // Default 100
+
+	Triggers []AutoScaleTrigger `json:"triggers" yaml:"triggers"`
+}
+
+// AutoScaleTrigger describes the config of a scaler
+type AutoScaleTrigger struct {
+	Name             string            `json:"name" yaml:"name"`
+	Type             string            `json:"type" yaml:"type"`
+	MetaData         map[string]string `json:"metadata" yaml:"metadata"`
+	AuthenticatedRef *AutoScaleAuthRef `json:"authRef" yaml:"authRef"` // Authentication ref is optional
+}
+
+// AutoScaleAuthRef describes the authentication reference for a scaler
+type AutoScaleAuthRef struct {
+	SecretName    string                    `json:"secretName" yaml:"secretName"`
+	SecretMapping []AutoScaleAuthRefMapping `json:"secretMapping" yaml:"secretMapping"`
+}
+
+// AutoScaleAuthRefMapping describes the mapping between the keys of the secret and parameters of the scaler
+type AutoScaleAuthRefMapping struct {
+	Parameter string `json:"param" yaml:"param"`
+	Key       string `json:"key" yaml:"key"`
 }
 
 // Task describes the configuration of a task

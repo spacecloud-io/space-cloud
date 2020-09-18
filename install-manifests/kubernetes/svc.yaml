@@ -1,0 +1,45 @@
+api: /v1/runner/{project}/services/{serviceId}/{version}
+meta:
+  project: myproject
+  serviceId: greeter
+  version: v1
+spec:
+  affinity: null
+  labels: null
+  scale:
+    concurrency: 50
+    maxReplicas: 2
+    minReplicas: 1
+    mode: per-second
+    replicas: 1
+  statsInclusionPrefixes: ""
+  tasks:
+  - docker:
+      cmd: null
+      image: spaceuptech/greeter
+      imagePullPolicy: pull-if-not-exists
+      secret: ""
+    env:
+      GREETING: hi
+    id: greeter
+    name: greeter
+    ports:
+    - name: http1
+      port: 8080
+      protocol: http
+    - name: http2
+      port: 8090
+      protocol: http
+    resources:
+      cpu: 100
+      memory: 100
+    runtime: image
+    secrets: null
+  upstreams:
+  - projectId: myproject
+    service: '*'
+  whitelists:
+  - projectId: myproject
+    service: '*'
+type: service
+---

@@ -157,7 +157,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 		if err != nil {
 			return nil, err
 		}
-		service.Scale = scale
+		service.Scale = &scale
 
 		for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
 			if containerInfo.Name == "metric-proxy" || containerInfo.Name == "istio-proxy" {
@@ -201,13 +201,13 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 			delete(envs, runtimeEnvVariable)
 
 			// Delete internal environment variables if runtime was code
-			if runtime == model.Code {
-				delete(envs, model.ArtifactURL)
-				delete(envs, model.ArtifactToken)
-				delete(envs, model.ArtifactProject)
-				delete(envs, model.ArtifactService)
-				delete(envs, model.ArtifactVersion)
-			}
+			// if runtime == model.Code {
+			// 	delete(envs, model.ArtifactURL)
+			// 	delete(envs, model.ArtifactToken)
+			// 	delete(envs, model.ArtifactProject)
+			// 	delete(envs, model.ArtifactService)
+			// 	delete(envs, model.ArtifactVersion)
+			// }
 
 			// Get the image pull policy
 			imagePullPolicy := model.PullIfNotExists

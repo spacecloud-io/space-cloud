@@ -486,7 +486,7 @@ func (s *Server) handleProxy() http.HandlerFunc {
 
 		// Add to active request count
 		// TODO: add support for multiple versions
-		s.chAppend <- &model.ProxyMessage{Service: service, Project: project, Version: ogVersion, NodeID: "s-proxy", ActiveRequests: 1}
+		// TODO: Scale from 0 to 1
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()

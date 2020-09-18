@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/kedacore/keda/api/v1alpha1"
 	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
 	networkingv1alpha3 "istio.io/api/networking/v1alpha3"
@@ -16,6 +17,7 @@ import (
 	"istio.io/client-go/pkg/apis/networking/v1alpha3"
 	"istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,14 +43,14 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 		}
 		// Add an environment variable to hold the runtime value
 		envVars = append(envVars, v1.EnvVar{Name: runtimeEnvVariable, Value: string(task.Runtime)})
-		if task.Runtime == model.Code {
-			artifactURL := v1.EnvVar{Name: model.ArtifactURL, Value: i.config.ArtifactAddr}
-			artifactToken := v1.EnvVar{Name: model.ArtifactToken, Value: token}
-			artifactProject := v1.EnvVar{Name: model.ArtifactProject, Value: service.ProjectID}
-			artifactService := v1.EnvVar{Name: model.ArtifactService, Value: service.ID}
-			artifactVersion := v1.EnvVar{Name: model.ArtifactVersion, Value: service.Version}
-			envVars = append(envVars, artifactURL, artifactToken, artifactProject, artifactService, artifactVersion)
-		}
+		// if task.Runtime == model.Code {
+		// 	artifactURL := v1.EnvVar{Name: model.ArtifactURL, Value: i.config.ArtifactAddr}
+		// 	artifactToken := v1.EnvVar{Name: model.ArtifactToken, Value: token}
+		// 	artifactProject := v1.EnvVar{Name: model.ArtifactProject, Value: service.ProjectID}
+		// 	artifactService := v1.EnvVar{Name: model.ArtifactService, Value: service.ID}
+		// 	artifactVersion := v1.EnvVar{Name: model.ArtifactVersion, Value: service.Version}
+		// 	envVars = append(envVars, artifactURL, artifactToken, artifactProject, artifactService, artifactVersion)
+		// }
 
 		// Prepare ports to be exposed
 		ports := prepareContainerPorts(task.Ports)
@@ -434,6 +436,188 @@ func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
 	}}
 }
 
+func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) (*v1alpha1.ScaledObject, []v1alpha1.TriggerAuthentication, error) {
+	// Create an empty trigger authentication ref error
+	triggerAuthRefs := make([]v1alpha1.TriggerAuthentication, 0)
+
+	// Generate a default auto scale config if not provided
+	if service.AutoScale == nil {
+		service.AutoScale = &model.AutoScaleConfig{
+			PollingInterval:  15,
+			CoolDownInterval: 120,
+			MinReplicas:      1,
+			MaxReplicas:      100,
+			Triggers:         []model.AutoScaleTrigger{},
+		}
+
+		// Load value from the previous scale object
+		if service.Scale != nil {
+			mode := "requests-per-second"
+			if service.Scale.Mode == "parallel" {
+				mode = "active-requests"
+			}
+			service.AutoScale.MinReplicas = service.Scale.MinReplicas
+			service.AutoScale.MaxReplicas = service.Scale.MaxReplicas
+			service.AutoScale.Triggers = append(service.AutoScale.Triggers, model.AutoScaleTrigger{
+				Type: mode,
+				Name: mode,
+				MetaData: map[string]string{
+					"target": strconv.Itoa(int(service.Scale.Concurrency)),
+				},
+			})
+		}
+	}
+
+	// Set default values for auto scale config
+	if service.AutoScale.MaxReplicas == 0 {
+		service.AutoScale.MaxReplicas = 100
+	}
+	if service.AutoScale.PollingInterval == 0 {
+		service.AutoScale.PollingInterval = 15
+	}
+	if service.AutoScale.CoolDownInterval == 0 {
+		service.AutoScale.CoolDownInterval = 120
+	}
+
+	// return nil value if no triggers are provided
+	if len(service.AutoScale.Triggers) == 0 {
+		return nil, triggerAuthRefs, nil
+	}
+
+	// A variable for the advanced config. We want the advanced config to be nil unless it is specifically needed.
+	var advancedConfig *v1alpha1.AdvancedConfig
+
+	// Prepare the triggers
+	triggers := make([]v1alpha1.ScaleTriggers, 0)
+	for _, trigger := range service.AutoScale.Triggers {
+		switch trigger.Type {
+		case "cpu", "memory":
+			// Create an advanced config object if it doesn't already config
+			if advancedConfig == nil {
+				advancedConfig = &v1alpha1.AdvancedConfig{
+					HorizontalPodAutoscalerConfig: &v1alpha1.HorizontalPodAutoscalerConfig{
+						ResourceMetrics: make([]*v2beta2.ResourceMetricSource, 0, 1),
+					},
+				}
+			}
+
+			// Convert target to int32
+			targetString, p := trigger.MetaData["target"]
+			if !p {
+				return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Missing field (target) in scaling trigger (%s)", trigger.Type), nil, nil)
+			}
+			targetInt, err := strconv.Atoi(targetString)
+			if err != nil {
+				return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid value (%s) for field (target) in scaling trigger (%s)", targetString, trigger.Type), err, nil)
+			}
+			target := int32(targetInt)
+
+			// Add resource trigger to advanced config
+			resourceMetric := &v2beta2.ResourceMetricSource{
+				Name: v1.ResourceName(trigger.Type),
+				Target: v2beta2.MetricTarget{
+					Type:               v2beta2.UtilizationMetricType,
+					AverageUtilization: &target,
+				},
+			}
+			advancedConfig.HorizontalPodAutoscalerConfig.ResourceMetrics = append(advancedConfig.HorizontalPodAutoscalerConfig.ResourceMetrics, resourceMetric)
+
+		case "requests-per-second", "active-requests":
+			// Check if target is provided
+			target, p := trigger.MetaData["target"]
+			if !p {
+				return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Missing field (target) in scaling trigger (%s)", trigger.Type), nil, nil)
+			}
+
+			triggers = append(triggers, v1alpha1.ScaleTriggers{
+				Type: "external-push",
+				Name: trigger.Name,
+				Metadata: map[string]string{
+					"scalerAddress": "runner.space-cloud.svc.cluster.local:4055",
+					"type":          trigger.Type,
+					"target":        target,
+				},
+			})
+
+		default:
+			// Create a nil authRef object. We want it to be nil unless it is specifically needed.
+			var authRef *v1alpha1.ScaledObjectAuthRef
+			if trigger.AuthenticatedRef != nil {
+				// Make the param mapping array
+				secretTargetRefs := make([]v1alpha1.AuthSecretTargetRef, len(trigger.AuthenticatedRef.SecretMapping))
+				for i, ref := range trigger.AuthenticatedRef.SecretMapping {
+					secretTargetRefs[i] = v1alpha1.AuthSecretTargetRef{
+						Name:      trigger.AuthenticatedRef.SecretName,
+						Key:       ref.Key,
+						Parameter: ref.Parameter,
+					}
+				}
+
+				// Generate a unique name for the trigger auth
+				name := fmt.Sprintf("%s-%s", getServiceUniqueName(service.ProjectID, service.Name, service.Version), trigger.Name)
+
+				// Add the trigger authentication object
+				triggerAuthRefs = append(triggerAuthRefs, v1alpha1.TriggerAuthentication{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: name,
+						Labels: map[string]string{
+							"app":     service.ID,
+							"version": service.Version,
+						},
+						Annotations: map[string]string{
+							"generatedBy": getGeneratedByAnnotationName(),
+						},
+					},
+					Spec: v1alpha1.TriggerAuthenticationSpec{
+						SecretTargetRef: secretTargetRefs,
+					},
+				})
+
+				// Don't forget to populate the auth ref object
+				authRef = &v1alpha1.ScaledObjectAuthRef{
+					Name: name,
+				}
+			}
+
+			// Add the trigger to the list of triggers
+			triggers = append(triggers, v1alpha1.ScaleTriggers{
+				Type:              trigger.Type,
+				Name:              trigger.Name,
+				Metadata:          trigger.MetaData,
+				AuthenticationRef: authRef,
+			})
+		}
+	}
+
+	// Prepare the keda config
+	kedaConfig := &v1alpha1.ScaledObject{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: getDeploymentName(service.ID, service.Version),
+			Labels: map[string]string{
+				"app":     service.ID,
+				"version": service.Version,
+			},
+			Annotations: map[string]string{
+				"generatedBy": getGeneratedByAnnotationName(),
+			},
+		},
+		Spec: v1alpha1.ScaledObjectSpec{
+			Triggers:        triggers,
+			PollingInterval: &service.AutoScale.PollingInterval,
+			CooldownPeriod:  &service.AutoScale.CoolDownInterval,
+			MinReplicaCount: &service.AutoScale.MinReplicas,
+			MaxReplicaCount: &service.AutoScale.MaxReplicas,
+			Advanced:        advancedConfig,
+			ScaleTargetRef: &v1alpha1.ScaleTarget{
+				Name: getDeploymentName(service.ID, service.Version),
+				Kind: "Deployment", // Change this to stateful set when necessary
+			},
+		},
+	}
+
+	return kedaConfig, triggerAuthRefs, nil
+}
+
 func (i *Istio) generateDeployment(service *model.Service, token string, listOfSecrets map[string]*v1.Secret) *appsv1.Deployment {
 	preparedContainer, volumes, imagePull := i.prepareContainers(service, token, listOfSecrets)
 	// Make sure the desired replica count doesn't cross the min and max range
@@ -510,10 +694,6 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 			Name:   getDeploymentName(service.ID, service.Version),
 			Labels: labels,
 			Annotations: map[string]string{
-				"concurrency": strconv.Itoa(int(service.Scale.Concurrency)),
-				"minReplicas": strconv.Itoa(int(service.Scale.MinReplicas)),
-				"maxReplicas": strconv.Itoa(int(service.Scale.MaxReplicas)),
-				"mode":        service.Scale.Mode,
 				"generatedBy": getGeneratedByAnnotationName(),
 			},
 		},

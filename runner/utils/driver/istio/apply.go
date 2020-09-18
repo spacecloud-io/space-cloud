@@ -15,14 +15,6 @@ func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error 
 
 	ns := service.ProjectID
 
-	// Set the default concurrency value to 50
-	if service.Scale.Concurrency == 0 {
-		service.Scale.Concurrency = 50
-	}
-
-	// Adjust the min scale in case of tcp based services. Min scale for tcp services need to be at least 1.
-	adjustMinScale(service)
-
 	// TODO: remove artifact store related code
 	token, err := i.auth.GenerateTokenForArtifactStore(service.ID, service.ProjectID, service.Version)
 	if err != nil {

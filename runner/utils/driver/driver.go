@@ -9,7 +9,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
-	"github.com/spaceuptech/space-cloud/runner/utils/driver/docker"
 	"github.com/spaceuptech/space-cloud/runner/utils/driver/istio"
 )
 
@@ -78,9 +77,6 @@ func initDriver(auth *auth.Module, c *Config) (Interface, error) {
 		istioConfig.ArtifactAddr = c.ArtifactAddr
 
 		return istio.NewIstioDriver(auth, istioConfig)
-
-	case model.TypeDocker:
-		return docker.NewDockerDriver(auth, c.ClusterName, c.ArtifactAddr)
 
 	default:
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("invalid driver type (%s) provided", c.DriverType), nil, nil)

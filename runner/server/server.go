@@ -3,20 +3,15 @@ package server
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/metrics"
 
-	"github.com/dgraph-io/badger"
 	"github.com/gorilla/mux"
 
-	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
 	"github.com/spaceuptech/space-cloud/runner/utils/driver"
@@ -37,10 +32,6 @@ type Server struct {
 	auth     *auth.Module
 	driver   driver.Interface
 	debounce *utils.Debounce
-
-	// For autoscaler
-	db       *badger.DB
-	chAppend chan *model.ProxyMessage
 }
 
 // New creates a new instance of the runner
@@ -67,29 +58,6 @@ func New(c *Config) (*Server, error) {
 
 	debounce := utils.NewDebounce()
 
-	opts := badger.DefaultOptions("/tmp/runner.db")
-	badgerLogger := logrus.New()
-	badgerLogger.SetOutput(ioutil.Discard)
-	opts.Logger = badgerLogger
-
-	db, err := badger.Open(opts)
-	if err != nil {
-		return nil, err
-	}
-
-	// Periodically run the garbage collector
-	go func() {
-		ticker := time.NewTicker(5 * time.Minute)
-		defer ticker.Stop()
-		for range ticker.C {
-		again:
-			err := db.RunValueLogGC(0.7)
-			if err == nil {
-				goto again
-			}
-		}
-	}()
-
 	// Return a new runner instance
 	return &Server{
 		config: c,
@@ -101,10 +69,6 @@ func New(c *Config) (*Server, error) {
 		auth:     a,
 		driver:   d,
 		debounce: debounce,
-
-		// For autoscaler
-		db:       db,
-		chAppend: make(chan *model.ProxyMessage, 10),
 	}, nil
 }
 
@@ -112,12 +76,6 @@ func New(c *Config) (*Server, error) {
 func (s *Server) Start() error {
 	// Initialise the various routes of the s
 	s.routes()
-
-	// Start necessary routines for autoscaler
-	go s.routineAdjustScale()
-	for i := 0; i < 10; i++ {
-		go s.routineDumpDetails()
-	}
 
 	// Start proxy server
 	go func() {
