@@ -121,37 +121,53 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 		service.ProjectID = projectID
 		service.ID = deployment.Labels["app"]
 		service.Version = deployment.Labels["version"]
+		service.Affinity = make([]model.Affinity, 0)
 
-		// node affinity preferred
-		affinities := extractPreferredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
-		}
+		// Extract affinities
+		if deployment.Spec.Template.Spec.Affinity != nil {
 
-		// node affinity required
-		affinities = extractRequiredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
-		}
+			// node affinity preferred
+			if deployment.Spec.Template.Spec.Affinity.NodeAffinity != nil {
 
-		// service affinity
-		affinities = extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution, 1)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
-		}
-		affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution, 1)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
-		}
+				if deployment.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution != nil {
+					affinities := extractPreferredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution)
+					if len(affinities) > 0 {
+						service.Affinity = append(service.Affinity, affinities...)
+					}
+				}
 
-		// service anti affinity
-		affinities = extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, -1)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
-		}
-		affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution, -1)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
+				// node affinity required
+				if deployment.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+					affinities := extractRequiredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
+					if len(affinities) > 0 {
+						service.Affinity = append(service.Affinity, affinities...)
+					}
+				}
+			}
+
+			// service affinity
+			if deployment.Spec.Template.Spec.Affinity.PodAffinity != nil {
+				affinities := extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution, 1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+				affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution, 1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+			}
+
+			// service anti affinity
+			if deployment.Spec.Template.Spec.Affinity.PodAntiAffinity != nil {
+				affinities := extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, -1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+				affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution, -1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+			}
 		}
 
 		// service labels
