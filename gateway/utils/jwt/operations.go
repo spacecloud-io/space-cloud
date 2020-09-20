@@ -34,7 +34,10 @@ func (j *JWT) ParseToken(ctx context.Context, token string) (map[string]interfac
 		// check if kid belongs to a normal token with kid header
 		obj, ok := j.staticSecrets[kid.(string)]
 		if ok {
-			if obj.Alg == config.RS256Public {
+			switch obj.Alg {
+			case "":
+				obj.Alg = config.HS256
+			case config.RS256Public:
 				obj.Alg = config.RS256
 			}
 			return j.verifyTokenSignature(ctx, token, obj)

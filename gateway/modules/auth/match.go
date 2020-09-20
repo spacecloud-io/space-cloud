@@ -90,7 +90,8 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 	var obj interface{}
 	if rule.ReqTmpl != "" {
 		switch rule.Template {
-		case config.TemplatingEngineGo:
+		// If nothing provided default templating engine is go
+		case config.TemplatingEngineGo, "":
 			// Create a new template object
 			t := template.New(rule.Name)
 			t = t.Funcs(tmpl2.CreateGoFuncMaps(m))

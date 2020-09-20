@@ -188,7 +188,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 			ports := make([]model.Port, len(containerInfo.Ports))
 			for i, port := range containerInfo.Ports {
 				array := strings.Split(port.Name, "-")
-				ports[i] = model.Port{Name: array[0], Protocol: model.Protocol(array[1]), Port: port.ContainerPort}
+				ports[i] = model.Port{Name: port.Name, Protocol: model.Protocol(array[0]), Port: port.ContainerPort}
 			}
 
 			var dockerSecret string
