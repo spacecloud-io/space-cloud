@@ -1,6 +1,8 @@
 package jwt
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"sync"
 	"time"
@@ -53,11 +55,13 @@ func (j *JWT) SetSecrets(secrets []*config.Secret) error {
 	newKidMap := map[string]string{}
 	newStaticSecretMap := map[string]*config.Secret{}
 	for _, secret := range secrets {
-		if secret.KID == "" {
-			secret.KID = ksuid.New().String()
-		}
 		switch secret.Alg {
 		case config.JwkURL:
+			// Set the secret kid if it isn't already set
+			if secret.KID == "" {
+				secret.KID = ksuid.New().String()
+			}
+
 			// add or update a secret
 			obj, ok := j.jwkSecrets[secret.KID]
 			if !ok || secret.JwkURL != obj.url {
@@ -85,9 +89,33 @@ func (j *JWT) SetSecrets(secrets []*config.Secret) error {
 			if secret.IsPrimary {
 				return helpers.Logger.LogError("internal", "RSA algorithms without private keys cannot be used as a primary secret", nil, nil)
 			}
+
+			// Set the secret kid if it isn't already set
+			if secret.KID == "" {
+				h := sha256.New()
+				_, _ = h.Write([]byte(secret.PublicKey))
+				secret.KID = base64.StdEncoding.EncodeToString(h.Sum(nil))
+			}
+
 			newStaticSecretMap[secret.KID] = secret
 
-		case config.RS256, config.HS256, "":
+		case config.RS256:
+			// Set the secret kid if it isn't already set
+			if secret.KID == "" {
+				h := sha256.New()
+				_, _ = h.Write([]byte(secret.PublicKey))
+				secret.KID = base64.StdEncoding.EncodeToString(h.Sum(nil))
+			}
+
+			newStaticSecretMap[secret.KID] = secret
+		case config.HS256, "":
+			// Set the secret kid if it isn't already set
+			if secret.KID == "" {
+				h := sha256.New()
+				_, _ = h.Write([]byte(secret.Secret))
+				secret.KID = base64.StdEncoding.EncodeToString(h.Sum(nil))
+			}
+
 			newStaticSecretMap[secret.KID] = secret
 		default:
 			return helpers.Logger.LogError("internal", fmt.Sprintf("Invalid token algorithm provided (%s)", secret.Alg), nil, nil)

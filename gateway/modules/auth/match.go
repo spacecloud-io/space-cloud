@@ -90,7 +90,8 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 	var obj interface{}
 	if rule.ReqTmpl != "" {
 		switch rule.Template {
-		case config.TemplatingEngineGo:
+		// If nothing provided default templating engine is go
+		case config.TemplatingEngineGo, "":
 			// Create a new template object
 			t := template.New(rule.Name)
 			t = t.Funcs(tmpl2.CreateGoFuncMaps(m))
@@ -127,7 +128,11 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 		rule.Store = "args.result"
 	}
 
-	return formatError(ctx, rule, utils.StoreValue(ctx, rule.Store, result, args))
+	if err := utils.StoreValue(ctx, rule.Store, result, args); err != nil {
+		return formatError(ctx, rule, err)
+	}
+
+	return nil
 }
 
 func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Rule, crud model.CrudAuthInterface, args, auth map[string]interface{}) (*model.PostProcess, error) {
@@ -151,7 +156,7 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 		return nil, formatError(ctx, rule, err)
 	}
 
-	postProcess, err := m.matchRule(ctx, project, rule.Clause, args, nil)
+	postProcess, err := m.matchRule(ctx, project, rule.Clause, args, auth)
 	return postProcess, formatError(ctx, rule, err)
 }
 

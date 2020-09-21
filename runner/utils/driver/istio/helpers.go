@@ -164,7 +164,8 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 func prepareContainerPorts(taskPorts []model.Port) []v1.ContainerPort {
 	ports := make([]v1.ContainerPort, len(taskPorts))
 	for i, p := range taskPorts {
-		ports[i] = v1.ContainerPort{Name: fmt.Sprintf("%s-%s", p.Name, p.Protocol), ContainerPort: p.Port}
+		arr := strings.Split(p.Name, "-")
+		ports[i] = v1.ContainerPort{Name: p.Name, ContainerPort: p.Port, Protocol: v1.Protocol(arr[0])}
 	}
 
 	return ports
@@ -485,17 +486,18 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 		case model.AffinityTypeNode:
 			// affinity
 			if nodeAffinity == nil {
-				nodeAffinity = &v1.NodeAffinity{
-					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
-						NodeSelectorTerms: []v1.NodeSelectorTerm{},
-					},
-				}
+				nodeAffinity = &v1.NodeAffinity{}
 			}
 			required, preferred := getNodeAffinityObject(affinity)
 			if preferred != nil {
 				nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, *preferred)
 			}
 			if required != nil {
+				if nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+					nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &v1.NodeSelector{
+						NodeSelectorTerms: []v1.NodeSelectorTerm{},
+					}
+				}
 				nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, *required)
 			}
 		}
