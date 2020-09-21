@@ -142,7 +142,7 @@ func setFileSecret(fileStoreType utils.FileStoreType, key, value string) error {
 func splitConnectionString(connection string) (string, string, bool) {
 	s := strings.Split(connection, ".")
 	if s[0] == "secrets" {
-		return s[1], s[2], true
+		return s[1], strings.Join(s[2:], "."), true
 	}
 	return "", "", false
 }

@@ -53,7 +53,7 @@ func (m *Module) SetConfig(project, secretSource string, secrets []*config.Secre
 	}
 
 	if secretSource == "admin" {
-		secrets = []*config.Secret{{Secret: m.adminMan.GetSecret(), IsPrimary: true, Alg: config.HS256}}
+		secrets = []*config.Secret{{KID: utils.AdminSecretKID, Secret: m.adminMan.GetSecret(), IsPrimary: true, Alg: config.HS256}}
 	}
 	if err := m.jwt.SetSecrets(secrets); err != nil {
 		return err

@@ -7,6 +7,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/spaceuptech/helpers"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // GenerateToken creates a token with the appropriate claims
@@ -42,6 +44,7 @@ func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error
 	claims["exp"] = time.Now().Add(24 * 7 * time.Hour).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token.Header["kid"] = utils.AdminSecretKID
 	tokenString, err := token.SignedString([]byte(m.user.Secret))
 	if err != nil {
 		return "", err
