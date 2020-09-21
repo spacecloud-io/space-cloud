@@ -164,7 +164,8 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 func prepareContainerPorts(taskPorts []model.Port) []v1.ContainerPort {
 	ports := make([]v1.ContainerPort, len(taskPorts))
 	for i, p := range taskPorts {
-		ports[i] = v1.ContainerPort{Name: p.Name, ContainerPort: p.Port}
+		arr := strings.Split(p.Name, "-")
+		ports[i] = v1.ContainerPort{Name: p.Name, ContainerPort: p.Port, Protocol: v1.Protocol(arr[0])}
 	}
 
 	return ports
