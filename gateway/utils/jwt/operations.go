@@ -34,20 +34,20 @@ func (j *JWT) ParseToken(ctx context.Context, token string) (map[string]interfac
 		// check if kid belongs to a normal token with kid header
 		obj, ok := j.staticSecrets[kid.(string)]
 		if ok {
-			tempSecret := obj
+			tempSecret := *obj
 			switch obj.Alg {
 			case "":
 				tempSecret.Alg = config.HS256
 			case config.RS256Public:
 				tempSecret.Alg = config.RS256
 			}
-			return j.verifyTokenSignature(ctx, token, tempSecret)
+			return j.verifyTokenSignature(ctx, token, &tempSecret)
 		}
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "No secret with given kid found", nil, map[string]interface{}{"kid": kid})
 	}
 
 	for _, secret := range j.staticSecrets {
-		tempSecret := secret
+		tempSecret := *secret
 		// normal token
 		switch secret.Alg {
 		case "":
@@ -56,7 +56,7 @@ func (j *JWT) ParseToken(ctx context.Context, token string) (map[string]interfac
 			tempSecret.Alg = config.RS256
 		}
 
-		claims, err := j.verifyTokenSignature(ctx, token, tempSecret)
+		claims, err := j.verifyTokenSignature(ctx, token, &tempSecret)
 		if err == nil {
 			return claims, nil
 		}
