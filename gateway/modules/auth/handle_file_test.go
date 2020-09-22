@@ -8,6 +8,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	jwtUtils "github.com/spaceuptech/space-cloud/gateway/utils/jwt"
 )
 
 func TestGetFileRule(t *testing.T) {
@@ -88,7 +89,7 @@ func TestGetFileRule(t *testing.T) {
 				if !reflect.DeepEqual(rules, test.result) {
 					t.Errorf("getFileRule():Wanted Rule%v,Got Rule%v", test.result, rules)
 				}
-				//check if valid path paramters are returned
+				// check if valid path paramters are returned
 				if !reflect.DeepEqual(data, test.pathParams) {
 					t.Errorf("getFileRule():Wanted Path Parameters%v,Got Path Parameters%v", test.pathParams, data)
 				}
@@ -108,7 +109,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 	}{
 		{
 			testName: "Successful Test allow", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
-			module: &Module{fileRules: []*config.FileRule{&config.FileRule{
+			module: &Module{jwt: jwtUtils.New(), fileRules: []*config.FileRule{&config.FileRule{
 				Prefix: string(os.PathSeparator),
 				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "allow"}},
 			}},
@@ -117,7 +118,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 		},
 		{
 			testName: "Test Case-Invalid Project Details", project: "projec", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
-			module: &Module{fileRules: []*config.FileRule{&config.FileRule{
+			module: &Module{jwt: jwtUtils.New(), fileRules: []*config.FileRule{&config.FileRule{
 				Prefix: string(os.PathSeparator),
 				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "allow"}},
 			}},
@@ -126,7 +127,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 		},
 		{
 			testName: "Test Case-Not able to parse token", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
-			module: &Module{fileRules: []*config.FileRule{&config.FileRule{
+			module: &Module{jwt: jwtUtils.New(), fileRules: []*config.FileRule{&config.FileRule{
 				Prefix: string(os.PathSeparator),
 				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "allowed"}},
 			}},
@@ -135,7 +136,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 		},
 		{
 			testName: "Test Case-invalid file rule", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
-			module: &Module{fileRules: []*config.FileRule{&config.FileRule{
+			module: &Module{jwt: jwtUtils.New(), fileRules: []*config.FileRule{&config.FileRule{
 				Prefix: string(os.PathSeparator) + "folder",
 				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "allowed"}},
 			}},
@@ -144,12 +145,11 @@ func TestIsFileOpAuthorised(t *testing.T) {
 		},
 		{
 			testName: "Invalid Test Case-Fields do not match", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
-			module: &Module{fileRules: []*config.FileRule{&config.FileRule{
+			module: &Module{jwt: jwtUtils.New(), fileRules: []*config.FileRule{&config.FileRule{
 				Prefix: string(os.PathSeparator),
 				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "deny"}},
 			}},
 				project: "project",
-				secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}},
 			},
 			IsErrExpected: true, op: "read", args: map[string]interface{}{"params": "age"}, path: string(os.PathSeparator),
 		},
@@ -160,7 +160,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got Error-", err, "Want Error-", test.IsErrExpected)
 			}
-			//check Post Process Result if match rule function is called
+			// check Post Process Result if match rule function is called
 			if !test.IsErrExpected && !reflect.DeepEqual(result, test.result) {
 				t.Error("Got Result-", result, "Wanted Result-", test.result)
 			}

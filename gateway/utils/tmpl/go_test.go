@@ -1,12 +1,12 @@
 package tmpl
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
 	"text/template"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -129,7 +129,7 @@ variables:
     cluster_key: "{{ generateId }}"
 `,
 				params: map[string]interface{}{"cluster": "cluster 1"},
-				claims: auth.TokenClaims{"id": "1"},
+				claims: map[string]interface{}{"id": "1"},
 				format: "yaml",
 			},
 			want: map[string]interface{}{
@@ -159,7 +159,7 @@ variables:
 }
 `,
 				params: map[string]interface{}{"cluster": "cluster 1"},
-				claims: auth.TokenClaims{"id": "1"},
+				claims: map[string]interface{}{"id": "1"},
 				format: "json",
 			},
 			want: map[string]interface{}{
@@ -187,7 +187,7 @@ variables:
 				return
 			}
 
-			got, err := GoTemplate("", "", tmpl, tt.args.format, tt.args.token, tt.args.claims, tt.args.params)
+			got, err := GoTemplate(context.Background(), tmpl, tt.args.format, tt.args.token, tt.args.claims, tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GoTemplate() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -37,6 +37,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
+	github.com/lestrrat-go/jwx v1.0.4
 	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mholt/certmagic v0.9.1
@@ -47,7 +48,7 @@ require (
 	github.com/segmentio/ksuid v1.0.3
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
-	github.com/spaceuptech/helpers v0.1.1
+	github.com/spaceuptech/helpers v0.1.2
 	github.com/spaceuptech/space-api-go v0.18.1
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1
@@ -61,7 +62,7 @@ require (
 	go.etcd.io/bbolt v1.3.3
 	go.mongodb.org/mongo-driver v1.1.1
 	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4
-	golang.org/x/net v0.0.0-20200222125558-5a598a2470a0
+	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
 	golang.org/x/sys v0.0.0-20200824131525-c12d262b63d8 // indirect
 	google.golang.org/api v0.18.0
 	gopkg.in/yaml.v2 v2.2.7 // indirect

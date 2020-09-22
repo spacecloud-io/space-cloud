@@ -88,21 +88,43 @@ const (
 
 // Affinity describes the affinity rules of a service
 type Affinity struct {
-	Attribute string           `json:"attribute" yaml:"attribute"`
-	Value     string           `json:"value" yaml:"value"`
-	Weight    float32          `json:"weight" yaml:"weight"`
-	Operator  AffinityOperator `json:"operator" yaml:"operator"`
+	ID               string             `json:"id" yaml:"id"`
+	Type             AffinityType       `json:"type" yaml:"type"`         // node or service
+	Weight           int32              `json:"weight" yaml:"weight"`     // -100 to 100
+	Operator         AffinityOperator   `json:"operator" yaml:"operator"` // preferred or required
+	TopologyKey      string             `json:"topologyKey" yaml:"topologyKey"`
+	Projects         []string           `json:"projects" yaml:"projects"`
+	MatchExpressions []MatchExpressions `json:"matchExpressions" yaml:"matchExpressions"`
+}
+
+// MatchExpressions are a set of rules defined for scheduling pods on specifc nodes
+type MatchExpressions struct {
+	Key       string   `json:"key" yaml:"key"`
+	Values    []string `json:"values" yaml:"values"`
+	Attribute string   `json:"attribute" yaml:"attribute"`
+	Operator  string   `json:"operator" yaml:"operator"`
 }
 
 // AffinityOperator describes the type of operator
 type AffinityOperator string
 
 const (
-	// AffinityOperatorEQ is used for equal to operation
-	AffinityOperatorEQ AffinityOperator = "=="
+	// AffinityOperatorPreferred scheduling on particular node is preferred
+	AffinityOperatorPreferred AffinityOperator = "preferred"
 
-	// AffinityOperatorNEQ is used for not equal to operation
-	AffinityOperatorNEQ AffinityOperator = "!="
+	// AffinityOperatorRequired scheduling on partiuclar node is required
+	AffinityOperatorRequired AffinityOperator = "required"
+)
+
+// AffinityType describe the type of affinity it can be either node (corresponds to kubernetes nodes) or service (corresponds to kubernetes pod)
+type AffinityType string
+
+const (
+	// AffinityTypeNode is used for kubernetes node resource
+	AffinityTypeNode AffinityType = "node"
+
+	// AffinityTypeService is used for kubernetes service resource
+	AffinityTypeService AffinityType = "service"
 )
 
 // Upstream is the upstream dependencies of this service
@@ -136,7 +158,7 @@ type SpecObject struct {
 	Spec interface{}       `yaml:"spec,omitempty"`
 }
 
-//ServiceStatus describes structure of service status
+// ServiceStatus describes structure of service status
 type ServiceStatus struct {
 	ServiceID       string         `json:"serviceId" yaml:"serviceId"`
 	Version         string         `json:"version" yaml:"version"`
@@ -144,7 +166,7 @@ type ServiceStatus struct {
 	Replicas        []*ReplicaInfo `json:"replicas" yaml:"replicas"`
 }
 
-//ReplicaInfo describes structure of replica info
+// ReplicaInfo describes structure of replica info
 type ReplicaInfo struct {
 	ID     string `json:"id" yaml:"id"`
 	Status string `json:"status" yaml:"status"`

@@ -12,7 +12,7 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
-func prepareService(projectID, dockerFilePath, serviceFilePath string) error {
+func prepareService(projectID, dockerFilePath, serviceFilePath, dockerImageName string) error {
 
 	// Check if a docker file exists
 	if !utils.FileExists(dockerFilePath) {
@@ -52,7 +52,7 @@ func prepareService(projectID, dockerFilePath, serviceFilePath string) error {
 	if !utils.FileExists(serviceFilePath) {
 		utils.LogInfo(fmt.Sprintf("Could not find service file (%s)", serviceFilePath))
 
-		svc, err := services.GenerateService(projectID, "auto")
+		svc, err := services.GenerateService(projectID, dockerImageName)
 		if err != nil {
 			return utils.LogError("Could not generate service config", err)
 		}

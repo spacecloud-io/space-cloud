@@ -2,13 +2,14 @@
 #############################################################################################
 ################################ Set some global parameters  ################################
 #############################################################################################
-apiVersion: "authentication.istio.io/v1alpha1"
-kind: "MeshPolicy"
+apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
 metadata:
   name: "default"
+  namespace: "istio-system"
 spec:
-  peers:
-    - mtls: {}
+  mtls:
+    mode: STRICT
 ---
 apiVersion: v1
 kind: Namespace
@@ -199,7 +200,7 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: spaceuptech/runner:0.19.2
+          image: spaceuptech/runner:0.19.3
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "LOG_LEVEL"
@@ -230,18 +231,6 @@ spec:
       app: gateway
   rules:
     - {}
----
-apiVersion: "authentication.istio.io/v1alpha1"
-kind: "Policy"
-metadata:
-  name: "gateway-policy"
-  namespace: space-cloud
-spec:
-  targets:
-    - name: gateway
-  peers:
-    - mtls:
-        mode: PERMISSIVE
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
@@ -379,7 +368,7 @@ spec:
       containers:
         - name: gateway
           command: ["./app", "run"]
-          image: spaceuptech/gateway:0.19.2
+          image: spaceuptech/gateway:0.19.3
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "NODE_ID"
@@ -388,6 +377,8 @@ spec:
                   fieldPath: metadata.name
             - name: "RUNNER_ADDR"
               value: "runner.space-cloud.svc.cluster.local:4050"
+            - name: "GOOGLE_APPLICATION_CREDENTIALS"
+              value: "/root/.gcp/credentials.json"
             - name: "ADMIN_USER"
               value: "admin"
             - name: "ADMIN_PASS"

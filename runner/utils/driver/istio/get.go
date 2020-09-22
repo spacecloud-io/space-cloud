@@ -6,12 +6,108 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
+
+func extractPreferredServiceAffinityObject(arr []v1.WeightedPodAffinityTerm, multiplier int32) []model.Affinity {
+	affinities := []model.Affinity{}
+	for _, preferredSchedulingTerm := range arr {
+		matchExpression := []model.MatchExpressions{}
+		for _, expression := range preferredSchedulingTerm.PodAffinityTerm.LabelSelector.MatchExpressions {
+			matchExpression = append(matchExpression, model.MatchExpressions{
+				Key:       expression.Key,
+				Values:    expression.Values,
+				Attribute: "label",
+				Operator:  string(expression.Operator),
+			})
+		}
+		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
+			Type:             model.AffinityTypeService,
+			Weight:           preferredSchedulingTerm.Weight * multiplier,
+			Operator:         model.AffinityOperatorPreferred,
+			TopologyKey:      preferredSchedulingTerm.PodAffinityTerm.TopologyKey,
+			Projects:         preferredSchedulingTerm.PodAffinityTerm.Namespaces,
+			MatchExpressions: matchExpression,
+		})
+	}
+	return affinities
+}
+
+func extractRequiredServiceAffinityObject(arr []v1.PodAffinityTerm, multiplier int32) []model.Affinity {
+	affinities := []model.Affinity{}
+	for _, preferredSchedulingTerm := range arr {
+		matchExpression := []model.MatchExpressions{}
+		for _, expression := range preferredSchedulingTerm.LabelSelector.MatchExpressions {
+			matchExpression = append(matchExpression, model.MatchExpressions{
+				Key:       expression.Key,
+				Values:    expression.Values,
+				Attribute: "label",
+				Operator:  string(expression.Operator),
+			})
+		}
+		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
+			Type:             model.AffinityTypeService,
+			Weight:           100 * multiplier,
+			Operator:         model.AffinityOperatorRequired,
+			TopologyKey:      preferredSchedulingTerm.TopologyKey,
+			Projects:         preferredSchedulingTerm.Namespaces,
+			MatchExpressions: matchExpression,
+		})
+	}
+	return affinities
+}
+
+func extractPreferredNodeAffinityObject(arr []v1.PreferredSchedulingTerm) []model.Affinity {
+	affinities := []model.Affinity{}
+	for _, preferredSchedulingTerm := range arr {
+		matchExpression := []model.MatchExpressions{}
+		for _, expression := range preferredSchedulingTerm.Preference.MatchExpressions {
+			matchExpression = append(matchExpression, model.MatchExpressions{
+				Key:       expression.Key,
+				Values:    expression.Values,
+				Attribute: "label",
+				Operator:  string(expression.Operator),
+			})
+		}
+		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
+			Type:             model.AffinityTypeNode,
+			Weight:           preferredSchedulingTerm.Weight,
+			Operator:         model.AffinityOperatorPreferred,
+			MatchExpressions: matchExpression,
+		})
+	}
+	return affinities
+}
+
+func extractRequiredNodeAffinityObject(arr []v1.NodeSelectorTerm) []model.Affinity {
+	affinities := []model.Affinity{}
+	for _, nodeSelectorTerm := range arr {
+		matchExpression := []model.MatchExpressions{}
+		for _, expression := range nodeSelectorTerm.MatchExpressions {
+			matchExpression = append(matchExpression, model.MatchExpressions{
+				Key:       expression.Key,
+				Values:    expression.Values,
+				Attribute: "label",
+				Operator:  string(expression.Operator),
+			})
+		}
+		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
+			Type:             model.AffinityTypeNode,
+			Operator:         model.AffinityOperatorRequired,
+			MatchExpressions: matchExpression,
+		})
+	}
+	return affinities
+}
 
 // GetServices gets the services for istio
 func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
@@ -25,6 +121,57 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 		service.ProjectID = projectID
 		service.ID = deployment.Labels["app"]
 		service.Version = deployment.Labels["version"]
+		service.Affinity = make([]model.Affinity, 0)
+
+		// Extract affinities
+		if deployment.Spec.Template.Spec.Affinity != nil {
+
+			// node affinity preferred
+			if deployment.Spec.Template.Spec.Affinity.NodeAffinity != nil {
+
+				if deployment.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution != nil {
+					affinities := extractPreferredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution)
+					if len(affinities) > 0 {
+						service.Affinity = append(service.Affinity, affinities...)
+					}
+				}
+
+				// node affinity required
+				if deployment.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+					affinities := extractRequiredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
+					if len(affinities) > 0 {
+						service.Affinity = append(service.Affinity, affinities...)
+					}
+				}
+			}
+
+			// service affinity
+			if deployment.Spec.Template.Spec.Affinity.PodAffinity != nil {
+				affinities := extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution, 1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+				affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution, 1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+			}
+
+			// service anti affinity
+			if deployment.Spec.Template.Spec.Affinity.PodAntiAffinity != nil {
+				affinities := extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, -1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+				affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution, -1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+			}
+		}
+
+		// service labels
+		service.Labels = deployment.Spec.Template.Labels
 
 		// Get scale config
 		scale, err := getScaleConfigFromDeployment(ctx, deployment)
@@ -40,8 +187,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 			// get ports
 			ports := make([]model.Port, len(containerInfo.Ports))
 			for i, port := range containerInfo.Ports {
-				array := strings.Split(port.Name, "-")
-				ports[i] = model.Port{Name: array[0], Protocol: model.Protocol(array[1]), Port: port.ContainerPort}
+				ports[i] = model.Port{Name: port.Name, Protocol: model.Protocol(port.Protocol), Port: port.ContainerPort}
 			}
 
 			var dockerSecret string
@@ -154,7 +300,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 			service.Upstreams = append(service.Upstreams, model.Upstream{ProjectID: a[0], Service: a[1]})
 		}
 
-		// todo labels, serviceName, affinity, runtime
+		// todo serviceName, runtime
 		services = append(services, service)
 	}
 
