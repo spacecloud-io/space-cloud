@@ -164,7 +164,8 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 func prepareContainerPorts(taskPorts []model.Port) []v1.ContainerPort {
 	ports := make([]v1.ContainerPort, len(taskPorts))
 	for i, p := range taskPorts {
-		ports[i] = v1.ContainerPort{Name: fmt.Sprintf("%s-%s", p.Name, p.Protocol), ContainerPort: p.Port}
+		arr := strings.Split(p.Name, "-")
+		ports[i] = v1.ContainerPort{Name: p.Name, ContainerPort: p.Port, Protocol: v1.Protocol(arr[0])}
 	}
 
 	return ports
@@ -451,13 +452,65 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 	if strings.Contains(service.StatsInclusionPrefixes, "http.inbound") {
 		service.StatsInclusionPrefixes += ",http.inbound"
 	}
+
+	var nodeAffinity *v1.NodeAffinity
+	var podAffinity *v1.PodAffinity
+	var podAntiAffinity *v1.PodAntiAffinity
+	for _, affinity := range service.Affinity {
+		switch affinity.Type {
+		case model.AffinityTypeService:
+			// affinity
+			if affinity.Weight > 0 {
+				if podAffinity == nil {
+					podAffinity = &v1.PodAffinity{}
+				}
+				required, preferred := getServiceAffinityObject(affinity, 1)
+				if preferred != nil {
+					podAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(podAffinity.PreferredDuringSchedulingIgnoredDuringExecution, *preferred)
+				}
+				if required != nil {
+					podAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(podAffinity.RequiredDuringSchedulingIgnoredDuringExecution, *required)
+				}
+			} else {
+				if podAntiAffinity == nil {
+					podAntiAffinity = &v1.PodAntiAffinity{}
+				}
+				required, preferred := getServiceAffinityObject(affinity, -1)
+				if preferred != nil {
+					podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(podAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, *preferred)
+				}
+				if required != nil {
+					podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(podAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution, *required)
+				}
+			}
+		case model.AffinityTypeNode:
+			// affinity
+			if nodeAffinity == nil {
+				nodeAffinity = &v1.NodeAffinity{}
+			}
+			required, preferred := getNodeAffinityObject(affinity)
+			if preferred != nil {
+				nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, *preferred)
+			}
+			if required != nil {
+				if nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+					nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &v1.NodeSelector{
+						NodeSelectorTerms: []v1.NodeSelectorTerm{},
+					}
+				}
+				nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, *required)
+			}
+		}
+	}
+
+	labels := service.Labels
+	labels["app"] = service.ID
+	labels["version"] = service.Version
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: getDeploymentName(service.ID, service.Version),
-			Labels: map[string]string{
-				"app":     service.ID,
-				"version": service.Version,
-			},
+			Name:   getDeploymentName(service.ID, service.Version),
+			Labels: labels,
 			Annotations: map[string]string{
 				"concurrency": strconv.Itoa(int(service.Scale.Concurrency)),
 				"minReplicas": strconv.Itoa(int(service.Scale.MinReplicas)),
@@ -472,18 +525,81 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"sidecar.istio.io/statsInclusionPrefixes": service.StatsInclusionPrefixes},
-					Labels:      map[string]string{"app": service.ID, "version": service.Version},
+					Labels:      labels,
 				},
 				Spec: v1.PodSpec{
 					ServiceAccountName: getServiceAccountName(service.ID),
 					Containers:         preparedContainer,
 					Volumes:            volumes,
 					ImagePullSecrets:   imagePull,
-					// TODO: Add config for affinity
+					Affinity: &v1.Affinity{
+						NodeAffinity:    nodeAffinity,
+						PodAffinity:     podAffinity,
+						PodAntiAffinity: podAntiAffinity,
+					},
 				},
 			},
 		},
 	}
+}
+
+func getServiceAffinityObject(affinity model.Affinity, multiplier int32) (*v1.PodAffinityTerm, *v1.WeightedPodAffinityTerm) {
+	expressions := []metav1.LabelSelectorRequirement{}
+	for _, expression := range affinity.MatchExpressions {
+		expressions = append(expressions, metav1.LabelSelectorRequirement{
+			Key:      expression.Key,
+			Operator: metav1.LabelSelectorOperator(expression.Operator),
+			Values:   expression.Values,
+		})
+	}
+	switch affinity.Operator {
+	case model.AffinityOperatorRequired:
+		return &v1.PodAffinityTerm{
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels:      nil,
+				MatchExpressions: expressions,
+			},
+			Namespaces:  affinity.Projects,
+			TopologyKey: affinity.TopologyKey,
+		}, nil
+	case model.AffinityOperatorPreferred:
+		return nil, &v1.WeightedPodAffinityTerm{
+			Weight: affinity.Weight * multiplier,
+			PodAffinityTerm: v1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels:      nil,
+					MatchExpressions: expressions,
+				},
+				Namespaces:  affinity.Projects,
+				TopologyKey: affinity.TopologyKey,
+			},
+		}
+	}
+	return nil, nil
+}
+
+func getNodeAffinityObject(affinity model.Affinity) (*v1.NodeSelectorTerm, *v1.PreferredSchedulingTerm) {
+	expressions := []v1.NodeSelectorRequirement{}
+	for _, expression := range affinity.MatchExpressions {
+		expressions = append(expressions, v1.NodeSelectorRequirement{
+			Key:      expression.Key,
+			Operator: v1.NodeSelectorOperator(expression.Operator),
+			Values:   expression.Values,
+		})
+	}
+	switch affinity.Operator {
+	case model.AffinityOperatorRequired:
+		return &v1.NodeSelectorTerm{MatchExpressions: expressions}, nil
+	case model.AffinityOperatorPreferred:
+		return nil, &v1.PreferredSchedulingTerm{
+			Weight: affinity.Weight,
+			Preference: v1.NodeSelectorTerm{
+				MatchExpressions: expressions,
+				MatchFields:      nil,
+			},
+		}
+	}
+	return nil, nil
 }
 
 func generateGeneralService(service *model.Service) *v1.Service {

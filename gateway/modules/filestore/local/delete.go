@@ -2,6 +2,7 @@ package local
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 )
@@ -18,7 +19,7 @@ func (l *Local) DeleteFile(ctx context.Context, path string) error {
 	ps := string(os.PathSeparator)
 	path = strings.TrimRight(l.rootPath, ps) + ps + strings.TrimLeft(path, ps)
 	if isPathDir(path) {
-		return os.RemoveAll(path)
+		return fmt.Errorf("cannot delete the folder")
 	}
 	return os.Remove(path)
 }

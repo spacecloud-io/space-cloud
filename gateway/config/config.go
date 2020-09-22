@@ -32,9 +32,18 @@ type Project struct {
 
 // Secret describes the a secret object
 type Secret struct {
-	IsPrimary  bool   `json:"isPrimary" yaml:"isPrimary"`
-	Secret     string `json:"secret" yaml:"secret"`
-	Alg        JWTAlg `json:"alg" yaml:"alg"`
+	IsPrimary bool   `json:"isPrimary" yaml:"isPrimary"` // used by the frontend & backend to generate token out of multiple secrets
+	Alg       JWTAlg `json:"alg" yaml:"alg"`             // RSA256 or HMAC256
+
+	KID string `json:"kid" yaml:"kid"` // uniquely identifies a secret
+
+	JwkURL string      `json:"jwkUrl" yaml:"jwkUrl"`
+	JwkKey interface{} `json:"-" yaml:"-"`
+
+	// Used for HMAC256 secret
+	Secret string `json:"secret" yaml:"secret"`
+
+	// Use for RSA256
 	PublicKey  string `json:"publicKey" yaml:"publicKey"`
 	PrivateKey string `json:"privateKey" yaml:"privateKey"`
 }
@@ -48,6 +57,12 @@ const (
 
 	// RS256 is method used for signing token
 	RS256 JWTAlg = "RS256"
+
+	// JwkURL is the method for identifying a secret that has to be validated against secret kes fetched from url
+	JwkURL JWTAlg = "JWK_URL"
+
+	// RS256Public is the method for identifying a secret that has to be validated against with a public key
+	RS256Public JWTAlg = "RS256_PUBLIC"
 )
 
 // Admin holds the admin config
@@ -125,23 +140,28 @@ type TableRule struct {
 
 // Rule is the authorisation object at the query level
 type Rule struct {
-	ID      string                 `json:"id,omitempty" yaml:"id,omitempty"`
-	Rule    string                 `json:"rule" yaml:"rule"`
-	Eval    string                 `json:"eval,omitempty" yaml:"eval,omitempty"`
-	Type    string                 `json:"type,omitempty" yaml:"type,omitempty"`
-	F1      interface{}            `json:"f1,omitempty" yaml:"f1,omitempty"`
-	F2      interface{}            `json:"f2,omitempty" yaml:"f2,omitempty"`
-	Clauses []*Rule                `json:"clauses,omitempty" yaml:"clauses,omitempty"`
-	DB      string                 `json:"db,omitempty" yaml:"db,omitempty"`
-	Col     string                 `json:"col,omitempty" yaml:"col,omitempty"`
-	Find    map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty"`
-	URL     string                 `json:"url,omitempty" yaml:"url,omitempty"`
-	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty"`
-	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
-	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
-	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
-	Name    string                 `json:"name,omitempty" yaml:"name,omitempty"`
-	Error   string                 `json:"error,omitempty" yaml:"error,omitempty"`
+	ID       string                 `json:"id,omitempty" yaml:"id,omitempty"`
+	Rule     string                 `json:"rule" yaml:"rule"`
+	Eval     string                 `json:"eval,omitempty" yaml:"eval,omitempty"`
+	Type     string                 `json:"type,omitempty" yaml:"type,omitempty"`
+	F1       interface{}            `json:"f1,omitempty" yaml:"f1,omitempty"`
+	F2       interface{}            `json:"f2,omitempty" yaml:"f2,omitempty"`
+	Clauses  []*Rule                `json:"clauses,omitempty" yaml:"clauses,omitempty"`
+	DB       string                 `json:"db,omitempty" yaml:"db,omitempty"`
+	Col      string                 `json:"col,omitempty" yaml:"col,omitempty"`
+	Find     map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty"`
+	URL      string                 `json:"url,omitempty" yaml:"url,omitempty"`
+	Fields   interface{}            `json:"fields,omitempty" yaml:"fields,omitempty"`
+	Field    string                 `json:"field,omitempty" yaml:"field,omitempty"`
+	Value    interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
+	Clause   *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
+	Name     string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	Error    string                 `json:"error,omitempty" yaml:"error,omitempty"`
+	Store    string                 `json:"store,omitempty" yaml:"store,omitempty"`
+	Claims   map[string]interface{} `json:"claims,omitempty" yaml:"claims,omitempty"`
+	Template TemplatingEngine       `json:"template,omitempty" yaml:"template,omitempty"`
+	ReqTmpl  string                 `json:"requestTemplate" yaml:"requestTemplate"`
+	OpFormat string                 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -172,17 +192,18 @@ type Service struct {
 
 // Endpoint holds the config of a endpoint
 type Endpoint struct {
-	Kind      EndpointKind             `json:"kind" yaml:"kind"`
-	Tmpl      EndpointTemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
-	ReqTmpl   string                   `json:"requestTemplate" yaml:"requestTemplate"`
-	GraphTmpl string                   `json:"graphTemplate" yaml:"graphTemplate"`
-	ResTmpl   string                   `json:"responseTemplate" yaml:"responseTemplate"`
-	OpFormat  string                   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
-	Token     string                   `json:"token,omitempty" yaml:"token,omitempty"`
-	Method    string                   `json:"method" yaml:"method"`
-	Path      string                   `json:"path" yaml:"path"`
-	Rule      *Rule                    `json:"rule,omitempty" yaml:"rule,omitempty"`
-	Headers   Headers                  `json:"headers,omitempty" yaml:"headers,omitempty"`
+	Kind      EndpointKind     `json:"kind" yaml:"kind"`
+	Tmpl      TemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
+	ReqTmpl   string           `json:"requestTemplate" yaml:"requestTemplate"`
+	GraphTmpl string           `json:"graphTemplate" yaml:"graphTemplate"`
+	ResTmpl   string           `json:"responseTemplate" yaml:"responseTemplate"`
+	OpFormat  string           `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
+	Token     string           `json:"token,omitempty" yaml:"token,omitempty"`
+	Method    string           `json:"method" yaml:"method"`
+	Path      string           `json:"path" yaml:"path"`
+	Rule      *Rule            `json:"rule,omitempty" yaml:"rule,omitempty"`
+	Headers   Headers          `json:"headers,omitempty" yaml:"headers,omitempty"`
+	Timeout   int              `json:"timeout,omitempty" yaml:"timeout,omitempty"` // Timeout is in seconds
 }
 
 // EndpointKind describes the type of endpoint. Default value - internal
@@ -199,12 +220,12 @@ const (
 	EndpointKindPrepared EndpointKind = "prepared"
 )
 
-// EndpointTemplatingEngine describes the type of endpoint. Default value - go
-type EndpointTemplatingEngine string
+// TemplatingEngine describes the type of endpoint. Default value - go
+type TemplatingEngine string
 
 const (
-	// EndpointTemplatingEngineGo describes the go templating engine
-	EndpointTemplatingEngineGo EndpointTemplatingEngine = "go"
+	// TemplatingEngineGo describes the go templating engine
+	TemplatingEngineGo TemplatingEngine = "go"
 )
 
 // Header describes the operation to be performed on the header
@@ -279,15 +300,15 @@ type Eventing struct {
 
 // EventingRule holds an eventing rule
 type EventingRule struct {
-	Type            string                   `json:"type" yaml:"type"`
-	Retries         int                      `json:"retries" yaml:"retries"`
-	Timeout         int                      `json:"timeout" yaml:"timeout"` // Timeout is in milliseconds
-	ID              string                   `json:"id" yaml:"id"`
-	URL             string                   `json:"url" yaml:"url"`
-	Options         map[string]string        `json:"options" yaml:"options"`
-	Tmpl            EndpointTemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
-	RequestTemplate string                   `json:"requestTemplate,omitempty" yaml:"requestTemplate,omitempty"`
-	OpFormat        string                   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
+	Type            string            `json:"type" yaml:"type"`
+	Retries         int               `json:"retries" yaml:"retries"`
+	Timeout         int               `json:"timeout" yaml:"timeout"` // Timeout is in milliseconds
+	ID              string            `json:"id" yaml:"id"`
+	URL             string            `json:"url" yaml:"url"`
+	Options         map[string]string `json:"options" yaml:"options"`
+	Tmpl            TemplatingEngine  `json:"template,omitempty" yaml:"template,omitempty"`
+	RequestTemplate string            `json:"requestTemplate,omitempty" yaml:"requestTemplate,omitempty"`
+	OpFormat        string            `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
 }
 
 // SchemaObject is the body of the request for adding schema

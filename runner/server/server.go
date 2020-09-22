@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -73,8 +72,6 @@ func New(c *Config) (*Server, error) {
 	badgerLogger.SetOutput(ioutil.Discard)
 	opts.Logger = badgerLogger
 
-	// The default logger used by badger is log, so we are disabling all the logs done by log package
-	log.SetOutput(ioutil.Discard)
 	db, err := badger.Open(opts)
 	if err != nil {
 		return nil, err
