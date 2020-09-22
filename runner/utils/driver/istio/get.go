@@ -122,6 +122,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 		service.ID = deployment.Labels["app"]
 		service.Version = deployment.Labels["version"]
 		service.Affinity = make([]model.Affinity, 0)
+		service.StatsInclusionPrefixes = deployment.Spec.Template.Annotations["sidecar.istio.io/statsInclusionPrefixes"]
 
 		// Extract affinities
 		if deployment.Spec.Template.Spec.Affinity != nil {
@@ -187,7 +188,8 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 			// get ports
 			ports := make([]model.Port, len(containerInfo.Ports))
 			for i, port := range containerInfo.Ports {
-				ports[i] = model.Port{Name: port.Name, Protocol: model.Protocol(port.Protocol), Port: port.ContainerPort}
+				proto := strings.Split(port.Name, "-")[0]
+				ports[i] = model.Port{Name: port.Name, Protocol: model.Protocol(proto), Port: port.ContainerPort}
 			}
 
 			var dockerSecret string
