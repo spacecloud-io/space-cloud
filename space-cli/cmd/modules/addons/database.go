@@ -31,7 +31,11 @@ type loadEnvResponse struct {
 func addDatabase(dbtype, username, password, alias, version string) error {
 	ctx := context.Background()
 	autoApply := viper.GetBool("auto-apply")
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 	clusterName := viper.GetString("cluster-name")
 
 	// change selected account according to cluster name provided
@@ -274,7 +278,11 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 
 func removeDatabase(alias string) error {
 	clusterName := viper.GetString("cluster-name")
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 	autoRemove := viper.GetBool("auto-remove")
 
 	// change selected account according to cluster name provided
