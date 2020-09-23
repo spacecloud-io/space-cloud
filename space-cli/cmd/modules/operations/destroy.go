@@ -33,19 +33,24 @@ func Destroy(clusterName string) error {
 	// Remove all container
 	for _, containerInfo := range containers {
 		if containerInfo.Labels["service"] == string(model.ImageRunner) {
-			// Make sure the container is running before deleting secrets
-			if err := cli.ContainerStart(ctx, containerInfo.ID, types.ContainerStartOptions{}); err != nil {
-				return err
-			}
-			// NOTE: files are created with root permission in runner. If host system want to delete these files it requires root permissions.
-			// so to delete files without root permission we remove the files from container itself
-			execProcess, err := cli.ContainerExecCreate(ctx, containerInfo.ID, types.ExecConfig{Cmd: []string{"rm", "-rf", "/secrets"}})
-			if err != nil {
-				return err
-			}
-			if err := cli.ContainerExecStart(ctx, execProcess.ID, types.ExecStartCheck{}); err != nil {
-				return err
-			}
+			go func() {
+				// Make sure the container is running before deleting secrets
+				if err := cli.ContainerStart(ctx, containerInfo.ID, types.ContainerStartOptions{}); err != nil {
+					_ = utils.LogError("Unable to start container to delete secrets", err)
+					return
+				}
+				// NOTE: files are created with root permission in runner. If host system want to delete these files it requires root permissions.
+				// so to delete files without root permission we remove the files from container itself
+				execProcess, err := cli.ContainerExecCreate(ctx, containerInfo.ID, types.ExecConfig{Cmd: []string{"rm", "-rf", "/secrets"}})
+				if err != nil {
+					_ = utils.LogError("Unable to create delete secrets execution command", err)
+					return
+				}
+				if err := cli.ContainerExecStart(ctx, execProcess.ID, types.ExecStartCheck{}); err != nil {
+					_ = utils.LogError("Unable to execute delete secrets command", err)
+					return
+				}
+			}()
 		}
 		if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 			_ = utils.LogError(fmt.Sprintf("Unable to remove container %s - %s", containerInfo.ID, err.Error()), nil)
