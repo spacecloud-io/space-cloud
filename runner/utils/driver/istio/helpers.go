@@ -844,6 +844,7 @@ func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, project
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getVirtualServiceName(serviceID),
 			Labels: map[string]string{
+				"app":                          serviceID,
 				"app.kubernetes.io/name":       serviceID,
 				"app.kubernetes.io/managed-by": "space-cloud",
 				"space-cloud.io/version":       model.Version,
