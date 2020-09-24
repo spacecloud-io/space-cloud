@@ -24,7 +24,7 @@ type Istio struct {
 	adjustScaleLock sync.Map
 
 	// Drivers to talk to k8s and istio
-	kube  *kubernetes.Clientset
+	kube  kubernetes.Interface
 	istio *versionedclient.Clientset
 
 	// For caching deployments
