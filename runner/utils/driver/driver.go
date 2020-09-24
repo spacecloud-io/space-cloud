@@ -30,7 +30,6 @@ type Interface interface {
 	GetServices(ctx context.Context, projectID string) ([]*model.Service, error)
 	GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error)
 	DeleteService(ctx context.Context, projectID, serviceID, version string) error
-	AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error
 	WaitForService(ctx context.Context, service *model.Service) error
 	Type() model.DriverType
 	GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error)

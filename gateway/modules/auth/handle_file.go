@@ -30,7 +30,7 @@ func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path st
 	}
 
 	var auth map[string]interface{}
-	auth, err = m.parseToken(ctx, token)
+	auth, err = m.jwt.ParseToken(ctx, token)
 	if err != nil {
 		return nil, err
 	}

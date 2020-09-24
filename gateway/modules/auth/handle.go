@@ -17,7 +17,7 @@ func (m *Module) AuthorizeRequest(ctx context.Context, rule *config.Rule, projec
 	}
 
 	// Parse token
-	auth, err := m.parseToken(ctx, token)
+	auth, err := m.jwt.ParseToken(ctx, token)
 	if err != nil {
 		return nil, err
 	}

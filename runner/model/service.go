@@ -120,6 +120,7 @@ const (
 
 // Affinity describes the affinity rules of a service
 type Affinity struct {
+	ID               string             `json:"id" yaml:"id"`
 	Type             AffinityType       `json:"type" yaml:"type"`         // node or service
 	Weight           int32              `json:"weight" yaml:"weight"`     // -100 to 100
 	Operator         AffinityOperator   `json:"operator" yaml:"operator"` // preferred or required

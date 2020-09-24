@@ -46,11 +46,6 @@ func (m *Module) DeleteService(ctx context.Context, projectID, serviceID, versio
 	return m.driver.DeleteService(ctx, projectID, serviceID, version)
 }
 
-// AdjustScale adjust's scale
-func (m *Module) AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error {
-	return m.driver.AdjustScale(ctx, service, activeReqs)
-}
-
 // WaitForService waits for service
 func (m *Module) WaitForService(ctx context.Context, service *model.Service) error {
 	return m.driver.WaitForService(ctx, service)

@@ -6,9 +6,11 @@ import (
 	"strconv"
 
 	"github.com/kedacore/keda/api/v1alpha1"
+	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
 	"istio.io/client-go/pkg/apis/networking/v1alpha3"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	kubeErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -236,4 +238,99 @@ func getTriggersFromAdvancedConfig(advancedConfig *v1alpha1.AdvancedConfig) []mo
 	}
 
 	return triggers
+}
+
+func extractPreferredServiceAffinityObject(arr []v1.WeightedPodAffinityTerm, multiplier int32) []model.Affinity {
+	affinities := []model.Affinity{}
+	for _, preferredSchedulingTerm := range arr {
+		matchExpression := []model.MatchExpressions{}
+		for _, expression := range preferredSchedulingTerm.PodAffinityTerm.LabelSelector.MatchExpressions {
+			matchExpression = append(matchExpression, model.MatchExpressions{
+				Key:       expression.Key,
+				Values:    expression.Values,
+				Attribute: "label",
+				Operator:  string(expression.Operator),
+			})
+		}
+		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
+			Type:             model.AffinityTypeService,
+			Weight:           preferredSchedulingTerm.Weight * multiplier,
+			Operator:         model.AffinityOperatorPreferred,
+			TopologyKey:      preferredSchedulingTerm.PodAffinityTerm.TopologyKey,
+			Projects:         preferredSchedulingTerm.PodAffinityTerm.Namespaces,
+			MatchExpressions: matchExpression,
+		})
+	}
+	return affinities
+}
+
+func extractRequiredServiceAffinityObject(arr []v1.PodAffinityTerm, multiplier int32) []model.Affinity {
+	affinities := []model.Affinity{}
+	for _, preferredSchedulingTerm := range arr {
+		matchExpression := []model.MatchExpressions{}
+		for _, expression := range preferredSchedulingTerm.LabelSelector.MatchExpressions {
+			matchExpression = append(matchExpression, model.MatchExpressions{
+				Key:       expression.Key,
+				Values:    expression.Values,
+				Attribute: "label",
+				Operator:  string(expression.Operator),
+			})
+		}
+		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
+			Type:             model.AffinityTypeService,
+			Weight:           100 * multiplier,
+			Operator:         model.AffinityOperatorRequired,
+			TopologyKey:      preferredSchedulingTerm.TopologyKey,
+			Projects:         preferredSchedulingTerm.Namespaces,
+			MatchExpressions: matchExpression,
+		})
+	}
+	return affinities
+}
+
+func extractPreferredNodeAffinityObject(arr []v1.PreferredSchedulingTerm) []model.Affinity {
+	affinities := []model.Affinity{}
+	for _, preferredSchedulingTerm := range arr {
+		matchExpression := []model.MatchExpressions{}
+		for _, expression := range preferredSchedulingTerm.Preference.MatchExpressions {
+			matchExpression = append(matchExpression, model.MatchExpressions{
+				Key:       expression.Key,
+				Values:    expression.Values,
+				Attribute: "label",
+				Operator:  string(expression.Operator),
+			})
+		}
+		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
+			Type:             model.AffinityTypeNode,
+			Weight:           preferredSchedulingTerm.Weight,
+			Operator:         model.AffinityOperatorPreferred,
+			MatchExpressions: matchExpression,
+		})
+	}
+	return affinities
+}
+
+func extractRequiredNodeAffinityObject(arr []v1.NodeSelectorTerm) []model.Affinity {
+	affinities := []model.Affinity{}
+	for _, nodeSelectorTerm := range arr {
+		matchExpression := []model.MatchExpressions{}
+		for _, expression := range nodeSelectorTerm.MatchExpressions {
+			matchExpression = append(matchExpression, model.MatchExpressions{
+				Key:       expression.Key,
+				Values:    expression.Values,
+				Attribute: "label",
+				Operator:  string(expression.Operator),
+			})
+		}
+		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
+			Type:             model.AffinityTypeNode,
+			Operator:         model.AffinityOperatorRequired,
+			MatchExpressions: matchExpression,
+		})
+	}
+	return affinities
 }

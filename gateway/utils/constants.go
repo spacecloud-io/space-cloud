@@ -5,7 +5,7 @@ import (
 )
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.19.2"
+const BuildVersion = "0.19.3"
 
 // DLQEventTriggerPrefix used as suffix for DLQ event trigger
 const DLQEventTriggerPrefix = "dlq_"
@@ -190,5 +190,8 @@ type TypeMakeHTTPRequest func(ctx context.Context, method, url, token, scToken s
 // GetSecrets gets fileStore and database secrets from runner
 type GetSecrets func(project, secretName, key string) (string, error)
 
-//DefaultContextTime used for creating default context time for endpoints
+// DefaultContextTime used for creating default context time for endpoints
 const DefaultContextTime = 10
+
+// AdminSecretKID describes the kid to be used for admin secrets
+const AdminSecretKID = "sc-admin-kid"
