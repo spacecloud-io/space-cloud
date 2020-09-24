@@ -106,16 +106,30 @@ func extractRequiredNodeAffinityObject(arr []v1.NodeSelectorTerm) []model.Affini
 
 // GetServices gets the services for istio
 func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
+	// Get all deployments in project
 	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error getting service in istio - unable to find deployment", err, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to find deployments in project", err, nil)
 	}
+
+	// Get all keda trigger authentication in project
+	triggerAuthList, err := i.keda.KedaV1alpha1().TriggerAuthentications(projectID).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to find keda trigger auths in project", err, nil)
+	}
+
+	// Get all the keda scaled objects in projects
+	scaledObjectList, err := i.keda.KedaV1alpha1().ScaledObjects(projectID).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to find keda scaled object in project", err, nil)
+	}
+
 	services := []*model.Service{}
 	for _, deployment := range deploymentList.Items {
 		service := new(model.Service)
 		service.ProjectID = projectID
-		service.ID = deployment.Labels["app"]
-		service.Version = deployment.Labels["version"]
+		service.ID = deployment.Labels["app.kubernetes.io/name"]
+		service.Version = deployment.Labels["app.kubernetes.io/version"]
 
 		// node affinity preferred
 		affinities := extractPreferredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution)
@@ -153,11 +167,10 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 		service.Labels = deployment.Spec.Template.Labels
 
 		// Get scale config
-		scale, err := getScaleConfigFromDeployment(ctx, deployment)
-		if err != nil {
-			return nil, err
+		service.AutoScale = getScaleConfigFromKedaConfig(service.ID, service.Version, scaledObjectList.Items, triggerAuthList.Items)
+		if service.AutoScale == nil {
+			service.AutoScale = getScaleConfigFromDeployment(deployment)
 		}
-		service.Scale = &scale
 
 		for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
 			if containerInfo.Name == "metric-proxy" || containerInfo.Name == "istio-proxy" {
@@ -295,8 +308,8 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]*mode
 	}
 	result := make([]*model.ServiceStatus, 0)
 	for _, deployment := range deploymentList.Items {
-		serviceID := deployment.Labels["app"]
-		serviceVersion := deployment.Labels["version"]
+		serviceID := deployment.Labels["app.kubernetes.io/name"]
+		serviceVersion := deployment.Labels["app.kubernetes.io/version"]
 
 		podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s,version=%s", serviceID, serviceVersion)})
 		if err != nil {
@@ -329,7 +342,7 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 	serviceRoutes := make(map[string]model.Routes, len(services.Items))
 
 	for _, service := range services.Items {
-		serviceID := service.Labels["app"]
+		serviceID := service.Labels["app.kubernetes.io/name"]
 		routes := make(model.Routes, len(service.Spec.Http))
 
 		for i, route := range service.Spec.Http {

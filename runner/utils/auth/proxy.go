@@ -35,15 +35,3 @@ func (m *Module) VerifyProxyToken(token string) (map[string]interface{}, error) 
 
 	return nil, errors.New("token could not be verified")
 }
-
-// SignProxyToken returns a token to be used by a proxy service
-func (m *Module) SignProxyToken(nodeID, project, service, version string) (string, error) {
-	claims := jwt.MapClaims{"id": nodeID, "project": project, "service": service, "version": version}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(m.config.ProxySecret))
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
-}

@@ -9,7 +9,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/kedacore/keda/api/v1alpha1"
-	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
 	networkingv1alpha3 "istio.io/api/networking/v1alpha3"
 	securityv1beta1 "istio.io/api/security/v1beta1"
@@ -25,7 +24,7 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-func (i *Istio) prepareContainers(service *model.Service, token string, listOfSecrets map[string]*v1.Secret) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
+func (i *Istio) prepareContainers(service *model.Service, listOfSecrets map[string]*v1.Secret) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
 	// there will be a metric collection container as well which pushes metric data to the autoscaler.
 	tasks := service.Tasks
@@ -124,33 +123,6 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 		}
 	}
 
-	// Add metric proxy container service is purely http based
-	var isTCP bool
-	for _, task := range tasks {
-		for _, port := range task.Ports {
-			if port.Protocol == model.TCP {
-				isTCP = true
-				break
-			}
-		}
-	}
-	if !isTCP {
-		token, _ := i.auth.SignProxyToken(ksuid.New().String(), service.ProjectID, service.ID, service.Version)
-		containers = append(containers, v1.Container{
-			Name: "metric-proxy",
-			Env:  []v1.EnvVar{{Name: "TOKEN", Value: token}, {Name: "MODE", Value: service.Scale.Mode}},
-
-			// Resource Related
-			Resources: *generateResourceRequirements(&model.Resources{CPU: 20, Memory: 50}),
-
-			// Docker related
-			Image:           "spaceuptech/metric-proxy:0.3.0",
-			Command:         []string{"./app"},
-			Args:            []string{"start"},
-			ImagePullPolicy: v1.PullIfNotPresent,
-		})
-	}
-
 	// Convert map to array
 	arrVolume := make([]v1.Volume, 0)
 	for _, v := range volume {
@@ -183,7 +155,7 @@ func prepareServicePorts(tasks []model.Task) []v1.ServicePort {
 	return ports
 }
 
-func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID string, services map[string]model.ScaleConfig, routes model.Routes, proxyPort uint32) ([]*networkingv1alpha3.HTTPRoute, error) {
+func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID string, services map[string]model.AutoScaleConfig, routes model.Routes, proxyPort uint32) ([]*networkingv1alpha3.HTTPRoute, error) {
 	var httpRoutes []*networkingv1alpha3.HTTPRoute
 
 	for _, route := range routes {
@@ -430,9 +402,12 @@ func prepareUpstreamHosts(service *model.Service) []string {
 
 func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
 	return &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{
-		Name:        getServiceAccountName(service.ID),
-		Labels:      map[string]string{"account": service.ID},
-		Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+		Name: getServiceAccountName(service.ID),
+		Labels: map[string]string{
+			"app.kubernetes.io/name":       service.ID,
+			"app.kubernetes.io/managed-by": "space-cloud",
+			"space-cloud.io/version":       model.Version,
+		},
 	}}
 }
 
@@ -442,13 +417,7 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 
 	// Generate a default auto scale config if not provided
 	if service.AutoScale == nil {
-		service.AutoScale = &model.AutoScaleConfig{
-			PollingInterval:  15,
-			CoolDownInterval: 120,
-			MinReplicas:      1,
-			MaxReplicas:      100,
-			Triggers:         []model.AutoScaleTrigger{},
-		}
+		service.AutoScale = getDefaultAutoScaleConfig()
 
 		// Load value from the previous scale object
 		if service.Scale != nil {
@@ -534,6 +503,7 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 				Name: trigger.Name,
 				Metadata: map[string]string{
 					"scalerAddress": "runner.space-cloud.svc.cluster.local:4055",
+					"scaler":        "space-cloud.io/scaler",
 					"type":          trigger.Type,
 					"target":        target,
 				},
@@ -554,18 +524,17 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 				}
 
 				// Generate a unique name for the trigger auth
-				name := fmt.Sprintf("%s-%s", getServiceUniqueName(service.ProjectID, service.Name, service.Version), trigger.Name)
+				name := getKedaTriggerAuthName(service.ID, service.Version, trigger.Name)
 
 				// Add the trigger authentication object
 				triggerAuthRefs = append(triggerAuthRefs, v1alpha1.TriggerAuthentication{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: name,
 						Labels: map[string]string{
-							"app":     service.ID,
-							"version": service.Version,
-						},
-						Annotations: map[string]string{
-							"generatedBy": getGeneratedByAnnotationName(),
+							"app.kubernetes.io/name":       service.ID,
+							"app.kubernetes.io/version":    service.Version,
+							"app.kubernetes.io/managed-by": "space-cloud",
+							"space-cloud.io/version":       model.Version,
 						},
 					},
 					Spec: v1alpha1.TriggerAuthenticationSpec{
@@ -592,13 +561,12 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 	// Prepare the keda config
 	kedaConfig := &v1alpha1.ScaledObject{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: getDeploymentName(service.ID, service.Version),
+			Name: getKedaScaledObjectName(service.ID, service.Version),
 			Labels: map[string]string{
-				"app":     service.ID,
-				"version": service.Version,
-			},
-			Annotations: map[string]string{
-				"generatedBy": getGeneratedByAnnotationName(),
+				"app.kubernetes.io/name":       service.ID,
+				"app.kubernetes.io/version":    service.Version,
+				"app.kubernetes.io/managed-by": "space-cloud",
+				"space-cloud.io/version":       model.Version,
 			},
 		},
 		Spec: v1alpha1.ScaledObjectSpec{
@@ -618,8 +586,8 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 	return kedaConfig, triggerAuthRefs, nil
 }
 
-func (i *Istio) generateDeployment(service *model.Service, token string, listOfSecrets map[string]*v1.Secret) *appsv1.Deployment {
-	preparedContainer, volumes, imagePull := i.prepareContainers(service, token, listOfSecrets)
+func (i *Istio) generateDeployment(service *model.Service, listOfSecrets map[string]*v1.Secret) *appsv1.Deployment {
+	preparedContainer, volumes, imagePull := i.prepareContainers(service, listOfSecrets)
 	// Make sure the desired replica count doesn't cross the min and max range
 	if service.Scale.Replicas < service.Scale.MinReplicas {
 		service.Scale.Replicas = service.Scale.MinReplicas
@@ -688,18 +656,22 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 	labels := service.Labels
 	labels["app"] = service.ID
 	labels["version"] = service.Version
+	labels["app.kubernetes.io/name"] = service.ID
+	labels["app.kubernetes.io/version"] = service.Version
+	labels["app.kubernetes.io/managed-by"] = "space-cloud"
+	labels["space-cloud.io/version"] = model.Version
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   getDeploymentName(service.ID, service.Version),
 			Labels: labels,
-			Annotations: map[string]string{
-				"generatedBy": getGeneratedByAnnotationName(),
-			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &service.Scale.Replicas,
-			Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": service.ID, "version": service.Version}},
+			Selector: &metav1.LabelSelector{MatchLabels: map[string]string{
+				"app.kubernetes.io/name":    service.ID,
+				"app.kubernetes.io/version": service.Version,
+			}},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{"sidecar.istio.io/statsInclusionPrefixes": service.StatsInclusionPrefixes},
@@ -783,14 +755,19 @@ func getNodeAffinityObject(affinity model.Affinity) (*v1.NodeSelectorTerm, *v1.P
 func generateGeneralService(service *model.Service) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getServiceName(service.ID),
-			Labels:      map[string]string{"app": service.ID, "service": service.ID},
-			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+			Name: getServiceName(service.ID),
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       service.ID,
+				"app.kubernetes.io/managed-by": "space-cloud",
+				"space-cloud.io/version":       model.Version,
+			},
 		},
 		Spec: v1.ServiceSpec{
-			Ports:    prepareServicePorts(service.Tasks),
-			Selector: map[string]string{"app": service.ID},
-			Type:     v1.ServiceTypeClusterIP,
+			Ports: prepareServicePorts(service.Tasks),
+			Selector: map[string]string{
+				"app.kubernetes.io/name": service.ID,
+			},
+			Type: v1.ServiceTypeClusterIP,
 		},
 	}
 }
@@ -798,14 +775,21 @@ func generateGeneralService(service *model.Service) *v1.Service {
 func generateInternalService(service *model.Service) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getInternalServiceName(service.ID, service.Version),
-			Labels:      map[string]string{"app": service.ID, "service": service.ID, "version": service.Version},
-			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+			Name: getInternalServiceName(service.ID, service.Version),
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       service.ID,
+				"app.kubernetes.io/version":    service.Version,
+				"app.kubernetes.io/managed-by": "space-cloud",
+				"space-cloud.io/version":       model.Version,
+			},
 		},
 		Spec: v1.ServiceSpec{
-			Ports:    prepareServicePorts(service.Tasks),
-			Selector: map[string]string{"app": service.ID, "version": service.Version},
-			Type:     v1.ServiceTypeClusterIP,
+			Ports: prepareServicePorts(service.Tasks),
+			Selector: map[string]string{
+				"app.kubernetes.io/name":    service.ID,
+				"app.kubernetes.io/version": service.Version,
+			},
+			Type: v1.ServiceTypeClusterIP,
 		},
 	}
 }
@@ -815,8 +799,12 @@ func (i *Istio) updateVirtualService(service *model.Service, prevVirtualService 
 	return &v1alpha3.VirtualService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        getVirtualServiceName(service.ID),
-			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
-			Labels:      map[string]string{"app": service.ID}, // We use the app label to retrieve service routing rules
+			Annotations: map[string]string{},
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       service.ID,
+				"app.kubernetes.io/managed-by": "space-cloud",
+				"space-cloud.io/version":       model.Version,
+			},
 		},
 		Spec: networkingv1alpha3.VirtualService{
 			Hosts: prepareVirtualServiceHosts(service),
@@ -826,7 +814,7 @@ func (i *Istio) updateVirtualService(service *model.Service, prevVirtualService 
 		},
 	}
 }
-func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, projectID, serviceID string, scaleConfig map[string]model.ScaleConfig, routes model.Routes, prevVirtualService *v1alpha3.VirtualService) (*v1alpha3.VirtualService, error) {
+func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, projectID, serviceID string, scaleConfig map[string]model.AutoScaleConfig, routes model.Routes, prevVirtualService *v1alpha3.VirtualService) (*v1alpha3.VirtualService, error) {
 	// Generate the httpRoutes based on the routes provided
 	httpRoutes, err := prepareVirtualServiceHTTPRoutes(ctx, projectID, serviceID, scaleConfig, routes, i.config.ProxyPort)
 	if err != nil {
@@ -840,9 +828,12 @@ func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, project
 
 	return &v1alpha3.VirtualService{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getVirtualServiceName(serviceID),
-			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
-			Labels:      map[string]string{"app": serviceID}, // We use the app label to retrieve service routing rules
+			Name: getVirtualServiceName(serviceID),
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       serviceID,
+				"app.kubernetes.io/managed-by": "space-cloud",
+				"space-cloud.io/version":       model.Version,
+			},
 		},
 		Spec: networkingv1alpha3.VirtualService{
 			Hosts: []string{getServiceDomainName(projectID, serviceID)},
@@ -855,8 +846,12 @@ func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, project
 func generateGeneralDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
 	return &v1alpha3.DestinationRule{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getGeneralDestRuleName(service.ID),
-			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+			Name: getGeneralDestRuleName(service.ID),
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       service.ID,
+				"app.kubernetes.io/managed-by": "space-cloud",
+				"space-cloud.io/version":       model.Version,
+			},
 		},
 		Spec: networkingv1alpha3.DestinationRule{
 			Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID),
@@ -870,8 +865,13 @@ func generateGeneralDestinationRule(service *model.Service) *v1alpha3.Destinatio
 func generateInternalDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
 	return &v1alpha3.DestinationRule{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getInternalDestRuleName(service.ID, service.Version),
-			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+			Name: getInternalDestRuleName(service.ID, service.Version),
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       service.ID,
+				"app.kubernetes.io/version":    service.Version,
+				"app.kubernetes.io/managed-by": "space-cloud",
+				"space-cloud.io/version":       model.Version,
+			},
 		},
 		Spec: networkingv1alpha3.DestinationRule{
 			Host: getInternalServiceDomain(service.ProjectID, service.ID, service.Version),
@@ -885,12 +885,20 @@ func generateInternalDestinationRule(service *model.Service) *v1alpha3.Destinati
 func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 	authPolicy := &v1beta1.AuthorizationPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getAuthorizationPolicyName(service.ProjectID, service.ID, service.Version),
-			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+			Name: getAuthorizationPolicyName(service.ProjectID, service.ID, service.Version),
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       service.ID,
+				"app.kubernetes.io/version":    service.Version,
+				"app.kubernetes.io/managed-by": "space-cloud",
+				"space-cloud.io/version":       model.Version,
+			},
 		},
 		Spec: securityv1beta1.AuthorizationPolicy{
-			Selector: &v1beta12.WorkloadSelector{MatchLabels: map[string]string{"app": service.ID, "version": service.Version}},
-			Rules:    prepareAuthPolicyRules(service),
+			Selector: &v1beta12.WorkloadSelector{MatchLabels: map[string]string{
+				"app.kubernetes.io/name":    service.ID,
+				"app.kubernetes.io/version": service.Version,
+			}},
+			Rules: prepareAuthPolicyRules(service),
 		},
 	}
 	return authPolicy
@@ -899,11 +907,19 @@ func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {
 	return &v1alpha3.Sidecar{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getSidecarName(service.ID, service.Version),
-			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+			Name: getSidecarName(service.ID, service.Version),
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       service.ID,
+				"app.kubernetes.io/version":    service.Version,
+				"app.kubernetes.io/managed-by": "space-cloud",
+				"space-cloud.io/version":       model.Version,
+			},
 		},
 		Spec: networkingv1alpha3.Sidecar{
-			WorkloadSelector:      &networkingv1alpha3.WorkloadSelector{Labels: map[string]string{"app": service.ID, "version": service.Version}},
+			WorkloadSelector: &networkingv1alpha3.WorkloadSelector{Labels: map[string]string{
+				"app.kubernetes.io/name":    service.ID,
+				"app.kubernetes.io/version": service.Version,
+			}},
 			Egress:                []*networkingv1alpha3.IstioEgressListener{{Hosts: prepareUpstreamHosts(service)}},
 			OutboundTrafficPolicy: &networkingv1alpha3.OutboundTrafficPolicy{Mode: networkingv1alpha3.OutboundTrafficPolicy_ALLOW_ANY},
 		},
@@ -965,19 +981,12 @@ func generateResourceRequirements(c *model.Resources) *v1.ResourceRequirements {
 	return &resources
 }
 
-func adjustMinScale(service *model.Service) {
-	// Simply return if min replicas is greater than zero
-	if service.Scale.MinReplicas > 0 {
-		return
+func getDefaultAutoScaleConfig() *model.AutoScaleConfig {
+	return &model.AutoScaleConfig{
+		PollingInterval:  15,
+		CoolDownInterval: 120,
+		MinReplicas:      1,
+		MaxReplicas:      100,
+		Triggers:         []model.AutoScaleTrigger{},
 	}
-
-	for _, task := range service.Tasks {
-		for _, port := range task.Ports {
-			if port.Protocol == model.TCP {
-				service.Scale.MinReplicas = 1
-				break
-			}
-		}
-	}
-
 }

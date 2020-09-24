@@ -214,9 +214,13 @@ func generateSecret(ctx context.Context, projectID string, secret *model.Secret)
 	return &v1.Secret{
 		Type: typeOfSecret,
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        secret.ID,
-			Namespace:   projectID,
-			Labels:      map[string]string{"app": "space-cloud"},
+			Name:      secret.ID,
+			Namespace: projectID,
+			Labels: map[string]string{
+				"app":                          "space-cloud",
+				"app.kubernetes.io/name":       secret.ID,
+				"app.kubernetes.io/managed-by": "space-cloud",
+			},
 			Annotations: map[string]string{"rootPath": secret.RootPath, "secretType": secret.Type},
 		},
 		Data: encodedData,
