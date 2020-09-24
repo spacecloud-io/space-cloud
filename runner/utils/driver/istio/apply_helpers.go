@@ -28,10 +28,8 @@ func (i *Istio) applyDeployment(ctx context.Context, ns string, deployment *apps
 	prevDeployment, err := i.kube.AppsV1().Deployments(ns).Get(ctx, deployment.Name, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a deployment if it doesn't already exist
-		if _, err := i.kube.AppsV1().Deployments(ns).Create(ctx, deployment, metav1.CreateOptions{}); err != nil {
-			return err
-		}
-		return i.cache.setDeployment(ctx, ns, deployment.Name, deployment)
+		_, err := i.kube.AppsV1().Deployments(ns).Create(ctx, deployment, metav1.CreateOptions{})
+		return err
 	}
 	if err != nil {
 		return err
@@ -41,15 +39,8 @@ func (i *Istio) applyDeployment(ctx context.Context, ns string, deployment *apps
 	prevDeployment.Labels = deployment.Labels
 	prevDeployment.Annotations = deployment.Annotations
 	prevDeployment.Spec = deployment.Spec
-	if _, err := i.kube.AppsV1().Deployments(ns).Update(ctx, prevDeployment, metav1.UpdateOptions{}); err != nil {
-		return err
-	}
-	// Update the deployment cache
-	if err := i.cache.setDeployment(ctx, ns, deployment.Name, prevDeployment); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = i.kube.AppsV1().Deployments(ns).Update(ctx, prevDeployment, metav1.UpdateOptions{})
+	return err
 }
 
 func (i *Istio) createServiceIfNotExist(ctx context.Context, ns string, service *v1.Service) error {
