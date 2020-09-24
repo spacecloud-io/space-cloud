@@ -14,10 +14,11 @@ type Credential struct {
 
 // Account is the object for representing individual account information
 type Account struct {
-	ID        string `json:"id" yaml:"id"`
-	UserName  string `json:"username" yaml:"username"`
-	Key       string `json:"key" yaml:"key"`
-	ServerURL string `json:"serverurl" yaml:"serverurl"`
+	ID             string `json:"id" yaml:"id"`
+	UserName       string `json:"username" yaml:"username"`
+	Key            string `json:"key" yaml:"key"`
+	ServerURL      string `json:"serverurl" yaml:"serverurl"`
+	DefaultProject string `json:"defaultProject" yaml:"defaultProject"`
 }
 
 // Projects describes the configuration of a single project
