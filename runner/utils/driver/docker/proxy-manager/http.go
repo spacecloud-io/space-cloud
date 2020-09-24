@@ -56,7 +56,7 @@ func (m *Manager) handleHTTPRequest(port int32) http.HandlerFunc {
 
 		// Copy headers and status code
 		for k, v := range response.Header {
-			writer.Header().Set(k, v[0])
+			writer.Header()[k] = v
 		}
 		writer.WriteHeader(response.StatusCode)
 

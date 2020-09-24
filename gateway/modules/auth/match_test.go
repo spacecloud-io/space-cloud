@@ -14,6 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	jwtUtils "github.com/spaceuptech/space-cloud/gateway/utils/jwt"
 )
 
 func TestMatch_Rule(t *testing.T) {
@@ -698,7 +699,7 @@ func TestModule_matchFunc(t *testing.T) {
 	}{
 		{
 			name: "Normal webhook call validation should pass",
-			m:    &Module{secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			m:    &Module{jwt: jwtUtils.New(), aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{
 				httpParams: params{
 					url:    "http://localhost/validate",
@@ -712,7 +713,7 @@ func TestModule_matchFunc(t *testing.T) {
 		},
 		{
 			name: "Normal webhook call validation should fail",
-			m:    &Module{secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			m:    &Module{jwt: jwtUtils.New(), aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{
 				httpParams: params{
 					shouldRequestFail: true,
@@ -725,7 +726,7 @@ func TestModule_matchFunc(t *testing.T) {
 		},
 		{
 			name: "Normal webhook call with custom claims",
-			m:    &Module{secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			m:    &Module{jwt: jwtUtils.New(), aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{
 				httpParams: params{
 					url:    "http://localhost/validate",
@@ -739,7 +740,7 @@ func TestModule_matchFunc(t *testing.T) {
 		},
 		{
 			name: "Normal webhook call with custom claims and template",
-			m:    &Module{secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			m:    &Module{jwt: jwtUtils.New(), aesKey: base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{
 				httpParams: params{
 					url:    "http://localhost/validate",
@@ -763,7 +764,7 @@ func TestModule_matchFunc(t *testing.T) {
 					t.Errorf("matchFunc() Url mis match in makeHTTPRequest wanted (%s) got (%s)", tt.args.httpParams.url, url)
 					return nil
 				}
-				claims, err := tt.m.parseToken(ctx, token)
+				claims, err := tt.m.jwt.ParseToken(ctx, token)
 				if err != nil {
 					t.Errorf("matchFunc() cannot parse token (%s)", token)
 					return nil
@@ -780,6 +781,7 @@ func TestModule_matchFunc(t *testing.T) {
 				}
 				return nil
 			}
+			_ = tt.m.SetConfig("", "", []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, string(tt.m.aesKey), nil, nil, nil, nil)
 			if err := tt.m.matchFunc(context.Background(), tt.args.rule, HTTPCall, tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("matchFunc() error = %v, wantErr %v", err, tt.wantErr)
 			}

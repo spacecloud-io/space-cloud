@@ -164,7 +164,13 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 func prepareContainerPorts(taskPorts []model.Port) []v1.ContainerPort {
 	ports := make([]v1.ContainerPort, len(taskPorts))
 	for i, p := range taskPorts {
-		ports[i] = v1.ContainerPort{Name: fmt.Sprintf("%s-%s", p.Name, p.Protocol), ContainerPort: p.Port}
+		proto := v1.Protocol(p.Protocol)
+		switch p.Protocol {
+		case model.HTTP, model.TCP:
+			proto = v1.ProtocolTCP
+		}
+
+		ports[i] = v1.ContainerPort{Name: p.Name, ContainerPort: p.Port, Protocol: proto}
 	}
 
 	return ports
@@ -174,7 +180,13 @@ func prepareServicePorts(tasks []model.Task) []v1.ServicePort {
 	var ports []v1.ServicePort
 	for _, task := range tasks {
 		for _, p := range task.Ports {
-			ports = append(ports, v1.ServicePort{Name: p.Name, Port: p.Port})
+			proto := v1.Protocol(p.Protocol)
+			switch p.Protocol {
+			case model.HTTP, model.TCP:
+				proto = v1.ProtocolTCP
+			}
+
+			ports = append(ports, v1.ServicePort{Name: p.Name, Port: p.Port, Protocol: proto})
 		}
 	}
 
@@ -448,7 +460,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 	if service.StatsInclusionPrefixes == "" {
 		service.StatsInclusionPrefixes = "http.inbound,cluster_manager,listener_manager"
 	}
-	if strings.Contains(service.StatsInclusionPrefixes, "http.inbound") {
+	if !strings.Contains(service.StatsInclusionPrefixes, "http.inbound") {
 		service.StatsInclusionPrefixes += ",http.inbound"
 	}
 
@@ -485,17 +497,18 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 		case model.AffinityTypeNode:
 			// affinity
 			if nodeAffinity == nil {
-				nodeAffinity = &v1.NodeAffinity{
-					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
-						NodeSelectorTerms: []v1.NodeSelectorTerm{},
-					},
-				}
+				nodeAffinity = &v1.NodeAffinity{}
 			}
 			required, preferred := getNodeAffinityObject(affinity)
 			if preferred != nil {
 				nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, *preferred)
 			}
 			if required != nil {
+				if nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
+					nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &v1.NodeSelector{
+						NodeSelectorTerms: []v1.NodeSelectorTerm{},
+					}
+				}
 				nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, *required)
 			}
 		}

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +27,7 @@ func extractPreferredServiceAffinityObject(arr []v1.WeightedPodAffinityTerm, mul
 			})
 		}
 		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
 			Type:             model.AffinityTypeService,
 			Weight:           preferredSchedulingTerm.Weight * multiplier,
 			Operator:         model.AffinityOperatorPreferred,
@@ -50,6 +52,7 @@ func extractRequiredServiceAffinityObject(arr []v1.PodAffinityTerm, multiplier i
 			})
 		}
 		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
 			Type:             model.AffinityTypeService,
 			Weight:           100 * multiplier,
 			Operator:         model.AffinityOperatorRequired,
@@ -74,6 +77,7 @@ func extractPreferredNodeAffinityObject(arr []v1.PreferredSchedulingTerm) []mode
 			})
 		}
 		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
 			Type:             model.AffinityTypeNode,
 			Weight:           preferredSchedulingTerm.Weight,
 			Operator:         model.AffinityOperatorPreferred,
@@ -96,6 +100,7 @@ func extractRequiredNodeAffinityObject(arr []v1.NodeSelectorTerm) []model.Affini
 			})
 		}
 		affinities = append(affinities, model.Affinity{
+			ID:               ksuid.New().String(),
 			Type:             model.AffinityTypeNode,
 			Operator:         model.AffinityOperatorRequired,
 			MatchExpressions: matchExpression,
@@ -116,37 +121,54 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 		service.ProjectID = projectID
 		service.ID = deployment.Labels["app"]
 		service.Version = deployment.Labels["version"]
+		service.Affinity = make([]model.Affinity, 0)
+		service.StatsInclusionPrefixes = deployment.Spec.Template.Annotations["sidecar.istio.io/statsInclusionPrefixes"]
 
-		// node affinity preferred
-		affinities := extractPreferredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
-		}
+		// Extract affinities
+		if deployment.Spec.Template.Spec.Affinity != nil {
 
-		// node affinity required
-		affinities = extractRequiredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
-		}
+			// node affinity preferred
+			if deployment.Spec.Template.Spec.Affinity.NodeAffinity != nil {
 
-		// service affinity
-		affinities = extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution, 1)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
-		}
-		affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution, 1)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
-		}
+				if deployment.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution != nil {
+					affinities := extractPreferredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution)
+					if len(affinities) > 0 {
+						service.Affinity = append(service.Affinity, affinities...)
+					}
+				}
 
-		// service anti affinity
-		affinities = extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, -1)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
-		}
-		affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution, -1)
-		if len(affinities) > 0 {
-			service.Affinity = append(service.Affinity, affinities...)
+				// node affinity required
+				if deployment.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+					affinities := extractRequiredNodeAffinityObject(deployment.Spec.Template.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
+					if len(affinities) > 0 {
+						service.Affinity = append(service.Affinity, affinities...)
+					}
+				}
+			}
+
+			// service affinity
+			if deployment.Spec.Template.Spec.Affinity.PodAffinity != nil {
+				affinities := extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution, 1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+				affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution, 1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+			}
+
+			// service anti affinity
+			if deployment.Spec.Template.Spec.Affinity.PodAntiAffinity != nil {
+				affinities := extractPreferredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution, -1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+				affinities = extractRequiredServiceAffinityObject(deployment.Spec.Template.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution, -1)
+				if len(affinities) > 0 {
+					service.Affinity = append(service.Affinity, affinities...)
+				}
+			}
 		}
 
 		// service labels
@@ -166,8 +188,8 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 			// get ports
 			ports := make([]model.Port, len(containerInfo.Ports))
 			for i, port := range containerInfo.Ports {
-				array := strings.Split(port.Name, "-")
-				ports[i] = model.Port{Name: array[0], Protocol: model.Protocol(array[1]), Port: port.ContainerPort}
+				proto := strings.Split(port.Name, "-")[0]
+				ports[i] = model.Port{Name: port.Name, Protocol: model.Protocol(proto), Port: port.ContainerPort}
 			}
 
 			var dockerSecret string
@@ -280,7 +302,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 			service.Upstreams = append(service.Upstreams, model.Upstream{ProjectID: a[0], Service: a[1]})
 		}
 
-		// todo labels, serviceName, affinity, runtime
+		// todo serviceName, runtime
 		services = append(services, service)
 	}
 
