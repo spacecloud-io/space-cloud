@@ -27,7 +27,7 @@ func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token stri
 
 	var auth map[string]interface{}
 	if rule.Rule != "allow" {
-		auth, err = m.parseToken(ctx, token)
+		auth, err = m.jwt.ParseToken(ctx, token)
 		if err != nil {
 			return model.RequestParams{}, err
 		}
