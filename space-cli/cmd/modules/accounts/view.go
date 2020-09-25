@@ -29,7 +29,7 @@ func listAccounts(prefix string, showKeys bool) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Username", "Key", "Selected Account"})
+	table.SetHeader([]string{"ID", "Username", "Key", "URL", "Default Project", "Selected Account"})
 
 	table.SetBorder(false)
 	table.SetCenterSeparator("")
@@ -38,15 +38,15 @@ func listAccounts(prefix string, showKeys bool) error {
 	for _, account := range accounts {
 		if showKeys {
 			if account.ID == credential.SelectedAccount {
-				table.Append([]string{account.ID, account.UserName, account.Key, "true"})
+				table.Append([]string{account.ID, account.UserName, account.Key, account.ServerURL, account.DefaultProject, "true"})
 			} else {
-				table.Append([]string{account.ID, account.UserName, account.Key, ""})
+				table.Append([]string{account.ID, account.UserName, account.Key, account.ServerURL, account.DefaultProject, ""})
 			}
 		} else {
 			if account.ID == credential.SelectedAccount {
-				table.Append([]string{account.ID, account.UserName, strings.Repeat("*", utf8.RuneCountInString(account.Key)), "true"})
+				table.Append([]string{account.ID, account.UserName, strings.Repeat("*", utf8.RuneCountInString(account.Key)), account.ServerURL, account.DefaultProject, "true"})
 			} else {
-				table.Append([]string{account.ID, account.UserName, strings.Repeat("*", utf8.RuneCountInString(account.Key)), ""})
+				table.Append([]string{account.ID, account.UserName, strings.Repeat("*", utf8.RuneCountInString(account.Key)), account.ServerURL, account.DefaultProject, ""})
 			}
 		}
 	}
