@@ -10,6 +10,7 @@ import (
 	pb "github.com/spaceuptech/space-cloud/runner/modules/scaler/externalscaler"
 )
 
+// GetMetricSpec defines the average target value for the metric
 func (s *Scaler) GetMetricSpec(ctx context.Context, scaledObject *pb.ScaledObjectRef) (*pb.GetMetricSpecResponse, error) {
 	// Extract the target details first
 	project, p1 := scaledObject.ScalerMetadata["project"]
@@ -39,6 +40,7 @@ func (s *Scaler) GetMetricSpec(ctx context.Context, scaledObject *pb.ScaledObjec
 	}, nil
 }
 
+// GetMetrics returns the total value for the metric
 func (s *Scaler) GetMetrics(ctx context.Context, metricRequest *pb.GetMetricsRequest) (*pb.GetMetricsResponse, error) {
 	// Extract the service details first
 	project, p1 := metricRequest.ScaledObjectRef.ScalerMetadata["project"]

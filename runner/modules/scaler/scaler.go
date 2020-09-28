@@ -16,7 +16,6 @@ type Scaler struct {
 	isActiveStreams map[string]*isActiveStream
 
 	// Client drivers
-	prometheusAddr   string
 	prometheusClient v1.API
 }
 
