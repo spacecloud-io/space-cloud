@@ -86,7 +86,7 @@ func (s *Server) Start() error {
 		// Start http server
 		corsObj := utils.CreateCorsObject()
 		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Starting server proxy on port %s", s.config.ProxyPort), nil)
-		if err := http.ListenAndServe(":"+s.config.ProxyPort, corsObj.Handler(router)); err != nil {
+		if err := http.ListenAndServe(":"+s.config.ProxyPort, corsObj.Handler(loggerMiddleWare(router))); err != nil {
 			helpers.Logger.LogFatal(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Proxy server failed: - %v", err), nil)
 		}
 	}()

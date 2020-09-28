@@ -18,7 +18,7 @@ type Config struct {
 	ConfigFilePath string
 	IsInCluster    bool
 	ProxyPort      uint32
-	ArtifactAddr   string
+	PrometheusAddr string
 	ClusterName    string
 }
 
@@ -30,6 +30,7 @@ type Interface interface {
 	GetServices(ctx context.Context, projectID string) ([]*model.Service, error)
 	GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error)
 	DeleteService(ctx context.Context, projectID, serviceID, version string) error
+	ScaleUp(ctx context.Context, projectID, serviceID, version string) error
 	WaitForService(ctx context.Context, service *model.Service) error
 	Type() model.DriverType
 	GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error)
@@ -73,7 +74,7 @@ func initDriver(auth *auth.Module, c *Config) (Interface, error) {
 			istioConfig = istio.GenerateOutsideClusterConfig(c.ConfigFilePath)
 		}
 		istioConfig.SetProxyPort(c.ProxyPort)
-		istioConfig.ArtifactAddr = c.ArtifactAddr
+		istioConfig.PrometheusAddr = c.PrometheusAddr
 
 		return istio.NewIstioDriver(auth, istioConfig)
 

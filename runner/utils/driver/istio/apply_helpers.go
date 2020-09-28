@@ -36,9 +36,11 @@ func (i *Istio) applyDeployment(ctx context.Context, ns string, deployment *apps
 	}
 
 	// Update the deployment config
+	prevReplicas := prevDeployment.Spec.Replicas
 	prevDeployment.Labels = deployment.Labels
 	prevDeployment.Annotations = deployment.Annotations
 	prevDeployment.Spec = deployment.Spec
+	prevDeployment.Spec.Replicas = prevReplicas
 	_, err = i.kube.AppsV1().Deployments(ns).Update(ctx, prevDeployment, metav1.UpdateOptions{})
 	return err
 }

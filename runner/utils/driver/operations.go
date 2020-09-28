@@ -46,6 +46,11 @@ func (m *Module) DeleteService(ctx context.Context, projectID, serviceID, versio
 	return m.driver.DeleteService(ctx, projectID, serviceID, version)
 }
 
+// ScaleUp scales a service up from 0 replicas
+func (m *Module) ScaleUp(ctx context.Context, projectID, serviceID, version string) error {
+	return m.driver.ScaleUp(ctx, projectID, serviceID, version)
+}
+
 // WaitForService waits for service
 func (m *Module) WaitForService(ctx context.Context, service *model.Service) error {
 	return m.driver.WaitForService(ctx, service)

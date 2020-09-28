@@ -257,7 +257,7 @@ func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32
 				// Check if the route was for a service with min scale 0. If the destination has the host of runner, it means it is communicating via the proxy.
 				if dest.Destination.Host == "runner.space-cloud.svc.cluster.local" {
 					// We are only interested in this case if the new min replica for this version is more than 0. If the min replica was zero there would be no change
-					if service.Scale.MinReplicas == 0 {
+					if service.AutoScale.MinReplicas == 0 {
 						continue
 					}
 
@@ -274,7 +274,7 @@ func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32
 
 				// Since we are here it means the given destination communicated with the target directly. We don't really care if the min replica is greater
 				// than zero because this would mean there is no change.
-				if service.Scale.MinReplicas > 0 {
+				if service.AutoScale.MinReplicas > 0 {
 					continue
 				}
 
@@ -301,7 +301,7 @@ func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32
 				destPort := uint32(port.Port)
 
 				// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service to service incoming requests.
-				if service.Scale.MinReplicas == 0 {
+				if service.AutoScale.MinReplicas == 0 {
 					destHost = "runner.space-cloud.svc.cluster.local"
 					destPort = proxyPort
 				}
@@ -514,10 +514,14 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 				Type: "external-push",
 				Name: trigger.Name,
 				Metadata: map[string]string{
-					"scalerAddress": "runner.space-cloud.svc.cluster.local:4055",
+					"scalerAddress": "runner.space-cloud.svc.cluster.local:4060",
 					"scaler":        "space-cloud.io/scaler",
 					"type":          trigger.Type,
 					"target":        target,
+					"service":       service.ID,
+					"version":       service.Version,
+					"project":       service.ProjectID,
+					"minReplicas":   strconv.Itoa(int(service.AutoScale.MinReplicas)),
 				},
 			})
 
@@ -543,6 +547,8 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 					ObjectMeta: metav1.ObjectMeta{
 						Name: name,
 						Labels: map[string]string{
+							"app":                          service.ID,
+							"version":                      service.Version,
 							"app.kubernetes.io/name":       service.ID,
 							"app.kubernetes.io/version":    service.Version,
 							"app.kubernetes.io/managed-by": "space-cloud",
@@ -575,6 +581,8 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getKedaScaledObjectName(service.ID, service.Version),
 			Labels: map[string]string{
+				"app":                          service.ID,
+				"version":                      service.Version,
 				"app.kubernetes.io/name":       service.ID,
 				"app.kubernetes.io/version":    service.Version,
 				"app.kubernetes.io/managed-by": "space-cloud",
@@ -600,13 +608,6 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 
 func (i *Istio) generateDeployment(service *model.Service, listOfSecrets map[string]*v1.Secret) *appsv1.Deployment {
 	preparedContainer, volumes, imagePull := i.prepareContainers(service, listOfSecrets)
-	// Make sure the desired replica count doesn't cross the min and max range
-	if service.Scale.Replicas < service.Scale.MinReplicas {
-		service.Scale.Replicas = service.Scale.MinReplicas
-	}
-	if service.Scale.Replicas > service.Scale.MaxReplicas {
-		service.Scale.Replicas = service.Scale.MaxReplicas
-	}
 
 	// Set the default stats inclusion prefix
 	if service.StatsInclusionPrefixes == "" {
@@ -680,10 +681,10 @@ func (i *Istio) generateDeployment(service *model.Service, listOfSecrets map[str
 			Labels: labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &service.Scale.Replicas,
+			Replicas: &service.AutoScale.MinReplicas,
 			Selector: &metav1.LabelSelector{MatchLabels: map[string]string{
-				"app.kubernetes.io/name":    service.ID,
-				"app.kubernetes.io/version": service.Version,
+				"app":     service.ID,
+				"version": service.Version,
 			}},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -770,6 +771,7 @@ func generateGeneralService(service *model.Service) *v1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getServiceName(service.ID),
 			Labels: map[string]string{
+				"app":                          service.ID,
 				"app.kubernetes.io/name":       service.ID,
 				"app.kubernetes.io/managed-by": "space-cloud",
 				"space-cloud.io/version":       model.Version,
@@ -778,7 +780,7 @@ func generateGeneralService(service *model.Service) *v1.Service {
 		Spec: v1.ServiceSpec{
 			Ports: prepareServicePorts(service.Tasks),
 			Selector: map[string]string{
-				"app.kubernetes.io/name": service.ID,
+				"app": service.ID,
 			},
 			Type: v1.ServiceTypeClusterIP,
 		},
@@ -790,6 +792,8 @@ func generateInternalService(service *model.Service) *v1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getInternalServiceName(service.ID, service.Version),
 			Labels: map[string]string{
+				"app":                          service.ID,
+				"version":                      service.Version,
 				"app.kubernetes.io/name":       service.ID,
 				"app.kubernetes.io/version":    service.Version,
 				"app.kubernetes.io/managed-by": "space-cloud",
@@ -799,8 +803,8 @@ func generateInternalService(service *model.Service) *v1.Service {
 		Spec: v1.ServiceSpec{
 			Ports: prepareServicePorts(service.Tasks),
 			Selector: map[string]string{
-				"app.kubernetes.io/name":    service.ID,
-				"app.kubernetes.io/version": service.Version,
+				"app":     service.ID,
+				"version": service.Version,
 			},
 			Type: v1.ServiceTypeClusterIP,
 		},
@@ -863,6 +867,7 @@ func generateGeneralDestinationRule(service *model.Service) *v1alpha3.Destinatio
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getGeneralDestRuleName(service.ID),
 			Labels: map[string]string{
+				"app":                          service.ID,
 				"app.kubernetes.io/name":       service.ID,
 				"app.kubernetes.io/managed-by": "space-cloud",
 				"space-cloud.io/version":       model.Version,
@@ -882,6 +887,8 @@ func generateInternalDestinationRule(service *model.Service) *v1alpha3.Destinati
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getInternalDestRuleName(service.ID, service.Version),
 			Labels: map[string]string{
+				"app":                          service.ID,
+				"version":                      service.Version,
 				"app.kubernetes.io/name":       service.ID,
 				"app.kubernetes.io/version":    service.Version,
 				"app.kubernetes.io/managed-by": "space-cloud",
@@ -902,6 +909,8 @@ func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getAuthorizationPolicyName(service.ProjectID, service.ID, service.Version),
 			Labels: map[string]string{
+				"app":                          service.ID,
+				"version":                      service.Version,
 				"app.kubernetes.io/name":       service.ID,
 				"app.kubernetes.io/version":    service.Version,
 				"app.kubernetes.io/managed-by": "space-cloud",
@@ -910,8 +919,8 @@ func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 		},
 		Spec: securityv1beta1.AuthorizationPolicy{
 			Selector: &v1beta12.WorkloadSelector{MatchLabels: map[string]string{
-				"app.kubernetes.io/name":    service.ID,
-				"app.kubernetes.io/version": service.Version,
+				"app":     service.ID,
+				"version": service.Version,
 			}},
 			Rules: prepareAuthPolicyRules(service),
 		},
@@ -924,6 +933,8 @@ func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getSidecarName(service.ID, service.Version),
 			Labels: map[string]string{
+				"app":                          service.ID,
+				"version":                      service.Version,
 				"app.kubernetes.io/name":       service.ID,
 				"app.kubernetes.io/version":    service.Version,
 				"app.kubernetes.io/managed-by": "space-cloud",
@@ -932,8 +943,8 @@ func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {
 		},
 		Spec: networkingv1alpha3.Sidecar{
 			WorkloadSelector: &networkingv1alpha3.WorkloadSelector{Labels: map[string]string{
-				"app.kubernetes.io/name":    service.ID,
-				"app.kubernetes.io/version": service.Version,
+				"app":     service.ID,
+				"version": service.Version,
 			}},
 			Egress:                []*networkingv1alpha3.IstioEgressListener{{Hosts: prepareUpstreamHosts(service)}},
 			OutboundTrafficPolicy: &networkingv1alpha3.OutboundTrafficPolicy{Mode: networkingv1alpha3.OutboundTrafficPolicy_ALLOW_ANY},

@@ -9,6 +9,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
+	"github.com/spaceuptech/space-cloud/runner/modules/scaler"
 
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
 )
@@ -20,9 +21,10 @@ type Istio struct {
 	config *Config
 
 	// Drivers to talk to k8s and istio
-	kube  *kubernetes.Clientset
-	istio *versionedclient.Clientset
-	keda  *kedaVersionedClient.Clientset
+	kube       *kubernetes.Clientset
+	istio      *versionedclient.Clientset
+	keda       *kedaVersionedClient.Clientset
+	kedaScaler *scaler.Scaler
 }
 
 // NewIstioDriver creates a new instance of the istio driver
@@ -56,7 +58,15 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 		return nil, err
 	}
 
-	return &Istio{auth: auth, config: c, kube: kube, istio: istio, keda: kedaClient}, nil
+	kedaScaler, err := scaler.New(c.PrometheusAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Start the keda external scaler
+	go kedaScaler.Start()
+
+	return &Istio{auth: auth, config: c, kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}, nil
 }
 
 func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {

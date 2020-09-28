@@ -6,11 +6,11 @@ type Service struct {
 	Name                   string            `json:"name,omitempty" yaml:"name,omitempty"`
 	ProjectID              string            `json:"projectId,omitempty" yaml:"projectId,omitempty"`
 	Version                string            `json:"version,omitempty" yaml:"version,omitempty"`
-	Scale                  *ScaleConfig      `json:"scale" yaml:"scale"`
-	AutoScale              *AutoScaleConfig  `json:"autoScale" yaml:"autoScale"`
-	Labels                 map[string]string `json:"labels" yaml:"labels"`
+	Scale                  *ScaleConfig      `json:"scale,omitempty" yaml:"scale,omitempty"`
+	AutoScale              *AutoScaleConfig  `json:"autoScale,omitempty" yaml:"autoScale,omitempty"`
+	Labels                 map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
 	Tasks                  []Task            `json:"tasks" yaml:"tasks"`
-	Affinity               []Affinity        `json:"affinity" yaml:"affinity"`
+	Affinity               []Affinity        `json:"affinity,omitempty" yaml:"affinity,omitempty"`
 	Whitelist              []Whitelist       `json:"whitelists" yaml:"whitelists"`
 	Upstreams              []Upstream        `json:"upstreams" yaml:"upstreams"`
 	StatsInclusionPrefixes string            `json:"statsInclusionPrefixes" yaml:"statsInclusionPrefixes"`
@@ -27,13 +27,13 @@ type ScaleConfig struct {
 
 // AutoScaleConfig describes the config used to scale a service
 type AutoScaleConfig struct {
-	PollingInterval  int32 `json:"pollingInterval" yaml:"pollingInterval"` // Default 15 (in seconds)
-	CoolDownInterval int32 `json:"coolDown" yaml:"coolDownInterval"`       // Default 120 (in seconds)
+	PollingInterval  int32 `json:"pollingInterval" yaml:"pollingInterval"`   // Default 15 (in seconds)
+	CoolDownInterval int32 `json:"coolDownInterval" yaml:"coolDownInterval"` // Default 120 (in seconds)
 
 	MinReplicas int32 `json:"minReplicas" yaml:"minReplicas"` // Default 1
 	MaxReplicas int32 `json:"maxReplicas" yaml:"maxReplicas"` // Default 100
 
-	Triggers []AutoScaleTrigger `json:"triggers" yaml:"triggers"`
+	Triggers []AutoScaleTrigger `json:"triggers,omitempty" yaml:"triggers,omitempty"`
 }
 
 // AutoScaleTrigger describes the config of a scaler
