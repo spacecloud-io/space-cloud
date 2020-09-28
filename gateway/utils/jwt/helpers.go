@@ -119,10 +119,50 @@ func (j *JWT) verifyTokenSignature(ctx context.Context, token string, secret *co
 		for key, val := range claims {
 			obj[key] = val
 		}
+
+		if secret.Issuer != "" {
+			if !claims.VerifyIssuer(secret.Issuer, true) {
+				return nil, errors.New("unable to verify issuer claim of jwt token")
+			}
+		}
+
+		if len(secret.Audience) > 0 {
+			c, ok := claims["aud"]
+			if !ok {
+				return nil, errors.New("claim (aud) not provided in token")
+			}
+			if err := verifyAudienceClaim(c, secret.Audience); err != nil {
+				return nil, err
+			}
+		}
+
 		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "auth"})
 		return obj, nil
 	}
 	return nil, errors.New("AUTH: JWT token could not be verified")
+}
+
+func verifyAudienceClaim(claims interface{}, audClaimsVerify []string) error {
+	switch audClaimFromToken := claims.(type) {
+	case string:
+		for _, cmp := range audClaimsVerify {
+			if audClaimFromToken == cmp {
+				return nil
+			}
+		}
+		return errors.New("unable to verify audience claim of jwt token")
+	case []interface{}:
+		for _, audClaim := range audClaimFromToken {
+			for _, c := range audClaimsVerify {
+				if audClaim == c {
+					return nil
+				}
+			}
+		}
+		return errors.New("unable to verify audience claim of jwt token")
+	default:
+		return errors.New("invalid type provided for claim audience in jwt token")
+	}
 }
 
 func (j *JWT) parseJwkSecret(ctx context.Context, kid, token string) (map[string]interface{}, error) {

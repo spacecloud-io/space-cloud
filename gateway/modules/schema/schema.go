@@ -131,7 +131,8 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 			}
 
 			fieldTypeStuct := model.FieldType{
-				FieldName: field.Name.Value,
+				FieldName:  field.Name.Value,
+				TypeIDSize: 50,
 			}
 			if len(field.Directives) > 0 {
 				// Loop over all directives
@@ -144,6 +145,21 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 						fieldTypeStuct.IsCreatedAt = true
 					case model.DirectiveUpdatedAt:
 						fieldTypeStuct.IsUpdatedAt = true
+					case model.DirectiveVarcharSize:
+						for _, arg := range directive.Arguments {
+							switch arg.Name.Value {
+							case "value":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								size, ok := val.(int)
+								if !ok {
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+								}
+								if size < model.SQLTypeIDSize {
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Directive @size should be greater than %d", model.SQLTypeIDSize), nil, map[string]interface{}{"arg": arg.Name.Value})
+								}
+								fieldTypeStuct.TypeIDSize = size
+							}
+						}
 					case model.DirectiveDefault:
 						fieldTypeStuct.IsDefault = true
 

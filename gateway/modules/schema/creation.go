@@ -148,7 +148,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		}
 
 		currentColumnInfo, ok := currentTableInfo[realColumnName]
-		columnType, err := getSQLType(ctx, dbType, realColumnInfo.Kind)
+		columnType, err := getSQLType(ctx, realColumnInfo.TypeIDSize, dbType, realColumnInfo.Kind)
 		if err != nil {
 			return nil, err
 		}
