@@ -41,7 +41,7 @@ type Secret struct {
 	JwkKey interface{} `json:"-" yaml:"-"`
 
 	Audience []string `json:"aud" yaml:"aud"`
-	Issuer   string   `json:"iss" yaml:"iss"`
+	Issuer   []string `json:"iss" yaml:"iss"`
 
 	// Used for HMAC256 secret
 	Secret string `json:"secret" yaml:"secret"`

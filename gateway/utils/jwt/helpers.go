@@ -120,9 +120,13 @@ func (j *JWT) verifyTokenSignature(ctx context.Context, token string, secret *co
 			obj[key] = val
 		}
 
-		if secret.Issuer != "" {
-			if !claims.VerifyIssuer(secret.Issuer, true) {
-				return nil, errors.New("unable to verify issuer claim of jwt token")
+		if len(secret.Issuer) > 0 {
+			c, ok := claims["iss"]
+			if !ok {
+				return nil, errors.New("claim (iss) not provided in token")
+			}
+			if err := verifyClaims(c, secret.Issuer); err != nil {
+				return nil, err
 			}
 		}
 
@@ -131,7 +135,7 @@ func (j *JWT) verifyTokenSignature(ctx context.Context, token string, secret *co
 			if !ok {
 				return nil, errors.New("claim (aud) not provided in token")
 			}
-			if err := verifyAudienceClaim(c, secret.Audience); err != nil {
+			if err := verifyClaims(c, secret.Audience); err != nil {
 				return nil, err
 			}
 		}
@@ -142,27 +146,26 @@ func (j *JWT) verifyTokenSignature(ctx context.Context, token string, secret *co
 	return nil, errors.New("AUTH: JWT token could not be verified")
 }
 
-func verifyAudienceClaim(claims interface{}, audClaimsVerify []string) error {
-	switch audClaimFromToken := claims.(type) {
+func verifyClaims(claims interface{}, configValues []string) error {
+	switch claimFromToken := claims.(type) {
 	case string:
-		for _, cmp := range audClaimsVerify {
-			if audClaimFromToken == cmp {
+		for _, cmp := range configValues {
+			if claimFromToken == cmp {
 				return nil
 			}
 		}
-		return errors.New("unable to verify audience claim of jwt token")
 	case []interface{}:
-		for _, audClaim := range audClaimFromToken {
-			for _, c := range audClaimsVerify {
+		for _, audClaim := range claimFromToken {
+			for _, c := range configValues {
 				if audClaim == c {
 					return nil
 				}
 			}
 		}
-		return errors.New("unable to verify audience claim of jwt token")
 	default:
-		return errors.New("invalid type provided for claim audience in jwt token")
+		return errors.New("invalid type provided for claim in jwt token")
 	}
+	return errors.New("unable to verify claim of jwt token")
 }
 
 func (j *JWT) parseJwkSecret(ctx context.Context, kid, token string) (map[string]interface{}, error) {

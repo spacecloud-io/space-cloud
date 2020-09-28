@@ -60,7 +60,7 @@ const (
 	TypeID string = "ID"
 	// TypeJSON is variable used for Variable of type Jsonb
 	TypeJSON string = "JSON"
-	// SQLTypeIDSize is variable used for specifing si	ze of sql type ID
+	// SQLTypeIDSize is variable used for specifying size of sql type ID
 	SQLTypeIDSize int = 50
 	// TypeObject is a string with value object
 	TypeObject string = "Object"
