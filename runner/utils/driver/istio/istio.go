@@ -21,7 +21,7 @@ type Istio struct {
 	config *Config
 
 	// Drivers to talk to k8s and istio
-	kube       *kubernetes.Clientset
+	kube       kubernetes.Interface
 	istio      *versionedclient.Clientset
 	keda       *kedaVersionedClient.Clientset
 	kedaScaler *scaler.Scaler
