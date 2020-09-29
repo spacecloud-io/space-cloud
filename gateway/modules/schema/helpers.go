@@ -12,11 +12,11 @@ import (
 )
 
 // GetSQLType return sql type
-func getSQLType(ctx context.Context, dbType, typename string) (string, error) {
+func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (string, error) {
 
 	switch typename {
 	case model.TypeID:
-		return "varchar(" + model.SQLTypeIDSize + ")", nil
+		return fmt.Sprintf("varchar(%d)", maxIDSize), nil
 	case model.TypeString:
 		if dbType == string(model.SQLServer) {
 			return "varchar(max)", nil
@@ -288,7 +288,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 		if err := checkErrors(ctx, realFieldStruct); err != nil {
 			return "", err
 		}
-		sqlType, err := getSQLType(ctx, dbType, realFieldStruct.Kind)
+		sqlType, err := getSQLType(ctx, realFieldStruct.TypeIDSize, dbType, realFieldStruct.Kind)
 		if err != nil {
 			return "", nil
 		}

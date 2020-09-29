@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -188,22 +189,26 @@ func TestParseSchema(t *testing.T) {
 				"mongo": model.Collection{
 					"tweet": model.Fields{
 						"ID": &model.FieldType{
-							FieldName: "ID",
-							Kind:      model.TypeID,
-							IsPrimary: true,
+							FieldName:  "ID",
+							Kind:       model.TypeID,
+							TypeIDSize: model.SQLTypeIDSize,
+							IsPrimary:  true,
 						},
 						"age": &model.FieldType{
-							FieldName: "age",
-							Kind:      model.TypeFloat,
+							FieldName:  "age",
+							TypeIDSize: model.SQLTypeIDSize,
+							Kind:       model.TypeFloat,
 						},
 						"spec": &model.FieldType{
-							FieldName: "spec",
-							Kind:      model.TypeJSON,
+							FieldName:  "spec",
+							TypeIDSize: model.SQLTypeIDSize,
+							Kind:       model.TypeJSON,
 						},
 						"customer_id": &model.FieldType{
 							FieldName:           "customer_id",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
+							TypeIDSize:          model.SQLTypeIDSize,
 							IsForeign:           true,
 							JointTable: &model.TableProperties{
 								To:             "id",
@@ -237,39 +242,46 @@ func TestParseSchema(t *testing.T) {
 				"mongo": model.Collection{
 					"tweet": model.Fields{
 						"ID": &model.FieldType{
-							FieldName: "ID",
-							Kind:      model.TypeID,
-							IsPrimary: true,
+							FieldName:  "ID",
+							Kind:       model.TypeID,
+							TypeIDSize: model.SQLTypeIDSize,
+							IsPrimary:  true,
 						},
 						"age": &model.FieldType{
-							FieldName: "age",
-							Kind:      model.TypeFloat,
+							FieldName:  "age",
+							Kind:       model.TypeFloat,
+							TypeIDSize: model.SQLTypeIDSize,
 						},
 						"role": &model.FieldType{
 							FieldName:           "role",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
+							TypeIDSize:          model.SQLTypeIDSize,
 							IsDefault:           true,
 							Default:             "user",
 						},
 						"spec": &model.FieldType{
-							FieldName: "spec",
-							Kind:      model.TypeJSON,
+							FieldName:  "spec",
+							Kind:       model.TypeJSON,
+							TypeIDSize: model.SQLTypeIDSize,
 						},
 						"createdAt": &model.FieldType{
 							FieldName:   "createdAt",
 							Kind:        model.TypeDateTime,
+							TypeIDSize:  model.SQLTypeIDSize,
 							IsCreatedAt: true,
 						},
 						"updatedAt": &model.FieldType{
 							FieldName:   "updatedAt",
 							Kind:        model.TypeDateTime,
+							TypeIDSize:  model.SQLTypeIDSize,
 							IsUpdatedAt: true,
 						},
 						"first_name": &model.FieldType{
 							FieldName:           "first_name",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
+							TypeIDSize:          model.SQLTypeIDSize,
 							IsIndex:             true,
 							IndexInfo: &model.TableProperties{
 								Group: "user_name",
@@ -281,6 +293,7 @@ func TestParseSchema(t *testing.T) {
 							FieldName:           "name",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
+							TypeIDSize:          model.SQLTypeIDSize,
 							IsIndex:             true,
 							IsUnique:            true,
 							IndexInfo: &model.TableProperties{
@@ -293,6 +306,7 @@ func TestParseSchema(t *testing.T) {
 							FieldName:           "customer_id",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
+							TypeIDSize:          model.SQLTypeIDSize,
 							IsForeign:           true,
 							JointTable: &model.TableProperties{
 								To:             "id",
@@ -302,10 +316,11 @@ func TestParseSchema(t *testing.T) {
 							},
 						},
 						"order_dates": &model.FieldType{
-							FieldName: "order_dates",
-							IsList:    true,
-							Kind:      model.TypeDateTime,
-							IsLinked:  true,
+							FieldName:  "order_dates",
+							IsList:     true,
+							Kind:       model.TypeDateTime,
+							TypeIDSize: model.SQLTypeIDSize,
+							IsLinked:   true,
 							LinkedTable: &model.TableProperties{
 								Table:  "order",
 								From:   "id",
@@ -350,7 +365,19 @@ func TestParseSchema(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(r, testCase.schema) {
-				t.Errorf("parser()=got return value-%v,expected schema-%v", r, testCase.schema)
+				t.Error("Schema.parseSchema() error =", r, testCase.schema)
+				v, err := json.MarshalIndent(r, "", " ")
+				if err != nil {
+					t.Log(err)
+					return
+				}
+				t.Log("Got", string(v))
+				v, err = json.MarshalIndent(testCase.schema, "", " ")
+				if err != nil {
+					t.Log(err)
+					return
+				}
+				t.Log("Want", string(v))
 			}
 		})
 	}

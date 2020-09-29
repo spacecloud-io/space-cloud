@@ -296,13 +296,17 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 				return nil, hasOptions, err
 			}
 
-			tempInt, ok := temp.(int)
-			if !ok {
-				return nil, hasOptions, errors.New("Invalid type for skip")
+			switch t := temp.(type) {
+			case float64:
+				// This condition occurs if we provide value of limit operator from graphql variables
+				tempInt64 := int64(t)
+				options.Skip = &tempInt64
+			case int:
+				tempInt64 := int64(t)
+				options.Skip = &tempInt64
+			default:
+				return nil, hasOptions, fmt.Errorf("invalid type provided for skip expecting integer got (%s)", reflect.TypeOf(temp))
 			}
-
-			tempInt64 := int64(tempInt)
-			options.Skip = &tempInt64
 
 		case "limit":
 			hasOptions = true // Set the flag to true
@@ -312,13 +316,17 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 				return nil, hasOptions, err
 			}
 
-			tempInt, ok := temp.(int)
-			if !ok {
-				return nil, hasOptions, errors.New("Invalid type for skip")
+			switch t := temp.(type) {
+			case float64:
+				// This condition occurs if we provide value of limit operator from graphql variables
+				tempInt64 := int64(t)
+				options.Limit = &tempInt64
+			case int:
+				tempInt64 := int64(t)
+				options.Limit = &tempInt64
+			default:
+				return nil, hasOptions, fmt.Errorf("invalid type provided for limit expecting integer got (%s)", reflect.TypeOf(temp))
 			}
-
-			tempInt64 := int64(tempInt)
-			options.Limit = &tempInt64
 
 		case "sort":
 			hasOptions = true // Set the flag to true

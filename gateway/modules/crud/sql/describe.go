@@ -37,7 +37,8 @@ CASE
 	WHEN column_default = '1' THEN 'true'
 	WHEN column_default = '0' THEN 'false'
 	ELSE coalesce(column_default,'')
-END AS 'Default'
+END AS 'Default',
+coalesce(CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize'
 from information_schema.columns
 where (table_name,table_schema) = (?,?);`
 		args = append(args, col, project)
@@ -48,7 +49,9 @@ CASE
     WHEN t.constraint_type = 'PRIMARY KEY' THEN 'PRI'
     WHEN t.constraint_type = 'UNIQUE' THEN 'UNI'
     ELSE ''
-END AS "Key"
+END AS "Key",
+-- Set the null values to 50
+coalesce(isc.character_maximum_length,50) AS "VarcharSize"
 FROM information_schema.columns isc
     left join (select cu.table_schema, cu.table_name, cu.column_name, istc.constraint_type 
     	from information_schema.constraint_column_usage cu 
@@ -68,7 +71,8 @@ ORDER BY isc.ordinal_position;`
            WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
            WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'
            ELSE isnull(TC.CONSTRAINT_TYPE,'')
-           END AS 'Key'
+           END AS 'Key',
+coalesce(c.CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize'
 FROM INFORMATION_SCHEMA.COLUMNS AS C
          FULL JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS CC
                    ON C.COLUMN_NAME = CC.COLUMN_NAME

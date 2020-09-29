@@ -119,10 +119,53 @@ func (j *JWT) verifyTokenSignature(ctx context.Context, token string, secret *co
 		for key, val := range claims {
 			obj[key] = val
 		}
+
+		if len(secret.Issuer) > 0 {
+			c, ok := claims["iss"]
+			if !ok {
+				return nil, errors.New("claim (iss) not provided in token")
+			}
+			if err := verifyClaims(c, secret.Issuer); err != nil {
+				return nil, err
+			}
+		}
+
+		if len(secret.Audience) > 0 {
+			c, ok := claims["aud"]
+			if !ok {
+				return nil, errors.New("claim (aud) not provided in token")
+			}
+			if err := verifyClaims(c, secret.Audience); err != nil {
+				return nil, err
+			}
+		}
+
 		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Claim from request token", map[string]interface{}{"claims": claims, "type": "auth"})
 		return obj, nil
 	}
 	return nil, errors.New("AUTH: JWT token could not be verified")
+}
+
+func verifyClaims(claims interface{}, configValues []string) error {
+	switch claimFromToken := claims.(type) {
+	case string:
+		for _, cmp := range configValues {
+			if claimFromToken == cmp {
+				return nil
+			}
+		}
+	case []interface{}:
+		for _, audClaim := range claimFromToken {
+			for _, c := range configValues {
+				if audClaim == c {
+					return nil
+				}
+			}
+		}
+	default:
+		return errors.New("invalid type provided for claim in jwt token")
+	}
+	return errors.New("unable to verify claim of jwt token")
 }
 
 func (j *JWT) parseJwkSecret(ctx context.Context, kid, token string) (map[string]interface{}, error) {
