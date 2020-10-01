@@ -21,42 +21,6 @@ var connection = flag.String("conn", "", "connection string of the database")
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	//var customerTable = `type customers {
-	//						id: ID! @primary
-	//						name: String!
-	//						age: Integer!
-	//						height: Float
-	//						is_prime: Boolean!
-	//						birth_date: DateTime!
-	//						address: JSON!
-	//					}`
-	//var companiesTable = `type companies {
-	//					 id: ID! @primary
-	//					 parent : ID!
-	//					 name : String!
-	//					 established_date : DateTime!
-	//					 kind : Integer!
-	//					 volume : Float!
-	//					 is_public : Boolean!
-	//					 description : JSON!
-	//				}`
-	//var ordersTable = `type orders {
-	//					id: ID! @primary
-	//					order_date: DateTime!
-	//					amount: Integer!
-	//					is_prime: Boolean,
-	//					product_id: String!
-	//					address: JSON!
-	//					stars: Float!
-	//				}`
-	//var rawBatch = `type raw_batch {
-	//					id: ID! @primary
-	//					score : Integer!
-	//				}`
-	//var rawQuery = `type raw_query {
-	//					id: ID! @primary
-	//					score : Integer!
-	//				}`
 
 	// create sc project
 	var projectInfo = `{"name":"myproject","id":"myproject","secrets":[{"secret":"27f6a16bf7864c319e01b7511737407d","isPrimary":true}],"aesKey":"MWJkOTE5ZjVmMGRjNGZiMjg4MDQ0NjQ5MDE0ZWM2MDQ=","contextTime":5,"modules":{"db":{},"eventing":{},"userMan":{},"remoteServices":{"externalServices":{}},"fileStore":{"enabled":false,"rules":[]}}}`
@@ -108,12 +72,12 @@ func TestMain(m *testing.M) {
 
 	db, err := Init(true, *connection, "myproject")
 	if err != nil {
-		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't establishing connection with database", dbType)
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.Background()), "Create() Couldn't establishing connection with database", map[string]interface{}{"dbType": *dbType})
 		return
 	}
 	// clear data
 	if err := db.client.Database("myproject").Drop(context.Background()); err != nil {
-		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", err)
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.Background()), "Create() Couldn't truncate table", map[string]interface{}{"error": err})
 	}
 
 	os.Exit(exitVal)

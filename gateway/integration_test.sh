@@ -8,7 +8,7 @@ go build .
 sudo kill -9 `sudo lsof -t -i:4122`
 
 # run the gateway in background
-./gateway run --dev &> /dev/null &
+./gateway run --dev --log-format text &> /dev/null &
 sleep 10
 #sc_process_num=$!
 
