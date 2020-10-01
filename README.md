@@ -1,7 +1,7 @@
 <p align="center"><a href="https://www.spaceuptech.com"><img src="https://spaceuptech.com/icons/space-cloud-block-diagram1.png" alt="Space Cloud"></a></p>
 
 <h3 align="center">
-  Google Firebase + Heroku to Develop, Scale and Secure Serverless Apps on Kubernetes.
+  Develop, Deploy and Secure Serverless Apps on Kubernetes.
 </h3>
 
 <p align="center">
