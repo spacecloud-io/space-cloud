@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // SchemaCrudInterface is an interface consisting of functions of schema module used by auth module
@@ -65,6 +66,7 @@ type AuthFilestoreInterface interface {
 type AuthFunctionInterface interface {
 	GetSCAccessToken(ctx context.Context) (string, error)
 	Encrypt(value string) (string, error)
+	CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (string, error)
 }
 
 // EventingRealtimeInterface is an interface consisting of functions of Eventing module used by RealTime module
