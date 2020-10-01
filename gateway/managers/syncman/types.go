@@ -62,7 +62,8 @@ type dbRulesResponse struct {
 	Rules             map[string]*config.Rule `json:"rules"`
 }
 
-type dbSchemaResponse struct {
+// DbSchemaResponse is a structure used to return db schemas
+type DbSchemaResponse struct {
 	DbAlias   string       `json:"dbAlias"`
 	Col       string       `json:"col"`
 	Schema    string       `json:"schema"`

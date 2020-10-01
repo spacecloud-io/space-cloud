@@ -94,7 +94,7 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 		meta := map[string]string{"project": project, "col": tableName.(string), "dbAlias": dbAlias.(string)}
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate", commandName, meta, obj["schema"])
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate", commandName, meta, map[string]interface{}{"schema": obj["schema"]})
 		if err != nil {
 			return nil, err
 		}

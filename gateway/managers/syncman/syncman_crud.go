@@ -543,7 +543,7 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 }
 
 // GetSchemas gets schemas from config
-func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) (int, []dbSchemaResponse, error) {
+func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) (int, []DbSchemaResponse, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -554,7 +554,7 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 	}
 
 	alreadyAddedTables := map[string]bool{}
-	schemaResponse := make([]dbSchemaResponse, 0)
+	schemaResponse := make([]DbSchemaResponse, 0)
 	a := s.modules.GetSchemaModuleForSyncMan()
 	if dbAlias != "*" && col != "*" {
 		if err := getSchemaResponse(ctx, format, dbAlias, col, true, alreadyAddedTables, a, projectConfig.Modules.Crud[dbAlias].Collections, &schemaResponse); err != nil {
@@ -581,7 +581,7 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 	return http.StatusOK, schemaResponse, nil
 }
 
-func getSchemaResponse(ctx context.Context, format, dbName, tableName string, ignoreForeignCheck bool, alreadyAddedTables map[string]bool, a model.SchemaEventingInterface, collection map[string]*config.TableRule, schemaResponse *[]dbSchemaResponse) error {
+func getSchemaResponse(ctx context.Context, format, dbName, tableName string, ignoreForeignCheck bool, alreadyAddedTables map[string]bool, a model.SchemaEventingInterface, collection map[string]*config.TableRule, schemaResponse *[]DbSchemaResponse) error {
 	_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
 	if ok {
 		return nil
@@ -606,9 +606,9 @@ func getSchemaResponse(ctx context.Context, format, dbName, tableName string, ig
 	}
 	alreadyAddedTables[getKeyName(dbName, tableName)] = true
 	if format == "json" {
-		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, SchemaObj: collectionInfo})
+		*schemaResponse = append(*schemaResponse, DbSchemaResponse{DbAlias: dbName, Col: tableName, SchemaObj: collectionInfo})
 	} else {
-		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, Schema: table.Schema})
+		*schemaResponse = append(*schemaResponse, DbSchemaResponse{DbAlias: dbName, Col: tableName, Schema: table.Schema})
 	}
 	return nil
 }

@@ -1227,8 +1227,8 @@ func TestManager_GetSchemas(t *testing.T) {
 		modulesMockArgs     []mockArgs
 		schemaErrorMockArgs []mockArgs
 		schemaMockArgs      []mockArgs
-		want1               []dbSchemaResponse
-		want2               []dbSchemaResponse
+		want1               []DbSchemaResponse
+		want2               []DbSchemaResponse
 		wantErr             bool
 	}{
 		{
@@ -1312,7 +1312,7 @@ func TestManager_GetSchemas(t *testing.T) {
 						true},
 				},
 			},
-			want1: []dbSchemaResponse{
+			want1: []DbSchemaResponse{
 				{
 					DbAlias: "db1",
 					Col:     "authors",
@@ -1444,7 +1444,7 @@ func TestManager_GetSchemas(t *testing.T) {
 						true},
 				},
 			},
-			want1: []dbSchemaResponse{
+			want1: []DbSchemaResponse{
 				{
 					DbAlias: "db1",
 					Col:     "genres",
@@ -1685,7 +1685,7 @@ func TestManager_GetSchemas(t *testing.T) {
 						true},
 				},
 			},
-			want1: []dbSchemaResponse{
+			want1: []DbSchemaResponse{
 				{
 					DbAlias: "db1",
 					Col:     "genres",
@@ -1881,7 +1881,7 @@ func TestManager_GetSchemas(t *testing.T) {
 						true},
 				},
 			},
-			want1: []dbSchemaResponse{
+			want1: []DbSchemaResponse{
 				{DbAlias: "db1", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
 			},
 		},
@@ -1990,7 +1990,7 @@ func TestManager_GetSchemas(t *testing.T) {
 						true},
 				},
 			},
-			want1: []dbSchemaResponse{
+			want1: []DbSchemaResponse{
 				{DbAlias: "db1", Col: "genres", Schema: `type genres {id: ID! name: String }`},
 				{DbAlias: "db1", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
 				{DbAlias: "db1", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
@@ -2169,7 +2169,7 @@ func TestManager_GetSchemas(t *testing.T) {
 						true},
 				},
 			},
-			want1: []dbSchemaResponse{
+			want1: []DbSchemaResponse{
 				{DbAlias: "db1", Col: "genres", Schema: `type genres {id: ID! name: String }`},
 				{DbAlias: "db1", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
 				{DbAlias: "db1", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
@@ -2177,7 +2177,7 @@ func TestManager_GetSchemas(t *testing.T) {
 				{DbAlias: "db2", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
 				{DbAlias: "db2", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
 			},
-			want2: []dbSchemaResponse{
+			want2: []DbSchemaResponse{
 				{DbAlias: "db2", Col: "genres", Schema: `type genres {id: ID! name: String }`},
 				{DbAlias: "db2", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
 				{DbAlias: "db2", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
