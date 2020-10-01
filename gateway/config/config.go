@@ -192,19 +192,19 @@ type Service struct {
 
 // Endpoint holds the config of a endpoint
 type Endpoint struct {
-	Kind      EndpointKind     		 `json:"kind" yaml:"kind"`
-	Tmpl      TemplatingEngine 		 `json:"template,omitempty" yaml:"template,omitempty"`
-	ReqTmpl   string           		 `json:"requestTemplate" yaml:"requestTemplate"`
-	GraphTmpl string           		 `json:"graphTemplate" yaml:"graphTemplate"`
-	ResTmpl   string           		 `json:"responseTemplate" yaml:"responseTemplate"`
-	OpFormat  string           		 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
-	Token     string           		 `json:"token,omitempty" yaml:"token,omitempty"`
+	Kind      EndpointKind           `json:"kind" yaml:"kind"`
+	Tmpl      TemplatingEngine       `json:"template,omitempty" yaml:"template,omitempty"`
+	ReqTmpl   string                 `json:"requestTemplate" yaml:"requestTemplate"`
+	GraphTmpl string                 `json:"graphTemplate" yaml:"graphTemplate"`
+	ResTmpl   string                 `json:"responseTemplate" yaml:"responseTemplate"`
+	OpFormat  string                 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
+	Token     string                 `json:"token,omitempty" yaml:"token,omitempty"`
 	Claims    map[string]interface{} `json:"claims,omitempty" yaml:"claims,omitempty"`
-	Method    string          		 `json:"method" yaml:"method"`
-	Path      string           		 `json:"path" yaml:"path"`
-	Rule      *Rule            		 `json:"rule,omitempty" yaml:"rule,omitempty"`
-	Headers   Headers          		 `json:"headers,omitempty" yaml:"headers,omitempty"`
-	Timeout   int              	 	 `json:"timeout,omitempty" yaml:"timeout,omitempty"` // Timeout is in seconds
+	Method    string                 `json:"method" yaml:"method"`
+	Path      string                 `json:"path" yaml:"path"`
+	Rule      *Rule                  `json:"rule,omitempty" yaml:"rule,omitempty"`
+	Headers   Headers                `json:"headers,omitempty" yaml:"headers,omitempty"`
+	Timeout   int                    `json:"timeout,omitempty" yaml:"timeout,omitempty"` // Timeout is in seconds
 }
 
 // EndpointKind describes the type of endpoint. Default value - internal
