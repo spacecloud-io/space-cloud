@@ -15,7 +15,7 @@ func (i *Istio) DeleteService(ctx context.Context, projectID, serviceID, version
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Error in delete service - could not get count of versions for service (%s)", getServiceUniqueID(projectID, serviceID, version)), err, nil)
 	}
 
-	// TODO: this could turn out to be a problem when two delete requests come in simultaneously
+	// TODO: this could turn out to be a problem when two delete requests for the same service come in simultaneously
 	if count == 1 {
 		if err := i.deleteServiceAccountIfExist(ctx, projectID, serviceID); err != nil {
 			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Could not delete service - service account could not be deleted", err, nil)
@@ -45,6 +45,9 @@ func (i *Istio) DeleteService(ctx context.Context, projectID, serviceID, version
 	}
 	if err := i.deleteSidecarConfig(ctx, projectID, serviceID, version); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Could not delete service - sidecar config could not be deleted", err, nil)
+	}
+	if err := i.deleteKedaConfig(ctx, projectID, serviceID, version); err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Could not delete service - autoscaler config could not be deleted", err, nil)
 	}
 
 	return nil

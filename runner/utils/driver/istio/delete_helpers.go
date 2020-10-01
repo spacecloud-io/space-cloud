@@ -52,6 +52,28 @@ func (i *Istio) deleteSidecarConfig(ctx context.Context, projectID, serviceID, v
 	return ignoreErrorIfNotFound(err)
 }
 
+func (i *Istio) deleteKedaConfig(ctx context.Context, projectID, serviceID, version string) error {
+	// Delete the scaled object first
+	if err := i.keda.KedaV1alpha1().ScaledObjects(projectID).Delete(ctx, getKedaScaledObjectName(serviceID, version), metav1.DeleteOptions{}); !kubeErrors.IsNotFound(err) {
+		return err
+	}
+
+	// Fetch all the keda trigger auth objects for this version
+	triggers, err := i.getKedaTriggerAuthsForVersion(ctx, projectID, serviceID, version)
+	if err != nil {
+		return err
+	}
+
+	// Delete each keda trigger auth object
+	for _, trigger := range triggers.Items {
+		if err := i.keda.KedaV1alpha1().TriggerAuthentications(projectID).Delete(ctx, trigger.Name, metav1.DeleteOptions{}); !kubeErrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func ignoreErrorIfNotFound(err error) error {
 	if kubeErrors.IsNotFound(err) {
 		return nil
