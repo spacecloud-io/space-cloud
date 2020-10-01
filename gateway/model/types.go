@@ -65,6 +65,7 @@ type AuthFilestoreInterface interface {
 type AuthFunctionInterface interface {
 	GetSCAccessToken(ctx context.Context) (string, error)
 	Encrypt(value string) (string, error)
+	CreateToken(ctx context.Context, tokenClaims TokenClaims) (string, error)
 }
 
 // EventingRealtimeInterface is an interface consisting of functions of Eventing module used by RealTime module
