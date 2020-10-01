@@ -43,7 +43,7 @@ type ModulesInterface interface {
 	Delete(projectID string)
 }
 
-//GlobalModulesInterface is an interface consisting of functions of the global modules
+// GlobalModulesInterface is an interface consisting of functions of the global modules
 type GlobalModulesInterface interface {
 	// SetMetricsConfig set the config of the metrics module
 	SetMetricsConfig(isMetricsEnabled bool)
@@ -63,5 +63,8 @@ type dbRulesResponse struct {
 }
 
 type dbSchemaResponse struct {
-	Schema string `json:"schema"`
+	DbAlias   string       `json:"dbAlias"`
+	Col       string       `json:"col"`
+	Schema    string       `json:"schema"`
+	SchemaObj model.Fields `json:"schemaObj"`
 }

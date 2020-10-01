@@ -2,6 +2,7 @@ package syncman
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"reflect"
 	"testing"
@@ -1226,43 +1227,57 @@ func TestManager_GetSchemas(t *testing.T) {
 		modulesMockArgs     []mockArgs
 		schemaErrorMockArgs []mockArgs
 		schemaMockArgs      []mockArgs
-		want                []interface{}
+		want1               []dbSchemaResponse
+		want2               []dbSchemaResponse
 		wantErr             bool
 	}{
 		{
-			name:    "unable to get project config",
+			name:    "Unable to get project config",
 			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "2"},
 			wantErr: true,
 		},
 		{
-			name:    "dbAlias and col are not empty but collection not present in config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
-			args:    args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1"},
+			name: "dbAlias and col are not empty but collection not present in config",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "GetSchemaModuleForSyncMan",
+					paramsReturned: []interface{}{&mockSchema},
+				},
+			},
 			wantErr: true,
 		},
 		{
-			name: "dbAlias and col are not empty and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
-			want: []interface{}{map[string]*dbSchemaResponse{"alias-tableName": {Schema: "type event {id: ID! title: String}"}}},
-		},
-		{
-			name: "dbAlias is not empty and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "*", dbAlias: "alias", project: "1"},
-			want: []interface{}{map[string]*dbSchemaResponse{"alias-tableName": {Schema: "type event {id: ID! title: String}"}}},
-		},
-		{
-			name: "dbAlias and col are empty and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "1"},
-			want: []interface{}{map[string]*dbSchemaResponse{"alias-tableName": {Schema: "type event {id: ID! title: String}"}}},
-		},
-		{
-			name: "dbAlias and col are not empty and format JSON and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", format: "json"},
+			name: "Get schema of specified database & table in json format",
+			s: &Manager{
+				projectConfig: &config.Config{
+					Projects: []*config.Project{
+						{
+							ID: "myProject", Modules: &config.Modules{
+								Crud: config.Crud{
+									"db1": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+									"db2": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), col: "authors", dbAlias: "db1", project: "myProject", format: "json"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
@@ -1272,24 +1287,87 @@ func TestManager_GetSchemas(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method: "GetSchema",
-					args:   []interface{}{"alias", "tableName"},
+					args:   []interface{}{"db1", "authors"},
 					paramsReturned: []interface{}{model.Fields{
-						"alias": &model.FieldType{
-							FieldName: "abcd",
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
 						},
-					}, true},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+						true},
 				},
 			},
-			want: []interface{}{map[string]*dbJSONSchemaResponse{"alias-tableName": {Fields: []*model.FieldType{
+			want1: []dbSchemaResponse{
 				{
-					FieldName: "abcd",
-				},
-			}}}},
+					DbAlias: "db1",
+					Col:     "authors",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					}},
+			},
 		},
 		{
-			name: "dbAlias is not empty and format is JSON and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "*", dbAlias: "alias", project: "1", format: "json"},
+			name: "Get schema of specified database in json format",
+			s: &Manager{
+				projectConfig: &config.Config{
+					Projects: []*config.Project{
+						{
+							ID: "myProject", Modules: &config.Modules{
+								Crud: config.Crud{
+									"db1": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+									"db2": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), col: "*", dbAlias: "db1", project: "myProject", format: "json"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
@@ -1299,24 +1377,170 @@ func TestManager_GetSchemas(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method: "GetSchema",
-					args:   []interface{}{"alias", "tableName"},
+					args:   []interface{}{"db1", "genres"},
 					paramsReturned: []interface{}{model.Fields{
-						"alias": &model.FieldType{
-							FieldName: "abcd",
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
 						},
-					}, true},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "authors"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "subscribers"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "authors",
+								To:    "id",
+							},
+						},
+					},
+						true},
 				},
 			},
-			want: []interface{}{map[string]*dbJSONSchemaResponse{"alias-tableName": {Fields: []*model.FieldType{
+			want1: []dbSchemaResponse{
 				{
-					FieldName: "abcd",
+					DbAlias: "db1",
+					Col:     "genres",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
 				},
-			}}}},
+				{
+					DbAlias: "db1",
+					Col:     "authors",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+				},
+				{
+					DbAlias: "db1",
+					Col:     "subscribers",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "authors",
+								To:    "id",
+							},
+						},
+					},
+				},
+			},
 		},
 		{
-			name: "dbAlias and col are empty and format is JSON and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "1", format: "json"},
+			name: "Get schema of all database in json format",
+			s: &Manager{
+				projectConfig: &config.Config{
+					Projects: []*config.Project{
+						{
+							ID: "myProject", Modules: &config.Modules{
+								Crud: config.Crud{
+									"db1": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+									"db2": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "myProject", format: "json"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
@@ -1326,19 +1550,641 @@ func TestManager_GetSchemas(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method: "GetSchema",
-					args:   []interface{}{"alias", "tableName"},
+					args:   []interface{}{"db1", "genres"},
 					paramsReturned: []interface{}{model.Fields{
-						"alias": &model.FieldType{
-							FieldName: "abcd",
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
 						},
-					}, true},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "authors"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "subscribers"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "authors",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db2", "genres"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db2", "authors"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db2", "subscribers"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "authors",
+								To:    "id",
+							},
+						},
+					},
+						true},
 				},
 			},
-			want: []interface{}{map[string]*dbJSONSchemaResponse{"alias-tableName": {Fields: []*model.FieldType{
+			want1: []dbSchemaResponse{
 				{
-					FieldName: "abcd",
+					DbAlias: "db1",
+					Col:     "genres",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
 				},
-			}}}},
+				{
+					DbAlias: "db1",
+					Col:     "authors",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+				},
+				{
+					DbAlias: "db1",
+					Col:     "subscribers",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "authors",
+								To:    "id",
+							},
+						},
+					},
+				},
+				{
+					DbAlias: "db2",
+					Col:     "genres",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
+				},
+				{
+					DbAlias: "db2",
+					Col:     "authors",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+				},
+				{
+					DbAlias: "db2",
+					Col:     "subscribers",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "authors",
+								To:    "id",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Get schema of specified database & table",
+			s: &Manager{
+				projectConfig: &config.Config{
+					Projects: []*config.Project{
+						{
+							ID: "myProject", Modules: &config.Modules{
+								Crud: config.Crud{
+									"db1": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+									"db2": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), col: "authors", dbAlias: "db1", project: "myProject", format: ""},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "GetSchemaModuleForSyncMan",
+					paramsReturned: []interface{}{&mockSchema},
+				},
+			},
+			schemaMockArgs: []mockArgs{
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "authors"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+			},
+			want1: []dbSchemaResponse{
+				{DbAlias: "db1", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+			},
+		},
+		{
+			name: "Get schema of specified database",
+			s: &Manager{
+				projectConfig: &config.Config{
+					Projects: []*config.Project{
+						{
+							ID: "myProject", Modules: &config.Modules{
+								Crud: config.Crud{
+									"db1": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+									"db2": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), col: "*", dbAlias: "db1", project: "myProject", format: ""},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "GetSchemaModuleForSyncMan",
+					paramsReturned: []interface{}{&mockSchema},
+				},
+			},
+			schemaMockArgs: []mockArgs{
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "genres"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "authors"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "subscribers"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "authors",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+			},
+			want1: []dbSchemaResponse{
+				{DbAlias: "db1", Col: "genres", Schema: `type genres {id: ID! name: String }`},
+				{DbAlias: "db1", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+				{DbAlias: "db1", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+			},
+		},
+		{
+			name: "Get schema of all databases",
+			s: &Manager{
+				projectConfig: &config.Config{
+					Projects: []*config.Project{
+						{
+							ID: "myProject", Modules: &config.Modules{
+								Crud: config.Crud{
+									"db1": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+									"db2": &config.CrudStub{
+										Collections: map[string]*config.TableRule{
+											"authors":     {Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+											"subscribers": {Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+											"genres":      {Schema: "type genres {id: ID! name: String }"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "myProject", format: ""},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "GetSchemaModuleForSyncMan",
+					paramsReturned: []interface{}{&mockSchema},
+				},
+			},
+			schemaMockArgs: []mockArgs{
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "genres"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "authors"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db1", "subscribers"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "authors",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db2", "genres"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db2", "authors"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "genres",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+				{
+					method: "GetSchema",
+					args:   []interface{}{"db2", "subscribers"},
+					paramsReturned: []interface{}{model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table: "authors",
+								To:    "id",
+							},
+						},
+					},
+						true},
+				},
+			},
+			want1: []dbSchemaResponse{
+				{DbAlias: "db1", Col: "genres", Schema: `type genres {id: ID! name: String }`},
+				{DbAlias: "db1", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+				{DbAlias: "db1", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+				{DbAlias: "db2", Col: "genres", Schema: `type genres {id: ID! name: String }`},
+				{DbAlias: "db2", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+				{DbAlias: "db2", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+			},
+			want2: []dbSchemaResponse{
+				{DbAlias: "db2", Col: "genres", Schema: `type genres {id: ID! name: String }`},
+				{DbAlias: "db2", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+				{DbAlias: "db2", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+				{DbAlias: "db1", Col: "genres", Schema: `type genres {id: ID! name: String }`},
+				{DbAlias: "db1", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+				{DbAlias: "db1", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -1358,8 +2204,21 @@ func TestManager_GetSchemas(t *testing.T) {
 				t.Errorf("Manager.GetSchemas() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Manager.GetSchemas() = %v, want %v", got, tt.want)
+			// && !!reflect.DeepEqual(got, tt.want2)
+			if !reflect.DeepEqual(got, tt.want1) {
+				t.Error("Manager.GetSchemas()")
+				v, err := json.MarshalIndent(got, "", " ")
+				if err != nil {
+					t.Log(err)
+					return
+				}
+				t.Log("Got", string(v))
+				v, err = json.MarshalIndent(tt.want1, "", " ")
+				if err != nil {
+					t.Log(err)
+					return
+				}
+				t.Log("Want", string(v))
 			}
 			mockModules.AssertExpectations(t)
 			mockSchema.AssertExpectations(t)
@@ -1392,7 +2251,7 @@ func TestManager_GetSchemas(t *testing.T) {
 // 		args            args
 // 		modulesMockArgs []mockArgs
 // 		storeMockArgs   []mockArgs
-// 		want            map[string]interface{}
+// 		want1            map[string]interface{}
 // 		wantErr         bool
 // 	}{
 // 		{
@@ -1438,7 +2297,7 @@ func TestManager_GetSchemas(t *testing.T) {
 // 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 // 				},
 // 			},
-// 			want:    map[string]interface{}{},
+// 			want1:    map[string]interface{}{},
 // 			wantErr: true,
 // 		},
 // 		{
@@ -1459,7 +2318,7 @@ func TestManager_GetSchemas(t *testing.T) {
 // 					paramsReturned: []interface{}{nil},
 // 				},
 // 			},
-// 			want: map[string]interface{}{},
+// 			want1: map[string]interface{}{},
 // 		},
 // 		{
 // 			name:    "unable to inspect schema",
@@ -1489,8 +2348,8 @@ func TestManager_GetSchemas(t *testing.T) {
 // 				t.Errorf("Manager.SetReloadSchema() error = %v, wantErr %v", err, tt.wantErr)
 // 				return
 // 			}
-// 			if !reflect.DeepEqual(got, tt.want) {
-// 				t.Errorf("Manager.SetReloadSchema() = %v, want %v", got, tt.want)
+// 			if !reflect.DeepEqual(got, tt.want1) {
+// 				t.Errorf("Manager.SetReloadSchema() = %v, want1 %v", got, tt.want1)
 // 			}
 //
 // 			mockModules.AssertExpectations(t)
@@ -1500,7 +2359,6 @@ func TestManager_GetSchemas(t *testing.T) {
 // }
 
 func TestManager_SetSchemaInspection(t *testing.T) {
-
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -1717,7 +2575,6 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 }
 
 func TestManager_RemoveSchemaInspection(t *testing.T) {
-
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -2134,7 +2991,6 @@ func TestManager_SetModifyAllSchema(t *testing.T) {
 }
 
 func TestManager_GetDatabaseConfig(t *testing.T) {
-
 	type args struct {
 		ctx     context.Context
 		project string
@@ -2187,7 +3043,6 @@ func TestManager_GetDatabaseConfig(t *testing.T) {
 }
 
 func TestManager_GetCollectionRules(t *testing.T) {
-
 	type args struct {
 		ctx     context.Context
 		project string

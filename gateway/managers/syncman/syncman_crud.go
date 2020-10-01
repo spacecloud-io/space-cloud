@@ -542,12 +542,8 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 	return http.StatusOK, []interface{}{coll}, nil
 }
 
-type dbJSONSchemaResponse struct {
-	Fields []*model.FieldType `json:"fields"`
-}
-
 // GetSchemas gets schemas from config
-func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) (int, []interface{}, error) {
+func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) (int, []dbSchemaResponse, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -557,69 +553,68 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 		return http.StatusBadRequest, nil, err
 	}
 
-	if format == "json" {
-		a := s.modules.GetSchemaModuleForSyncMan()
-		if dbAlias != "*" && col != "*" {
-			collectionInfo, p := a.GetSchema(dbAlias, col)
-			if !p {
-				return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
-			}
-			fields := []*model.FieldType{}
-			for _, v := range collectionInfo {
-				fields = append(fields, v)
-			}
-			return http.StatusOK, []interface{}{map[string]*dbJSONSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Fields: fields}}}, nil
-		} else if dbAlias != "*" {
-			collections := projectConfig.Modules.Crud[dbAlias].Collections
-			coll := map[string]*dbJSONSchemaResponse{}
-			for key := range collections {
-				collectionInfo, _ := a.GetSchema(dbAlias, key)
-				fields := []*model.FieldType{}
-				for _, v := range collectionInfo {
-					fields = append(fields, v)
-				}
-				coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &dbJSONSchemaResponse{Fields: fields}
-			}
-			return http.StatusOK, []interface{}{coll}, nil
-		}
-		databases := projectConfig.Modules.Crud
-		coll := map[string]*dbJSONSchemaResponse{}
-		for dbName, dbInfo := range databases {
-			for key := range dbInfo.Collections {
-				collectionInfo, _ := a.GetSchema(dbName, key)
-				fields := []*model.FieldType{}
-				for _, v := range collectionInfo {
-					fields = append(fields, v)
-				}
-				coll[fmt.Sprintf("%s-%s", dbName, key)] = &dbJSONSchemaResponse{Fields: fields}
-			}
-		}
-		return http.StatusOK, []interface{}{coll}, nil
-	}
-
+	alreadyAddedTables := map[string]bool{}
+	schemaResponse := make([]dbSchemaResponse, 0)
+	a := s.modules.GetSchemaModuleForSyncMan()
 	if dbAlias != "*" && col != "*" {
-		collectionInfo, ok := projectConfig.Modules.Crud[dbAlias].Collections[col]
-		if !ok {
-			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
+		if err := getSchemaResponse(ctx, format, dbAlias, col, true, alreadyAddedTables, a, projectConfig.Modules.Crud[dbAlias].Collections, &schemaResponse); err != nil {
+			return 0, nil, err
 		}
-
-		return http.StatusOK, []interface{}{map[string]*dbSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Schema: collectionInfo.Schema}}}, nil
 	} else if dbAlias != "*" {
 		collections := projectConfig.Modules.Crud[dbAlias].Collections
-		coll := map[string]*dbSchemaResponse{}
-		for key, value := range collections {
-			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &dbSchemaResponse{Schema: value.Schema}
+		for key := range collections {
+			if err := getSchemaResponse(ctx, format, dbAlias, key, false, alreadyAddedTables, a, collections, &schemaResponse); err != nil {
+				return 0, nil, err
+			}
 		}
-		return http.StatusOK, []interface{}{coll}, nil
-	}
-	databases := projectConfig.Modules.Crud
-	coll := map[string]*dbSchemaResponse{}
-	for dbName, dbInfo := range databases {
-		for key, value := range dbInfo.Collections {
-			coll[fmt.Sprintf("%s-%s", dbName, key)] = &dbSchemaResponse{Schema: value.Schema}
+	} else {
+		databases := projectConfig.Modules.Crud
+		for dbName, dbInfo := range databases {
+			for key := range dbInfo.Collections {
+				if err := getSchemaResponse(ctx, format, dbName, key, false, alreadyAddedTables, a, dbInfo.Collections, &schemaResponse); err != nil {
+					return 0, nil, err
+				}
+			}
 		}
 	}
-	return http.StatusOK, []interface{}{coll}, nil
+
+	return http.StatusOK, schemaResponse, nil
+}
+
+func getSchemaResponse(ctx context.Context, format, dbName, tableName string, ignoreForeignCheck bool, alreadyAddedTables map[string]bool, a model.SchemaEventingInterface, collection map[string]*config.TableRule, schemaResponse *[]dbSchemaResponse) error {
+	_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
+	if ok {
+		return nil
+	}
+
+	table, ok := collection[tableName]
+	if !ok {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbName, tableName), nil, nil)
+	}
+
+	collectionInfo, _ := a.GetSchema(dbName, tableName)
+	for _, fieldInfo := range collectionInfo {
+		if !ignoreForeignCheck && fieldInfo.IsForeign {
+			_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
+			if ok {
+				continue
+			}
+			if err := getSchemaResponse(ctx, format, dbName, fieldInfo.JointTable.Table, false, alreadyAddedTables, a, collection, schemaResponse); err != nil {
+				return err
+			}
+		}
+	}
+	alreadyAddedTables[getKeyName(dbName, tableName)] = true
+	if format == "json" {
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, SchemaObj: collectionInfo})
+	} else {
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, Schema: table.Schema})
+	}
+	return nil
+}
+
+func getKeyName(dbName, key string) string {
+	return fmt.Sprintf("%s-%s", dbName, key)
 }
 
 type result struct {

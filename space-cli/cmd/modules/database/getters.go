@@ -86,23 +86,19 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
 		obj := item.(map[string]interface{})
-		for key, value := range obj {
-			str := strings.Split(key, "-")
-			if str[1] == "event_logs" || str[1] == "invocation_logs" {
-				continue
-			}
-			meta := map[string]string{"project": project, "col": str[1], "dbAlias": str[0]}
-
-			delete(obj, "isRealtimeEnabled")
-			delete(obj, "rules")
-
-			// Generating the object
-			s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate", commandName, meta, value)
-			if err != nil {
-				return nil, err
-			}
-			objs = append(objs, s)
+		tableName := obj["col"]
+		dbAlias := obj["dbAlias"]
+		if tableName == "event_logs" || tableName == "invocation_logs" || tableName == "default" {
+			continue
 		}
+		meta := map[string]string{"project": project, "col": tableName.(string), "dbAlias": dbAlias.(string)}
+
+		// Generating the object
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate", commandName, meta, obj["schema"])
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, s)
 	}
 	return objs, nil
 }
