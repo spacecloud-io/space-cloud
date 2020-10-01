@@ -70,7 +70,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	// Create a new token if claims are provided
 	if endpoint.Claims != nil {
-		token = m.auth.CreateToken(ctx, endpoint.Claims)
+		token, err = m.auth.CreateToken(ctx, endpoint.Claims)
 	} 
 
 	/***************** Set the request body *****************/
