@@ -80,7 +80,8 @@ func LoginStart(userName, ID, key, url string) error {
 		return err
 	}
 	fmt.Printf("Login Successful\n")
-	return nil
+
+	return SetDefaultProject("")
 }
 
 // LoginWithSelectedAccount returns selected account & login token

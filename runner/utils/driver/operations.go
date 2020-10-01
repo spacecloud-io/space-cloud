@@ -46,9 +46,9 @@ func (m *Module) DeleteService(ctx context.Context, projectID, serviceID, versio
 	return m.driver.DeleteService(ctx, projectID, serviceID, version)
 }
 
-// AdjustScale adjust's scale
-func (m *Module) AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error {
-	return m.driver.AdjustScale(ctx, service, activeReqs)
+// ScaleUp scales a service up from 0 replicas
+func (m *Module) ScaleUp(ctx context.Context, projectID, serviceID, version string) error {
+	return m.driver.ScaleUp(ctx, projectID, serviceID, version)
 }
 
 // WaitForService waits for service

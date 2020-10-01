@@ -1,4 +1,4 @@
-FROM golang:1.13.5-alpine3.10
+FROM golang:1.14.9-alpine3.12
 WORKDIR /build
 
 # Take the current space cloud version as a argument
@@ -15,7 +15,7 @@ RUN GOOS=linux CGO_ENABLED=0 go build -a -ldflags '-s -w -extldflags "-static"' 
 # Download mission control
 RUN echo $SC_VERSION && wget https://storage.googleapis.com/space-cloud/mission-control/mission-control-v$SC_VERSION.zip && unzip mission-control-v$SC_VERSION.zip
 
-FROM alpine:3.10
+FROM alpine:3.12
 ARG SC_VERSION=0.19.3
 
 RUN apk --no-cache add ca-certificates

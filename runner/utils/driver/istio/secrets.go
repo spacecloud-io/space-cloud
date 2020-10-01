@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/spaceuptech/helpers"
 	v1 "k8s.io/api/core/v1"
@@ -68,14 +69,35 @@ func (i *Istio) ListSecrets(ctx context.Context, projectID string) ([]*model.Sec
 			RootPath: v.ObjectMeta.Annotations["rootPath"],
 			Data:     make(map[string]string, len(v.Data)),
 		}
-		if s.Type == model.FileType || s.Type == model.EnvType {
+		if s.Type == model.DockerType {
+			value, ok := v.Data[v1.DockerConfigJsonKey]
+			if !ok {
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Docker secret not made according to the space cloud format", fmt.Errorf("key (%s) does not exists in secret (%s) with type docker", v1.DockerConfigJsonKey, v.ObjectMeta.Name), nil)
+			}
+			obj := map[string]interface{}{}
+			if err := json.Unmarshal(value, &obj); err != nil {
+				return nil, err
+			}
+
+			for key, data := range obj["auths"].(map[string]interface{}) {
+				tempObj := data.(map[string]interface{})["auth"].(string)
+				decodedString, err := b64.StdEncoding.DecodeString(tempObj)
+				if err != nil {
+					return nil, err
+				}
+				arr := strings.Split(string(decodedString), ":")
+				if len(arr) < 2 {
+					return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Docker secret not made according to the space cloud format", fmt.Errorf("auth value for secret (%s) with type docker is not seperated by (:)", v.ObjectMeta.Name), nil)
+				}
+				s.Data["username"] = arr[0]
+				s.Data["password"] = arr[1]
+				s.Data["url"] = key
+				break
+			}
+		} else {
 			for k1, data := range v.Data {
 				s.Data[k1] = string(data)
 			}
-		} else if s.Type == model.DockerType {
-			s.Data["username"] = ""
-			s.Data["password"] = ""
-			s.Data["url"] = ""
 		}
 		listOfSecrets[i] = s
 	}
@@ -214,9 +236,13 @@ func generateSecret(ctx context.Context, projectID string, secret *model.Secret)
 	return &v1.Secret{
 		Type: typeOfSecret,
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        secret.ID,
-			Namespace:   projectID,
-			Labels:      map[string]string{"app": "space-cloud"},
+			Name:      secret.ID,
+			Namespace: projectID,
+			Labels: map[string]string{
+				"app":                          "space-cloud",
+				"app.kubernetes.io/name":       secret.ID,
+				"app.kubernetes.io/managed-by": "space-cloud",
+			},
 			Annotations: map[string]string{"rootPath": secret.RootPath, "secretType": secret.Type},
 		},
 		Data: encodedData,
