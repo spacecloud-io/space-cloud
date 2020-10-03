@@ -109,8 +109,17 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 	case kinds.OperationDefinition:
 		op := node.(*ast.OperationDefinition)
+		// query { --> operation definition
+		//    everything under bracket is selection set
+		// 	users @db{} --> Field
+		// 	posts @db{} --> Field
+		// }
+		// mutation { --> operation definition
+		// 	insert_users @db{}
+		// 	insert_posts @db{}
+		// }
 		switch op.Operation {
-		case "query":
+		case ast.OperationTypeQuery:
 			obj := utils.NewObject()
 
 			// Create a wait group
@@ -137,7 +146,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			wg.Wait()
 			cb(obj.GetAll(), nil)
 			return
-		case "mutation":
+		case ast.OperationTypeMutation:
 			graph.handleMutation(ctx, node, token, store, cb)
 			return
 
@@ -147,12 +156,20 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 		}
 
 	case kinds.Field:
+		// users @db { --> Field
+		//    everything under bracket is selection set
+		// 	  @db --> directive
+		// 	id
+		// 	name
+		// 	age
+		// }
 		field := node.(*ast.Field)
 
-		// No directive means its a nested field
+		// If it has a directive means its a nested field
 		if len(field.Directives) > 0 {
 			directive := field.Directives[0].Name.Value
 			kind := graph.getQueryKind(directive, field.Name.Value)
+			// database query
 			if kind == "read" {
 				graph.execReadRequest(ctx, field, token, store, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 					if err != nil {
@@ -168,6 +185,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 				return
 			}
 
+			// database prepared query
 			if kind == "prepared-queries" {
 				graph.execPreparedQueryRequest(ctx, field, token, store, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 					if err != nil {
@@ -180,6 +198,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 				return
 			}
 
+			// remote service call
 			if kind == "func" {
 				graph.execFuncCall(ctx, token, field, store, createCallback(func(result interface{}, err error) {
 					if err != nil {
@@ -196,6 +215,8 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			return
 		}
 
+		// This part of code won't be executed until called by post process result
+		// If the selection set of query has a field which is of typed linked, we will trigger another read request
 		if schema != nil {
 			fieldStruct, p := schema[field.Name.Value]
 			if p && fieldStruct.IsLinked {
