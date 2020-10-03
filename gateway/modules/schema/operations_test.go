@@ -2,6 +2,7 @@ package schema
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -22,6 +23,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		crud    config.Crud
 		args    args
 		want1   []interface{}
+		want2   []interface{}
 		wantErr bool
 	}{
 		{
@@ -343,6 +345,146 @@ func TestManager_GetSchemas(t *testing.T) {
 					},
 				},
 			},
+			want2: []interface{}{
+				dbSchemaResponse{
+					DbAlias: "db2",
+					Col:     "genres",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
+				},
+				dbSchemaResponse{
+					DbAlias: "db2",
+					Col:     "authors",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table:          "genres",
+								To:             "id",
+								OnDelete:       "NO ACTION",
+								ConstraintName: getConstraintName("authors", "genre_id"),
+							},
+						},
+					},
+				},
+				dbSchemaResponse{
+					DbAlias: "db2",
+					Col:     "subscribers",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table:          "authors",
+								To:             "id",
+								OnDelete:       "NO ACTION",
+								ConstraintName: getConstraintName("subscribers", "author_id"),
+							},
+						},
+					},
+				},
+				dbSchemaResponse{
+					DbAlias: "db1",
+					Col:     "genres",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+					},
+				},
+				dbSchemaResponse{
+					DbAlias: "db1",
+					Col:     "authors",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"genre_id": &model.FieldType{
+							FieldName:           "genre_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table:          "genres",
+								To:             "id",
+								OnDelete:       "NO ACTION",
+								ConstraintName: getConstraintName("authors", "genre_id"),
+							},
+						},
+					},
+				},
+				dbSchemaResponse{
+					DbAlias: "db1",
+					Col:     "subscribers",
+					SchemaObj: model.Fields{
+						"id": &model.FieldType{
+							FieldName:           "id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+						},
+						"name": &model.FieldType{
+							FieldName: "name",
+							Kind:      model.TypeString,
+						},
+						"author_id": &model.FieldType{
+							FieldName:           "author_id",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsForeign:           true,
+							JointTable: &model.TableProperties{
+								Table:          "authors",
+								To:             "id",
+								OnDelete:       "NO ACTION",
+								ConstraintName: getConstraintName("subscribers", "author_id"),
+							},
+						},
+					},
+				},
+			},
 		},
 		{
 			name: "Get schema of specified database & table",
@@ -419,6 +561,14 @@ func TestManager_GetSchemas(t *testing.T) {
 				dbSchemaResponse{DbAlias: "db2", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
 				dbSchemaResponse{DbAlias: "db2", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
 			},
+			want2: []interface{}{
+				dbSchemaResponse{DbAlias: "db2", Col: "genres", Schema: `type genres {id: ID! name: String }`},
+				dbSchemaResponse{DbAlias: "db2", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+				dbSchemaResponse{DbAlias: "db2", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+				dbSchemaResponse{DbAlias: "db1", Col: "genres", Schema: `type genres {id: ID! name: String }`},
+				dbSchemaResponse{DbAlias: "db1", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
+				dbSchemaResponse{DbAlias: "db1", Col: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
+			},
 		},
 	}
 
@@ -437,7 +587,14 @@ func TestManager_GetSchemas(t *testing.T) {
 			}
 
 			if diff := deep.Equal(got, tt.want1); diff != nil {
-				t.Error("Manager.GetSchemas() error ", diff)
+				if diff2 := deep.Equal(got, tt.want2); diff2 != nil {
+					a, _ := json.MarshalIndent(diff2, "", " ")
+					t.Error("Manager.GetSchemas() error2 \n", string(a))
+				} else {
+					return
+				}
+				a, _ := json.MarshalIndent(diff, "", " ")
+				t.Error("Manager.GetSchemas() error1 \n", string(a))
 			}
 		})
 	}

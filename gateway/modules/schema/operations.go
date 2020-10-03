@@ -11,7 +11,7 @@ import (
 // If * is provided for database or collection. It will get all the databases and collection
 func (s *Schema) GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error) {
 	s.lock.RLock()
-	defer s.lock.RLock()
+	defer s.lock.RUnlock()
 
 	alreadyAddedTables := map[string]bool{}
 	schemaResponse := make([]interface{}, 0)
