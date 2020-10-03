@@ -6,9 +6,8 @@ import (
 
 	"github.com/go-test/deep"
 
-	"github.com/spaceuptech/space-cloud/gateway/model"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_GetSchemas(t *testing.T) {

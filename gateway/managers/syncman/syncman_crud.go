@@ -553,7 +553,8 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 		return http.StatusBadRequest, nil, err
 	}
 
-	arr, err := s.modules.GetSchemaModuleForSyncMan().GetSchemaForDB(ctx, dbAlias, col, format)
+	a := s.modules.GetSchemaModuleForSyncMan()
+	arr, err := a.GetSchemaForDB(ctx, dbAlias, col, format)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
