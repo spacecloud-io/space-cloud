@@ -8,6 +8,7 @@ import (
 
 	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
@@ -524,4 +525,79 @@ func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*index
 		}
 	}
 	return indexMap, nil
+}
+
+// GetSchemaForDB gets schema of specified database & collection
+// If * is provided for database or collection. It will get all the databases and collection
+func (s *Schema) GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error) {
+	alreadyAddedTables := map[string]bool{}
+	schemaResponse := make([]interface{}, 0)
+	if dbAlias != "*" && col != "*" {
+		db, ok := s.config[dbAlias]
+		if !ok {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Provided database doesn't exists (%s)", dbAlias), nil, nil)
+		}
+		if err := s.getSchemaResponse(ctx, format, dbAlias, col, true, alreadyAddedTables, db.Collections, &schemaResponse); err != nil {
+			return nil, err
+		}
+	} else if dbAlias != "*" {
+		collections := s.config[dbAlias].Collections
+		for key := range collections {
+			if err := s.getSchemaResponse(ctx, format, dbAlias, key, false, alreadyAddedTables, collections, &schemaResponse); err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		for dbName, dbInfo := range s.config {
+			for key := range dbInfo.Collections {
+				if err := s.getSchemaResponse(ctx, format, dbName, key, false, alreadyAddedTables, dbInfo.Collections, &schemaResponse); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+	return schemaResponse, nil
+}
+
+func (s *Schema) getSchemaResponse(ctx context.Context, format, dbName, tableName string, ignoreForeignCheck bool, alreadyAddedTables map[string]bool, collection map[string]*config.TableRule, schemaResponse *[]interface{}) error {
+	_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
+	if ok {
+		return nil
+	}
+
+	table, ok := collection[tableName]
+	if !ok {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbName, tableName), nil, nil)
+	}
+
+	collectionInfo, _ := s.GetSchema(dbName, tableName)
+	for _, fieldInfo := range collectionInfo {
+		if !ignoreForeignCheck && fieldInfo.IsForeign {
+			_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
+			if ok {
+				continue
+			}
+			if err := s.getSchemaResponse(ctx, format, dbName, fieldInfo.JointTable.Table, false, alreadyAddedTables, collection, schemaResponse); err != nil {
+				return err
+			}
+		}
+	}
+	alreadyAddedTables[getKeyName(dbName, tableName)] = true
+	if format == "json" {
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, SchemaObj: collectionInfo})
+	} else {
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, Schema: table.Schema})
+	}
+	return nil
+}
+
+func getKeyName(dbName, key string) string {
+	return fmt.Sprintf("%s-%s", dbName, key)
+}
+
+type dbSchemaResponse struct {
+	DbAlias   string       `json:"dbAlias"`
+	Col       string       `json:"col"`
+	Schema    string       `json:"schema"`
+	SchemaObj model.Fields `json:"schemaObj"`
 }

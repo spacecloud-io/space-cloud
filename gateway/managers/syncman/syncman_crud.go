@@ -543,78 +543,22 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 }
 
 // GetSchemas gets schemas from config
-func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) (int, []DbSchemaResponse, error) {
+func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) (int, []interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	_, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
 
-	alreadyAddedTables := map[string]bool{}
-	schemaResponse := make([]DbSchemaResponse, 0)
-	a := s.modules.GetSchemaModuleForSyncMan()
-	if dbAlias != "*" && col != "*" {
-		if err := getSchemaResponse(ctx, format, dbAlias, col, true, alreadyAddedTables, a, projectConfig.Modules.Crud[dbAlias].Collections, &schemaResponse); err != nil {
-			return 0, nil, err
-		}
-	} else if dbAlias != "*" {
-		collections := projectConfig.Modules.Crud[dbAlias].Collections
-		for key := range collections {
-			if err := getSchemaResponse(ctx, format, dbAlias, key, false, alreadyAddedTables, a, collections, &schemaResponse); err != nil {
-				return 0, nil, err
-			}
-		}
-	} else {
-		databases := projectConfig.Modules.Crud
-		for dbName, dbInfo := range databases {
-			for key := range dbInfo.Collections {
-				if err := getSchemaResponse(ctx, format, dbName, key, false, alreadyAddedTables, a, dbInfo.Collections, &schemaResponse); err != nil {
-					return 0, nil, err
-				}
-			}
-		}
+	arr, err := s.modules.GetSchemaModuleForSyncMan().GetSchemaForDB(ctx, dbAlias, col, format)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
 	}
 
-	return http.StatusOK, schemaResponse, nil
-}
-
-func getSchemaResponse(ctx context.Context, format, dbName, tableName string, ignoreForeignCheck bool, alreadyAddedTables map[string]bool, a model.SchemaEventingInterface, collection map[string]*config.TableRule, schemaResponse *[]DbSchemaResponse) error {
-	_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
-	if ok {
-		return nil
-	}
-
-	table, ok := collection[tableName]
-	if !ok {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbName, tableName), nil, nil)
-	}
-
-	collectionInfo, _ := a.GetSchema(dbName, tableName)
-	for _, fieldInfo := range collectionInfo {
-		if !ignoreForeignCheck && fieldInfo.IsForeign {
-			_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
-			if ok {
-				continue
-			}
-			if err := getSchemaResponse(ctx, format, dbName, fieldInfo.JointTable.Table, false, alreadyAddedTables, a, collection, schemaResponse); err != nil {
-				return err
-			}
-		}
-	}
-	alreadyAddedTables[getKeyName(dbName, tableName)] = true
-	if format == "json" {
-		*schemaResponse = append(*schemaResponse, DbSchemaResponse{DbAlias: dbName, Col: tableName, SchemaObj: collectionInfo})
-	} else {
-		*schemaResponse = append(*schemaResponse, DbSchemaResponse{DbAlias: dbName, Col: tableName, Schema: table.Schema})
-	}
-	return nil
-}
-
-func getKeyName(dbName, key string) string {
-	return fmt.Sprintf("%s-%s", dbName, key)
+	return http.StatusOK, arr, nil
 }
 
 type result struct {

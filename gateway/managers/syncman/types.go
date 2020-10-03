@@ -61,11 +61,3 @@ type dbRulesResponse struct {
 	IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
 	Rules             map[string]*config.Rule `json:"rules"`
 }
-
-// DbSchemaResponse is a structure used to return db schemas
-type DbSchemaResponse struct {
-	DbAlias   string       `json:"dbAlias"`
-	Col       string       `json:"col"`
-	Schema    string       `json:"schema"`
-	SchemaObj model.Fields `json:"schemaObj"`
-}

@@ -172,3 +172,7 @@ func (m *mockSchemaEventingInterface) GetSchema(dbAlias, col string) (model.Fiel
 	c := m.Called(dbAlias, col)
 	return c.Get(0).(model.Fields), c.Bool(1)
 }
+func (m *mockSchemaEventingInterface) GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error) {
+	c := m.Called(ctx, dbAlias, col, format)
+	return c.Get(0).([]interface{}), c.Error(1)
+}
