@@ -41,3 +41,7 @@ func (m *Module) createBatch(ctx context.Context, project, dbAlias, col string, 
 func getPreparedQueryKey(dbAlias, id string) string {
 	return fmt.Sprintf("%s--%s", dbAlias, id)
 }
+
+func (m *Module) getDefaultFetchLimit(dbAlias string) *int64 {
+	return &m.queryFetchLimit
+}

@@ -62,12 +62,13 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 
 	coll, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type, DBName: v.DBName}
+		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type, DBName: v.DBName, Limit: v.Limit}
 	} else {
 		coll.Conn = v.Conn
 		coll.Enabled = v.Enabled
 		coll.Type = v.Type
 		coll.DBName = v.DBName
+		coll.Limit = v.Limit
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {

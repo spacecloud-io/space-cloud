@@ -87,4 +87,6 @@ const (
 
 	// SQLServer is the type used for MsSQL
 	SQLServer DBType = "sqlserver"
+
+	DefaultFetchLimit = 1000
 )
