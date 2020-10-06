@@ -43,7 +43,7 @@ type ModulesInterface interface {
 	Delete(projectID string)
 }
 
-//GlobalModulesInterface is an interface consisting of functions of the global modules
+// GlobalModulesInterface is an interface consisting of functions of the global modules
 type GlobalModulesInterface interface {
 	// SetMetricsConfig set the config of the metrics module
 	SetMetricsConfig(isMetricsEnabled bool)
@@ -60,8 +60,4 @@ type preparedQueryResponse struct {
 type dbRulesResponse struct {
 	IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
 	Rules             map[string]*config.Rule `json:"rules"`
-}
-
-type dbSchemaResponse struct {
-	Schema string `json:"schema"`
 }
