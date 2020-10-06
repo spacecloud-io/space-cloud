@@ -4,6 +4,7 @@ package sql
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -172,9 +173,10 @@ func TestMain(m *testing.M) {
 		return
 	}
 
+	ctx := context.Background()
 	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
-		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't establishing connection with database", dbType)
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't establishing connection with database", map[string]interface{}{"db": *dbType})
 		return
 	}
 	// clear data
@@ -182,11 +184,11 @@ func TestMain(m *testing.M) {
 	switch model.DBType(*dbType) {
 	case model.MySQL:
 		if _, err := db.client.Exec("DROP DATABASE IF EXISTS myproject"); err != nil {
-			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", err)
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", map[string]interface{}{"error": err})
 		}
 	case model.Postgres:
 		if _, err := db.client.Exec("DROP SCHEMA myproject CASCADE "); err != nil {
-			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", err)
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", map[string]interface{}{"error": err})
 		}
 	case model.SQLServer:
 		if _, err := db.client.Exec(`DROP TABLE IF EXISTS myproject.customers;
@@ -195,7 +197,7 @@ func TestMain(m *testing.M) {
 											DROP TABLE IF EXISTS myproject.raw_batch;
 											DROP TABLE IF EXISTS myproject.raw_query;
 `); err != nil {
-			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", err)
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't truncate table", map[string]interface{}{"error": err})
 		}
 
 	}

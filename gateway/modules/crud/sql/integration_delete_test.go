@@ -161,7 +161,7 @@ func TestSQL_Delete(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("Delete() Scanning error", err)
 				}
-				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(context.Background(), model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if !reflect.DeepEqual(tt.wantReadResult, readResult) {
@@ -232,7 +232,7 @@ func TestSQL_DeleteCollection(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("DeleteCollection Scanning error", err)
 				}
-				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(context.Background(), model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if !reflect.DeepEqual(tt.wantResult, readResult) {

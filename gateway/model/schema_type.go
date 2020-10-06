@@ -31,6 +31,7 @@ type (
 		LinkedTable *TableProperties `json:"linkedTable"`
 		JointTable  *TableProperties `json:"jointTable"`
 		Default     interface{}      `json:"default"`
+		TypeIDSize  int              `json:"size"`
 	}
 
 	// TableProperties are properties of the table
@@ -59,8 +60,8 @@ const (
 	TypeID string = "ID"
 	// TypeJSON is variable used for Variable of type Jsonb
 	TypeJSON string = "JSON"
-	// SQLTypeIDSize is variable used for specifing si	ze of sql type ID
-	SQLTypeIDSize string = "50"
+	// SQLTypeIDSize is variable used for specifying size of sql type ID
+	SQLTypeIDSize int = 50
 	// TypeObject is a string with value object
 	TypeObject string = "Object"
 	// TypeEnum is a variable type enum
@@ -82,7 +83,8 @@ const (
 	// DirectiveDefault is used to add default key
 	DirectiveDefault string = "default"
 
-	// DefaultIndexName  string = ""
+	// DirectiveVarcharSize denotes the maximum allowable character for field type ID
+	DirectiveVarcharSize string = "size"
 
 	// DefaultIndexSort specifies default order of sorting
 	DefaultIndexSort string = "asc"
@@ -97,6 +99,7 @@ type InspectorFieldType struct {
 	FieldNull    string `db:"Null"`
 	FieldKey     string `db:"Key"`
 	FieldDefault string `db:"Default"`
+	VarcharSize  int    `db:"VarcharSize"`
 }
 
 // ForeignKeysType is the type for storing  foreignkeys information of sql inspection
