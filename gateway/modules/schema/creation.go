@@ -34,7 +34,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, logical
 
 	currentSchema, err := s.Inspector(ctx, dbAlias, dbType, logicalDBName, tableName)
 	if err != nil {
-		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Schema Inspector Error", map[string]interface{}{"error": err})
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Schema Inspector Error", map[string]interface{}{"error": err.Error()})
 	}
 
 	queries, err := s.generateCreationQueries(ctx, dbAlias, tableName, logicalDBName, parsedSchema, currentSchema)
@@ -80,6 +80,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		currentTableInfo = model.Fields{}
 		for realColumnName, realColumnInfo := range realTableInfo {
 			temp := model.FieldType{
+				TypeIDSize:          realColumnInfo.TypeIDSize,
 				FieldName:           realColumnInfo.FieldName,
 				IsFieldTypeRequired: realColumnInfo.IsFieldTypeRequired,
 				IsList:              realColumnInfo.IsList,
@@ -148,7 +149,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		}
 
 		currentColumnInfo, ok := currentTableInfo[realColumnName]
-		columnType, err := getSQLType(ctx, dbType, realColumnInfo.Kind)
+		columnType, err := getSQLType(ctx, realColumnInfo.TypeIDSize, dbType, realColumnInfo.Kind)
 		if err != nil {
 			return nil, err
 		}
@@ -174,7 +175,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 
 		} else {
 			if !realColumnInfo.IsLinked {
-				if c.realColumnInfo.Kind != c.currentColumnInfo.Kind {
+				if c.realColumnInfo.Kind != c.currentColumnInfo.Kind || (c.realColumnInfo.Kind == model.TypeID && c.currentColumnInfo.Kind == model.TypeID && c.realColumnInfo.TypeIDSize != c.currentColumnInfo.TypeIDSize) {
 					// As we are making sure that tables can only be created with primary key, this condition will occur if primary key is removed from a field
 					if !c.realColumnInfo.IsPrimary && c.currentColumnInfo.IsPrimary {
 						return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Cannot change type of field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), nil, nil)

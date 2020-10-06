@@ -37,7 +37,8 @@ CASE
 	WHEN column_default = '1' THEN 'true'
 	WHEN column_default = '0' THEN 'false'
 	ELSE coalesce(column_default,'')
-END AS 'Default'
+END AS 'Default',
+coalesce(CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize'
 from information_schema.columns
 where (table_name,table_schema) = (?,?);`
 		args = append(args, col, project)
@@ -48,7 +49,9 @@ CASE
     WHEN t.constraint_type = 'PRIMARY KEY' THEN 'PRI'
     WHEN t.constraint_type = 'UNIQUE' THEN 'UNI'
     ELSE ''
-END AS "Key"
+END AS "Key",
+-- Set the null values to 50
+coalesce(isc.character_maximum_length,50) AS "VarcharSize"
 FROM information_schema.columns isc
     left join (select cu.table_schema, cu.table_name, cu.column_name, istc.constraint_type 
     	from information_schema.constraint_column_usage cu 
@@ -67,8 +70,10 @@ ORDER BY isc.ordinal_position;`
        CASE
            WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
            WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'
+           WHEN TC.CONSTRAINT_TYPE = 'FOREIGN KEY' THEN 'MUL'
            ELSE isnull(TC.CONSTRAINT_TYPE,'')
-           END AS 'Key'
+           END AS 'Key',
+coalesce(c.CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize'
 FROM INFORMATION_SCHEMA.COLUMNS AS C
          FULL JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS CC
                    ON C.COLUMN_NAME = CC.COLUMN_NAME
@@ -132,15 +137,17 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 	`
 		args = append(args, project, col)
 	case model.SQLServer:
-		queryString = `SELECT 
-		CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME, RC.DELETE_RULE,
-		isnull(KCU.TABLE_NAME,'') AS 'REFERENCED_TABLE_NAME', isnull(KCU.COLUMN_NAME,'') AS 'REFERENCED_COLUMN_NAME'
-	FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE CCU
-		FULL JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
-			ON CCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
-		FULL JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU 
-			ON KCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  
-	WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2 AND KCU.TABLE_NAME= @p3`
+		queryString = `SELECT
+    CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME, RC.DELETE_RULE,
+    isnull(KCU2.TABLE_NAME,'') AS 'REFERENCED_TABLE_NAME', isnull(KCU2.COLUMN_NAME,'') AS 'REFERENCED_COLUMN_NAME'
+FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE CCU
+         FUll JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS RC
+                   ON RC.CONSTRAINT_NAME = CCU.CONSTRAINT_NAME
+         FUll JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU
+                   ON RC.CONSTRAINT_NAME = KCU.CONSTRAINT_NAME
+         FUll JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU2
+                   ON RC.UNIQUE_CONSTRAINT_NAME = KCU2.CONSTRAINT_NAME
+WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2 AND KCU.TABLE_NAME= @p3`
 		args = append(args, project, col, col)
 	}
 	rows, err := s.client.QueryxContext(ctx, queryString, args...)
