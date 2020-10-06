@@ -43,7 +43,7 @@ func (j *JWT) ParseToken(ctx context.Context, token string) (map[string]interfac
 			}
 			return j.verifyTokenSignature(ctx, token, &tempSecret)
 		}
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "No secret with given kid found", nil, map[string]interface{}{"kid": kid})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse token or secret with given kid does not exists", err, map[string]interface{}{"kid": kid})
 	}
 
 	var er error

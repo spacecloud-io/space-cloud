@@ -183,7 +183,7 @@ func (j *JWT) parseJwkSecret(ctx context.Context, kid, token string) (map[string
 		if err := key[0].Raw(&raw); err != nil {
 			return nil, err
 		}
-		return j.verifyTokenSignature(ctx, token, &config.Secret{Alg: config.JWTAlg(key[0].Algorithm()), JwkKey: raw, JwkURL: obj.url})
+		return j.verifyTokenSignature(ctx, token, &config.Secret{Issuer: obj.issuer, Audience: obj.audience, Alg: config.JWTAlg(key[0].Algorithm()), JwkKey: raw, JwkURL: obj.url})
 	}
 	return nil, errors.New("kid doesn't exists in internal jwk mapping of keys")
 }
