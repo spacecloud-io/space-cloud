@@ -241,7 +241,7 @@ func TestSQL_Create(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("Create() Scanning error", err)
 				}
-				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(context.Background(), model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if len(tt.wantReadResult) != len(readResult) {

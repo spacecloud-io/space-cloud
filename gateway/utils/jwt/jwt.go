@@ -23,6 +23,8 @@ type JWT struct {
 }
 
 type jwkSecret struct {
+	audience    []string
+	issuer      []string
 	url         string
 	refreshTime time.Time
 	set         *jwk.Set
@@ -69,6 +71,8 @@ func (j *JWT) SetSecrets(secrets []*config.Secret) error {
 				if err != nil {
 					return err
 				}
+				jwkSecretInfo.audience = secret.Audience
+				jwkSecretInfo.issuer = secret.Issuer
 
 				newJwkSecrets[secret.KID] = jwkSecretInfo
 				for _, key := range jwkSecretInfo.set.Keys {
@@ -78,6 +82,8 @@ func (j *JWT) SetSecrets(secrets []*config.Secret) error {
 			}
 
 			// add existing secret to new map
+			obj.audience = secret.Audience
+			obj.issuer = secret.Issuer
 			newJwkSecrets[secret.KID] = obj
 			for key, value := range j.mapJwkKidToSecretKid {
 				if value == secret.KID {
