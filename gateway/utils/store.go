@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/spaceuptech/helpers"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Adjust loads value from state if referenced
@@ -77,6 +78,64 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 		pre := strings.IndexRune(function, '(')
 		post := strings.IndexRune(function, ')')
 		params := splitVariable(function[pre+1:len(function)-1], ',')
+
+		// Method check - stringToObjectId
+		if strings.HasPrefix(function, "stringToObjectId") {
+			value, err := LoadValue(function[pre+1:post], state)
+			if err != nil {
+				return nil, err
+			}
+
+			if v, ok := value.(primitive.A); ok {
+				value = []interface{}(v)
+			}
+
+			// The value can be a string or an array of string
+			switch v := value.(type) {
+			case primitive.ObjectID:
+				return v, nil
+			case string:
+				return primitive.ObjectIDFromHex(v)
+			case []interface{}:
+				array := make([]interface{}, len(v))
+				for i, item := range v {
+					s, ok := item.(string)
+					if !ok {
+						return nil, fmt.Errorf("value (%v) cannot be converted to ObjectID", item)
+					}
+
+					objID, err := primitive.ObjectIDFromHex(s)
+					if err != nil {
+						return nil, err
+					}
+
+					array[i] = objID
+				}
+				return array, nil
+			default:
+				return nil, fmt.Errorf("invalid type provided (%s) for object id conversion", reflect.TypeOf(value))
+			}
+		}
+
+		// Method check - objectIdToString
+		if strings.HasPrefix(function, "objectIdToString") {
+			value, err := LoadValue(function[pre+1:post], state)
+			if err != nil {
+				return nil, err
+			}
+
+			switch val := value.(type) {
+			case string:
+				return val, nil
+
+			case primitive.ObjectID:
+				return val.Hex(), nil
+
+			default:
+				return nil, fmt.Errorf("invalid type provided (%s) for object id conversion", reflect.TypeOf(value))
+			}
+		}
+
 		if strings.HasPrefix(function, "exists") {
 			_, err := LoadValue(function[pre+1:post], state)
 			return err == nil, nil
