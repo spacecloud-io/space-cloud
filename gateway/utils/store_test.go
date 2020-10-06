@@ -602,7 +602,7 @@ func TestLoadNumber(t *testing.T) {
 }
 
 func TestLoadValueMongo(t *testing.T) {
-	objectId, _ := primitive.ObjectIDFromHex("5f7c4770582dc480c95ec67e")
+	objectID, _ := primitive.ObjectIDFromHex("5f7c4770582dc480c95ec67e")
 	type args struct {
 		key   string
 		state map[string]interface{}
@@ -619,7 +619,7 @@ func TestLoadValueMongo(t *testing.T) {
 				key:   "utils.stringToObjectId(args.string)",
 				state: map[string]interface{}{"string": "5f7c4770582dc480c95ec67e"},
 			},
-			want: objectId,
+			want: objectID,
 		},
 		{
 			name: "string array to object id",
@@ -627,7 +627,7 @@ func TestLoadValueMongo(t *testing.T) {
 				key:   "utils.stringToObjectId(args.string)",
 				state: map[string]interface{}{"string": []interface{}{"5f7c4770582dc480c95ec67e", "5f7c4770582dc480c95ec67e"}},
 			},
-			want: []interface{}{objectId, objectId},
+			want: []interface{}{objectID, objectID},
 		},
 		{
 			name: "string array (primitive.A) to object id",
@@ -635,15 +635,15 @@ func TestLoadValueMongo(t *testing.T) {
 				key:   "utils.stringToObjectId(args.string)",
 				state: map[string]interface{}{"string": primitive.A{"5f7c4770582dc480c95ec67e", "5f7c4770582dc480c95ec67e"}},
 			},
-			want: []interface{}{objectId, objectId},
+			want: []interface{}{objectID, objectID},
 		},
 		{
 			name: "object id  to object id",
 			args: args{
 				key:   "utils.stringToObjectId(args.string)",
-				state: map[string]interface{}{"string": objectId},
+				state: map[string]interface{}{"string": objectID},
 			},
-			want: objectId,
+			want: objectID,
 		},
 		{
 			name: "invalid string to object id",
@@ -665,7 +665,7 @@ func TestLoadValueMongo(t *testing.T) {
 			name: "object id to string",
 			args: args{
 				key:   "utils.objectIdToString(args.obj)",
-				state: map[string]interface{}{"obj": objectId},
+				state: map[string]interface{}{"obj": objectID},
 			},
 			want: "5f7c4770582dc480c95ec67e",
 		},
