@@ -1204,169 +1204,6 @@ func TestManager_GetSecrets(t *testing.T) {
 	}
 }
 
-func TestManager_GetSchemas(t *testing.T) {
-
-	mockSchema := mockSchemaEventingInterface{}
-	type mockArgs struct {
-		method         string
-		args           []interface{}
-		paramsReturned []interface{}
-	}
-	type args struct {
-		ctx     context.Context
-		project string
-		dbAlias string
-		col     string
-		format  string
-	}
-	tests := []struct {
-		name                string
-		s                   *Manager
-		args                args
-		modulesMockArgs     []mockArgs
-		schemaErrorMockArgs []mockArgs
-		schemaMockArgs      []mockArgs
-		want                []interface{}
-		wantErr             bool
-	}{
-		{
-			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
-			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "2"},
-			wantErr: true,
-		},
-		{
-			name:    "dbAlias and col are not empty but collection not present in config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
-			args:    args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1"},
-			wantErr: true,
-		},
-		{
-			name: "dbAlias and col are not empty and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
-			want: []interface{}{map[string]*dbSchemaResponse{"alias-tableName": {Schema: "type event {id: ID! title: String}"}}},
-		},
-		{
-			name: "dbAlias is not empty and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "*", dbAlias: "alias", project: "1"},
-			want: []interface{}{map[string]*dbSchemaResponse{"alias-tableName": {Schema: "type event {id: ID! title: String}"}}},
-		},
-		{
-			name: "dbAlias and col are empty and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "1"},
-			want: []interface{}{map[string]*dbSchemaResponse{"alias-tableName": {Schema: "type event {id: ID! title: String}"}}},
-		},
-		{
-			name: "dbAlias and col are not empty and format JSON and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", format: "json"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
-				},
-			},
-			schemaMockArgs: []mockArgs{
-				{
-					method: "GetSchema",
-					args:   []interface{}{"alias", "tableName"},
-					paramsReturned: []interface{}{model.Fields{
-						"alias": &model.FieldType{
-							FieldName: "abcd",
-						},
-					}, true},
-				},
-			},
-			want: []interface{}{map[string]*dbJSONSchemaResponse{"alias-tableName": {Fields: []*model.FieldType{
-				{
-					FieldName: "abcd",
-				},
-			}}}},
-		},
-		{
-			name: "dbAlias is not empty and format is JSON and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "*", dbAlias: "alias", project: "1", format: "json"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
-				},
-			},
-			schemaMockArgs: []mockArgs{
-				{
-					method: "GetSchema",
-					args:   []interface{}{"alias", "tableName"},
-					paramsReturned: []interface{}{model.Fields{
-						"alias": &model.FieldType{
-							FieldName: "abcd",
-						},
-					}, true},
-				},
-			},
-			want: []interface{}{map[string]*dbJSONSchemaResponse{"alias-tableName": {Fields: []*model.FieldType{
-				{
-					FieldName: "abcd",
-				},
-			}}}},
-		},
-		{
-			name: "dbAlias and col are empty and format is JSON and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "1", format: "json"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
-				},
-			},
-			schemaMockArgs: []mockArgs{
-				{
-					method: "GetSchema",
-					args:   []interface{}{"alias", "tableName"},
-					paramsReturned: []interface{}{model.Fields{
-						"alias": &model.FieldType{
-							FieldName: "abcd",
-						},
-					}, true},
-				},
-			},
-			want: []interface{}{map[string]*dbJSONSchemaResponse{"alias-tableName": {Fields: []*model.FieldType{
-				{
-					FieldName: "abcd",
-				},
-			}}}},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockModules := mockModulesInterface{}
-
-			for _, m := range tt.modulesMockArgs {
-				mockModules.On(m.method, m.args...).Return(m.paramsReturned...)
-			}
-			for _, m := range tt.schemaMockArgs {
-				mockSchema.On(m.method, m.args...).Return(m.paramsReturned...)
-			}
-
-			tt.s.modules = &mockModules
-			_, got, err := tt.s.GetSchemas(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.format, model.RequestParams{})
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Manager.GetSchemas() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Manager.GetSchemas() = %v, want %v", got, tt.want)
-			}
-			mockModules.AssertExpectations(t)
-			mockSchema.AssertExpectations(t)
-		})
-	}
-}
-
 // func TestManager_SetReloadSchema(t *testing.T) {
 //
 // 	project := "1"
@@ -1392,7 +1229,7 @@ func TestManager_GetSchemas(t *testing.T) {
 // 		args            args
 // 		modulesMockArgs []mockArgs
 // 		storeMockArgs   []mockArgs
-// 		want            map[string]interface{}
+// 		want1            map[string]interface{}
 // 		wantErr         bool
 // 	}{
 // 		{
@@ -1438,7 +1275,7 @@ func TestManager_GetSchemas(t *testing.T) {
 // 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 // 				},
 // 			},
-// 			want:    map[string]interface{}{},
+// 			want1:    map[string]interface{}{},
 // 			wantErr: true,
 // 		},
 // 		{
@@ -1459,7 +1296,7 @@ func TestManager_GetSchemas(t *testing.T) {
 // 					paramsReturned: []interface{}{nil},
 // 				},
 // 			},
-// 			want: map[string]interface{}{},
+// 			want1: map[string]interface{}{},
 // 		},
 // 		{
 // 			name:    "unable to inspect schema",
@@ -1489,8 +1326,8 @@ func TestManager_GetSchemas(t *testing.T) {
 // 				t.Errorf("Manager.SetReloadSchema() error = %v, wantErr %v", err, tt.wantErr)
 // 				return
 // 			}
-// 			if !reflect.DeepEqual(got, tt.want) {
-// 				t.Errorf("Manager.SetReloadSchema() = %v, want %v", got, tt.want)
+// 			if !reflect.DeepEqual(got, tt.want1) {
+// 				t.Errorf("Manager.SetReloadSchema() = %v, want1 %v", got, tt.want1)
 // 			}
 //
 // 			mockModules.AssertExpectations(t)
@@ -1500,7 +1337,6 @@ func TestManager_GetSchemas(t *testing.T) {
 // }
 
 func TestManager_SetSchemaInspection(t *testing.T) {
-
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -1717,7 +1553,6 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 }
 
 func TestManager_RemoveSchemaInspection(t *testing.T) {
-
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -2134,7 +1969,6 @@ func TestManager_SetModifyAllSchema(t *testing.T) {
 }
 
 func TestManager_GetDatabaseConfig(t *testing.T) {
-
 	type args struct {
 		ctx     context.Context
 		project string
@@ -2187,7 +2021,6 @@ func TestManager_GetDatabaseConfig(t *testing.T) {
 }
 
 func TestManager_GetCollectionRules(t *testing.T) {
-
 	type args struct {
 		ctx     context.Context
 		project string
