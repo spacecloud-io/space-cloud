@@ -1,9 +1,11 @@
 package schema
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
@@ -23,9 +25,10 @@ func Test_generateSDL(t *testing.T) {
 			args: args{
 				schemaCol: model.Collection{"table1": model.Fields{
 					"col2": &model.FieldType{
-						FieldName: "col2",
-						Kind:      model.TypeID,
-						IsPrimary: true,
+						FieldName:  "col2",
+						Kind:       model.TypeID,
+						TypeIDSize: model.SQLTypeIDSize,
+						IsPrimary:  true,
 					},
 					"age": &model.FieldType{
 						FieldName: "age",
@@ -45,6 +48,7 @@ func Test_generateSDL(t *testing.T) {
 						FieldName:           "role",
 						IsFieldTypeRequired: true,
 						Kind:                model.TypeID,
+						TypeIDSize:          model.SQLTypeIDSize,
 						IsDefault:           true,
 						Default:             "user",
 					},
@@ -56,6 +60,7 @@ func Test_generateSDL(t *testing.T) {
 						FieldName:           "first_name",
 						IsFieldTypeRequired: true,
 						Kind:                model.TypeID,
+						TypeIDSize:          model.SQLTypeIDSize,
 						IsIndex:             true,
 						IndexInfo: &model.TableProperties{
 							Group: "user_name",
@@ -67,6 +72,7 @@ func Test_generateSDL(t *testing.T) {
 						FieldName:           "name",
 						IsFieldTypeRequired: true,
 						Kind:                model.TypeID,
+						TypeIDSize:          model.SQLTypeIDSize,
 						IsIndex:             true,
 						IsUnique:            true,
 						IndexInfo: &model.TableProperties{
@@ -79,6 +85,7 @@ func Test_generateSDL(t *testing.T) {
 						FieldName:           "customer_id",
 						IsFieldTypeRequired: true,
 						Kind:                model.TypeID,
+						TypeIDSize:          model.SQLTypeIDSize,
 						IsForeign:           true,
 						JointTable: &model.TableProperties{
 							To:             "id",
@@ -103,7 +110,7 @@ func Test_generateSDL(t *testing.T) {
 				},
 				},
 			},
-			want:    "type  table1 { \n\tage: Float        \n\tcol2: ID @primary       \n\tcreatedAt: DateTime  @createdAt      \n\tcustomer_id: ID!        @foreign(table: customer, field: id ,onDelete: cascade)\n\tfirst_name: ID!     @index(group: \"user_name\", sort: \"asc\", order: 1)   \n\tname: ID!    @unique(group: \"user_name\", order: 1)     \n\torder_dates: DateTime       @link(table: order, from: id, to: customer_id, field: order_date) \n\trole: ID!      @default(value: user)  \n\tspec: JSON        \n\tupdatedAt: DateTime   @updatedAt     \n}",
+			want:    "type  table1 { \n\tage: Float        \n\tcol2: ID @primary @size(value: 50)      \n\tcreatedAt: DateTime  @createdAt      \n\tcustomer_id: ID!  @size(value: 50)       @foreign(table: customer, field: id ,onDelete: cascade)\n\tfirst_name: ID!  @size(value: 50)    @index(group: \"user_name\", sort: \"asc\", order: 1)   \n\tname: ID!  @size(value: 50)   @unique(group: \"user_name\", order: 1)     \n\torder_dates: DateTime       @link(table: order, from: id, to: customer_id, field: order_date) \n\trole: ID!  @size(value: 50)     @default(value: user)  \n\tspec: JSON        \n\tupdatedAt: DateTime   @updatedAt     \n}",
 			wantErr: false,
 		},
 	}
@@ -114,7 +121,8 @@ func Test_generateSDL(t *testing.T) {
 				t.Errorf("generateSDL() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !cmp.Equal(got, tt.want) {
+			// minify string by removing space
+			if !cmp.Equal(strings.Replace(got, " ", "", -1), strings.Replace(tt.want, " ", "", -1)) {
 				t.Errorf("generateSDL() = %v, want %v", got, tt.want)
 			}
 		})
