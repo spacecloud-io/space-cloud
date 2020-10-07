@@ -23,13 +23,12 @@ import (
 // Module is the root block providing convenient wrappers
 type Module struct {
 	sync.RWMutex
-	block           Crud
-	dbType          string
-	alias           string
-	project         string
-	queryFetchLimit int64
-	schema          model.SchemaCrudInterface
-	queries         map[string]*config.PreparedQuery
+	block   Crud
+	dbType  string
+	alias   string
+	project string
+	schema  model.SchemaCrudInterface
+	queries map[string]*config.PreparedQuery
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
 
@@ -66,6 +65,7 @@ type Crud interface {
 	IsSame(conn, dbName string) bool
 	Close() error
 	GetConnectionState(ctx context.Context) bool
+	SetQueryFetchLimit(limit int64)
 }
 
 // Init create a new instance of the Module object
@@ -146,7 +146,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		if v.Limit == 0 {
 			v.Limit = model.DefaultFetchLimit
 		}
-		m.queryFetchLimit = v.Limit
 
 		// Add the prepared queries in this db
 		for id, query := range v.PreparedQueries {
@@ -165,6 +164,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		}
 
 		if m.block != nil {
+			m.block.SetQueryFetchLimit(v.Limit)
 			// Skip if the connection string is the same
 			if m.block.IsSame(connectionString, v.DBName) {
 				continue

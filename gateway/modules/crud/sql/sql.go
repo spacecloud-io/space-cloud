@@ -20,11 +20,12 @@ import (
 
 // SQL holds the sql db object
 type SQL struct {
-	enabled    bool
-	connection string
-	client     *sqlx.DB
-	dbType     string
-	name       string // logical db name or schema name according to the database type
+	enabled         bool
+	queryFetchLimit *int64
+	connection      string
+	client          *sqlx.DB
+	dbType          string
+	name            string // logical db name or schema name according to the database type
 }
 
 // Init initialises a new sql instance
@@ -131,4 +132,8 @@ func doExecContext(ctx context.Context, query string, args []interface{}, execut
 	defer func() { _ = stmt.Close() }()
 
 	return stmt.ExecContext(ctx, args...)
+}
+
+func (s *SQL) SetQueryFetchLimit(limit int64) {
+	s.queryFetchLimit = &limit
 }

@@ -81,14 +81,6 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		return dataLoader.Load(ctx, key)()
 	}
 
-	if req.Options == nil {
-		req.Options = &model.ReadOptions{}
-	}
-	if req.Options.Limit == nil {
-		req.Options.Limit = m.getDefaultFetchLimit(dbAlias)
-		req.Options.HasOptions = true
-	}
-
 	n, result, err := crud.Read(ctx, col, req)
 
 	// Process the response
