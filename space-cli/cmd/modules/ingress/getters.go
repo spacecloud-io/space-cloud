@@ -34,14 +34,7 @@ func GetIngressRoutes(project, commandName string, params map[string]string, fil
 		}
 
 		if len(filters) > 0 {
-			count := 0
-			for _, filter := range filters {
-				if applyFilter(project, filter, spec) {
-					count++
-				}
-			}
-			// If all filters are satisfied then only add object to the list
-			if len(filters) == count {
+			if applyFilters(project, filters, spec) {
 				objs = append(objs, s)
 			}
 			continue
@@ -51,67 +44,75 @@ func GetIngressRoutes(project, commandName string, params map[string]string, fil
 	return objs, nil
 }
 
-func applyFilter(project, filter string, spec map[string]interface{}) bool {
-	arr := strings.Split(filter, "=")
-	if len(arr) < 2 {
-		return false
-	}
-	filterKey := arr[0]
-	filterValue := strings.Join(arr[1:], "=")
-	switch filterKey {
-	case "url":
-		value, ok := spec["source"].(map[string]interface{})
-		if !ok {
+func applyFilters(project string, filters []string, spec map[string]interface{}) bool {
+	filterApplicableCount := 0
+	for _, filter := range filters {
+		arr := strings.Split(filter, "=")
+		if len(arr) < 2 {
 			return false
 		}
+		filterKey := arr[0]
+		filterValue := strings.Join(arr[1:], "=")
+		switch filterKey {
+		case "url":
+			value, ok := spec["source"].(map[string]interface{})
+			if !ok {
+				continue
+			}
 
-		if strings.Contains(value["url"].(string), filterValue) {
-			return true
-		}
-	case "service":
-		targets, ok := spec["targets"].([]interface{})
-		if !ok {
-			return false
-		}
-		hostName := fmt.Sprintf("%s.%s.svc.cluster.local", filterValue, project)
-		for _, target := range targets {
-			targetObj, ok := target.(map[string]interface{})
+			if strings.Contains(value["url"].(string), filterValue) {
+				filterApplicableCount++
+			}
+		case "service":
+			targets, ok := spec["targets"].([]interface{})
 			if !ok {
-				return false
+				continue
 			}
-			if hostName == targetObj["host"] {
-				return true
+			hostName := fmt.Sprintf("%s.%s.svc.cluster.local", filterValue, project)
+			for _, target := range targets {
+				targetObj, ok := target.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if hostName == targetObj["host"] {
+					filterApplicableCount++
+					break
+				}
 			}
-		}
-	case "target-host":
-		targets, ok := spec["targets"].([]interface{})
-		if !ok {
-			return false
-		}
-		for _, target := range targets {
-			targetObj, ok := target.(map[string]interface{})
+		case "target-host":
+			targets, ok := spec["targets"].([]interface{})
 			if !ok {
-				return false
+				continue
 			}
-			if filterValue == targetObj["host"] {
-				return true
+			for _, target := range targets {
+				targetObj, ok := target.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if filterValue == targetObj["host"] {
+					filterApplicableCount++
+					break
+				}
 			}
-		}
-	case "request-host":
-		value, ok := spec["source"].(map[string]interface{})
-		if !ok {
-			return false
-		}
-		if len(value["hosts"].([]interface{})) == 0 {
-			return true
-		}
-		for _, requestHost := range value["hosts"].([]interface{}) {
-			if filterValue == requestHost.(string) || requestHost.(string) == "*" {
-				return true
+		case "request-host":
+			value, ok := spec["source"].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if len(value["hosts"].([]interface{})) == 0 {
+				filterApplicableCount++
+			}
+			for _, requestHost := range value["hosts"].([]interface{}) {
+				if filterValue == requestHost.(string) || requestHost.(string) == "*" {
+					filterApplicableCount++
+					break
+				}
 			}
 		}
 	}
-	return false
+	// If all filters are satisfied then only add object to the list
+	fmt.Println("----", len(filters), filterApplicableCount)
+	return len(filters) == filterApplicableCount
 }
 
 // GetIngressGlobal gets ingress global

@@ -325,6 +325,10 @@ func TestGetIngressRoutes(t *testing.T) {
 										"version": "v0.18.0",
 										"host":    "greeting.myproject.svc.cluster.local",
 									},
+									map[string]interface{}{
+										"version": "v0.18.0",
+										"host":    "basic.myproject.svc.cluster.local",
+									},
 								},
 							},
 							map[string]interface{}{
@@ -359,22 +363,9 @@ func TestGetIngressRoutes(t *testing.T) {
 								"version": "v0.18.0",
 								"host":    "greeting.myproject.svc.cluster.local",
 							},
-						},
-					},
-				},
-				{
-					API:  "/v1/config/projects/{project}/routing/ingress/{id}",
-					Type: "ingress-routes",
-					Meta: map[string]string{"project": "myproject", "id": "local-admin-2"},
-					Spec: map[string]interface{}{
-						"source": map[string]interface{}{
-							"url":   "/v1/config/projects/myproject/routing/ingress",
-							"hosts": []interface{}{"www.google.com", "www.facebook.com"},
-						},
-						"targets": []interface{}{
 							map[string]interface{}{
 								"version": "v0.18.0",
-								"host":    "greeting.myproject.svc.cluster.local",
+								"host":    "basic.myproject.svc.cluster.local",
 							},
 						},
 					},
