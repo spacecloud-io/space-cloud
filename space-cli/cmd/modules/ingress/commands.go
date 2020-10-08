@@ -2,6 +2,7 @@ package ingress
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
@@ -31,14 +32,19 @@ func GetSubCommands() []*cobra.Command {
 	var getroutes = &cobra.Command{
 		Use:     "ingress-routes",
 		Aliases: []string{"ingress-route"},
-		RunE:    actionGetIngressRoutes,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("filter", cmd.Flags().Lookup("filter")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('filter')", err)
+			}
+		},
+		RunE: actionGetIngressRoutes,
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			project, check := utils.GetProjectID()
 			if !check {
 				utils.LogDebug("Project not specified in flag", nil)
 				return nil, cobra.ShellCompDirectiveDefault
 			}
-			objs, err := GetIngressRoutes(project, "ingress-route", map[string]string{})
+			objs, err := GetIngressRoutes(project, "ingress-route", map[string]string{}, []string{})
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveDefault
 			}
@@ -49,6 +55,7 @@ func GetSubCommands() []*cobra.Command {
 			return ids, cobra.ShellCompDirectiveDefault
 		},
 	}
+	getroutes.Flags().StringSliceP("filter", "", []string{}, "Filter ingress routes based on services, target-host, request-host & url")
 
 	var getIngressGlobal = &cobra.Command{
 		Use:  "ingress-global",
@@ -70,8 +77,8 @@ func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 	if len(args) != 0 {
 		params["id"] = args[0]
 	}
-
-	objs, err := GetIngressRoutes(project, commandName, params)
+	filters := viper.GetStringSlice("filter")
+	objs, err := GetIngressRoutes(project, commandName, params, filters)
 	if err != nil {
 		return err
 	}
