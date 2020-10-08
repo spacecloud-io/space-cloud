@@ -19,17 +19,16 @@ import (
 // FetchGetSubCommands fetches all the generatesubcommands from different modules
 func FetchGetSubCommands() *cobra.Command {
 	var getCmd = &cobra.Command{
-		Use: "get",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := viper.BindPFlag("filter", cmd.Flags().Lookup("filter")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('filter')", err)
-			}
-		},
-		Short:         "",
-		SilenceErrors: true,
+		Use:              "get",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {},
+		Short:            "",
+		SilenceErrors:    true,
 	}
-	getCmd.Flags().StringSliceP("filter", "", []string{}, "Filter ingress routes based on services, target-host, request-host & url")
-
+	getCmd.PersistentFlags().StringSliceP("filter", "", []string{}, "Filter ingress routes based on services, target-host, request-host & url")
+	err := viper.BindPFlag("filter", getCmd.PersistentFlags().Lookup("filter"))
+	if err != nil {
+		_ = utils.LogError("Unable to bind the flag ('filter')", nil)
+	}
 	getCmd.AddCommand(auth.GetSubCommands()...)
 	getCmd.AddCommand(database.GetSubCommands()...)
 	getCmd.AddCommand(eventing.GetSubCommands()...)
