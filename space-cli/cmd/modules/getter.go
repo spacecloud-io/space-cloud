@@ -2,6 +2,7 @@ package modules
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/auth"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/database"
@@ -12,15 +13,23 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/project"
 	remoteservices "github.com/spaceuptech/space-cloud/space-cli/cmd/modules/remote-services"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/services"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // FetchGetSubCommands fetches all the generatesubcommands from different modules
 func FetchGetSubCommands() *cobra.Command {
 	var getCmd = &cobra.Command{
-		Use:           "get",
+		Use: "get",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("filter", cmd.Flags().Lookup("filter")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('filter')", err)
+			}
+		},
 		Short:         "",
 		SilenceErrors: true,
 	}
+	getCmd.Flags().StringSliceP("filter", "", []string{}, "Filter ingress routes based on services, target-host, request-host & url")
+
 	getCmd.AddCommand(auth.GetSubCommands()...)
 	getCmd.AddCommand(database.GetSubCommands()...)
 	getCmd.AddCommand(eventing.GetSubCommands()...)

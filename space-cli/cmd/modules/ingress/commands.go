@@ -32,12 +32,7 @@ func GetSubCommands() []*cobra.Command {
 	var getroutes = &cobra.Command{
 		Use:     "ingress-routes",
 		Aliases: []string{"ingress-route"},
-		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := viper.BindPFlag("filter", cmd.Flags().Lookup("filter")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('filter')", err)
-			}
-		},
-		RunE: actionGetIngressRoutes,
+		RunE:    actionGetIngressRoutes,
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			project, check := utils.GetProjectID()
 			if !check {
@@ -55,7 +50,6 @@ func GetSubCommands() []*cobra.Command {
 			return ids, cobra.ShellCompDirectiveDefault
 		},
 	}
-	getroutes.Flags().StringSliceP("filter", "", []string{}, "Filter ingress routes based on services, target-host, request-host & url")
 
 	var getIngressGlobal = &cobra.Command{
 		Use:  "ingress-global",

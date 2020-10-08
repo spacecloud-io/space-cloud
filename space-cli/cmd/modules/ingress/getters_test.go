@@ -107,7 +107,7 @@ func TestGetIngressRoutes(t *testing.T) {
 				project:     "myproject",
 				commandName: "ingress-routes",
 				params:      map[string]string{},
-				filters:     []string{"url=/v1/config/projects/myproject/routing"},
+				filters:     []string{"url=abc"},
 			},
 			transportMockArgs: []mockArgs{
 				{
@@ -153,6 +153,10 @@ func TestGetIngressRoutes(t *testing.T) {
 									"version": "v0.18.0",
 									"host":    "greeting.myproject.svc.cluster.local",
 								},
+								map[string]interface{}{
+									"version": "v0.18.0",
+									"host":    "greeting.myproject.svc.cluster.local",
+								},
 							},
 						},
 						},
@@ -166,11 +170,17 @@ func TestGetIngressRoutes(t *testing.T) {
 					Meta: map[string]string{"project": "myproject", "id": "local-admin"},
 					Spec: map[string]interface{}{
 						"source": map[string]interface{}{"url": "/v1/config/projects/myproject/routing/ingress"},
-						"targets": []interface{}{map[string]interface{}{
-							"version": "v0.18.0",
-							"host":    "greeting.myproject.svc.cluster.local",
+						"targets": []interface{}{
+							map[string]interface{}{
+								"version": "v0.18.0",
+								"host":    "greeting.myproject.svc.cluster.local",
+							},
+							map[string]interface{}{
+								"version": "v0.18.0",
+								"host":    "greeting.myproject.svc.cluster.local",
+							},
 						},
-						}},
+					},
 				},
 			},
 			wantErr: false,
@@ -224,7 +234,7 @@ func TestGetIngressRoutes(t *testing.T) {
 							"id": "local-admin",
 							"source": map[string]interface{}{
 								"url":   "/v1/config/projects/myproject/routing/ingress",
-								"hosts": []string{"www.google.com", "www.facebook.com"},
+								"hosts": []string{"www.google.com", "www.google.com", "www.facebook.com"},
 							},
 							"targets": []interface{}{
 								map[string]interface{}{
@@ -245,7 +255,7 @@ func TestGetIngressRoutes(t *testing.T) {
 					Spec: map[string]interface{}{
 						"source": map[string]interface{}{
 							"url":   "/v1/config/projects/myproject/routing/ingress",
-							"hosts": []interface{}{"www.google.com", "www.facebook.com"},
+							"hosts": []interface{}{"www.google.com", "www.google.com", "www.facebook.com"},
 						},
 						"targets": []interface{}{map[string]interface{}{
 							"version": "v0.18.0",
@@ -326,7 +336,7 @@ func TestGetIngressRoutes(t *testing.T) {
 								"targets": []interface{}{
 									map[string]interface{}{
 										"version": "v0.18.0",
-										"host":    "basic.myproject.svc.cluster.local",
+										"host":    "greeting.myproject.svc.cluster.local",
 									},
 								},
 							},
@@ -364,7 +374,7 @@ func TestGetIngressRoutes(t *testing.T) {
 						"targets": []interface{}{
 							map[string]interface{}{
 								"version": "v0.18.0",
-								"host":    "basic.myproject.svc.cluster.local",
+								"host":    "greeting.myproject.svc.cluster.local",
 							},
 						},
 					},
@@ -417,6 +427,7 @@ func TestGetIngressRoutes(t *testing.T) {
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
 				t.Errorf("GetIngressRoutes() len= %v, want %v", len(got), len(tt.want))
+				return
 			}
 			for i, v := range got {
 				if !reflect.DeepEqual(v, tt.want[i]) {
