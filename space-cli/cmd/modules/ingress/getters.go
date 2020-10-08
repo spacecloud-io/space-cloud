@@ -3,6 +3,7 @@ package ingress
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
@@ -10,7 +11,7 @@ import (
 )
 
 // GetIngressRoutes gets ingress routes
-func GetIngressRoutes(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+func GetIngressRoutes(project, commandName string, params map[string]string, filters []string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress", project)
 	// Get the spec from the server
 	payload := new(model.Response)
@@ -31,9 +32,82 @@ func GetIngressRoutes(project, commandName string, params map[string]string) ([]
 		if err != nil {
 			return nil, err
 		}
+
+		if len(filters) > 0 {
+			for _, filter := range filters {
+				if applyFilter(project, filter, spec) {
+					objs = append(objs, s)
+					break
+				}
+			}
+			continue
+		}
 		objs = append(objs, s)
 	}
 	return objs, nil
+}
+
+func applyFilter(project, filter string, spec map[string]interface{}) bool {
+	arr := strings.Split(filter, "=")
+	if len(arr) < 2 {
+		return false
+	}
+	filterKey := arr[0]
+	filterValue := strings.Join(arr[1:], "=")
+	switch filterKey {
+	case "url":
+		value, ok := spec["source"].(map[string]interface{})
+		if !ok {
+			return false
+		}
+
+		if strings.Contains(value["url"].(string), filterValue) {
+			return true
+		}
+	case "service":
+		targets, ok := spec["targets"].([]interface{})
+		if !ok {
+			return false
+		}
+		hostName := fmt.Sprintf("%s.%s.svc.cluster.local", filterValue, project)
+		for _, target := range targets {
+			targetObj, ok := target.(map[string]interface{})
+			if !ok {
+				return false
+			}
+			if hostName == targetObj["host"] {
+				return true
+			}
+		}
+	case "target-host":
+		targets, ok := spec["targets"].([]interface{})
+		if !ok {
+			return false
+		}
+		for _, target := range targets {
+			targetObj, ok := target.(map[string]interface{})
+			if !ok {
+				return false
+			}
+			if filterValue == targetObj["host"] {
+				return true
+			}
+		}
+	case "request-host":
+		value, ok := spec["source"].(map[string]interface{})
+		if !ok {
+			return false
+		}
+		if len(value["hosts"].([]interface{})) == 0 {
+			return true
+		}
+		for _, requestHost := range value["hosts"].([]interface{}) {
+			if filterValue == requestHost.(string) || requestHost.(string) == "*" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // GetIngressGlobal gets ingress global

@@ -181,7 +181,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	objs, err = ingress.GetIngressRoutes(projectName, "ingress-routes", map[string]string{})
+	objs, err = ingress.GetIngressRoutes(projectName, "ingress-routes", map[string]string{}, []string{})
 	if err != nil {
 		return nil
 	}
