@@ -34,11 +34,15 @@ func GetIngressRoutes(project, commandName string, params map[string]string, fil
 		}
 
 		if len(filters) > 0 {
+			count := 0
 			for _, filter := range filters {
 				if applyFilter(project, filter, spec) {
-					objs = append(objs, s)
-					break
+					count++
 				}
+			}
+			// If all filters are satisfied then only add object to the list
+			if len(filters) == count {
+				objs = append(objs, s)
 			}
 			continue
 		}
