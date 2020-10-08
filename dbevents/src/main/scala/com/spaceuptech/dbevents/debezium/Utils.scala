@@ -102,28 +102,6 @@ object Utils {
     props
   }
 
-  def prepareMongoConfig(source: DatabaseSource): Properties = {
-    val name = generateConnectorName(source)
-
-    val props = io.debezium.config.Configuration.empty().asProperties()
-    props.setProperty("name", name)
-    props.setProperty("connector.class", "io.debezium.connector.mongodb.MongoDbConnector")
-    props.setProperty("offset.storage", "org.apache.kafka.connect.storage.FileOffsetBackingStore")
-    props.setProperty("offset.storage.file.filename", "./offsets.dat")
-    props.setProperty("offset.flush.interval.ms", "60000")
-    props.setProperty("converter.schemas.enable", "false")
-    /* begin connector properties */
-    props.setProperty("mongodb.hosts", source.config.getOrElse("hosts", "localhost:27017"))
-    props.setProperty("mongodb.name", source.config.getOrElse("name", name))
-    props.setProperty("mongodb.user", source.config.getOrElse("user", "user"))
-    props.setProperty("mongodb.password", source.config.getOrElse("password", "pass"))
-    props.setProperty("mongodb.authsource", source.config.getOrElse("authSource", "admin"))
-    props.setProperty("mongodb.ssl.enabled",source.config.getOrElse("sslEnabled", "false"))
-    props.setProperty("database.include.list", source.config.getOrElse("db", "test"))
-
-    props
-  }
-
   def generateConnectorName(source: DatabaseSource): String = {
     s"${source.project}_${source.dbAlias}"
   }
