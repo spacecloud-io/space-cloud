@@ -1,4 +1,4 @@
 package model
 
 // Version represents the current runner version
-const Version string = "v0.19.4"
+const Version string = "v0.19.5"
