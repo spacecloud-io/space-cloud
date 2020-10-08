@@ -111,7 +111,6 @@ func applyFilters(project string, filters []string, spec map[string]interface{})
 		}
 	}
 	// If all filters are satisfied then only add object to the list
-	fmt.Println("----", len(filters), filterApplicableCount)
 	return len(filters) == filterApplicableCount
 }
 
