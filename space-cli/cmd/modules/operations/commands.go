@@ -3,6 +3,7 @@ package operations
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -204,7 +205,13 @@ func Commands() []*cobra.Command {
 		Use:   "apply",
 		Short: "Applies a config file or directory",
 		RunE:  actionApply,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("delay", cmd.Flags().Lookup("delay")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('delay')", err)
+			}
+		},
 	}
+	apply.Flags().DurationP("delay", "", time.Duration(0), "Adds a delay between 2 subsequent request made by space cli to space cloud")
 
 	var start = &cobra.Command{
 		Use:   "start",
@@ -280,9 +287,9 @@ func actionApply(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return utils.LogError("error while applying service incorrect number of arguments provided", nil)
 	}
-
+	delay := viper.GetDuration("delay")
 	dirName := args[0]
-	return Apply(dirName)
+	return Apply(dirName, delay)
 }
 
 func actionStart(cmd *cobra.Command, args []string) error {
