@@ -88,3 +88,38 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: providers})
 	}
 }
+
+// HandleDeleteUserManagement returns handler to delete auth
+func HandleDeleteUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		providerID := "*"
+		providerQuery, exists := r.URL.Query()["id"]
+		if exists {
+			providerID = providerQuery[0]
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
+
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "auth-provider", "read", map[string]string{"project": projectID, "id": providerID})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+
+		status, err := syncMan.DeleteUserManagement(ctx, projectID, providerID, reqParams)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
+	}
+}

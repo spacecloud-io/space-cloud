@@ -62,3 +62,27 @@ func (s *Manager) GetUserManagement(ctx context.Context, project, providerID str
 
 	return http.StatusOK, providers, nil
 }
+
+// DeleteUserManagement deletes the user management
+func (s *Manager) DeleteUserManagement(ctx context.Context, project, provider string, reqParams model.RequestParams) (int, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	delete(projectConfig.Modules.Auth, provider)
+
+	if err := s.modules.SetUsermanConfig(project, projectConfig.Modules.Auth); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if err := s.setProject(ctx, projectConfig); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}

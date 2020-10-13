@@ -81,3 +81,46 @@ func actionGenerateUserManagement(cmd *cobra.Command, args []string) error {
 
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
+
+// DeleteSubCommands is the list of commands the auth module exposes
+func DeleteSubCommands() []*cobra.Command {
+
+	var deleteAuthProvider = &cobra.Command{
+		Use:     "auth-provider",
+		Aliases: []string{"auth-provider"},
+		RunE:    actionDeleteAuthProvider,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			objs, err := GetAuthProviders(project, "auth-providers", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range objs {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
+	}
+
+	return []*cobra.Command{deleteAuthProvider}
+}
+
+func actionDeleteAuthProvider(cmd *cobra.Command, args []string) error {
+	// Get the project and url parameters
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	prefix := ""
+	if len(args) != 0 {
+		prefix = args[0]
+	}
+
+	return deleteAuthProvider(project, prefix)
+}

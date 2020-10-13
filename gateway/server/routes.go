@@ -38,6 +38,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/user-management/provider").HandlerFunc(handlers.HandleGetUserManagement(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/user-management/provider/{id}").HandlerFunc(handlers.HandleSetUserManagement(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/user-management/provider/{id}").HandlerFunc(handlers.HandleDeleteUserManagement(s.managers.Admin(), s.managers.Sync()))
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/config").HandlerFunc(handlers.HandleGetEventingConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/config/{id}").HandlerFunc(handlers.HandleSetEventingConfig(s.managers.Admin(), s.managers.Sync()))
