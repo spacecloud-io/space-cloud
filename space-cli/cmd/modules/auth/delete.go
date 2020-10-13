@@ -14,19 +14,15 @@ import (
 
 func deleteAuthProvider(project, prefix string) error {
 
-	url := fmt.Sprintf("/v1/config/projects/%s/user-management/provider", project)
-
-	// Get the spec from the server
-	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, map[string]string{"id": "*"}, payload); err != nil {
+	objs, err := GetAuthProviders(project, "auth-provider", map[string]string{"id": "*"})
+	if err != nil {
 		return err
 	}
 
 	doesProviderExist := false
 	providers := []string{}
-	for _, item := range payload.Result {
-		spec := item.(map[string]interface{})
-		providers = append(providers, spec["id"].(string))
+	for _, spec := range objs {
+		providers = append(providers, spec.Meta["id"])
 	}
 
 	filteredProviders := []string{}
@@ -59,15 +55,11 @@ func deleteAuthProvider(project, prefix string) error {
 	}
 
 	// Delete the provider from the server
-	url = fmt.Sprintf("/v1/config/projects/%s/user-management/provider/%s", project, prefix)
+	url := fmt.Sprintf("/v1/config/projects/%s/user-management/provider/%s", project, prefix)
 
-	payload = new(model.Response)
-	if err := transport.Client.Get(http.MethodDelete, url, map[string]string{"id": prefix}, payload); err != nil {
+	payload := new(model.Response)
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"id": prefix}, payload); err != nil {
 		return err
-	}
-
-	if payload.Error != "" {
-		return utils.LogError(payload.Error, nil)
 	}
 
 	return nil

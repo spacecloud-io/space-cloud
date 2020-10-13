@@ -87,7 +87,7 @@ func DeleteSubCommands() []*cobra.Command {
 
 	var deleteAuthProvider = &cobra.Command{
 		Use:     "auth-provider",
-		Aliases: []string{"auth-provider"},
+		Aliases: []string{"auth-providers"},
 		RunE:    actionDeleteAuthProvider,
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			project, check := utils.GetProjectID()

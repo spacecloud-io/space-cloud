@@ -14,7 +14,7 @@ func GetIngressRoutes(project, commandName string, params map[string]string) ([]
 	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -41,7 +41,7 @@ func GetIngressGlobal(project, commandName string) ([]*model.SpecObject, error) 
 	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress/global", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, map[string]string{}, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, map[string]string{}, payload); err != nil {
 		return nil, err
 	}
 	var objs []*model.SpecObject
