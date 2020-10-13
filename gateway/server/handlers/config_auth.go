@@ -97,17 +97,13 @@ func HandleDeleteUserManagement(adminMan *admin.Manager, syncMan *syncman.Manage
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		providerID := "*"
-		providerQuery, exists := r.URL.Query()["id"]
-		if exists {
-			providerID = providerQuery[0]
-		}
+		providerID := vars["id"]
 
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(ctx, token, "auth-provider", "read", map[string]string{"project": projectID, "id": providerID})
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "auth-provider", "delete", map[string]string{"project": projectID, "id": providerID})
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
