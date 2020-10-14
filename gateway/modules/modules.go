@@ -50,7 +50,7 @@ func New(clusterID string, nodeID string, managers *managers.Managers, globalMod
 
 	c := crud.Init()
 	c.SetGetSecrets(syncMan.GetSecrets)
-	s := schema.Init(c)
+	s := schema.Init(clusterID, c)
 	c.SetSchema(s)
 
 	a := auth.Init(clusterID, nodeID, c, adminMan)

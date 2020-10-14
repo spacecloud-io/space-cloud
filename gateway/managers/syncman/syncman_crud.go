@@ -559,77 +559,24 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 	return http.StatusOK, []interface{}{coll}, nil
 }
 
-type dbJSONSchemaResponse struct {
-	Fields []*model.FieldType `json:"fields"`
-}
-
 // GetSchemas gets schemas from config
 func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) (int, []interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	_, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
 
-	if format == "json" {
-		a := s.modules.GetSchemaModuleForSyncMan()
-		if dbAlias != "*" && col != "*" {
-			collectionInfo, p := a.GetSchema(dbAlias, col)
-			if !p {
-				return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
-			}
-			fields := []*model.FieldType{}
-			for _, v := range collectionInfo {
-				fields = append(fields, v)
-			}
-			return http.StatusOK, []interface{}{map[string]*dbJSONSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Fields: fields}}}, nil
-		} else if dbAlias != "*" {
-			coll := map[string]*dbJSONSchemaResponse{}
-			for _, value := range projectConfig.DatabaseSchemas {
-				collectionInfo, _ := a.GetSchema(dbAlias, value.Table)
-				fields := []*model.FieldType{}
-				for _, v := range collectionInfo {
-					fields = append(fields, v)
-				}
-				coll[fmt.Sprintf("%s-%s", dbAlias, value.Table)] = &dbJSONSchemaResponse{Fields: fields}
-			}
-			return http.StatusOK, []interface{}{coll}, nil
-		}
-		coll := map[string]*dbJSONSchemaResponse{}
-		for _, dbSchema := range projectConfig.DatabaseSchemas {
-			collectionInfo, _ := a.GetSchema(dbSchema.DbAlias, dbSchema.Table)
-			fields := []*model.FieldType{}
-			for _, v := range collectionInfo {
-				fields = append(fields, v)
-			}
-			coll[fmt.Sprintf("%s-%s", dbSchema.DbAlias, dbSchema.Table)] = &dbJSONSchemaResponse{Fields: fields}
-		}
-		return http.StatusOK, []interface{}{coll}, nil
+	a := s.modules.GetSchemaModuleForSyncMan()
+	arr, err := a.GetSchemaForDB(ctx, dbAlias, col, format)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
 	}
 
-	if dbAlias != "*" && col != "*" {
-		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseSchema, dbAlias, col)
-		dbSchema, ok := projectConfig.DatabaseSchemas[resourceID]
-		if !ok {
-			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
-		}
-
-		return http.StatusOK, []interface{}{map[string]*dbSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Schema: dbSchema.Schema}}}, nil
-	} else if dbAlias != "*" {
-		coll := map[string]*dbSchemaResponse{}
-		for _, value := range projectConfig.DatabaseSchemas {
-			coll[fmt.Sprintf("%s-%s", dbAlias, value.Table)] = &dbSchemaResponse{Schema: value.Schema}
-		}
-		return http.StatusOK, []interface{}{coll}, nil
-	}
-	coll := map[string]*dbSchemaResponse{}
-	for _, dbSchema := range projectConfig.DatabaseSchemas {
-		coll[fmt.Sprintf("%s-%s", dbSchema.DbAlias, dbSchema.Table)] = &dbSchemaResponse{Schema: dbSchema.Schema}
-	}
-	return http.StatusOK, []interface{}{coll}, nil
+	return http.StatusOK, arr, nil
 }
 
 type result struct {

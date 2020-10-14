@@ -587,7 +587,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 
 	c := crud.Init()
 
-	s := Init(c)
+	s := Init("chicago", c)
 	if err := s.parseSchema(dbSchemas); err != nil {
 		t.Errorf("error parsing schema :: %v", err)
 	}

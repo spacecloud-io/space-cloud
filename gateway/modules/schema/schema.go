@@ -25,11 +25,12 @@ type Schema struct {
 	crud      model.CrudSchemaInterface
 	project   string
 	dbSchemas config.DatabaseSchemas
+	clusterID string
 }
 
 // Init creates a new instance of the schema object
-func Init(crud model.CrudSchemaInterface) *Schema {
-	return &Schema{SchemaDoc: model.Type{}, crud: crud}
+func Init(clusterID string, crud model.CrudSchemaInterface) *Schema {
+	return &Schema{clusterID: clusterID, SchemaDoc: model.Type{}, crud: crud}
 }
 
 // SetConfig modifies the tables according to the schema on save

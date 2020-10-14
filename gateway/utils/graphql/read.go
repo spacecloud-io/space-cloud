@@ -27,6 +27,14 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
+	var hasOptions bool
+	req.Options, hasOptions, err = generateOptions(ctx, field.Arguments, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+	req.Options.HasOptions = hasOptions
+
 	req.Aggregate, err = extractAggregate(ctx, field)
 	if err != nil {
 		cb("", "", nil, err)
@@ -39,7 +47,6 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}
-		req.Options.HasOptions = false
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
 		_ = graph.auth.PostProcessMethod(ctx, actions, result)
 

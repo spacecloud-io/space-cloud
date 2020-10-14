@@ -92,6 +92,9 @@ func (new a) SchemaInspection(ctx context.Context, dbAlias, project, col string)
 func (new a) GetSchema(dbAlias, col string) (model.Fields, bool) {
 	return nil, false
 }
+func (new *a) GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error) {
+	return nil, nil
+}
 
 func TestModule_validate(t *testing.T) {
 	authModule := auth.Init("chicago", "1", &crud.Module{}, nil)
@@ -142,7 +145,7 @@ func TestModule_validate(t *testing.T) {
 			name: "no schema given",
 			m: &Module{
 				schemas: map[string]model.Fields{"event": {}},
-				schema:  newSchema,
+				schema:  &newSchema,
 				auth:    authModule,
 				config: &config.Eventing{
 					SecurityRules: map[string]*config.Rule{

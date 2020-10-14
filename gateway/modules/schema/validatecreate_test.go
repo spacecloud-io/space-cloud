@@ -141,7 +141,7 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 		},
 	}
 
-	s := Init(&crud.Module{})
+	s := Init("chicago", &crud.Module{})
 	err := s.parseSchema(Parsedata)
 	if err != nil {
 		t.Errorf("Error while parsing schema-%v", err)
@@ -213,7 +213,7 @@ func TestSchema_SchemaValidate(t *testing.T) {
 			},
 		},
 	}
-	s := Init(&crud.Module{})
+	s := Init("chicago", &crud.Module{})
 	err := s.parseSchema(Parsedata)
 	if err != nil {
 		t.Errorf("Error while parsing schema:%v", err)
@@ -441,7 +441,7 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 	}
-	s := Init(&crud.Module{})
+	s := Init("chicago", &crud.Module{})
 	err := s.parseSchema(Parsedata)
 	if err != nil {
 		t.Errorf("Error while parsing schema:%v", err)

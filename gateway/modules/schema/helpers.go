@@ -8,6 +8,7 @@ import (
 
 	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
@@ -528,4 +529,48 @@ func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*index
 		}
 	}
 	return indexMap, nil
+}
+
+func (s *Schema) getSchemaResponse(ctx context.Context, format, dbName, tableName string, ignoreForeignCheck bool, alreadyAddedTables map[string]bool, schemaResponse *[]interface{}) error {
+	_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
+	if ok {
+		return nil
+	}
+
+	resourceID := config.GenerateResourceID(s.clusterID, s.project, config.ResourceDatabaseSchema, dbName, tableName)
+	dbSchema, ok := s.dbSchemas[resourceID]
+	if !ok {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbName, tableName), nil, nil)
+	}
+
+	collectionInfo, _ := s.GetSchema(dbName, tableName)
+	for _, fieldInfo := range collectionInfo {
+		if !ignoreForeignCheck && fieldInfo.IsForeign {
+			_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
+			if ok {
+				continue
+			}
+			if err := s.getSchemaResponse(ctx, format, dbName, fieldInfo.JointTable.Table, ignoreForeignCheck, alreadyAddedTables, schemaResponse); err != nil {
+				return err
+			}
+		}
+	}
+	alreadyAddedTables[getKeyName(dbName, tableName)] = true
+	if format == "json" {
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, SchemaObj: collectionInfo})
+	} else {
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, Schema: dbSchema.Schema})
+	}
+	return nil
+}
+
+func getKeyName(dbName, key string) string {
+	return fmt.Sprintf("%s-%s", dbName, key)
+}
+
+type dbSchemaResponse struct {
+	DbAlias   string       `json:"dbAlias"`
+	Col       string       `json:"col"`
+	Schema    string       `json:"schema"`
+	SchemaObj model.Fields `json:"schemaObj"`
 }

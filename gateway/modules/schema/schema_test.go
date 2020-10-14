@@ -333,7 +333,7 @@ func TestParseSchema(t *testing.T) {
 		},
 	}
 
-	s := Init(&crud.Module{})
+	s := Init("chicago", &crud.Module{})
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			r, err := s.Parser(testCase.Data)
