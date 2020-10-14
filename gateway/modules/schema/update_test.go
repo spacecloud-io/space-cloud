@@ -30,15 +30,14 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 		diploma:Boolean
 	}`
 
-	var TestCases = config.Crud{
-		"mongo": &config.CrudStub{
-			Collections: map[string]*config.TableRule{
-				"tweet": {
-					Schema: Query,
-				},
-			},
+	var dbSchemas = config.DatabaseSchemas{
+		config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseSchema{
+			Table:   "tweet",
+			DbAlias: "mongo",
+			Schema:  Query,
 		},
 	}
+
 	type args struct {
 		dbType    string
 		col       string
@@ -587,12 +586,9 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 	}
 
 	c := crud.Init()
-	if err := c.SetConfig("", TestCases); err != nil {
-		t.Errorf("error in schmea update test file unable to set config of crud (%s)", err.Error())
-	}
 
 	s := Init(c)
-	if err := s.parseSchema(TestCases); err != nil {
+	if err := s.parseSchema(dbSchemas); err != nil {
 		t.Errorf("error parsing schema :: %v", err)
 	}
 

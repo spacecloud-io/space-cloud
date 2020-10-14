@@ -8,15 +8,13 @@ import (
 
 // Store abstracts the implementation of letsencrypt storage operations
 type Store interface {
-	WatchProjects(cb func(projects []*config.Project)) error
 	WatchServices(cb func(projects scServices)) error
-	WatchAdminConfig(cb func(clusters []*config.Admin)) error
+	WatchResources(cb func(eventType, resourceId string, resource interface{})) error
 
 	Register()
 
-	GetAdminConfig(ctx context.Context) (*config.Admin, error)
+	SetResource(ctx context.Context, resourceID string, resource interface{}) error
+	DeleteResource(ctx context.Context, resourceID string) error
 
-	SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error
-	SetProject(ctx context.Context, project *config.Project) error
-	DeleteProject(ctx context.Context, projectID string) error
+	GetGlobalConfig() (*config.Config, error)
 }

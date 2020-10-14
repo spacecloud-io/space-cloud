@@ -27,7 +27,7 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 		ruleName := vars["id"]
 		projectID := vars["project"]
 
-		value := config.EventingRule{}
+		value := config.EventingTrigger{}
 		_ = json.NewDecoder(r.Body).Decode(&value)
 		defer utils.CloseTheCloser(r.Body)
 

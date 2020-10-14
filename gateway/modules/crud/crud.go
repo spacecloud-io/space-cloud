@@ -2,7 +2,6 @@ package crud
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -28,9 +27,11 @@ type Module struct {
 	alias   string
 	project string
 	schema  model.SchemaCrudInterface
-	queries map[string]*config.PreparedQuery
+	queries config.DatabasePreparedQueries
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
+
+	config *config.DatabaseConfig
 
 	dataLoader loader
 	// Variables to store the hooks
@@ -72,17 +73,6 @@ func Init() *Module {
 	return &Module{batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
-// SetSchema sets the schema module
-func (m *Module) SetSchema(s model.SchemaCrudInterface) {
-	m.schema = s
-}
-
-// SetHooks sets the internal hooks
-func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHook) {
-	m.hooks = hooks
-	m.metricHook = metricHook
-}
-
 func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName string) (Crud, error) {
 	switch dbType {
 	case model.Mongo:
@@ -107,100 +97,6 @@ func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName
 	}
 }
 
-func (m *Module) getCrudBlock(dbAlias string) (Crud, error) {
-	if m.block != nil && m.alias == dbAlias {
-		return m.block, nil
-	}
-	return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to get database connection", fmt.Errorf("crud module not initialized yet for %q", dbAlias), nil)
-}
-
-// SetConfig set the rules and secret key required by the crud block
-func (m *Module) SetConfig(project string, crud config.Crud) error {
-	m.Lock()
-	defer m.Unlock()
-
-	if len(crud) > 1 {
-		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Crud module cannot have more than 1 database", errors.New(""), map[string]interface{}{"project": project})
-	}
-
-	m.project = project
-
-	// Reset all existing prepared query
-	m.queries = map[string]*config.PreparedQuery{}
-
-	// clear previous data loader
-	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
-
-	// Create a new crud blocks
-	for k, v := range crud {
-		if v.Type == "" {
-			v.Type = k
-		}
-
-		// set default database name to project id
-		if v.DBName == "" {
-			v.DBName = project
-		}
-
-		// Add the prepared queries in this db
-		for id, query := range v.PreparedQueries {
-			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
-		}
-
-		// check if connection string starts with secrets
-		secretName, isSecretExists := splitConnectionString(v.Conn)
-		connectionString := v.Conn
-		if isSecretExists {
-			var err error
-			connectionString, err = m.getSecrets(project, secretName, "CONN")
-			if err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch secret from runner", err, map[string]interface{}{"project": project})
-			}
-		}
-
-		if m.block != nil {
-			// Skip if the connection string is the same
-			if m.block.IsSame(connectionString, v.DBName) {
-				continue
-			}
-			// Close the previous database connection
-			if err := m.block.Close(); err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to close database connections", err, map[string]interface{}{"project": project})
-			}
-		}
-
-		var c Crud
-		var err error
-
-		v.Type = strings.TrimPrefix(v.Type, "sql-")
-		c, err = m.initBlock(model.DBType(v.Type), v.Enabled, connectionString, v.DBName)
-
-		if v.Enabled {
-			if err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Cannot connect to database", err, map[string]interface{}{"project": project, "dbAlias": k, "dbType": v.Type, "conn": v.Conn, "logicalDbName": v.DBName})
-			}
-			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Successfully connected to database", map[string]interface{}{"project": project, "dbAlias": k, "dbType": v.Type})
-		}
-
-		m.dbType = v.Type
-		m.block = c
-		m.alias = strings.TrimPrefix(k, "sql-")
-	}
-
-	m.closeBatchOperation()
-	m.initBatchOperation(project, crud)
-	return nil
-}
-
-// splitConnectionString splits the connection string
-func splitConnectionString(connection string) (string, bool) {
-	s := strings.Split(connection, ".")
-	if s[0] == "secrets" {
-		return s[1], true
-	}
-	return "", false
-}
-
 // GetDBType returns the type of the db for the alias provided
 func (m *Module) GetDBType(dbAlias string) (string, error) {
 	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
@@ -208,14 +104,6 @@ func (m *Module) GetDBType(dbAlias string) (string, error) {
 		return "", fmt.Errorf("cannot get db type as invalid db alias (%s) provided", dbAlias)
 	}
 	return m.dbType, nil
-}
-
-// SetGetSecrets sets the GetSecrets function
-func (m *Module) SetGetSecrets(function utils.GetSecrets) {
-	m.Lock()
-	defer m.Unlock()
-
-	m.getSecrets = function
 }
 
 // CloseConfig close the rules and secret key required by the crud block

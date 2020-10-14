@@ -14,7 +14,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		SchemaDoc model.Type
 		crud      model.CrudSchemaInterface
 		project   string
-		config    config.Crud
+		config    config.DatabaseSchemas
 	}
 	type args struct {
 		dbAlias       string
@@ -25,13 +25,13 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 	}
 
 	crudPostgres := crud.Init()
-	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
+	_ = crudPostgres.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "postgres"): &config.DatabaseConfig{DbAlias: "postgres", Type: "sql-postgres", Enabled: false}})
 
 	crudMySQL := crud.Init()
-	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
+	_ = crudMySQL.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "mysql"): &config.DatabaseConfig{DbAlias: "mysql", Type: "sql-mysql", Enabled: false}})
 
 	crudSQLServer := crud.Init()
-	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
+	_ = crudSQLServer.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "sqlserver"): &config.DatabaseConfig{DbAlias: "sqlserver", Type: "sql-sqlserver", Enabled: false}})
 
 	tests := []struct {
 		name    string
@@ -3442,7 +3442,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				SchemaDoc: tt.fields.SchemaDoc,
 				crud:      tt.fields.crud,
 				project:   tt.fields.project,
-				config:    tt.fields.config,
+				dbSchemas: tt.fields.config,
 			}
 			got, err := s.generateCreationQueries(context.Background(), tt.args.dbAlias, tt.args.tableName, tt.args.project, tt.args.parsedSchema, tt.args.currentSchema)
 			if (err != nil) != tt.wantErr {
