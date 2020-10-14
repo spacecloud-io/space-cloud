@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/operations"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
@@ -60,7 +61,7 @@ func deployService(dockerFilePath, serviceFilePath string) error {
 	}
 
 	// Time to apply the service file config
-	if err := operations.Apply(serviceFilePath); err != nil {
+	if err := operations.Apply(serviceFilePath, model.ApplyWithNoDelay); err != nil {
 		return utils.LogError("Unable to apply service file config", err)
 	}
 

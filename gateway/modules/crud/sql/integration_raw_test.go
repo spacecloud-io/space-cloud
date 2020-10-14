@@ -99,7 +99,7 @@ func TestSQL_GetConnectionState(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := db.GetConnectionState(ctx); got != tt.want {
+			if got := db.GetConnectionState(context.Background()); got != tt.want {
 				t.Errorf("GetConnectionState() = %v, want %v", got, tt.want)
 			}
 		})
@@ -155,7 +155,7 @@ func TestSQL_RawBatch(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("RawBatch() Scanning error", err)
 				}
-				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(context.Background(), model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 
@@ -236,7 +236,7 @@ func TestSQL_RawQuery(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("RawQuery() Scanning error", err)
 				}
-				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(context.Background(), model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if !reflect.DeepEqual(tt.wantResult, readResult) {
