@@ -3,13 +3,13 @@ package syncman
 import (
 	"context"
 	"errors"
+	"net/http"
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestManager_SetUserManagement(t *testing.T) {
@@ -154,6 +154,121 @@ func TestManager_GetUserManagement(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Manager.GetUserManagement() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestManager_DeleteUserManagement(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		ctx       context.Context
+		project   string
+		provider  string
+		reqParams model.RequestParams
+	}
+	tests := []struct {
+		name            string
+		s               *Manager
+		args            args
+		modulesMockArgs []mockArgs
+		storeMockArgs   []mockArgs
+		want            int
+		wantErr         bool
+	}{
+		{
+			name:    "unable to get project config",
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{}}}}}},
+			args:    args{ctx: context.Background(), project: "2", provider: "provider"},
+			want:    http.StatusBadRequest,
+			wantErr: true,
+		},
+		{
+			name: "unable to set userman config",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "provider"}}}}}}},
+			args: args{ctx: context.Background(), project: "1", provider: "provider"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetUsermanConfig",
+					args:           []interface{}{"1", config.Auth{}},
+					paramsReturned: []interface{}{errors.New("unable to set userman config")},
+				},
+			},
+			want:    http.StatusInternalServerError,
+			wantErr: true,
+		},
+		{
+			name: "unable to set project",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "provider"}}}}}}},
+			args: args{ctx: context.Background(), project: "1", provider: "provider"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetUsermanConfig",
+					args:           []interface{}{"1", config.Auth{}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "SetProject",
+					args:           []interface{}{context.Background(), mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to get db config")},
+				},
+			},
+			want:    http.StatusInternalServerError,
+			wantErr: true,
+		},
+		{
+			name: "auth provider is succesfully deleted",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "provider"}}}}}}},
+			args: args{ctx: context.Background(), project: "1", provider: "provider"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetUsermanConfig",
+					args:           []interface{}{"1", config.Auth{}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "SetProject",
+					args:           []interface{}{context.Background(), mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			want: http.StatusOK,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockModules := mockModulesInterface{}
+			mockStore := mockStoreInterface{}
+
+			for _, m := range tt.modulesMockArgs {
+				mockModules.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.storeMockArgs {
+				mockStore.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			tt.s.modules = &mockModules
+			tt.s.store = &mockStore
+
+			got, err := tt.s.DeleteUserManagement(tt.args.ctx, tt.args.project, tt.args.provider, tt.args.reqParams)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Manager.DeleteUserManagement() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Manager.DeleteUserManagement() = %v, want %v", got, tt.want)
+			}
+
+			mockModules.AssertExpectations(t)
+			mockStore.AssertExpectations(t)
 		})
 	}
 }
