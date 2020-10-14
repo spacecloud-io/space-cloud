@@ -37,7 +37,7 @@ func deleteAuthProvider(project, prefix string) error {
 		if len(filteredProviders) == 1 {
 			prefix = filteredProviders[0]
 		} else {
-			if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID: ", Options: filteredProviders, Default: filteredProviders[0]}, &prefix); err != nil {
+			if err := input.Survey.AskOne(&survey.Select{Message: "Choose the provider ID: ", Options: filteredProviders, Default: filteredProviders[0]}, &prefix); err != nil {
 				return err
 			}
 		}
@@ -48,7 +48,7 @@ func deleteAuthProvider(project, prefix string) error {
 			if prefix != "" {
 				utils.LogInfo("Warning! No provider found for prefix provided, showing all")
 			}
-			if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID: ", Options: providers, Default: providers[0]}, &prefix); err != nil {
+			if err := input.Survey.AskOne(&survey.Select{Message: "Choose the provider ID: ", Options: providers, Default: providers[0]}, &prefix); err != nil {
 				return err
 			}
 		}
