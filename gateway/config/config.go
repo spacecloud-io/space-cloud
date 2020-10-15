@@ -124,6 +124,7 @@ type CrudStub struct {
 	Enabled         bool                      `json:"enabled" yaml:"enabled"`
 	BatchTime       int                       `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
 	BatchRecords    int                       `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
+	Limit           int64                     `json:"limit,omitempty" yaml:"limit"`               // indicates number of records per batch
 }
 
 // PreparedQuery contains the config at the collection level
