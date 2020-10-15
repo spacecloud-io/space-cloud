@@ -14,7 +14,13 @@ import (
 )
 
 func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
-
+	if req.Options == nil {
+		req.Options = &model.ReadOptions{}
+	}
+	if req.Options.Limit == nil {
+		req.Options.Limit = b.queryFetchLimit
+		req.Options.HasOptions = true
+	}
 	switch req.Operation {
 	case utils.All, utils.One:
 		var count int64

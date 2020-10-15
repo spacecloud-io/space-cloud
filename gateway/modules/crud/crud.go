@@ -66,6 +66,7 @@ type Crud interface {
 	IsSame(conn, dbName string) bool
 	Close() error
 	GetConnectionState(ctx context.Context) bool
+	SetQueryFetchLimit(limit int64)
 }
 
 // Init create a new instance of the Module object

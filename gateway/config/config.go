@@ -98,6 +98,7 @@ type DatabaseConfig struct {
 	Enabled      bool   `json:"enabled" yaml:"enabled"`
 	BatchTime    int    `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
 	BatchRecords int    `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
+	Limit        int64  `json:"limit,omitempty" yaml:"limit"`               // indicates number of records to send per request
 }
 
 // DatabaseSchema stores information of db schemas
@@ -220,6 +221,7 @@ type CrudStub struct {
 	Enabled         bool                             `json:"enabled" yaml:"enabled"`
 	BatchTime       int                              `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
 	BatchRecords    int                              `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
+	Limit           int64                            `json:"limit,omitempty" yaml:"limit"`               // indicates number of records per batch
 }
 
 // DatbasePreparedQuery stores information of prepared query

@@ -38,6 +38,10 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 			v.DBName = project
 		}
 
+		if v.Limit == 0 {
+			v.Limit = model.DefaultFetchLimit
+		}
+
 		// check if connection string starts with secrets
 		secretName, isSecretExists := splitConnectionString(v.Conn)
 		connectionString := v.Conn
@@ -50,6 +54,7 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 		}
 
 		if m.block != nil {
+			m.block.SetQueryFetchLimit(v.Limit)
 			// Skip if the connection string is the same
 			if m.block.IsSame(connectionString, v.DBName) {
 				continue
