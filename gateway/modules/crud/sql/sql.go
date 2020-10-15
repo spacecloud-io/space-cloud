@@ -116,7 +116,7 @@ func (s *SQL) connect() error {
 	s.client = sql
 
 	s.client.SetMaxOpenConns(10)
-
+	s.client.SetMaxIdleConns(0)
 	return sql.PingContext(ctx)
 }
 

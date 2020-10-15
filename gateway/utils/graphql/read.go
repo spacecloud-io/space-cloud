@@ -27,6 +27,14 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
+	var hasOptions bool
+	req.Options, hasOptions, err = generateOptions(ctx, field.Arguments, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+	req.Options.HasOptions = hasOptions
+
 	req.Aggregate, err = extractAggregate(ctx, field)
 	if err != nil {
 		cb("", "", nil, err)
@@ -39,7 +47,6 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}
-		req.Options.HasOptions = false
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
 		_ = graph.auth.PostProcessMethod(ctx, actions, result)
 
@@ -296,13 +303,17 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 				return nil, hasOptions, err
 			}
 
-			tempInt, ok := temp.(int)
-			if !ok {
-				return nil, hasOptions, errors.New("Invalid type for skip")
+			switch t := temp.(type) {
+			case float64:
+				// This condition occurs if we provide value of limit operator from graphql variables
+				tempInt64 := int64(t)
+				options.Skip = &tempInt64
+			case int:
+				tempInt64 := int64(t)
+				options.Skip = &tempInt64
+			default:
+				return nil, hasOptions, fmt.Errorf("invalid type provided for skip expecting integer got (%s)", reflect.TypeOf(temp))
 			}
-
-			tempInt64 := int64(tempInt)
-			options.Skip = &tempInt64
 
 		case "limit":
 			hasOptions = true // Set the flag to true
@@ -312,13 +323,17 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 				return nil, hasOptions, err
 			}
 
-			tempInt, ok := temp.(int)
-			if !ok {
-				return nil, hasOptions, errors.New("Invalid type for skip")
+			switch t := temp.(type) {
+			case float64:
+				// This condition occurs if we provide value of limit operator from graphql variables
+				tempInt64 := int64(t)
+				options.Limit = &tempInt64
+			case int:
+				tempInt64 := int64(t)
+				options.Limit = &tempInt64
+			default:
+				return nil, hasOptions, fmt.Errorf("invalid type provided for limit expecting integer got (%s)", reflect.TypeOf(temp))
 			}
-
-			tempInt64 := int64(tempInt)
-			options.Limit = &tempInt64
 
 		case "sort":
 			hasOptions = true // Set the flag to true

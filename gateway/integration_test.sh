@@ -8,7 +8,7 @@ go build .
 sudo kill -9 `sudo lsof -t -i:4122`
 
 # run the gateway in background
-./gateway run --dev &> /dev/null &
+./gateway run --dev --log-format text &> /dev/null &
 sleep 10
 #sc_process_num=$!
 
@@ -17,7 +17,7 @@ cd modules/crud/sql
 
 ## mysql test
 echo "starting mysql container, it will take 30 seconds"
-docker run --name integration-mysql -p 3306:3306  -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:latest &> /dev/null
+docker run --name integration-mysql -p 3306:3306  -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:8.0.21 &> /dev/null
 sleep 30
 echo "running integration tests for mysql"
 go test -tags integration -db_type mysql -conn "root:my-secret-pw@tcp(localhost:3306)/"
@@ -27,7 +27,7 @@ echo "\n"
 
 # postgres test
 echo "starting postgres container, it will take 30 seconds"
-docker run --name integration-postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres &> /dev/null
+docker run --name integration-postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres:13 &> /dev/null
 sleep 30
 echo "running integration tests for postgres"
 go test -tags integration -db_type postgres -conn "postgres://postgres:mysecretpassword@localhost:5432/postgres?sslmode=disable"
@@ -37,7 +37,7 @@ echo "\n"
 
 ## sqlserver test
 echo "starting sqlserver container,it will take 30 seconds"
-docker run --name integration-sqlserver -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=yourPassword@#12345' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-CU8-ubuntu
+docker run --name integration-sqlserver -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=yourPassword@#12345' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2019-latest
 sleep 30
 echo "running integration tests for sqlserver"
 go test -tags integration -db_type sqlserver -conn "Data Source=localhost,1433;Initial Catalog=master;User ID=sa;Password=yourPassword@#12345;"
@@ -48,7 +48,7 @@ cd ../mgo
 
 # mongo test
 echo "starting mongo container,it will take 30 seconds"
-docker run --name integration-mongo -p 27017:27017 -d mongo:latest
+docker run --name integration-mongo -p 27017:27017 -d mongo:4.2.10
 sleep 30
 echo "running integration tests for mongo"
 go test -tags integration -db_type mongo -conn "mongodb://localhost:27017"

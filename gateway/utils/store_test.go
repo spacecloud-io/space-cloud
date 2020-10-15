@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestStoreValue(t *testing.T) {
@@ -594,6 +596,97 @@ func TestLoadNumber(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("LoadNumber() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLoadValueMongo(t *testing.T) {
+	objectID, _ := primitive.ObjectIDFromHex("5f7c4770582dc480c95ec67e")
+	type args struct {
+		key   string
+		state map[string]interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			name: "string to object id",
+			args: args{
+				key:   "utils.stringToObjectId(args.string)",
+				state: map[string]interface{}{"string": "5f7c4770582dc480c95ec67e"},
+			},
+			want: objectID,
+		},
+		{
+			name: "string array to object id",
+			args: args{
+				key:   "utils.stringToObjectId(args.string)",
+				state: map[string]interface{}{"string": []interface{}{"5f7c4770582dc480c95ec67e", "5f7c4770582dc480c95ec67e"}},
+			},
+			want: []interface{}{objectID, objectID},
+		},
+		{
+			name: "string array (primitive.A) to object id",
+			args: args{
+				key:   "utils.stringToObjectId(args.string)",
+				state: map[string]interface{}{"string": primitive.A{"5f7c4770582dc480c95ec67e", "5f7c4770582dc480c95ec67e"}},
+			},
+			want: []interface{}{objectID, objectID},
+		},
+		{
+			name: "object id  to object id",
+			args: args{
+				key:   "utils.stringToObjectId(args.string)",
+				state: map[string]interface{}{"string": objectID},
+			},
+			want: objectID,
+		},
+		{
+			name: "invalid string to object id",
+			args: args{
+				key:   "utils.stringToObjectId(args.string)",
+				state: map[string]interface{}{"string": "5f7c4770582dc480c95ec67edd"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "string to string",
+			args: args{
+				key:   "utils.objectIdToString(args.obj)",
+				state: map[string]interface{}{"obj": "5f7c4770582dc480c95ec67e"},
+			},
+			want: "5f7c4770582dc480c95ec67e",
+		},
+		{
+			name: "object id to string",
+			args: args{
+				key:   "utils.objectIdToString(args.obj)",
+				state: map[string]interface{}{"obj": objectID},
+			},
+			want: "5f7c4770582dc480c95ec67e",
+		},
+		{
+			name: "random stuff to string",
+			args: args{
+				key:   "utils.objectIdToString(args.obj)",
+				state: map[string]interface{}{"obj": 12},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := LoadValue(tt.args.key, map[string]interface{}{"args": tt.args.state})
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LoadValue() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("LoadValue() = %v, want %v", got, tt.want)
 			}
 		})
 	}

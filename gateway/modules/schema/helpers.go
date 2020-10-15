@@ -8,15 +8,16 @@ import (
 
 	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // GetSQLType return sql type
-func getSQLType(ctx context.Context, dbType, typename string) (string, error) {
+func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (string, error) {
 
 	switch typename {
 	case model.TypeID:
-		return "varchar(" + model.SQLTypeIDSize + ")", nil
+		return fmt.Sprintf("varchar(%d)", maxIDSize), nil
 	case model.TypeString:
 		if dbType == string(model.SQLServer) {
 			return "varchar(max)", nil
@@ -288,13 +289,17 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 		if err := checkErrors(ctx, realFieldStruct); err != nil {
 			return "", err
 		}
-		sqlType, err := getSQLType(ctx, dbType, realFieldStruct.Kind)
+		sqlType, err := getSQLType(ctx, realFieldStruct.TypeIDSize, dbType, realFieldStruct.Kind)
 		if err != nil {
 			return "", nil
 		}
 
 		if realFieldStruct.IsPrimary {
 			doesPrimaryKeyExists = true
+			if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
+				primaryKeyQuery = realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS PRIMARY KEY NOT NULL, "
+				continue
+			}
 			primaryKeyQuery = realFieldKey + " " + sqlType + " PRIMARY KEY NOT NULL, "
 			continue
 		}
@@ -524,4 +529,47 @@ func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*index
 		}
 	}
 	return indexMap, nil
+}
+
+func (s *Schema) getSchemaResponse(ctx context.Context, format, dbName, tableName string, ignoreForeignCheck bool, alreadyAddedTables map[string]bool, collection map[string]*config.TableRule, schemaResponse *[]interface{}) error {
+	_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
+	if ok {
+		return nil
+	}
+
+	table, ok := collection[tableName]
+	if !ok {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbName, tableName), nil, nil)
+	}
+
+	collectionInfo, _ := s.GetSchema(dbName, tableName)
+	for _, fieldInfo := range collectionInfo {
+		if !ignoreForeignCheck && fieldInfo.IsForeign {
+			_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
+			if ok {
+				continue
+			}
+			if err := s.getSchemaResponse(ctx, format, dbName, fieldInfo.JointTable.Table, ignoreForeignCheck, alreadyAddedTables, collection, schemaResponse); err != nil {
+				return err
+			}
+		}
+	}
+	alreadyAddedTables[getKeyName(dbName, tableName)] = true
+	if format == "json" {
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, SchemaObj: collectionInfo})
+	} else {
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, Schema: table.Schema})
+	}
+	return nil
+}
+
+func getKeyName(dbName, key string) string {
+	return fmt.Sprintf("%s-%s", dbName, key)
+}
+
+type dbSchemaResponse struct {
+	DbAlias   string       `json:"dbAlias"`
+	Col       string       `json:"col"`
+	Schema    string       `json:"schema"`
+	SchemaObj model.Fields `json:"schemaObj"`
 }
