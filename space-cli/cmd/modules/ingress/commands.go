@@ -2,6 +2,7 @@ package ingress
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
@@ -38,7 +39,7 @@ func GetSubCommands() []*cobra.Command {
 				utils.LogDebug("Project not specified in flag", nil)
 				return nil, cobra.ShellCompDirectiveDefault
 			}
-			objs, err := GetIngressRoutes(project, "ingress-route", map[string]string{})
+			objs, err := GetIngressRoutes(project, "ingress-route", map[string]string{}, []string{})
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveDefault
 			}
@@ -70,8 +71,8 @@ func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 	if len(args) != 0 {
 		params["id"] = args[0]
 	}
-
-	objs, err := GetIngressRoutes(project, commandName, params)
+	filters := viper.GetStringSlice("filter")
+	objs, err := GetIngressRoutes(project, commandName, params, filters)
 	if err != nil {
 		return err
 	}
