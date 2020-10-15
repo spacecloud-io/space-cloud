@@ -30,3 +30,10 @@ libraryDependencies ++= Seq(
 
 // Dependencies for parsing JSON
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.7.0-M6"
+
+// Dependencies to play around with JWT
+libraryDependencies += "com.auth0" % "java-jwt" % "3.11.0"
+
+// Dependencies for the kubernetes client
+libraryDependencies += "io.kubernetes" % "client-java" % "10.0.0"
+

@@ -2,31 +2,26 @@ package com.spaceuptech.dbevents
 
 import akka.actor.typed.{Behavior, PostStop, Signal}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import com.spaceuptech.dbevents.debezium.DebeziumSupervisor
-import com.spaceuptech.spacecloud.SpaceCloudClient
+import com.spaceuptech.dbevents.spacecloud.ProjectsSupervisor
 
 // We are creating an object to simply creation of the actor
 object EventsSupervisor {
-  def apply(gatewayUrl: String, adminSecret: String): Behavior[Nothing] = Behaviors.setup[Nothing](context => new EventsSupervisor(context, gatewayUrl, adminSecret))
+  def apply(): Behavior[Nothing] = Behaviors.setup[Nothing](context => new EventsSupervisor(context))
 }
 
-class EventsSupervisor(context: ActorContext[Nothing], gatewayUrl: String, adminSecret: String) extends AbstractBehavior[Nothing](context) {
+class EventsSupervisor(context: ActorContext[Nothing]) extends AbstractBehavior[Nothing](context) {
   context.log.info("DB events source app started")
 
-  // Start the debezium supervisor
-  private val debezium = context.spawn(DebeziumSupervisor(), "debezium")
+  // Start the projects supervisor
+  private val projects = context.spawn(ProjectsSupervisor(), "projects")
+  projects ! ProjectsSupervisor.FetchProjects()
 
-  // Start the space cloud client
-  private val spaceCloudClient = context.spawn(SpaceCloudClient(gatewayUrl, adminSecret), "space-cloud")
-
-
-  override def onMessage(msg: Nothing): Behavior[Nothing] = {
-    // No need to handle any messages
-    Behaviors.unhandled
-  }
+  // No need to handle any messages
+  override def onMessage(msg: Nothing): Behavior[Nothing] = Behaviors.unhandled
 
   override def onSignal: PartialFunction[Signal, Behavior[Nothing]] = {
     case PostStop =>
+      projects ! ProjectsSupervisor.Stop()
       context.log.info("DB events source app stopped")
       this
   }
