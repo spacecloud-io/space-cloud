@@ -78,6 +78,7 @@ func (b *Bolt) GetDBType() model.DBType {
 	return model.EmbeddedDB
 }
 
-func (s *Bolt) SetQueryFetchLimit(limit int64) {
-	s.queryFetchLimit = &limit
+// SetQueryFetchLimit sets data fetch limit
+func (b *Bolt) SetQueryFetchLimit(limit int64) {
+	b.queryFetchLimit = &limit
 }

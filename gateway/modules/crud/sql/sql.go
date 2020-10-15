@@ -134,6 +134,7 @@ func doExecContext(ctx context.Context, query string, args []interface{}, execut
 	return stmt.ExecContext(ctx, args...)
 }
 
+// SetQueryFetchLimit sets data fetch limit
 func (s *SQL) SetQueryFetchLimit(limit int64) {
 	s.queryFetchLimit = &limit
 }

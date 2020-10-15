@@ -92,6 +92,7 @@ func (m *Mongo) GetDBType() model.DBType {
 	return model.Mongo
 }
 
-func (s *Mongo) SetQueryFetchLimit(limit int64) {
-	s.queryFetchLimit = &limit
+// SetQueryFetchLimit sets data fetch limit
+func (m *Mongo) SetQueryFetchLimit(limit int64) {
+	m.queryFetchLimit = &limit
 }
