@@ -25,7 +25,7 @@ func GenerateEmptyProject(project *ProjectConfig) *Project {
 		EventingTriggers:        make(map[string]*EventingTrigger),
 		FileStoreConfig:         new(FileStoreConfig),
 		FileStoreRules:          FileStoreRules{},
-		Auths:                   make(Auth),
+		Auths:                   make(Auths),
 		LetsEncrypt:             new(LetsEncrypt),
 		IngressRoutes:           make(IngressRoutes),
 		IngressGlobal:           new(GlobalRoutesConfig),

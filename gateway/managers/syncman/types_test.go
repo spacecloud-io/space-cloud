@@ -105,7 +105,7 @@ func (m *mockModulesInterface) SetEventingRuleConfig(ctx context.Context, secure
 	return m.Called(ctx, secureObj).Error(0)
 }
 
-func (m *mockModulesInterface) SetUsermanConfig(ctx context.Context, projectID string, auth config.Auth) error {
+func (m *mockModulesInterface) SetUsermanConfig(ctx context.Context, projectID string, auth config.Auths) error {
 	return m.Called(ctx, projectID, auth).Error(0)
 }
 

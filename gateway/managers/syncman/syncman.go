@@ -97,19 +97,19 @@ func (s *Manager) Start(port int) error {
 	}
 
 	// Start routine to observe space cloud project level resources
-	if err := s.store.WatchResources(func(eventType, resourceID string, resource interface{}) {
+	if err := s.store.WatchResources(func(eventType, resourceID string, resourceType config.Resource, resource interface{}) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancel()
-		_, projectID, resourceType, err := splitResourceID(ctx, resourceID)
+		_, projectID, _, err := splitResourceID(ctx, resourceID)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to split resource id in watch resources", err, nil)
 			return
 		}
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating resources", map[string]interface{}{"event": eventType, "resourceId": resourceID, "resource": resource, "projectId": projectID, "type": resourceType})
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating resources", map[string]interface{}{"event": eventType, "resourceId": resourceID, "resource": resource, "projectId": projectID, "resourceType": resourceType})
 
-		if err := validateResource(ctx, eventType, s.projectConfig, resourceID, resource); err != nil {
+		if err := validateResource(ctx, eventType, s.projectConfig, resourceID, resourceType, resource); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to update resources", err, nil)
 			return
 		}

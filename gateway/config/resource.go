@@ -5,6 +5,29 @@ import (
 	"strings"
 )
 
+// Order is according to space cli apply functionality
+var ResourceFetchingOrder = []Resource{
+	ResourceProject,
+	ResourceDatabaseConfig,
+	ResourceDatabaseRule,
+	ResourceDatabaseSchema,
+	ResourceDatabasePreparedQuery,
+	ResourceFileStoreConfig,
+	ResourceFileStoreRule,
+	ResourceEventingConfig,
+	ResourceEventingTrigger,
+	ResourceEventingRule,
+	ResourceEventingSchema,
+	ResourceRemoteService,
+	ResourceIngressGlobal,
+	ResourceIngressRoute,
+	ResourceAuthProvider,
+	ResourceProjectLetsEncrypt,
+	ResourceCluster,
+	ResourceIntegration,
+	ResourceIntegrationHook,
+}
+
 // Resource is a resource type
 type Resource string
 
@@ -34,9 +57,9 @@ const (
 	ResourceEventingRule Resource = "eventing-rule"
 
 	// ResourceFileStoreConfig is a resource
-	ResourceFileStoreConfig Resource = "file-store-config"
+	ResourceFileStoreConfig Resource = "filestore-config"
 	// ResourceFileStoreRule is a resource
-	ResourceFileStoreRule Resource = "file-store-rule"
+	ResourceFileStoreRule Resource = "filestore-rule"
 
 	// ResourceProjectLetsEncrypt is a resource
 	ResourceProjectLetsEncrypt Resource = "letsencrypt"

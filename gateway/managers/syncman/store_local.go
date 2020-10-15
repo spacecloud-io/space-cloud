@@ -43,7 +43,7 @@ func NewLocalStore(nodeID, advertiseAddr string, ssl *config.SSL) (*LocalStore, 
 func (s *LocalStore) Register() {}
 
 // WatchResources maintains consistency over all projects
-func (s *LocalStore) WatchResources(cb func(eventType, resourceId string, resource interface{})) error {
+func (s *LocalStore) WatchResources(cb func(eventType, resourceId string, resourceType config.Resource, resource interface{})) error {
 	return nil
 }
 
@@ -55,7 +55,7 @@ func (s *LocalStore) WatchServices(cb func(scServices)) error {
 
 // SetResource sets the project of the local globalConfig
 func (s *LocalStore) SetResource(ctx context.Context, resourceID string, resource interface{}) error {
-	if err := validateResource(ctx, config.ResourceAddEvent, s.globalConfig, resourceID, resource); err != nil {
+	if err := validateResource(ctx, config.ResourceAddEvent, s.globalConfig, resourceID, "", resource); err != nil {
 		return err
 	}
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)
@@ -63,7 +63,7 @@ func (s *LocalStore) SetResource(ctx context.Context, resourceID string, resourc
 
 // DeleteResource deletes the project from the local gloablConfig
 func (s *LocalStore) DeleteResource(ctx context.Context, resourceID string) error {
-	if err := validateResource(ctx, config.ResourceDeleteEvent, s.globalConfig, resourceID, nil); err != nil {
+	if err := validateResource(ctx, config.ResourceDeleteEvent, s.globalConfig, resourceID, "", nil); err != nil {
 		return err
 	}
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)

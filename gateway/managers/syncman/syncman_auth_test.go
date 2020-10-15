@@ -35,18 +35,18 @@ func TestManager_SetUserManagement(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auth)}}}},
+			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auths)}}}},
 			args:    args{ctx: context.Background(), project: "2", provider: "provider", value: &config.AuthStub{ID: "1"}},
 			wantErr: true,
 		},
 		{
 			name: "userman config is not set",
-			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auth)}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auths)}}}},
 			args: args{ctx: context.Background(), project: "1", provider: "provider", value: &config.AuthStub{ID: "1"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetUsermanConfig",
-					args:           []interface{}{mock.Anything, "1", config.Auth{config.GenerateResourceID("chicago", "1", config.ResourceAuthProvider, "provider"): &config.AuthStub{ID: "provider", Enabled: false}}},
+					args:           []interface{}{mock.Anything, "1", config.Auths{config.GenerateResourceID("chicago", "1", config.ResourceAuthProvider, "provider"): &config.AuthStub{ID: "provider", Enabled: false}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -61,12 +61,12 @@ func TestManager_SetUserManagement(t *testing.T) {
 		},
 		{
 			name: "userman config is set",
-			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auth)}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auths)}}}},
 			args: args{ctx: context.Background(), project: "1", provider: "provider", value: &config.AuthStub{ID: "1"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetUsermanConfig",
-					args:           []interface{}{mock.Anything, "1", config.Auth{config.GenerateResourceID("chicago", "1", config.ResourceAuthProvider, "provider"): &config.AuthStub{ID: "provider", Enabled: false}}},
+					args:           []interface{}{mock.Anything, "1", config.Auths{config.GenerateResourceID("chicago", "1", config.ResourceAuthProvider, "provider"): &config.AuthStub{ID: "provider", Enabled: false}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -121,7 +121,7 @@ func TestManager_GetUserManagement(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project",
-			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auth)}}}},
+			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auths)}}}},
 			args:    args{ctx: context.Background(), project: "2", providerID: "provider"},
 			wantErr: true,
 		},

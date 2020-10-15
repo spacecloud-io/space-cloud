@@ -50,7 +50,7 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 							Table:   "default",
 						},
 					},
-					Auths: config.Auth{
+					Auths: config.Auths{
 						"": &config.AuthStub{ID: "email", Enabled: true},
 					},
 					RemoteService: config.Services{

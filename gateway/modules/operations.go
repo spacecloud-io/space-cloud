@@ -28,10 +28,6 @@ func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.P
 		}
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting config of auth module", nil)
-		// Initializes rules for all modules
-		// if project.FileStoreConfig == nil {
-		// 	project.FileStoreConfig = new(config.FileStoreConfig)
-		// }
 		if err := m.auth.SetConfig(ctx, project.FileStoreConfig.StoreType, project.ProjectConfig, project.DatabaseRules, project.DatabasePreparedQueries, project.FileStoreRules, project.RemoteService, project.EventingRules); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set auth module config", err, nil)
 		}
@@ -136,13 +132,14 @@ func (m *Modules) SetFileStoreConfig(ctx context.Context, projectID string, file
 	if err := m.file.SetConfig(projectID, fileStore); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set filestore module config", err, nil)
 	}
+	m.auth.SetFileStoreType(fileStore.StoreType)
 	return nil
 }
 
 // SetFileStoreSecurityRuleConfig sets the config of auth and filestore modules
 func (m *Modules) SetFileStoreSecurityRuleConfig(ctx context.Context, projectID string, fileStoreRules config.FileStoreRules) {
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting config of file store rules in auth module", nil)
-	m.auth.SetFileStoreRules(projectID, fileStoreRules)
+	m.auth.SetFileStoreRules(fileStoreRules)
 }
 
 // SetEventingConfig sets the config of eventing module
@@ -177,7 +174,7 @@ func (m *Modules) SetEventingRuleConfig(ctx context.Context, secureObj config.Ev
 }
 
 // SetUsermanConfig set the config of the userman module
-func (m *Modules) SetUsermanConfig(ctx context.Context, projectID string, auth config.Auth) error {
+func (m *Modules) SetUsermanConfig(ctx context.Context, projectID string, auth config.Auths) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting config of user management module", nil)
 	m.user.SetConfig(auth)
 	return nil

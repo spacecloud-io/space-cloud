@@ -15,6 +15,7 @@ import (
 func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.CreateRequest) (model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
+
 	rule, auth, err := m.authenticateCrudRequest(ctx, project, dbAlias, col, token, model.Create)
 	if err != nil {
 		return model.RequestParams{}, err

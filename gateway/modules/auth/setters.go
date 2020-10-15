@@ -39,7 +39,7 @@ func (m *Module) SetConfig(ctx context.Context, fileStoreType string, projectCon
 
 	m.SetDatabaseRules(dbRules)
 	m.SetDatabasePreparedQueryRules(dbPreparedRules)
-	m.SetFileStoreRules(fileStoreType, fileStoreRules)
+	m.SetFileStoreRules(fileStoreRules)
 	m.SetEventingRules(eventingRules)
 	m.SetRemoteServiceConfig(remoteServices)
 
@@ -54,7 +54,7 @@ func (m *Module) SetRemoteServiceConfig(remoteServices config.Services) {
 }
 
 // SetFileStoreRules sets the file store module config
-func (m *Module) SetFileStoreRules(fileStoreType string, fileRules config.FileStoreRules) {
+func (m *Module) SetFileStoreRules(fileRules config.FileStoreRules) {
 	m.Lock()
 	defer m.Unlock()
 	if fileRules == nil {
@@ -66,6 +66,11 @@ func (m *Module) SetFileStoreRules(fileStoreType string, fileRules config.FileSt
 	}
 	sortFileRule(temp)
 	m.fileRules = temp
+}
+
+func (m *Module) SetFileStoreType(fileStoreType string) {
+	m.Lock()
+	defer m.Unlock()
 	m.fileStoreType = fileStoreType
 }
 
@@ -88,18 +93,6 @@ func (m *Module) SetDatabasePreparedQueryRules(dbPreparedRules config.DatabasePr
 	m.Lock()
 	defer m.Unlock()
 	m.dbPrepQueryRules = dbPreparedRules
-}
-
-// SetAESKey sets the aeskey to be used for encryption
-func (m *Module) SetAESKey(encodedAESKey string) error {
-	m.Lock()
-	defer m.Unlock()
-	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
-	if err != nil {
-		return err
-	}
-	m.aesKey = decodedAESKey
-	return nil
 }
 
 // SetMakeHTTPRequest sets the http request

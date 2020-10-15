@@ -25,7 +25,7 @@ func (s *Manager) SetUserManagement(ctx context.Context, project, provider strin
 
 	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceAuthProvider, provider)
 	if projectConfig.Auths == nil {
-		projectConfig.Auths = config.Auth{resourceID: value}
+		projectConfig.Auths = config.Auths{resourceID: value}
 	} else {
 		projectConfig.Auths[resourceID] = value
 	}

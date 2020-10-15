@@ -66,7 +66,7 @@ type Project struct {
 	FileStoreConfig *FileStoreConfig `json:"fileStoreConfig,omitempty" yaml:"fileStoreConfig,omitempty"`
 	FileStoreRules  FileStoreRules   `json:"fileStoreRules,omitempty" yaml:"fileStoreRules,omitempty"`
 
-	Auths Auth `json:"auths,omitempty" yaml:"auths,omitempty"`
+	Auths Auths `json:"auths,omitempty" yaml:"auths,omitempty"`
 
 	LetsEncrypt *LetsEncrypt `json:"letsencrypt,omitempty" yaml:"letsencrypt,omitempty"`
 
@@ -267,7 +267,7 @@ type Rule struct {
 }
 
 // Auth holds the mapping of the sign in method
-type Auth map[string]*AuthStub // The key here is the sign in method
+type Auths map[string]*AuthStub // The key here is the sign in method
 
 // AuthStub holds the config at a single sign in level
 type AuthStub struct {

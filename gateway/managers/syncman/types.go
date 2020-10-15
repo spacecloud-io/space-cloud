@@ -52,7 +52,7 @@ type ModulesInterface interface {
 	SetEventingRuleConfig(ctx context.Context, secureObj config.EventingRules) error
 
 	// SetUsermanConfig set the config of the userman module
-	SetUsermanConfig(ctx context.Context, projectID string, auth config.Auth) error
+	SetUsermanConfig(ctx context.Context, projectID string, auth config.Auths) error
 
 	// Getters
 	GetSchemaModuleForSyncMan() model.SchemaEventingInterface

@@ -51,29 +51,36 @@ func (s *KubeStore) Register() {
 	// kubernetes will handle this automatically
 }
 
-func onAddOrUpdateResource(eventType string, obj interface{}) (string, string, interface{}) {
+func onAddOrUpdateResource(eventType string, obj interface{}) (string, string, config.Resource, interface{}) {
 	configMap := obj.(*v1.ConfigMap)
 	resourceID, ok := configMap.Data["id"]
 	if !ok {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("%s event occured on resource config map, but (id) field was not found in config map data", eventType), nil, nil)
-		return "", "", nil
+		return "", "", "", nil
 	}
+
+	resourceType, ok := configMap.Labels["kind"]
+	if !ok {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("%s event occured on resource config map, but (kind) label was not found in config map", eventType), nil, nil)
+		return "", "", "", nil
+	}
+
 	dataJSONString, ok := configMap.Data["data"]
 	if !ok {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("%s event occured on resource config map, but (resource) field was not found in config map data", eventType), nil, nil)
-		return "", "", nil
+		return "", "", "", nil
 	}
 
-	var v map[string]interface{}
+	v := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(dataJSONString), &v); err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to unmarshal resource config map data while watching kube store project", nil, map[string]interface{}{"resourceId": resourceID, "eventType": eventType})
-		return "", "", nil
+		return "", "", "", nil
 	}
-	return eventType, resourceID, v
+	return eventType, resourceID, config.Resource(resourceType), v
 }
 
 // WatchResources maintains consistency over all projects
-func (s *KubeStore) WatchResources(cb func(eventType, resourceID string, resource interface{})) error {
+func (s *KubeStore) WatchResources(cb func(eventType, resourceID string, resourceType config.Resource, resource interface{})) error {
 	go func() {
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
 			options.LabelSelector = fmt.Sprintf("clusterId=%s", s.clusterID)
@@ -85,13 +92,25 @@ func (s *KubeStore) WatchResources(cb func(eventType, resourceID string, resourc
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				cb(onAddOrUpdateResource(config.ResourceAddEvent, obj))
+				evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceAddEvent, obj)
+				if resource == nil || resourceID == "" {
+					return
+				}
+				cb(evenType, resourceID, resourceType, resource)
 			},
 			UpdateFunc: func(old, obj interface{}) {
-				cb(onAddOrUpdateResource(config.ResourceUpdateEvent, obj))
+				evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceUpdateEvent, obj)
+				if resource == nil || resourceID == "" {
+					return
+				}
+				cb(evenType, resourceID, resourceType, resource)
 			},
 			DeleteFunc: func(obj interface{}) {
-				cb(onAddOrUpdateResource(config.ResourceDeleteEvent, obj))
+				evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+				if resource == nil || resourceID == "" {
+					return
+				}
+				cb(evenType, resourceID, resourceType, resource)
 			},
 		})
 
@@ -197,7 +216,7 @@ func (s *KubeStore) SetResource(ctx context.Context, resourceID string, resource
 	}
 
 	// validate if the resource value is according to the resource type
-	if err := validateResource(ctx, config.ResourceAddEvent, s.projectsConfig, resourceID, resource); err != nil {
+	if err := validateResource(ctx, config.ResourceAddEvent, s.projectsConfig, resourceID, resourceType, resource); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to validate resource", err, map[string]interface{}{"project": projectID})
 	}
 
@@ -257,15 +276,17 @@ func (s *KubeStore) DeleteResource(ctx context.Context, resourceID string) error
 
 // GetGlobalConfig gets config of all resource required by a cluster
 func (s *KubeStore) GetGlobalConfig() (*config.Config, error) {
-	configMaps, err := s.kube.CoreV1().ConfigMaps(spaceCloud).List(v12.ListOptions{LabelSelector: fmt.Sprintf("clusterId=%s", s.clusterID)})
-	if err != nil {
-		return nil, err
-	}
 	globalConfig := config.GenerateEmptyConfig()
-	for _, configMap := range configMaps.Items {
-		eventType, resourceID, resource := onAddOrUpdateResource(config.ResourceAddEvent, &configMap)
-		if err := validateResource(context.TODO(), eventType, globalConfig, resourceID, resource); err != nil {
+	for _, resourceType := range config.ResourceFetchingOrder {
+		configMaps, err := s.kube.CoreV1().ConfigMaps(spaceCloud).List(v12.ListOptions{LabelSelector: fmt.Sprintf("clusterId=%s,kind=%s", s.clusterID, resourceType)})
+		if err != nil {
 			return nil, err
+		}
+		for _, configMap := range configMaps.Items {
+			eventType, resourceID, _, resource := onAddOrUpdateResource(config.ResourceAddEvent, &configMap)
+			if err := validateResource(context.TODO(), eventType, globalConfig, resourceID, resourceType, resource); err != nil {
+				return nil, err
+			}
 		}
 	}
 	s.projectsConfig = globalConfig
