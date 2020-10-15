@@ -158,7 +158,7 @@ func (m *mockStoreInterface) GetGlobalConfig() (*config.Config, error) {
 	return c.Get(0).(*config.Config), c.Error(1)
 }
 
-func (m *mockStoreInterface) WatchResources(cb func(eventType string, resourceId string, resource interface{})) error {
+func (m *mockStoreInterface) WatchResources(cb func(eventType string, resourceId string, resourceType config.Resource, resource interface{})) error {
 	panic("implement me")
 }
 

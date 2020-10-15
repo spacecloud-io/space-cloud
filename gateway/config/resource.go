@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Order is according to space cli apply functionality
+// ResourceFetchingOrder order is according to space cli apply functionality
 var ResourceFetchingOrder = []Resource{
 	ResourceProject,
 	ResourceDatabaseConfig,

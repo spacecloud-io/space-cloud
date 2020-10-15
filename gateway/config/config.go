@@ -266,7 +266,7 @@ type Rule struct {
 	OpFormat string                 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
 }
 
-// Auth holds the mapping of the sign in method
+// Auths holds the mapping of the sign in method
 type Auths map[string]*AuthStub // The key here is the sign in method
 
 // AuthStub holds the config at a single sign in level

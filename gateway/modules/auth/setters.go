@@ -68,6 +68,7 @@ func (m *Module) SetFileStoreRules(fileRules config.FileStoreRules) {
 	m.fileRules = temp
 }
 
+// SetFileStoreType sets file story type
 func (m *Module) SetFileStoreType(fileStoreType string) {
 	m.Lock()
 	defer m.Unlock()
