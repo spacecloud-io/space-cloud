@@ -313,7 +313,7 @@ func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.
 	return http.StatusOK, nil
 }
 
-// DeleteCollectionRules sets the collection rules of the database
+// DeleteCollectionRules deletes the collection rules of the database
 func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, col string, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
