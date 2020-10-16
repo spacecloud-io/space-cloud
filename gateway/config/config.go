@@ -51,29 +51,29 @@ type IngressRoutes map[string]*Route // Key here is resource id --> clusterId--p
 
 // Project holds the project level configuration
 type Project struct {
-	ProjectConfig *ProjectConfig `json:"projectConfig,omitempty" yaml:"projectConfig,omitempty"`
+	ProjectConfig *ProjectConfig `json:"projectConfig" yaml:"projectConfig"`
 
-	DatabaseConfigs         DatabaseConfigs         `json:"dbConfigs,omitempty" yaml:"dbConfigs,omitempty"`
-	DatabaseSchemas         DatabaseSchemas         `json:"dbSchemas,omitempty" yaml:"dbSchemas,omitempty"`
-	DatabaseRules           DatabaseRules           `json:"dbRules,omitempty" yaml:"dbRules,omitempty"`
-	DatabasePreparedQueries DatabasePreparedQueries `json:"dbPreparedQuery,omitempty" yaml:"dbPreparedQuery,omitempty"`
+	DatabaseConfigs         DatabaseConfigs         `json:"dbConfigs" yaml:"dbConfigs"`
+	DatabaseSchemas         DatabaseSchemas         `json:"dbSchemas" yaml:"dbSchemas"`
+	DatabaseRules           DatabaseRules           `json:"dbRules" yaml:"dbRules"`
+	DatabasePreparedQueries DatabasePreparedQueries `json:"dbPreparedQuery" yaml:"dbPreparedQuery"`
 
-	EventingConfig   *EventingConfig  `json:"eventingConfig,omitempty" yaml:"eventingConfig,omitempty"`
-	EventingSchemas  EventingSchemas  `json:"eventingSchemas,omitempty" yaml:"eventingSchemas,omitempty"`
-	EventingRules    EventingRules    `json:"eventingRules,omitempty" yaml:"eventingRules,omitempty"`
-	EventingTriggers EventingTriggers `json:"eventingTriggers,omitempty" yaml:"eventingTriggers,omitempty"`
+	EventingConfig   *EventingConfig  `json:"eventingConfig" yaml:"eventingConfig"`
+	EventingSchemas  EventingSchemas  `json:"eventingSchemas" yaml:"eventingSchemas"`
+	EventingRules    EventingRules    `json:"eventingRules" yaml:"eventingRules"`
+	EventingTriggers EventingTriggers `json:"eventingTriggers" yaml:"eventingTriggers"`
 
-	FileStoreConfig *FileStoreConfig `json:"fileStoreConfig,omitempty" yaml:"fileStoreConfig,omitempty"`
-	FileStoreRules  FileStoreRules   `json:"fileStoreRules,omitempty" yaml:"fileStoreRules,omitempty"`
+	FileStoreConfig *FileStoreConfig `json:"fileStoreConfig" yaml:"fileStoreConfig"`
+	FileStoreRules  FileStoreRules   `json:"fileStoreRules" yaml:"fileStoreRules"`
 
-	Auths Auths `json:"auths,omitempty" yaml:"auths,omitempty"`
+	Auths Auths `json:"auths" yaml:"auths"`
 
-	LetsEncrypt *LetsEncrypt `json:"letsencrypt,omitempty" yaml:"letsencrypt,omitempty"`
+	LetsEncrypt *LetsEncrypt `json:"letsencrypt" yaml:"letsencrypt"`
 
-	IngressRoutes IngressRoutes       `json:"ingressRoute,omitempty" yaml:"ingressRoute,omitempty"`
-	IngressGlobal *GlobalRoutesConfig `json:"ingressGlobal,omitempty" yaml:"ingressGlobal,omitempty"`
+	IngressRoutes IngressRoutes       `json:"ingressRoute" yaml:"ingressRoute"`
+	IngressGlobal *GlobalRoutesConfig `json:"ingressGlobal" yaml:"ingressGlobal"`
 
-	RemoteService Services `json:"remoteServices,omitempty" yaml:"remoteServices,omitempty"`
+	RemoteService Services `json:"remoteServices" yaml:"remoteServices"`
 }
 
 // ProjectConfig stores information of individual project

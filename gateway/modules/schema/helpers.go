@@ -571,6 +571,6 @@ func getKeyName(dbName, key string) string {
 type dbSchemaResponse struct {
 	DbAlias   string       `json:"dbAlias"`
 	Col       string       `json:"col"`
-	Schema    string       `json:"schema"`
-	SchemaObj model.Fields `json:"schemaObj"`
+	Schema    string       `json:"schema,omitempty"`
+	SchemaObj model.Fields `json:"schemaObj,omitempty"`
 }

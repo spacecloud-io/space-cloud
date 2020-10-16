@@ -552,11 +552,15 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 		}
 		return http.StatusOK, []interface{}{coll}, nil
 	}
+	result := make([]interface{}, 0)
 	coll := map[string]*dbRulesResponse{}
 	for _, dbRule := range projectConfig.DatabaseRules {
 		coll[fmt.Sprintf("%s-%s", dbRule.DbAlias, dbRule.Table)] = &dbRulesResponse{IsRealTimeEnabled: dbRule.IsRealTimeEnabled, Rules: dbRule.Rules}
 	}
-	return http.StatusOK, []interface{}{coll}, nil
+	if len(coll) > 0 {
+		result = append(result, coll)
+	}
+	return http.StatusOK, result, nil
 }
 
 // GetSchemas gets schemas from config
