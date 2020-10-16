@@ -504,6 +504,43 @@ func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http
 	}
 }
 
+// HandleDeleteTableRules is an endpoint handler which deletes database collection rules in config
+func HandleDeleteTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
+		col := vars["col"]
+
+		v := config.TableRule{}
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "db-rule", "delete", map[string]string{"project": projectID, "db": dbAlias, "col": col})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		reqParams = utils.ExtractRequestParams(r, reqParams, v)
+		status, err := syncman.DeleteCollectionRules(ctx, projectID, dbAlias, col, reqParams)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
+	}
+}
+
 // HandleReloadSchema is an endpoint handler which return & sets the schemas of all collection in config
 func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

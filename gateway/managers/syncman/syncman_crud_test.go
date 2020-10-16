@@ -3,13 +3,13 @@ package syncman
 import (
 	"context"
 	"errors"
+	"net/http"
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/stretchr/testify/mock"
 )
 
 // func TestManager_SetDeleteCollection(t *testing.T) {
@@ -2075,6 +2075,136 @@ func TestManager_GetCollectionRules(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Manager.GetCollectionRules() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestManager_DeleteCollectionRules(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		ctx     context.Context
+		project string
+		dbAlias string
+		col     string
+		params  model.RequestParams
+	}
+	tests := []struct {
+		name            string
+		s               *Manager
+		args            args
+		modulesMockArgs []mockArgs
+		storeMockArgs   []mockArgs
+		want            int
+		wantErr         bool
+	}{
+		{
+			name:    "unable to get project",
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Rules: map[string]*config.Rule{"DB_IINSERT": {ID: "ruleID"}}}}}}}}}}},
+			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "2"},
+			want:    http.StatusBadRequest,
+			wantErr: true,
+		},
+		{
+			name:    "dbalias not present",
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Rules: map[string]*config.Rule{"DB_IINSERT": {ID: "ruleID"}}}}}}}}}}},
+			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "notAlias", project: "1"},
+			want:    http.StatusBadRequest,
+			wantErr: true,
+		},
+		{
+			name:    "table not present",
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Rules: map[string]*config.Rule{"DB_IINSERT": {ID: "ruleID"}}}}}}}}}}},
+			args:    args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1"},
+			want:    http.StatusBadRequest,
+			wantErr: true,
+		},
+		{
+			name: "unable to set crud config",
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Rules: map[string]*config.Rule{"DB_IINSERT": {ID: "ruleID"}}}}}}}}}}},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{"1", mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to set db config")},
+				},
+			},
+			want:    http.StatusInternalServerError,
+			wantErr: true,
+		},
+		{
+			name: "unable to set project",
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Rules: map[string]*config.Rule{"DB_IINSERT": {ID: "ruleID"}}}}}}}}}}},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{"1", mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "SetProject",
+					args:           []interface{}{context.Background(), mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to get db config")},
+				},
+			},
+			want:    http.StatusInternalServerError,
+			wantErr: true,
+		},
+		{
+			name: "db rules succesfully deleted",
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Rules: map[string]*config.Rule{"DB_IINSERT": {ID: "ruleID"}}}}}}}}}}},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{"1", mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "SetProject",
+					args:           []interface{}{context.Background(), mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			want: http.StatusOK,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockModules := mockModulesInterface{}
+			mockStore := mockStoreInterface{}
+
+			for _, m := range tt.modulesMockArgs {
+				mockModules.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.storeMockArgs {
+				mockStore.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			tt.s.modules = &mockModules
+			tt.s.store = &mockStore
+
+			got, err := tt.s.DeleteCollectionRules(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Manager.DeleteCollectionRules() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Manager.DeleteCollectionRules() = %v, want %v", got, tt.want)
+			}
+
+			mockModules.AssertExpectations(t)
+			mockStore.AssertExpectations(t)
 		})
 	}
 }

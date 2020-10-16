@@ -313,6 +313,41 @@ func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.
 	return http.StatusOK, nil
 }
 
+// DeleteCollectionRules sets the collection rules of the database
+func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, col string, params model.RequestParams) (int, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
+	if !ok {
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection rules, provided db alias (%s) does not exists", dbAlias), nil, nil)
+	}
+
+	collection, ok := databaseConfig.Collections[col]
+	if !ok {
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection rules, provided collection (%s) does not exists", col), nil, nil)
+	}
+
+	collection.Rules = make(map[string]*config.Rule)
+
+	fmt.Printf("Crud: %v", projectConfig.Modules.Crud[dbAlias])
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+	}
+
+	if err := s.setProject(ctx, projectConfig); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
 // SetReloadSchema reloads of the schema
 func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, params model.RequestParams) (int, error) {
 	// Acquire a lock
