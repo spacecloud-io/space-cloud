@@ -144,16 +144,14 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		taskID := r.URL.Query().Get("taskId")
-		replicaID := r.URL.Query().Get("replicaId")
-		if replicaID == "" {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, "replica id not provided in query param")
+		req, err := generateLogRequestFromQueryParams(r.Context(), r.URL)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		_, isFollow := r.URL.Query()["follow"]
 
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Get logs process started", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
-		pipeReader, err := s.driver.GetLogs(r.Context(), isFollow, projectID, taskID, replicaID)
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Get logs process started", map[string]interface{}{"projectId": projectID, "taskId": req.TaskID, "replicaId": req.ReplicaID, "isFollow": req.IsFollow, "tail": req.Tail, "sinceInSeconds": *req.Since, "sinceTime": req.SinceTime.String()})
+		pipeReader, err := s.driver.GetLogs(r.Context(), projectID, req)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Failed to get service logs", err, nil)
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
@@ -178,7 +176,7 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 			default:
 				str, err := reader.ReadString('\n')
 				if err != nil {
-					if err == io.EOF && !isFollow {
+					if err == io.EOF && !req.IsFollow {
 						helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "End of file reached for logs", map[string]interface{}{})
 						return
 					}
@@ -312,7 +310,7 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 			return
 		}
 
-		//var result []interface{}
+		// var result []interface{}
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		serviceID, serviceIDExists := r.URL.Query()["serviceId"]
