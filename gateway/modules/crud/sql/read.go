@@ -27,6 +27,14 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		dbType = string(model.Postgres)
 	}
 
+	if req.Options == nil {
+		req.Options = &model.ReadOptions{}
+	}
+	if req.Options.Limit == nil {
+		req.Options.Limit = s.queryFetchLimit
+		req.Options.HasOptions = true
+	}
+
 	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getDBName(col)).Prepared(true)
 	var tarr []string
