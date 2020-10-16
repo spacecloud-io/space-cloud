@@ -14,7 +14,7 @@ import (
 
 func deleteDBRules(project, dbAlias, prefix string) error {
 
-	objs, err := GetDbRule(project, "db-rule", map[string]string{"dbAlias": "*", "col": "*"})
+	objs, err := GetDbRule(project, "db-rule", map[string]string{"dbAlias": dbAlias, "col": "*"})
 	if err != nil {
 		return err
 	}
