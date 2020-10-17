@@ -39,7 +39,7 @@ type Modules struct {
 }
 
 // New creates a new modules instance
-func New(nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
+func New(clusterID string, nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
 
 	// Extract managers
 	adminMan := managers.Admin()
@@ -50,13 +50,13 @@ func New(nodeID string, managers *managers.Managers, globalMods *global.Global) 
 
 	c := crud.Init()
 	c.SetGetSecrets(syncMan.GetSecrets)
-	s := schema.Init(c)
+	s := schema.Init(clusterID, c)
 	c.SetSchema(s)
 
-	a := auth.Init(nodeID, c, adminMan)
+	a := auth.Init(clusterID, nodeID, c, adminMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
-	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
+	fn := functions.Init(clusterID, a, syncMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
 	f.SetGetSecrets(syncMan.GetSecrets)
 

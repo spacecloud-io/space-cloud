@@ -15,17 +15,17 @@ func TestParseSchema(t *testing.T) {
 		name          string
 		IsErrExpected bool
 		schema        model.Type
-		Data          config.Crud
+		Data          config.DatabaseSchemas
 	}{
 		{
 			name:          "compulsory field with different datatypes/primary key on list",
 			IsErrExpected: true,
 			schema:        nil,
-			Data: config.Crud{
-				"mongo": &config.CrudStub{
-					Collections: map[string]*config.TableRule{
-						"tweet": &config.TableRule{
-							Schema: `
+			Data: config.DatabaseSchemas{
+				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseSchema{
+					Table:   "tweet",
+					DbAlias: "mongo",
+					Schema: `
 						type tweet {
 							id: ID!
 							createdAt:DateTime
@@ -35,8 +35,6 @@ func TestParseSchema(t *testing.T) {
 							exp: Integer
 							owner:[String]@primary
 						  }`,
-						},
-					},
 				},
 			},
 		},
@@ -44,16 +42,14 @@ func TestParseSchema(t *testing.T) {
 			name:          "invalid collection name",
 			schema:        nil,
 			IsErrExpected: true,
-			Data: config.Crud{
-				"mongo": &config.CrudStub{
-					Collections: map[string]*config.TableRule{
-						"tes": &config.TableRule{
-							Schema: `type test {
+			Data: config.DatabaseSchemas{
+				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tes"): &config.DatabaseSchema{
+					Table:   "tes",
+					DbAlias: "mongo",
+					Schema: `type test {
 						 id : ID @id
 						 person : sharad @link(table:sharad, from:Name, to:isMale)
 						}`,
-						},
-					},
 				},
 			},
 		},
@@ -61,11 +57,11 @@ func TestParseSchema(t *testing.T) {
 			name:          "invalid linked field and valid directives",
 			schema:        nil,
 			IsErrExpected: true,
-			Data: config.Crud{
-				"mongo": &config.CrudStub{
-					Collections: map[string]*config.TableRule{
-						"test": &config.TableRule{
-							Schema: `type test {
+			Data: config.DatabaseSchemas{
+				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "test"): &config.DatabaseSchema{
+					Table:   "test",
+					DbAlias: "mongo",
+					Schema: `type test {
 						 id : ID @primary
 						 text: String@unique
 						 createdAt:DateTime@createdAt
@@ -77,8 +73,6 @@ func TestParseSchema(t *testing.T) {
 							latitude:Float
 							longitude:Float
 						}`,
-						},
-					},
 				},
 			},
 		},
@@ -86,11 +80,11 @@ func TestParseSchema(t *testing.T) {
 			name:          "collection could not be found in schema",
 			schema:        nil,
 			IsErrExpected: true,
-			Data: config.Crud{
-				"mongo": &config.CrudStub{
-					Collections: map[string]*config.TableRule{
-						"test": &config.TableRule{
-							Schema: `type test {
+			Data: config.DatabaseSchemas{
+				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "test"): &config.DatabaseSchema{
+					Table:   "test",
+					DbAlias: "mongo",
+					Schema: `type test {
 						 id : ID @primary
 						 text: String@unique
 						 createdAt:DateTime@createdAt
@@ -99,8 +93,6 @@ func TestParseSchema(t *testing.T) {
 						 person : sharad @link(table:sharad, from:Name)
 
 						}`,
-						},
-					},
 				},
 			},
 		},
@@ -108,21 +100,18 @@ func TestParseSchema(t *testing.T) {
 			name:          "field not provided in schema",
 			schema:        nil,
 			IsErrExpected: true,
-			Data: config.Crud{
-				"mongo": &config.CrudStub{
-					Collections: map[string]*config.TableRule{
-						"test": &config.TableRule{
-							Schema: `type test {
+			Data: config.DatabaseSchemas{
+				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseSchema{
+					Table:   "tweet",
+					DbAlias: "mongo",
+					Schema: `type test {
 						 id : ID @primary
 						 text: String@unique
 						 createdAt:DateTime@createdAt
 						 updatedAt:DateTime@updatedAt
 						 exp:Integera
 						 person : sharad @link()
-
 						}`,
-						},
-					},
 				},
 			},
 		},
@@ -130,21 +119,18 @@ func TestParseSchema(t *testing.T) {
 			name:          "value not provided for default",
 			schema:        nil,
 			IsErrExpected: true,
-			Data: config.Crud{
-				"mongo": &config.CrudStub{
-					Collections: map[string]*config.TableRule{
-						"test": &config.TableRule{
-							Schema: `type test {
+			Data: config.DatabaseSchemas{
+				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseSchema{
+					Table:   "tweet",
+					DbAlias: "mongo",
+					Schema: `type test {
 						 id : ID @primary
 						 text: String@unique
 						 createdAt:DateTime@createdAt
 						 updatedAt:DateTime@updatedAt
 						 exp:Integera
 						 person : sharad @default
-
 						}`,
-						},
-					},
 				},
 			},
 		},
@@ -152,17 +138,14 @@ func TestParseSchema(t *testing.T) {
 			name:          "wrong directive provided",
 			schema:        nil,
 			IsErrExpected: true,
-			Data: config.Crud{
-				"mongo": &config.CrudStub{
-					Collections: map[string]*config.TableRule{
-						"test": &config.TableRule{
-							Schema: `type test {
+			Data: config.DatabaseSchemas{
+				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseSchema{
+					Table:   "tweet",
+					DbAlias: "mongo",
+					Schema: `type test {
 						 id : ID @primary
 						 person : sharad @de
-
 						}`,
-						},
-					},
 				},
 			},
 		},
@@ -170,16 +153,14 @@ func TestParseSchema(t *testing.T) {
 			name:          "wrong args provided for group in directive-index",
 			schema:        nil,
 			IsErrExpected: true,
-			Data: config.Crud{
-				"mongo": &config.CrudStub{
-					Collections: map[string]*config.TableRule{
-						"test": &config.TableRule{
-							Schema: `type test {
+			Data: config.DatabaseSchemas{
+				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseSchema{
+					Table:   "tweet",
+					DbAlias: "mongo",
+					Schema: `type test {
 						 id : ID @primary
 						 first_name: ID! @index(group: 10, order: 1, sort: "asc")
 						}`,
-						},
-					},
 				},
 			},
 		},
@@ -221,18 +202,16 @@ func TestParseSchema(t *testing.T) {
 				},
 			},
 			IsErrExpected: false,
-			Data: config.Crud{
-				"mongo": &config.CrudStub{
-					Collections: map[string]*config.TableRule{
-						"tweet": &config.TableRule{
-							Schema: `type tweet {
+			Data: config.DatabaseSchemas{
+				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseSchema{
+					Table:   "tweet",
+					DbAlias: "mongo",
+					Schema: `type tweet {
 						 ID : ID @primary
 						 age: Float
 						 spec: JSON
 						 customer_id: ID! @foreign(table: "customer", field: "id", onDelete: "ca")
 						}`,
-						},
-					},
 				},
 			},
 		},
@@ -333,11 +312,11 @@ func TestParseSchema(t *testing.T) {
 				},
 			},
 			IsErrExpected: false,
-			Data: config.Crud{
-				"mongo": &config.CrudStub{
-					Collections: map[string]*config.TableRule{
-						"tweet": &config.TableRule{
-							Schema: `type tweet {
+			Data: config.DatabaseSchemas{
+				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseSchema{
+					Table:   "tweet",
+					DbAlias: "mongo",
+					Schema: `type tweet {
 						 ID : ID @primary
 						 age: Float
 						 spec: JSON
@@ -349,14 +328,12 @@ func TestParseSchema(t *testing.T) {
 						 customer_id: ID! @foreign(table: "customer", field: "id", onDelete: "cascade")
 						 order_dates: [DateTime] @link(table: "order", field: "order_date", from: "id", to: "customer_id")
 						}`,
-						},
-					},
 				},
 			},
 		},
 	}
 
-	s := Init(&crud.Module{})
+	s := Init("chicago", &crud.Module{})
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			r, err := s.Parser(testCase.Data)

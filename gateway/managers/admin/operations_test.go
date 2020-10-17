@@ -11,7 +11,6 @@ import (
 
 func TestManager_GetClusterID(t *testing.T) {
 	type fields struct {
-		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
@@ -31,7 +30,6 @@ func TestManager_GetClusterID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				config:    tt.fields.config,
 				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
 				isProd:    tt.fields.isProd,
@@ -46,7 +44,6 @@ func TestManager_GetClusterID(t *testing.T) {
 
 func TestManager_GetCredentials(t *testing.T) {
 	type fields struct {
-		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
@@ -66,7 +63,6 @@ func TestManager_GetCredentials(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				config:    tt.fields.config,
 				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
 				isProd:    tt.fields.isProd,
@@ -103,7 +99,6 @@ func TestManager_GetInternalAccessToken(t *testing.T) {
 
 func TestManager_GetQuotas(t *testing.T) {
 	type fields struct {
-		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
@@ -123,7 +118,6 @@ func TestManager_GetQuotas(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				config:    tt.fields.config,
 				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
 				isProd:    tt.fields.isProd,
@@ -138,7 +132,6 @@ func TestManager_GetQuotas(t *testing.T) {
 
 func TestManager_IsTokenValid(t *testing.T) {
 	type fields struct {
-		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
@@ -169,7 +162,6 @@ func TestManager_IsTokenValid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				config:    tt.fields.config,
 				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
 				isProd:    tt.fields.isProd,
@@ -225,24 +217,24 @@ func TestManager_ValidateSyncOperation(t *testing.T) {
 		{
 			name: "project already exists",
 			args: args{
-				c:       &config.Config{Projects: []*config.Project{{ID: "projectID"}}},
-				project: &config.Project{ID: "projectID"},
+				c:       &config.Config{Projects: config.Projects{"projectID": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "projectID"}}}},
+				project: &config.Project{ProjectConfig: &config.ProjectConfig{ID: "projectID"}},
 			},
 			want: true,
 		},
 		{
 			name: "project max projects creation limit not reached",
 			args: args{
-				c:       &config.Config{Projects: []*config.Project{}},
-				project: &config.Project{ID: "projectID"},
+				c:       &config.Config{Projects: config.Projects{"projectID": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "projectID"}}}},
+				project: &config.Project{ProjectConfig: &config.ProjectConfig{ID: "projectID"}},
 			},
 			want: true,
 		},
 		{
 			name: "project max projects creation limit reached",
 			args: args{
-				c:       &config.Config{Projects: []*config.Project{{ID: "project1"}}},
-				project: &config.Project{ID: "project2"},
+				c:       &config.Config{Projects: config.Projects{"projectID": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "projectID"}}}},
+				project: &config.Project{ProjectConfig: &config.ProjectConfig{ID: "project2"}},
 			},
 			want: false,
 		},
@@ -250,7 +242,7 @@ func TestManager_ValidateSyncOperation(t *testing.T) {
 	m := New("", "clusterID", false, &config.AdminUser{})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := m.ValidateProjectSyncOperation(tt.args.c, tt.args.project); got != tt.want {
+			if got := m.ValidateProjectSyncOperation(tt.args.c, tt.args.project.ProjectConfig); got != tt.want {
 				t.Errorf("ValidateProjectSyncOperation() = %v, want %v", got, tt.want)
 			}
 		})

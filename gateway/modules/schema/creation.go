@@ -222,24 +222,19 @@ func cleanIndexMap(v []*model.FieldType) []*model.FieldType {
 }
 
 // SchemaModifyAll modifies all the tables provided
-func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
+func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, dbSchemas config.DatabaseSchemas) error {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	crud := config.Crud{}
-	crud[dbAlias] = &config.CrudStub{
-		Enabled:     true,
-		Collections: tables,
-	}
-	parsedSchema, err := s.Parser(crud)
+	parsedSchema, err := s.Parser(dbSchemas)
 	if err != nil {
 		return err
 	}
-	for tableName, info := range tables {
-		if info.Schema == "" {
+	for _, dbSchema := range dbSchemas {
+		if dbSchema.Schema == "" {
 			continue
 		}
-		if err := s.SchemaCreation(ctx, dbAlias, tableName, logicalDBName, parsedSchema); err != nil {
+		if err := s.SchemaCreation(ctx, dbAlias, dbSchema.Table, logicalDBName, parsedSchema); err != nil {
 			return err
 		}
 	}

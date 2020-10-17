@@ -9,7 +9,7 @@ import (
 
 // SchemaCrudInterface is an interface consisting of functions of schema module used by auth module
 type SchemaCrudInterface interface {
-	SetConfig(conf config.Crud, project string) error
+	SetConfig(dbSchemas config.DatabaseSchemas, project string) error
 	ValidateCreateOperation(ctx context.Context, dbType, col string, req *CreateRequest) error
 	ValidateUpdateOperation(ctx context.Context, dbType, col, op string, updateDoc, find map[string]interface{}) error
 	CrudPostProcess(ctx context.Context, dbAlias, col string, result interface{}) error
@@ -24,9 +24,9 @@ type CrudAuthInterface interface {
 // SchemaEventingInterface is an interface consisting of functions of schema module used by eventing module
 type SchemaEventingInterface interface {
 	CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool)
-	Parser(crud config.Crud) (Type, error)
+	Parser(dbSchemas config.DatabaseSchemas) (Type, error)
 	SchemaValidator(ctx context.Context, col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
-	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error
+	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, dbSchemas config.DatabaseSchemas) error
 	SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error)
 	GetSchema(dbAlias, col string) (Fields, bool)
 	GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error)
@@ -71,7 +71,7 @@ type AuthFunctionInterface interface {
 
 // EventingRealtimeInterface is an interface consisting of functions of Eventing module used by RealTime module
 type EventingRealtimeInterface interface {
-	SetRealtimeTriggers(eventingRules []*config.EventingRule)
+	SetRealtimeTriggers(eventingRules []*config.EventingTrigger)
 }
 
 // AuthRealtimeInterface is an interface consisting of functions of auth module used by RealTime module

@@ -47,19 +47,21 @@ var testQueries = `
  	name: String
    }
  `
-var Parsedata = config.Crud{
-	"mongo": &config.CrudStub{
-		Collections: map[string]*config.TableRule{
-			"tweet": {
-				Schema: testQueries,
-			},
-			"test": {
-				Schema: testQueries,
-			},
-			"location": {
-				Schema: testQueries,
-			},
-		},
+var Parsedata = config.DatabaseSchemas{
+	config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseSchema{
+		Table:   "tweet",
+		DbAlias: "mongo",
+		Schema:  testQueries,
+	},
+	config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "test"): &config.DatabaseSchema{
+		Table:   "test",
+		DbAlias: "mongo",
+		Schema:  testQueries,
+	},
+	config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "location"): &config.DatabaseSchema{
+		Table:   "location",
+		DbAlias: "mongo",
+		Schema:  testQueries,
 	},
 }
 
@@ -139,7 +141,7 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 		},
 	}
 
-	s := Init(&crud.Module{})
+	s := Init("chicago", &crud.Module{})
 	err := s.parseSchema(Parsedata)
 	if err != nil {
 		t.Errorf("Error while parsing schema-%v", err)
@@ -211,7 +213,7 @@ func TestSchema_SchemaValidate(t *testing.T) {
 			},
 		},
 	}
-	s := Init(&crud.Module{})
+	s := Init("chicago", &crud.Module{})
 	err := s.parseSchema(Parsedata)
 	if err != nil {
 		t.Errorf("Error while parsing schema:%v", err)
@@ -439,7 +441,7 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 	}
-	s := Init(&crud.Module{})
+	s := Init("chicago", &crud.Module{})
 	err := s.parseSchema(Parsedata)
 	if err != nil {
 		t.Errorf("Error while parsing schema:%v", err)

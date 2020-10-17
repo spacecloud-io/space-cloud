@@ -68,22 +68,18 @@ func (s *Manager) GetAssignedTokens() (start, end int) {
 	return calcTokens(len(s.services), utils.MaxEventTokens, index)
 }
 
-func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
-	s.setProjectConfig(project)
-	return s.store.SetProject(ctx, project)
-}
-
 // SetClusterConfig applies the set cluster config
 func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfig, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.projectConfig.Admin.ClusterConfig = req
-	if err := s.store.SetAdminConfig(ctx, s.projectConfig.Admin); err != nil {
+	s.projectConfig.ClusterConfig = req
+	resourceID := config.GenerateResourceID(s.clusterID, "", config.ResourceCluster, "cluster")
+	if err := s.store.SetResource(ctx, resourceID, s.projectConfig.ClusterConfig); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	s.globalModules.SetMetricsConfig(s.projectConfig.Admin.ClusterConfig.EnableTelemetry)
+	s.globalModules.SetMetricsConfig(s.projectConfig.ClusterConfig.EnableTelemetry)
 	s.modules.LetsEncrypt().SetLetsEncryptEmail(req.LetsEncryptEmail)
 
 	return http.StatusOK, nil
@@ -93,26 +89,18 @@ func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfi
 func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestParams) (int, *config.ClusterConfig, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return http.StatusOK, s.projectConfig.Admin.ClusterConfig, nil
-}
-
-// SetAdminConfig sets admin config
-func (s *Manager) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	return s.store.SetAdminConfig(ctx, cluster)
+	return http.StatusOK, s.projectConfig.ClusterConfig, nil
 }
 
 // GetConfig returns the config present in the state
-func (s *Manager) GetConfig(projectID string) (*config.Project, error) {
+func (s *Manager) GetConfig(projectID string) (*config.ProjectConfig, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	// Iterate over all projects stored
-	for _, p := range s.projectConfig.Projects {
-		if projectID == p.ID {
-			return p, nil
-		}
+	project, ok := s.projectConfig.Projects[projectID]
+	if ok {
+		return project.ProjectConfig, nil
 	}
 
 	return nil, errors.New("given project is not present in state")
