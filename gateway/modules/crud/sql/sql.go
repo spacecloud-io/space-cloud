@@ -90,13 +90,14 @@ func (s *SQL) IsClientSafe(ctx context.Context) error {
 	if !s.enabled {
 		return utils.ErrDatabaseDisabled
 	}
-
 	if s.client == nil {
 		if err := s.connect(); err != nil {
 			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error connecting to "+s.dbType+" : "+err.Error()), nil)
 			return utils.ErrDatabaseConnection
 		}
 	}
+
+	s.client.Set
 
 	return nil
 }

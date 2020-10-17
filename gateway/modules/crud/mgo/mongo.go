@@ -38,7 +38,6 @@ func (m *Mongo) Close() error {
 	if m.client != nil {
 		return m.client.Disconnect(context.TODO())
 	}
-
 	return nil
 }
 

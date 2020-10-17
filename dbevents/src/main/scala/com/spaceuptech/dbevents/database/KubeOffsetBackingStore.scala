@@ -7,8 +7,8 @@ import java.util.Base64
 import java.util.concurrent.{Executor, ExecutorService, Executors, Future, TimeUnit}
 
 import io.kubernetes.client.openapi.apis.CoreV1Api
-import io.kubernetes.client.openapi.models.V1DeleteOptions
-import io.kubernetes.client.openapi.{ApiClient, Configuration}
+import io.kubernetes.client.openapi.models.{V1ConfigMap, V1ConfigMapBuilder, V1DeleteOptions}
+import io.kubernetes.client.openapi.{ApiClient, ApiException, Configuration}
 import io.kubernetes.client.util.ClientBuilder
 import org.apache.kafka.connect.runtime.WorkerConfig
 import org.apache.kafka.connect.storage.OffsetBackingStore
@@ -29,6 +29,23 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
 
   override def start(): Unit = {
     executor = Executors.newSingleThreadExecutor
+
+    // Check if the store has already been configured
+    if (name == "") {
+      throw new Exception("Call configure before calling start")
+    }
+
+    // Create an empty config map if it doesn't already exist
+    try {
+      val api = new CoreV1Api()
+      val configMap = new V1ConfigMapBuilder()
+        .withNewMetadata().withName(name).endMetadata()
+        .withData(new util.HashMap[String, String]())
+        .build()
+      api.createNamespacedConfigMap("space-cloud", configMap, null, null, null)
+    } catch {
+      case ex: ApiException => println("Unable to create config map for offset storage", ex.getMessage)
+    }
   }
 
   override def stop(): Unit = {
@@ -60,7 +77,6 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
 
       // Create a v1 api client
       val api = new CoreV1Api()
-      api.setApiClient(client)
 
       // Get the config map
       val configMap = api.readNamespacedConfigMap(name, "space-cloud", null,null, null)
@@ -79,24 +95,30 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
 
   override def set(values: util.Map[ByteBuffer, ByteBuffer], callback: Callback[Void]): Future[Void] = {
     executor.submit(() => {
-      // Create a v1 api client
-      val api = new CoreV1Api()
+      try {
+        // Create a v1 api client
+        val api = new CoreV1Api()
 
-      // Get the config map
-      val configMap = api.readNamespacedConfigMap(name, "space-cloud", null,null, null)
-      val currentValues = configMap.getData
+        // Get the config map
+        val configMap = api.readNamespacedConfigMap(name, "space-cloud", null, null, null)
+        val currentValues = configMap.getData
 
-      // Store the values in the config map
-      val map = values.asScala
-      for ((k, v) <- map) {
-        currentValues.put(Base64.getEncoder.encodeToString(k.array()), Base64.getEncoder.encodeToString(v.array()))
+        // Store the values in the config map
+        val map = values.asScala
+        for ((k, v) <- map) {
+          currentValues.put(Base64.getEncoder.encodeToString(k.array()), Base64.getEncoder.encodeToString(v.array()))
+        }
+        configMap.setData(currentValues)
+
+        // Update the config map
+        api.replaceNamespacedConfigMap(name, "space-cloud", configMap, null, null, null)
+
+        if (callback != null) callback.onCompletion(null, null)
+      } catch {
+        case ex: Throwable => if (callback != null) callback.onCompletion(ex, null)
       }
-      configMap.setData(currentValues)
 
-      // Update the config map
-      api.replaceNamespacedConfigMap(name, "space-cloud", configMap, null, null, null)
-
-      Void
+      null
     })
   }
 
@@ -105,7 +127,7 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
     name = name.replaceAll("_","-").toLowerCase
     println()
     println("************************************")
-    println("The name:", name)
+    println("Offset backing store name:", name)
     println("************************************")
     println()
   }

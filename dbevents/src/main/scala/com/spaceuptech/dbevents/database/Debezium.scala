@@ -17,7 +17,9 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
   import Database._
 
   // Lets get the connection string first
-  private val connString = Await.result(getConnString(config.conn), 10.seconds)
+  implicit val system: ActorSystem[Nothing] = context.system
+  implicit val executionContext: ExecutionContextExecutor = system.executionContext
+  private val connString = Await.result(getConnString(projectId, config.conn), 10.seconds)
   private val source = generateDatabaseSource(projectId, connString, config)
 
   // Extract name of actor
@@ -26,7 +28,7 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
 
   // Start the debezium engine
   private val executor = Executors.newSingleThreadExecutor
-  private var status = Utils.startDebeziumEngine(source, executor)
+  private var status = Utils.startDebeziumEngine(source, executor, context.self)
 
   // Start task for status check
   timers.startTimerAtFixedRate(name, CheckEngineStatus(), 10.second)
@@ -37,9 +39,16 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
       case Database.CheckEngineStatus() =>
         // Try starting the debezium engine again only if it wasn't running already
         if (status.future.isDone || status.future.isCancelled) {
+          // Just making sure its closed first
+          status.engine.close()
+          status.future.cancel(true)
+
           context.log.info(s"Debezium engine $name is closed. Restarting...")
-          status = Utils.startDebeziumEngine(source, executor)
+          status = Utils.startDebeziumEngine(source, executor, context.self)
         }
+        this
+
+      case ChangeRecord(payload, project, dbAlias, dbType) =>
         this
 
       case Stop() => Behaviors.stopped
@@ -55,6 +64,7 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
       if (!status.future.isCancelled && !status.future.isDone) {
         context.log.info(s"Closing debezium engine - $name")
         status.engine.close()
+        status.future.cancel(true)
         context.log.info(s"Closed debezium engine - $name")
       }
 
@@ -81,21 +91,4 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
     DatabaseSource(projectId, db.dbAlias, db.`type`, config)
   }
 
-  private def getConnString(conn: String): Future[String] = {
-    implicit val system: ActorSystem[Nothing] = context.system
-    implicit val executionContext: ExecutionContextExecutor = system.executionContext
-
-    if (!conn.startsWith("secrets")) {
-      return Future { conn }
-    }
-
-    val secret = conn.split('.')[1]
-   fetchSpaceCloudResource[Secret](s"http://${Global.gatewayUrl}/v1/runner/$projectId/secrets?id=$secret").flatMap {
-      secretResponse =>
-        secretResponse.result(0).data.get("CONN") match {
-          case Some(conn) => Future{conn}
-          case _ => Future.failed(new Exception("Secret does not have a valid resonse"))
-        }
-    }
-  }
 }

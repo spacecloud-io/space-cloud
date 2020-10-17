@@ -28,6 +28,10 @@ libraryDependencies ++= Seq(
   "io.debezium" % "debezium-connector-postgres" % "1.3.0.Final"
 )
 
+// Dependencies for the mongo db driver
+libraryDependencies += "org.mongodb" % "mongodb-driver" % "3.12.7"
+
+
 // Dependencies for parsing JSON
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.7.0-M6"
 

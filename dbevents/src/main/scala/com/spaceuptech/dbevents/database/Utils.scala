@@ -1,18 +1,40 @@
 package com.spaceuptech.dbevents.database
 
 import java.util.Properties
-import java.util.concurrent.ExecutorService
+import java.util.concurrent.{Callable, ExecutorService}
 
+import akka.actor.typed.ActorRef
+import com.mongodb.client.model.changestream.ChangeStreamDocument
+import com.mongodb.{Block, MongoClient, MongoClientURI}
+import com.spaceuptech.dbevents.database.Database.ChangeRecord
 import com.spaceuptech.dbevents.{DatabaseSource, Global}
 import io.debezium.engine.format.Json
 import io.debezium.engine.DebeziumEngine
+import org.bson.Document
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 
 object Utils {
+  def startMongoWatcher(projectId: String, conn: String, dbName: String, executorService: ExecutorService, actor: ActorRef[Database.Command]): java.util.concurrent.Future[_] = {
+    val connectionString = new MongoClientURI("mongodb://localhost:27017")
+    val mongoClient = new MongoClient(connectionString)
+    val db = mongoClient.getDatabase(dbName)
 
+    val printBlock = new Block[ChangeStreamDocument[Document]]() {
+      override def apply(t: ChangeStreamDocument[Document]): Unit = {
 
-  def startDebeziumEngine(source: DatabaseSource, executorService: ExecutorService): DebeziumStatus = {
+      }
+    }
+
+    executorService.submit(new Callable[Unit] {
+      override def call(): Unit = {
+        val itr = db.watch().iterator()
+
+      }
+    })
+  }
+
+  def startDebeziumEngine(source: DatabaseSource, executorService: ExecutorService, actor: ActorRef[Database.Command]): DebeziumStatus = {
     // Create the engine configuration object
     val props = source.dbType match {
       case "mysql" => prepareMySQLConfig(source)
@@ -30,13 +52,9 @@ object Utils {
 
       // Marshal the string only if the json string is not null
       if (jsonString != null) {
-        // Parse the json value
-
-        System.out.println()
-        System.out.println("DB Record Raw:", jsonString)
+        // Parse the json value and forward it to our actor
         val payload = parse(jsonString).extract[ChangeRecordPayload]
-        System.out.println("DB Record:", ChangeRecord(payload, source.project, source.dbAlias, source.dbType))
-        System.out.println()
+        actor ! ChangeRecord(payload, source.project, source.dbAlias, source.dbType)
       }
 
     }).build()
@@ -62,7 +80,7 @@ object Utils {
     props.setProperty("database.include.list", source.config.getOrElse("db", "test"))
     props.setProperty("database.server.name", s"${generateConnectorName(source)}_connector")
     props.setProperty("database.ssl.mode", source.config.getOrElse("sslMode", "disabled"))
-    props.setProperty("database.history", "io.debezium.relational.history.FileDatabaseHistory")
+    props.setProperty("database.history", getDatabaseHistoryStorageClass)
     props.setProperty("database.history.file.filename", "./dbhistory.dat")
 
     props
@@ -121,6 +139,13 @@ object Utils {
     Global.storageType match {
       case "k8s" => "com.spaceuptech.dbevents.database.KubeOffsetBackingStore"
       case _ => "org.apache.kafka.connect.storage.FileOffsetBackingStore"
+    }
+  }
+
+  def getDatabaseHistoryStorageClass: String = {
+    Global.storageType match {
+      case "k8s" => "com.spaceuptech.dbevents.database.KubeDatabaseHistory"
+      case _ => "io.debezium.relational.history.FileDatabaseHistory"
     }
   }
 

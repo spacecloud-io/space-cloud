@@ -13,6 +13,7 @@ object Database {
   }
 
   sealed trait Command
+  case class ChangeRecord(payload: ChangeRecordPayload, project: String, dbAlias: String, dbType: String) extends Command
   case class CheckEngineStatus() extends Command
   case class Stop() extends Command
 }
