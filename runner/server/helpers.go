@@ -28,7 +28,7 @@ func generateLogRequestFromQueryParams(ctx context.Context, r *url.URL) (*model.
 	}
 
 	if replicaID == "" {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "replica id not provided in query param", nil, map[string]interface{}{"since": since, "sinceTime": sinceTime})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Replica id not provided in query param", nil, map[string]interface{}{"since": since, "sinceTime": sinceTime})
 	}
 
 	if since != "" && sinceTime != "" {
