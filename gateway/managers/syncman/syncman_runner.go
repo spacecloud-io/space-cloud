@@ -519,15 +519,14 @@ func (s *Manager) GetClusterType(ctx context.Context, admin AdminSyncmanInterfac
 
 	token, err := admin.GetInternalAccessToken()
 	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "GetClusterType failed to generate internal access token", err, nil)
-		return "", err
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "GetClusterType failed to generate internal access token", err, nil)
 	}
 
 	data := new(model.Response)
 
 	err = s.MakeHTTPRequest(ctx, http.MethodGet, fmt.Sprintf("http://%s/v1/runner/cluster-type", s.runnerAddr), token, "", map[string]interface{}{}, data)
 	if err != nil {
-		return "", err
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to fetch cluster type from runner", err, nil)
 	}
 
 	return data.Result.(string), err

@@ -75,7 +75,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 			return http.StatusInternalServerError, nil, err
 		}
 		token = newToken
-	} 
+	}
 
 	/***************** Set the request body *****************/
 
@@ -240,11 +240,13 @@ func (m *Module) loadService(service string) *config.Service {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if s, p := m.config.InternalServices[service]; p {
-		return s
+	for _, s := range m.config {
+		if s.ID == service {
+			return s
+		}
 	}
 
-	return m.config.Services[service]
+	return nil
 }
 
 func (m *Module) getProject() string {

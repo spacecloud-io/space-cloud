@@ -231,7 +231,7 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: spaceuptech/runner:0.19.5
+          image: spaceuptech/runner:0.20.0
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "LOG_LEVEL"
@@ -387,7 +387,7 @@ metadata:
   labels:
     app: gateway
 spec:
-  replicas: 1
+  replicas: 2
   serviceName: gateway
   selector:
     matchLabels:
@@ -402,7 +402,7 @@ spec:
       containers:
         - name: gateway
           command: ["./app", "run"]
-          image: spaceuptech/gateway:0.19.5
+          image: spaceuptech/gateway:0.20.0
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "NODE_ID"
@@ -421,6 +421,8 @@ spec:
               value: "some-secret"
             - name: "LOG_LEVEL"
               value: "debug"
+            - name: "LOG_FORMAT"
+              value: "text"
             - name: "STORE_TYPE"
               value: "kube"
             - name: "LETSENCRYPT_STORE"

@@ -31,14 +31,13 @@ func (m *Manager) IsTokenValid(ctx context.Context, token, resource, op string, 
 }
 
 // ValidateProjectSyncOperation validates if an operation is permitted based on the mode
-func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config.Project) bool {
+func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config.ProjectConfig) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	for _, p := range c.Projects {
-		if p.ID == project.ID {
-			return true
-		}
+	_, ok := c.Projects[project.ID]
+	if ok {
+		return true
 	}
 
 	return len(c.Projects) < m.quotas.MaxProjects

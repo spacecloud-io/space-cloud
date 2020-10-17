@@ -131,7 +131,7 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 
-		v := config.CrudStub{}
+		v := config.DatabaseConfig{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
@@ -146,7 +146,7 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		}
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, v)
-		status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams)
+		status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, &v, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
@@ -282,7 +282,7 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 		projectID := vars["project"]
 		id := vars["id"]
 
-		v := config.PreparedQuery{}
+		v := config.DatbasePreparedQuery{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
@@ -355,7 +355,7 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		projectID := vars["project"]
 		col := vars["col"]
 
-		v := config.TableRule{}
+		v := config.DatabaseSchema{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
@@ -437,7 +437,7 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 		projectID := vars["project"]
 		col := vars["col"]
 
-		v := config.TableRule{}
+		v := config.DatabaseRule{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 

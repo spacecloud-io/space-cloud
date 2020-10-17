@@ -22,7 +22,7 @@ func Init(crud model.CrudUserInterface, auth model.AuthUserInterface) *Module {
 }
 
 // SetConfig sets the config required by the user management module
-func (m *Module) SetConfig(auth config.Auth) {
+func (m *Module) SetConfig(auth config.Auths) {
 	m.Lock()
 	defer m.Unlock()
 
