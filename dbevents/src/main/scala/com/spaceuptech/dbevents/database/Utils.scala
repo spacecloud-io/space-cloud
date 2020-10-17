@@ -1,37 +1,129 @@
 package com.spaceuptech.dbevents.database
 
-import java.util.Properties
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.util.{Calendar, HashMap, Properties}
 import java.util.concurrent.{Callable, ExecutorService}
+import java.util.function.Consumer
 
 import akka.actor.typed.ActorRef
-import com.mongodb.client.model.changestream.ChangeStreamDocument
-import com.mongodb.{Block, MongoClient, MongoClientURI}
+import com.mongodb.client.model.changestream.{ChangeStreamDocument, FullDocument, OperationType}
+import com.mongodb.{MongoClient, MongoClientURI}
 import com.spaceuptech.dbevents.database.Database.ChangeRecord
 import com.spaceuptech.dbevents.{DatabaseSource, Global}
 import io.debezium.engine.format.Json
 import io.debezium.engine.DebeziumEngine
-import org.bson.Document
+import org.bson.{BsonDocument, Document}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 
 object Utils {
-  def startMongoWatcher(projectId: String, conn: String, dbName: String, executorService: ExecutorService, actor: ActorRef[Database.Command]): java.util.concurrent.Future[_] = {
-    val connectionString = new MongoClientURI("mongodb://localhost:27017")
+  def startMongoWatcher(projectId: String, dbAlias: String, conn: String, dbName: String, executorService: ExecutorService, actor: ActorRef[Database.Command]): java.util.concurrent.Future[_] = {
+    val connectionString = new MongoClientURI(conn)
     val mongoClient = new MongoClient(connectionString)
     val db = mongoClient.getDatabase(dbName)
 
-    val printBlock = new Block[ChangeStreamDocument[Document]]() {
-      override def apply(t: ChangeStreamDocument[Document]): Unit = {
+    val offsetStore = new KubeOffsetBackingStore()
+    offsetStore.setName(s"$projectId-$dbAlias")
+    offsetStore.start()
 
+    val key = StandardCharsets.UTF_8.encode("resume-token")
+    val resumeToken = offsetStore.get(java.util.Arrays.asList(Array(key))).get().get(key)
+
+    var t = Calendar.getInstance().getTime
+
+    val consumer: Consumer[ChangeStreamDocument[Document]] = (doc) => {
+      // Check if 60 minutes have elapsed since last timer
+      val cal = Calendar.getInstance()
+      cal.setTime(t)
+      cal.add(Calendar.MINUTE, 60)
+
+      if (Calendar.getInstance().getTime.after(cal.getTime)) {
+        t = Calendar.getInstance().getTime
+
+        val value = StandardCharsets.UTF_8.encode(doc.getResumeToken.toJson)
+        offsetStore.set(java.util.Collections.singletonMap(key, value), null)
+      }
+
+      doc.getOperationType match {
+        case OperationType.INSERT =>
+          actor ! ChangeRecord(
+            payload = ChangeRecordPayload(
+              op = Some("c"),
+              before = None,
+              after = Some(mongoDocumentToMap(doc.getFullDocument)),
+              source = getMongoSource(projectId, dbAlias, doc)
+            ),
+            project = projectId,
+            dbAlias = dbAlias,
+            dbType = "mongo"
+          )
+
+        case OperationType.UPDATE | OperationType.REPLACE =>
+          actor ! ChangeRecord(
+            payload = ChangeRecordPayload(
+              op = Some("u"),
+              before = Option(mongoDocumentKeyToMap(doc.getDocumentKey)),
+              after = Some(mongoDocumentToMap(doc.getFullDocument)),
+              source = getMongoSource(projectId, dbAlias, doc)
+            ),
+            project = projectId,
+            dbAlias = dbAlias,
+            dbType = "mongo"
+          )
+
+        case OperationType.DELETE =>
+          actor ! ChangeRecord(
+            payload = ChangeRecordPayload(
+              op = Some("d"),
+              before = Option(mongoDocumentKeyToMap(doc.getDocumentKey)),
+              after = None,
+              source = getMongoSource(projectId, dbAlias, doc)
+            ),
+            project = projectId,
+            dbAlias = dbAlias,
+            dbType = "mongo"
+          )
+
+        case _ =>
+          println(s"Invalid operation type (${doc.getOperationType.getValue}) received")
       }
     }
 
     executorService.submit(new Callable[Unit] {
       override def call(): Unit = {
-        val itr = db.watch().iterator()
 
+        var w = db.watch().fullDocument(FullDocument.UPDATE_LOOKUP)
+        if (resumeToken != null) {
+          w = w.resumeAfter(mongoByteBufferToBsonDocument(resumeToken))
+        }
+        w.forEach(consumer)
       }
     })
+  }
+
+  def mongoByteBufferToBsonDocument(data: ByteBuffer): BsonDocument = {
+    BsonDocument.parse(new String(data.array(), "UTF-8"))
+  }
+
+  def mongoDocumentKeyToMap(find: BsonDocument): Map[String, Any] =  {
+    val id = find.getObjectId("_id").getValue.toHexString
+    Map("_id" -> id)
+  }
+
+  def mongoDocumentToMap(doc: Document): Map[String, Any] =  {
+    implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
+
+    val jsonString = doc.toJson
+    parse(jsonString).extract[Map[String, Any]]
+  }
+
+  def getMongoSource(projectId: String, dbAlias: String, doc: ChangeStreamDocument[Document]): ChangeRecordPayloadSource = {
+    ChangeRecordPayloadSource(
+      name = s"${projectId}_$dbAlias",
+      ts_ms = doc.getClusterTime.getTime * 1000,
+      table = doc.getNamespace.getCollectionName
+    )
   }
 
   def startDebeziumEngine(source: DatabaseSource, executorService: ExecutorService, actor: ActorRef[Database.Command]): DebeziumStatus = {

@@ -10,6 +10,7 @@ import io.kubernetes.client.openapi.apis.CoreV1Api
 import io.kubernetes.client.openapi.models.{V1ConfigMap, V1ConfigMapBuilder, V1DeleteOptions}
 import io.kubernetes.client.openapi.{ApiClient, ApiException, Configuration}
 import io.kubernetes.client.util.ClientBuilder
+import org.apache.commons.lang3.concurrent.ConcurrentUtils
 import org.apache.kafka.connect.runtime.WorkerConfig
 import org.apache.kafka.connect.storage.OffsetBackingStore
 import org.apache.kafka.connect.util.Callback
@@ -21,15 +22,11 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
   // Variable to store identity of caller
   var name: String = ""
 
-  var executor: ExecutorService = _
-
   // Create kubernetes client
   val client: ApiClient = ClientBuilder.cluster().build()
   Configuration.setDefaultApiClient(client)
 
   override def start(): Unit = {
-    executor = Executors.newSingleThreadExecutor
-
     // Check if the store has already been configured
     if (name == "") {
       throw new Exception("Call configure before calling start")
@@ -49,15 +46,6 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
   }
 
   override def stop(): Unit = {
-    // Stop the executor first
-    if (executor != null) {
-      executor.shutdown()
-      try {
-        executor.awaitTermination(30, TimeUnit.SECONDS)
-      } catch {
-        case ex: Throwable => println("unable to stop the executor:", ex.getMessage)
-      }
-    }
 
     // Create a v1 api client
     val api = new CoreV1Api()
@@ -71,64 +59,67 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
   }
 
   override def get(keys: util.Collection[ByteBuffer]): Future[util.Map[ByteBuffer, ByteBuffer]] = {
-    executor.submit(() => {
-      // Make a result map
-      val result: util.Map[ByteBuffer, ByteBuffer] = new util.HashMap()
+    // Make a result map
+    val result: util.Map[ByteBuffer, ByteBuffer] = new util.HashMap()
 
+    // Create a v1 api client
+    val api = new CoreV1Api()
+
+    // Get the config map
+    val configMap = api.readNamespacedConfigMap(name, "space-cloud", null,null, null)
+
+    // Iterate over the keys
+    val itr = keys.iterator()
+    while(itr.hasNext) {
+      val key = itr.next()
+      val value = configMap.getData.get(Base64.getEncoder.encodeToString(key.array()), "")
+      if (value != null) {
+        result.put(key, ByteBuffer.wrap(Base64.getDecoder.decode(value)))
+      } else {
+        result.put(key, null)
+      }
+    }
+
+    ConcurrentUtils.constantFuture(result)
+  }
+
+  override def set(values: util.Map[ByteBuffer, ByteBuffer], callback: Callback[Void]): Future[Void] = {
+    try {
       // Create a v1 api client
       val api = new CoreV1Api()
 
       // Get the config map
-      val configMap = api.readNamespacedConfigMap(name, "space-cloud", null,null, null)
+      val configMap = api.readNamespacedConfigMap(name, "space-cloud", null, null, null)
+      val currentValues = configMap.getData
 
-      // Iterate over the keys
-      val itr = keys.iterator()
-      while(itr.hasNext) {
-        val key = itr.next()
-        val value = configMap.getData.get(Base64.getEncoder.encodeToString(key.array()))
-        result.put(key, StandardCharsets.UTF_8.encode(value))
+      // Store the values in the config map
+      val map = values.asScala
+      for ((k, v) <- map) {
+        currentValues.put(Base64.getEncoder.encodeToString(k.array()), Base64.getEncoder.encodeToString(v.array()))
       }
+      configMap.setData(currentValues)
 
-      result
-    })
-  }
+      // Update the config map
+      api.replaceNamespacedConfigMap(name, "space-cloud", configMap, null, null, null)
 
-  override def set(values: util.Map[ByteBuffer, ByteBuffer], callback: Callback[Void]): Future[Void] = {
-    executor.submit(() => {
-      try {
-        // Create a v1 api client
-        val api = new CoreV1Api()
+      if (callback != null) callback.onCompletion(null, null)
+    } catch {
+      case ex: Throwable => if (callback != null) callback.onCompletion(ex, null)
+    }
 
-        // Get the config map
-        val configMap = api.readNamespacedConfigMap(name, "space-cloud", null, null, null)
-        val currentValues = configMap.getData
-
-        // Store the values in the config map
-        val map = values.asScala
-        for ((k, v) <- map) {
-          currentValues.put(Base64.getEncoder.encodeToString(k.array()), Base64.getEncoder.encodeToString(v.array()))
-        }
-        configMap.setData(currentValues)
-
-        // Update the config map
-        api.replaceNamespacedConfigMap(name, "space-cloud", configMap, null, null, null)
-
-        if (callback != null) callback.onCompletion(null, null)
-      } catch {
-        case ex: Throwable => if (callback != null) callback.onCompletion(ex, null)
-      }
-
-      null
-    })
+    ConcurrentUtils.constantFuture(null)
   }
 
   override def configure(config: WorkerConfig): Unit = {
-    name = config.getString("name")
-    name = name.replaceAll("_","-").toLowerCase
+    setName(config.getString("name"))
     println()
     println("************************************")
     println("Offset backing store name:", name)
     println("************************************")
     println()
+  }
+
+  def setName(value: String): Unit = {
+    name = value.replaceAll("_","-").toLowerCase
   }
 }

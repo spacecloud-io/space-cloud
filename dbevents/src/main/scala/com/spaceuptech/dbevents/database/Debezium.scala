@@ -31,7 +31,7 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
   private var status = Utils.startDebeziumEngine(source, executor, context.self)
 
   // Start task for status check
-  timers.startTimerAtFixedRate(name, CheckEngineStatus(), 10.second)
+  timers.startTimerAtFixedRate(name, CheckEngineStatus(), 30.second)
 
   override def onMessage(msg: Command): Behavior[Command] = {
     // No need to handle any messages

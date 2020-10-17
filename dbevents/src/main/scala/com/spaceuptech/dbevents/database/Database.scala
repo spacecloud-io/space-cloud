@@ -8,6 +8,7 @@ object Database {
   def createActor(projectId: String, config: DatabaseConfig): Behavior[Command] = {
     config.`type` match {
       case "postgres" | "mysql" | "sqlserver" => Behaviors.withTimers[Command](timers => Behaviors.setup[Command](context => new Debezium(context, timers, projectId, config)))
+      case "mongo" => Behaviors.withTimers[Command](timers => Behaviors.setup[Command](context => new Mongo(context, timers, projectId, config)))
       case _ => throw new Exception(s"Invalid db type (${config.`type`}) provided")
     }
   }
