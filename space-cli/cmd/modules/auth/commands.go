@@ -9,25 +9,10 @@ import (
 // GetSubCommands is the list of commands the auth module exposes
 func GetSubCommands() []*cobra.Command {
 	var getAuthProviders = &cobra.Command{
-		Use:     "auth-providers",
-		Aliases: []string{"auth-provider"},
-		RunE:    actionGetAuthProviders,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			objs, err := GetAuthProviders(project, "auth-providers", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var ids []string
-			for _, v := range objs {
-				ids = append(ids, v.Meta["id"])
-			}
-			return ids, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "auth-providers",
+		Aliases:           []string{"auth-provider"},
+		RunE:              actionGetAuthProviders,
+		ValidArgsFunction: validArgsFunc,
 	}
 	return []*cobra.Command{getAuthProviders}
 }
@@ -86,25 +71,10 @@ func actionGenerateUserManagement(cmd *cobra.Command, args []string) error {
 func DeleteSubCommands() []*cobra.Command {
 
 	var deleteAuthProvider = &cobra.Command{
-		Use:     "auth-provider",
-		Aliases: []string{"auth-providers"},
-		RunE:    actionDeleteAuthProvider,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			objs, err := GetAuthProviders(project, "auth-providers", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var ids []string
-			for _, v := range objs {
-				ids = append(ids, v.Meta["id"])
-			}
-			return ids, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "auth-provider",
+		Aliases:           []string{"auth-providers"},
+		RunE:              actionDeleteAuthProvider,
+		ValidArgsFunction: validArgsFunc,
 	}
 
 	return []*cobra.Command{deleteAuthProvider}

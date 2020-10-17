@@ -150,7 +150,7 @@ func Test_deleteAuthProvider(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the provider ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyMatchReturnValue},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local"},
 				},
 			},
@@ -199,7 +199,7 @@ func Test_deleteAuthProvider(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the provider ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyMatchReturnValue},
 					paramsReturned: []interface{}{nil, "local"},
 				},
 			},
@@ -248,7 +248,7 @@ func Test_deleteAuthProvider(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the provider ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyMatchReturnValue},
 					paramsReturned: []interface{}{nil, "local"},
 				},
 			},
@@ -282,7 +282,7 @@ func Test_deleteAuthProvider(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the provider ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyNoMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyNoMatchReturnValue},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local"},
 				},
 			},
@@ -331,7 +331,7 @@ func Test_deleteAuthProvider(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the provider ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyNoMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyNoMatchReturnValue},
 					paramsReturned: []interface{}{nil, "local"},
 				},
 			},
@@ -380,7 +380,7 @@ func Test_deleteAuthProvider(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the provider ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyNoMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyNoMatchReturnValue},
 					paramsReturned: []interface{}{nil, "local"},
 				},
 			},

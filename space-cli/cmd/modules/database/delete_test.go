@@ -168,7 +168,7 @@ func Test_deleteDBRules(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the table name: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyMatchReturnValue},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "age"},
 				},
 			},
@@ -225,7 +225,7 @@ func Test_deleteDBRules(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the table name: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyMatchReturnValue},
 					paramsReturned: []interface{}{nil, "age"},
 				},
 			},
@@ -282,7 +282,7 @@ func Test_deleteDBRules(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the table name: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyMatchReturnValue},
 					paramsReturned: []interface{}{nil, "age"},
 				},
 			},
@@ -324,7 +324,7 @@ func Test_deleteDBRules(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the table name: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyNoMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyNoMatchReturnValue},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "age"},
 				},
 			},
@@ -381,7 +381,7 @@ func Test_deleteDBRules(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the table name: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyNoMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyNoMatchReturnValue},
 					paramsReturned: []interface{}{nil, "age"},
 				},
 			},
@@ -438,7 +438,7 @@ func Test_deleteDBRules(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the table name: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyNoMatchReturnValue},
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyNoMatchReturnValue},
 					paramsReturned: []interface{}{nil, "age"},
 				},
 			},
