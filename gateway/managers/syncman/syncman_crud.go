@@ -337,7 +337,6 @@ func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, c
 
 	collection.Rules = make(map[string]*config.Rule)
 
-	fmt.Printf("Crud: %v", projectConfig.Modules.Crud[dbAlias])
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}

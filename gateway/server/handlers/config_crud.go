@@ -520,7 +520,7 @@ func HandleDeleteTableRules(adminMan *admin.Manager, syncman *syncman.Manager) h
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
-		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
 		// Check if the request is authorised
