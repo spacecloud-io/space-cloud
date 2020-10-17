@@ -32,7 +32,7 @@ func generateLogRequestFromQueryParams(ctx context.Context, r *url.URL) (*model.
 	}
 
 	if since != "" && sinceTime != "" {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "you cannot only provide since or sinceTime at once", nil, map[string]interface{}{"since": since, "sinceTime": sinceTime})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "You cannot provide since and sinceTime at once", nil, map[string]interface{}{"since": since, "sinceTime": sinceTime})
 	}
 
 	if since != "" {
