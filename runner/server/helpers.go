@@ -45,7 +45,7 @@ func generateLogRequestFromQueryParams(ctx context.Context, r *url.URL) (*model.
 	}
 
 	if sinceTime != "" {
-		sinceTimeDuration, err := time.Parse(sinceTime, time.RFC3339)
+		sinceTimeDuration, err := time.Parse(time.RFC3339, sinceTime)
 		if err != nil {
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("cannot parse since time value (%s) to time", sinceTime), err, map[string]interface{}{"sinceTime": sinceTime})
 		}

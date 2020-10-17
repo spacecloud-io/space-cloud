@@ -150,7 +150,7 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 			return
 		}
 
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Get logs process started", map[string]interface{}{"projectId": projectID, "taskId": req.TaskID, "replicaId": req.ReplicaID, "isFollow": req.IsFollow, "tail": req.Tail, "sinceInSeconds": *req.Since, "sinceTime": req.SinceTime.String()})
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Get logs process started", map[string]interface{}{"projectId": projectID, "taskId": req.TaskID, "replicaId": req.ReplicaID, "isFollow": req.IsFollow, "tail": req.Tail})
 		pipeReader, err := s.driver.GetLogs(r.Context(), projectID, req)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Failed to get service logs", err, nil)
