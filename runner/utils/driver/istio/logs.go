@@ -27,7 +27,6 @@ func (i *Istio) GetLogs(ctx context.Context, projectID string, info *model.LogRe
 	req := i.kube.CoreV1().Pods(projectID).GetLogs(info.ReplicaID, &v1.PodLogOptions{
 		Container:    info.TaskID,
 		Follow:       info.IsFollow,
-		Timestamps:   true,
 		SinceSeconds: info.Since,
 		SinceTime:    info.SinceTime,
 		TailLines:    info.Tail,
