@@ -423,7 +423,7 @@ spec:
               value: "some-secret"
             - name: "LOG_LEVEL"
               value: "debug"
-            - name: "LOG_FORMAT "
+            - name: "LOG_FORMAT"
               value: "text"
             - name: "STORE_TYPE"
               value: "kube"
