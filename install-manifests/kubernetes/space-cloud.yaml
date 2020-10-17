@@ -236,6 +236,8 @@ spec:
           env:
             - name: "LOG_LEVEL"
               value: "debug"
+            - name: "LOG_FORMAT"
+              value: "json"
             - name: "PROMETHEUS_ADDR"
               value: "http://prometheus.space-cloud.svc.cluster.local:9090"
             - name: "JWT_SECRET"
@@ -422,7 +424,7 @@ spec:
             - name: "LOG_LEVEL"
               value: "debug"
             - name: "LOG_FORMAT"
-              value: "text"
+              value: "json"
             - name: "STORE_TYPE"
               value: "kube"
             - name: "LETSENCRYPT_STORE"
