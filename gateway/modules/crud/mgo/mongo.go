@@ -16,10 +16,11 @@ import (
 
 // Mongo holds the mongo session
 type Mongo struct {
-	enabled    bool
-	connection string
-	dbName     string
-	client     *mongo.Client
+	queryFetchLimit *int64
+	enabled         bool
+	connection      string
+	dbName          string
+	client          *mongo.Client
 }
 
 // Init initialises a new mongo instance
@@ -89,4 +90,9 @@ func (m *Mongo) connect() error {
 // GetDBType returns the dbType of the crud block
 func (m *Mongo) GetDBType() model.DBType {
 	return model.Mongo
+}
+
+// SetQueryFetchLimit sets data fetch limit
+func (m *Mongo) SetQueryFetchLimit(limit int64) {
+	m.queryFetchLimit = &limit
 }

@@ -19,6 +19,14 @@ import (
 func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
 	collection := m.client.Database(m.dbName).Collection(col)
 
+	if req.Options == nil {
+		req.Options = &model.ReadOptions{}
+	}
+	if req.Options.Limit == nil {
+		req.Options.Limit = m.queryFetchLimit
+		req.Options.HasOptions = true
+	}
+
 	switch req.Operation {
 	case utils.Count:
 		countOptions := options.Count()

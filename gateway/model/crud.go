@@ -87,4 +87,7 @@ const (
 
 	// SQLServer is the type used for MsSQL
 	SQLServer DBType = "sqlserver"
+
+	// DefaultFetchLimit is the default value to be used as a limit to fetch rows/collection in each read query
+	DefaultFetchLimit = 1000
 )

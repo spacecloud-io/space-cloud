@@ -2,15 +2,10 @@ package istio
 
 import (
 	"fmt"
-
-	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
 func getServiceUniqueID(projectID, serviceID, version string) string {
 	return fmt.Sprintf("%s:%s:%s", projectID, serviceID, version)
-}
-func getServiceUniqueName(project, service, version string) string {
-	return fmt.Sprintf("%s-%s-%s", project, service, version)
 }
 
 func getServiceAccountName(serviceID string) string {
@@ -55,6 +50,10 @@ func getSidecarName(serviceID, version string) string {
 	return fmt.Sprintf("%s-%s", serviceID, version)
 }
 
-func getGeneratedByAnnotationName() string {
-	return fmt.Sprintf("space-cloud-runner-%s", model.Version)
+func getKedaScaledObjectName(serviceID, version string) string {
+	return getDeploymentName(serviceID, version)
+}
+
+func getKedaTriggerAuthName(serviceID, version, triggerName string) string {
+	return fmt.Sprintf("%s-%s", getDeploymentName(serviceID, version), triggerName)
 }

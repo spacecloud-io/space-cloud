@@ -74,7 +74,3 @@ type dbRulesResponse struct {
 	IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
 	Rules             map[string]*config.Rule `json:"rules"`
 }
-
-type dbSchemaResponse struct {
-	Schema string `json:"schema"`
-}

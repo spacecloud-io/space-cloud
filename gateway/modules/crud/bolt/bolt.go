@@ -12,10 +12,11 @@ import (
 
 // Bolt holds the bolt session
 type Bolt struct {
-	enabled    bool
-	connection string
-	bucketName string
-	client     *bbolt.DB
+	queryFetchLimit *int64
+	enabled         bool
+	connection      string
+	bucketName      string
+	client          *bbolt.DB
 }
 
 // Init initialises a new bolt instance
@@ -75,4 +76,9 @@ func (b *Bolt) connect() error {
 // GetDBType returns the dbType of the crud block
 func (b *Bolt) GetDBType() model.DBType {
 	return model.EmbeddedDB
+}
+
+// SetQueryFetchLimit sets data fetch limit
+func (b *Bolt) SetQueryFetchLimit(limit int64) {
+	b.queryFetchLimit = &limit
 }

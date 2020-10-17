@@ -34,6 +34,7 @@ type SchemaEventingInterface interface {
 	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error
 	SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error)
 	GetSchema(dbAlias, col string) (Fields, bool)
+	GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error)
 }
 
 // CrudEventingInterface is an interface consisting of functions of crud module used by Eventing module
@@ -70,6 +71,7 @@ type AuthFilestoreInterface interface {
 type AuthFunctionInterface interface {
 	GetSCAccessToken(ctx context.Context) (string, error)
 	Encrypt(value string) (string, error)
+	CreateToken(ctx context.Context, tokenClaims TokenClaims) (string, error)
 }
 
 // EventingRealtimeInterface is an interface consisting of functions of Eventing module used by RealTime module

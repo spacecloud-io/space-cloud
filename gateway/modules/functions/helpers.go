@@ -68,6 +68,15 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		token = endpoint.Token
 	}
 
+	// Create a new token if claims are provided
+	if endpoint.Claims != nil {
+		newToken, err := m.auth.CreateToken(ctx, endpoint.Claims)
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
+		token = newToken
+	} 
+
 	/***************** Set the request body *****************/
 
 	newParams, err := m.adjustReqBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, params)

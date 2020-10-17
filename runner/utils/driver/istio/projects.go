@@ -22,9 +22,10 @@ func (i *Istio) CreateProject(ctx context.Context, project *model.Project) error
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
 			Labels: map[string]string{
-				"istio-injection": "enabled",
-				"app":             "space-cloud",
-				"kind":            project.Kind,
+				"istio-injection":              "enabled",
+				"app.kubernetes.io/name":       namespace,
+				"app.kubernetes.io/managed-by": "space-cloud",
+				"space-cloud.io/kind":          project.Kind,
 			},
 		},
 	}

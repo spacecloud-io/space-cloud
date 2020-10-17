@@ -69,6 +69,7 @@ type Crud interface {
 	IsSame(conn, dbName string) bool
 	Close() error
 	GetConnectionState(ctx context.Context) bool
+	SetQueryFetchLimit(limit int64)
 }
 
 // Init create a new instance of the Module object
@@ -160,6 +161,10 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			v.DBName = project
 		}
 
+		if v.Limit == 0 {
+			v.Limit = model.DefaultFetchLimit
+		}
+
 		// Add the prepared queries in this db
 		for id, query := range v.PreparedQueries {
 			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
@@ -177,6 +182,9 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		}
 
 		if block, p := m.blocks[blockKey]; p {
+
+			block.SetQueryFetchLimit(v.Limit)
+
 			// Skip if the connection string is the same
 			if block.IsSame(connectionString, v.DBName) {
 				continue

@@ -15,20 +15,6 @@ func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error 
 
 	ns := service.ProjectID
 
-	// Set the default concurrency value to 50
-	if service.Scale.Concurrency == 0 {
-		service.Scale.Concurrency = 50
-	}
-
-	// Adjust the min scale in case of tcp based services. Min scale for tcp services need to be at least 1.
-	adjustMinScale(service)
-
-	// TODO: remove artifact store related code
-	token, err := i.auth.GenerateTokenForArtifactStore(service.ID, service.ProjectID, service.Version)
-	if err != nil {
-		return err
-	}
-
 	// Get the list of secrets required for this service
 	listOfSecrets, err := i.getSecrets(ctx, service)
 	if err != nil {
@@ -41,9 +27,15 @@ func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error 
 		return err
 	}
 
+	// Generate the necessary keda objects
+	kedaConfig, triggerSecretRefs, err := i.generateKedaConfig(ctx, service)
+	if err != nil {
+		return err
+	}
+
 	// Create the appropriate kubernetes and istio objects
 	kubeServiceAccount := generateServiceAccount(service)
-	kubeDeployment := i.generateDeployment(service, token, listOfSecrets)
+	kubeDeployment := i.generateDeployment(service, listOfSecrets)
 	kubeGeneralService := generateGeneralService(service)
 	kubeInternalService := generateInternalService(service)
 	istioVirtualService := i.updateVirtualService(service, prevVirtualService)
@@ -103,6 +95,11 @@ func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error 
 	// Apply the sidecar config
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying sidecar config (%s) in %s", istioSidecar.Name, ns), nil)
 	if err := i.applySidecar(ctx, ns, istioSidecar); err != nil {
+		return err
+	}
+
+	// Apply the keda config. We aren't logging here since its being done inside the applyKedaConfig function.
+	if err := i.applyKedaConfig(ctx, ns, kedaConfig, triggerSecretRefs); err != nil {
 		return err
 	}
 

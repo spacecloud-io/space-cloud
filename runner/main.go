@@ -91,12 +91,6 @@ func main() {
 					Usage:  "The jwt secret to use when the algorithm is set to HS256",
 					Value:  "some-secret",
 				},
-				cli.StringFlag{
-					Name:   "jwt-proxy-secret",
-					EnvVar: "JWT_PROXY_SECRET",
-					Usage:  "The jwt secret to use for authenticating the proxy",
-					Value:  "some-proxy-secret",
-				},
 
 				// Driver config
 				cli.StringFlag{
@@ -111,10 +105,10 @@ func main() {
 					Usage:  "Driver config file path",
 				},
 				cli.StringFlag{
-					Name:   "artifact-addr",
-					EnvVar: "ARTIFACT_ADDR",
-					Usage:  "The address used to reach the artifact serverl",
-					Value:  "http://store.space-cloud.svc.cluster.local",
+					Name:   "prometheus-addr",
+					EnvVar: "PROMETHEUS_ADDR",
+					Usage:  "The address used to reach prometheus",
+					Value:  "http://prometheus.space-cloud.svc.cluster.local:9090",
 				},
 				cli.BoolFlag{
 					Name:   "outside-cluster",

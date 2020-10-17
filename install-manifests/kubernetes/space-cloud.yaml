@@ -50,12 +50,16 @@ rules:
     resources: ["deployments"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups:
-    - "apps"
+      - "apps"
     resources: ["statefulsets"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups:
-    - "security.istio.io"
-    - "networking.istio.io"
+      - "security.istio.io"
+      - "networking.istio.io"
+    resources: ["*"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups:
+      - "keda.sh"
     resources: ["*"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
@@ -109,6 +113,21 @@ roleRef:
 ########################## Configure the istio side of the runner  ##########################
 #############################################################################################
 apiVersion: "security.istio.io/v1beta1"
+kind: "PeerAuthentication"
+metadata:
+  name: "runner-auth"
+  namespace: "space-cloud"
+spec:
+  selector:
+    matchLabels:
+      app: runner
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    4060:
+      mode: PERMISSIVE
+---
+apiVersion: "security.istio.io/v1beta1"
 kind: "AuthorizationPolicy"
 metadata:
   name: "auth-runner"
@@ -140,7 +159,9 @@ spec:
   hosts:
     - "runner.space-cloud.svc.cluster.local"
   http:
-    - route:
+    - match:
+        - port: 4050
+      route:
         - destination:
             host: runner.space-cloud.svc.cluster.local
             port:
@@ -149,15 +170,23 @@ spec:
         attempts: 3
         perTryTimeout: 60s
     - match:
-        - port: 4052
+        - port: 4055
       route:
         - destination:
             host: runner.space-cloud.svc.cluster.local
             port:
-              number: 4052
+              number: 4055
       retries:
         attempts: 1
-        perTryTimeout: 3m
+        perTryTimeout: 30m
+  tcp:
+    - match:
+        - port: 4060
+      route:
+        - destination:
+            host: runner.space-cloud.svc.cluster.local
+            port:
+              number: 4060
 ---
 #############################################################################################
 ################### Create the service and deployment objects for runner  ###################
@@ -176,6 +205,8 @@ spec:
       name: http
     - port: 4055
       name: http-proxy
+    - port: 4060
+      name: grpc-keda
   selector:
     app: runner
 ---
@@ -205,17 +236,16 @@ spec:
           env:
             - name: "LOG_LEVEL"
               value: "debug"
-            - name: "ARTIFACT_ADDR"
-              value: "store.space-cloud.svc.cluster.local:4122"
+            - name: "PROMETHEUS_ADDR"
+              value: "http://prometheus.space-cloud.svc.cluster.local:9090"
             - name: "JWT_SECRET"
               value: "some-secret"
-            - name: "JWT_PROXY_SECRET"
-              value: "some-proxy-secret"
             - name: "CLUSTER_ID"
               value: "first-cluster"
           ports:
             - containerPort: 4050
             - containerPort: 4055
+            - containerPort: 4060
           resources:
             requests:
               memory: "1024Mi"
@@ -357,7 +387,7 @@ metadata:
   labels:
     app: gateway
 spec:
-  replicas: 3
+  replicas: 1
   serviceName: gateway
   selector:
     matchLabels:
@@ -408,3 +438,25 @@ spec:
             requests:
               memory: "256Mi"
               cpu: "200m"
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gateway
+  namespace: space-cloud
+  labels:
+    app: gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: gateway
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80

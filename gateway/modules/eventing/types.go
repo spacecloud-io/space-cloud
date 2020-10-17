@@ -115,8 +115,14 @@ type mockSchemaEventingInterface struct {
 	mock.Mock
 }
 
+func (m *mockSchemaEventingInterface) GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error) {
+	c := m.Called(ctx, dbAlias, col, format)
+	return c.Get(0).([]interface{}), c.Error(1)
+}
+
 func (m *mockSchemaEventingInterface) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
-	panic("implement me")
+	c := m.Called(ctx, dbAlias, project, col)
+	return c.String(0), c.Error(1)
 }
 
 func (m *mockSchemaEventingInterface) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {

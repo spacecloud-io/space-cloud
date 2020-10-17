@@ -86,12 +86,13 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 
 	coll, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type, DBName: v.DBName}
+		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type, DBName: v.DBName, Limit: v.Limit}
 	} else {
 		coll.Conn = v.Conn
 		coll.Enabled = v.Enabled
 		coll.Type = v.Type
 		coll.DBName = v.DBName
+		coll.Limit = v.Limit
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
@@ -716,10 +717,6 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 	return http.StatusOK, []interface{}{coll}, nil
 }
 
-type dbJSONSchemaResponse struct {
-	Fields []*model.FieldType `json:"fields"`
-}
-
 // GetSchemas gets schemas from config
 func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) (int, []interface{}, error) {
 	// Check if the request has been hijacked
@@ -738,74 +735,18 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	_, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
 
-	if format == "json" {
-		a, _ := s.modules.GetSchemaModuleForSyncMan(project)
-		if dbAlias != "*" && col != "*" {
-			collectionInfo, p := a.GetSchema(dbAlias, col)
-			if !p {
-				return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
-			}
-			fields := []*model.FieldType{}
-			for _, v := range collectionInfo {
-				fields = append(fields, v)
-			}
-			return http.StatusOK, []interface{}{map[string]*dbJSONSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Fields: fields}}}, nil
-		} else if dbAlias != "*" {
-			collections := projectConfig.Modules.Crud[dbAlias].Collections
-			coll := map[string]*dbJSONSchemaResponse{}
-			for key := range collections {
-				collectionInfo, _ := a.GetSchema(dbAlias, key)
-				fields := []*model.FieldType{}
-				for _, v := range collectionInfo {
-					fields = append(fields, v)
-				}
-				coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &dbJSONSchemaResponse{Fields: fields}
-			}
-			return http.StatusOK, []interface{}{coll}, nil
-		}
-		databases := projectConfig.Modules.Crud
-		coll := map[string]*dbJSONSchemaResponse{}
-		for dbName, dbInfo := range databases {
-			for key := range dbInfo.Collections {
-				collectionInfo, _ := a.GetSchema(dbName, key)
-				fields := []*model.FieldType{}
-				for _, v := range collectionInfo {
-					fields = append(fields, v)
-				}
-				coll[fmt.Sprintf("%s-%s", dbName, key)] = &dbJSONSchemaResponse{Fields: fields}
-			}
-		}
-		return http.StatusOK, []interface{}{coll}, nil
+	a, _ := s.modules.GetSchemaModuleForSyncMan(project)
+	arr, err := a.GetSchemaForDB(ctx, dbAlias, col, format)
+	if err != nil {
+		return http.StatusInternalServerError, nil, err
 	}
 
-	if dbAlias != "*" && col != "*" {
-		collectionInfo, ok := projectConfig.Modules.Crud[dbAlias].Collections[col]
-		if !ok {
-			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
-		}
-
-		return http.StatusOK, []interface{}{map[string]*dbSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Schema: collectionInfo.Schema}}}, nil
-	} else if dbAlias != "*" {
-		collections := projectConfig.Modules.Crud[dbAlias].Collections
-		coll := map[string]*dbSchemaResponse{}
-		for key, value := range collections {
-			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &dbSchemaResponse{Schema: value.Schema}
-		}
-		return http.StatusOK, []interface{}{coll}, nil
-	}
-	databases := projectConfig.Modules.Crud
-	coll := map[string]*dbSchemaResponse{}
-	for dbName, dbInfo := range databases {
-		for key, value := range dbInfo.Collections {
-			coll[fmt.Sprintf("%s-%s", dbName, key)] = &dbSchemaResponse{Schema: value.Schema}
-		}
-	}
-	return http.StatusOK, []interface{}{coll}, nil
+	return http.StatusOK, arr, nil
 }
 
 type result struct {
