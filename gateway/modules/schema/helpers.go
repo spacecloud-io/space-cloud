@@ -531,13 +531,14 @@ func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*index
 	return indexMap, nil
 }
 
-func (s *Schema) getSchemaResponse(ctx context.Context, format, dbName, tableName string, ignoreForeignCheck bool, alreadyAddedTables map[string]bool, collection map[string]*config.TableRule, schemaResponse *[]interface{}) error {
+func (s *Schema) getSchemaResponse(ctx context.Context, format, dbName, tableName string, ignoreForeignCheck bool, alreadyAddedTables map[string]bool, schemaResponse *[]interface{}) error {
 	_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
 	if ok {
 		return nil
 	}
 
-	table, ok := collection[tableName]
+	resourceID := config.GenerateResourceID(s.clusterID, s.project, config.ResourceDatabaseSchema, dbName, tableName)
+	dbSchema, ok := s.dbSchemas[resourceID]
 	if !ok {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbName, tableName), nil, nil)
 	}
@@ -549,7 +550,7 @@ func (s *Schema) getSchemaResponse(ctx context.Context, format, dbName, tableNam
 			if ok {
 				continue
 			}
-			if err := s.getSchemaResponse(ctx, format, dbName, fieldInfo.JointTable.Table, ignoreForeignCheck, alreadyAddedTables, collection, schemaResponse); err != nil {
+			if err := s.getSchemaResponse(ctx, format, dbName, fieldInfo.JointTable.Table, ignoreForeignCheck, alreadyAddedTables, schemaResponse); err != nil {
 				return err
 			}
 		}
@@ -558,7 +559,7 @@ func (s *Schema) getSchemaResponse(ctx context.Context, format, dbName, tableNam
 	if format == "json" {
 		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, SchemaObj: collectionInfo})
 	} else {
-		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, Schema: table.Schema})
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, Schema: dbSchema.Schema})
 	}
 	return nil
 }
@@ -570,6 +571,6 @@ func getKeyName(dbName, key string) string {
 type dbSchemaResponse struct {
 	DbAlias   string       `json:"dbAlias"`
 	Col       string       `json:"col"`
-	Schema    string       `json:"schema"`
-	SchemaObj model.Fields `json:"schemaObj"`
+	Schema    string       `json:"schema,omitempty"`
+	SchemaObj model.Fields `json:"schemaObj,omitempty"`
 }

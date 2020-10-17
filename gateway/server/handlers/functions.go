@@ -36,7 +36,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		timeOut, err := functions.GetEndpointContextTimeout(r.Context(), serviceID, function)
+		timeOut, err := functions.GetEndpointContextTimeout(r.Context(), projectID, serviceID, function)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err.Error())
 			return

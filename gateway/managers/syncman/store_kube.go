@@ -3,10 +3,9 @@ package syncman
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sort"
-	"time"
+	"strings"
 
 	"github.com/spaceuptech/helpers"
 	v1 "k8s.io/api/core/v1"
@@ -24,8 +23,9 @@ import (
 
 // KubeStore is an object for storing kubestore information
 type KubeStore struct {
-	clusterID string
-	kube      *kubernetes.Clientset
+	clusterID      string
+	projectsConfig *config.Config
+	kube           *kubernetes.Clientset
 }
 
 const spaceCloud string = "space-cloud"
@@ -43,7 +43,7 @@ func NewKubeStore(clusterID string) (*KubeStore, error) {
 		return nil, err
 	}
 
-	return &KubeStore{clusterID: clusterID, kube: kube}, nil
+	return &KubeStore{clusterID: clusterID, kube: kube, projectsConfig: new(config.Config)}, nil
 }
 
 // Register registers space cloud to the kube store
@@ -51,115 +51,66 @@ func (s *KubeStore) Register() {
 	// kubernetes will handle this automatically
 }
 
-func onAddOrUpdateAdminConfig(obj interface{}, clusters []*config.Admin) {
+func onAddOrUpdateResource(eventType string, obj interface{}) (string, string, config.Resource, interface{}) {
 	configMap := obj.(*v1.ConfigMap)
-	clusterJSONString, ok := configMap.Data["cluster"]
+	resourceID, ok := configMap.Data["id"]
 	if !ok {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to watch kube store admin config as field (cluster) not found in config map", nil, nil)
-		return
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("%s event occured on resource config map, but (id) field was not found in config map data", eventType), nil, nil)
+		return "", "", "", nil
 	}
 
-	if err := json.Unmarshal([]byte(clusterJSONString), clusters[0]); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to unmarshal config map data while watching kube store admin config", nil, nil)
-		return
+	resourceType, ok := configMap.Labels["kind"]
+	if !ok {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("%s event occured on resource config map, but (kind) label was not found in config map", eventType), nil, nil)
+		return "", "", "", nil
 	}
-	if clusters[0].ClusterConfig == nil {
-		clusters[0].ClusterConfig = getDefaultAdminConfig().ClusterConfig
+
+	dataJSONString, ok := configMap.Data["data"]
+	if !ok {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("%s event occured on resource config map, but (resource) field was not found in config map data", eventType), nil, nil)
+		return "", "", "", nil
 	}
+
+	v := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(dataJSONString), &v); err != nil {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to unmarshal resource config map data while watching kube store project", nil, map[string]interface{}{"resourceId": resourceID, "eventType": eventType})
+		return "", "", "", nil
+	}
+	return eventType, resourceID, config.Resource(resourceType), v
 }
 
-func onAddOrUpdateProjects(obj interface{}, projectMap map[string]*config.Project) map[string]*config.Project {
-	configMap := obj.(*v1.ConfigMap)
-	projectJSONString, ok := configMap.Data["project"]
-	if !ok {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to watch kube store project as field (cluster) not found in config map", nil, nil)
-		return nil
-	}
-
-	v := new(config.Project)
-	if err := json.Unmarshal([]byte(projectJSONString), v); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to unmarshal config map data while watching kube store project", nil, nil)
-		return nil
-	}
-	projectMap[v.ID] = v
-	return projectMap
-}
-
-// WatchAdminConfig maintains consistency over all projects
-func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
+// WatchResources maintains consistency over all projects
+func (s *KubeStore) WatchResources(cb func(eventType, resourceID string, resourceType config.Resource, resource interface{})) error {
 	go func() {
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
-			options.LabelSelector = fmt.Sprintf("adminConfig=adminConfig,clusterId=%s", s.clusterID)
+			options.LabelSelector = fmt.Sprintf("clusterId=%s", s.clusterID)
 		}
 		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 0, informers.WithTweakListOptions(options)).Core().V1().ConfigMaps().Informer()
 		stopper := make(chan struct{})
 		defer close(stopper)
 		defer runtime.HandleCrash() // handles a crash & logs an error
 
-		clusters := []*config.Admin{getDefaultAdminConfig()}
-
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				onAddOrUpdateAdminConfig(obj, clusters)
-				cb(clusters)
-			},
-			UpdateFunc: func(old, obj interface{}) {
-				onAddOrUpdateAdminConfig(obj, clusters)
-				cb(clusters)
-			},
-			DeleteFunc: func(old interface{}) {
-				clusters[0] = getDefaultAdminConfig()
-				cb(clusters)
-			},
-		})
-
-		go informer.Run(stopper)
-		<-stopper
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "stopped watching over projects in kube store", nil)
-	}()
-	return nil
-}
-func getDefaultAdminConfig() *config.Admin {
-	return &config.Admin{
-		ClusterConfig: &config.ClusterConfig{
-			EnableTelemetry: true,
-		},
-		LicenseKey:   "",
-		LicenseValue: "",
-		License:      "",
-	}
-}
-
-// WatchProjects maintains consistency over all projects
-func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
-	go func() {
-		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
-			options.LabelSelector = fmt.Sprintf("kind=project,clusterId=%s", s.clusterID)
-		}
-		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 0, informers.WithTweakListOptions(options)).Core().V1().ConfigMaps().Informer()
-		stopper := make(chan struct{})
-		defer close(stopper)
-		defer runtime.HandleCrash() // handles a crash & logs an error
-
-		projectMap := map[string]*config.Project{}
-
-		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				cb(s.getProjects(onAddOrUpdateProjects(obj, projectMap)))
-			},
-			DeleteFunc: func(obj interface{}) {
-				configMap := obj.(*v1.ConfigMap)
-				projectID, ok := configMap.Data["id"]
-				if !ok {
-					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to delete project while watching kube store projects as field (id) not present in config map", nil, nil)
+				evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceAddEvent, obj)
+				if resource == nil || resourceID == "" {
 					return
 				}
-				delete(projectMap, projectID)
-				cb(s.getProjects(projectMap))
-
+				cb(evenType, resourceID, resourceType, resource)
 			},
 			UpdateFunc: func(old, obj interface{}) {
-				cb(s.getProjects(onAddOrUpdateProjects(obj, projectMap)))
+				evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceUpdateEvent, obj)
+				if resource == nil || resourceID == "" {
+					return
+				}
+				cb(evenType, resourceID, resourceType, resource)
+			},
+			DeleteFunc: func(obj interface{}) {
+				evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+				if resource == nil || resourceID == "" {
+					return
+				}
+				cb(evenType, resourceID, resourceType, resource)
 			},
 		})
 
@@ -256,29 +207,40 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
-// SetProject sets the project of the kube store
-func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) error {
-	projectJSONString, err := json.Marshal(project)
+// SetResource sets the project of the kube store
+func (s *KubeStore) SetResource(ctx context.Context, resourceID string, resource interface{}) error {
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting resource", map[string]interface{}{"resourceId": resourceID})
+	clusterID, projectID, resourceType, err := splitResourceID(ctx, resourceID)
+	if err != nil {
+		return err
+	}
+
+	// validate if the resource value is according to the resource type
+	if err := validateResource(ctx, config.ResourceAddEvent, s.projectsConfig, resourceID, resourceType, resource); err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to validate resource", err, map[string]interface{}{"project": projectID})
+	}
+
+	resourceJSONString, err := json.Marshal(resource)
 	if err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set project in kube store couldn't unmarshal project config", err, nil)
 		return err
 	}
 
-	name := fmt.Sprintf("%s-%s", s.clusterID, project.ID)
+	name := makeIDConfigMapCompatible(resourceID)
 	configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(name, v12.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		configMap := &v1.ConfigMap{
 			ObjectMeta: v12.ObjectMeta{
 				Name: name,
 				Labels: map[string]string{
-					"kind":      "project",
-					"projectId": project.ID,
-					"clusterId": s.clusterID,
+					"kind":      string(resourceType),
+					"projectId": projectID,
+					"clusterId": clusterID,
 				},
 			},
 			Data: map[string]string{
-				"id":      project.ID,
-				"project": string(projectJSONString),
+				"id":   resourceID,
+				"data": string(resourceJSONString),
 			},
 		}
 		_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Create(configMap)
@@ -291,8 +253,7 @@ func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) err
 		return err
 	}
 
-	configMap.Data["id"] = project.ID
-	configMap.Data["project"] = string(projectJSONString)
+	configMap.Data["data"] = string(resourceJSONString)
 
 	_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Update(configMap)
 	if err != nil {
@@ -301,83 +262,10 @@ func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) err
 	return err
 }
 
-// GetAdminConfig returns the admin config present in the store
-func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
-	name := fmt.Sprintf("sc-admin-config-%s", s.clusterID)
-
-	for i := 0; i < 3; i++ {
-		configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(name, v12.GetOptions{})
-		if kubeErrors.IsNotFound(err) {
-			return getDefaultAdminConfig(), nil
-		} else if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to fetch config map (%s) from kubernetes", name), err, map[string]interface{}{"namespace": spaceCloud})
-
-			// Sleep for 5 seconds then try again
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		clusterJSONString, ok := configMap.Data["cluster"]
-		if !ok {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Admin config data is corrupted", errors.New("key (cluster) not found in config map data object"), map[string]interface{}{})
-		}
-
-		cluster := new(config.Admin)
-		if err := json.Unmarshal([]byte(clusterJSONString), cluster); err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Admin config data is corrupted", err, map[string]interface{}{})
-		}
-
-		return cluster, nil
-	}
-
-	return nil, errors.New("admin config could not be fetched")
-}
-
-// SetAdminConfig sets the project of the kube store
-func (s *KubeStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
-	clusterJSONString, err := json.Marshal(cluster)
-	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config in kube store couldn't unmarshal admin config data", err, nil)
-		return err
-	}
-
-	name := fmt.Sprintf("sc-admin-config-%s", s.clusterID)
-	configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(name, v12.GetOptions{})
-	if kubeErrors.IsNotFound(err) {
-		configMap := &v1.ConfigMap{
-			ObjectMeta: v12.ObjectMeta{
-				Name: name,
-				Labels: map[string]string{
-					"adminConfig": "adminConfig",
-					"clusterId":   s.clusterID,
-				},
-			},
-			Data: map[string]string{
-				"cluster": string(clusterJSONString),
-			},
-		}
-		_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Create(configMap)
-		if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config in kube store couldn't create config map", err, nil)
-		}
-		return err
-	} else if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config in kube store couldn't get config map", err, nil)
-		return err
-	}
-
-	configMap.Data["cluster"] = string(clusterJSONString)
-
-	_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Update(configMap)
-	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config in kube store couldn't update config map", err, nil)
-	}
-	return err
-}
-
-// DeleteProject deletes the project from the kube store
-func (s *KubeStore) DeleteProject(ctx context.Context, projectID string) error {
-	err := s.kube.CoreV1().ConfigMaps(spaceCloud).Delete(fmt.Sprintf("%s-%s", s.clusterID, projectID), &v12.DeleteOptions{})
+// DeleteResource deletes a resource from cluster
+func (s *KubeStore) DeleteResource(ctx context.Context, resourceID string) error {
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Deleting resource", map[string]interface{}{"resourceId": resourceID})
+	err := s.kube.CoreV1().ConfigMaps(spaceCloud).Delete(makeIDConfigMapCompatible(resourceID), &v12.DeleteOptions{})
 	if kubeErrors.IsNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -386,10 +274,27 @@ func (s *KubeStore) DeleteProject(ctx context.Context, projectID string) error {
 	return err
 }
 
-func (s *KubeStore) getProjects(v map[string]*config.Project) []*config.Project {
-	projects := []*config.Project{}
-	for _, value := range v {
-		projects = append(projects, value)
+// GetGlobalConfig gets config of all resource required by a cluster
+func (s *KubeStore) GetGlobalConfig() (*config.Config, error) {
+	globalConfig := config.GenerateEmptyConfig()
+	for _, resourceType := range config.ResourceFetchingOrder {
+		configMaps, err := s.kube.CoreV1().ConfigMaps(spaceCloud).List(v12.ListOptions{LabelSelector: fmt.Sprintf("clusterId=%s,kind=%s", s.clusterID, resourceType)})
+		if err != nil {
+			return nil, err
+		}
+		for _, configMap := range configMaps.Items {
+			eventType, resourceID, _, resource := onAddOrUpdateResource(config.ResourceAddEvent, &configMap)
+			if err := validateResource(context.TODO(), eventType, globalConfig, resourceID, resourceType, resource); err != nil {
+				return nil, err
+			}
+		}
 	}
-	return projects
+	s.projectsConfig = globalConfig
+	return globalConfig, nil
+}
+
+// name cannot contain have underscore (_) but some resource have underscore in their name e.g --> event_logs, invocation_logs
+// NOTE: use labels for getting the correct resource id
+func makeIDConfigMapCompatible(resourceID string) string {
+	return strings.ToLower(strings.Replace(resourceID, "_", "-", -1))
 }
