@@ -56,7 +56,7 @@ func generateLogRequestFromQueryParams(ctx context.Context, r *url.URL) (*model.
 	if tail != "" {
 		tailNum, err := strconv.Atoi(tail)
 		if err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("incorrect value (%v) provided for tail ", tail), err, map[string]interface{}{"tail": tail})
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Incorrect value (%v) provided for tail ", tail), err, map[string]interface{}{"tail": tail})
 		}
 		if tailNum < 1 {
 			// -1 indicates show all logs
