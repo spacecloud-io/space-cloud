@@ -15,7 +15,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		SchemaDoc model.Type
 		crud      model.CrudSchemaInterface
 		project   string
-		config    config.Crud
+		config    config.DatabaseSchemas
 	}
 	type args struct {
 		dbAlias       string
@@ -27,21 +27,21 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 	adminMan := admin.New("nodeID", "clusterID", true, &config.AdminUser{})
 	crudPostgres := crud.Init()
 	crudPostgres.SetAdminManager(adminMan)
-	err := crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
+	err := crudPostgres.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "postgres"): &config.DatabaseConfig{DbAlias: "postgres", Type: "sql-postgres", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize postgres", err)
 	}
 
 	crudMySQL := crud.Init()
 	crudMySQL.SetAdminManager(adminMan)
-	err = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
+	err = crudMySQL.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "mysql"): &config.DatabaseConfig{DbAlias: "mysql", Type: "sql-mysql", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize my sql", err)
 
 	}
 	crudSQLServer := crud.Init()
 	crudSQLServer.SetAdminManager(adminMan)
-	err = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
+	err = crudSQLServer.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "sqlserver"): &config.DatabaseConfig{DbAlias: "sqlserver", Type: "sql-sqlserver", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize sql server", err)
 
@@ -3455,7 +3455,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				SchemaDoc: tt.fields.SchemaDoc,
 				crud:      tt.fields.crud,
 				project:   tt.fields.project,
-				config:    tt.fields.config,
+				dbSchemas: tt.fields.config,
 			}
 			got, err := s.generateCreationQueries(context.Background(), tt.args.dbAlias, tt.args.tableName, tt.args.project, tt.args.parsedSchema, tt.args.currentSchema)
 			if (err != nil) != tt.wantErr {

@@ -24,104 +24,101 @@ func (m *Manager) invokeHooks(ctx context.Context, params model.RequestParams) a
 
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Inside invoke hooks", map[string]interface{}{"resource": params.Resource, "verb": params.Op})
 	// TODO: Make the iteration happen in parallel
-	for integrationID, integration := range m.config {
+	for _, hook := range m.integrationHookConfig {
 		// Skip if the integration is the caller
-		if callerID == integrationID {
+		if callerID == hook.IntegrationID {
+			continue
+		}
+		// Check if the resource types match
+		if !utils.StringExists(hook.Resource, "*", params.Resource) {
 			continue
 		}
 
-		for hookID, hook := range integration.Hooks {
-			// Check if the resource types match
-			if !utils.StringExists(hook.Resource, "*", params.Resource) {
-				continue
-			}
+		// Check if the op matches
+		if !utils.StringExists(hook.Verbs, "*", params.Op) {
+			continue
+		}
 
-			// Check if the op matches
-			if !utils.StringExists(hook.Verbs, "*", params.Op) {
-				continue
-			}
-
-			// Check if the attr match
-			if params.Attributes != nil {
-				for k, v := range hook.Attributes {
-					val, p := params.Attributes[k]
-					if !p {
-						continue
-					}
-
-					if !utils.StringExists(v, "*", val) {
-						continue
-					}
-				}
-			}
-
-			// TODO: Check if rule matches
-
-			// Get the admin token
-			scToken, err := m.adminMan.GetInternalAccessToken()
-			if err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to make sc token for invoking hook (%s) in integration (%s)", hookID, integrationID), err, nil)
-				continue
-			}
-
-			// Invoke the hook
-			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Invoking hook", map[string]interface{}{
-				"url":      hook.URL,
-				"resource": params.Resource,
-				"verb":     params.Op,
-			})
-			var res config.IntegrationHookResponse
-			req := &utils.HTTPRequest{URL: hook.URL, Params: params, Method: http.MethodPost, SCToken: scToken}
-			status, err := utils.MakeHTTPRequest(ctx, req, &res)
-			if err != nil {
-				err = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to make request to hook (%s) in integration (%s)", hookID, integrationID), err, nil)
-
-				// Return error if this was a hook with hijack permission
-				if hook.Kind == "hijack" {
-					return authResponse{checkResponse: true, status: status, err: err}
+		// Check if the attr match
+		if params.Attributes != nil {
+			for k, v := range hook.Attributes {
+				val, p := params.Attributes[k]
+				if !p {
+					continue
 				}
 
-				// Otherwise continue
-				continue
+				if !utils.StringExists(v, "*", val) {
+					continue
+				}
+			}
+		}
+
+		// TODO: Check if rule matches
+
+		// Get the admin token
+		scToken, err := m.adminMan.GetInternalAccessToken()
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to make sc token for invoking hook (%s) in integration (%s)", hook.ID, hook.IntegrationID), err, nil)
+			continue
+		}
+
+		// Invoke the hook
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Invoking hook", map[string]interface{}{
+			"url":      hook.URL,
+			"resource": params.Resource,
+			"verb":     params.Op,
+		})
+		var res config.IntegrationHookResponse
+		req := &utils.HTTPRequest{URL: hook.URL, Params: params, Method: http.MethodPost, SCToken: scToken}
+		status, err := utils.MakeHTTPRequest(ctx, req, &res)
+		if err != nil {
+			err = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to make request to hook (%s) in integration (%s)", hook.ID, hook.IntegrationID), err, nil)
+
+			// Return error if this was a hook with hijack permission
+			if hook.Kind == "hijack" {
+				return authResponse{checkResponse: true, status: status, err: err}
 			}
 
-			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Hook (%s) in integration (%s) responded with action (%s)", hookID, integrationID, res.Action), nil)
+			// Otherwise continue
+			continue
+		}
 
-			switch res.Action {
-			case config.ErrorHookResponse:
-				// Simply log the error. No big deal. The hook can always hijack and throw error if this was serious
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Hook (%s) in integration (%s) sent error response - %s", hookID, integrationID, res.Error), err, nil)
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Hook (%s) in integration (%s) responded with action (%s)", hook.ID, hook.IntegrationID, res.Action), nil)
 
-			case config.IgnoreHookResponse:
-				// Do nothing
+		switch res.Action {
+		case config.ErrorHookResponse:
+			// Simply log the error. No big deal. The hook can always hijack and throw error if this was serious
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Hook (%s) in integration (%s) sent error response - %s", hook.ID, hook.IntegrationID, res.Error), err, nil)
+
+		case config.IgnoreHookResponse:
+			// Do nothing
+			break
+
+		case config.HijackHookResponse:
+			// Check if hook hook has permission to hijack
+			if hook.Kind != "hijack" {
+				helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Hook (%s) in integration (%s) does not has permission to hijack", hook.ID, hook.IntegrationID), nil)
 				break
+			}
 
-			case config.HijackHookResponse:
-				// Check if hook hook has permission to hijack
-				if hook.Kind != "hijack" {
-					helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Hook (%s) in integration (%s) does not has permission to hijack", hookID, integrationID), nil)
-					break
-				}
+			// We will skip hijack responses if a previous hook has already claimed this
+			if hookResponse.checkResponse {
+				helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot process highjack action of hook (%s) in integration (%s) since it has already been claimed by integration (%s)", hook.ID, hook.IntegrationID, hookResponse.integration), nil)
+				break
+			}
 
-				// We will skip hijack responses if a previous hook has already claimed this
-				if hookResponse.checkResponse {
-					helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot process highjack action of hook (%s) in integration (%s) since it has already been claimed by integration (%s)", hookID, integrationID, hookResponse.integration), nil)
-					break
-				}
+			// Set the hook Response
+			hookResponse = authResponse{
+				integration:   hook.IntegrationID,
+				hook:          hook.ID,
+				checkResponse: true,
+				result:        res.Result,
+				status:        status,
+			}
 
-				// Set the hook Response
-				hookResponse = authResponse{
-					integration:   integrationID,
-					hook:          hookID,
-					checkResponse: true,
-					result:        res.Result,
-					status:        status,
-				}
-
-				// Set error if exists
-				if res.Error != "" {
-					hookResponse.err = errors.New(res.Error)
-				}
+			// Set error if exists
+			if res.Error != "" {
+				hookResponse.err = errors.New(res.Error)
 			}
 		}
 	}

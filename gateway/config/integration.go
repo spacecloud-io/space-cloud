@@ -1,7 +1,10 @@
 package config
 
 // Integrations describes all the integrations registered in the cluster
-type Integrations []*IntegrationConfig
+type Integrations map[string]*IntegrationConfig
+
+// IntegrationHooks describes all the hooks specific to a integration
+type IntegrationHooks map[string]*IntegrationHook
 
 // Get checks if id exists in the integration array and returns it
 func (integrations Integrations) Get(id string) (*IntegrationConfig, bool) {
@@ -15,21 +18,20 @@ func (integrations Integrations) Get(id string) (*IntegrationConfig, bool) {
 
 // IntegrationConfig describes the configuration of a single integration
 type IntegrationConfig struct {
-	ID                  string                      `json:"id" yaml:"id"`
-	Name                string                      `json:"name" yaml:"name"`
-	Details             string                      `json:"details" yaml:"details"`
-	Description         string                      `json:"description" yaml:"description"`
-	Key                 string                      `json:"key" yaml:"key"`         // Used for fetching tokens
-	License             string                      `json:"license" yaml:"license"` // Used to store level and id
-	Version             string                      `json:"version" yaml:"version"`
-	ConfigPermissions   []IntegrationPermission     `json:"configPermissions" yaml:"configPermissions"`
-	APIPermissions      []IntegrationPermission     `json:"apiPermissions" yaml:"apiPermissions"`
-	Deployments         []interface{}               `json:"deployments" yaml:"deployments"`
-	SecretSource        string                      `json:"secretSource" yaml:"secretSource"`
-	AppURL              string                      `json:"appUrl" yaml:"appUrl"`
-	Hooks               map[string]*IntegrationHook `json:"hooks" yaml:"hooks"`
-	CompatibleVersion   string                      `json:"compatibleVersion" yaml:"compatibleVersion"`
-	CompatibleVersionNo int                         `json:"compatibleVersionNo" yaml:"compatibleVersionNo"`
+	ID                  string                  `json:"id" yaml:"id"`
+	Name                string                  `json:"name" yaml:"name"`
+	Details             string                  `json:"details" yaml:"details"`
+	Description         string                  `json:"description" yaml:"description"`
+	Key                 string                  `json:"key" yaml:"key"`         // Used for fetching tokens
+	License             string                  `json:"license" yaml:"license"` // Used to store level and id
+	Version             string                  `json:"version" yaml:"version"`
+	ConfigPermissions   []IntegrationPermission `json:"configPermissions" yaml:"configPermissions"`
+	APIPermissions      []IntegrationPermission `json:"apiPermissions" yaml:"apiPermissions"`
+	Deployments         []interface{}           `json:"deployments" yaml:"deployments"`
+	SecretSource        string                  `json:"secretSource" yaml:"secretSource"`
+	AppURL              string                  `json:"appUrl" yaml:"appUrl"`
+	CompatibleVersion   string                  `json:"compatibleVersion" yaml:"compatibleVersion"`
+	CompatibleVersionNo int                     `json:"compatibleVersionNo" yaml:"compatibleVersionNo"`
 }
 
 // IntegrationHook describes the config for a integration hook

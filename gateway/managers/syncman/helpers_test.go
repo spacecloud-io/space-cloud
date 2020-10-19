@@ -39,71 +39,6 @@ func Test_calcTokens(t *testing.T) {
 	}
 }
 
-func TestManager_setProjectConfig(t *testing.T) {
-	type args struct {
-		conf *config.Project
-	}
-	tests := []struct {
-		name string
-		s    *Manager
-		args args
-		want []*config.Project
-	}{
-		{
-			name: "empty config passed as parameter",
-			s:    &Manager{projectConfig: config.GenerateEmptyConfig()},
-			args: args{conf: &config.Project{}},
-			want: []*config.Project{{}},
-		},
-		{
-			name: "config id doesn't match project id",
-			s:    &Manager{projectConfig: config.GenerateEmptyConfig()},
-			args: args{conf: &config.Project{ID: "someID"}},
-			want: []*config.Project{{ID: "someID"}},
-		},
-		{
-			name: "config id matches a project id",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "notSomeID"}, {ID: "someID"}}}},
-			args: args{conf: &config.Project{ID: "someID"}},
-			want: []*config.Project{{ID: "notSomeID"}, {ID: "someID"}},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.s.setProjectConfig(tt.args.conf)
-
-			if !reflect.DeepEqual(tt.s.projectConfig.Projects, tt.want) {
-				t.Errorf("Got: %v, Want: %v", tt.s.projectConfig.Projects, tt.want)
-			}
-		})
-	}
-}
-
-func Test_remove(t *testing.T) {
-	type args struct {
-		s []*config.Project
-		i int
-	}
-	tests := []struct {
-		name string
-		args args
-		want []*config.Project
-	}{
-		{
-			name: "project is removed",
-			args: args{s: []*config.Project{{ID: "id1"}, {ID: "id2"}, {ID: "id3"}}, i: 1},
-			want: []*config.Project{{ID: "id1"}, {ID: "id3"}},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := remove(tt.args.s, tt.args.i); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("remove() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestManager_delete(t *testing.T) {
 	type args struct {
 		projectID string
@@ -112,19 +47,38 @@ func TestManager_delete(t *testing.T) {
 		name string
 		s    *Manager
 		args args
-		want []*config.Project
+		want config.Projects
 	}{
 		{
 			name: "project ID does not match",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "id1"}, {ID: "id2"}}}},
+			s: &Manager{
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"id1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id1"}},
+						"id2": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id2"}},
+					},
+				},
+			},
 			args: args{projectID: "notMatching"},
-			want: []*config.Project{{ID: "id1"}, {ID: "id2"}},
+			want: config.Projects{
+				"id1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id1"}},
+				"id2": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id2"}},
+			},
 		},
 		{
 			name: "project ID does matches and project config is deleted",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "id1"}, {ID: "id2"}}}},
-			args: args{projectID: "id1"},
-			want: []*config.Project{{ID: "id2"}},
+			s: &Manager{
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"id1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id1"}},
+						"id2": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id2"}},
+					},
+				},
+			},
+			args: args{projectID: "id2"},
+			want: config.Projects{
+				"id1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id1"}},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -310,17 +264,31 @@ func TestManager_getConfigWithoutLock(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "project not present in the state",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "id1"}, {ID: "id2"}}}},
+			name: "project not present in the state",
+			s: &Manager{
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"id1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id1"}},
+						"id2": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id2"}},
+					},
+				},
+			},
 			args:    args{projectID: "someID"},
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name: "project id matches",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "id1"}, {ID: "id2"}}}},
+			s: &Manager{
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"id1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id1"}},
+						"id2": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id2"}},
+					},
+				},
+			},
 			args: args{projectID: "id1"},
-			want: &config.Project{ID: "id1"},
+			want: &config.Project{ProjectConfig: &config.ProjectConfig{ID: "id1"}},
 		},
 	}
 	for _, tt := range tests {

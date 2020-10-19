@@ -30,7 +30,8 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	if err := s.adminMan.ValidateIntegrationSyncOperation(config.Integrations{integrationConfig}); err != nil {
+	resourceID := config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, integrationConfig.ID)
+	if err := s.adminMan.ValidateIntegrationSyncOperation(config.Integrations{resourceID: integrationConfig}); err != nil {
 		return http.StatusUpgradeRequired, err
 	}
 
@@ -91,11 +92,11 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 	}
 
 	// Check if integration already exists
-	var integrations config.Integrations
-	var proj *config.Project
-	if _, p := s.projectConfig.Admin.Integrations.Get(integrationConfig.ID); !p {
+	integrations := make(config.Integrations)
+	var proj *config.ProjectConfig
+	if _, p := s.projectConfig.Integrations.Get(integrationConfig.ID); !p {
 		// Prepare a unique
-		proj = &config.Project{
+		proj = &config.ProjectConfig{
 			ID:                 integrationConfig.ID,
 			Name:               integrationConfig.Name,
 			SecretSource:       integrationConfig.SecretSource,
@@ -104,36 +105,32 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 			IsIntegration:      true,
 		}
 
-		integrationConfig.Hooks = map[string]*config.IntegrationHook{}
-
-		integrations = append(s.projectConfig.Admin.Integrations, integrationConfig)
+		integrations[resourceID] = integrationConfig
 	} else {
-		for _, i := range s.projectConfig.Admin.Integrations {
-			if i.ID != integrationConfig.ID {
-				integrations = append(integrations, i)
-			}
-		}
-		integrations = append(integrations, integrationConfig)
+		integrations = s.projectConfig.Integrations
+		// update existing integration
+		integrations[resourceID] = integrationConfig
 	}
 
-	if err := s.integrationMan.SetConfig(integrations); err != nil {
+	if err := s.integrationMan.SetIntegrations(integrations); err != nil {
 		return http.StatusUpgradeRequired, err
 	}
+	s.adminMan.SetIntegrationConfig(integrations)
+	s.projectConfig.Integrations = integrations
 
-	s.projectConfig.Admin.Integrations = integrations
-
-	if err := s.store.SetAdminConfig(ctx, s.projectConfig.Admin); err != nil {
+	if err := s.store.SetResource(ctx, resourceID, s.projectConfig.Integrations); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
 	if proj != nil {
-		s.projectConfig.Projects = append(s.projectConfig.Projects, proj)
-		if err := s.modules.SetProjectConfig(proj); err != nil {
+		s.projectConfig.Projects[proj.ID] = &config.Project{ProjectConfig: proj}
+		if err := s.modules.SetProjectConfig(ctx, proj); err != nil {
 			return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create new project for integration", nil, nil)
 		}
 
 		// Update the store
-		if err := s.store.SetProject(ctx, proj); err != nil {
+		rID := config.GenerateResourceID(s.clusterID, proj.ID, config.ResourceProject, proj.ID)
+		if err := s.store.SetResource(ctx, rID, proj); err != nil {
 			return http.StatusInternalServerError, err
 		}
 	}
@@ -170,35 +167,34 @@ func (s *Manager) RemoveIntegration(ctx context.Context, id string, params model
 	}
 
 	// Remove project from projects array
-	for i, p := range s.projectConfig.Projects {
-		if p.ID == id && p.IsIntegration {
-			length := len(s.projectConfig.Projects)
-			s.projectConfig.Projects[i] = s.projectConfig.Projects[length-1]
-			s.projectConfig.Projects = s.projectConfig.Projects[:length-1]
-			break
-		}
-	}
+	projectResourceID := config.GenerateResourceID(s.clusterID, id, config.ResourceProject, id)
+	delete(s.projectConfig.Projects, projectResourceID)
 
 	// Remove integration from integrations array
-	for i, c := range s.projectConfig.Admin.Integrations {
-		if c.ID == id {
-			length := len(s.projectConfig.Admin.Integrations)
-			s.projectConfig.Admin.Integrations[i] = s.projectConfig.Admin.Integrations[length-1]
-			s.projectConfig.Admin.Integrations = s.projectConfig.Admin.Integrations[:length-1]
-			break
+	integrationResourceID := config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, id)
+	delete(s.projectConfig.Integrations, integrationResourceID)
+
+	// Remove integration hooks
+	for _, hook := range s.projectConfig.IntegrationHooks {
+		// remove integration hook belonging to particular integration
+		if hook.IntegrationID == id {
+			resourceID := config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegrationHook, hook.ID)
+			delete(s.projectConfig.Integrations, resourceID)
+			if err := s.store.DeleteResource(ctx, resourceID); err != nil {
+				return http.StatusInternalServerError, err
+			}
 		}
 	}
 
 	// Update the modules and integration manager
 	s.modules.Delete(id)
-	_ = s.integrationMan.SetConfig(s.projectConfig.Admin.Integrations)
+	_ = s.integrationMan.SetConfig(s.projectConfig.Integrations, s.projectConfig.IntegrationHooks)
 
 	// Update the stores
-	if err := s.store.DeleteProject(ctx, id); err != nil {
+	if err := s.store.DeleteResource(ctx, projectResourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
-
-	if err := s.store.SetAdminConfig(ctx, s.projectConfig.Admin); err != nil {
+	if err := s.store.DeleteResource(ctx, integrationResourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -223,7 +219,7 @@ func (s *Manager) GetIntegrations(ctx context.Context, id string, params model.R
 	defer s.lock.RUnlock()
 
 	result := make([]interface{}, 0)
-	for _, i := range s.projectConfig.Admin.Integrations {
+	for _, i := range s.projectConfig.Integrations {
 		if id == "*" {
 			result = append(result, i)
 			continue
@@ -259,15 +255,9 @@ func (s *Manager) AddIntegrationHook(ctx context.Context, integrationID string, 
 	defer s.lock.Unlock()
 
 	// Find the right integration
-	var integrationConfig *config.IntegrationConfig
-	for _, i := range s.projectConfig.Admin.Integrations {
-		if i.ID == integrationID {
-			integrationConfig = i
-			break
-		}
-	}
-
-	if integrationConfig == nil {
+	resourceID := config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, integrationID)
+	integrationConfig, ok := s.projectConfig.Integrations[resourceID]
+	if !ok || integrationConfig == nil {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) does not exist", integrationID), nil, nil)
 	}
 
@@ -277,16 +267,17 @@ func (s *Manager) AddIntegrationHook(ctx context.Context, integrationID string, 
 	}
 
 	// Create an empty map if nil
-	if integrationConfig.Hooks == nil {
-		integrationConfig.Hooks = map[string]*config.IntegrationHook{}
+	if s.projectConfig.IntegrationHooks == nil {
+		s.projectConfig.IntegrationHooks = make(config.IntegrationHooks)
 	}
 
 	// Add the hook and store the config
-	integrationConfig.Hooks[hookConfig.ID] = hookConfig
-	_ = s.integrationMan.SetConfig(s.projectConfig.Admin.Integrations)
+	resourceID = config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, hookConfig.ID)
+	s.projectConfig.IntegrationHooks[resourceID] = hookConfig
+	s.integrationMan.SetIntegrationHooks(s.projectConfig.IntegrationHooks)
 
 	// Store the config in the store
-	if err := s.store.SetAdminConfig(ctx, s.projectConfig.Admin); err != nil {
+	if err := s.store.SetResource(ctx, resourceID, hookConfig); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -311,25 +302,19 @@ func (s *Manager) RemoveIntegrationHook(ctx context.Context, integrationID, hook
 	defer s.lock.Unlock()
 
 	// Find the right integration
-	var integrationConfig *config.IntegrationConfig
-	for _, i := range s.projectConfig.Admin.Integrations {
-		if i.ID == integrationID {
-			integrationConfig = i
-			break
-		}
-	}
-
-	// Throw error if hook does not exist
-	if integrationConfig == nil {
+	resourceID := config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, integrationID)
+	integrationConfig, ok := s.projectConfig.Integrations[resourceID]
+	if !ok || integrationConfig == nil {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) does not exist", integrationID), nil, nil)
 	}
 
 	// Delete the hook
-	delete(integrationConfig.Hooks, hookID)
-	_ = s.integrationMan.SetConfig(s.projectConfig.Admin.Integrations)
+	resourceID = config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, hookID)
+	delete(s.projectConfig.IntegrationHooks, resourceID)
+	s.integrationMan.SetIntegrationHooks(s.projectConfig.IntegrationHooks)
 
 	// Store the config in the store
-	if err := s.store.SetAdminConfig(ctx, s.projectConfig.Admin); err != nil {
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -354,23 +339,17 @@ func (s *Manager) GetIntegrationHooks(ctx context.Context, integrationID, hookID
 	defer s.lock.RUnlock()
 
 	// Find the right integration
-	var integrationConfig *config.IntegrationConfig
-	for _, i := range s.projectConfig.Admin.Integrations {
-		if i.ID == integrationID {
-			integrationConfig = i
-			break
-		}
-	}
-
-	// Throw error if hook does not exist
-	if integrationConfig == nil {
+	resourceID := config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, integrationID)
+	integrationConfig, ok := s.projectConfig.Integrations[resourceID]
+	if !ok || integrationConfig == nil {
 		return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) does not exist", integrationID), nil, nil)
 	}
 
 	// Return the provided hook if id is present
 	if hookID != "*" {
-		hook, p := integrationConfig.Hooks[hookID]
-		if !p {
+		resourceID = config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, hookID)
+		hook, ok := s.projectConfig.IntegrationHooks[resourceID]
+		if !ok {
 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration hook (%s) does not exist", hookID), nil, nil)
 		}
 
@@ -381,7 +360,10 @@ func (s *Manager) GetIntegrationHooks(ctx context.Context, integrationID, hookID
 
 	// Create an array of hooks
 	hooks := make([]interface{}, 0)
-	for k, v := range integrationConfig.Hooks {
+	for k, v := range s.projectConfig.IntegrationHooks {
+		if v.IntegrationID != integrationID {
+			continue
+		}
 		v.ID = k
 		v.IntegrationID = integrationID
 		hooks = append(hooks, v)
@@ -397,11 +379,11 @@ func (s *Manager) GetIntegrationTokens(ctx context.Context, id, key string) (int
 	defer s.lock.RUnlock()
 
 	// Check if an integration by that id exists
-	if s.projectConfig.Admin.Integrations == nil {
+	if s.projectConfig.Integrations == nil {
 		return http.StatusNotFound, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) not found", id), nil, nil)
 	}
 
-	i, p := s.projectConfig.Admin.Integrations.Get(id)
+	i, p := s.projectConfig.Integrations.Get(id)
 	if !p {
 		return http.StatusNotFound, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) not found", id), nil, nil)
 	}
@@ -421,20 +403,20 @@ func (s *Manager) GetIntegrationTokens(ctx context.Context, id, key string) (int
 	projects := map[string]string{}
 	for _, p := range s.projectConfig.Projects {
 		// Skip if the project is an integration
-		if p.IsIntegration && p.ID != id {
+		if p.ProjectConfig.IsIntegration && p.ProjectConfig.ID != id {
 			continue
 		}
 
 		// Get auth module of that project
-		a, err := s.modules.GetAuthModuleForSyncMan(p.ID)
+		a, err := s.modules.GetAuthModuleForSyncMan(p.ProjectConfig.ID)
 		if err != nil {
-			return http.StatusInternalServerError, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get auth module of project (%s) for integration (%s)", p.ID, id), err, nil)
+			return http.StatusInternalServerError, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get auth module of project (%s) for integration (%s)", p.ProjectConfig.ID, id), err, nil)
 		}
 
 		// Create the token for the project
-		projects[p.ID], err = a.GetIntegrationToken(ctx, id)
+		projects[p.ProjectConfig.ID], err = a.GetIntegrationToken(ctx, id)
 		if err != nil {
-			return http.StatusInternalServerError, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create token for project (%s) for integration (%s)", p.ID, id), err, nil)
+			return http.StatusInternalServerError, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create token for project (%s) for integration (%s)", p.ProjectConfig.ID, id), err, nil)
 		}
 	}
 

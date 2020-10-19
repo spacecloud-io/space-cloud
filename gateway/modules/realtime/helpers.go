@@ -23,33 +23,47 @@ func eventingToRealtimeEvent(event string) string {
 	}
 }
 
-func generateEventRules(crudConfig config.Crud, project, url string) []*config.EventingRule {
+func isDBEnabled(dbAlias string, dbConfigs config.DatabaseConfigs) bool {
+	for _, dbConfig := range dbConfigs {
+		if dbConfig.DbAlias == dbAlias {
+			return dbConfig.Enabled
+		}
+	}
+	return false
+}
 
-	var eventingRules []*config.EventingRule
+func isRealTimeEnabled(dbAlias, table string, dbRules config.DatabaseRules) bool {
+	for _, dbRule := range dbRules {
+		if dbRule.DbAlias == dbAlias && dbRule.Table == table {
+			return dbRule.IsRealTimeEnabled
+		}
+	}
+	return false
+}
+
+func generateEventRules(dbConfigs config.DatabaseConfigs, dbRules config.DatabaseRules, dbSchemas config.DatabaseSchemas, project, url string) []*config.EventingTrigger {
+
+	var eventingRules []*config.EventingTrigger
 
 	// Iterate over all dbTypes
-	for dbAlias, dbStub := range crudConfig {
+	for _, dbSchema := range dbSchemas {
 
 		// Proceed only if db is enabled
-		if dbStub.Enabled {
+		if isDBEnabled(dbSchema.DbAlias, dbConfigs) {
 
-			// Iterate over all connections
-			for col, colStub := range dbStub.Collections {
+			// Check if realtime mode is enabled
+			if isRealTimeEnabled(dbSchema.DbAlias, dbSchema.Table, dbRules) {
 
-				// Check if realtime mode is enabled
-				if colStub.IsRealTimeEnabled {
-
-					// Add a new event for each db event type
-					for _, eventType := range dbEvents {
-						rule := &config.EventingRule{
-							Type:    eventType,
-							URL:     url,
-							Options: map[string]string{"db": dbAlias, "col": col},
-							Retries: 3,
-							Timeout: 5000, // Timeout is in milliseconds
-						}
-						eventingRules = append(eventingRules, rule)
+				// Add a new event for each db event type
+				for _, eventType := range dbEvents {
+					rule := &config.EventingTrigger{
+						Type:    eventType,
+						URL:     url,
+						Options: map[string]string{"db": dbSchema.DbAlias, "col": dbSchema.Table},
+						Retries: 3,
+						Timeout: 5000, // Timeout is in milliseconds
 					}
+					eventingRules = append(eventingRules, rule)
 				}
 			}
 		}

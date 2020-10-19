@@ -157,7 +157,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	}
 }
 
-func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInterface, rule *config.EventingRule, eventDoc *model.EventDocument, params interface{}) error {
+func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInterface, rule *config.EventingTrigger, eventDoc *model.EventDocument, params interface{}) error {
 	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(rule.Timeout)*time.Millisecond)
 	defer cancel()
 	internalToken, err := m.auth.GetInternalAccessToken(ctx)

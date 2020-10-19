@@ -37,7 +37,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, isDev b
 		return nil, err
 	}
 
-	modules, err := modules.New(nodeID, managers, globalMods)
+	modules, err := modules.New(clusterID, nodeID, managers, globalMods)
 	if err != nil {
 		return nil, err
 	}

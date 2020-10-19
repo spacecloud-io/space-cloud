@@ -30,7 +30,7 @@ func (m *Manager) checkPermissions(ctx context.Context, kind, resource, op strin
 	// Extract the necessary claims
 	id := claims["id"]
 
-	i, p := m.config[id.(string)]
+	i, p := m.integrationConfig[id.(string)]
 	if !p {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration (%s) not found", id), nil, nil)
 	}

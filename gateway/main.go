@@ -49,7 +49,7 @@ var essentialFlags = []cli.Flag{
 		Name:   "cluster",
 		Usage:  "The cluster id to start space-cloud with",
 		EnvVar: "CLUSTER_ID",
-		Value:  ksuid.New().String(),
+		Value:  "",
 	},
 	cli.StringFlag{
 		Name:   "advertise-addr",
@@ -184,7 +184,9 @@ func actionRun(c *cli.Context) error {
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
 	advertiseAddr := c.String("advertise-addr")
-
+	if clusterID == "" {
+		return fmt.Errorf("provider cluster id through --cluster flag or using setting enviornment vairable CLUSTER_ID")
+	}
 	// Load ui flag
 	disableUI := c.Bool("disable-ui")
 

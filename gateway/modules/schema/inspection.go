@@ -198,11 +198,9 @@ func inspectionPostgresCheckFieldType(size int, typeName string, fieldDetails *m
 func (s *Schema) GetCollectionSchema(ctx context.Context, project, dbType string) (map[string]*config.TableRule, error) {
 
 	collections := []string{}
-	for dbName, crudValue := range s.config {
-		if dbName == dbType {
-			for colName := range crudValue.Collections {
-				collections = append(collections, colName)
-			}
+	for _, dbSchema := range s.dbSchemas {
+		if dbSchema.DbAlias == dbType {
+			collections = append(collections, dbSchema.Table)
 			break
 		}
 	}

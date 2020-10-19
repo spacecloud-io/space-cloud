@@ -214,8 +214,8 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 	return rows
 }
 
-func (m *Module) getMatchingRules(name string, options map[string]string) []*config.EventingRule {
-	rules := make([]*config.EventingRule, 0)
+func (m *Module) getMatchingRules(name string, options map[string]string) []*config.EventingTrigger {
+	rules := make([]*config.EventingTrigger, 0)
 
 	for n, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
@@ -252,14 +252,14 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 	return true
 }
 
-func (m *Module) selectRule(name string) (*config.EventingRule, error) {
+func (m *Module) selectRule(name string) (*config.EventingTrigger, error) {
 	if rule, ok := m.config.Rules[name]; ok {
 		return rule, nil
 	}
 	if rule, ok := m.config.InternalRules[name]; ok {
 		return rule, nil
 	}
-	return &config.EventingRule{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Could not find rule with name %s", name), nil, nil)
+	return &config.EventingTrigger{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Could not find rule with name %s", name), nil, nil)
 }
 
 func (m *Module) validate(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
@@ -299,7 +299,7 @@ func getGoTemplateKey(kind, triggerName string) string {
 	return fmt.Sprintf("%s---%s", kind, triggerName)
 }
 
-func (m *Module) adjustReqBody(ctx context.Context, trigger, token string, endpoint *config.EventingRule, auth, params interface{}) (interface{}, error) {
+func (m *Module) adjustReqBody(ctx context.Context, trigger, token string, endpoint *config.EventingTrigger, auth, params interface{}) (interface{}, error) {
 	var req interface{}
 	var err error
 

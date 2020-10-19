@@ -36,25 +36,25 @@ func TestManager_SetUserManagement(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{}}}}}},
+			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auths)}}}},
 			args:    args{ctx: context.Background(), project: "2", provider: "provider", value: &config.AuthStub{ID: "1"}},
 			wantErr: true,
 		},
 		{
 			name: "userman config is not set",
-			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auths)}}}},
 			args: args{ctx: context.Background(), project: "1", provider: "provider", value: &config.AuthStub{ID: "1"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetUsermanConfig",
-					args:           []interface{}{"1", config.Auth{"provider": &config.AuthStub{ID: "provider", Enabled: false}}},
+					args:           []interface{}{mock.Anything, "1", config.Auths{config.GenerateResourceID("chicago", "1", config.ResourceAuthProvider, "provider"): &config.AuthStub{ID: "provider", Enabled: false}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{context.Background(), mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceAuthProvider, "provider"), &config.AuthStub{ID: "provider"}},
 					paramsReturned: []interface{}{errors.New("unable to get db config")},
 				},
 			},
@@ -69,19 +69,19 @@ func TestManager_SetUserManagement(t *testing.T) {
 		},
 		{
 			name: "userman config is set",
-			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auths)}}}},
 			args: args{ctx: context.Background(), project: "1", provider: "provider", value: &config.AuthStub{ID: "1"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetUsermanConfig",
-					args:           []interface{}{"1", config.Auth{"provider": &config.AuthStub{ID: "provider", Enabled: false}}},
+					args:           []interface{}{mock.Anything, "1", config.Auths{config.GenerateResourceID("chicago", "1", config.ResourceAuthProvider, "provider"): &config.AuthStub{ID: "provider", Enabled: false}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{context.Background(), mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceAuthProvider, "provider"), &config.AuthStub{ID: "provider"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -94,6 +94,7 @@ func TestManager_SetUserManagement(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -143,13 +144,13 @@ func TestManager_GetUserManagement(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}}}},
+			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: make(config.Auths)}}}},
 			args:    args{ctx: context.Background(), project: "2", providerID: "provider"},
 			wantErr: true,
 		},
 		{
 			name: "providerID is empty",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "id"}}}}}}},
+			s:    &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: map[string]*config.AuthStub{"provider": {ID: "id"}}}}}},
 			args: args{ctx: context.Background(), project: "1", providerID: "*"},
 			integrationArgs: []mockArgs{
 				{
@@ -162,7 +163,7 @@ func TestManager_GetUserManagement(t *testing.T) {
 		},
 		{
 			name: "providerID is not present in config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "id"}}}}}}},
+			s:    &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: map[string]*config.AuthStub{"provider": {ID: "id"}}}}}},
 			args: args{ctx: context.Background(), project: "1", providerID: "notProvider"},
 			integrationArgs: []mockArgs{
 				{
@@ -175,7 +176,7 @@ func TestManager_GetUserManagement(t *testing.T) {
 		},
 		{
 			name: "providerID is present in config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "id"}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: map[string]*config.AuthStub{config.GenerateResourceID("chicago", "1", config.ResourceAuthProvider, "provider"): {ID: "provider"}}}}}},
 			args: args{ctx: context.Background(), project: "1", providerID: "provider"},
 			integrationArgs: []mockArgs{
 				{
@@ -184,7 +185,7 @@ func TestManager_GetUserManagement(t *testing.T) {
 					paramsReturned: []interface{}{mockHookResponse{}},
 				},
 			},
-			want: []interface{}{&config.AuthStub{ID: "id"}},
+			want: []interface{}{&config.AuthStub{ID: "provider"}},
 		},
 	}
 	for _, tt := range tests {

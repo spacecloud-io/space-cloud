@@ -73,7 +73,7 @@ func (m *Manager) CheckIfAdmin(ctx context.Context, token string) error {
 }
 
 // IsDBConfigValid checks if the database config is valid
-func (m *Manager) IsDBConfigValid(config config.Crud) error {
+func (m *Manager) IsDBConfigValid(config config.DatabaseConfigs) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -93,12 +93,12 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 }
 
 // ValidateProjectSyncOperation validates if an operation is permitted based on the mode
-func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config.Project) bool {
+func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config.ProjectConfig) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	// Allow if project is an integration
-	if _, p := m.config.Integrations.Get(project.ID); p {
+	if _, p := m.integrations.Get(project.ID); p {
 		return true
 	}
 
@@ -106,17 +106,17 @@ func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config
 
 	for _, p := range c.Projects {
 		// Return true if the project already exists in
-		if p.ID == project.ID {
+		if p.ProjectConfig.ID == project.ID {
 			return true
 		}
 
 		// Increment count if it isn't an integration
-		if m.config.Integrations == nil {
+		if m.integrations == nil {
 			totalProjects++
 			continue
 		}
 
-		if _, p := m.config.Integrations.Get(p.ID); !p {
+		if _, p := m.integrations.Get(p.ProjectConfig.ID); !p {
 			totalProjects++
 		}
 	}
@@ -167,7 +167,7 @@ func (m *Manager) GetSessionID() string {
 }
 
 func (m *Manager) GetEnterpriseClusterID() string {
-	return m.config.LicenseKey
+	return m.license.LicenseKey
 }
 
 // GetSecret returns the admin secret

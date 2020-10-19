@@ -38,20 +38,13 @@ func (m *Module) CallWithContext(ctx context.Context, service, function, token s
 	return status, result, nil
 }
 
-// AddInternalRule add an internal rule to internal service
-func (m *Module) AddInternalRule(service string, rule *config.Service) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	m.config.InternalServices[service] = rule
-}
-
 // GetEndpointContextTimeout returns the endpoint timeout of particular remote-service
-func (m *Module) GetEndpointContextTimeout(ctx context.Context, service, function string) (int, error) {
+func (m *Module) GetEndpointContextTimeout(ctx context.Context, projectID, service, function string) (int, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if serviceVal, ok := m.config.Services[service]; ok {
+	resourceID := config.GenerateResourceID(m.clusterID, projectID, config.ResourceRemoteService, service)
+	if serviceVal, ok := m.config[resourceID]; ok {
 		if endpoint, ok := serviceVal.Endpoints[function]; ok {
 			return endpoint.Timeout, nil
 		}

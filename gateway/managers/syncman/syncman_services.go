@@ -35,17 +35,18 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 		return http.StatusBadRequest, err
 	}
 
-	if projectConfig.Modules.Services.Services == nil {
-		projectConfig.Modules.Services.Services = config.Services{}
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceRemoteService, service)
+	if projectConfig.RemoteService == nil {
+		projectConfig.RemoteService = config.Services{resourceID: value}
+	} else {
+		projectConfig.RemoteService[resourceID] = value
 	}
 
-	projectConfig.Modules.Services.Services[service] = value
-
-	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
+	if err := s.modules.SetRemoteServiceConfig(ctx, project, projectConfig.RemoteService); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.SetResource(ctx, resourceID, value); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -75,13 +76,14 @@ func (s *Manager) DeleteService(ctx context.Context, project, service string, pa
 		return http.StatusBadRequest, err
 	}
 
-	delete(projectConfig.Modules.Services.Services, service)
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceRemoteService, service)
+	delete(projectConfig.RemoteService, resourceID)
 
-	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
+	if err := s.modules.SetRemoteServiceConfig(ctx, project, projectConfig.RemoteService); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -112,7 +114,7 @@ func (s *Manager) GetServices(ctx context.Context, project, serviceID string, pa
 	}
 
 	if serviceID != "*" {
-		service, ok := projectConfig.Modules.Services.Services[serviceID]
+		service, ok := projectConfig.RemoteService[config.GenerateResourceID(s.clusterID, project, config.ResourceRemoteService, serviceID)]
 		if !ok {
 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("service with id (%s) does not exists", serviceID), nil, nil)
 		}
@@ -120,7 +122,7 @@ func (s *Manager) GetServices(ctx context.Context, project, serviceID string, pa
 	}
 
 	services := []interface{}{}
-	for _, value := range projectConfig.Modules.Services.Services {
+	for _, value := range projectConfig.RemoteService {
 		services = append(services, value)
 	}
 	return http.StatusOK, services, nil
