@@ -17,8 +17,16 @@ type mockIntegrationManager struct {
 	skip bool
 }
 
-func (m *mockIntegrationManager) SetConfig(array config.Integrations) error {
-	return m.Called(array).Error(0)
+func (m *mockIntegrationManager) SetConfig(integrations config.Integrations, integrationHooks config.IntegrationHooks) error {
+	return m.Called(integrations, integrationHooks).Error(0)
+}
+
+func (m *mockIntegrationManager) SetIntegrations(integrations config.Integrations) error {
+	return m.Called(integrations).Error(0)
+}
+
+func (m *mockIntegrationManager) SetIntegrationHooks(integrationHooks config.IntegrationHooks) {
+	m.Called(integrationHooks)
 }
 
 func (m *mockIntegrationManager) InvokeHook(_ context.Context, params model.RequestParams) config.IntegrationAuthResponse {
@@ -63,6 +71,10 @@ type mockAdminSyncmanInterface struct {
 	mock.Mock
 }
 
+func (m *mockAdminSyncmanInterface) SetIntegrationConfig(integrations config.Integrations) {
+	m.Called(integrations)
+}
+
 func (m *mockAdminSyncmanInterface) ValidateIntegrationSyncOperation(integrations config.Integrations) error {
 	return m.Called(integrations).Error(0)
 }
@@ -89,11 +101,11 @@ func (m *mockAdminSyncmanInterface) RenewLicense(b bool) error {
 	return m.Called(b).Error(0)
 }
 
-func (m *mockAdminSyncmanInterface) ValidateProjectSyncOperation(projects *config.Config, projectID *config.Project) bool {
+func (m *mockAdminSyncmanInterface) ValidateProjectSyncOperation(projects *config.Config, projectID *config.ProjectConfig) bool {
 	return m.Called(projects, projectID).Bool(0)
 }
 
-func (m *mockAdminSyncmanInterface) SetConfig(admin *config.Admin, isFirst bool) error {
+func (m *mockAdminSyncmanInterface) SetConfig(admin *config.License, isFirst bool) error {
 	return m.Called(admin, isFirst).Error(0)
 }
 
@@ -107,12 +119,79 @@ func (m *mockAdminSyncmanInterface) GetInternalAccessToken() (string, error) {
 	return c.String(0), c.Error(1)
 }
 
-func (m *mockAdminSyncmanInterface) GetConfig() *config.Admin {
-	return m.Called().Get(0).(*config.Admin)
+func (m *mockAdminSyncmanInterface) GetConfig() *config.License {
+	return m.Called().Get(0).(*config.License)
 }
 
 type mockModulesInterface struct {
 	mock.Mock
+}
+
+func (m *mockModulesInterface) SetInitialProjectConfig(ctx context.Context, config config.Projects) error {
+	a := m.Called(ctx, config)
+	return a.Error(0)
+}
+
+func (m *mockModulesInterface) SetDatabaseConfig(ctx context.Context, projectID string, crudConfigs config.DatabaseConfigs) error {
+	return m.Called(ctx, projectID, crudConfigs).Error(0)
+}
+
+func (m *mockModulesInterface) SetDatabaseSchemaConfig(ctx context.Context, projectID string, schemaConfigs config.DatabaseSchemas) error {
+	return m.Called(ctx, projectID, schemaConfigs).Error(0)
+}
+
+func (m *mockModulesInterface) SetDatabaseRulesConfig(ctx context.Context, projectID string, ruleConfigs config.DatabaseRules) error {
+	return m.Called(ctx, projectID, ruleConfigs).Error(0)
+}
+
+func (m *mockModulesInterface) SetDatabasePreparedQueryConfig(ctx context.Context, projectID string, prepConfigs config.DatabasePreparedQueries) error {
+	return m.Called(ctx, projectID, prepConfigs).Error(0)
+}
+
+func (m *mockModulesInterface) SetFileStoreConfig(ctx context.Context, projectID string, fileStore *config.FileStoreConfig) error {
+	c := m.Called(ctx, projectID, fileStore)
+	return c.Error(0)
+}
+
+func (m *mockModulesInterface) SetFileStoreSecurityRuleConfig(ctx context.Context, projectID string, fileRule config.FileStoreRules) error {
+	return m.Called(ctx, projectID, fileRule).Error(0)
+}
+
+func (m *mockModulesInterface) SetRemoteServiceConfig(ctx context.Context, projectID string, services config.Services) error {
+	return m.Called(ctx, projectID, services).Error(0)
+}
+
+func (m *mockModulesInterface) SetLetsencryptConfig(ctx context.Context, projectID string, c *config.LetsEncrypt) error {
+	return m.Called(ctx, projectID, c).Error(0)
+}
+
+func (m *mockModulesInterface) SetIngressRouteConfig(ctx context.Context, projectID string, routes config.IngressRoutes) error {
+	return m.Called(ctx, projectID, routes).Error(0)
+}
+
+func (m *mockModulesInterface) SetIngressGlobalRouteConfig(ctx context.Context, projectID string, c *config.GlobalRoutesConfig) error {
+	return m.Called(ctx, projectID, c).Error(0)
+}
+
+func (m *mockModulesInterface) SetEventingConfig(ctx context.Context, projectID string, eventingConfigs *config.EventingConfig) error {
+	c := m.Called(ctx, projectID, eventingConfigs)
+	return c.Error(0)
+}
+
+func (m *mockModulesInterface) SetEventingSchemaConfig(ctx context.Context, projectID string, schemaObj config.EventingSchemas) error {
+	return m.Called(ctx, projectID, schemaObj).Error(0)
+}
+
+func (m *mockModulesInterface) SetEventingTriggerConfig(ctx context.Context, projectID string, triggerObj config.EventingTriggers) error {
+	return m.Called(ctx, projectID, triggerObj).Error(0)
+}
+
+func (m *mockModulesInterface) SetEventingRuleConfig(ctx context.Context, projectID string, secureObj config.EventingRules) error {
+	return m.Called(ctx, projectID, secureObj).Error(0)
+}
+
+func (m *mockModulesInterface) SetUsermanConfig(ctx context.Context, projectID string, auth config.Auths) error {
+	return m.Called(ctx, projectID, auth).Error(0)
 }
 
 func (m *mockModulesInterface) LetsEncrypt() *letsencrypt.LetsEncrypt {
@@ -127,12 +206,12 @@ func (m *mockModulesInterface) Delete(projectID string) {
 	m.Called(projectID)
 }
 
-func (m *mockModulesInterface) SetProjectConfig(config *config.Project) error {
-	return m.Called(config).Error(0)
+func (m *mockModulesInterface) SetProjectConfig(ctx context.Context, config *config.ProjectConfig) error {
+	return m.Called(ctx, config).Error(0)
 }
 
 func (m *mockModulesInterface) SetGlobalConfig(projectID, secretSource string, secrets []*config.Secret, aesKey string) error {
-	c := m.Called(projectID, secrets, aesKey)
+	c := m.Called(projectID, secretSource, secrets, aesKey)
 	return c.Error(0)
 }
 
@@ -146,23 +225,9 @@ func (m *mockModulesInterface) SetServicesConfig(projectID string, services *con
 	return c.Error(0)
 }
 
-func (m *mockModulesInterface) SetFileStoreConfig(projectID string, fileStore *config.FileStore) error {
-	c := m.Called(projectID, fileStore)
-	return c.Error(0)
-}
-
-func (m *mockModulesInterface) SetEventingConfig(projectID string, eventingConfig *config.Eventing) error {
-	c := m.Called(projectID, eventingConfig)
-	return c.Error(0)
-}
-
-func (m *mockModulesInterface) SetUsermanConfig(projectID string, auth config.Auth) error {
-	return m.Called(projectID, auth).Error(0)
-}
-
 func (m *mockModulesInterface) GetSchemaModuleForSyncMan(projectID string) (model.SchemaEventingInterface, error) {
 	c := m.Called(projectID)
-	return c.Get(0).(model.SchemaEventingInterface), c.Error(1)
+	return c.Get(0).(*mockSchemaEventingInterface), c.Error(1)
 }
 
 func (m *mockModulesInterface) GetAuthModuleForSyncMan(projectID string) (model.AuthSyncManInterface, error) {
@@ -172,6 +237,32 @@ func (m *mockModulesInterface) GetAuthModuleForSyncMan(projectID string) (model.
 
 type mockStoreInterface struct {
 	mock.Mock
+}
+
+func (m *mockStoreInterface) GetGlobalConfig() (*config.Config, error) {
+	c := m.Called()
+	return c.Get(0).(*config.Config), c.Error(1)
+}
+
+func (m *mockStoreInterface) WatchResources(cb func(eventType string, resourceId string, resourceType config.Resource, resource interface{})) error {
+	panic("implement me")
+}
+
+func (m *mockStoreInterface) SetResource(ctx context.Context, resourceID string, resource interface{}) error {
+	return m.Called(ctx, resourceID, resource).Error(0)
+}
+
+func (m *mockStoreInterface) DeleteResource(ctx context.Context, resourceID string) error {
+	return m.Called(ctx, resourceID).Error(0)
+}
+
+func (m *mockStoreInterface) DeleteProject(ctx context.Context, projectID string) error {
+	return m.Called(ctx, projectID).Error(0)
+}
+
+func (m *mockStoreInterface) GetProjectsConfig() (config.Projects, error) {
+	c := m.Called()
+	return c.Get(0).(config.Projects), c.Error(1)
 }
 
 func (m *mockStoreInterface) WatchProjects(cb func(projects []*config.Project)) error {
@@ -188,16 +279,6 @@ func (m *mockStoreInterface) Register() {
 	m.Called()
 }
 
-func (m *mockStoreInterface) SetProject(ctx context.Context, project *config.Project) error {
-	c := m.Called(ctx, project)
-	return c.Error(0)
-}
-
-func (m *mockStoreInterface) DeleteProject(ctx context.Context, projectID string) error {
-	c := m.Called(ctx, projectID)
-	return c.Error(0)
-}
-
 func (m *mockStoreInterface) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
 	c := m.Called(ctx, adminConfig)
 	return c.Error(0)
@@ -208,7 +289,7 @@ func (m *mockStoreInterface) GetAdminConfig(ctx context.Context) (*config.Admin,
 	return c.Get(0).(*config.Admin), c.Error(1)
 }
 
-func (m *mockStoreInterface) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
+func (m *mockStoreInterface) WatchClusterConfig(cb func(clusters []*config.Admin)) error {
 	c := m.Called(cb)
 	return c.Error(0)
 }
@@ -222,18 +303,18 @@ func (m *mockSchemaEventingInterface) CheckIfEventingIsPossible(dbAlias, col str
 	return map[string]interface{}{}, c.Bool(1)
 }
 
-func (m *mockSchemaEventingInterface) Parser(crud config.Crud) (model.Type, error) {
-	c := m.Called(crud)
+func (m *mockSchemaEventingInterface) Parser(dbSchemas config.DatabaseSchemas) (model.Type, error) {
+	c := m.Called(dbSchemas)
 	return nil, c.Error(1)
 }
 
 func (m *mockSchemaEventingInterface) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
-	c := m.Called(col, collectionFields, doc)
+	c := m.Called(ctx, col, collectionFields, doc)
 	return nil, c.Error(1)
 }
 
-func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
-	c := m.Called(ctx, dbAlias, logicalDBName, tables)
+func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, dbSchemas config.DatabaseSchemas) error {
+	c := m.Called(ctx, dbAlias, logicalDBName, dbSchemas)
 	return c.Error(0)
 }
 

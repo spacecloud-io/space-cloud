@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -65,7 +66,7 @@ func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, sch
 		schemas:    map[string]model.Fields{},
 		fileStore:  file,
 		metricHook: hook,
-		config:     &config.Eventing{Enabled: false, InternalRules: map[string]*config.EventingRule{}},
+		config:     &config.Eventing{Enabled: false, InternalRules: make(config.EventingTriggers)},
 		templates:  map[string]*template.Template{},
 	}
 
@@ -77,33 +78,13 @@ func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, sch
 }
 
 // SetConfig sets the module config
-func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project string, eventing *config.EventingConfig) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	if eventing == nil || !eventing.Enabled {
 		m.config.Enabled = false
 		return nil
-	}
-
-	for eventType, schemaObj := range eventing.Schemas {
-		dummyCrud := config.Crud{
-			"dummyDBName": &config.CrudStub{
-				Collections: map[string]*config.TableRule{
-					eventType: {
-						Schema: schemaObj.Schema,
-					},
-				},
-			},
-		}
-
-		schemaType, err := m.schema.Parser(dummyCrud)
-		if err != nil {
-			return err
-		}
-		if len(schemaType["dummyDBName"][eventType]) != 0 {
-			m.schemas[eventType] = schemaType["dummyDBName"][eventType]
-		}
 	}
 
 	if eventing.DBAlias == "" {
@@ -114,13 +95,45 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	m.config.Enabled = eventing.Enabled
 	m.config.DBAlias = eventing.DBAlias
 
-	m.config.Rules = eventing.Rules
-	if m.config.Rules == nil {
-		m.config.Rules = map[string]*config.EventingRule{}
+	// `m.config.InternalRules` cannot be set by the eventing module. Its used by other modules only.
+	if m.config.InternalRules == nil {
+		m.config.InternalRules = make(config.EventingTriggers)
+	}
+
+	return nil
+}
+
+// SetSchemaConfig sets schema config of eventing module
+func (m *Module) SetSchemaConfig(evSchemas config.EventingSchemas) error {
+	for _, evSchema := range evSchemas {
+		resourceID := ksuid.New().String()
+		dummyDBSchema := config.DatabaseSchemas{
+			resourceID: {
+				Table:   evSchema.ID,
+				DbAlias: "dummyDBName",
+				Schema:  evSchema.Schema,
+			},
+		}
+		schemaType, err := m.schema.Parser(dummyDBSchema)
+		if err != nil {
+			return err
+		}
+		if len(schemaType["dummyDBName"][evSchema.ID]) != 0 {
+			m.schemas[evSchema.ID] = schemaType["dummyDBName"][evSchema.ID]
+		}
+	}
+	return nil
+}
+
+// SetTriggerConfig sets eventing trigger config of eventing module
+func (m *Module) SetTriggerConfig(triggers config.EventingTriggers) error {
+	m.config.Rules = make(config.EventingTriggers)
+	for _, trigger := range triggers {
+		m.config.Rules[trigger.ID] = trigger
 	}
 
 	m.templates = map[string]*template.Template{}
-	for name, trigger := range m.config.Rules {
+	for _, trigger := range m.config.Rules {
 		// Set default templating engine
 		if trigger.Tmpl == "" {
 			trigger.Tmpl = config.TemplatingEngineGo
@@ -134,7 +147,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		switch trigger.Tmpl {
 		case config.TemplatingEngineGo:
 			if trigger.RequestTemplate != "" {
-				if err := m.createGoTemplate("trigger", name, trigger.RequestTemplate); err != nil {
+				if err := m.createGoTemplate("trigger", trigger.ID, trigger.RequestTemplate); err != nil {
 					return err
 				}
 			}
@@ -142,17 +155,15 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided", trigger.Tmpl), nil, map[string]interface{}{})
 		}
 	}
+	return nil
+}
 
-	m.config.SecurityRules = eventing.SecurityRules
+// SetSecurityRuleConfig set security rule config of eventing module
+func (m *Module) SetSecurityRuleConfig(rules map[string]*config.Rule) error {
+	m.config.SecurityRules = rules
 	if m.config.SecurityRules == nil {
 		m.config.SecurityRules = map[string]*config.Rule{}
 	}
-
-	// `m.config.InternalRules` cannot be set by the eventing module. Its used by other modules only.
-	if m.config.InternalRules == nil {
-		m.config.InternalRules = map[string]*config.EventingRule{}
-	}
-
 	return nil
 }
 
@@ -162,7 +173,7 @@ func (m *Module) CloseConfig() error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	//erase map
+	// erase map
 	m.processingEvents.Range(func(key interface{}, value interface{}) bool {
 		m.processingEvents.Delete(key)
 		return true

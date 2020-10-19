@@ -27,8 +27,8 @@ func (m *Module) ApplyService(ctx context.Context, service *model.Service) error
 }
 
 // GetLogs get logs of specified service
-func (m *Module) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error) {
-	return m.driver.GetLogs(ctx, isFollow, projectID, taskID, replica)
+func (m *Module) GetLogs(ctx context.Context, projectID string, info *model.LogRequest) (io.ReadCloser, error) {
+	return m.driver.GetLogs(ctx, projectID, info)
 }
 
 // GetServices gets services

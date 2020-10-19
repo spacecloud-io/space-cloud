@@ -33,114 +33,143 @@ func TestManager_SetService(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "serviceID"}}}}}}}},
-			args:    args{ctx: context.Background(), project: "2", service: "serviceID", value: &config.Service{ID: "id"}},
+			name: "Project config not found",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+						},
+					},
+				},
+			},
+			args:    args{ctx: context.Background(), project: "test", service: "greeter", value: &config.Service{ID: "greeter"}},
 			wantErr: true,
 		},
 		{
-			name: "services are nil and unable to set services config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{}}}}}},
-			args: args{ctx: context.Background(), project: "1", service: "serviceID", value: &config.Service{ID: "id"}},
+			name: "Services are nil and add a new service",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myproject", service: "greeter", value: &config.Service{ID: "greeter"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetServicesConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method: "SetRemoteServiceConfig",
+					args: []interface{}{mock.Anything, "myproject", config.Services{
+						config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter"): &config.Service{
+							ID: "greeter",
+						},
+					}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method: "SetResource",
+					args: []interface{}{
+						mock.Anything,
+						config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter"),
+						&config.Service{ID: "greeter"}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Services are nil and update existing service",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myproject", service: "greeter", value: &config.Service{ID: "greeter", URL: "https://httpbin.org/"}},
+			modulesMockArgs: []mockArgs{
+				{
+					method: "SetRemoteServiceConfig",
+					args: []interface{}{mock.Anything, "myproject", config.Services{
+						config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter"): &config.Service{
+							ID:  "greeter",
+							URL: "https://httpbin.org/",
+						},
+					}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method: "SetResource",
+					args: []interface{}{
+						mock.Anything,
+						config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter"),
+						&config.Service{ID: "greeter", URL: "https://httpbin.org/"}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "unable to set remote service config",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myproject", service: "greeter", value: &config.Service{ID: "greeter"}},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetRemoteServiceConfig",
+					args:           []interface{}{mock.Anything, "myproject", mock.Anything},
 					paramsReturned: []interface{}{errors.New("Invalid templating engine provided")},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "services are nil and unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{}}}}}},
-			args: args{ctx: context.Background(), project: "1", service: "serviceID", value: &config.Service{ID: "id"}},
+			name: "unable to set resource",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myproject", service: "greeter", value: &config.Service{ID: "greeter"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetServicesConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetRemoteServiceConfig",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("Invalid config file type")},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter"), &config.Service{ID: "greeter"}},
+					paramsReturned: []interface{}{errors.New("unable to set resource")},
 				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "services are nil and service is set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{}}}}}},
-			args: args{ctx: context.Background(), project: "1", service: "serviceID", value: &config.Service{ID: "id"}},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetServicesConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-		},
-		{
-			name: "unable to set services config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "serviceID"}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", service: "serviceID", value: &config.Service{ID: "id"}},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetServicesConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{errors.New("Invalid templating engine provided")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "serviceID"}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", service: "serviceID", value: &config.Service{ID: "id"}},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetServicesConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("Invalid config file type")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "service is set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "serviceID"}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", service: "serviceID", value: &config.Service{ID: "id"}},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetServicesConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {
@@ -160,7 +189,8 @@ func TestManager_SetService(t *testing.T) {
 			tt.s.store = &mockStore
 			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
-			if _, err := tt.s.SetService(tt.args.ctx, tt.args.project, tt.args.service, tt.args.value, model.RequestParams{}); (err != nil) != tt.wantErr {
+			_, err := tt.s.SetService(tt.args.ctx, tt.args.project, tt.args.service, tt.args.value, model.RequestParams{})
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetService() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -190,62 +220,102 @@ func TestManager_DeleteService(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "serviceID"}}}}}}}},
-			args:    args{ctx: context.Background(), project: "2", service: "serviceID"},
+			name: "Project config not found",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+						},
+					},
+				},
+			},
+			args:    args{ctx: context.Background(), project: "test", service: "greeter"},
 			wantErr: true,
 		},
 		{
-			name: "unable to set services config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "serviceID"}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", service: "serviceID"},
+			name: "Services exists, gets deleted",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+							RemoteService: config.Services{
+								config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter"): &config.Service{ID: "greeter"},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myproject", service: "greeter"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetServicesConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetRemoteServiceConfig",
+					args:           []interface{}{mock.Anything, "myproject", config.Services{}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "DeleteResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter")},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "unable to set remote service config",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myproject", service: "greeter"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetRemoteServiceConfig",
+					args:           []interface{}{mock.Anything, "myproject", mock.Anything},
 					paramsReturned: []interface{}{errors.New("Invalid templating engine provided")},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "serviceID"}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", service: "serviceID"},
+			name: "unable to delete resource",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myproject", service: "greeter"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetServicesConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetRemoteServiceConfig",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("Invalid config file type")},
+					method:         "DeleteResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter")},
+					paramsReturned: []interface{}{errors.New("unable to delete resource")},
 				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "service is set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "serviceID"}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", service: "serviceID"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetServicesConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {
@@ -289,28 +359,59 @@ func TestManager_GetServices(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "id"}}}}}}}},
-			args:    args{ctx: context.Background(), project: "2", serviceID: "id"},
+			name: "Project config not found",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+						},
+					},
+				},
+			},
+			args:    args{ctx: context.Background(), project: "test", serviceID: "greeter"},
 			wantErr: true,
 		},
 		{
-			name:    "service not present in config config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "id"}}}}}}}},
-			args:    args{ctx: context.Background(), project: "1", serviceID: "notService"},
-			wantErr: true,
+			name: "Get all services",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+							RemoteService: config.Services{
+								config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter1"): &config.Service{ID: "greeter1"},
+							},
+						},
+					},
+				},
+			},
+			args:    args{ctx: context.Background(), project: "myproject", serviceID: "*"},
+			want:    []interface{}{&config.Service{ID: "greeter1"}},
+			wantErr: false,
 		},
 		{
-			name: "got service",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "id"}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", serviceID: "service"},
-			want: []interface{}{&config.Service{ID: "id"}},
-		},
-		{
-			name: "got all services",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "id"}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", serviceID: "*"},
-			want: []interface{}{&config.Service{ID: "id"}},
+			name: "Get specific service",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+							RemoteService: config.Services{
+								config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter1"): &config.Service{ID: "greeter1"},
+								config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter2"): &config.Service{ID: "greeter2"},
+								config.GenerateResourceID("chicago", "myproject", config.ResourceRemoteService, "greeter3"): &config.Service{ID: "greeter3"},
+							},
+						},
+					},
+				},
+			},
+			args:    args{ctx: context.Background(), project: "myproject", serviceID: "greeter1"},
+			want:    []interface{}{&config.Service{ID: "greeter1"}},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {

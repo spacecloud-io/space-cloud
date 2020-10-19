@@ -22,11 +22,13 @@ const maxLicenseFetchErrorCount = 5
 
 // Manager manages all admin transactions
 type Manager struct {
-	lock   sync.RWMutex
-	config *config.Admin
-	quotas model.UsageQuotas
-	plan   string
-	user   *config.AdminUser
+	lock         sync.RWMutex
+	quotas       model.UsageQuotas
+	plan         string
+	user         *config.AdminUser
+	license      *config.License
+	integrations config.Integrations
+
 	isProd bool
 
 	licenseRenewalDate string
@@ -52,7 +54,8 @@ func New(nodeID, clusterID string, isDev bool, adminUserInfo *config.AdminUser) 
 		m.sessionID = ksuid.New().String()
 	}
 	// Initialise all config
-	m.config = new(config.Admin)
+	m.license = new(config.License)
+	m.integrations = make(config.Integrations)
 	m.user = adminUserInfo
 	m.quotas = model.UsageQuotas{MaxDatabases: 1, MaxProjects: 1}
 
@@ -124,31 +127,31 @@ func (m *Manager) SetIntegrationMan(i IntegrationInterface) {
 }
 
 // SetConfig sets the admin config
-func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
+func (m *Manager) SetConfig(licenseConfig *config.License, isInitialCall bool) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	// Set the admin config
-	m.config = config
+	m.license = licenseConfig
 
 	// Create a unique session id if in offline mode
 	if licenseMode == "offline" {
-		if m.config.LicenseKey == "" || m.config.LicenseValue == "" {
+		if m.license.LicenseKey == "" || m.license.LicenseValue == "" {
 			// Set the licenseKey and value with unique values
-			m.config.LicenseKey = ksuid.New().String()
-			m.config.LicenseValue = ksuid.New().String()
+			m.license.LicenseKey = ksuid.New().String()
+			m.license.LicenseValue = ksuid.New().String()
 
-			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting session id", map[string]interface{}{"key": m.config.LicenseKey, "value": m.config.LicenseValue})
+			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting session id", map[string]interface{}{"key": m.license.LicenseKey, "value": m.license.LicenseValue})
 
 			go func() {
-				if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
+				if err := m.syncMan.SetLicense(context.Background(), m.license); err != nil {
 					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config with session id", nil, nil)
 				}
 			}()
 			return nil
 		}
 
-		m.sessionID = m.config.LicenseKey + m.config.LicenseValue
+		m.sessionID = m.license.LicenseKey + m.license.LicenseValue
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Successfully set session id", map[string]interface{}{"sessionId": m.sessionID})
 	}
 
@@ -156,27 +159,33 @@ func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 	if m.isRegistered() {
 		if m.checkIfLeaderGateway() && licenseMode == "online" {
 			// Only the leader gateway can handle licensing information
-			return m.startOperation(config.License, isInitialCall)
+			return m.startOperation(licenseConfig.License, isInitialCall)
 		} else {
-			return m.setQuotas(config.License)
+			return m.setQuotas(licenseConfig.License)
 		}
 	}
 
 	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Gateway running in open source mode", nil)
 	// Reset quotas defaults
-	m.quotas.MaxProjects = 1
-	m.quotas.MaxDatabases = 1
-	m.quotas.IntegrationLevel = 0
+	m.quotas.MaxProjects = 3
+	m.quotas.MaxDatabases = 3
+	m.quotas.IntegrationLevel = 10
 	m.plan = "space-cloud-open--monthly"
 	return nil
 }
 
 // GetConfig returns the admin config
-func (m *Manager) GetConfig() *config.Admin {
+func (m *Manager) GetConfig() *config.License {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return m.config
+	return m.license
+}
+
+func (m *Manager) SetIntegrationConfig(integrations config.Integrations) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.integrations = integrations
 }
 
 // LoadEnv gets the env
@@ -200,5 +209,5 @@ func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas, string, string, st
 		}
 	}
 
-	return m.isProd, m.plan, m.quotas, loginURL, m.clusterName, m.licenseRenewalDate, m.config.LicenseKey, m.config.LicenseValue, m.sessionID, licenseMode
+	return m.isProd, m.plan, m.quotas, loginURL, m.clusterName, m.licenseRenewalDate, m.license.LicenseKey, m.license.LicenseValue, m.sessionID, licenseMode
 }

@@ -33,7 +33,7 @@ type Interface interface {
 	ScaleUp(ctx context.Context, projectID, serviceID, version string) error
 	WaitForService(ctx context.Context, service *model.Service) error
 	Type() model.DriverType
-	GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error)
+	GetLogs(ctx context.Context, projectID string, info *model.LogRequest) (io.ReadCloser, error)
 
 	// Service routes
 	ApplyServiceRoutes(ctx context.Context, projectID, serviceID string, routes model.Routes) error

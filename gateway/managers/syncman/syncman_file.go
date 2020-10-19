@@ -12,7 +12,7 @@ import (
 )
 
 // SetFileStore sets the file store module
-func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStore, params model.RequestParams) (int, error) {
+func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStoreConfig, params model.RequestParams) (int, error) {
 	// Check if the request has been hijacked
 	hookResponse := s.integrationMan.InvokeHook(ctx, params)
 	if hookResponse.CheckResponse() {
@@ -34,18 +34,14 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 		return http.StatusBadRequest, err
 	}
 
-	projectConfig.Modules.FileStore.Enabled = value.Enabled
-	projectConfig.Modules.FileStore.StoreType = value.StoreType
-	projectConfig.Modules.FileStore.Conn = value.Conn
-	projectConfig.Modules.FileStore.Endpoint = value.Endpoint
-	projectConfig.Modules.FileStore.Bucket = value.Bucket
-	projectConfig.Modules.FileStore.Secret = value.Secret
+	projectConfig.FileStoreConfig = value
 
-	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
+	if err := s.modules.SetFileStoreConfig(ctx, project, projectConfig.FileStoreConfig); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting file store config", err, nil)
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceFileStoreConfig, "filestore")
+	if err := s.store.SetResource(ctx, resourceID, value); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -76,23 +72,18 @@ func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *co
 		return http.StatusBadRequest, err
 	}
 
-	var doesExist bool
-	for index, val := range projectConfig.Modules.FileStore.Rules {
-		if val.ID == value.ID {
-			projectConfig.Modules.FileStore.Rules[index] = value
-			doesExist = true
-		}
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceFileStoreRule, id)
+	if projectConfig.FileStoreRules == nil {
+		projectConfig.FileStoreRules = config.FileStoreRules{resourceID: value}
+	} else {
+		projectConfig.FileStoreRules[resourceID] = value
 	}
 
-	if !doesExist {
-		projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
+	if err := s.modules.SetFileStoreSecurityRuleConfig(ctx, project, projectConfig.FileStoreRules); err != nil {
+		return http.StatusInternalServerError, err
 	}
 
-	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
-		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting file store config", err, nil)
-	}
-
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.SetResource(ctx, resourceID, value); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -122,20 +113,14 @@ func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename strin
 		return http.StatusBadRequest, err
 	}
 
-	temp := projectConfig.Modules.FileStore.Rules
-	for i, v := range projectConfig.Modules.FileStore.Rules {
-		if v.ID == filename {
-			temp = append(temp[:i], temp[i+1:]...)
-			break
-		}
-	}
-	projectConfig.Modules.FileStore.Rules = temp
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceFileStoreRule, filename)
+	delete(projectConfig.FileStoreRules, resourceID)
 
-	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
-		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting file store config", err, nil)
+	if err := s.modules.SetFileStoreSecurityRuleConfig(ctx, project, projectConfig.FileStoreRules); err != nil {
+		return http.StatusInternalServerError, err
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -165,14 +150,7 @@ func (s *Manager) GetFileStoreConfig(ctx context.Context, project string, params
 		return http.StatusBadRequest, nil, err
 	}
 
-	return http.StatusOK, []interface{}{config.FileStore{
-		Enabled:   projectConfig.Modules.FileStore.Enabled,
-		StoreType: projectConfig.Modules.FileStore.StoreType,
-		Conn:      projectConfig.Modules.FileStore.Conn,
-		Endpoint:  projectConfig.Modules.FileStore.Endpoint,
-		Bucket:    projectConfig.Modules.FileStore.Bucket,
-		Secret:    projectConfig.Modules.FileStore.Secret,
-	}}, nil
+	return http.StatusOK, []interface{}{projectConfig.FileStoreConfig}, nil
 }
 
 // GetFileStoreRules gets file store rules from config
@@ -199,16 +177,16 @@ func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string,
 	}
 
 	if ruleID != "*" {
-		for _, value := range projectConfig.Modules.FileStore.Rules {
-			if ruleID == value.ID {
-				return http.StatusOK, []interface{}{value}, nil
-			}
+		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceFileStoreRule, ruleID)
+		fileRule, ok := projectConfig.FileStoreRules[resourceID]
+		if ok {
+			return http.StatusOK, []interface{}{fileRule}, nil
 		}
 		return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Security rule (%s) of file store does not exists", ruleID), fmt.Errorf("security rule not found in config"), nil)
 	}
 
 	fileRules := []interface{}{}
-	for _, value := range projectConfig.Modules.FileStore.Rules {
+	for _, value := range projectConfig.FileStoreRules {
 		fileRules = append(fileRules, value)
 	}
 	return http.StatusOK, fileRules, nil

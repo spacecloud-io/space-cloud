@@ -16,9 +16,10 @@ type AdminSyncmanInterface interface {
 	IsRegistered() bool
 	GetSessionID() string
 	RenewLicense(bool) error
-	ValidateProjectSyncOperation(c *config.Config, project *config.Project) bool
-	SetConfig(admin *config.Admin, isFirst bool) error
-	GetConfig() *config.Admin
+	ValidateProjectSyncOperation(c *config.Config, project *config.ProjectConfig) bool
+	SetConfig(admin *config.License, isFirst bool) error
+	GetConfig() *config.License
+	SetIntegrationConfig(integrations config.Integrations)
 
 	// For integrations
 	GetIntegrationToken(id string) (string, error)
@@ -27,24 +28,47 @@ type AdminSyncmanInterface interface {
 }
 
 type integrationInterface interface {
-	SetConfig(array config.Integrations) error
+	SetConfig(integrations config.Integrations, integrationHooks config.IntegrationHooks) error
+	SetIntegrations(integrations config.Integrations) error
+	SetIntegrationHooks(integrationHooks config.IntegrationHooks)
 	InvokeHook(context.Context, model.RequestParams) config.IntegrationAuthResponse
 }
 
 // ModulesInterface is an interface consisting of functions of the modules module used by syncman
 type ModulesInterface interface {
-	// SetProjectConfig sets the config all modules
-	SetProjectConfig(config *config.Project) error
-	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
-	SetCrudConfig(projectID string, crudConfig config.Crud) error
-	// SetServicesConfig sets the config of auth and functions modules
-	SetServicesConfig(projectID string, services *config.ServicesModule) error
+	// SetInitialProjectConfig sets the config all modules
+	SetInitialProjectConfig(ctx context.Context, config config.Projects) error
+
+	// SetProjectConfig sets specific project config
+	SetProjectConfig(ctx context.Context, config *config.ProjectConfig) error
+
+	// SetDatabaseConfig sets the config of crud, auth, schema and realtime modules
+	SetDatabaseConfig(ctx context.Context, projectID string, crudConfigs config.DatabaseConfigs) error
+
+	SetDatabaseSchemaConfig(ctx context.Context, projectID string, schemaConfigs config.DatabaseSchemas) error
+	SetDatabaseRulesConfig(ctx context.Context, projectID string, ruleConfigs config.DatabaseRules) error
+	SetDatabasePreparedQueryConfig(ctx context.Context, projectID string, prepConfigs config.DatabasePreparedQueries) error
+
 	// SetFileStoreConfig sets the config of auth and filestore modules
-	SetFileStoreConfig(projectID string, fileStore *config.FileStore) error
+	SetFileStoreConfig(ctx context.Context, projectID string, fileStore *config.FileStoreConfig) error
+	SetFileStoreSecurityRuleConfig(ctx context.Context, projectID string, fileRule config.FileStoreRules) error
+
+	// SetServicesConfig sets the config of auth and functions modules
+	SetRemoteServiceConfig(ctx context.Context, projectID string, services config.Services) error
+
+	SetLetsencryptConfig(ctx context.Context, projectID string, c *config.LetsEncrypt) error
+
+	SetIngressRouteConfig(ctx context.Context, projectID string, routes config.IngressRoutes) error
+	SetIngressGlobalRouteConfig(ctx context.Context, projectID string, c *config.GlobalRoutesConfig) error
+
 	// SetEventingConfig sets the config of eventing module
-	SetEventingConfig(projectID string, eventingConfig *config.Eventing) error
+	SetEventingConfig(ctx context.Context, projectID string, eventingConfigs *config.EventingConfig) error
+	SetEventingSchemaConfig(ctx context.Context, projectID string, schemaObj config.EventingSchemas) error
+	SetEventingTriggerConfig(ctx context.Context, projectID string, triggerObj config.EventingTriggers) error
+	SetEventingRuleConfig(ctx context.Context, projectID string, secureObj config.EventingRules) error
+
 	// SetUsermanConfig set the config of the userman module
-	SetUsermanConfig(projectID string, auth config.Auth) error
+	SetUsermanConfig(ctx context.Context, projectID string, auth config.Auths) error
 
 	// Getters
 	GetSchemaModuleForSyncMan(projectID string) (model.SchemaEventingInterface, error)

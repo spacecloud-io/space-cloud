@@ -5,23 +5,31 @@ import (
 )
 
 // SetConfig sets the config of the integration manager
-func (m *Manager) SetConfig(array config.Integrations) error {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	// Check if integration array is valid
-	if err := m.adminMan.ValidateIntegrationSyncOperation(array); err != nil {
-		m.config = map[string]*config.IntegrationConfig{}
+func (m *Manager) SetConfig(integrations config.Integrations, integrationHooks config.IntegrationHooks) error {
+	if err := m.SetIntegrations(integrations); err != nil {
 		return err
 	}
 
-	// Reset existing config
-	m.config = make(map[string]*config.IntegrationConfig, len(array))
+	m.SetIntegrationHooks(integrationHooks)
+	return nil
+}
 
-	// Add the integration config on by one
-	for _, i := range array {
-		m.config[i.ID] = i
+func (m *Manager) SetIntegrations(integrations config.Integrations) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	// Check if integration are valid
+	if err := m.adminMan.ValidateIntegrationSyncOperation(integrations); err != nil {
+		m.integrationConfig = map[string]*config.IntegrationConfig{}
+		return err
 	}
 
+	m.integrationConfig = integrations
 	return nil
+}
+
+func (m *Manager) SetIntegrationHooks(integrationHooks config.IntegrationHooks) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.integrationHookConfig = integrationHooks
 }

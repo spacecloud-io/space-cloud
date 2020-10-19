@@ -79,7 +79,7 @@ func TestRouting_SetProjectRoutes(t *testing.T) {
 	}
 	type args struct {
 		project string
-		routes  config.Routes
+		routes  config.IngressRoutes
 	}
 	tests := []struct {
 		name   string
@@ -94,8 +94,8 @@ func TestRouting_SetProjectRoutes(t *testing.T) {
 			},
 			args: args{
 				project: "test1",
-				routes: config.Routes{
-					&config.Route{
+				routes: config.IngressRoutes{
+					config.GenerateResourceID("chicago", "myproject", config.ResourceIngressRoute, "12345"): &config.Route{
 						ID:     "12345",
 						Source: config.RouteSource{},
 					},

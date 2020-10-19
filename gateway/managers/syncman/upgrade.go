@@ -15,7 +15,7 @@ func (s *Manager) SetOfflineLicense(ctx context.Context, license string) error {
 
 	oldConfig := s.adminMan.GetConfig()
 	oldConfig.License = license
-	return s.SetAdminConfig(ctx, oldConfig)
+	return s.SetLicense(ctx, oldConfig)
 }
 
 func (s *Manager) RenewLicense(ctx context.Context, token string) error {
@@ -40,7 +40,7 @@ func (s *Manager) RenewLicense(ctx context.Context, token string) error {
 		return err
 	}
 
-	return s.SetAdminConfig(ctx, s.adminMan.GetConfig())
+	return s.SetLicense(ctx, s.adminMan.GetConfig())
 }
 
 func (s *Manager) ConvertToEnterprise(ctx context.Context, token, licenseKey, licenseValue, clusterName string) error {
@@ -82,5 +82,5 @@ func (s *Manager) ConvertToEnterprise(ctx context.Context, token, licenseKey, li
 	oldConfig.LicenseValue = licenseValue
 	oldConfig.License = upgradeResponse.Result.License
 
-	return s.SetAdminConfig(ctx, oldConfig)
+	return s.SetLicense(ctx, oldConfig)
 }

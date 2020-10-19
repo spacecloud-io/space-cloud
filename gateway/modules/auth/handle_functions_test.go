@@ -21,24 +21,21 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 	}{
 		{
 			testName: "Successful Test allow(Internal Services)", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
-			module: &Module{fileRules: []*config.FileRule{&config.FileRule{
-				Prefix: string(os.PathSeparator),
-				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "allow"}},
-			},
-			},
-				funcRules: &config.ServicesModule{
-					InternalServices: config.Services{
-						"service": &config.Service{
-							Endpoints: map[string]*config.Endpoint{
-								"ep": {
-									Rule: &config.Rule{Rule: "allow"},
-								},
+			module: &Module{
+				funcRules: config.Services{
+					config.GenerateResourceID("chicago", "project", config.ResourceRemoteService, "service"): &config.Service{
+						ID: "service",
+						Endpoints: map[string]*config.Endpoint{
+							"ep": {
+								Rule: &config.Rule{Rule: "allow"},
 							},
 						},
 					},
 				},
-				project: "project"},
-			service: "service", secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}},
+				project: "project",
+			},
+			service:       "service",
+			secretKeys:    []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}},
 			function:      "ep",
 			IsErrExpected: false,
 		},
@@ -49,13 +46,12 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "allow"}},
 			},
 			},
-				funcRules: &config.ServicesModule{
-					Services: config.Services{
-						"service": &config.Service{
-							Endpoints: map[string]*config.Endpoint{
-								"ep": {
-									Rule: &config.Rule{Rule: "allow"},
-								},
+				funcRules: config.Services{
+					config.GenerateResourceID("chicago", "project", config.ResourceRemoteService, "service"): &config.Service{
+						ID: "service",
+						Endpoints: map[string]*config.Endpoint{
+							"ep": {
+								Rule: &config.Rule{Rule: "allow"},
 							},
 						},
 					},
@@ -72,13 +68,12 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "allow"}},
 			},
 			},
-				funcRules: &config.ServicesModule{
-					InternalServices: config.Services{
-						"service": &config.Service{
-							Endpoints: map[string]*config.Endpoint{
-								"ep": {
-									Rule: &config.Rule{Rule: "deny"},
-								},
+				funcRules: config.Services{
+					config.GenerateResourceID("chicago", "project", config.ResourceRemoteService, "service"): &config.Service{
+						ID: "service",
+						Endpoints: map[string]*config.Endpoint{
+							"ep": {
+								Rule: &config.Rule{Rule: "deny"},
 							},
 						},
 					},
@@ -90,13 +85,10 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 		},
 		{
 			testName: "Test Case-Successfully parse token", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
-			module: &Module{fileRules: []*config.FileRule{&config.FileRule{
-				Prefix: string(os.PathSeparator),
-				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "match", Eval: "==", F1: 1, F2: 1, Type: "number"}},
-			},
-			}, funcRules: &config.ServicesModule{
-				InternalServices: config.Services{
-					"service": &config.Service{
+			module: &Module{
+				funcRules: config.Services{
+					config.GenerateResourceID("chicago", "project", config.ResourceRemoteService, "service"): &config.Service{
+						ID: "service",
 						Endpoints: map[string]*config.Endpoint{
 							"ep": {
 								Rule: &config.Rule{Rule: "match", Eval: "==", F1: 1, F2: 1, Type: "number"},
@@ -104,8 +96,8 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 						},
 					},
 				},
+				project: "project",
 			},
-				project: "project"},
 			service: "service", secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}},
 			function:      "ep",
 			IsErrExpected: false,
@@ -113,15 +105,16 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			result:        map[string]interface{}{"token1": "token1value", "token2": "token2value"},
 		},
 	}
-	authModule := Init("1", &crud.Module{}, nil, nil)
+	authModule := Init("chicago", "1", &crud.Module{}, nil, nil)
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			if er := authModule.SetConfig("project", "", test.secretKeys, "", config.Crud{}, &config.FileStore{}, test.module.funcRules, &config.Eventing{}); er != nil {
+			if er := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: test.secretKeys}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, test.module.funcRules, config.EventingRules{}); er != nil {
 				t.Errorf("error setting config of auth module  - %s", er.Error())
 			}
 			_, reqParams, err := (authModule).IsFuncCallAuthorised(context.Background(), test.project, test.service, test.function, test.token, test.params)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got Error-", err, "Want Error-", test.IsErrExpected)
+				return
 			}
 			// check result if TokenClaims is returned after parsing token and matching rule
 			if test.CheckResult && !reflect.DeepEqual(test.result, reqParams.Claims) {

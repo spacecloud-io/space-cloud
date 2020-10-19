@@ -29,7 +29,7 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		value := new(config.FileStore)
+		value := new(config.FileStoreConfig)
 		_ = json.NewDecoder(r.Body).Decode(value)
 		defer utils.CloseTheCloser(r.Body)
 

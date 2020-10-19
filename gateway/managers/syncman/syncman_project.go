@@ -12,7 +12,7 @@ import (
 )
 
 // ApplyProjectConfig creates the config for the project
-func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Project, params model.RequestParams) (int, error) {
+func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.ProjectConfig, params model.RequestParams) (int, error) {
 	// Check if the request has been hijacked
 	hookResponse := s.integrationMan.InvokeHook(ctx, params)
 	if hookResponse.CheckResponse() {
@@ -43,37 +43,11 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-
-	var doesProjectExists bool
-	for _, p := range s.projectConfig.Projects {
-		if p.ID == project.ID {
-			// override the existing config
-			p.Name = project.Name
-			p.AESKey = project.AESKey
-			p.Secrets = project.Secrets
-			p.SecretSource = project.SecretSource
-			p.DockerRegistry = project.DockerRegistry
-			p.ContextTimeGraphQL = project.ContextTimeGraphQL
-			p.IsIntegration = project.IsIntegration
-			// Mark project as existing
-			doesProjectExists = true
-			project = p
-		}
-	}
-
-	if !doesProjectExists {
-		// Append project with default modules to projects array
-		project.Modules = &config.Modules{
-			FileStore:    &config.FileStore{},
-			Services:     &config.ServicesModule{},
-			Auth:         map[string]*config.AuthStub{},
-			Crud:         map[string]*config.CrudStub{},
-			Routes:       []*config.Route{},
-			GlobalRoutes: &config.GlobalRoutesConfig{},
-			LetsEncrypt:  config.LetsEncrypt{WhitelistedDomains: []string{}},
-		}
-		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
-
+	p, ok := s.projectConfig.Projects[project.ID]
+	if ok {
+		p.ProjectConfig = project
+	} else {
+		s.projectConfig.Projects[project.ID] = config.GenerateEmptyProject(project)
 		// Create a project in the runner as well
 		if s.runnerAddr != "" {
 			params := map[string]interface{}{"id": project.ID}
@@ -82,12 +56,12 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			}
 		}
 	}
-	// We will ignore the error for the create project request
-	if err := s.modules.SetProjectConfig(project); err != nil {
+
+	if err := s.modules.SetProjectConfig(ctx, project); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	if err := s.store.SetProject(ctx, project); err != nil {
+	if err := s.store.SetResource(ctx, config.GenerateResourceID(s.clusterID, project.ID, config.ResourceProject, project.ID), project); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -124,8 +98,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string, par
 			return http.StatusInternalServerError, err
 		}
 	}
-
-	s.delete(projectID)
+	// NOTE: we are not deleting project here as, the watcher of config maps will eventually delete the project
 	s.modules.Delete(projectID)
 
 	if err := s.store.DeleteProject(ctx, projectID); err != nil {
@@ -154,23 +127,19 @@ func (s *Manager) GetProjectConfig(ctx context.Context, projectID string, params
 
 	// Iterate over all projects stored
 	v := []interface{}{}
-	for _, p := range s.projectConfig.Projects {
-		if projectID == "*" {
-			// Get all projects which aren't integrations
-			if !p.IsIntegration {
-
-				v = append(v, config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, SecretSource: p.SecretSource, Name: p.Name, ID: p.ID})
+	if projectID == "*" {
+		for _, p := range s.projectConfig.Projects {
+			if !p.ProjectConfig.IsIntegration {
+				v = append(v, p.ProjectConfig)
 			}
-			continue
 		}
-
-		if projectID == p.ID {
-			return http.StatusOK, []interface{}{config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, SecretSource: p.SecretSource, IsIntegration: p.IsIntegration, Name: p.Name, ID: p.ID}}, nil
-		}
-	}
-	if len(v) > 0 || projectID == "*" {
 		return http.StatusOK, v, nil
 	}
+	project, ok := s.projectConfig.Projects[projectID]
+	if ok {
+		return http.StatusOK, []interface{}{project.ProjectConfig}, nil
+	}
+
 	return http.StatusBadRequest, []interface{}{}, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Project (%s) not present in config", projectID), nil, nil)
 }
 

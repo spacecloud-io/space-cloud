@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/spaceuptech/helpers"
+
+	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
 // GetSchemaForDB gets schema of specified database & collection
@@ -16,26 +18,24 @@ func (s *Schema) GetSchemaForDB(ctx context.Context, dbAlias, col, format string
 	alreadyAddedTables := map[string]bool{}
 	schemaResponse := make([]interface{}, 0)
 	if dbAlias != "*" && col != "*" {
-		db, ok := s.config[dbAlias]
+		resourceID := config.GenerateResourceID(s.clusterID, s.project, config.ResourceDatabaseSchema, dbAlias, col)
+		_, ok := s.dbSchemas[resourceID]
 		if !ok {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Provided database doesn't exists (%s)", dbAlias), nil, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
 		}
-		if err := s.getSchemaResponse(ctx, format, dbAlias, col, true, alreadyAddedTables, db.Collections, &schemaResponse); err != nil {
+		if err := s.getSchemaResponse(ctx, format, dbAlias, col, true, alreadyAddedTables, &schemaResponse); err != nil {
 			return nil, err
 		}
 	} else if dbAlias != "*" {
-		collections := s.config[dbAlias].Collections
-		for key := range collections {
-			if err := s.getSchemaResponse(ctx, format, dbAlias, key, false, alreadyAddedTables, collections, &schemaResponse); err != nil {
+		for _, dbSchema := range s.dbSchemas {
+			if err := s.getSchemaResponse(ctx, format, dbAlias, dbSchema.Table, false, alreadyAddedTables, &schemaResponse); err != nil {
 				return nil, err
 			}
 		}
 	} else {
-		for dbName, dbInfo := range s.config {
-			for key := range dbInfo.Collections {
-				if err := s.getSchemaResponse(ctx, format, dbName, key, false, alreadyAddedTables, dbInfo.Collections, &schemaResponse); err != nil {
-					return nil, err
-				}
+		for _, dbSchema := range s.dbSchemas {
+			if err := s.getSchemaResponse(ctx, format, dbSchema.DbAlias, dbSchema.Table, false, alreadyAddedTables, &schemaResponse); err != nil {
+				return nil, err
 			}
 		}
 	}

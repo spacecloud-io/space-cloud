@@ -42,7 +42,7 @@ func (m *Manager) licenseRenewalRoutine() {
 						break
 					}
 					go func() {
-						if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
+						if err := m.syncMan.SetLicense(context.Background(), m.license); err != nil {
 							_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to save admin config", err, nil)
 						}
 					}()
@@ -123,7 +123,7 @@ func (m *Manager) ValidateLicense() error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	if _, err := m.decryptLicense(m.config.License); err != nil {
+	if _, err := m.decryptLicense(m.license.License); err != nil {
 		m.ResetQuotas()
 		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to validate license key", err, nil)
 	}
@@ -151,14 +151,14 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	// Marshal the request body
 	data, _ := json.Marshal(map[string]interface{}{
 		"params": model.RenewLicense{
-			LicenseKey:       m.config.LicenseKey,
-			LicenseValue:     m.config.LicenseValue,
-			License:          m.config.License,
+			LicenseKey:       m.license.LicenseKey,
+			LicenseValue:     m.license.LicenseValue,
+			License:          m.license.License,
 			CurrentSessionID: m.sessionID,
 		},
 		"timeout": 10,
 	})
-	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), `Renewing admin license`, map[string]interface{}{"clusterId": m.config.LicenseKey, "clusterKey": m.config.LicenseValue, "sessionId": m.sessionID})
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), `Renewing admin license`, map[string]interface{}{"clusterId": m.license.LicenseKey, "clusterKey": m.license.LicenseValue, "sessionId": m.sessionID})
 	// Fire the request
 	res, err := http.Post("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/renewLicense", "application/json", bytes.NewBuffer(data))
 	if err != nil {
@@ -192,12 +192,12 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 		m.licenseFetchErrorCount = 0
 	}
 
-	m.config.License = v.Result.License
+	m.license.License = v.Result.License
 	if err := m.setQuotas(v.Result.License); err != nil {
 		return err
 	}
 
-	go func() { _ = m.syncMan.SetAdminConfig(context.TODO(), m.config) }()
+	go func() { _ = m.syncMan.SetLicense(context.TODO(), m.license) }()
 	return nil
 }
 
@@ -209,16 +209,16 @@ func (m *Manager) ResetQuotas() {
 	m.plan = "space-cloud-open--monthly"
 
 	if licenseMode == "online" {
-		m.config.LicenseKey = ""
-		m.config.LicenseValue = ""
+		m.license.LicenseKey = ""
+		m.license.LicenseValue = ""
 	}
 
-	m.config.License = ""
+	m.license.License = ""
 
 	m.clusterName = ""
 
 	go func() {
-		if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
+		if err := m.syncMan.SetLicense(context.Background(), m.license); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to save admin config", err, nil)
 		}
 	}()
@@ -255,7 +255,7 @@ func (m *Manager) isEnterpriseMode() bool {
 }
 
 func (m *Manager) isRegistered() bool {
-	return m.config.LicenseKey != "" && m.config.LicenseValue != "" && m.config.License != ""
+	return m.license.LicenseKey != "" && m.license.LicenseValue != "" && m.license.License != ""
 }
 
 func (m *Manager) decryptLicense(license string) (*model.License, error) {

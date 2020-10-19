@@ -34,7 +34,7 @@ type Module struct {
 	Managers *managers.Managers
 }
 
-func newModule(nodeID string, managers *managers.Managers, globalMods *global.Global) *Module {
+func newModule(clusterID, nodeID string, managers *managers.Managers, globalMods *global.Global) *Module {
 	// Get managers
 	adminMan := managers.Admin()
 	syncMan := managers.Sync()
@@ -48,13 +48,13 @@ func newModule(nodeID string, managers *managers.Managers, globalMods *global.Gl
 	c.SetGetSecrets(syncMan.GetSecrets)
 	c.SetIntegrationManager(integrationMan)
 
-	s := schema.Init(c)
+	s := schema.Init(clusterID, c)
 	c.SetSchema(s)
 
-	a := auth.Init(nodeID, c, adminMan, integrationMan)
+	a := auth.Init(clusterID, nodeID, c, adminMan, integrationMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
-	fn := functions.Init(a, syncMan, integrationMan, metrics.AddFunctionOperation)
+	fn := functions.Init(clusterID, a, syncMan, integrationMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
 	f.SetGetSecrets(syncMan.GetSecrets)
 

@@ -43,15 +43,15 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 	}
 	crudPostgres := crud.Init()
 	crudPostgres.SetAdminManager(admin.New("", "", false, nil))
-	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
+	_ = crudPostgres.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "postgres"): &config.DatabaseConfig{DbAlias: "postgres", Type: "sql-postgres", Enabled: false}})
 
 	crudMySQL := crud.Init()
 	crudMySQL.SetAdminManager(admin.New("", "", false, nil))
-	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
+	_ = crudMySQL.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "mysql"): &config.DatabaseConfig{DbAlias: "mysql", Type: "sql-mysql", Enabled: false}})
 
 	crudSQLServer := crud.Init()
 	crudSQLServer.SetAdminManager(admin.New("", "", false, nil))
-	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
+	_ = crudSQLServer.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "sqlserver"): &config.DatabaseConfig{DbAlias: "sqlserver", Type: "sql-sqlserver", Enabled: false}})
 	tests := []struct {
 		name         string
 		fields       fields
@@ -292,15 +292,15 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 	}
 	crudPostgres := crud.Init()
 	crudPostgres.SetAdminManager(admin.New("", "", false, nil))
-	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
+	_ = crudPostgres.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "postgres"): &config.DatabaseConfig{DbAlias: "postgres", Type: "sql-postgres", Enabled: false}})
 
 	crudMySQL := crud.Init()
 	crudMySQL.SetAdminManager(admin.New("", "", false, nil))
-	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
+	_ = crudMySQL.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "mysql"): &config.DatabaseConfig{DbAlias: "mysql", Type: "sql-mysql", Enabled: false}})
 
 	crudSQLServer := crud.Init()
 	crudSQLServer.SetAdminManager(admin.New("", "", false, nil))
-	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
+	_ = crudSQLServer.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "sqlserver"): &config.DatabaseConfig{DbAlias: "sqlserver", Type: "sql-sqlserver", Enabled: false}})
 	tests := []struct {
 		name    string
 		fields  fields

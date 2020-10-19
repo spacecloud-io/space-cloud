@@ -11,25 +11,23 @@ import (
 
 func loadEnvironmentVariable(c *Config) {
 	for _, p := range c.Projects {
-		for i, secret := range p.Secrets {
+		for i, secret := range p.ProjectConfig.Secrets {
 			if strings.HasPrefix(secret.Secret, "$") {
 				tempString := strings.TrimPrefix(secret.Secret, "$")
 				tempEnvVar, present := os.LookupEnv(tempString)
 
 				if present {
-					p.Secrets[i].Secret = tempEnvVar
+					p.ProjectConfig.Secrets[i].Secret = tempEnvVar
 				}
 			}
 		}
-		if p.Modules != nil {
-			for _, value := range p.Modules.Crud {
-				if strings.HasPrefix(value.Conn, "$") {
-					tempStringC := strings.TrimPrefix(value.Conn, "$")
-					tempEnvVarC, presentC := os.LookupEnv(tempStringC)
+		for _, value := range p.DatabaseConfigs {
+			if strings.HasPrefix(value.Conn, "$") {
+				tempStringC := strings.TrimPrefix(value.Conn, "$")
+				tempEnvVarC, presentC := os.LookupEnv(tempStringC)
 
-					if presentC {
-						value.Conn = tempEnvVarC
-					}
+				if presentC {
+					value.Conn = tempEnvVarC
 				}
 			}
 		}
