@@ -356,23 +356,19 @@ func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, c
 		return http.StatusBadRequest, err
 	}
 
-	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
+	databaseRulesConfig, ok := projectConfig.DatabaseRules[resourceID]
 	if !ok {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection rules, provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
-	collection, ok := databaseConfig.Collections[col]
-	if !ok {
-		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection rules, provided collection (%s) does not exists", col), nil, nil)
-	}
+	databaseRulesConfig.Rules = make(map[string]*config.Rule)
 
-	collection.Rules = make(map[string]*config.Rule)
-
-	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+	if err := s.modules.SetDatabaseRulesConfig(ctx, projectConfig.DatabaseRules); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 

@@ -79,13 +79,15 @@ func (s *Manager) DeleteUserManagement(ctx context.Context, project, provider st
 		return http.StatusBadRequest, err
 	}
 
-	delete(projectConfig.Modules.Auth, provider)
+	delete(projectConfig.Auths, provider)
 
-	if err := s.modules.SetUsermanConfig(project, projectConfig.Modules.Auth); err != nil {
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceAuthProvider, provider)
+
+	if err := s.modules.SetUsermanConfig(ctx, project, projectConfig.Auths); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 

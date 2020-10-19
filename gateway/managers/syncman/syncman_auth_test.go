@@ -181,19 +181,19 @@ func TestManager_DeleteUserManagement(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{}}}}}},
+			s:       &Manager{projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {Auths: config.Auths{"provider": &config.AuthStub{ID: "provider"}}}}}},
 			args:    args{ctx: context.Background(), project: "2", provider: "provider"},
 			want:    http.StatusBadRequest,
 			wantErr: true,
 		},
 		{
 			name: "unable to set userman config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "provider"}}}}}}},
+			s:    &Manager{projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {Auths: config.Auths{"provider": &config.AuthStub{ID: "provider"}}}}}},
 			args: args{ctx: context.Background(), project: "1", provider: "provider"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetUsermanConfig",
-					args:           []interface{}{"1", config.Auth{}},
+					args:           []interface{}{context.Background(), "1", config.Auths{}},
 					paramsReturned: []interface{}{errors.New("unable to set userman config")},
 				},
 			},
@@ -202,18 +202,18 @@ func TestManager_DeleteUserManagement(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "provider"}}}}}}},
+			s:    &Manager{clusterID: "clusterID", projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {Auths: config.Auths{"provider": &config.AuthStub{ID: "provider"}}}}}},
 			args: args{ctx: context.Background(), project: "1", provider: "provider"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetUsermanConfig",
-					args:           []interface{}{"1", config.Auth{}},
+					args:           []interface{}{context.Background(), "1", config.Auths{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
+					method:         "DeleteResource",
 					args:           []interface{}{context.Background(), mock.Anything},
 					paramsReturned: []interface{}{errors.New("unable to get db config")},
 				},
@@ -223,18 +223,18 @@ func TestManager_DeleteUserManagement(t *testing.T) {
 		},
 		{
 			name: "auth provider is succesfully deleted",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "provider"}}}}}}},
+			s:    &Manager{clusterID: "clusterID", projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {Auths: config.Auths{"provider": &config.AuthStub{ID: "provider"}}}}}},
 			args: args{ctx: context.Background(), project: "1", provider: "provider"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetUsermanConfig",
-					args:           []interface{}{"1", config.Auth{}},
+					args:           []interface{}{context.Background(), "1", config.Auths{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
+					method:         "DeleteResource",
 					args:           []interface{}{context.Background(), mock.Anything},
 					paramsReturned: []interface{}{nil},
 				},
