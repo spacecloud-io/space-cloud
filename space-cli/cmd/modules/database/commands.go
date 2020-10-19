@@ -241,7 +241,14 @@ func DeleteSubCommands() []*cobra.Command {
 		ValidArgsFunction: validDBRulesArgsFunc,
 	}
 
-	return []*cobra.Command{deleteRules}
+	var deleteConfigs = &cobra.Command{
+		Use:               "db-configs",
+		Aliases:           []string{"db-config"},
+		RunE:              actionDeleteDbConfigs,
+		ValidArgsFunction: validDBConfigArgsFunc,
+	}
+
+	return []*cobra.Command{deleteRules, deleteConfigs}
 }
 
 func actionDeleteDbRules(cmd *cobra.Command, args []string) error {
@@ -258,6 +265,25 @@ func actionDeleteDbRules(cmd *cobra.Command, args []string) error {
 	prefixCol := args[1]
 
 	err := deleteDBRules(project, dbAlias, prefixCol)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionDeleteDbConfigs(cmd *cobra.Command, args []string) error {
+	// Get the project and url parameters
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	if len(args) != 1 {
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+	}
+	prefix := args[0]
+
+	err := deleteDBConfigs(project, prefix)
 	if err != nil {
 		return err
 	}

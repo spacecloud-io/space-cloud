@@ -37,3 +37,32 @@ func deleteDBRules(project, dbAlias, prefix string) error {
 
 	return nil
 }
+
+func deleteDBConfigs(project, prefix string) error {
+
+	objs, err := GetDbConfig(project, "db-config", map[string]string{"dbAlias": "*"})
+	if err != nil {
+		return err
+	}
+
+	doesAliasExist := false
+	aliasNames := []string{}
+	for _, spec := range objs {
+		aliasNames = append(aliasNames, spec.Meta["dbAlias"])
+	}
+
+	prefix, err = filter.DeleteOptions(project, prefix, aliasNames, doesAliasExist)
+	if err != nil {
+		return err
+	}
+
+	// Delete the db config from the server
+	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/config/%s", project, prefix, "database-config")
+
+	payload := new(model.Response)
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": prefix}, payload); err != nil {
+		return err
+	}
+
+	return nil
+}
