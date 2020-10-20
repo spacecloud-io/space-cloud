@@ -95,3 +95,32 @@ func deleteDBPreparedQuery(project, dbAlias, prefix string) error {
 
 	return nil
 }
+
+func deleteDBSchemas(project, dbAlias, prefix string) error {
+
+	objs, err := GetDbSchema(project, "db-schema", map[string]string{"dbAlias": dbAlias, "col": "*"})
+	if err != nil {
+		return err
+	}
+
+	doesTableExist := false
+	tableNames := []string{}
+	for _, spec := range objs {
+		tableNames = append(tableNames, spec.Meta["col"])
+	}
+
+	prefix, err = filter.DeleteOptions(project, prefix, tableNames, doesTableExist)
+	if err != nil {
+		return err
+	}
+
+	// Delete the db prepared query from the server
+	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/collections/%s", project, dbAlias, prefix)
+
+	payload := new(model.Response)
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": dbAlias, "col": prefix}, payload); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -88,7 +88,6 @@ func Test_deleteDBRules(t *testing.T) {
 					method: "MakeHTTPRequest",
 					args: []interface{}{
 						http.MethodDelete,
-
 						"/v1/config/projects/myproject/database/dbAlias/collections/users/rules",
 						map[string]string{"dbAlias": "dbAlias", "col": "users"},
 						new(model.Response),
@@ -220,7 +219,6 @@ func Test_deleteDBRules(t *testing.T) {
 					method: "MakeHTTPRequest",
 					args: []interface{}{
 						http.MethodGet,
-
 						"/v1/config/projects/myproject/database/collections/rules",
 						map[string]string{"dbAlias": "dbAlias", "col": "*"},
 						new(model.Response),
@@ -255,7 +253,6 @@ func Test_deleteDBRules(t *testing.T) {
 					method: "MakeHTTPRequest",
 					args: []interface{}{
 						http.MethodDelete,
-
 						"/v1/config/projects/myproject/database/dbAlias/collections/age/rules",
 						map[string]string{"dbAlias": "dbAlias", "col": "age"},
 						new(model.Response),
@@ -1760,7 +1757,536 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			input.Survey = &mockSurvey
 
 			if err := deleteDBPreparedQuery(tt.args.project, tt.args.dbAlias, tt.args.prefix); (err != nil) != tt.wantErr {
-				t.Errorf("deleteDBRules() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("deleteDBPreparedQuery() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			mockTransport.AssertExpectations(t)
+			mockSurvey.AssertExpectations(t)
+		})
+	}
+}
+
+func Test_deleteDBSchemas(t *testing.T) {
+	// surveyMatchReturnValue stores the values returned from the survey when prefix is matched
+	surveyMatchReturnValue := "s"
+	// surveyNoMatchReturnValue stores the values returned from the survey when prefix is not matched
+	surveyNoMatchReturnValue := "b"
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+
+	type args struct {
+		project string
+		dbAlias string
+		prefix  string
+	}
+	tests := []struct {
+		name              string
+		args              args
+		transportMockArgs []mockArgs
+		surveyMockArgs    []mockArgs
+		wantErr           bool
+	}{
+		{
+			name: "Unable to get db schemas",
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "subscribers"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/schema/mutate",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						errors.New("bad request"),
+						model.Response{},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "prefix matches one table name but unable to delete db schemas",
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "subscribers"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/schema/mutate",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"col":     "subscribers",
+									"dbAlias": "dbAlias",
+									"schema":  "type subscribers { id: ID! @primary name: String!}",
+								},
+								map[string]interface{}{
+									"col":     "shops",
+									"dbAlias": "dbAlias",
+									"schema":  "type shops { id: ID! @primary name: String!}",
+								},
+							},
+						},
+					},
+				},
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/subscribers",
+						map[string]string{"dbAlias": "dbAlias", "col": "subscribers"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						errors.New("bad request"),
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"statusCode": 400,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "prefix matches one table name and schemas deleted successfully",
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "subscribers"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/schema/mutate",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"col":     "subscribers",
+									"dbAlias": "dbAlias",
+									"schema":  "type subscribers { id: ID! @primary name: String!}",
+								},
+								map[string]interface{}{
+									"col":     "shops",
+									"dbAlias": "dbAlias",
+									"schema":  "type shops { id: ID! @primary name: String!}",
+								},
+							},
+						},
+					},
+				},
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/subscribers",
+						map[string]string{"dbAlias": "dbAlias", "col": "subscribers"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"statusCode": 200,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "prefix matches multiple table names but unable to survey table name",
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "s"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/schema/mutate",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"col":     "subscribers",
+									"dbAlias": "dbAlias",
+									"schema":  "type subscribers { id: ID! @primary name: String!}",
+								},
+								map[string]interface{}{
+									"col":     "shops",
+									"dbAlias": "dbAlias",
+									"schema":  "type shops { id: ID! @primary name: String!}",
+								},
+							},
+						},
+					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"subscribers", "shops"},
+							Default: []string{"subscribers", "shops"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "subscribers"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "prefix matches multiple table names but unable to delete db schemas",
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "s"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/schema/mutate",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"col":     "subscribers",
+									"dbAlias": "dbAlias",
+									"schema":  "type subscribers { id: ID! @primary name: String!}",
+								},
+								map[string]interface{}{
+									"col":     "shops",
+									"dbAlias": "dbAlias",
+									"schema":  "type shops { id: ID! @primary name: String!}",
+								},
+							},
+						},
+					},
+				},
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/subscribers",
+						map[string]string{"dbAlias": "dbAlias", "col": "subscribers"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						errors.New("bad request"),
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"statusCode": 400,
+								},
+							},
+						},
+					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"subscribers", "shops"},
+							Default: []string{"subscribers", "shops"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "subscribers"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "prefix matches multiple table names and db schemas successfully deleted",
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "s"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/schema/mutate",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"col":     "subscribers",
+									"dbAlias": "dbAlias",
+									"schema":  "type subscribers { id: ID! @primary name: String!}",
+								},
+								map[string]interface{}{
+									"col":     "shops",
+									"dbAlias": "dbAlias",
+									"schema":  "type shops { id: ID! @primary name: String!}",
+								},
+							},
+						},
+					},
+				},
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/subscribers",
+						map[string]string{"dbAlias": "dbAlias", "col": "subscribers"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"statusCode": 200,
+								},
+							},
+						},
+					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"subscribers", "shops"},
+							Default: []string{"subscribers", "shops"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "subscribers"},
+				},
+			},
+		},
+		{
+			name: "prefix does not match any table names and unable to survey table name",
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "b"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/schema/mutate",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"col":     "subscribers",
+									"dbAlias": "dbAlias",
+									"schema":  "type subscribers { id: ID! @primary name: String!}",
+								},
+								map[string]interface{}{
+									"col":     "shops",
+									"dbAlias": "dbAlias",
+									"schema":  "type shops { id: ID! @primary name: String!}",
+								},
+							},
+						},
+					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"subscribers", "shops"},
+							Default: []string{"subscribers", "shops"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "subscribers"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "prefix does not match any table names but unable to delete schemas",
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "b"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/schema/mutate",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"col":     "subscribers",
+									"dbAlias": "dbAlias",
+									"schema":  "type subscribers { id: ID! @primary name: String!}",
+								},
+								map[string]interface{}{
+									"col":     "shops",
+									"dbAlias": "dbAlias",
+									"schema":  "type shops { id: ID! @primary name: String!}",
+								},
+							},
+						},
+					},
+				},
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/subscribers",
+						map[string]string{"dbAlias": "dbAlias", "col": "subscribers"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						errors.New("bad request"),
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"statusCode": 400,
+								},
+							},
+						},
+					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"subscribers", "shops"},
+							Default: []string{"subscribers", "shops"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "subscribers"},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "prefix does not match any table names and schemas successfully deleted",
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "b"},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/schema/mutate",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"col":     "subscribers",
+									"dbAlias": "dbAlias",
+									"schema":  "type subscribers { id: ID! @primary name: String!}",
+								},
+								map[string]interface{}{
+									"col":     "shops",
+									"dbAlias": "dbAlias",
+									"schema":  "type shops { id: ID! @primary name: String!}",
+								},
+							},
+						},
+					},
+				},
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/subscribers",
+						map[string]string{"dbAlias": "dbAlias", "col": "subscribers"},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"statusCode": 200,
+								},
+							},
+						},
+					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"subscribers", "shops"},
+							Default: []string{"subscribers", "shops"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "subscribers"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockTransport := transport.MocketAuthProviders{}
+			mockSurvey := utils.MockInputInterface{}
+
+			for _, m := range tt.transportMockArgs {
+				mockTransport.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.surveyMockArgs {
+				mockSurvey.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			transport.Client = &mockTransport
+			input.Survey = &mockSurvey
+
+			if err := deleteDBSchemas(tt.args.project, tt.args.dbAlias, tt.args.prefix); (err != nil) != tt.wantErr {
+				t.Errorf("deleteDBSchemas() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			mockTransport.AssertExpectations(t)

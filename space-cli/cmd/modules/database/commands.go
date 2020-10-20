@@ -251,11 +251,18 @@ func DeleteSubCommands() []*cobra.Command {
 	var deletePreparedQuery = &cobra.Command{
 		Use:               "db-prepared-queries",
 		Aliases:           []string{"db-prepared-query"},
-		RunE:              actionDeleteDbConfigs,
+		RunE:              actionDeleteDbPreparedQuery,
 		ValidArgsFunction: dbPreparedQueriesAutoCompleteFun,
 	}
 
-	return []*cobra.Command{deleteRules, deleteConfigs, deletePreparedQuery}
+	var deleteSchemas = &cobra.Command{
+		Use:               "db-prepared-queries",
+		Aliases:           []string{"db-prepared-query"},
+		RunE:              actionDeleteDbSchemas,
+		ValidArgsFunction: dbSchemasAutoCompleteFun,
+	}
+
+	return []*cobra.Command{deleteRules, deleteConfigs, deletePreparedQuery, deleteSchemas}
 }
 
 func actionDeleteDbRules(cmd *cobra.Command, args []string) error {
@@ -318,6 +325,30 @@ func actionDeleteDbPreparedQuery(cmd *cobra.Command, args []string) error {
 	}
 
 	err := deleteDBPreparedQuery(project, dbAlias, prefix)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionDeleteDbSchemas(cmd *cobra.Command, args []string) error {
+	// Get the project and url parameters
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	if len(args) != 1 {
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+	}
+	dbAlias := args[0]
+
+	prefix := ""
+	if len(args) > 1 {
+		prefix = args[1]
+	}
+
+	err := deleteDBSchemas(project, dbAlias, prefix)
 	if err != nil {
 		return err
 	}
