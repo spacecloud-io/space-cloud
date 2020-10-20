@@ -66,3 +66,32 @@ func deleteDBConfigs(project, prefix string) error {
 
 	return nil
 }
+
+func deleteDBPreparedQuery(project, dbAlias, prefix string) error {
+
+	objs, err := GetDbPreparedQuery(project, "db-prepared-query", map[string]string{"dbAlias": dbAlias, "id": "*"})
+	if err != nil {
+		return err
+	}
+
+	doesPreparedQueryExist := false
+	preparedQueries := []string{}
+	for _, spec := range objs {
+		preparedQueries = append(preparedQueries, spec.Meta["id"])
+	}
+
+	prefix, err = filter.DeleteOptions(project, prefix, preparedQueries, doesPreparedQueryExist)
+	if err != nil {
+		return err
+	}
+
+	// Delete the db prepared query from the server
+	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/prepared-queries/%s", project, dbAlias, prefix)
+
+	payload := new(model.Response)
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": dbAlias, "id": prefix}, payload); err != nil {
+		return err
+	}
+
+	return nil
+}
