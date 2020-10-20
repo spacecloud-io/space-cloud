@@ -18,6 +18,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
+	v12 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -1014,5 +1015,70 @@ func getDefaultAutoScaleConfig() *model.AutoScaleConfig {
 		MinReplicas:      1,
 		MaxReplicas:      100,
 		Triggers:         []model.AutoScaleTrigger{},
+	}
+}
+
+func (i *Istio) generateServiceRole(ctx context.Context, role model.Role) *v12.Role {
+	labels := make(map[string]string)
+	labels["app"] = role.Service
+	labels["app.kubernetes.io/name"] = role.Service
+	labels["app.kubernetes.io/managed-by"] = "space-cloud"
+	labels["space-cloud.io/version"] = model.Version
+
+	rules := make([]v12.PolicyRule, 0)
+	for _, rule := range role.Rules {
+		rules = append(rules, v12.PolicyRule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
+
+	}
+
+	return &v12.Role{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "Role",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      role.ID,
+			Namespace: role.Project,
+			Labels:    labels,
+		},
+		Rules: rules,
+	}
+}
+
+func (i *Istio) generateServiceRoleBinding(ctx context.Context, role model.Role) *v12.RoleBinding {
+	labels := make(map[string]string)
+	labels["app"] = role.Service
+	labels["app.kubernetes.io/name"] = role.Service
+	labels["app.kubernetes.io/managed-by"] = "space-cloud"
+	labels["space-cloud.io/version"] = model.Version
+
+	rules := make([]v12.PolicyRule, 0)
+	for _, rule := range role.Rules {
+		rules = append(rules, v12.PolicyRule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
+
+	}
+
+	return &v12.RoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "RoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      role.ID,
+			Namespace: role.Project,
+			Labels:    labels,
+		},
+		Subjects: []v12.Subject{
+			{
+				Kind:     "service accounts",
+				Name:     role.Service,
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+		},
+		RoleRef: v12.RoleRef{
+			Kind:     "Role",
+			Name:     role.ID,
+			APIGroup: "rbac.authorization.k8s.io",
+		},
 	}
 }

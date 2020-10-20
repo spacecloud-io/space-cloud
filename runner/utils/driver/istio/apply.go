@@ -129,3 +129,23 @@ func (i *Istio) ApplyServiceRoutes(ctx context.Context, projectID, serviceID str
 
 	return i.applyVirtualService(ctx, ns, virtualService)
 }
+
+// ApplyServiceRole sets role of each service
+func (i *Istio) ApplyServiceRole(ctx context.Context, role model.Role) error {
+	ServiceRole := i.generateServiceRole(ctx, role)
+
+	// Apply the service role
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service role (%s) in %s", ServiceRole.Name, role.Project), nil)
+	if err := i.applyServiceRole(ctx, role.Project, ServiceRole); err != nil {
+		return err
+	}
+
+	ServiceRoleBinding := i.generateServiceRoleBinding(ctx, role)
+
+	// Apply the service role binding
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service role binding (%s) in %s", ServiceRoleBinding.Name, role.Project), nil)
+	if err := i.applyServiceRoleBinding(ctx, role.Project, ServiceRoleBinding); err != nil {
+		return err
+	}
+	return nil
+}

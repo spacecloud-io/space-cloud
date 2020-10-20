@@ -10,6 +10,7 @@ import (
 	"istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	v12 "k8s.io/api/rbac/v1"
 	kubeErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -208,5 +209,42 @@ func (i *Istio) applyKedaConfig(ctx context.Context, ns string, scaledObj *v1alp
 	prevScaledObj.Spec = scaledObj.Spec
 	prevScaledObj.Labels = scaledObj.Labels
 	_, err = i.keda.KedaV1alpha1().ScaledObjects(ns).Update(ctx, prevScaledObj, metav1.UpdateOptions{})
+	return err
+}
+
+func (i *Istio) applyServiceRole(ctx context.Context, ns string, role *v12.Role) error {
+	prevServiceRole, err := i.kube.RbacV1().Roles(ns).Get(ctx, role.Name, metav1.GetOptions{})
+	if kubeErrors.IsNotFound(err) {
+		// Create a service role if it doesn't already exist
+		_, err := i.kube.RbacV1().Roles(ns).Create(ctx, role, metav1.CreateOptions{})
+		return err
+	}
+	if err != nil {
+		return err
+	}
+
+	// Update the service role
+	prevServiceRole.Labels = role.Labels
+	prevServiceRole.Rules = role.Rules
+	_, err = i.kube.RbacV1().Roles(ns).Update(ctx, prevServiceRole, metav1.UpdateOptions{})
+	return err
+}
+
+func (i *Istio) applyServiceRoleBinding(ctx context.Context, ns string, rolebinding *v12.RoleBinding) error {
+	prevServiceRoleBinding, err := i.kube.RbacV1().RoleBindings(ns).Get(ctx, rolebinding.Name, metav1.GetOptions{})
+	if kubeErrors.IsNotFound(err) {
+		// Create a service role if it doesn't already exist
+		_, err := i.kube.RbacV1().RoleBindings(ns).Create(ctx, rolebinding, metav1.CreateOptions{})
+		return err
+	}
+	if err != nil {
+		return err
+	}
+
+	// Update the service role
+	prevServiceRoleBinding.Labels = rolebinding.Labels
+	prevServiceRoleBinding.Subjects = rolebinding.Subjects
+	prevServiceRoleBinding.RoleRef = rolebinding.RoleRef
+	_, err = i.kube.RbacV1().RoleBindings(ns).Update(ctx, prevServiceRoleBinding, metav1.UpdateOptions{})
 	return err
 }

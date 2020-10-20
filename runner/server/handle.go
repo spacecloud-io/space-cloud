@@ -392,6 +392,44 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 	}
 }
 
+// HandleServiceRoleRequest handles request to apply service role
+func (s *Server) HandleServiceRoleRequest() http.HandlerFunc {
+	type request struct {
+		Role model.Role `json:"role"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to set service roles", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		req := new(request)
+		_ = json.NewDecoder(r.Body).Decode(req)
+
+		vars := mux.Vars(r)
+		req.Role.Project = vars["project"]
+		req.Role.Service = vars["serviceId"]
+
+		err = s.driver.ApplyServiceRole(ctx, req.Role)
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service roles", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+	}
+}
+
 // HandleGetServiceRoutingRequest handles request to get all service routing rules
 func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 

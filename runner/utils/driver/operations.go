@@ -71,6 +71,11 @@ func (m *Module) GetServiceRoutes(ctx context.Context, projectID string) (map[st
 	return m.driver.GetServiceRoutes(ctx, projectID)
 }
 
+// ApplyServiceRole applies service role
+func (m *Module) ApplyServiceRole(ctx context.Context, role model.Role) error {
+	return m.driver.ApplyServiceRole(ctx, role)
+}
+
 // CreateSecret create's secret
 func (m *Module) CreateSecret(ctx context.Context, projectID string, secretObj *model.Secret) error {
 	return m.driver.CreateSecret(ctx, projectID, secretObj)
