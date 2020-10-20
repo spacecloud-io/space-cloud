@@ -47,27 +47,27 @@ func GetSubCommands() []*cobra.Command {
 		Use:               "db-rules",
 		Aliases:           []string{"db-rule"},
 		RunE:              actionGetDbRules,
-		ValidArgsFunction: validDBRulesArgsFunc,
+		ValidArgsFunction: dbRulesAutoCompleteFun,
 	}
 
 	var getconfigs = &cobra.Command{
 		Use:               "db-configs",
 		Aliases:           []string{"db-config"},
 		RunE:              actionGetDbConfig,
-		ValidArgsFunction: validDBConfigArgsFunc,
+		ValidArgsFunction: dbConfigAutoCompleteFun,
 	}
 
 	var getschemas = &cobra.Command{
 		Use:               "db-schemas",
 		Aliases:           []string{"db-schema"},
 		RunE:              actionGetDbSchema,
-		ValidArgsFunction: validDBSchemasArgsFunc,
+		ValidArgsFunction: dbSchemasAutoCompleteFun,
 	}
 
 	var getPreparedQuery = &cobra.Command{
 		Use:               "db-prepared-query",
 		RunE:              actionGetDbPreparedQuery,
-		ValidArgsFunction: validDBPreparedQueriesArgsFunc,
+		ValidArgsFunction: dbPreparedQueriesAutoCompleteFun,
 	}
 
 	return []*cobra.Command{getrules, getconfigs, getschemas, getPreparedQuery}
@@ -238,21 +238,21 @@ func DeleteSubCommands() []*cobra.Command {
 		Use:               "db-rules",
 		Aliases:           []string{"db-rule"},
 		RunE:              actionDeleteDbRules,
-		ValidArgsFunction: validDBRulesArgsFunc,
+		ValidArgsFunction: dbRulesAutoCompleteFun,
 	}
 
 	var deleteConfigs = &cobra.Command{
 		Use:               "db-configs",
 		Aliases:           []string{"db-config"},
 		RunE:              actionDeleteDbConfigs,
-		ValidArgsFunction: validDBConfigArgsFunc,
+		ValidArgsFunction: dbConfigAutoCompleteFun,
 	}
 
 	var deletePreparedQuery = &cobra.Command{
 		Use:               "db-prepared-queries",
 		Aliases:           []string{"db-prepared-query"},
 		RunE:              actionDeleteDbConfigs,
-		ValidArgsFunction: validDBPreparedQueriesArgsFunc,
+		ValidArgsFunction: dbPreparedQueriesAutoCompleteFun,
 	}
 
 	return []*cobra.Command{deleteRules, deleteConfigs, deletePreparedQuery}
@@ -265,13 +265,16 @@ func actionDeleteDbRules(cmd *cobra.Command, args []string) error {
 		return utils.LogError("Project not specified in flag", nil)
 	}
 
-	if len(args) != 2 {
+	if len(args) != 1 {
 		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbAlias := args[0]
-	prefixCol := args[1]
+	prefix := ""
+	if len(args) > 1 {
+		prefix = args[1]
+	}
 
-	err := deleteDBRules(project, dbAlias, prefixCol)
+	err := deleteDBRules(project, dbAlias, prefix)
 	if err != nil {
 		return err
 	}
@@ -285,10 +288,10 @@ func actionDeleteDbConfigs(cmd *cobra.Command, args []string) error {
 		return utils.LogError("Project not specified in flag", nil)
 	}
 
-	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+	prefix := ""
+	if len(args) > 0 {
+		prefix = args[0]
 	}
-	prefix := args[0]
 
 	err := deleteDBConfigs(project, prefix)
 	if err != nil {
@@ -304,11 +307,15 @@ func actionDeleteDbPreparedQuery(cmd *cobra.Command, args []string) error {
 		return utils.LogError("Project not specified in flag", nil)
 	}
 
-	if len(args) != 2 {
+	if len(args) != 1 {
 		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbAlias := args[0]
-	prefix := args[1]
+
+	prefix := ""
+	if len(args) > 1 {
+		prefix = args[1]
+	}
 
 	err := deleteDBPreparedQuery(project, dbAlias, prefix)
 	if err != nil {

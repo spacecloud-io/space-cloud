@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func validArgsFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func authProvidersAutoCompleteFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	project, check := utils.GetProjectID()
 	if !check {
 		utils.LogDebug("Project not specified in flag", nil)

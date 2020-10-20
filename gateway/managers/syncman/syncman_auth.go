@@ -79,9 +79,9 @@ func (s *Manager) DeleteUserManagement(ctx context.Context, project, provider st
 		return http.StatusBadRequest, err
 	}
 
-	delete(projectConfig.Auths, provider)
-
 	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceAuthProvider, provider)
+
+	delete(projectConfig.Auths, resourceID)
 
 	if err := s.modules.SetUsermanConfig(ctx, project, projectConfig.Auths); err != nil {
 		return http.StatusInternalServerError, err

@@ -180,20 +180,60 @@ func TestManager_DeleteUserManagement(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {Auths: config.Auths{"provider": &config.AuthStub{ID: "provider"}}}}}},
-			args:    args{ctx: context.Background(), project: "2", provider: "provider"},
+			name: "Unable to get project config",
+			s: &Manager{
+				clusterID: "clusterID",
+				projectConfig: &config.Config{
+					Projects: map[string]*config.Project{
+						"myProject": {
+							Auths: config.Auths{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "google"): &config.AuthStub{
+									ID: "google",
+								},
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "facebook"): &config.AuthStub{
+									ID: "facebook",
+								},
+							},
+						},
+					},
+				},
+			},
+			args:    args{ctx: context.Background(), project: "notMyProject", provider: "google"},
 			want:    http.StatusBadRequest,
 			wantErr: true,
 		},
 		{
-			name: "unable to set userman config",
-			s:    &Manager{projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {Auths: config.Auths{"provider": &config.AuthStub{ID: "provider"}}}}}},
-			args: args{ctx: context.Background(), project: "1", provider: "provider"},
+			name: "Unable to set userman config",
+			s: &Manager{
+				clusterID: "clusterID",
+				projectConfig: &config.Config{
+					Projects: map[string]*config.Project{
+						"myProject": {
+							Auths: config.Auths{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "google"): &config.AuthStub{
+									ID: "google",
+								},
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "facebook"): &config.AuthStub{
+									ID: "facebook",
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myProject", provider: "google"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetUsermanConfig",
-					args:           []interface{}{context.Background(), "1", config.Auths{}},
+					method: "SetUsermanConfig",
+					args: []interface{}{
+						context.Background(),
+						"myProject",
+						config.Auths{
+							config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "facebook"): &config.AuthStub{
+								ID: "facebook",
+							},
+						},
+					},
 					paramsReturned: []interface{}{errors.New("unable to set userman config")},
 				},
 			},
@@ -201,20 +241,44 @@ func TestManager_DeleteUserManagement(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "unable to set project",
-			s:    &Manager{clusterID: "clusterID", projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {Auths: config.Auths{"provider": &config.AuthStub{ID: "provider"}}}}}},
-			args: args{ctx: context.Background(), project: "1", provider: "provider"},
+			name: "Unable to set project",
+			s: &Manager{
+				clusterID: "clusterID",
+				projectConfig: &config.Config{
+					Projects: map[string]*config.Project{
+						"myProject": {
+							Auths: config.Auths{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "google"): &config.AuthStub{
+									ID: "google",
+								},
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "facebook"): &config.AuthStub{
+									ID: "facebook",
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myProject", provider: "google"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetUsermanConfig",
-					args:           []interface{}{context.Background(), "1", config.Auths{}},
+					method: "SetUsermanConfig",
+					args: []interface{}{
+						context.Background(),
+						"myProject",
+						config.Auths{
+							config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "facebook"): &config.AuthStub{
+								ID: "facebook",
+							},
+						},
+					},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
 					method:         "DeleteResource",
-					args:           []interface{}{context.Background(), mock.Anything},
+					args:           []interface{}{context.Background(), config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "google")},
 					paramsReturned: []interface{}{errors.New("unable to get db config")},
 				},
 			},
@@ -222,20 +286,44 @@ func TestManager_DeleteUserManagement(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "auth provider is succesfully deleted",
-			s:    &Manager{clusterID: "clusterID", projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {Auths: config.Auths{"provider": &config.AuthStub{ID: "provider"}}}}}},
-			args: args{ctx: context.Background(), project: "1", provider: "provider"},
+			name: "Auth provider is succesfully deleted",
+			s: &Manager{
+				clusterID: "clusterID",
+				projectConfig: &config.Config{
+					Projects: map[string]*config.Project{
+						"myProject": {
+							Auths: config.Auths{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "google"): &config.AuthStub{
+									ID: "google",
+								},
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "facebook"): &config.AuthStub{
+									ID: "facebook",
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myProject", provider: "google"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetUsermanConfig",
-					args:           []interface{}{context.Background(), "1", config.Auths{}},
+					method: "SetUsermanConfig",
+					args: []interface{}{
+						context.Background(),
+						"myProject",
+						config.Auths{
+							config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "facebook"): &config.AuthStub{
+								ID: "facebook",
+							},
+						},
+					},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
 					method:         "DeleteResource",
-					args:           []interface{}{context.Background(), mock.Anything},
+					args:           []interface{}{context.Background(), config.GenerateResourceID("clusterID", "myProject", config.ResourceAuthProvider, "google")},
 					paramsReturned: []interface{}{nil},
 				},
 			},

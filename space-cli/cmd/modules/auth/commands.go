@@ -12,7 +12,7 @@ func GetSubCommands() []*cobra.Command {
 		Use:               "auth-providers",
 		Aliases:           []string{"auth-provider"},
 		RunE:              actionGetAuthProviders,
-		ValidArgsFunction: validArgsFunc,
+		ValidArgsFunction: authProvidersAutoCompleteFunc,
 	}
 	return []*cobra.Command{getAuthProviders}
 }
@@ -74,7 +74,7 @@ func DeleteSubCommands() []*cobra.Command {
 		Use:               "auth-provider",
 		Aliases:           []string{"auth-providers"},
 		RunE:              actionDeleteAuthProvider,
-		ValidArgsFunction: validArgsFunc,
+		ValidArgsFunction: authProvidersAutoCompleteFunc,
 	}
 
 	return []*cobra.Command{deleteAuthProvider}

@@ -41,7 +41,12 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{},
@@ -56,7 +61,12 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -76,7 +86,13 @@ func Test_deleteDBRules(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/collections/users/rules", map[string]string{"dbAlias": "dbAlias", "col": "users"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+
+						"/v1/config/projects/myproject/database/dbAlias/collections/users/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "users"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{
@@ -97,7 +113,12 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -117,7 +138,12 @@ func Test_deleteDBRules(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/collections/users/rules", map[string]string{"dbAlias": "dbAlias", "col": "users"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/users/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "users"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -137,7 +163,12 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -167,8 +198,15 @@ func Test_deleteDBRules(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"age", "address"},
+							Default: []string{"age", "address"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "age"},
 				},
 			},
@@ -180,7 +218,13 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -209,7 +253,13 @@ func Test_deleteDBRules(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/collections/age/rules", map[string]string{"dbAlias": "dbAlias", "col": "age"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+
+						"/v1/config/projects/myproject/database/dbAlias/collections/age/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "age"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{
@@ -224,8 +274,15 @@ func Test_deleteDBRules(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"age", "address"},
+							Default: []string{"age", "address"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "age"},
 				},
 			},
@@ -237,7 +294,12 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -266,7 +328,12 @@ func Test_deleteDBRules(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/collections/age/rules", map[string]string{"dbAlias": "dbAlias", "col": "age"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/age/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "age"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -281,8 +348,15 @@ func Test_deleteDBRules(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"age", "address"},
+							Default: []string{"age", "address"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "age"},
 				},
 			},
@@ -293,7 +367,12 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -323,8 +402,15 @@ func Test_deleteDBRules(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyNoMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"age", "address"},
+							Default: []string{"age", "address"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "age"},
 				},
 			},
@@ -336,7 +422,12 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -365,7 +456,12 @@ func Test_deleteDBRules(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/collections/age/rules", map[string]string{"dbAlias": "dbAlias", "col": "age"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/age/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "age"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{
@@ -380,8 +476,15 @@ func Test_deleteDBRules(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyNoMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"age", "address"},
+							Default: []string{"age", "address"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "age"},
 				},
 			},
@@ -393,7 +496,12 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -422,7 +530,12 @@ func Test_deleteDBRules(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/collections/age/rules", map[string]string{"dbAlias": "dbAlias", "col": "age"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/age/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "age"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -437,8 +550,15 @@ func Test_deleteDBRules(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"age", "address"}, Default: []string{"age", "address"}[0]}, &surveyNoMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"age", "address"},
+							Default: []string{"age", "address"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "age"},
 				},
 			},
@@ -449,7 +569,12 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -469,7 +594,12 @@ func Test_deleteDBRules(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/collections/age/rules", map[string]string{"dbAlias": "dbAlias", "col": "age"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/age/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "age"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{
@@ -490,7 +620,12 @@ func Test_deleteDBRules(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/collections/rules", map[string]string{"dbAlias": "dbAlias", "col": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/collections/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -510,7 +645,12 @@ func Test_deleteDBRules(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/collections/age/rules", map[string]string{"dbAlias": "dbAlias", "col": "age"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/collections/age/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "age"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -578,7 +718,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/config", map[string]string{"dbAlias": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/config",
+						map[string]string{"dbAlias": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{},
@@ -593,7 +738,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/config", map[string]string{"dbAlias": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/config",
+						map[string]string{"dbAlias": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -612,7 +762,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/mongo/config/database-config", map[string]string{"dbAlias": "mongo"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/mongo/config/database-config",
+						map[string]string{"dbAlias": "mongo"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{
@@ -633,7 +788,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/config", map[string]string{"dbAlias": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/config",
+						map[string]string{"dbAlias": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -652,7 +812,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/mongo/config/database-config", map[string]string{"dbAlias": "mongo"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/mongo/config/database-config",
+						map[string]string{"dbAlias": "mongo"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -672,7 +837,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/config", map[string]string{"dbAlias": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/config",
+						map[string]string{"dbAlias": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -700,8 +870,15 @@ func Test_deleteDBConfigs(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"mongo", "mysql"}, Default: []string{"mongo", "mysql"}[0]}, &surveyMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"mongo", "mysql"},
+							Default: []string{"mongo", "mysql"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "mongo"},
 				},
 			},
@@ -713,7 +890,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/config", map[string]string{"dbAlias": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/config",
+						map[string]string{"dbAlias": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -740,7 +922,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/mongo/config/database-config", map[string]string{"dbAlias": "mongo"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/mongo/config/database-config",
+						map[string]string{"dbAlias": "mongo"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{
@@ -755,8 +942,15 @@ func Test_deleteDBConfigs(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"mongo", "mysql"}, Default: []string{"mongo", "mysql"}[0]}, &surveyMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"mongo", "mysql"},
+							Default: []string{"mongo", "mysql"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "mongo"},
 				},
 			},
@@ -768,7 +962,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/config", map[string]string{"dbAlias": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/config",
+						map[string]string{"dbAlias": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -795,7 +994,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/mongo/config/database-config", map[string]string{"dbAlias": "mongo"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/mongo/config/database-config",
+						map[string]string{"dbAlias": "mongo"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -810,8 +1014,15 @@ func Test_deleteDBConfigs(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"mongo", "mysql"}, Default: []string{"mongo", "mysql"}[0]}, &surveyMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"mongo", "mysql"},
+							Default: []string{"mongo", "mysql"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "mongo"},
 				},
 			},
@@ -822,7 +1033,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/config", map[string]string{"dbAlias": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/config",
+						map[string]string{"dbAlias": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -850,8 +1066,15 @@ func Test_deleteDBConfigs(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"mongo", "mysql"}, Default: []string{"mongo", "mysql"}[0]}, &surveyNoMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"mongo", "mysql"},
+							Default: []string{"mongo", "mysql"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "mongo"},
 				},
 			},
@@ -863,7 +1086,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/config", map[string]string{"dbAlias": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/config",
+						map[string]string{"dbAlias": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -890,7 +1118,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/mongo/config/database-config", map[string]string{"dbAlias": "mongo"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/mongo/config/database-config",
+						map[string]string{"dbAlias": "mongo"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{
@@ -905,8 +1138,15 @@ func Test_deleteDBConfigs(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"mongo", "mysql"}, Default: []string{"mongo", "mysql"}[0]}, &surveyNoMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"mongo", "mysql"},
+							Default: []string{"mongo", "mysql"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "mongo"},
 				},
 			},
@@ -918,7 +1158,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/config", map[string]string{"dbAlias": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/config",
+						map[string]string{"dbAlias": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -945,7 +1190,12 @@ func Test_deleteDBConfigs(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/mongo/config/database-config", map[string]string{"dbAlias": "mongo"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/mongo/config/database-config",
+						map[string]string{"dbAlias": "mongo"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -960,8 +1210,15 @@ func Test_deleteDBConfigs(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"mongo", "mysql"}, Default: []string{"mongo", "mysql"}[0]}, &surveyNoMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"mongo", "mysql"},
+							Default: []string{"mongo", "mysql"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "mongo"},
 				},
 			},
@@ -1022,7 +1279,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/prepared-queries",
+						map[string]string{"dbAlias": "dbAlias", "id": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{},
@@ -1037,7 +1299,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/prepared-queries",
+						map[string]string{"dbAlias": "dbAlias", "id": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1053,7 +1320,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1", map[string]string{"dbAlias": "dbAlias", "id": "prep1"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1",
+						map[string]string{"dbAlias": "dbAlias", "id": "prep1"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{
@@ -1074,7 +1346,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/prepared-queries",
+						map[string]string{"dbAlias": "dbAlias", "id": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1090,7 +1367,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1", map[string]string{"dbAlias": "dbAlias", "id": "prep1"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1",
+						map[string]string{"dbAlias": "dbAlias", "id": "prep1"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1110,7 +1392,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/prepared-queries",
+						map[string]string{"dbAlias": "dbAlias", "id": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1132,8 +1419,15 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"prep1", "prep2"}, Default: []string{"prep1", "prep2"}[0]}, &surveyMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"prep1", "prep2"},
+							Default: []string{"prep1", "prep2"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "prep1"},
 				},
 			},
@@ -1145,7 +1439,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/prepared-queries",
+						map[string]string{"dbAlias": "dbAlias", "id": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1166,7 +1465,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1", map[string]string{"dbAlias": "dbAlias", "id": "prep1"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1",
+						map[string]string{"dbAlias": "dbAlias", "id": "prep1"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{
@@ -1181,8 +1485,15 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"prep1", "prep2"}, Default: []string{"prep1", "prep2"}[0]}, &surveyMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"prep1", "prep2"},
+							Default: []string{"prep1", "prep2"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "prep1"},
 				},
 			},
@@ -1194,7 +1505,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/prepared-queries",
+						map[string]string{"dbAlias": "dbAlias", "id": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1215,7 +1531,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1", map[string]string{"dbAlias": "dbAlias", "id": "prep1"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1",
+						map[string]string{"dbAlias": "dbAlias", "id": "prep1"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1230,8 +1551,15 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"prep1", "prep2"}, Default: []string{"prep1", "prep2"}[0]}, &surveyMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"prep1", "prep2"},
+							Default: []string{"prep1", "prep2"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "prep1"},
 				},
 			},
@@ -1242,7 +1570,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/prepared-queries",
+						map[string]string{"dbAlias": "dbAlias", "id": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1264,8 +1597,15 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"prep1", "prep2"}, Default: []string{"prep1", "prep2"}[0]}, &surveyNoMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"prep1", "prep2"},
+							Default: []string{"prep1", "prep2"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "prep1"},
 				},
 			},
@@ -1277,7 +1617,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/prepared-queries",
+						map[string]string{"dbAlias": "dbAlias", "id": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1298,7 +1643,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1", map[string]string{"dbAlias": "dbAlias", "id": "prep1"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1",
+						map[string]string{"dbAlias": "dbAlias", "id": "prep1"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						model.Response{
@@ -1313,8 +1663,15 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"prep1", "prep2"}, Default: []string{"prep1", "prep2"}[0]}, &surveyNoMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"prep1", "prep2"},
+							Default: []string{"prep1", "prep2"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "prep1"},
 				},
 			},
@@ -1326,7 +1683,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "*"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/myproject/database/prepared-queries",
+						map[string]string{"dbAlias": "dbAlias", "id": "*"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1347,7 +1709,12 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 				},
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1", map[string]string{"dbAlias": "dbAlias", "id": "prep1"}, new(model.Response)},
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/config/projects/myproject/database/dbAlias/prepared-queries/prep1",
+						map[string]string{"dbAlias": "dbAlias", "id": "prep1"},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						model.Response{
@@ -1362,8 +1729,15 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 			},
 			surveyMockArgs: []mockArgs{
 				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"prep1", "prep2"}, Default: []string{"prep1", "prep2"}[0]}, &surveyNoMatchReturnValue},
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"prep1", "prep2"},
+							Default: []string{"prep1", "prep2"}[0],
+						},
+						&surveyNoMatchReturnValue,
+					},
 					paramsReturned: []interface{}{nil, "prep1"},
 				},
 			},

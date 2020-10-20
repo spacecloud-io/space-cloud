@@ -1763,27 +1763,96 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name:    "unable to get project",
-			s:       &Manager{clusterID: "clusterID", storeType: "local", projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {DatabaseRules: config.DatabaseRules{"clusterID--1--db-rule--alias--tableName--rule": &config.DatabaseRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "ruleID"}}}}}}}},
+			name: "unable to get project",
+			s: &Manager{
+				clusterID: "clusterID",
+				storeType: "local",
+				projectConfig: &config.Config{
+					Projects: map[string]*config.Project{
+						"myProject": {
+							DatabaseConfigs: config.DatabaseConfigs{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{
+									DbAlias: "alias",
+								},
+							},
+							DatabaseRules: config.DatabaseRules{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{
+									Rules: map[string]*config.Rule{
+										"DB_INSERT": {
+											ID: "ruleID",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "2"},
 			want:    http.StatusBadRequest,
 			wantErr: true,
 		},
 		{
-			name:    "db alias not present",
-			s:       &Manager{clusterID: "clusterID", storeType: "local", projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {DatabaseRules: config.DatabaseRules{"clusterID--1--db-rule--alias-tableName-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "ruleID"}}}}}}}},
-			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "notAlias", project: "1"},
+			name: "db alias not present",
+			s: &Manager{
+				clusterID: "clusterID",
+				storeType: "local",
+				projectConfig: &config.Config{
+					Projects: map[string]*config.Project{
+						"myProject": {
+							DatabaseConfigs: config.DatabaseConfigs{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{
+									DbAlias: "alias",
+								},
+							},
+							DatabaseRules: config.DatabaseRules{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{
+									Rules: map[string]*config.Rule{
+										"DB_INSERT": {
+											ID: "ruleID",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "notAlias", project: "myProject"},
 			want:    http.StatusBadRequest,
 			wantErr: true,
 		},
 		{
 			name: "unable to set crud config",
-			s:    &Manager{clusterID: "clusterID", storeType: "local", projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {DatabaseRules: config.DatabaseRules{"clusterID--1--db-rule--alias-tableName-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "ruleID"}}}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
+			s: &Manager{
+				clusterID: "clusterID",
+				storeType: "local",
+				projectConfig: &config.Config{
+					Projects: map[string]*config.Project{
+						"myProject": {
+							DatabaseConfigs: config.DatabaseConfigs{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{
+									DbAlias: "alias",
+								},
+							},
+							DatabaseRules: config.DatabaseRules{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{
+									Rules: map[string]*config.Rule{
+										"DB_INSERT": {
+											ID: "ruleID",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "myProject"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{context.Background(), config.DatabaseRules{"clusterID--1--db-rule--alias-tableName-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{}}}},
+					args:           []interface{}{context.Background(), config.DatabaseRules{}},
 					paramsReturned: []interface{}{errors.New("unable to set db config")},
 				},
 			},
@@ -1792,19 +1861,42 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{clusterID: "clusterID", storeType: "local", projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {DatabaseRules: config.DatabaseRules{"clusterID--1--db-rule--alias-tableName-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "ruleID"}}}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
+			s: &Manager{
+				clusterID: "clusterID",
+				storeType: "local",
+				projectConfig: &config.Config{
+					Projects: map[string]*config.Project{
+						"myProject": {
+							DatabaseConfigs: config.DatabaseConfigs{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{
+									DbAlias: "alias",
+								},
+							},
+							DatabaseRules: config.DatabaseRules{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{
+									Rules: map[string]*config.Rule{
+										"DB_INSERT": {
+											ID: "ruleID",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "myProject"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{context.Background(), config.DatabaseRules{"clusterID--1--db-rule--alias-tableName-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{}}}},
+					args:           []interface{}{context.Background(), config.DatabaseRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
 					method:         "DeleteResource",
-					args:           []interface{}{context.Background(), "clusterID--1--db-rule--alias-tableName-rule"},
+					args:           []interface{}{context.Background(), config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseRule, "alias", "tableName", "rule")},
 					paramsReturned: []interface{}{errors.New("unable to get db config")},
 				},
 			},
@@ -1813,19 +1905,42 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 		},
 		{
 			name: "db rules successfully deleted",
-			s:    &Manager{clusterID: "clusterID", storeType: "local", projectConfig: &config.Config{Projects: map[string]*config.Project{"1": {DatabaseRules: config.DatabaseRules{"clusterID--1--db-rule--alias-tableName-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "ruleID"}}}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
+			s: &Manager{
+				clusterID: "clusterID",
+				storeType: "local",
+				projectConfig: &config.Config{
+					Projects: map[string]*config.Project{
+						"myProject": {
+							DatabaseConfigs: config.DatabaseConfigs{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{
+									DbAlias: "alias",
+								},
+							},
+							DatabaseRules: config.DatabaseRules{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{
+									Rules: map[string]*config.Rule{
+										"DB_INSERT": {
+											ID: "ruleID",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "myProject"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{context.Background(), config.DatabaseRules{"clusterID--1--db-rule--alias-tableName-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{}}}},
+					args:           []interface{}{context.Background(), config.DatabaseRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
 					method:         "DeleteResource",
-					args:           []interface{}{context.Background(), "clusterID--1--db-rule--alias-tableName-rule"},
+					args:           []interface{}{context.Background(), config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseRule, "alias", "tableName", "rule")},
 					paramsReturned: []interface{}{nil},
 				},
 			},

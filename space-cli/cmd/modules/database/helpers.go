@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func validDBRulesArgsFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func dbRulesAutoCompleteFun(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	switch len(args) {
 	case 0:
 		project, check := utils.GetProjectID()
@@ -41,7 +41,7 @@ func validDBRulesArgsFunc(cmd *cobra.Command, args []string, toComplete string) 
 	return nil, cobra.ShellCompDirectiveDefault
 }
 
-func validDBConfigArgsFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func dbConfigAutoCompleteFun(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	project, check := utils.GetProjectID()
 	if !check {
 		utils.LogDebug("Project not specified in flag", nil)
@@ -58,7 +58,7 @@ func validDBConfigArgsFunc(cmd *cobra.Command, args []string, toComplete string)
 	return dbAlias, cobra.ShellCompDirectiveDefault
 }
 
-func validDBSchemasArgsFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func dbSchemasAutoCompleteFun(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 
 	switch len(args) {
 	case 0:
@@ -95,7 +95,7 @@ func validDBSchemasArgsFunc(cmd *cobra.Command, args []string, toComplete string
 	return nil, cobra.ShellCompDirectiveDefault
 }
 
-func validDBPreparedQueriesArgsFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func dbPreparedQueriesAutoCompleteFun(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	switch len(args) {
 	case 0:
 		project, check := utils.GetProjectID()
