@@ -233,7 +233,7 @@ func (i *Istio) applyServiceRole(ctx context.Context, ns string, role *v12.Role)
 func (i *Istio) applyServiceRoleBinding(ctx context.Context, ns string, rolebinding *v12.RoleBinding) error {
 	prevServiceRoleBinding, err := i.kube.RbacV1().RoleBindings(ns).Get(ctx, rolebinding.Name, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
-		// Create a service role if it doesn't already exist
+		// Create a service role binding if it doesn't already exist
 		_, err := i.kube.RbacV1().RoleBindings(ns).Create(ctx, rolebinding, metav1.CreateOptions{})
 		return err
 	}
@@ -241,7 +241,7 @@ func (i *Istio) applyServiceRoleBinding(ctx context.Context, ns string, rolebind
 		return err
 	}
 
-	// Update the service role
+	// Update the service role binding
 	prevServiceRoleBinding.Labels = rolebinding.Labels
 	prevServiceRoleBinding.Subjects = rolebinding.Subjects
 	prevServiceRoleBinding.RoleRef = rolebinding.RoleRef
@@ -270,7 +270,7 @@ func (i *Istio) applyServiceClusterRole(ctx context.Context, ns string, clusterR
 func (i *Istio) applyServiceClusterRoleBinding(ctx context.Context, ns string, clusterRoleBinding *v12.ClusterRoleBinding) error {
 	prevServiceClusterRoleBinding, err := i.kube.RbacV1().ClusterRoleBindings().Get(ctx, clusterRoleBinding.Name, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
-		// Create a service role if it doesn't already exist
+		// Create a service cluster role binding if it doesn't already exist
 		_, err := i.kube.RbacV1().ClusterRoleBindings().Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
 		return err
 	}
@@ -278,7 +278,7 @@ func (i *Istio) applyServiceClusterRoleBinding(ctx context.Context, ns string, c
 		return err
 	}
 
-	// Update the service role
+	// Update the service cluster role binding
 	prevServiceClusterRoleBinding.Labels = clusterRoleBinding.Labels
 	prevServiceClusterRoleBinding.Subjects = clusterRoleBinding.Subjects
 	prevServiceClusterRoleBinding.RoleRef = clusterRoleBinding.RoleRef
