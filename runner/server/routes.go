@@ -22,6 +22,7 @@ func (s *Server) routes() {
 
 	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/service-roles/{serviceId}").HandlerFunc(s.HandleServiceRoleRequest())
 	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/service-role").HandlerFunc(s.HandleGetServiceRoleRequest())
+	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}/service-roles/{serviceId}/{id}").HandlerFunc(s.HandleDeleteServiceRole())
 
 	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/services/logs").HandlerFunc(s.handleGetLogs())
 

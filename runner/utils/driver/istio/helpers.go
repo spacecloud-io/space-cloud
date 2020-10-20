@@ -1076,3 +1076,61 @@ func (i *Istio) generateServiceRoleBinding(ctx context.Context, role *model.Role
 		},
 	}
 }
+
+func (i *Istio) generateServiceClusterRole(ctx context.Context, role *model.Role) *v12.ClusterRole {
+	labels := make(map[string]string)
+	labels["app"] = role.Service
+	labels["app.kubernetes.io/name"] = role.Service
+	labels["app.kubernetes.io/managed-by"] = "space-cloud"
+	labels["space-cloud.io/version"] = model.Version
+
+	rules := make([]v12.PolicyRule, 0)
+	for _, rule := range role.Rules {
+		rules = append(rules, v12.PolicyRule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
+
+	}
+
+	return &v12.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "ClusterRole",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   role.ID,
+			Labels: labels,
+		},
+		Rules: rules,
+	}
+}
+
+func (i *Istio) generateServiceClusterRoleBinding(ctx context.Context, role *model.Role) *v12.ClusterRoleBinding {
+	labels := make(map[string]string)
+	labels["app"] = role.Service
+	labels["app.kubernetes.io/name"] = role.Service
+	labels["app.kubernetes.io/managed-by"] = "space-cloud"
+	labels["space-cloud.io/version"] = model.Version
+
+	return &v12.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "ClusterRoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      role.ID,
+			Namespace: role.Project,
+			Labels:    labels,
+		},
+		Subjects: []v12.Subject{
+			{
+				Kind:     "service accounts",
+				Name:     role.Service,
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+		},
+		RoleRef: v12.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     role.ID,
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+	}
+}

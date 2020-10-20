@@ -2,7 +2,9 @@ package istio
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/spaceuptech/helpers"
 	kubeErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -72,6 +74,29 @@ func (i *Istio) deleteKedaConfig(ctx context.Context, projectID, serviceID, vers
 	}
 
 	return nil
+}
+
+func (i *Istio) deleteServiceRoleIfExist(ctx context.Context, projectID, serviceID, id string) error {
+	_, err := i.kube.RbacV1().Roles(projectID).Get(ctx, id, metav1.GetOptions{})
+	if kubeErrors.IsNotFound(err) {
+		err := i.kube.RbacV1().RoleBindings(projectID).Delete(ctx, id, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+		err = i.kube.RbacV1().Roles(projectID).Delete(ctx, id, metav1.DeleteOptions{})
+		return err
+	}
+	_, err = i.kube.RbacV1().ClusterRoles().Get(ctx, id, metav1.GetOptions{})
+	if kubeErrors.IsNotFound(err) {
+		err := i.kube.RbacV1().ClusterRoleBindings().Delete(ctx, id, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+		err = i.kube.RbacV1().ClusterRoles().Delete(ctx, id, metav1.DeleteOptions{})
+		return err
+	}
+
+	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Specified role id-(%v) was not present", id), nil, nil)
 }
 
 func ignoreErrorIfNotFound(err error) error {

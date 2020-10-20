@@ -1,5 +1,6 @@
 package model
 
+// Role describes the configuration for the service role
 type Role struct {
 	ID      string `json:"id" yaml:"id"`
 	Project string `json:"project" yaml:"project"`
@@ -8,6 +9,7 @@ type Role struct {
 	Rules   []Rule `json:"rules" yaml:"rules"`
 }
 
+// Rule describe rule for service role
 type Rule struct {
 	APIGroups []string `json:"apiGroups" yaml:"apiGroups"`
 	Verbs     []string `json:"verbs" yaml:"verbs"`

@@ -132,20 +132,41 @@ func (i *Istio) ApplyServiceRoutes(ctx context.Context, projectID, serviceID str
 
 // ApplyServiceRole sets role of each service
 func (i *Istio) ApplyServiceRole(ctx context.Context, role *model.Role) error {
-	ServiceRole := i.generateServiceRole(ctx, role)
+	switch role.Type {
+	case "Project":
+		ServiceRole := i.generateServiceRole(ctx, role)
 
-	// Apply the service role
-	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service role (%s) in %s", ServiceRole.Name, role.Project), nil)
-	if err := i.applyServiceRole(ctx, role.Project, ServiceRole); err != nil {
-		return err
-	}
+		// Apply the service role
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service role (%s) in %s", ServiceRole.Name, role.Project), nil)
+		if err := i.applyServiceRole(ctx, role.Project, ServiceRole); err != nil {
+			return err
+		}
 
-	ServiceRoleBinding := i.generateServiceRoleBinding(ctx, role)
+		ServiceRoleBinding := i.generateServiceRoleBinding(ctx, role)
 
-	// Apply the service role binding
-	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service role binding (%s) in %s", ServiceRoleBinding.Name, role.Project), nil)
-	if err := i.applyServiceRoleBinding(ctx, role.Project, ServiceRoleBinding); err != nil {
-		return err
+		// Apply the service role binding
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service role binding (%s) in %s", ServiceRoleBinding.Name, role.Project), nil)
+		if err := i.applyServiceRoleBinding(ctx, role.Project, ServiceRoleBinding); err != nil {
+			return err
+		}
+	case "Cluster":
+		ServiceClusterRole := i.generateServiceClusterRole(ctx, role)
+
+		// Apply the service role
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service cluster role (%s) in %s", ServiceClusterRole.Name, role.Project), nil)
+		if err := i.applyServiceClusterRole(ctx, role.Project, ServiceClusterRole); err != nil {
+			return err
+		}
+
+		ServiceClusterRoleBinding := i.generateServiceClusterRoleBinding(ctx, role)
+
+		// Apply the service role binding
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service cluster role binding (%s) in %s", ServiceClusterRoleBinding.Name, role.Project), nil)
+		if err := i.applyServiceClusterRoleBinding(ctx, role.Project, ServiceClusterRoleBinding); err != nil {
+			return err
+		}
+	default:
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Specified Type-(%v) is invalid", role.Type), nil, nil)
 	}
 	return nil
 }

@@ -52,3 +52,11 @@ func (i *Istio) DeleteService(ctx context.Context, projectID, serviceID, version
 
 	return nil
 }
+
+// DeleteServiceRole deletes a service role
+func (i *Istio) DeleteServiceRole(ctx context.Context, projectID, serviceID, id string) error {
+	if err := i.deleteServiceRoleIfExist(ctx, projectID, serviceID, id); err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Could not delete service role", err, nil)
+	}
+	return nil
+}
