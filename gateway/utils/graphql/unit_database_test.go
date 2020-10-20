@@ -14,6 +14,177 @@ var number int64 = 5
 
 var queryTestCases = []tests{
 	{
+		name: "Query: Simple Query with templated directive",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db_t1"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db_t1", "pokemons"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db_t1"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db_t1", "pokemons", &model.ReadRequest{
+					Extras:    map[string]interface{}{},
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+					},
+					IsBatch: true,
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db_t1", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "ParseToken",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{map[string]interface{}{"tenant": "t1"}, nil},
+			},
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+			{
+				method:         "PostProcessMethod",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons @template(value: "db_{{.auth.tenant}}") {
+									id
+									name
+									power_level
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}},
+	},
+	{
+		name:           "Query: Simple Query with invalid templated directive",
+		crudMockArgs:   []mockArgs{},
+		schemaMockArgs: []mockArgs{},
+		authMockArgs:   []mockArgs{},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons @template {
+									id
+									name
+									power_level
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr: true,
+	},
+	{
+		name: "Query: Simple Query with templated directive in variables",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db_t1"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db_t1", "pokemons"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db_t1"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db_t1", "pokemons", &model.ReadRequest{
+					Extras:    map[string]interface{}{},
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+					},
+					IsBatch: true,
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db_t1", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "ParseToken",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{map[string]interface{}{"role": "t1"}, nil},
+			},
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+			{
+				method:         "PostProcessMethod",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons @template(value: $tmpl) {
+									id
+									name
+									power_level
+								}
+							}`,
+				Variables: map[string]interface{}{"tmpl": "db_{{.auth.role}}"},
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}},
+	},
+	{
 		name: "Query: Simple Query",
 		crudMockArgs: []mockArgs{
 			{
@@ -2890,6 +3061,66 @@ var queryTestCases = []tests{
 	}}
 
 var mutationTestCases = []tests{
+	{
+		name: "Mutation: Insert single object with templated directed",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db_t1"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Create",
+				args: []interface{}{mock.Anything, "db_t1", "trainers", &model.CreateRequest{
+					Document:  []interface{}{map[string]interface{}{"id": "1", "name": "ash"}},
+					Operation: utils.All,
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db_t1", "trainers"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", From: "id", To: "trainer_id"}}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "ParseToken",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{map[string]interface{}{"tenant": "t1"}, nil},
+			},
+			{
+				method:         "IsCreateOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{model.RequestParams{}, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  insert_trainers(
+								    docs: [
+								      {id: "1", name: "ash"}
+								    ]
+								  ) @template(value: "db_{{.auth.tenant}}") {
+								    status
+								    error
+								    returning {
+								      id
+								      name
+								    }
+								  }
+								}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"insert_trainers": map[string]interface{}{"error": nil, "status": 200, "returning": []interface{}{map[string]interface{}{"id": "1", "name": "ash"}}}},
+	},
 	{
 		name: "Mutation: Insert single object",
 		crudMockArgs: []mockArgs{

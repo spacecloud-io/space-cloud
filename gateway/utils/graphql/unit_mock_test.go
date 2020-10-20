@@ -49,6 +49,11 @@ type mockGraphQLAuthInterface struct {
 	mock.Mock
 }
 
+func (m *mockGraphQLAuthInterface) ParseToken(ctx context.Context, token string) (map[string]interface{}, error) {
+	args := m.Called(ctx, token)
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
 func (m *mockGraphQLAuthInterface) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.CreateRequest) (model.RequestParams, error) {
 	args := m.Called(ctx, project, dbAlias, col, token, req)
 	return args.Get(0).(model.RequestParams), args.Error(1)

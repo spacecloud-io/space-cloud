@@ -20,6 +20,7 @@ type CrudInterface interface {
 
 // AuthInterface is an interface consisting of functions of auth module used by graphql module
 type AuthInterface interface {
+	ParseToken(ctx context.Context, token string) (map[string]interface{}, error)
 	IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.CreateRequest) (model.RequestParams, error)
 	IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*model.PostProcess, model.RequestParams, error)
 	IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.UpdateRequest) (model.RequestParams, error)

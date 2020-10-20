@@ -42,12 +42,12 @@ func (graph *Module) GetProjectID() string {
 // ExecGraphQLQuery executes the provided graphql query
 func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb model.GraphQLCallback) {
 
-	source := source.NewSource(&source.Source{
+	s := source.NewSource(&source.Source{
 		Body: []byte(req.Query),
 		Name: req.OperationName,
 	})
 	// parse the source
-	doc, err := parser.Parse(parser.ParseParams{Source: source})
+	doc, err := parser.Parse(parser.ParseParams{Source: s})
 	if err != nil {
 		cb(nil, err)
 		return
@@ -76,6 +76,7 @@ func createCallback(cb model.GraphQLCallback) model.GraphQLCallback {
 		cb(result, err)
 	}
 }
+
 func createDBCallback(cb dbCallback) dbCallback {
 	var lock sync.Mutex
 	var isCalled bool
@@ -151,7 +152,12 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		// No directive means its a nested field
 		if len(field.Directives) > 0 {
-			directive := field.Directives[0].Name.Value
+			directive, err := graph.getDirectiveName(ctx, field.Directives[0], token, store)
+			if err != nil {
+				cb(nil, err)
+				return
+			}
+
 			kind := graph.getQueryKind(directive, field.Name.Value)
 			if kind == "read" {
 				graph.execReadRequest(ctx, field, token, store, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
