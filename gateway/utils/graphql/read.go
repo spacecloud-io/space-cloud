@@ -48,7 +48,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 }
 
 func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
-	dbAlias, err := graph.GetDBAlias(ctx, field)
+	dbAlias, err := graph.GetDBAlias(ctx, field, token, store)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -88,7 +88,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 }
 
 func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
-	dbAlias, err := graph.GetDBAlias(ctx, field)
+	dbAlias, err := graph.GetDBAlias(ctx, field, token, store)
 	if err != nil {
 		cb("", "", nil, err)
 		return

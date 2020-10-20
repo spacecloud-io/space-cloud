@@ -243,7 +243,7 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 					continue
 				}
 
-				dbAlias, err := graph.GetDBAlias(ctx, v)
+				dbAlias, err := graph.GetDBAlias(ctx, v, m.Payload.Token, map[string]interface{}{})
 				if err != nil {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					continue

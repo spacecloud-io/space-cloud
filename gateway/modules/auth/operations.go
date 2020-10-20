@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"context"
+
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -11,4 +13,9 @@ func (m *Module) Encrypt(value string) (string, error) {
 	defer m.RUnlock()
 
 	return utils.Encrypt(m.aesKey, value)
+}
+
+// ParseToken simply parses and returns the claims of a provided token
+func (m *Module) ParseToken(ctx context.Context, token string) (map[string]interface{}, error) {
+	return m.jwt.ParseToken(ctx, token)
 }

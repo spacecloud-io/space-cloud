@@ -10,8 +10,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) genrateUpdateReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (model.RequestParams, *model.AllRequest, error) {
-	dbAlias, err := graph.GetDBAlias(ctx, field)
+func (graph *Module) generateUpdateReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (model.RequestParams, *model.AllRequest, error) {
+	dbAlias, err := graph.GetDBAlias(ctx, field, token, store)
 	if err != nil {
 		return model.RequestParams{}, nil, err
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 func (graph *Module) genrateDeleteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (model.RequestParams, *model.AllRequest, error) {
-	dbAlias, err := graph.GetDBAlias(ctx, field)
+	dbAlias, err := graph.GetDBAlias(ctx, field, token, store)
 	if err != nil {
 		return model.RequestParams{}, nil, err
 	}
