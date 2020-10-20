@@ -394,9 +394,9 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 
 // HandleServiceRoleRequest handles request to apply service role
 func (s *Server) HandleServiceRoleRequest() http.HandlerFunc {
-	type request struct {
-		Role model.Role `json:"role"`
-	}
+	// type request struct {
+	// 	Role model.Role `json:"role"`
+	// }
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		defer utils.CloseTheCloser(r.Body)
@@ -412,14 +412,14 @@ func (s *Server) HandleServiceRoleRequest() http.HandlerFunc {
 			return
 		}
 
-		req := new(request)
+		req := new(model.Role)
 		_ = json.NewDecoder(r.Body).Decode(req)
 
 		vars := mux.Vars(r)
-		req.Role.Project = vars["project"]
-		req.Role.Service = vars["serviceId"]
+		req.Project = vars["project"]
+		req.Service = vars["serviceId"]
 
-		err = s.driver.ApplyServiceRole(ctx, req.Role)
+		err = s.driver.ApplyServiceRole(ctx, req)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply service roles", err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
@@ -478,6 +478,62 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		var result model.Routes
 		for _, value := range serviceRoutes {
 			result = append(result, value...)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
+	}
+}
+
+// HandleGetServiceRoleRequest handles request to get all service role
+func (s *Server) HandleGetServiceRoleRequest() http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to get service role", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		serviceID, exists := r.URL.Query()["id"]
+
+		serviceRole, err := s.driver.GetServiceRole(ctx, projectID)
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to get service role rules", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		if exists {
+			for k, result := range serviceRole {
+				if k == serviceID[0] {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(model.Response{Result: result})
+					return
+				}
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
+			return
+		}
+
+		result := make([]model.Role, 0)
+		for _, value := range serviceRole {
+			result = append(result, value)
 		}
 
 		w.Header().Set("Content-Type", "application/json")

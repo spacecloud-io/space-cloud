@@ -40,7 +40,8 @@ type Interface interface {
 	GetServiceRoutes(ctx context.Context, projectID string) (map[string]model.Routes, error)
 
 	// Service role
-	ApplyServiceRole(ctx context.Context, role model.Role) error
+	ApplyServiceRole(ctx context.Context, role *model.Role) error
+	GetServiceRole(ctx context.Context, projectID string) (map[string]model.Role, error)
 
 	// Secret methods!
 	CreateSecret(ctx context.Context, projectID string, secretObj *model.Secret) error

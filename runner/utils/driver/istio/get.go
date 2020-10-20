@@ -316,3 +316,29 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 
 	return serviceRoutes, nil
 }
+
+// GetServiceRole gets the service role rules of each service
+func (i *Istio) GetServiceRole(ctx context.Context, projectID string) (map[string]model.Role, error) {
+	ns := projectID
+
+	rolelist, err := i.kube.RbacV1().Roles(ns).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to find deployments in project", err, nil)
+	}
+	serviceRole := make(map[string]model.Role, len(rolelist.Items))
+	for _, role := range rolelist.Items {
+		serviceID := role.Labels["app"]
+		var Role model.Role
+		Role.ID = role.Name
+		Role.Project = role.Namespace
+		Role.Service = serviceID
+		Role.Type = role.Kind
+		Rules := make([]model.Rule, 0)
+		for _, rule := range role.Rules {
+			Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
+		}
+		Role.Rules = Rules
+		serviceRole[serviceID] = Role
+	}
+	return serviceRole, nil
+}

@@ -131,7 +131,7 @@ func (i *Istio) ApplyServiceRoutes(ctx context.Context, projectID, serviceID str
 }
 
 // ApplyServiceRole sets role of each service
-func (i *Istio) ApplyServiceRole(ctx context.Context, role model.Role) error {
+func (i *Istio) ApplyServiceRole(ctx context.Context, role *model.Role) error {
 	ServiceRole := i.generateServiceRole(ctx, role)
 
 	// Apply the service role

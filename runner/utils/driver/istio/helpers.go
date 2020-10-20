@@ -1018,7 +1018,7 @@ func getDefaultAutoScaleConfig() *model.AutoScaleConfig {
 	}
 }
 
-func (i *Istio) generateServiceRole(ctx context.Context, role model.Role) *v12.Role {
+func (i *Istio) generateServiceRole(ctx context.Context, role *model.Role) *v12.Role {
 	labels := make(map[string]string)
 	labels["app"] = role.Service
 	labels["app.kubernetes.io/name"] = role.Service
@@ -1045,18 +1045,12 @@ func (i *Istio) generateServiceRole(ctx context.Context, role model.Role) *v12.R
 	}
 }
 
-func (i *Istio) generateServiceRoleBinding(ctx context.Context, role model.Role) *v12.RoleBinding {
+func (i *Istio) generateServiceRoleBinding(ctx context.Context, role *model.Role) *v12.RoleBinding {
 	labels := make(map[string]string)
 	labels["app"] = role.Service
 	labels["app.kubernetes.io/name"] = role.Service
 	labels["app.kubernetes.io/managed-by"] = "space-cloud"
 	labels["space-cloud.io/version"] = model.Version
-
-	rules := make([]v12.PolicyRule, 0)
-	for _, rule := range role.Rules {
-		rules = append(rules, v12.PolicyRule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
-
-	}
 
 	return &v12.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
