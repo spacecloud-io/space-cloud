@@ -448,8 +448,8 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 	}
 }
 
-// HandleServiceRoleRequest handles request to apply service role
-func (s *Server) HandleServiceRoleRequest() http.HandlerFunc {
+// HandleSetServiceRole handles request to apply service role
+func (s *Server) HandleSetServiceRole() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		defer utils.CloseTheCloser(r.Body)
@@ -471,6 +471,7 @@ func (s *Server) HandleServiceRoleRequest() http.HandlerFunc {
 		vars := mux.Vars(r)
 		req.Project = vars["project"]
 		req.Service = vars["serviceId"]
+		req.ID = vars["roleId"]
 
 		err = s.driver.ApplyServiceRole(ctx, req)
 		if err != nil {
@@ -503,7 +504,8 @@ func (s *Server) HandleGetServiceRoleRequest() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		serviceID, exists := r.URL.Query()["id"]
+		serviceID, serviceIDexists := r.URL.Query()["serviceId"]
+		roleID, roleIDexists := r.URL.Query()["roleId"]
 
 		serviceRole, err := s.driver.GetServiceRole(ctx, projectID)
 		if err != nil {
@@ -512,7 +514,29 @@ func (s *Server) HandleGetServiceRoleRequest() http.HandlerFunc {
 			return
 		}
 
-		if exists {
+		if serviceIDexists {
+			if roleIDexists {
+				for k, results := range serviceRole {
+					if k == serviceID[0] {
+						for _, result := range results {
+							if result.ID == roleID[0] {
+								w.Header().Set("Content-Type", "application/json")
+								w.WriteHeader(http.StatusOK)
+								_ = json.NewEncoder(w).Encode(model.Response{Result: results})
+								return
+							}
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusInternalServerError)
+						_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("roleID(%s) not present in state", roleID[0])})
+						return
+					}
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
+				return
+			}
 			for k, result := range serviceRole {
 				if k == serviceID[0] {
 					w.Header().Set("Content-Type", "application/json")
@@ -528,14 +552,12 @@ func (s *Server) HandleGetServiceRoleRequest() http.HandlerFunc {
 			return
 		}
 
-		result := make([]model.Role, 0)
+		result := make([]*model.Role, 0)
 		for _, value := range serviceRole {
-			result = append(result, value)
+			result = append(result, value...)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
+		helpers.Response.SendResponse(ctx, w, http.StatusOK, model.Response{Result: result})
 	}
 }
 
@@ -559,7 +581,7 @@ func (s *Server) HandleDeleteServiceRole() http.HandlerFunc {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		serviceID := vars["serviceId"]
-		id := vars["id"]
+		id := vars["roleId"]
 
 		if err := s.driver.DeleteServiceRole(ctx, projectID, serviceID, id); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to delete service role", err, nil)

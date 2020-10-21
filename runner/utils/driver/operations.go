@@ -77,7 +77,7 @@ func (m *Module) ApplyServiceRole(ctx context.Context, role *model.Role) error {
 }
 
 // GetServiceRole get's service role
-func (m *Module) GetServiceRole(ctx context.Context, projectID string) (map[string]model.Role, error) {
+func (m *Module) GetServiceRole(ctx context.Context, projectID string) (map[string][]*model.Role, error) {
 	return m.driver.GetServiceRole(ctx, projectID)
 }
 

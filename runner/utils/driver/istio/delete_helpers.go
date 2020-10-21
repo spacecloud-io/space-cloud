@@ -77,26 +77,32 @@ func (i *Istio) deleteKedaConfig(ctx context.Context, projectID, serviceID, vers
 }
 
 func (i *Istio) deleteServiceRoleIfExist(ctx context.Context, projectID, serviceID, id string) error {
-	_, err := i.kube.RbacV1().Roles(projectID).Get(ctx, id, metav1.GetOptions{})
-	if kubeErrors.IsNotFound(err) {
+	_, err1 := i.kube.RbacV1().Roles(projectID).Get(ctx, id, metav1.GetOptions{})
+	if !kubeErrors.IsNotFound(err1) {
 		err := i.kube.RbacV1().RoleBindings(projectID).Delete(ctx, id, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
 		err = i.kube.RbacV1().Roles(projectID).Delete(ctx, id, metav1.DeleteOptions{})
-		return err
+		if err != nil {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete service role with id (%s)", id), nil, nil)
+		}
+		return nil
 	}
-	_, err = i.kube.RbacV1().ClusterRoles().Get(ctx, id, metav1.GetOptions{})
-	if kubeErrors.IsNotFound(err) {
+	_, err2 := i.kube.RbacV1().ClusterRoles().Get(ctx, id, metav1.GetOptions{})
+	if !kubeErrors.IsNotFound(err2) {
 		err := i.kube.RbacV1().ClusterRoleBindings().Delete(ctx, id, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
 		err = i.kube.RbacV1().ClusterRoles().Delete(ctx, id, metav1.DeleteOptions{})
-		return err
+		if err != nil {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete service role with id (%s)", id), nil, nil)
+		}
+		return nil
 	}
 
-	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Specified role id-(%v) was not present", id), nil, nil)
+	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Specified role id-(%v) was not present", id), fmt.Errorf("%v", map[string]interface{}{"err1": err1, "err2": err2}), nil)
 }
 
 func ignoreErrorIfNotFound(err error) error {

@@ -25,6 +25,9 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
+// DefaultAPIGroup id default value of API Group
+const DefaultAPIGroup string = "rbac.authorization.k8s.io"
+
 func (i *Istio) prepareContainers(service *model.Service, listOfSecrets map[string]*v1.Secret) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
 	// there will be a metric collection container as well which pushes metric data to the autoscaler.
@@ -1032,10 +1035,6 @@ func (i *Istio) generateServiceRole(ctx context.Context, role *model.Role) *v12.
 	}
 
 	return &v12.Role{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "Role",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      role.ID,
 			Namespace: role.Project,
@@ -1053,10 +1052,6 @@ func (i *Istio) generateServiceRoleBinding(ctx context.Context, role *model.Role
 	labels["space-cloud.io/version"] = model.Version
 
 	return &v12.RoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "RoleBinding",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      role.ID,
 			Namespace: role.Project,
@@ -1064,15 +1059,15 @@ func (i *Istio) generateServiceRoleBinding(ctx context.Context, role *model.Role
 		},
 		Subjects: []v12.Subject{
 			{
-				Kind:     "service accounts",
+				Kind:     "ServiceAccount",
 				Name:     role.Service,
-				APIGroup: "rbac.authorization.k8s.io",
+				APIGroup: DefaultAPIGroup,
 			},
 		},
 		RoleRef: v12.RoleRef{
 			Kind:     "Role",
 			Name:     role.ID,
-			APIGroup: "rbac.authorization.k8s.io",
+			APIGroup: DefaultAPIGroup,
 		},
 	}
 }
@@ -1091,10 +1086,6 @@ func (i *Istio) generateServiceClusterRole(ctx context.Context, role *model.Role
 	}
 
 	return &v12.ClusterRole{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "ClusterRole",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   role.ID,
 			Labels: labels,
@@ -1111,10 +1102,6 @@ func (i *Istio) generateServiceClusterRoleBinding(ctx context.Context, role *mod
 	labels["space-cloud.io/version"] = model.Version
 
 	return &v12.ClusterRoleBinding{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "ClusterRoleBinding",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      role.ID,
 			Namespace: role.Project,
@@ -1122,15 +1109,15 @@ func (i *Istio) generateServiceClusterRoleBinding(ctx context.Context, role *mod
 		},
 		Subjects: []v12.Subject{
 			{
-				Kind:     "service accounts",
+				Kind:     "ServiceAccount",
 				Name:     role.Service,
-				APIGroup: "rbac.authorization.k8s.io",
+				APIGroup: DefaultAPIGroup,
 			},
 		},
 		RoleRef: v12.RoleRef{
 			Kind:     "ClusterRole",
 			Name:     role.ID,
-			APIGroup: "rbac.authorization.k8s.io",
+			APIGroup: DefaultAPIGroup,
 		},
 	}
 }

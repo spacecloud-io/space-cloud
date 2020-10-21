@@ -133,7 +133,7 @@ func (i *Istio) ApplyServiceRoutes(ctx context.Context, projectID, serviceID str
 // ApplyServiceRole sets role of each service
 func (i *Istio) ApplyServiceRole(ctx context.Context, role *model.Role) error {
 	switch role.Type {
-	case "Project":
+	case model.ServiceRoleProject:
 		ServiceRole := i.generateServiceRole(ctx, role)
 
 		// Apply the service role
@@ -149,7 +149,7 @@ func (i *Istio) ApplyServiceRole(ctx context.Context, role *model.Role) error {
 		if err := i.applyServiceRoleBinding(ctx, role.Project, ServiceRoleBinding); err != nil {
 			return err
 		}
-	case "Cluster":
+	case model.ServiceRoleCluster:
 		ServiceClusterRole := i.generateServiceClusterRole(ctx, role)
 
 		// Apply the service role
@@ -166,7 +166,7 @@ func (i *Istio) ApplyServiceRole(ctx context.Context, role *model.Role) error {
 			return err
 		}
 	default:
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Specified Type-(%v) is invalid", role.Type), nil, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid service role type (%s) provided", role.Type), nil, nil)
 	}
 	return nil
 }

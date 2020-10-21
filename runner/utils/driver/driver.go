@@ -41,7 +41,7 @@ type Interface interface {
 
 	// Service role
 	ApplyServiceRole(ctx context.Context, role *model.Role) error
-	GetServiceRole(ctx context.Context, projectID string) (map[string]model.Role, error)
+	GetServiceRole(ctx context.Context, projectID string) (map[string][]*model.Role, error)
 	DeleteServiceRole(ctx context.Context, projectID, serviceID, id string) error
 
 	// Secret methods!

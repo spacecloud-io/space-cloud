@@ -15,3 +15,9 @@ type Rule struct {
 	Verbs     []string `json:"verbs" yaml:"verbs"`
 	Resources []string `json:"resources" yaml:"resources"`
 }
+
+// ServiceRoleProject TODO
+const ServiceRoleProject string = "Project"
+
+// ServiceRoleCluster TODO
+const ServiceRoleCluster string = "Cluster"

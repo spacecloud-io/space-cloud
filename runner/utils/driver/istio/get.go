@@ -318,47 +318,49 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 }
 
 // GetServiceRole gets the service role rules of each service
-func (i *Istio) GetServiceRole(ctx context.Context, projectID string) (map[string]model.Role, error) {
+func (i *Istio) GetServiceRole(ctx context.Context, projectID string) (map[string][]*model.Role, error) {
 	ns := projectID
 
-	rolelist, err1 := i.kube.RbacV1().Roles(ns).List(ctx, metav1.ListOptions{})
+	rolelist, err := i.kube.RbacV1().Roles(ns).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to get role in project", err, nil)
+	}
 
-	clusterRoleList, err2 := i.kube.RbacV1().ClusterRoles().List(ctx, metav1.ListOptions{})
-	if (err1 != nil) && (err2 != nil) {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to find role and clusterrole in project", err1, nil)
+	clusterRoleList, err := i.kube.RbacV1().ClusterRoles().List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to get clusterrole in project", err, nil)
 	}
-	serviceRole := make(map[string]model.Role, len(rolelist.Items))
-	if err1 == nil {
-		for _, role := range rolelist.Items {
-			serviceID := role.Labels["app"]
-			var Role model.Role
-			Role.ID = role.Name
-			Role.Project = role.Namespace
-			Role.Service = serviceID
-			Role.Type = role.Kind
-			Rules := make([]model.Rule, 0)
-			for _, rule := range role.Rules {
-				Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
-			}
-			Role.Rules = Rules
-			serviceRole[serviceID] = Role
+	serviceRole := make(map[string][]*model.Role, len(rolelist.Items))
+
+	for _, role := range rolelist.Items {
+		serviceID := role.Labels["app"]
+		Role := new(model.Role)
+		Role.ID = role.Name
+		Role.Project = role.Namespace
+		Role.Service = serviceID
+		Role.Type = role.Kind
+		Rules := make([]model.Rule, 0)
+		for _, rule := range role.Rules {
+			Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
 		}
+		Role.Rules = Rules
+		serviceRole[serviceID] = append(serviceRole[serviceID], Role)
 	}
-	if err2 == nil {
-		for _, role := range clusterRoleList.Items {
-			serviceID := role.Labels["app"]
-			var Role model.Role
-			Role.ID = role.Name
-			Role.Project = role.Namespace
-			Role.Service = serviceID
-			Role.Type = role.Kind
-			Rules := make([]model.Rule, 0)
-			for _, rule := range role.Rules {
-				Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
-			}
-			Role.Rules = Rules
-			serviceRole[serviceID] = Role
+
+	for _, role := range clusterRoleList.Items {
+		serviceID := role.Labels["app"]
+		Role := new(model.Role)
+		Role.ID = role.Name
+		Role.Project = role.Namespace
+		Role.Service = serviceID
+		Role.Type = role.Kind
+		Rules := make([]model.Rule, 0)
+		for _, rule := range role.Rules {
+			Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
 		}
+		Role.Rules = Rules
+		serviceRole[serviceID] = append(serviceRole[serviceID], Role)
 	}
+
 	return serviceRole, nil
 }
