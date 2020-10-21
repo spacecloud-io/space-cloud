@@ -15,7 +15,7 @@ func GetServicesRoutes(project, commandName string, params map[string]string) ([
 
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -93,7 +93,7 @@ func GetServicesSecrets(project, commandName string, params map[string]string) (
 
 	// Get the spec from the server
 	result := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, result); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, result); err != nil {
 		return nil, err
 	}
 
@@ -123,7 +123,7 @@ func GetServices(project, commandName string, params map[string]string) ([]*mode
 	url := fmt.Sprintf("/v1/runner/%s/services", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 

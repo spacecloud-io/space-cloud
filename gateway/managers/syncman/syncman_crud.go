@@ -345,6 +345,40 @@ func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.
 	return http.StatusOK, nil
 }
 
+// DeleteCollectionRules deletes the collection rules of the database
+func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, col string, params model.RequestParams) (int, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection rules provided db alias (%s) does not exists", dbAlias), nil, nil)
+	}
+
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
+	_, ok := projectConfig.DatabaseRules[resourceID]
+	if !ok {
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection rules, provided table or collection (%s) does not exists", col), nil, nil)
+	}
+
+	delete(projectConfig.DatabaseRules, resourceID)
+
+	if err := s.modules.SetDatabaseRulesConfig(ctx, projectConfig.DatabaseRules); err != nil {
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set database rules config", err, nil)
+	}
+
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
 // SetReloadSchema reloads of the schema
 func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, params model.RequestParams) (int, error) {
 	// Acquire a lock
