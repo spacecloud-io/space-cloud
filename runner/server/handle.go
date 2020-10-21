@@ -557,7 +557,7 @@ func (s *Server) HandleGetServiceRoleRequest() http.HandlerFunc {
 			result = append(result, value...)
 		}
 
-		helpers.Response.SendResponse(ctx, w, http.StatusOK, model.Response{Result: result})
+		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, model.Response{Result: result})
 	}
 }
 
