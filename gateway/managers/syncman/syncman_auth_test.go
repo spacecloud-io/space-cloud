@@ -241,7 +241,7 @@ func TestManager_DeleteUserManagement(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Unable to set project",
+			name: "Unable to delete resource",
 			s: &Manager{
 				clusterID: "clusterID",
 				projectConfig: &config.Config{

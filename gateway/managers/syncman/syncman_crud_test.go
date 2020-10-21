@@ -1763,7 +1763,7 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name: "unable to get project",
+			name: "Unable to get project",
 			s: &Manager{
 				clusterID: "clusterID",
 				storeType: "local",
@@ -1793,7 +1793,7 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "db alias not present",
+			name: "Db alias not present",
 			s: &Manager{
 				clusterID: "clusterID",
 				storeType: "local",
@@ -1823,7 +1823,37 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "unable to set crud config",
+			name: "Table or collection not present",
+			s: &Manager{
+				clusterID: "clusterID",
+				storeType: "local",
+				projectConfig: &config.Config{
+					Projects: map[string]*config.Project{
+						"myProject": {
+							DatabaseConfigs: config.DatabaseConfigs{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{
+									DbAlias: "alias",
+								},
+							},
+							DatabaseRules: config.DatabaseRules{
+								config.GenerateResourceID("clusterID", "myProject", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{
+									Rules: map[string]*config.Rule{
+										"DB_INSERT": {
+											ID: "ruleID",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			args:    args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "myProject"},
+			want:    http.StatusBadRequest,
+			wantErr: true,
+		},
+		{
+			name: "Unable to set database rules config",
 			s: &Manager{
 				clusterID: "clusterID",
 				storeType: "local",
@@ -1860,7 +1890,7 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "unable to set project",
+			name: "Unable to delete resource",
 			s: &Manager{
 				clusterID: "clusterID",
 				storeType: "local",
@@ -1904,7 +1934,7 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "db rules successfully deleted",
+			name: "Db rules successfully deleted",
 			s: &Manager{
 				clusterID: "clusterID",
 				storeType: "local",

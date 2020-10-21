@@ -239,6 +239,7 @@ func DeleteSubCommands() []*cobra.Command {
 		Aliases:           []string{"db-rule"},
 		RunE:              actionDeleteDbRules,
 		ValidArgsFunction: dbRulesAutoCompleteFun,
+		Example:           "space-cli delete db-rules dbAlias ruleID --project myproject --log-level info",
 	}
 
 	var deleteConfigs = &cobra.Command{
@@ -246,6 +247,7 @@ func DeleteSubCommands() []*cobra.Command {
 		Aliases:           []string{"db-config"},
 		RunE:              actionDeleteDbConfigs,
 		ValidArgsFunction: dbConfigAutoCompleteFun,
+		Example:           "space-cli delete db-configs dbAlias --project myproject --log-level info",
 	}
 
 	var deletePreparedQuery = &cobra.Command{
@@ -253,13 +255,15 @@ func DeleteSubCommands() []*cobra.Command {
 		Aliases:           []string{"db-prepared-query"},
 		RunE:              actionDeleteDbPreparedQuery,
 		ValidArgsFunction: dbPreparedQueriesAutoCompleteFun,
+		Example:           "space-cli delete db-prepared-queries dbAlias preparedQueryID --project myproject --log-level info",
 	}
 
 	var deleteSchemas = &cobra.Command{
-		Use:               "db-prepared-queries",
-		Aliases:           []string{"db-prepared-query"},
+		Use:               "db-schemas",
+		Aliases:           []string{"db-schema"},
 		RunE:              actionDeleteDbSchemas,
 		ValidArgsFunction: dbSchemasAutoCompleteFun,
+		Example:           "space-cli delete db-configs dbAlias tableName --project myproject --log-level info",
 	}
 
 	return []*cobra.Command{deleteRules, deleteConfigs, deletePreparedQuery, deleteSchemas}
