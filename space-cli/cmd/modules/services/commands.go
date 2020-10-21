@@ -26,8 +26,8 @@ func GenerateSubCommands() []*cobra.Command {
 	var generateServiceRole = &cobra.Command{
 		Use:     "service-role [path to config file]",
 		RunE:    actionGenerateServiceRole,
-		Aliases: []string{"service-role"},
-		Example: "space-cli generate service-role config.yaml --project myproject --log-level info",
+		Aliases: []string{"service-roles"},
+		Example: "space-cli generate service-role config.yaml --project myproject",
 	}
 
 	return []*cobra.Command{generateService, generateServiceRoute, generateServiceRole}
@@ -75,7 +75,7 @@ func GetSubCommands() []*cobra.Command {
 				}
 				var serviceIds []string
 				for _, v := range objs {
-					serviceIds = append(serviceIds, v.Meta["serviceID"])
+					serviceIds = append(serviceIds, v.Meta["serviceId"])
 				}
 				return serviceIds, cobra.ShellCompDirectiveDefault
 			case 1:
@@ -90,7 +90,7 @@ func GetSubCommands() []*cobra.Command {
 				}
 				var roleID []string
 				for _, v := range objs {
-					roleID = append(roleID, v.Meta["roleID"])
+					roleID = append(roleID, v.Meta["roleId"])
 				}
 				return roleID, cobra.ShellCompDirectiveDefault
 			}

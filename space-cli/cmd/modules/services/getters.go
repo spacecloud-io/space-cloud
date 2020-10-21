@@ -53,7 +53,7 @@ func GetServicesRoutes(project, commandName string, params map[string]string) ([
 
 // GetServicesRole gets services role
 func GetServicesRole(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
-	url := fmt.Sprintf("/v1/runner/%s/service-role", project)
+	url := fmt.Sprintf("/v1/runner/%s/service-roles", project)
 
 	// Get the spec from the server
 	payload := new(model.Response)
@@ -69,7 +69,7 @@ func GetServicesRole(project, commandName string, params map[string]string) ([]*
 			// array may have an empty object
 			continue
 		}
-		meta := map[string]string{"project": project, "serviceID": spec["service"].(string), "roleID": id.(string)}
+		meta := map[string]string{"project": project, "serviceId": spec["service"].(string), "roleId": id.(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")

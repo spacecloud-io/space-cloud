@@ -250,8 +250,8 @@ spec:
             - containerPort: 4060
           resources:
             requests:
-              memory: "1024Mi"
-              cpu: "500m"
+              memory: "100Mi"
+              cpu: "100m"
 ---
 #############################################################################################
 ########################## Configure the istio side of the gateway  #########################

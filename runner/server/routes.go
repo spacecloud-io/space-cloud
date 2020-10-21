@@ -21,7 +21,7 @@ func (s *Server) routes() {
 	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/service-routes").HandlerFunc(s.HandleGetServiceRoutingRequest())
 
 	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/service-roles/{serviceId}/{roleId}").HandlerFunc(s.HandleSetServiceRole())
-	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/service-role").HandlerFunc(s.HandleGetServiceRoleRequest())
+	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/service-roles").HandlerFunc(s.HandleGetServiceRoleRequest())
 	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}/service-roles/{serviceId}/{roleId}").HandlerFunc(s.HandleDeleteServiceRole())
 
 	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/services/logs").HandlerFunc(s.handleGetLogs())

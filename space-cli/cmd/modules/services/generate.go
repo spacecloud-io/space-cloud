@@ -197,9 +197,9 @@ func GenerateServiceRole(projectID string) (*model.SpecObject, error) {
 	if err := input.Survey.AskOne(&survey.Input{Message: "Enter serviceID:"}, &serviceID); err != nil {
 		return nil, err
 	}
-
+	Types := []string{"Project", "Cluster"}
 	Type := ""
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Type:"}, &Type); err != nil {
+	if err := input.Survey.AskOne(&survey.Select{Message: "Choose the Type of role: ", Options: Types, Default: Types[0]}, &Type); err != nil {
 		return nil, err
 	}
 
@@ -211,18 +211,27 @@ func GenerateServiceRole(projectID string) (*model.SpecObject, error) {
 			return nil, err
 		}
 		apiGroups := strings.Split(apiGroup, ",")
+		if apiGroups[len(apiGroups)-1] == "" {
+			return nil, utils.LogError(fmt.Sprintf("Last element of APIGroups not Specified"), nil)
+		}
 
 		verb := ""
 		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Verbs:"}, &verb); err != nil {
 			return nil, err
 		}
 		verbs := strings.Split(verb, ",")
+		if verbs[len(verbs)-1] == "" {
+			return nil, utils.LogError(fmt.Sprintf("Last element of Verbs not Specified"), nil)
+		}
 
 		resource := ""
 		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Resources:"}, &resource); err != nil {
 			return nil, err
 		}
 		resources := strings.Split(resource, ",")
+		if resources[len(resources)-1] == "" {
+			return nil, utils.LogError(fmt.Sprintf("Last element of Resources not Specified"), nil)
+		}
 
 		rule := model.Rule{
 			APIGroups: apiGroups,
@@ -240,9 +249,9 @@ func GenerateServiceRole(projectID string) (*model.SpecObject, error) {
 		API:  "/v1/runner/{project}/service-roles/{serviceId}/{roleId}",
 		Type: "service-role",
 		Meta: map[string]string{
-			"roleID":    roleID,
+			"roleId":    roleID,
 			"project":   projectID,
-			"serviceID": serviceID,
+			"serviceId": serviceID,
 		},
 		Spec: &model.Role{
 			Type:  Type,

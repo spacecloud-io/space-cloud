@@ -323,14 +323,14 @@ func (i *Istio) GetServiceRole(ctx context.Context, projectID string) (map[strin
 
 	rolelist, err := i.kube.RbacV1().Roles(ns).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to get role in project", err, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list roles in project (%s)", projectID), err, nil)
 	}
 
 	clusterRoleList, err := i.kube.RbacV1().ClusterRoles().List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to get clusterrole in project", err, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list cluster roles in project (%s)", projectID), err, nil)
 	}
-	serviceRole := make(map[string][]*model.Role, len(rolelist.Items))
+	serviceRole := make(map[string][]*model.Role, len(rolelist.Items)+len(clusterRoleList.Items))
 
 	for _, role := range rolelist.Items {
 		serviceID := role.Labels["app"]

@@ -25,8 +25,7 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-// DefaultAPIGroup id default value of API Group
-const DefaultAPIGroup string = "rbac.authorization.k8s.io"
+const defaultAPIGroup string = "rbac.authorization.k8s.io"
 
 func (i *Istio) prepareContainers(service *model.Service, listOfSecrets map[string]*v1.Secret) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
@@ -1060,14 +1059,14 @@ func (i *Istio) generateServiceRoleBinding(ctx context.Context, role *model.Role
 		Subjects: []v12.Subject{
 			{
 				Kind:     "ServiceAccount",
-				Name:     role.Service,
-				APIGroup: DefaultAPIGroup,
+				Name:     getServiceAccountName(role.Service),
+				APIGroup: role.Project, // For all service accounts in the "projectID" namespace:
 			},
 		},
 		RoleRef: v12.RoleRef{
 			Kind:     "Role",
 			Name:     role.ID,
-			APIGroup: DefaultAPIGroup,
+			APIGroup: role.Project, // For all service accounts in the "projectID" namespace:
 		},
 	}
 }
@@ -1103,21 +1102,20 @@ func (i *Istio) generateServiceClusterRoleBinding(ctx context.Context, role *mod
 
 	return &v12.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      role.ID,
-			Namespace: role.Project,
-			Labels:    labels,
+			Name:   role.ID,
+			Labels: labels,
 		},
 		Subjects: []v12.Subject{
 			{
 				Kind:     "ServiceAccount",
-				Name:     role.Service,
-				APIGroup: DefaultAPIGroup,
+				Name:     getServiceAccountName(role.Service),
+				APIGroup: defaultAPIGroup,
 			},
 		},
 		RoleRef: v12.RoleRef{
 			Kind:     "ClusterRole",
 			Name:     role.ID,
-			APIGroup: DefaultAPIGroup,
+			APIGroup: defaultAPIGroup,
 		},
 	}
 }
