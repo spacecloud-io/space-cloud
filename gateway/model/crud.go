@@ -25,7 +25,17 @@ type ReadOptions struct {
 	Skip       *int64           `json:"skip"`
 	Limit      *int64           `json:"limit"`
 	Distinct   *string          `json:"distinct"`
+	Join       []JoinOption     `json:"join"`
+	ReturnType string           `json:"returnType"`
 	HasOptions bool             `json:"hasOptions"` // used internally
+}
+
+// JoinOption describes the way a join needs to be performed
+type JoinOption struct {
+	Type  string                 `json:"type"`
+	Table string                 `json:"table"`
+	On    map[string]interface{} `json:"on"`
+	Join  []JoinOption           `json:"join"`
 }
 
 // UpdateRequest is the http body received for an update request

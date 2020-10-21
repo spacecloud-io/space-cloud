@@ -18,7 +18,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
-func (s *SQL) generator(ctx context.Context, find map[string]interface{}) (goqu.Expression, []string) {
+func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin bool) (goqu.Expression, []string) {
 	var regxarr []string
 	array := []goqu.Expression{}
 	for k, v := range find {
@@ -26,7 +26,7 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}) (goqu.
 			orArray := v.([]interface{})
 			orFinalArray := []goqu.Expression{}
 			for _, item := range orArray {
-				exp, a := s.generator(ctx, item.(map[string]interface{}))
+				exp, a := s.generator(ctx, item.(map[string]interface{}), isJoin)
 				orFinalArray = append(orFinalArray, exp)
 				regxarr = append(regxarr, a...)
 			}
@@ -34,9 +34,13 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}) (goqu.
 			array = append(array, goqu.Or(orFinalArray...))
 			continue
 		}
+
 		val, isObj := v.(map[string]interface{})
 		if isObj {
 			for k2, v2 := range val {
+				if vString, p := v2.(string); p && isJoin {
+					v2 = goqu.I(vString)
+				}
 				switch k2 {
 				case "$regex":
 					switch s.dbType {
@@ -84,6 +88,9 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}) (goqu.
 				}
 			}
 		} else {
+			if vString, ok := v.(string); ok && isJoin {
+				v = goqu.I(vString)
+			}
 			array = append(array, goqu.I(k).Eq(v))
 		}
 	}
@@ -95,7 +102,7 @@ func (s *SQL) generateWhereClause(ctx context.Context, q *goqu.SelectDataset, fi
 	if len(find) == 0 {
 		return
 	}
-	exp, arr := s.generator(ctx, find)
+	exp, arr := s.generator(ctx, find, false)
 	query = query.Where(exp)
 	return query, arr
 }
@@ -176,4 +183,33 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 			mapping[colType.Name()] = v.Time().UTC().Format(time.RFC3339)
 		}
 	}
+}
+
+func (s *SQL) processJoins(ctx context.Context, table string, query *goqu.SelectDataset, join []model.JoinOption) (*goqu.SelectDataset, error) {
+	for _, j := range join {
+		on, _ := s.generator(ctx, j.On, true)
+		switch j.Type {
+		case "", "LEFT":
+			query = query.LeftJoin(goqu.T(j.Table), goqu.On(on))
+		case "RIGHT":
+			query = query.RightJoin(goqu.T(j.Table), goqu.On(on))
+		case "INNER":
+			query = query.InnerJoin(goqu.T(j.Table), goqu.On(on))
+		case "OUTER":
+			query = query.FullOuterJoin(goqu.T(j.Table), goqu.On(on))
+		default:
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid join type (%s) provided", j.Type), nil, nil)
+		}
+
+		if j.Join != nil {
+			q, err := s.processJoins(ctx, j.Table, query, j.Join)
+			if err != nil {
+				return nil, err
+			}
+
+			query = q
+		}
+	}
+
+	return query, nil
 }

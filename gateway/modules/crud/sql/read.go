@@ -37,10 +37,23 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 
 	selArray := []interface{}{}
 	if req.Options != nil {
+
+		isJoin := len(req.Options.Join) > 0
+
+		// Throw error if select is not provided during joins
+		if isJoin && len(req.Options.Select) == 0 {
+			return "", nil, errors.New("select cannot be nil when using joins")
+		}
+
 		// Check if the select clause exists
 		if req.Options.Select != nil {
 			for key := range req.Options.Select {
-				selArray = append(selArray, key)
+				if !isJoin {
+					selArray = append(selArray, key)
+					continue
+				}
+
+				selArray = append(selArray, goqu.I(key).As(strings.Join(strings.Split(key, "."), "__")))
 			}
 		}
 		if req.Options.Skip != nil {
@@ -70,7 +83,14 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 			}
 			query = query.Order(orderBys...)
 		}
+
+		q, err := s.processJoins(ctx, col, query, req.Options.Join)
+		if err != nil {
+			return "", nil, err
+		}
+		query = q
 	}
+
 	switch req.Operation {
 	case utils.Count:
 		query = query.Select(goqu.COUNT("*"))
@@ -132,12 +152,13 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	}
 	return sqlString, args, nil
 }
+
 func generateAggregateAsColumnName(function, column string) string {
-	return fmt.Sprintf("%s__%s__%s", utils.GraphQLAggregate, function, column)
+	return fmt.Sprintf("%s___%s___%s", utils.GraphQLAggregate, function, column)
 }
 
 func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
-	v := strings.Split(asColumnName, "__")
+	v := strings.Split(asColumnName, "___")
 	if len(v) != 3 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
 		return "", "", false
 	}
@@ -159,10 +180,13 @@ func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, exec
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Executing sql read query", map[string]interface{}{"sqlQuery": sqlString, "queryArgs": args})
 	}
 
-	return s.readexec(ctx, sqlString, args, req.Operation, executor, len(req.Aggregate) > 0)
+	return s.readexec(ctx, col, sqlString, args, executor, req)
 }
 
-func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}, operation string, executor executor, isAggregate bool) (int64, interface{}, error) {
+func (s *SQL) readexec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, error) {
+	operation := req.Operation
+	isAggregate := len(req.Aggregate) > 0
+
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
 		return 0, nil, err
@@ -225,27 +249,28 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 
 	case utils.All, utils.Distinct:
 		array := []interface{}{}
+		mapping := make(map[string]map[string]interface{})
 		var count int64
 		for rows.Next() {
 
 			// Increment the counter
 			count++
 
-			mapping := make(map[string]interface{})
-			err := rows.MapScan(mapping)
+			row := make(map[string]interface{})
+			err := rows.MapScan(row)
 			if err != nil {
 				return 0, nil, err
 			}
 			switch s.GetDBType() {
 			case model.MySQL, model.Postgres, model.SQLServer:
-				mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
+				mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, row)
 			}
 			if isAggregate {
 				funcMap := map[string]interface{}{}
-				for asColumnName, value := range mapping {
+				for asColumnName, value := range row {
 					functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
 					if isAggregateColumn {
-						delete(mapping, asColumnName)
+						delete(row, asColumnName)
 						// check if function name already exists
 						funcValue, ok := funcMap[functionName]
 						if !ok {
@@ -263,16 +288,60 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 					}
 				}
 				if len(funcMap) > 0 {
-					mapping[utils.GraphQLAggregate] = funcMap
+					row[utils.GraphQLAggregate] = funcMap
 				}
 			}
 
-			array = append(array, mapping)
+			if req.Options == nil || req.Options.ReturnType == "flat" {
+				array = append(array, row)
+				continue
+			}
+
+			processRows(col, row, req.Options.Join, mapping, &array)
 		}
 
 		return count, array, nil
 
 	default:
 		return 0, nil, utils.ErrInvalidParams
+	}
+}
+
+func processRows(table string, row map[string]interface{}, join []model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}) {
+	m := map[string]interface{}{}
+
+	// Get keys of this table
+	for k, v := range row {
+		if strings.Split(k, "__")[0] == table {
+			m[k] = v
+		}
+	}
+
+	// Generate unique key for row. fmt.Sprintf internally sorts all keys
+	// hence returns a deterministic key.
+	key := fmt.Sprintf("%v", m)
+
+	// Check if key exists in mapping. This can happen if the row has multiple
+	// sub rows else append self to final array.
+	if m2, p := mapping[key]; p {
+		m = m2
+	} else {
+		mapping[key] = m
+		*finalArray = append(*finalArray, m)
+	}
+
+	// Process joint tables for rows
+	for _, j := range join {
+		var arr []interface{}
+
+		// Check if table name is already present in parent row. If not, create a new array
+		if arrTemp, p := m[j.Table]; p {
+			arr = arrTemp.([]interface{})
+		} else {
+			arr = []interface{}{}
+		}
+
+		// Recursively call the same function again
+		processRows(j.Table, row, j.Join, mapping, &arr)
 	}
 }

@@ -208,6 +208,41 @@ func TestSQL_generateReadQuery(t *testing.T) {
 			want1:   []interface{}{`{"obj1":"value1"}`},
 			wantErr: false,
 		},
+		{
+			name:   "simple join without select",
+			fields: fields{dbType: "mysql"},
+			args: args{project: "test", col: "t1",
+				req: &model.ReadRequest{
+					Find: map[string]interface{}{"t1.col1": map[string]interface{}{"$eq": 1}},
+					Options: &model.ReadOptions{
+						Join: []model.JoinOption{
+							{Table: "t2", Type: "LEFT", On: map[string]interface{}{"t1.col1": "t2.col2"}},
+						}},
+					Operation: "all"}},
+			want:    []string{""},
+			want1:   nil,
+			wantErr: true,
+		},
+		{
+			name:   "nested join with select",
+			fields: fields{dbType: "mysql"},
+			args: args{project: "test", col: "t1",
+				req: &model.ReadRequest{
+					Find: map[string]interface{}{"t1.col1": map[string]interface{}{"$eq": 1}},
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"t1.col1": 1},
+						Join: []model.JoinOption{
+							{Table: "t2", Type: "LEFT", On: map[string]interface{}{"t1.col1": "t2.col2"}, Join: []model.JoinOption{
+								{Table: "t3", Type: "LEFT", On: map[string]interface{}{"t2.col3": map[string]interface{}{"$eq": "t3.col4"}}},
+							}},
+						},
+					},
+					Operation: "all"}},
+			want:    []string{"SELECT t1.col1 AS t1__col1 FROM t1 LEFT JOIN t2 ON (t1.col1 = t2.col2) LEFT JOIN t3 ON (t2.col3 = t3.col4) WHERE (t1.col1 = ?)"},
+			want1:   []interface{}{int64(1)},
+			wantErr: false,
+		},
+
 		// postgres
 		{
 			name:    "String1 = ?",
