@@ -15,7 +15,7 @@ func GetEventingTrigger(project, commandName string, params map[string]string) (
 
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -43,7 +43,7 @@ func GetEventingConfig(project, commandName string, params map[string]string) ([
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/config", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +66,7 @@ func GetEventingSchema(project, commandName string, params map[string]string) ([
 
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -94,7 +94,7 @@ func GetEventingSecurityRule(project, commandName string, params map[string]stri
 
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
