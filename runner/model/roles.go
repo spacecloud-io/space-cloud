@@ -16,8 +16,8 @@ type Rule struct {
 	Resources []string `json:"resources" yaml:"resources"`
 }
 
-// ServiceRoleProject TODO
+// ServiceRoleProject is used to provide Type Project to role
 const ServiceRoleProject string = "Project"
 
-// ServiceRoleCluster TODO
+// ServiceRoleCluster is used to provide Type Cluster to role
 const ServiceRoleCluster string = "Cluster"
