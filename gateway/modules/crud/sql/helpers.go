@@ -120,7 +120,7 @@ func generateRecord(temp interface{}) (goqu.Record, error) {
 	return record, nil
 }
 
-func (s *SQL) getDBName(col string) string {
+func (s *SQL) getColName(col string) string {
 	switch model.DBType(s.dbType) {
 	case model.Postgres, model.SQLServer:
 		return fmt.Sprintf("%s.%s", s.name, col)
@@ -190,13 +190,13 @@ func (s *SQL) processJoins(ctx context.Context, table string, query *goqu.Select
 		on, _ := s.generator(ctx, j.On, true)
 		switch j.Type {
 		case "", "LEFT":
-			query = query.LeftJoin(goqu.T(j.Table), goqu.On(on))
+			query = query.LeftJoin(goqu.T(s.getColName(j.Table)), goqu.On(on))
 		case "RIGHT":
-			query = query.RightJoin(goqu.T(j.Table), goqu.On(on))
+			query = query.RightJoin(goqu.T(s.getColName(j.Table)), goqu.On(on))
 		case "INNER":
-			query = query.InnerJoin(goqu.T(j.Table), goqu.On(on))
+			query = query.InnerJoin(goqu.T(s.getColName(j.Table)), goqu.On(on))
 		case "OUTER":
-			query = query.FullOuterJoin(goqu.T(j.Table), goqu.On(on))
+			query = query.FullOuterJoin(goqu.T(s.getColName(j.Table)), goqu.On(on))
 		default:
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid join type (%s) provided", j.Type), nil, nil)
 		}

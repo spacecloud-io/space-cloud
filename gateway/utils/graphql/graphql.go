@@ -53,7 +53,7 @@ func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLReq
 		return
 	}
 
-	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": ""}, nil, createCallback(cb))
+	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": "", "directive": ""}, nil, createCallback(cb))
 }
 
 type dbCallback func(dbAlias, col string, op interface{}, err error)
@@ -202,24 +202,24 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			return
 		}
 
-		if schema != nil {
-			fieldStruct, p := schema[field.Name.Value]
-			if p && fieldStruct.IsLinked {
-				linkedInfo := fieldStruct.LinkedTable
-				loadKey := fmt.Sprintf("%s.%s", store["coreParentKey"], linkedInfo.From)
-				val, err := utils.LoadValue(loadKey, store)
-				if err != nil {
-					cb(nil, nil)
-					return
-				}
-				req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}}
-				graph.processLinkedResult(ctx, field, *fieldStruct, token, req, store, cb)
-				return
-			}
-		}
-
 		currentValue, err := utils.LoadValue(fmt.Sprintf("%s.%s", store["coreParentKey"], field.Name.Value), store)
 		if err != nil {
+			if schema != nil {
+				fieldStruct, p := schema[field.Name.Value]
+				if p && fieldStruct.IsLinked {
+					linkedInfo := fieldStruct.LinkedTable
+					loadKey := fmt.Sprintf("%s.%s", store["coreParentKey"], linkedInfo.From)
+					val, err := utils.LoadValue(loadKey, store)
+					if err != nil {
+						cb(nil, nil)
+						return
+					}
+					req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}}
+					graph.processLinkedResult(ctx, field, *fieldStruct, token, req, store, cb)
+					return
+				}
+			}
+
 			// if the field isn't found in the store means that field did not exist in the result. so return nil as error
 			cb(nil, nil)
 			return

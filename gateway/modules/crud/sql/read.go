@@ -28,7 +28,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	}
 
 	dialect := goqu.Dialect(dbType)
-	query := dialect.From(s.getDBName(col)).Prepared(true)
+	query := dialect.From(s.getColName(col)).Prepared(true)
 	var tarr []string
 	if req.Find != nil {
 		// Get the where clause from query object
@@ -41,7 +41,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		isJoin := len(req.Options.Join) > 0
 
 		// Throw error if select is not provided during joins
-		if isJoin && len(req.Options.Select) == 0 {
+		if isJoin && len(req.Options.Select) == 0 && len(req.Aggregate) == 0 {
 			return "", nil, errors.New("select cannot be nil when using joins")
 		}
 
@@ -154,7 +154,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 }
 
 func generateAggregateAsColumnName(function, column string) string {
-	return fmt.Sprintf("%s___%s___%s", utils.GraphQLAggregate, function, column)
+	return fmt.Sprintf("%s___%s___%s", utils.GraphQLAggregate, function, strings.Join(strings.Split(column, "."), "__"))
 }
 
 func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
@@ -265,39 +265,14 @@ func (s *SQL) readexec(ctx context.Context, col, sqlString string, args []interf
 			case model.MySQL, model.Postgres, model.SQLServer:
 				mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, row)
 			}
-			if isAggregate {
-				funcMap := map[string]interface{}{}
-				for asColumnName, value := range row {
-					functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
-					if isAggregateColumn {
-						delete(row, asColumnName)
-						// check if function name already exists
-						funcValue, ok := funcMap[functionName]
-						if !ok {
-							// set new function
-							// NOTE: This case occurs for count function with no column name (using * operator instead)
-							if columnName == "" {
-								funcMap[functionName] = value
-							} else {
-								funcMap[functionName] = map[string]interface{}{columnName: value}
-							}
-							continue
-						}
-						// add new column to existing function
-						funcValue.(map[string]interface{})[columnName] = value
-					}
-				}
-				if len(funcMap) > 0 {
-					row[utils.GraphQLAggregate] = funcMap
-				}
-			}
 
-			if req.Options == nil || req.Options.ReturnType == "flat" {
+			if req.Options == nil || req.Options.ReturnType == "table" || len(req.Options.Join) == 0 {
+				processAggregate(row, row, isAggregate)
 				array = append(array, row)
 				continue
 			}
 
-			processRows(col, row, req.Options.Join, mapping, &array)
+			processRows([]string{col}, isAggregate, row, req.Options.Join, mapping, &array)
 		}
 
 		return count, array, nil
@@ -306,20 +281,54 @@ func (s *SQL) readexec(ctx context.Context, col, sqlString string, args []interf
 		return 0, nil, utils.ErrInvalidParams
 	}
 }
-
-func processRows(table string, row map[string]interface{}, join []model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}) {
+func processAggregate(row, m map[string]interface{}, isAggregate bool) {
+	if isAggregate {
+		funcMap := map[string]interface{}{}
+		for asColumnName, value := range row {
+			functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
+			if isAggregateColumn {
+				delete(row, asColumnName)
+				// check if function name already exists
+				funcValue, ok := funcMap[functionName]
+				if !ok {
+					// set new function
+					// NOTE: This case occurs for count function with no column name (using * operator instead)
+					if columnName == "" {
+						funcMap[functionName] = value
+					} else {
+						funcMap[functionName] = map[string]interface{}{columnName: value}
+					}
+					continue
+				}
+				// add new column to existing function
+				funcValue.(map[string]interface{})[columnName] = value
+			}
+		}
+		if len(funcMap) > 0 {
+			m[utils.GraphQLAggregate] = funcMap
+		}
+	}
+}
+func processRows(table []string, isAggregate bool, row map[string]interface{}, join []model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}) {
 	m := map[string]interface{}{}
+	keyMap := map[string]interface{}{}
+
+	length := len(table) - 1
 
 	// Get keys of this table
 	for k, v := range row {
-		if strings.Split(k, "__")[0] == table {
-			m[k] = v
+		a := strings.Split(k, "__")
+		if utils.StringExists(table, a[0]) {
+			keyMap[a[1]] = v
+		}
+		if table[length] == a[0] {
+			m[a[1]] = v
 		}
 	}
 
 	// Generate unique key for row. fmt.Sprintf internally sorts all keys
 	// hence returns a deterministic key.
-	key := fmt.Sprintf("%v", m)
+	key := fmt.Sprintf("%v", keyMap)
 
 	// Check if key exists in mapping. This can happen if the row has multiple
 	// sub rows else append self to final array.
@@ -328,6 +337,15 @@ func processRows(table string, row map[string]interface{}, join []model.JoinOpti
 	} else {
 		mapping[key] = m
 		*finalArray = append(*finalArray, m)
+
+		// Process aggregate field only if its the root table that we are processing
+		if length == 0 {
+			processAggregate(row, m, isAggregate)
+		}
+	}
+
+	if len(m) == 0 {
+		return
 	}
 
 	// Process joint tables for rows
@@ -342,6 +360,7 @@ func processRows(table string, row map[string]interface{}, join []model.JoinOpti
 		}
 
 		// Recursively call the same function again
-		processRows(j.Table, row, j.Join, mapping, &arr)
+		processRows(append(table, j.Table), isAggregate, row, j.Join, mapping, &arr)
+		m[j.Table] = arr
 	}
 }

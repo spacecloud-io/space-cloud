@@ -142,7 +142,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 		dbType = string(model.Postgres)
 	}
 	dialect := goqu.Dialect(dbType)
-	query := dialect.From(s.getDBName(col)).Prepared(true)
+	query := dialect.From(s.getColName(col)).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object

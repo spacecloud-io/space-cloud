@@ -2,6 +2,8 @@ package sql
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -590,4 +592,145 @@ func str(s string) *string {
 }
 func iti(s int64) *int64 {
 	return &s
+}
+
+func Test_processRows(t *testing.T) {
+	type args struct {
+		rows        []interface{}
+		table       string
+		join        []model.JoinOption
+		isAggregate bool
+	}
+	tests := []struct {
+		name   string
+		args   args
+		result []interface{}
+	}{
+		{
+			name: "normal test case",
+			args: args{
+				table: "t1",
+				rows: []interface{}{
+					map[string]interface{}{"t1__c1": "a1", "t1__c2": "a2", "t2__c3": "b1"},
+					map[string]interface{}{"t1__c1": "a1", "t1__c2": "a2", "t2__c3": "b2"},
+					map[string]interface{}{"t1__c1": "c1", "t1__c2": "c2", "t2__c3": "d1"},
+					map[string]interface{}{"t1__c1": "c1", "t1__c2": "c2", "t2__c3": "d2"},
+				},
+				join: []model.JoinOption{{Table: "t2"}},
+			},
+			result: []interface{}{
+				map[string]interface{}{"c1": "a1", "c2": "a2", "t2": []interface{}{
+					map[string]interface{}{"c3": "b1"},
+					map[string]interface{}{"c3": "b2"},
+				}},
+				map[string]interface{}{"c1": "c1", "c2": "c2", "t2": []interface{}{
+					map[string]interface{}{"c3": "d1"},
+					map[string]interface{}{"c3": "d2"},
+				}},
+			},
+		}, {
+			name: "2 level nested test case",
+			args: args{
+				table: "t1",
+				rows: []interface{}{
+					map[string]interface{}{"t1__tc1": "a11", "t1__tc2": "a12", "t2__tc3": "b11", "t3__tc4": "c11"},
+					map[string]interface{}{"t1__tc1": "a11", "t1__tc2": "a12", "t2__tc3": "b11", "t3__tc4": "c21"},
+					map[string]interface{}{"t1__tc1": "a11", "t1__tc2": "a12", "t2__tc3": "b21", "t3__tc4": "c11"},
+					map[string]interface{}{"t1__tc1": "a11", "t1__tc2": "a12", "t2__tc3": "b21", "t3__tc4": "c21"},
+
+					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b11", "t3__tc4": "c11"},
+					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b11", "t3__tc4": "c21"},
+					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b21", "t3__tc4": "c11"},
+					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b21", "t3__tc4": "c21"},
+				},
+				join: []model.JoinOption{{Table: "t2", Join: []model.JoinOption{{Table: "t3"}}}},
+			},
+			result: []interface{}{
+				map[string]interface{}{"tc1": "a11", "tc2": "a12", "t2": []interface{}{
+					map[string]interface{}{"tc3": "b11", "t3": []interface{}{
+						map[string]interface{}{"tc4": "c11"},
+						map[string]interface{}{"tc4": "c21"},
+					}},
+					map[string]interface{}{"tc3": "b21", "t3": []interface{}{
+						map[string]interface{}{"tc4": "c11"},
+						map[string]interface{}{"tc4": "c21"},
+					}},
+				}},
+				map[string]interface{}{"tc1": "a21", "tc2": "a22", "t2": []interface{}{
+					map[string]interface{}{"tc3": "b11", "t3": []interface{}{
+						map[string]interface{}{"tc4": "c11"},
+						map[string]interface{}{"tc4": "c21"},
+					}},
+					map[string]interface{}{"tc3": "b21", "t3": []interface{}{
+						map[string]interface{}{"tc4": "c11"},
+						map[string]interface{}{"tc4": "c21"},
+					}},
+				}},
+			},
+		}, {
+			name: "2 level nested parallel branch test case",
+			args: args{
+				table: "t1",
+				rows: []interface{}{
+					map[string]interface{}{"t1__tc1": "a11", "t1__tc2": "a12", "t2__tc3": "b11", "t3__tc4": "c11"},
+					map[string]interface{}{"t1__tc1": "a11", "t1__tc2": "a12", "t2__tc3": "b11", "t3__tc4": "c21"},
+					map[string]interface{}{"t1__tc1": "a11", "t1__tc2": "a12", "t2__tc3": "b21", "t3__tc4": "c11"},
+					map[string]interface{}{"t1__tc1": "a11", "t1__tc2": "a12", "t2__tc3": "b21", "t3__tc4": "c21"},
+
+					map[string]interface{}{"t1__tc1": "a11", "t1__tc2": "a12", "t2__tc3": "b11", "t3__tc4": "c11", "t4__tc5": "c11"},
+					map[string]interface{}{"t1__tc1": "a11", "t1__tc2": "a12", "t2__tc3": "b11", "t3__tc4": "c21", "t4__tc5": "c21"},
+
+					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b11", "t3__tc4": "c11"},
+					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b11", "t3__tc4": "c21"},
+					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b21", "t3__tc4": "c11"},
+					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b21", "t3__tc4": "c21"},
+				},
+				join: []model.JoinOption{{Table: "t2", Join: []model.JoinOption{{Table: "t3"}}}, {Table: "t4"}},
+			},
+			result: []interface{}{
+				map[string]interface{}{"tc1": "a11", "tc2": "a12", "t2": []interface{}{
+					map[string]interface{}{"tc3": "b11", "t3": []interface{}{
+						map[string]interface{}{"tc4": "c11"},
+						map[string]interface{}{"tc4": "c21"},
+					}},
+					map[string]interface{}{"tc3": "b21", "t3": []interface{}{
+						map[string]interface{}{"tc4": "c11"},
+						map[string]interface{}{"tc4": "c21"},
+					}},
+				}, "t4": []interface{}{
+					map[string]interface{}{"tc5": "c11"},
+					map[string]interface{}{"tc5": "c21"},
+				}},
+				map[string]interface{}{"tc1": "a21", "tc2": "a22", "t2": []interface{}{
+					map[string]interface{}{"tc3": "b11", "t3": []interface{}{
+						map[string]interface{}{"tc4": "c11"},
+						map[string]interface{}{"tc4": "c21"},
+					}},
+					map[string]interface{}{"tc3": "b21", "t3": []interface{}{
+						map[string]interface{}{"tc4": "c11"},
+						map[string]interface{}{"tc4": "c21"},
+					}},
+				}, "t4": []interface{}{}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fmt.Println()
+			fmt.Println()
+			fmt.Println()
+			finalArray := make([]interface{}, 0)
+			mapping := map[string]map[string]interface{}{}
+			for _, row := range tt.args.rows {
+				processRows([]string{tt.args.table}, tt.args.isAggregate, row.(map[string]interface{}), tt.args.join, mapping, &finalArray)
+			}
+
+			if !reflect.DeepEqual(finalArray, tt.result) {
+				j1, _ := json.MarshalIndent(finalArray, "", " ")
+				j2, _ := json.MarshalIndent(tt.result, "", " ")
+				t.Errorf("processRows() = %v; wanted = %v", string(j1), string(j2))
+			}
+		})
+	}
 }

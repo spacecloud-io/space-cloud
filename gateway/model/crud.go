@@ -32,10 +32,10 @@ type ReadOptions struct {
 
 // JoinOption describes the way a join needs to be performed
 type JoinOption struct {
-	Type  string                 `json:"type"`
-	Table string                 `json:"table"`
-	On    map[string]interface{} `json:"on"`
-	Join  []JoinOption           `json:"join"`
+	Type  string                 `json:"type" mapstructure:"type"`
+	Table string                 `json:"table" mapstructure:"table"`
+	On    map[string]interface{} `json:"on" mapstructure:"on"`
+	Join  []JoinOption           `json:"join" mapstructure:"join"`
 }
 
 // UpdateRequest is the http body received for an update request

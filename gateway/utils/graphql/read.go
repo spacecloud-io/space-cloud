@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/graphql-go/graphql/language/ast"
+	"github.com/mitchellh/mapstructure"
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -65,7 +67,12 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		return
 	}
 
-	selectionSet := graph.extractSelectionSet(field, dbAlias, col)
+	selectionSet, err := graph.extractSelectionSet(field, dbAlias, col, req.Options.Join, len(req.Options.Join) > 0, req.Options.ReturnType)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
 	if len(selectionSet) > 0 {
 		req.Options.Select = selectionSet
 	}
@@ -79,7 +86,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 
 	go func() {
 		//  batch operation cannot be performed with aggregation
-		req.IsBatch = !(len(req.Aggregate) > 0)
+		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0)
 		req.Options.HasOptions = hasOptions
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
 		_ = graph.auth.PostProcessMethod(ctx, actions, result)
@@ -176,11 +183,11 @@ func generateArguments(ctx context.Context, field *ast.Field, store utils.M) map
 	return obj
 }
 
-func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string) map[string]int32 {
+func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string, join []model.JoinOption, isJoin bool, returnType string) (map[string]int32, error) {
 	selectMap := map[string]int32{}
 	schemaFields, _ := graph.schema.GetSchema(dbAlias, col)
 	if field.SelectionSet == nil {
-		return nil
+		return nil, nil
 	}
 	for _, selection := range field.SelectionSet.Selections {
 		v := selection.(*ast.Field)
@@ -188,16 +195,49 @@ func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string) 
 		if v.Name.Value == utils.GraphQLAggregate || len(v.Directives) > 0 {
 			continue
 		}
+
+		joinTable, isJointTable := isJointTable(v.Name.Value, join)
+
 		if schemaFields != nil {
-			// skip linked fields
+			// skip linked fields but allow joint tables
 			fieldStruct, p := schemaFields[v.Name.Value]
-			if p && fieldStruct.IsLinked {
+			if p && fieldStruct.IsLinked && !isJointTable {
 				continue
 			}
 		}
-		selectMap[v.Name.Value] = 1
+
+		if isJointTable {
+			if v.SelectionSet == nil {
+				return nil, errors.New("joint tables cannot have an empty selection set")
+			}
+
+			m, err := graph.extractSelectionSet(v, dbAlias, joinTable.Table, joinTable.Join, isJoin, returnType)
+			if err != nil {
+				return nil, err
+			}
+
+			for k, v := range m {
+				selectMap[k] = v
+			}
+			continue
+		}
+
+		// Need to make thing
+		key := v.Name.Value
+		if isJoin {
+			if returnType == "table" {
+				arr := strings.Split(key, "__")
+				if len(arr) != 2 {
+					return nil, fmt.Errorf("field name must be of the format `table__column`")
+				}
+				key = arr[0] + "." + arr[1]
+			} else {
+				key = col + "." + key
+			}
+		}
+		selectMap[key] = 1
 	}
-	return selectMap
+	return selectMap, nil
 }
 
 func extractAggregate(ctx context.Context, v *ast.Field) (map[string][]string, error) {
@@ -235,7 +275,7 @@ func extractAggregate(ctx context.Context, v *ast.Field) (map[string][]string, e
 			// get column name
 			for _, selection := range functionField.SelectionSet.Selections {
 				columnField := selection.(*ast.Field)
-				colArray = append(colArray, columnField.Name.Value)
+				colArray = append(colArray, strings.Join(strings.Split(columnField.Name.Value, "__"), "."))
 			}
 			functionMap[functionField.Name.Value] = colArray
 		}
@@ -288,6 +328,31 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 	options := model.ReadOptions{}
 	for _, v := range args {
 		switch v.Name.Value {
+		case "join":
+			hasOptions = true
+
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
+			if err != nil {
+				return nil, hasOptions, err
+			}
+
+			join := make([]model.JoinOption, 0)
+			if err := mapstructure.Decode(temp, &join); err != nil {
+				return nil, hasOptions, err
+			}
+			options.Join = join
+		case "returnType":
+			// We won't set hasOptions to true for this one
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
+			if err != nil {
+				return nil, hasOptions, err
+			}
+
+			retType, ok := temp.(string)
+			if !ok {
+				return nil, hasOptions, fmt.Errorf("invalid type provided for returnType; expecting string got (%s)", reflect.TypeOf(temp))
+			}
+			options.ReturnType = retType
 		case "skip":
 			hasOptions = true // Set the flag to true
 
@@ -369,4 +434,14 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 		}
 	}
 	return &options, hasOptions, nil
+}
+
+func isJointTable(table string, join []model.JoinOption) (model.JoinOption, bool) {
+	for _, j := range join {
+		if j.Table == table {
+			return j, true
+		}
+	}
+
+	return model.JoinOption{}, false
 }
