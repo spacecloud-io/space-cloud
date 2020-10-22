@@ -357,6 +357,91 @@ func (s *Manager) HandleRunnerGetServiceRoutingRequest(admin *admin.Manager) htt
 	}
 }
 
+// HandleRunnerSetServiceRole handles requests of the runner
+func (s *Manager) HandleRunnerSetServiceRole(admin *admin.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		reqParams, err := admin.IsTokenValid(ctx, token, "service-roles", "modify", map[string]string{"project": projectID, "id": vars["serviceId"], "roleId": vars["roleId"]})
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		// Create a context of execution
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+
+		s.forwardRequestToRunner(ctx, w, r, admin, reqParams)
+	}
+}
+
+// HandleRunnerGetServiceRoleRequest handles requests of the runner
+func (s *Manager) HandleRunnerGetServiceRoleRequest(admin *admin.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		serviceID := r.URL.Query().Get("id")
+		if serviceID == "" {
+			serviceID = "*"
+		}
+
+		roleID := r.URL.Query().Get("roleId")
+		if roleID == "" {
+			roleID = "*"
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		reqParams, err := admin.IsTokenValid(ctx, token, "service-roles", "read", map[string]string{"project": projectID, "id": serviceID, "roleId": roleID})
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		// Create a context of execution
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+
+		s.forwardRequestToRunner(ctx, w, r, admin, reqParams)
+	}
+}
+
+// HandleRunnerDeleteServiceRole handles requests of the runner
+func (s *Manager) HandleRunnerDeleteServiceRole(admin *admin.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		reqParams, err := admin.IsTokenValid(ctx, token, "service-roles", "modify", map[string]string{"project": projectID, "id": vars["serviceId"], "roleId": vars["roleId"]})
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		// Create a context of execution
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+
+		s.forwardRequestToRunner(ctx, w, r, admin, reqParams)
+	}
+}
+
 // HandleRunnerGetServiceLogs handles requests of the runner
 func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
