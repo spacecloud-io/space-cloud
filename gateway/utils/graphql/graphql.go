@@ -151,7 +151,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 		field := node.(*ast.Field)
 
 		// No directive means its a nested field
-		if len(field.Directives) > 0 {
+		if len(field.Directives) > 0 && field.Directives[0].Name.Value != "aggregate" {
 			directive, err := graph.getDirectiveName(ctx, field.Directives[0], token, store)
 			if err != nil {
 				cb(nil, err)

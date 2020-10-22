@@ -29,7 +29,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
-	req.Aggregate, err = extractAggregate(ctx, field)
+	req.Aggregate, err = extractAggregate(ctx, field, store)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -139,7 +139,7 @@ func generateReadRequest(ctx context.Context, field *ast.Field, store utils.M) (
 		return nil, false, err
 	}
 
-	readRequest.Aggregate, err = extractAggregate(ctx, field)
+	readRequest.Aggregate, err = extractAggregate(ctx, field, store)
 	if err != nil {
 		return nil, false, err
 	}
@@ -240,7 +240,7 @@ func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string, 
 	return selectMap, nil
 }
 
-func extractAggregate(ctx context.Context, v *ast.Field) (map[string][]string, error) {
+func extractAggregate(ctx context.Context, v *ast.Field, store utils.M) (map[string][]string, error) {
 	functionMap := make(map[string][]string)
 	aggregateFound := false
 	if v.SelectionSet == nil {
@@ -248,9 +248,28 @@ func extractAggregate(ctx context.Context, v *ast.Field) (map[string][]string, e
 	}
 	for _, selection := range v.SelectionSet.Selections {
 		field := selection.(*ast.Field)
+
+		// Check if aggregate was found in the directive
+		if len(field.Directives) > 0 && field.Directives[0].Name.Value == "aggregate" {
+			// Get the required parameters
+			op, err := getAggregateArguments(field.Directives[0], store)
+			if err != nil {
+				return nil, err
+			}
+
+			colArray, ok := functionMap[op]
+			if !ok {
+				colArray = []string{}
+			}
+			colArray = append(colArray, strings.Join(strings.Split(field.Name.Value, "__"), ".")+":table")
+			functionMap[op] = colArray
+			continue
+		}
+
 		if field.Name.Value != utils.GraphQLAggregate || field.SelectionSet == nil {
 			continue
 		}
+
 		if aggregateFound {
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field", nil, nil)
 		}
@@ -281,6 +300,27 @@ func extractAggregate(ctx context.Context, v *ast.Field) (map[string][]string, e
 		}
 	}
 	return functionMap, nil
+}
+
+func getAggregateArguments(field *ast.Directive, store utils.M) (string, error) {
+	for _, arg := range field.Arguments {
+		switch arg.Name.Value {
+		case "op":
+			temp, err := utils.ParseGraphqlValue(arg.Value, store)
+			if err != nil {
+				return "", err
+			}
+
+			op, ok := temp.(string)
+			if !ok {
+				return "", fmt.Errorf("invalid type provided (%s) for aggregate op", reflect.TypeOf(temp))
+			}
+
+			return op, nil
+		}
+	}
+
+	return "", errors.New("need to provide `op` when using aggregations")
 }
 
 func extractGroupByClause(ctx context.Context, args []*ast.Argument, store utils.M) ([]interface{}, error) {

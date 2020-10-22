@@ -137,9 +137,22 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 	for _, colType := range types {
 		typeName := colType.DatabaseTypeName()
 		switch v := mapping[colType.Name()].(type) {
+		case string:
+			switch typeName {
+			case "JSON", "JSONB":
+				var val interface{}
+				if err := json.Unmarshal([]byte(v), &val); err == nil {
+					mapping[colType.Name()] = val
+				}
+			}
 		case []byte:
 			switch typeName {
-			case "VARCHAR", "TEXT", "JSON", "JSONB":
+			case "JSON", "JSONB":
+				var val interface{}
+				if err := json.Unmarshal(v, &val); err == nil {
+					mapping[colType.Name()] = val
+				}
+			case "VARCHAR", "TEXT":
 				val, ok := mapping[colType.Name()].([]byte)
 				if ok {
 					mapping[colType.Name()] = string(val)
@@ -185,7 +198,7 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 	}
 }
 
-func (s *SQL) processJoins(ctx context.Context, table string, query *goqu.SelectDataset, join []model.JoinOption) (*goqu.SelectDataset, error) {
+func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join []model.JoinOption) (*goqu.SelectDataset, error) {
 	for _, j := range join {
 		on, _ := s.generator(ctx, j.On, true)
 		switch j.Type {
@@ -202,7 +215,7 @@ func (s *SQL) processJoins(ctx context.Context, table string, query *goqu.Select
 		}
 
 		if j.Join != nil {
-			q, err := s.processJoins(ctx, j.Table, query, j.Join)
+			q, err := s.processJoins(ctx, query, j.Join)
 			if err != nil {
 				return nil, err
 			}

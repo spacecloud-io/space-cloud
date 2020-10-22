@@ -12,7 +12,7 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	_ "github.com/denisenkom/go-mssqldb"                // Import for MsSQL
-	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postfres
+	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
 
@@ -29,13 +29,13 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 
 	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getColName(col)).Prepared(true)
-	var tarr []string
+	var regexArr []string
 	if req.Find != nil {
 		// Get the where clause from query object
-		query, tarr = s.generateWhereClause(ctx, query, req.Find)
+		query, regexArr = s.generateWhereClause(ctx, query, req.Find)
 	}
 
-	selArray := []interface{}{}
+	selArray := make([]interface{}, 0)
 	if req.Options != nil {
 
 		isJoin := len(req.Options.Join) > 0
@@ -53,7 +53,8 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 					continue
 				}
 
-				selArray = append(selArray, goqu.I(key).As(strings.Join(strings.Split(key, "."), "__")))
+				arr := strings.Split(key, ".")
+				selArray = append(selArray, goqu.I(key).As(strings.Join(arr, "__")))
 			}
 		}
 		if req.Options.Skip != nil {
@@ -84,7 +85,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 			query = query.Order(orderBys...)
 		}
 
-		q, err := s.processJoins(ctx, col, query, req.Options.Join)
+		q, err := s.processJoins(ctx, query, req.Options.Join)
 		if err != nil {
 			return "", nil, err
 		}
@@ -105,16 +106,16 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	case utils.All:
 		for function, colArray := range req.Aggregate {
 			for _, column := range colArray {
-				asColumnName := generateAggregateAsColumnName(function, column)
+				asColumnName := getAggregateAsColumnName(function, column)
 				switch function {
 				case "sum":
-					selArray = append(selArray, goqu.SUM(column).As(asColumnName))
+					selArray = append(selArray, goqu.SUM(getAggregateColumnName(column)).As(asColumnName))
 				case "max":
-					selArray = append(selArray, goqu.MAX(column).As(asColumnName))
+					selArray = append(selArray, goqu.MAX(getAggregateColumnName(column)).As(asColumnName))
 				case "min":
-					selArray = append(selArray, goqu.MIN(column).As(asColumnName))
+					selArray = append(selArray, goqu.MIN(getAggregateColumnName(column)).As(asColumnName))
 				case "avg":
-					selArray = append(selArray, goqu.AVG(column).As(asColumnName))
+					selArray = append(selArray, goqu.AVG(getAggregateColumnName(column)).As(asColumnName))
 				case "count":
 					selArray = append(selArray, goqu.COUNT("*").As(asColumnName))
 				default:
@@ -124,6 +125,11 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		}
 		query = query.Select(selArray...)
 		if len(req.GroupBy) > 0 {
+			for _, group := range req.GroupBy {
+				if strings.Split(group.(string), ".")[0] != col && req.Options.ReturnType != "table" {
+					return "", nil, fmt.Errorf("use `returnType` `table` to perform group by on joint tables")
+				}
+			}
 			query = query.GroupBy(req.GroupBy...)
 		}
 	}
@@ -135,7 +141,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	}
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 
-	for _, v := range tarr {
+	for _, v := range regexArr {
 		switch s.dbType {
 		case "mysql":
 			vReplaced := strings.Replace(v, "=", "REGEXP", -1)
@@ -153,16 +159,27 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	return sqlString, args, nil
 }
 
-func generateAggregateAsColumnName(function, column string) string {
-	return fmt.Sprintf("%s___%s___%s", utils.GraphQLAggregate, function, strings.Join(strings.Split(column, "."), "__"))
+func getAggregateColumnName(column string) string {
+	return strings.Split(column, ":")[0]
 }
 
-func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
-	v := strings.Split(asColumnName, "___")
-	if len(v) != 3 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
-		return "", "", false
+func getAggregateAsColumnName(function, column string) string {
+	format := "nested"
+	arr := strings.Split(column, ":")
+	if len(arr) == 2 && arr[1] == "table" {
+		format = "table"
+		column = arr[0]
 	}
-	return v[1], v[2], true
+
+	return fmt.Sprintf("%s___%s___%s___%s", utils.GraphQLAggregate, format, function, strings.Join(strings.Split(column, "."), "__"))
+}
+
+func splitAggregateAsColumnName(asColumnName string) (format, functionName, columnName string, isAggregateColumn bool) {
+	v := strings.Split(asColumnName, "___")
+	if len(v) != 4 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
+		return "", "", "", false
+	}
+	return v[1], v[2], v[3], true
 }
 
 // Read query document(s) from the database
@@ -180,10 +197,10 @@ func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, exec
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Executing sql read query", map[string]interface{}{"sqlQuery": sqlString, "queryArgs": args})
 	}
 
-	return s.readexec(ctx, col, sqlString, args, executor, req)
+	return s.readExec(ctx, col, sqlString, args, executor, req)
 }
 
-func (s *SQL) readexec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, error) {
+func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, error) {
 	operation := req.Operation
 	isAggregate := len(req.Aggregate) > 0
 
@@ -248,7 +265,7 @@ func (s *SQL) readexec(ctx context.Context, col, sqlString string, args []interf
 		return 1, mapping, nil
 
 	case utils.All, utils.Distinct:
-		array := []interface{}{}
+		array := make([]interface{}, 0)
 		mapping := make(map[string]map[string]interface{})
 		var count int64
 		for rows.Next() {
@@ -285,9 +302,15 @@ func processAggregate(row, m map[string]interface{}, isAggregate bool) {
 	if isAggregate {
 		funcMap := map[string]interface{}{}
 		for asColumnName, value := range row {
-			functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
+			format, functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
 			if isAggregateColumn {
 				delete(row, asColumnName)
+
+				if format == "table" {
+					m[columnName] = value
+					continue
+				}
+
 				// check if function name already exists
 				funcValue, ok := funcMap[functionName]
 				if !ok {
