@@ -164,7 +164,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	// service role
 	runnerRouter.Methods(http.MethodPost).Path("/{project}/service-roles/{serviceId}/{roleId}").HandlerFunc(s.managers.Sync().HandleRunnerSetServiceRole(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/service-roles").HandlerFunc(s.managers.Sync().HandleRunnerGetServiceRoleRequest(s.managers.Admin()))
-	runnerRouter.Methods(http.MethodDelete).Path("/{project}/services-roles/{serviceId}/{roleId}").HandlerFunc(s.managers.Sync().HandleRunnerDeleteServiceRole(s.managers.Admin()))
+	runnerRouter.Methods(http.MethodDelete).Path("/{project}/service-roles/{serviceId}/{roleId}").HandlerFunc(s.managers.Sync().HandleRunnerDeleteServiceRole(s.managers.Admin()))
 
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/services/logs").HandlerFunc(s.managers.Sync().HandleRunnerGetServiceLogs(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/services/status").HandlerFunc(s.managers.Sync().HandleRunnerGetDeploymentStatus(s.managers.Admin()))

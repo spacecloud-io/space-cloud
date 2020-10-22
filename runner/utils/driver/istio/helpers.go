@@ -1060,13 +1060,13 @@ func (i *Istio) generateServiceRoleBinding(ctx context.Context, role *model.Role
 			{
 				Kind:     "ServiceAccount",
 				Name:     getServiceAccountName(role.Service),
-				APIGroup: role.Project, // For all service accounts in the "projectID" namespace:
+				APIGroup: "",
 			},
 		},
 		RoleRef: v12.RoleRef{
 			Kind:     "Role",
 			Name:     role.ID,
-			APIGroup: role.Project, // For all service accounts in the "projectID" namespace:
+			APIGroup: defaultAPIGroup,
 		},
 	}
 }
@@ -1107,9 +1107,10 @@ func (i *Istio) generateServiceClusterRoleBinding(ctx context.Context, role *mod
 		},
 		Subjects: []v12.Subject{
 			{
-				Kind:     "ServiceAccount",
-				Name:     getServiceAccountName(role.Service),
-				APIGroup: defaultAPIGroup,
+				Kind:      "ServiceAccount",
+				Name:      getServiceAccountName(role.Service),
+				APIGroup:  "",
+				Namespace: role.Project,
 			},
 		},
 		RoleRef: v12.RoleRef{
