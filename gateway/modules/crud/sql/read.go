@@ -139,6 +139,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	if err != nil {
 		return "", nil, err
 	}
+
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 
 	for _, v := range regexArr {
@@ -262,6 +263,11 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
 		}
 
+		processAggregate(mapping, mapping, isAggregate)
+		if req.PostProcess != nil {
+			_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], mapping)
+		}
+
 		return 1, mapping, nil
 
 	case utils.All, utils.Distinct:
@@ -285,11 +291,14 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 
 			if req.Options == nil || req.Options.ReturnType == "table" || len(req.Options.Join) == 0 {
 				processAggregate(row, row, isAggregate)
+				if req.PostProcess != nil {
+					_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], row)
+				}
 				array = append(array, row)
 				continue
 			}
 
-			processRows([]string{col}, isAggregate, row, req.Options.Join, mapping, &array)
+			s.processRows(ctx, []string{col}, isAggregate, row, req.Options.Join, mapping, &array, req.PostProcess)
 		}
 
 		return count, array, nil
@@ -332,7 +341,7 @@ func processAggregate(row, m map[string]interface{}, isAggregate bool) {
 		}
 	}
 }
-func processRows(table []string, isAggregate bool, row map[string]interface{}, join []model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}) {
+func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool, row map[string]interface{}, join []model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess) {
 	m := map[string]interface{}{}
 	keyMap := map[string]interface{}{}
 
@@ -355,11 +364,19 @@ func processRows(table []string, isAggregate bool, row map[string]interface{}, j
 
 	// Check if key exists in mapping. This can happen if the row has multiple
 	// sub rows else append self to final array.
+	var mapLength int
 	if m2, p := mapping[key]; p {
+		mapLength = len(m2)
 		m = m2
 	} else {
+		mapLength = len(m)
 		mapping[key] = m
 		*finalArray = append(*finalArray, m)
+
+		// Perform post processing
+		if postProcess != nil {
+			_ = s.auth.PostProcessMethod(ctx, postProcess[table[length]], m)
+		}
 
 		// Process aggregate field only if its the root table that we are processing
 		if length == 0 {
@@ -367,7 +384,7 @@ func processRows(table []string, isAggregate bool, row map[string]interface{}, j
 		}
 	}
 
-	if len(m) == 0 {
+	if mapLength == 0 {
 		return
 	}
 
@@ -383,7 +400,7 @@ func processRows(table []string, isAggregate bool, row map[string]interface{}, j
 		}
 
 		// Recursively call the same function again
-		processRows(append(table, j.Table), isAggregate, row, j.Join, mapping, &arr)
+		s.processRows(ctx, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess)
 		m[j.Table] = arr
 	}
 }

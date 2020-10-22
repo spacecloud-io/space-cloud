@@ -214,7 +214,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 						cb(nil, nil)
 						return
 					}
-					req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}}
+					req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}, PostProcess: map[string]*model.PostProcess{}}
 					graph.processLinkedResult(ctx, field, *fieldStruct, token, req, store, cb)
 					return
 				}

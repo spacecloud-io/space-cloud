@@ -9,8 +9,36 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
+
+func matchWhere(rule *config.Rule, args map[string]interface{}, stub model.ReturnWhereStub) error {
+	f1 := getRuleFieldForReturnWhere(rule.F1, args, stub, true)
+	f2 := getRuleFieldForReturnWhere(rule.F2, args, stub, false)
+
+	f1String := f1.(string)
+	switch rule.Eval {
+	case "==":
+		stub.Where[f1String] = map[string]interface{}{"$eq": f2}
+	case "!=":
+		stub.Where[f1String] = map[string]interface{}{"$ne": f2}
+	case "<":
+		stub.Where[f1String] = map[string]interface{}{"$lt": f2}
+	case "<=":
+		stub.Where[f1String] = map[string]interface{}{"$lte": f2}
+	case ">":
+		stub.Where[f1String] = map[string]interface{}{"$gt": f2}
+	case ">=":
+		stub.Where[f1String] = map[string]interface{}{"$gte": f2}
+	case "in":
+		stub.Where[f1String] = map[string]interface{}{"$in": f2}
+	case "notin":
+		stub.Where[f1String] = map[string]interface{}{"$nin": f2}
+	}
+
+	return nil
+}
 
 func matchString(ctx context.Context, rule *config.Rule, args map[string]interface{}) error {
 	var f2String []interface{}

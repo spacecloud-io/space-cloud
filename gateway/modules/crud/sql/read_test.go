@@ -2,8 +2,6 @@ package sql
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -717,19 +715,16 @@ func Test_processRows(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fmt.Println()
-			fmt.Println()
-			fmt.Println()
+			s := &SQL{}
+
 			finalArray := make([]interface{}, 0)
 			mapping := map[string]map[string]interface{}{}
 			for _, row := range tt.args.rows {
-				processRows([]string{tt.args.table}, tt.args.isAggregate, row.(map[string]interface{}), tt.args.join, mapping, &finalArray)
+				s.processRows(context.Background(), []string{tt.args.table}, tt.args.isAggregate, row.(map[string]interface{}), tt.args.join, mapping, &finalArray, nil)
 			}
 
 			if !reflect.DeepEqual(finalArray, tt.result) {
-				j1, _ := json.MarshalIndent(finalArray, "", " ")
-				j2, _ := json.MarshalIndent(tt.result, "", " ")
-				t.Errorf("processRows() = %v; wanted = %v", string(j1), string(j2))
+				t.Errorf("processRows() = %v; wanted = %v", finalArray, tt.result)
 			}
 		})
 	}

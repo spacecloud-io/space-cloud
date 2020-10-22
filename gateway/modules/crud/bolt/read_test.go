@@ -108,7 +108,7 @@ func TestBolt_Read(t *testing.T) {
 		},
 	}
 
-	b, err := Init(true, "read.db", "bucketName")
+	b, err := Init(true, "read.db", "bucketName", nil)
 	if err != nil {
 		t.Fatal("error initializing database")
 	}

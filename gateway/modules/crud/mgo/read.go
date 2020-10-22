@@ -2,6 +2,7 @@ package mgo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -15,8 +16,11 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// Read querys document(s) from the database
+// Read queries document(s) from the database
 func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
+	if req.Options != nil && len(req.Options.Join) > 0 {
+		return 0, nil, errors.New("cannot perform joins in mongo db")
+	}
 	collection := m.client.Database(m.dbName).Collection(col)
 
 	switch req.Operation {
@@ -144,6 +148,11 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			if len(req.Aggregate) > 0 {
 				getNestedObject(doc)
 			}
+
+			if req.PostProcess != nil {
+				_ = m.auth.PostProcessMethod(ctx, req.PostProcess[col], doc)
+			}
+
 			results = append(results, doc)
 		}
 
@@ -174,6 +183,10 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 		err := collection.FindOne(ctx, req.Find, findOneOptions).Decode(&res)
 		if err != nil {
 			return 0, nil, err
+		}
+
+		if req.PostProcess != nil {
+			_ = m.auth.PostProcessMethod(ctx, req.PostProcess[col], res)
 		}
 
 		return 1, res, nil

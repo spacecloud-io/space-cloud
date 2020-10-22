@@ -16,11 +16,12 @@ type Bolt struct {
 	connection string
 	bucketName string
 	client     *bbolt.DB
+	auth       model.AuthCrudInterface
 }
 
 // Init initialises a new bolt instance
-func Init(enabled bool, connection, bucketName string) (b *Bolt, err error) {
-	b = &Bolt{enabled: enabled, connection: connection, bucketName: bucketName}
+func Init(enabled bool, connection, bucketName string, auth model.AuthCrudInterface) (b *Bolt, err error) {
+	b = &Bolt{enabled: enabled, connection: connection, bucketName: bucketName, auth: auth}
 
 	if b.enabled {
 		err = b.connect()

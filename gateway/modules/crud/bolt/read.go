@@ -34,6 +34,9 @@ func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (in
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to unmarshal while reading from bbolt db", err, nil)
 				}
 				if utils.Validate(req.Find, result) {
+					if req.PostProcess != nil {
+						_ = b.auth.PostProcessMethod(ctx, req.PostProcess[col], result)
+					}
 					results = append(results, result)
 					count++
 					if req.Operation == utils.One {

@@ -2,6 +2,7 @@ package crud
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/dataloader"
@@ -62,6 +63,7 @@ func (holder *resultsHolder) fillResults(res []interface{}) {
 
 		docs := []interface{}{}
 		for _, doc := range res {
+			fmt.Println("Validate:", doc, whereClause)
 			if utils.Validate(whereClause.(map[string]interface{}), doc) {
 				docs = append(docs, doc)
 			}

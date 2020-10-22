@@ -85,7 +85,7 @@ func TestBolt_Delete(t *testing.T) {
 		},
 	}
 
-	b, err := Init(true, "delete.db", "bucketName")
+	b, err := Init(true, "delete.db", "bucketName", nil)
 	if err != nil {
 		t.Fatal("error initializing database")
 	}

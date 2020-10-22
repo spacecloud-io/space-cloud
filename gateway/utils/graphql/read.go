@@ -16,11 +16,20 @@ import (
 )
 
 func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field, dbAlias, col, token string, req *model.ReadRequest, store utils.M, cb dbCallback) {
+	dbType, _ := graph.crud.GetDBType(dbAlias)
 	// Check if read op is authorised
-	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
+	returnWhere := model.ReturnWhereStub{Col: col, PrefixColName: false, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}
+	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req, returnWhere)
 	if err != nil {
 		cb("", "", nil, err)
 		return
+	}
+	req.PostProcess[col] = actions
+
+	if len(returnWhere.Where) > 0 {
+		for k, v := range returnWhere.Where {
+			req.Find[k] = v
+		}
 	}
 
 	req.GroupBy, err = extractGroupByClause(ctx, field.Arguments, store)
@@ -43,7 +52,6 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		}
 		req.Options.HasOptions = false
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
-		_ = graph.auth.PostProcessMethod(ctx, actions, result)
 
 		cb(dbAlias, col, result, err)
 	}()
@@ -78,20 +86,51 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 	}
 
 	// Check if read op is authorised
-	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
+	dbType, _ := graph.crud.GetDBType(dbAlias)
+
+	returnWhere := model.ReturnWhereStub{Col: col, PrefixColName: len(req.Options.Join) > 0, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}
+	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req, returnWhere)
 	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+	for k, v := range returnWhere.Where {
+		req.Find[k] = v
+	}
+	req.PostProcess[col] = actions
+
+	if err := graph.runAuthForJoins(ctx, dbType, dbAlias, token, req, req.Options.Join); err != nil {
 		cb("", "", nil, err)
 		return
 	}
 
 	go func() {
-		//  batch operation cannot be performed with aggregation
-		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0)
+		//  batch operation cannot be performed with aggregation or joins or when post processing is applied
+		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0 || isPostProcessingEnabled(req.PostProcess))
 		req.Options.HasOptions = hasOptions
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
-		_ = graph.auth.PostProcessMethod(ctx, actions, result)
 		cb(dbAlias, col, result, err)
 	}()
+}
+
+func (graph *Module) runAuthForJoins(ctx context.Context, dbType, dbAlias, token string, req *model.ReadRequest, join []model.JoinOption) error {
+	for _, j := range join {
+		returnWhere := model.ReturnWhereStub{Col: j.Table, PrefixColName: len(req.Options.Join) > 0, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}
+		actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, j.Table, token, req, returnWhere)
+		if err != nil {
+			return err
+		}
+		for k, v := range returnWhere.Where {
+			req.Find[k] = v
+		}
+		req.PostProcess[j.Table] = actions
+
+		if err := graph.runAuthForJoins(ctx, dbType, dbAlias, token, req, j.Join); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
@@ -127,7 +166,7 @@ func generateReadRequest(ctx context.Context, field *ast.Field, store utils.M) (
 	var err error
 
 	// Create a read request object
-	readRequest := model.ReadRequest{Operation: utils.All, Options: new(model.ReadOptions)}
+	readRequest := model.ReadRequest{Operation: utils.All, Options: new(model.ReadOptions), PostProcess: map[string]*model.PostProcess{}}
 
 	readRequest.Find, err = ExtractWhereClause(ctx, field.Arguments, store)
 	if err != nil {

@@ -28,6 +28,7 @@ type Module struct {
 	alias   string
 	project string
 	schema  model.SchemaCrudInterface
+	auth    model.AuthCrudInterface
 	queries map[string]*config.PreparedQuery
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
@@ -77,6 +78,11 @@ func (m *Module) SetSchema(s model.SchemaCrudInterface) {
 	m.schema = s
 }
 
+// SetAuth sets the auth module
+func (m *Module) SetAuth(a model.AuthCrudInterface) {
+	m.auth = a
+}
+
 // SetHooks sets the internal hooks
 func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHook) {
 	m.hooks = hooks
@@ -86,11 +92,11 @@ func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHoo
 func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName string) (Crud, error) {
 	switch dbType {
 	case model.Mongo:
-		return mgo.Init(enabled, connection, dbName)
+		return mgo.Init(enabled, connection, dbName, m.auth)
 	case model.EmbeddedDB:
-		return bolt.Init(enabled, connection, dbName)
+		return bolt.Init(enabled, connection, dbName, m.auth)
 	case model.MySQL, model.Postgres, model.SQLServer:
-		c, err := sql.Init(dbType, enabled, connection, dbName)
+		c, err := sql.Init(dbType, enabled, connection, dbName, m.auth)
 		if err == nil && enabled {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -99,7 +105,7 @@ func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName
 			}
 		}
 		if dbType == model.MySQL {
-			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, dbName), dbName)
+			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, dbName), dbName, m.auth)
 		}
 		return c, err
 	default:

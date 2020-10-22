@@ -58,7 +58,7 @@ func (m *mockGraphQLAuthInterface) IsCreateOpAuthorised(ctx context.Context, pro
 	args := m.Called(ctx, project, dbAlias, col, token, req)
 	return args.Get(0).(model.RequestParams), args.Error(1)
 }
-func (m *mockGraphQLAuthInterface) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*model.PostProcess, model.RequestParams, error) {
+func (m *mockGraphQLAuthInterface) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest, stub model.ReturnWhereStub) (*model.PostProcess, model.RequestParams, error) {
 	args := m.Called(ctx, project, dbAlias, col, token, req)
 	return args.Get(0).(*model.PostProcess), args.Get(1).(model.RequestParams), args.Error(2)
 }
