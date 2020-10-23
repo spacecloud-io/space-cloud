@@ -84,6 +84,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/routing/ingress").HandlerFunc(handlers.HandleGetProjectRoute(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/ingress/global").HandlerFunc(handlers.HandleSetGlobalRouteConfig(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/ingress/global").HandlerFunc(handlers.HandleDeleteGlobalRouteConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/routing/ingress/global").HandlerFunc(handlers.HandleGetGlobalRouteConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleSetProjectRoute(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.managers.Admin(), s.managers.Sync()))
