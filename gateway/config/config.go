@@ -88,6 +88,13 @@ type ProjectConfig struct {
 	ContextTimeGraphQL int       `json:"contextTimeGraphQL,omitempty" yaml:"contextTimeGraphQL,omitempty"` // contextTime sets the timeout of query
 }
 
+type DriverConfig struct {
+	MaxConn        int    //for SQL and Mongo
+	MaxIdleTimeout int    //for SQL and Mongo
+	MinConn        uint64 //only for Mongo
+	MaxIdleConn    int    //only for SQL
+}
+
 // DatabaseConfig stores information of database config
 type DatabaseConfig struct {
 	DbAlias      string `json:"dbAlias,omitempty" yaml:"dbAlias"`
@@ -99,6 +106,7 @@ type DatabaseConfig struct {
 	BatchTime    int    `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
 	BatchRecords int    `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
 	Limit        int64  `json:"limit,omitempty" yaml:"limit"`               // indicates number of records to send per request
+	DriverConf   DriverConfig
 }
 
 // DatabaseSchema stores information of db schemas

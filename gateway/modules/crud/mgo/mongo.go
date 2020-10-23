@@ -3,6 +3,7 @@ package mgo
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -21,11 +23,12 @@ type Mongo struct {
 	connection      string
 	dbName          string
 	client          *mongo.Client
+	driverConf      config.DriverConfig
 }
 
 // Init initialises a new mongo instance
-func Init(enabled bool, connection, dbName string) (mongoStub *Mongo, err error) {
-	mongoStub = &Mongo{dbName: dbName, enabled: enabled, connection: connection, client: nil}
+func Init(enabled bool, connection, dbName string, driverConf config.DriverConfig) (mongoStub *Mongo, err error) {
+	mongoStub = &Mongo{dbName: dbName, enabled: enabled, connection: connection, client: nil, driverConf: driverConf}
 
 	if mongoStub.enabled {
 		err = mongoStub.connect()
@@ -44,8 +47,8 @@ func (m *Mongo) Close() error {
 }
 
 // IsSame checks if we've got the same connection string
-func (m *Mongo) IsSame(conn, dbName string) bool {
-	return strings.HasPrefix(m.connection, conn) && dbName == m.dbName
+func (m *Mongo) IsSame(conn, dbName string, driverConf config.DriverConfig) bool {
+	return ((strings.HasPrefix(m.connection, conn)) && (dbName == m.dbName) && (driverConf.MaxConn == m.driverConf.MaxConn) && (driverConf.MaxIdleTimeout == m.driverConf.MaxIdleTimeout) && (driverConf.MinConn == m.driverConf.MinConn))
 }
 
 // IsClientSafe checks whether database is enabled and connected
@@ -70,7 +73,16 @@ func (m *Mongo) connect() error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
 	defer cancel()
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(m.connection))
+	opts := options.Client().ApplyURI(m.connection)
+	opts = opts.SetMaxPoolSize((uint64)(m.driverConf.MaxConn))
+	duration, err := time.ParseDuration(strconv.Itoa(m.driverConf.MaxIdleTimeout) + "ms")
+	if err != nil {
+		return err
+	}
+	opts = opts.SetMaxConnIdleTime(duration)
+	opts = opts.SetMinPoolSize(m.driverConf.MinConn)
+	client, err := mongo.NewClient(opts)
+
 	if err != nil {
 		return err
 	}
