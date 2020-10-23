@@ -36,6 +36,31 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 	return http.StatusOK, nil
 }
 
+// DeleteFileStore deletes the file store module
+func (s *Manager) DeleteFileStore(ctx context.Context, project string, params model.RequestParams) (int, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	projectConfig.FileStoreConfig = &config.FileStoreConfig{}
+
+	if err := s.modules.SetFileStoreConfig(ctx, project, projectConfig.FileStoreConfig); err != nil {
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting file store config", err, nil)
+	}
+
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceFileStoreConfig, "filestore")
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
 // SetFileRule sets the rule for file store
 func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *config.FileRule, params model.RequestParams) (int, error) {
 	// Acquire a lock

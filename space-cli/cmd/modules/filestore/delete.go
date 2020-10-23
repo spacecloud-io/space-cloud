@@ -40,7 +40,7 @@ func deleteFileStoreRule(project, prefix string) error {
 		return err
 	}
 
-	// Delete the filestore config from the server
+	// Delete the filestore rule from the server
 	url := fmt.Sprintf("/v1/config/projects/%s/file-storage/rules/%s", project, prefix)
 
 	payload := new(model.Response)

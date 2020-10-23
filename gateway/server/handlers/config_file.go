@@ -54,6 +54,37 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 	}
 }
 
+// HandleDeleteFileStore delete the file storage config
+func HandleDeleteFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
+
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-config", "modify", map[string]string{"project": projectID})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+		status, err := syncMan.DeleteFileStore(ctx, projectID, reqParams)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
+	}
+}
+
 // HandleGetFileStore returns handler to get file store
 func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

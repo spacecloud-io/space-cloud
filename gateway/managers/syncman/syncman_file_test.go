@@ -3,13 +3,13 @@ package syncman
 import (
 	"context"
 	"errors"
+	"net/http"
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestManager_SetFileStore(t *testing.T) {
@@ -414,6 +414,167 @@ func TestManager_GetFileStoreRules(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Manager.GetFileStoreRules() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestManager_DeleteFileStore(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		ctx     context.Context
+		project string
+	}
+	tests := []struct {
+		name            string
+		s               *Manager
+		args            args
+		modulesMockArgs []mockArgs
+		storeMockArgs   []mockArgs
+		want            int
+		wantErr         bool
+	}{
+		{
+			name: "Unable to get project config",
+			s: &Manager{
+				clusterID: "clusterID",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myProject": &config.Project{
+							FileStoreConfig: &config.FileStoreConfig{
+								Enabled:   true,
+								StoreType: "local",
+							},
+						},
+					},
+				},
+			},
+			args:    args{ctx: context.Background(), project: "notMyProject"},
+			want:    http.StatusBadRequest,
+			wantErr: true,
+		},
+		{
+			name: "Unable to set file store config",
+			s: &Manager{
+				clusterID: "clusterID",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myProject": &config.Project{
+							FileStoreConfig: &config.FileStoreConfig{
+								Enabled:   true,
+								StoreType: "local",
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myProject"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetFileStoreConfig",
+					args:           []interface{}{context.Background(), "myProject", &config.FileStoreConfig{}},
+					paramsReturned: []interface{}{errors.New("cannot get secrets from runner")},
+				},
+			},
+			want:    http.StatusInternalServerError,
+			wantErr: true,
+		},
+		{
+			name: "Unable to delete resource",
+			s: &Manager{
+				clusterID: "clusterID",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myProject": &config.Project{
+							FileStoreConfig: &config.FileStoreConfig{
+								Enabled:   true,
+								StoreType: "local",
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myProject"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetFileStoreConfig",
+					args:           []interface{}{context.Background(), "myProject", &config.FileStoreConfig{}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "DeleteResource",
+					args:           []interface{}{context.Background(), config.GenerateResourceID("clusterID", "myProject", config.ResourceFileStoreConfig, "filestore")},
+					paramsReturned: []interface{}{errors.New("unable to get filestore config")},
+				},
+			},
+			want:    http.StatusInternalServerError,
+			wantErr: true,
+		},
+		{
+			name: "File store config deleted successfully",
+			s: &Manager{
+				clusterID: "clusterID",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myProject": &config.Project{
+							FileStoreConfig: &config.FileStoreConfig{
+								Enabled:   true,
+								StoreType: "local",
+							},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), project: "myProject"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetFileStoreConfig",
+					args:           []interface{}{context.Background(), "myProject", &config.FileStoreConfig{}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "DeleteResource",
+					args:           []interface{}{context.Background(), config.GenerateResourceID("clusterID", "myProject", config.ResourceFileStoreConfig, "filestore")},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			want: http.StatusOK,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockModules := mockModulesInterface{}
+			mockStore := mockStoreInterface{}
+
+			for _, m := range tt.modulesMockArgs {
+				mockModules.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.storeMockArgs {
+				mockStore.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			tt.s.modules = &mockModules
+			tt.s.store = &mockStore
+
+			got, err := tt.s.DeleteFileStore(tt.args.ctx, tt.args.project, model.RequestParams{})
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Manager.DeleteFileStore() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Manager.DeleteFileStore() = %v, want %v", got, tt.want)
+			}
+
+			mockModules.AssertExpectations(t)
+			mockStore.AssertExpectations(t)
 		})
 	}
 }
