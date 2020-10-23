@@ -88,6 +88,7 @@ type ProjectConfig struct {
 	ContextTimeGraphQL int       `json:"contextTimeGraphQL,omitempty" yaml:"contextTimeGraphQL,omitempty"` // contextTime sets the timeout of query
 }
 
+// DriverConfig stores the parameters for drivers of Databases.
 type DriverConfig struct {
 	MaxConn        int    //for SQL and Mongo
 	MaxIdleTimeout int    //for SQL and Mongo
