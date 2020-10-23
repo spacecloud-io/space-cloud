@@ -24,7 +24,7 @@ func deleteIngressGlobalConfig(project string) error {
 
 func deleteIngressRoute(project, prefix string) error {
 
-	objs, err := GetIngressRoutes(project, "ingress-route", map[string]string{})
+	objs, err := GetIngressRoutes(project, "ingress-route", map[string]string{}, []string{})
 	if err != nil {
 		return err
 	}
