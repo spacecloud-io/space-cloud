@@ -338,7 +338,7 @@ func (i *Istio) GetServiceRole(ctx context.Context, projectID string) (map[strin
 		Role.ID = role.Name
 		Role.Project = role.Namespace
 		Role.Service = serviceID
-		Role.Type = "Project"
+		Role.Type = model.ServiceRoleProject
 		Rules := make([]model.Rule, 0)
 		for _, rule := range role.Rules {
 			Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
@@ -353,7 +353,7 @@ func (i *Istio) GetServiceRole(ctx context.Context, projectID string) (map[strin
 		Role.ID = role.Name
 		Role.Project = projectID
 		Role.Service = serviceID
-		Role.Type = "Cluster"
+		Role.Type = model.ServiceRoleCluster
 		Rules := make([]model.Rule, 0)
 		for _, rule := range role.Rules {
 			Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
