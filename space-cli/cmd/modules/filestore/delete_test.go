@@ -103,7 +103,7 @@ func Test_deleteFileStoreRule(t *testing.T) {
 		wantErr           bool
 	}{
 		{
-			name: "Unable to get db schemas",
+			name: "Unable to get filestore rules",
 			args: args{project: "myproject", prefix: "local-admin"},
 			transportMockArgs: []mockArgs{
 				{
