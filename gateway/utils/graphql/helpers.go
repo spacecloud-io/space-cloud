@@ -342,6 +342,9 @@ func addFieldPath(store utils.M, field string) {
 
 func isPostProcessingEnabled(actions map[string]*model.PostProcess) bool {
 	for _, v := range actions {
+		if v == nil {
+			continue
+		}
 		if len(v.PostProcessAction) > 0 {
 			return true
 		}

@@ -55,7 +55,16 @@ func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, 
 		return nil, model.RequestParams{}, err
 	}
 
-	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
+	opts := map[string]interface{}{}
+	if req.Options != nil {
+		if req.Options.Limit != nil {
+			opts["limit"] = *req.Options.Limit
+		}
+		if req.Options.Skip != nil {
+			opts["skip"] = *req.Options.Skip
+		}
+	}
+	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token, "opts": opts}
 	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, stub)
 	if err != nil {
 		return nil, model.RequestParams{}, err
