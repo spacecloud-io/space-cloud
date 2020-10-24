@@ -170,6 +170,7 @@ func (m *Module) SetMakeHTTPRequest(function utils.TypeMakeHTTPRequest) {
 	m.makeHTTPRequest = function
 }
 
+// CloseConfig closes go routines and initializes maps
 func (m *Module) CloseConfig() {
 	m.Lock()
 	defer m.Unlock()
