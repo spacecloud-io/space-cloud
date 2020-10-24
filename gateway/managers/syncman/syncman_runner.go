@@ -368,7 +368,7 @@ func (s *Manager) HandleRunnerSetServiceRole(admin *admin.Manager) http.HandlerF
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		reqParams, err := admin.IsTokenValid(ctx, token, "service-roles", "modify", map[string]string{"project": projectID, "id": vars["serviceId"], "roleId": vars["roleId"]})
+		reqParams, err := admin.IsTokenValid(ctx, token, "service-role", "modify", map[string]string{"project": projectID, "serviceId": vars["serviceId"], "id": vars["roleId"]})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
@@ -403,7 +403,7 @@ func (s *Manager) HandleRunnerGetServiceRoleRequest(admin *admin.Manager) http.H
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		reqParams, err := admin.IsTokenValid(ctx, token, "service-roles", "read", map[string]string{"project": projectID, "id": serviceID, "roleId": roleID})
+		reqParams, err := admin.IsTokenValid(ctx, token, "service-role", "read", map[string]string{"project": projectID, "serviceId": serviceID, "id": roleID})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
@@ -428,7 +428,7 @@ func (s *Manager) HandleRunnerDeleteServiceRole(admin *admin.Manager) http.Handl
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		reqParams, err := admin.IsTokenValid(ctx, token, "service-roles", "modify", map[string]string{"project": projectID, "id": vars["serviceId"], "roleId": vars["roleId"]})
+		reqParams, err := admin.IsTokenValid(ctx, token, "service-role", "modify", map[string]string{"project": projectID, "serviceId": vars["serviceId"], "id": vars["roleId"]})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())

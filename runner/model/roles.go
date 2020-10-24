@@ -5,7 +5,7 @@ type Role struct {
 	ID      string `json:"id" yaml:"id"`
 	Project string `json:"project" yaml:"project"`
 	Service string `json:"service" yaml:"service"`
-	Type    string `json:"type" yaml:"type"`
+	Type    string `json:"type" yaml:"type"` // Can be `project` or `cluster`
 	Rules   []Rule `json:"rules" yaml:"rules"`
 }
 
@@ -17,7 +17,7 @@ type Rule struct {
 }
 
 // ServiceRoleProject is used to provide Type Project to role
-const ServiceRoleProject string = "Project"
+const ServiceRoleProject string = "project"
 
 // ServiceRoleCluster is used to provide Type Cluster to role
-const ServiceRoleCluster string = "Cluster"
+const ServiceRoleCluster string = "cluster"

@@ -1020,13 +1020,7 @@ func getDefaultAutoScaleConfig() *model.AutoScaleConfig {
 	}
 }
 
-func (i *Istio) generateServiceRole(ctx context.Context, role *model.Role) *v12.Role {
-	labels := make(map[string]string)
-	labels["app"] = role.Service
-	labels["app.kubernetes.io/name"] = role.Service
-	labels["app.kubernetes.io/managed-by"] = "space-cloud"
-	labels["space-cloud.io/version"] = model.Version
-
+func (i *Istio) generateServiceRole(ctx context.Context, role *model.Role) (*v12.Role, *v12.RoleBinding) {
 	rules := make([]v12.PolicyRule, 0)
 	for _, rule := range role.Rules {
 		rules = append(rules, v12.PolicyRule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
@@ -1034,50 +1028,35 @@ func (i *Istio) generateServiceRole(ctx context.Context, role *model.Role) *v12.
 	}
 
 	return &v12.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      role.ID,
-			Namespace: role.Project,
-			Labels:    labels,
-		},
-		Rules: rules,
-	}
-}
-
-func (i *Istio) generateServiceRoleBinding(ctx context.Context, role *model.Role) *v12.RoleBinding {
-	labels := make(map[string]string)
-	labels["app"] = role.Service
-	labels["app.kubernetes.io/name"] = role.Service
-	labels["app.kubernetes.io/managed-by"] = "space-cloud"
-	labels["space-cloud.io/version"] = model.Version
-
-	return &v12.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      role.ID,
-			Namespace: role.Project,
-			Labels:    labels,
-		},
-		Subjects: []v12.Subject{
-			{
-				Kind:     "ServiceAccount",
-				Name:     getServiceAccountName(role.Service),
-				APIGroup: "",
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      role.ID,
+				Namespace: role.Project,
+				Labels:    i.generateServiceRoleLabels(role),
 			},
-		},
-		RoleRef: v12.RoleRef{
-			Kind:     "Role",
-			Name:     role.ID,
-			APIGroup: defaultAPIGroup,
-		},
-	}
+			Rules: rules,
+		}, &v12.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      role.ID,
+				Namespace: role.Project,
+				Labels:    i.generateServiceRoleLabels(role),
+			},
+			Subjects: []v12.Subject{
+				{
+					Kind:     "ServiceAccount",
+					Name:     getServiceAccountName(role.Service),
+					APIGroup: "",
+				},
+			},
+			RoleRef: v12.RoleRef{
+				Kind:     "Role",
+				Name:     role.ID,
+				APIGroup: defaultAPIGroup,
+			},
+		}
+
 }
 
-func (i *Istio) generateServiceClusterRole(ctx context.Context, role *model.Role) *v12.ClusterRole {
-	labels := make(map[string]string)
-	labels["app"] = role.Service
-	labels["app.kubernetes.io/name"] = role.Service
-	labels["app.kubernetes.io/managed-by"] = "space-cloud"
-	labels["space-cloud.io/version"] = model.Version
-
+func (i *Istio) generateServiceClusterRole(ctx context.Context, role *model.Role) (*v12.ClusterRole, *v12.ClusterRoleBinding) {
 	rules := make([]v12.PolicyRule, 0)
 	for _, rule := range role.Rules {
 		rules = append(rules, v12.PolicyRule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
@@ -1085,38 +1064,37 @@ func (i *Istio) generateServiceClusterRole(ctx context.Context, role *model.Role
 	}
 
 	return &v12.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   role.ID,
-			Labels: labels,
-		},
-		Rules: rules,
-	}
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   role.ID,
+				Labels: i.generateServiceRoleLabels(role),
+			},
+			Rules: rules,
+		}, &v12.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   role.ID,
+				Labels: i.generateServiceRoleLabels(role),
+			},
+			Subjects: []v12.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      getServiceAccountName(role.Service),
+					APIGroup:  "",
+					Namespace: role.Project,
+				},
+			},
+			RoleRef: v12.RoleRef{
+				Kind:     "ClusterRole",
+				Name:     role.ID,
+				APIGroup: defaultAPIGroup,
+			},
+		}
 }
 
-func (i *Istio) generateServiceClusterRoleBinding(ctx context.Context, role *model.Role) *v12.ClusterRoleBinding {
+func (i *Istio) generateServiceRoleLabels(role *model.Role) map[string]string {
 	labels := make(map[string]string)
 	labels["app"] = role.Service
 	labels["app.kubernetes.io/name"] = role.Service
 	labels["app.kubernetes.io/managed-by"] = "space-cloud"
 	labels["space-cloud.io/version"] = model.Version
-
-	return &v12.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   role.ID,
-			Labels: labels,
-		},
-		Subjects: []v12.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      getServiceAccountName(role.Service),
-				APIGroup:  "",
-				Namespace: role.Project,
-			},
-		},
-		RoleRef: v12.RoleRef{
-			Kind:     "ClusterRole",
-			Name:     role.ID,
-			APIGroup: defaultAPIGroup,
-		},
-	}
+	return labels
 }

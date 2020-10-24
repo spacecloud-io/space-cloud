@@ -78,7 +78,7 @@ func (i *Istio) deleteKedaConfig(ctx context.Context, projectID, serviceID, vers
 
 func (i *Istio) deleteServiceRoleIfExist(ctx context.Context, projectID, serviceID, id string) error {
 	if id == "*" {
-		rolelist, err := i.kube.RbacV1().Roles(projectID).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+		rolelist, err := i.kube.RbacV1().Roles(projectID).List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("app.kubernetes.io/managed-by=space-cloud,app=%s", serviceID)})
 		if err != nil {
 			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list roles in project (%s)", projectID), err, nil)
 		}
@@ -93,7 +93,7 @@ func (i *Istio) deleteServiceRoleIfExist(ctx context.Context, projectID, service
 			}
 		}
 
-		clusterRoleList, err := i.kube.RbacV1().ClusterRoles().List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+		clusterRoleList, err := i.kube.RbacV1().ClusterRoles().List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("app.kubernetes.io/managed-by=space-cloud,app=%s", serviceID)})
 		if err != nil {
 			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list cluster roles in project (%s)", projectID), err, nil)
 		}

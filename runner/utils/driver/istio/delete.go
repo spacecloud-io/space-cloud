@@ -17,7 +17,7 @@ func (i *Istio) DeleteService(ctx context.Context, projectID, serviceID, version
 
 	// TODO: this could turn out to be a problem when two delete requests for the same service come in simultaneously
 	if count == 1 {
-		if err := i.DeleteServiceRole(ctx, projectID, serviceID, "*"); err != nil {
+		if err := i.deleteServiceRoleIfExist(ctx, projectID, serviceID, "*"); err != nil {
 			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Could not delete service - service role could not be deleted", err, nil)
 		}
 		if err := i.deleteServiceAccountIfExist(ctx, projectID, serviceID); err != nil {
@@ -58,8 +58,5 @@ func (i *Istio) DeleteService(ctx context.Context, projectID, serviceID, version
 
 // DeleteServiceRole deletes a service role
 func (i *Istio) DeleteServiceRole(ctx context.Context, projectID, serviceID, id string) error {
-	if err := i.deleteServiceRoleIfExist(ctx, projectID, serviceID, id); err != nil {
-		return err
-	}
-	return nil
+	return i.deleteServiceRoleIfExist(ctx, projectID, serviceID, id)
 }
