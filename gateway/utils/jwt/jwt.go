@@ -35,7 +35,7 @@ const defaultRefreshTime = 1 * time.Hour
 
 // New initializes the package
 func New() *JWT {
-	ch := make(chan struct{})
+	ch := make(chan struct{}, 1)
 	j := &JWT{
 		staticSecrets:        map[string]*config.Secret{},
 		jwkSecrets:           map[string]*jwkSecret{},
