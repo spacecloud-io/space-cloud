@@ -282,6 +282,7 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			if err != nil {
 				return 0, nil, err
 			}
+
 			switch s.GetDBType() {
 			case model.MySQL, model.Postgres, model.SQLServer:
 				mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, row)

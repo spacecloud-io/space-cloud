@@ -202,10 +202,10 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 				}
 			}
 		case time.Time:
-			mapping[colType.Name()] = v.UTC().Format(time.RFC3339)
+			mapping[colType.Name()] = v.UTC().Format(time.RFC3339Nano)
 
 		case primitive.DateTime:
-			mapping[colType.Name()] = v.Time().UTC().Format(time.RFC3339)
+			mapping[colType.Name()] = v.Time().UTC().Format(time.RFC3339Nano)
 		}
 	}
 }
