@@ -17,7 +17,7 @@ func (graph *Module) generateUpdateReq(ctx context.Context, field *ast.Field, to
 	}
 
 	col := strings.TrimPrefix(field.Name.Value, "update_")
-	req, err := generateUpdateRequest(ctx, field, store)
+	req, err := generateUpdateRequest(field, store)
 	if err != nil {
 		return model.RequestParams{}, nil, err
 	}
@@ -33,7 +33,7 @@ func generateUpdateAllRequest(req *model.UpdateRequest) *model.AllRequest {
 	return &model.AllRequest{Operation: req.Operation, Find: req.Find, Update: req.Update}
 }
 
-func extractUpdateOperation(ctx context.Context, args []*ast.Argument, store utils.M) (string, error) {
+func extractUpdateOperation(args []*ast.Argument, store utils.M) (string, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "op":
@@ -51,21 +51,21 @@ func extractUpdateOperation(ctx context.Context, args []*ast.Argument, store uti
 	return utils.All, nil
 }
 
-func generateUpdateRequest(ctx context.Context, field *ast.Field, store utils.M) (*model.UpdateRequest, error) {
+func generateUpdateRequest(field *ast.Field, store utils.M) (*model.UpdateRequest, error) {
 	var err error
 	var updateRequest model.UpdateRequest
 
-	updateRequest.Operation, err = extractUpdateOperation(ctx, field.Arguments, store)
+	updateRequest.Operation, err = extractUpdateOperation(field.Arguments, store)
 	if err != nil {
 		return nil, err
 	}
 
-	updateRequest.Find, err = ExtractWhereClause(ctx, field.Arguments, store)
+	updateRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
 		return nil, err
 	}
 
-	updateRequest.Update, err = extractUpdateArgs(ctx, field.Arguments, store)
+	updateRequest.Update, err = extractUpdateArgs(field.Arguments, store)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func generateUpdateRequest(ctx context.Context, field *ast.Field, store utils.M)
 	return &updateRequest, nil
 }
 
-func extractUpdateArgs(ctx context.Context, args []*ast.Argument, store utils.M) (utils.M, error) {
+func extractUpdateArgs(args []*ast.Argument, store utils.M) (utils.M, error) {
 	t := map[string]interface{}{}
 	for _, v := range args {
 		switch v.Name.Value {

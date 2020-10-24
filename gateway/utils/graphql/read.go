@@ -169,7 +169,7 @@ func generateReadRequest(ctx context.Context, field *ast.Field, store utils.M) (
 	// Create a read request object
 	readRequest := model.ReadRequest{Operation: utils.All, Options: new(model.ReadOptions), PostProcess: map[string]*model.PostProcess{}}
 
-	readRequest.Find, err = ExtractWhereClause(ctx, field.Arguments, store)
+	readRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
 		return nil, false, err
 	}
@@ -382,7 +382,7 @@ func extractGroupByClause(ctx context.Context, args []*ast.Argument, store utils
 }
 
 // ExtractWhereClause return the where arg of graphql schema
-func ExtractWhereClause(ctx context.Context, args []*ast.Argument, store utils.M) (map[string]interface{}, error) {
+func ExtractWhereClause(args []*ast.Argument, store utils.M) (map[string]interface{}, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "where":
@@ -396,7 +396,7 @@ func ExtractWhereClause(ctx context.Context, args []*ast.Argument, store utils.M
 			if obj, ok := temp.(map[string]interface{}); ok {
 				return obj, nil
 			}
-			return nil, errors.New("Invalid where clause provided")
+			return nil, errors.New("invalid where clause provided")
 		}
 	}
 
@@ -507,7 +507,7 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 
 			tempString, ok := temp.(string)
 			if !ok {
-				return nil, hasOptions, errors.New("Invalid type for distinct")
+				return nil, hasOptions, fmt.Errorf("invalid type (%s) for distinct", reflect.TypeOf(temp))
 			}
 
 			options.Distinct = &tempString
