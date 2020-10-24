@@ -85,7 +85,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			functionsMap := make(bson.M)
 			for function, colArray := range req.Aggregate {
 				for _, column := range colArray {
-					asColumnName := generateAggregateAsColumnName(function, column)
+					asColumnName := getAggregateAsColumnName(function, column)
 					switch function {
 					case "sum":
 						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
@@ -293,27 +293,39 @@ func getOptionStage(options *model.ReadOptions, sortFields []string) []bson.M {
 	return optionStage
 }
 
-func generateAggregateAsColumnName(function, column string) string {
-	return fmt.Sprintf("%s__%s__%s", utils.GraphQLAggregate, function, column)
+func getAggregateAsColumnName(function, column string) string {
+	format := "nested"
+	arr := strings.Split(column, ":")
+	if len(arr) == 2 && arr[1] == "table" {
+		format = "table"
+		column = arr[0]
+	}
+
+	return fmt.Sprintf("%s___%s___%s___%s", utils.GraphQLAggregate, format, function, strings.Join(strings.Split(column, "."), "__"))
 }
 
-func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
-	v := strings.Split(asColumnName, "__")
-	if len(v) != 3 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
-		return "", "", false
+func splitAggregateAsColumnName(asColumnName string) (format, functionName, columnName string, isAggregateColumn bool) {
+	v := strings.Split(asColumnName, "___")
+	if len(v) != 4 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
+		return "", "", "", false
 	}
-	return v[1], v[2], true
+	return v[1], v[2], v[3], true
 }
 
 func getNestedObject(doc map[string]interface{}) {
 	resultObj := make(map[string]interface{})
 	for asColumnName, value := range doc {
-		functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
+		format, functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
 		if isAggregateColumn {
 			delete(doc, asColumnName)
+
+			if format == "table" {
+				doc[columnName] = value
+				continue
+			}
+
 			funcValue, ok := resultObj[functionName]
 			if !ok {
-
 				// NOTE: This case occurs for count function with no column name (using * operator instead)
 				if columnName == "" {
 					resultObj[functionName] = value
