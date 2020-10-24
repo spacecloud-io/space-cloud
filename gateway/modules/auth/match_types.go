@@ -16,8 +16,8 @@ import (
 func matchWhere(rule *config.Rule, args map[string]interface{}, stub model.ReturnWhereStub) error {
 	f1, f2 := getMatchFields(rule.F1, rule.F2)
 
-	f1 = getRuleFieldForReturnWhere(rule.F1, args, stub, true)
-	f2 = getRuleFieldForReturnWhere(rule.F2, args, stub, false)
+	f1 = getRuleFieldForReturnWhere(f1, args, stub, true)
+	f2 = getRuleFieldForReturnWhere(f2, args, stub, false)
 
 	f1String := f1.(string)
 	switch rule.Eval {
