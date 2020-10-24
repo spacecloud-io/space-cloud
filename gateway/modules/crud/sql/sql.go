@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -33,7 +32,7 @@ type SQL struct {
 
 // Init initialises a new sql instance
 func Init(dbType model.DBType, enabled bool, connection string, dbName string, driverConf config.DriverConfig) (s *SQL, err error) {
-	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil, driverConf : driverConf}
+	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil, driverConf: driverConf}
 
 	switch dbType {
 	case model.Postgres:
@@ -59,7 +58,7 @@ func Init(dbType model.DBType, enabled bool, connection string, dbName string, d
 
 // IsSame checks if we've got the same connection string
 func (s *SQL) IsSame(conn, dbName string, driverConf config.DriverConfig) bool {
-	return ((strings.HasPrefix(s.connection, conn)) && (dbName == s.name) && (driverConf.MaxConn == s.driverConf.MaxConn) && (driverConf.MaxIdleTimeout == s.driverConf.MaxIdleTimeout) && (driverConf.MaxIdleConn == s.driverConf.MaxIdleConn))
+	return strings.HasPrefix(s.connection, conn) && dbName == s.name && driverConf.MaxConn == s.driverConf.MaxConn && driverConf.MaxIdleTimeout == s.driverConf.MaxIdleTimeout && driverConf.MaxIdleConn == s.driverConf.MaxIdleConn
 }
 
 // Close gracefully the SQL client
@@ -118,13 +117,25 @@ func (s *SQL) connect() error {
 
 	s.client = sql
 
-	s.client.SetMaxOpenConns(s.driverConf.MaxConn)
-	s.client.SetMaxIdleConns(s.driverConf.MaxIdleConn)
-	duration, err := time.ParseDuration(strconv.Itoa(s.driverConf.MaxIdleTimeout) + "ms")
-	if err != nil {
-		return err
+	maxConn := s.driverConf.MaxConn
+	if maxConn == 0 {
+		maxConn = 10
 	}
-	s.client.SetConnMaxLifetime(duration)
+
+	maxIdleConn := s.driverConf.MaxIdleConn
+	if maxIdleConn == 0 {
+		maxIdleConn = 2
+	}
+
+	maxIdleTimeout := s.driverConf.MaxIdleTimeout
+	if maxIdleTimeout == 0 {
+		maxIdleTimeout = 0
+	}
+
+	s.client.SetMaxOpenConns(maxConn)
+	s.client.SetMaxIdleConns(maxIdleConn)
+	duration := time.Duration(maxIdleTimeout) * time.Millisecond
+	s.client.SetConnMaxIdleTime(duration)
 	return sql.PingContext(ctx)
 }
 

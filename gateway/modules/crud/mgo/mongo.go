@@ -3,7 +3,6 @@ package mgo
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -48,7 +47,7 @@ func (m *Mongo) Close() error {
 
 // IsSame checks if we've got the same connection string
 func (m *Mongo) IsSame(conn, dbName string, driverConf config.DriverConfig) bool {
-	return ((strings.HasPrefix(m.connection, conn)) && (dbName == m.dbName) && (driverConf.MaxConn == m.driverConf.MaxConn) && (driverConf.MaxIdleTimeout == m.driverConf.MaxIdleTimeout) && (driverConf.MinConn == m.driverConf.MinConn))
+	return strings.HasPrefix(m.connection, conn) && dbName == m.dbName && driverConf.MaxConn == m.driverConf.MaxConn && driverConf.MaxIdleTimeout == m.driverConf.MaxIdleTimeout && driverConf.MinConn == m.driverConf.MinConn
 }
 
 // IsClientSafe checks whether database is enabled and connected
@@ -74,13 +73,26 @@ func (m *Mongo) connect() error {
 	defer cancel()
 
 	opts := options.Client().ApplyURI(m.connection)
-	opts = opts.SetMaxPoolSize((uint64)(m.driverConf.MaxConn))
-	duration, err := time.ParseDuration(strconv.Itoa(m.driverConf.MaxIdleTimeout) + "ms")
-	if err != nil {
-		return err
+
+	maxConn := m.driverConf.MaxConn
+	if maxConn == 0 {
+		maxConn = 100
 	}
+
+	maxIdleTimeout := m.driverConf.MaxIdleTimeout
+	if maxIdleTimeout == 0 {
+		maxIdleTimeout = 0
+	}
+
+	minConn := m.driverConf.MinConn
+	if minConn == 0 {
+		minConn = 0
+	}
+	
+	opts = opts.SetMaxPoolSize((uint64)(maxConn))
+	duration := time.Duration(maxIdleTimeout) * time.Millisecond
 	opts = opts.SetMaxConnIdleTime(duration)
-	opts = opts.SetMinPoolSize(m.driverConf.MinConn)
+	opts = opts.SetMinPoolSize(minConn)
 	client, err := mongo.NewClient(opts)
 
 	if err != nil {
