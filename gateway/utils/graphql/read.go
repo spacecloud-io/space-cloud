@@ -44,7 +44,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 
 	go func() {
 
-		req.IsBatch = !(len(req.Aggregate) > 0)
+		req.IsBatch = !(len(req.Aggregate) > 0 || isPostProcessingEnabled(req.PostProcess))
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}
