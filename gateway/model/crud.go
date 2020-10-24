@@ -17,6 +17,7 @@ type ReadRequest struct {
 	IsBatch     bool                   `json:"isBatch"`
 	Extras      map[string]interface{} `json:"extras"`
 	PostProcess map[string]*PostProcess
+	MatchWhere  []map[string]interface{}
 }
 
 // ReadOptions is the options required for a read request

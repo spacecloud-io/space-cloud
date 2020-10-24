@@ -27,9 +27,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 	req.PostProcess[col] = actions
 
 	if len(returnWhere.Where) > 0 {
-		for k, v := range returnWhere.Where {
-			req.Find[k] = v
-		}
+		req.MatchWhere = append(req.MatchWhere, returnWhere.Where)
 	}
 
 	req.GroupBy, err = extractGroupByClause(ctx, field.Arguments, store)
@@ -94,9 +92,10 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		cb("", "", nil, err)
 		return
 	}
-	for k, v := range returnWhere.Where {
-		req.Find[k] = v
+	if len(returnWhere.Where) > 0 {
+		req.MatchWhere = append(req.MatchWhere, returnWhere.Where)
 	}
+
 	req.PostProcess[col] = actions
 
 	if err := graph.runAuthForJoins(ctx, dbType, dbAlias, token, req, req.Options.Join); err != nil {
@@ -120,9 +119,11 @@ func (graph *Module) runAuthForJoins(ctx context.Context, dbType, dbAlias, token
 		if err != nil {
 			return err
 		}
-		for k, v := range returnWhere.Where {
-			req.Find[k] = v
+
+		if len(returnWhere.Where) > 0 {
+			req.MatchWhere = append(req.MatchWhere, returnWhere.Where)
 		}
+
 		req.PostProcess[j.Table] = actions
 
 		if err := graph.runAuthForJoins(ctx, dbType, dbAlias, token, req, j.Join); err != nil {

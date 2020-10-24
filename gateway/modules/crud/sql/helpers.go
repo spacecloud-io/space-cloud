@@ -97,14 +97,26 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 	return goqu.And(array...), regxarr
 }
 
-func (s *SQL) generateWhereClause(ctx context.Context, q *goqu.SelectDataset, find map[string]interface{}) (query *goqu.SelectDataset, arr []string) {
+func (s *SQL) generateWhereClause(ctx context.Context, q *goqu.SelectDataset, find map[string]interface{}, matchWhere []map[string]interface{}) (query *goqu.SelectDataset, arr []string) {
 	query = q
-	if len(find) == 0 {
-		return
+
+	exps := make([]goqu.Expression, len(matchWhere))
+	for i, f := range matchWhere {
+		exps[i], _ = s.generator(ctx, f, false)
 	}
-	exp, arr := s.generator(ctx, find, false)
-	query = query.Where(exp)
-	return query, arr
+
+	regexArr := make([]string, 0)
+	if len(find) > 0 {
+		exp, arr := s.generator(ctx, find, false)
+		exps = append(exps, exp)
+		regexArr = arr
+	}
+
+	if len(exps) > 0 {
+		query = query.Where(goqu.And(exps...))
+	}
+
+	return query, regexArr
 }
 
 func generateRecord(temp interface{}) (goqu.Record, error) {

@@ -31,6 +31,20 @@ func (m *Module) getFields(ctx context.Context, fields interface{}, args map[str
 	}
 }
 
+func getMatchFields(f1, f2 interface{}) (interface{}, interface{}) {
+	if f1String, ok := f1.(string); ok {
+		if strings.HasPrefix(f1String, "args.find") {
+			return f1, f2
+		}
+	}
+	if f2String, ok := f2.(string); ok {
+		if strings.HasPrefix(f2String, "args.find") {
+			return f2, f1
+		}
+	}
+	return f1, f2
+}
+
 func getRuleFieldForReturnWhere(field interface{}, args map[string]interface{}, stub model.ReturnWhereStub, isField1 bool) interface{} {
 	fString, ok := field.(string)
 	if ok {

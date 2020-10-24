@@ -30,10 +30,8 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getColName(col)).Prepared(true)
 	var regexArr []string
-	if req.Find != nil {
-		// Get the where clause from query object
-		query, regexArr = s.generateWhereClause(ctx, query, req.Find)
-	}
+	// Get the where clause from query object
+	query, regexArr = s.generateWhereClause(ctx, query, req.Find, req.MatchWhere)
 
 	selArray := make([]interface{}, 0)
 	if req.Options != nil {

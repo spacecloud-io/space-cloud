@@ -14,8 +14,10 @@ import (
 )
 
 func matchWhere(rule *config.Rule, args map[string]interface{}, stub model.ReturnWhereStub) error {
-	f1 := getRuleFieldForReturnWhere(rule.F1, args, stub, true)
-	f2 := getRuleFieldForReturnWhere(rule.F2, args, stub, false)
+	f1, f2 := getMatchFields(rule.F1, rule.F2)
+
+	f1 = getRuleFieldForReturnWhere(rule.F1, args, stub, true)
+	f2 = getRuleFieldForReturnWhere(rule.F2, args, stub, false)
 
 	f1String := f1.(string)
 	switch rule.Eval {
@@ -33,7 +35,7 @@ func matchWhere(rule *config.Rule, args map[string]interface{}, stub model.Retur
 		stub.Where[f1String] = map[string]interface{}{"$gte": f2}
 	case "in":
 		stub.Where[f1String] = map[string]interface{}{"$in": f2}
-	case "notin":
+	case "notIn":
 		stub.Where[f1String] = map[string]interface{}{"$nin": f2}
 	}
 
@@ -85,7 +87,7 @@ func matchString(ctx context.Context, rule *config.Rule, args map[string]interfa
 			}
 		case "in":
 			return matchIn(ctx, f2String, f1, args)
-		case "notin":
+		case "notIn":
 			return matchNotIn(ctx, f2String, f1, args)
 		}
 	case []interface{}:
@@ -93,7 +95,7 @@ func matchString(ctx context.Context, rule *config.Rule, args map[string]interfa
 		switch rule.Eval {
 		case "in":
 			return matchIn(ctx, f2String, f1, args)
-		case "notin":
+		case "notIn":
 			return matchNotIn(ctx, f2String, f1, args)
 		}
 	default:
@@ -216,7 +218,7 @@ func matchNumber(ctx context.Context, rule *config.Rule, args map[string]interfa
 		}
 	case "in":
 		return matchIn(ctx, f2Number, f1, args)
-	case "notin":
+	case "notIn":
 		return matchNotIn(ctx, f2Number, f1, args)
 	}
 

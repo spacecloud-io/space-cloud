@@ -146,7 +146,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 
 	if req.Find != nil {
 		// Get the where clause from query object
-		query, _ = s.generateWhereClause(ctx, query, req.Find)
+		query, _ = s.generateWhereClause(ctx, query, req.Find, nil)
 	}
 
 	if req.Update == nil {
