@@ -135,7 +135,7 @@ func (s *SQL) connect() error {
 	s.client.SetMaxOpenConns(maxConn)
 	s.client.SetMaxIdleConns(maxIdleConn)
 	duration := time.Duration(maxIdleTimeout) * time.Millisecond
-	s.client.SetConnMaxIdleTime(duration)
+	// s.client.SetConnMaxIdleTime(duration)
 	return sql.PingContext(ctx)
 }
 
