@@ -33,7 +33,12 @@ func Test_deleteFileStoreConfig(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/file-storage/config/filestore-config", map[string]string{}, new(model.Response)},
+					args: []interface{}{
+						http.MethodPost,
+						"/v1/config/projects/myproject/file-storage/config/filestore-config",
+						map[string]string{},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						map[string]interface{}{
@@ -50,7 +55,12 @@ func Test_deleteFileStoreConfig(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/file-storage/config/filestore-config", map[string]string{}, new(model.Response)},
+					args: []interface{}{
+						http.MethodPost,
+						"/v1/config/projects/myproject/file-storage/config/filestore-config",
+						map[string]string{},
+						new(model.Response),
+					},
 					paramsReturned: []interface{}{
 						nil,
 						map[string]interface{}{
@@ -124,7 +134,7 @@ func Test_deleteFileStoreRule(t *testing.T) {
 		},
 		{
 			name: "Prefix matches one rule but unable to delete rule",
-			args: args{project: "myproject", prefix: "local-admin"},
+			args: args{project: "myproject", prefix: "l"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -140,14 +150,6 @@ func Test_deleteFileStoreRule(t *testing.T) {
 							Result: []interface{}{
 								map[string]interface{}{
 									"id":     "local-admin",
-									"prefix": "hello",
-									"rule": map[string]interface{}{
-										"rule": "allow",
-										"eval": "==",
-									},
-								},
-								map[string]interface{}{
-									"id":     "local",
 									"prefix": "hello",
 									"rule": map[string]interface{}{
 										"rule": "allow",
@@ -178,11 +180,25 @@ func Test_deleteFileStoreRule(t *testing.T) {
 					},
 				},
 			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"local-admin"},
+							Default: []string{"local-admin"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "local-admin"},
+				},
+			},
 			wantErr: true,
 		},
 		{
 			name: "Prefix matches one rule and rule deleted successfully",
-			args: args{project: "myproject", prefix: "local-admin"},
+			args: args{project: "myproject", prefix: "l"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -198,14 +214,6 @@ func Test_deleteFileStoreRule(t *testing.T) {
 							Result: []interface{}{
 								map[string]interface{}{
 									"id":     "local-admin",
-									"prefix": "hello",
-									"rule": map[string]interface{}{
-										"rule": "allow",
-										"eval": "==",
-									},
-								},
-								map[string]interface{}{
-									"id":     "local",
 									"prefix": "hello",
 									"rule": map[string]interface{}{
 										"rule": "allow",
@@ -234,6 +242,20 @@ func Test_deleteFileStoreRule(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"local-admin"},
+							Default: []string{"local-admin"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
 		},

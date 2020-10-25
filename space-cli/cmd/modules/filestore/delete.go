@@ -15,7 +15,7 @@ func deleteFileStoreConfig(project string) error {
 	url := fmt.Sprintf("/v1/config/projects/%s/file-storage/config/%s", project, "filestore-config")
 
 	payload := new(model.Response)
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodPost, url, map[string]string{}, payload); err != nil {
 		return err
 	}
 

@@ -55,7 +55,6 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodGet).Path("/v1/external/projects/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.managers.Admin(), s.modules))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleGetFileStore(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/file-storage/config/{id}").HandlerFunc(handlers.HandleSetFileStore(s.managers.Admin(), s.managers.Sync()))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/file-storage/config/{id}").HandlerFunc(handlers.HandleDeleteFileStore(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/file-storage/rules").HandlerFunc(handlers.HandleGetFileRule(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/file-storage/rules/{id}").HandlerFunc(handlers.HandleSetFileRule(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/file-storage/rules/{id}").HandlerFunc(handlers.HandleDeleteFileRule(s.managers.Admin(), s.managers.Sync()))

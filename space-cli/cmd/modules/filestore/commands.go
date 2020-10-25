@@ -53,14 +53,14 @@ func DeleteSubCommands() []*cobra.Command {
 		Aliases:           []string{"filestore-rule"},
 		RunE:              actionDeleteFileStoreRule,
 		ValidArgsFunction: fileStoreRulesAutoCompleteFun,
-		Example:           "space-cli delete filestore-rules ruleID --project myproject --log-level info",
+		Example:           "space-cli delete filestore-rules ruleID --project myproject",
 	}
 
 	var deleteFileStoreConfigs = &cobra.Command{
 		Use:     "filestore-configs",
 		Aliases: []string{"filestore-config"},
 		RunE:    actionDeleteFileStoreConfig,
-		Example: "space-cli delete filestore-configs --project myproject --log-level info",
+		Example: "space-cli delete filestore-configs --project myproject",
 	}
 
 	return []*cobra.Command{deleteFileStoreRules, deleteFileStoreConfigs}
