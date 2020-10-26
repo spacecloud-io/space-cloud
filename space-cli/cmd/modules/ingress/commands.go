@@ -120,13 +120,13 @@ func DeleteSubCommands() []*cobra.Command {
 		Aliases:           []string{"ingress-route"},
 		RunE:              actionDeleteIngressRoutes,
 		ValidArgsFunction: ingressRoutesAutoCompleteFun,
-		Example:           "space-cli delete ingress-routes routeID --project myproject --log-level info",
+		Example:           "space-cli delete ingress-routes routeID --project myproject",
 	}
 
 	var deleteIngressGlobal = &cobra.Command{
 		Use:     "ingress-global",
 		RunE:    actionDeleteIngressGlobal,
-		Example: "space-cli delete ingress-global --project myproject --log-level info",
+		Example: "space-cli delete ingress-global --project myproject",
 	}
 
 	return []*cobra.Command{deleteRoutes, deleteIngressGlobal}

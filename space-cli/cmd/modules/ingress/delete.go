@@ -14,8 +14,7 @@ func deleteIngressGlobalConfig(project string) error {
 	// Delete the ingress global config from the server
 	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress/global", project)
 
-	payload := new(model.Response)
-	if err := transport.Client.MakeHTTPRequest(http.MethodPost, url, map[string]string{}, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodPost, url, map[string]string{}, new(model.Response)); err != nil {
 		return err
 	}
 
@@ -35,16 +34,15 @@ func deleteIngressRoute(project, prefix string) error {
 		routeIDs = append(routeIDs, spec.Meta["id"])
 	}
 
-	prefix, err = filter.DeleteOptions(prefix, routeIDs, doesRouteExist)
+	resourceID, err := filter.DeleteOptions(prefix, routeIDs, doesRouteExist)
 	if err != nil {
 		return err
 	}
 
 	// Delete the ingress route from the server
-	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress/%s", project, prefix)
+	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress/%s", project, resourceID)
 
-	payload := new(model.Response)
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, new(model.Response)); err != nil {
 		return err
 	}
 
