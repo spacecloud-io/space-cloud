@@ -1,6 +1,6 @@
 module github.com/spaceuptech/space-cloud/runner
 
-go 1.14
+go 1.15
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
