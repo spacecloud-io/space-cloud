@@ -75,7 +75,7 @@ func DeleteSubCommands() []*cobra.Command {
 		Aliases:           []string{"auth-providers"},
 		RunE:              actionDeleteAuthProvider,
 		ValidArgsFunction: authProvidersAutoCompleteFunc,
-		Example:           "space-cli delete auth-provider providerID --project myproject --log-level info",
+		Example:           "space-cli delete auth-provider providerID --project myproject",
 	}
 
 	return []*cobra.Command{deleteAuthProvider}

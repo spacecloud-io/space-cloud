@@ -30,25 +30,10 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getFileStoreRules = &cobra.Command{
-		Use:     "filestore-rules",
-		Aliases: []string{"filestore-rule"},
-		RunE:    actionGetFileStoreRule,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			objs, err := GetFileStoreRule(project, "filestore-rule", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var ids []string
-			for _, v := range objs {
-				ids = append(ids, v.Meta["id"])
-			}
-			return ids, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "filestore-rules",
+		Aliases:           []string{"filestore-rule"},
+		RunE:              actionGetFileStoreRule,
+		ValidArgsFunction: fileStoreRulesAutoCompleteFun,
 	}
 
 	var getFileStoreConfigs = &cobra.Command{
@@ -58,6 +43,27 @@ func GetSubCommands() []*cobra.Command {
 	}
 
 	return []*cobra.Command{getFileStoreRules, getFileStoreConfigs}
+}
+
+// DeleteSubCommands is the list of commands the filestore module exposes
+func DeleteSubCommands() []*cobra.Command {
+
+	var deleteFileStoreRules = &cobra.Command{
+		Use:               "filestore-rules",
+		Aliases:           []string{"filestore-rule"},
+		RunE:              actionDeleteFileStoreRule,
+		ValidArgsFunction: fileStoreRulesAutoCompleteFun,
+		Example:           "space-cli delete filestore-rules ruleID --project myproject",
+	}
+
+	var deleteFileStoreConfigs = &cobra.Command{
+		Use:     "filestore-configs",
+		Aliases: []string{"filestore-config"},
+		RunE:    actionDeleteFileStoreConfig,
+		Example: "space-cli delete filestore-configs --project myproject",
+	}
+
+	return []*cobra.Command{deleteFileStoreRules, deleteFileStoreConfigs}
 }
 
 func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {
@@ -128,4 +134,29 @@ func actionGenerateFilestoreConfig(cmd *cobra.Command, args []string) error {
 	}
 
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+}
+
+func actionDeleteFileStoreConfig(cmd *cobra.Command, args []string) error {
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	return deleteFileStoreConfig(project)
+}
+
+func actionDeleteFileStoreRule(cmd *cobra.Command, args []string) error {
+	// Get the project and url parameters
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	prefix := ""
+	if len(args) != 0 {
+		prefix = args[0]
+	}
+
+	return deleteFileStoreRule(project, prefix)
 }

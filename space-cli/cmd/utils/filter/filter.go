@@ -19,12 +19,8 @@ func DeleteOptions(prefix string, resources []string, doesResourceExist bool) (s
 	}
 
 	if doesResourceExist {
-		if len(filteredResources) == 1 {
-			prefix = filteredResources[0]
-		} else {
-			if err := input.Survey.AskOne(&survey.Select{Message: "Choose the resource ID: ", Options: filteredResources, Default: filteredResources[0]}, &prefix); err != nil {
-				return "", err
-			}
+		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the resource ID: ", Options: filteredResources, Default: filteredResources[0]}, &prefix); err != nil {
+			return "", err
 		}
 	} else {
 		if len(resources) == 1 {
