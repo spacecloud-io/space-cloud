@@ -22,7 +22,7 @@ func deleteAuthProvider(project, prefix string) error {
 		providers = append(providers, spec.Meta["id"])
 	}
 
-	prefix, err = filter.DeleteOptions(project, prefix, providers, doesProviderExist)
+	prefix, err = filter.DeleteOptions(prefix, providers, doesProviderExist)
 	if err != nil {
 		return err
 	}

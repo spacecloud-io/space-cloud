@@ -50,7 +50,7 @@ func Test_deleteAuthProvider(t *testing.T) {
 		},
 		{
 			name: "prefix matches one provider but unable to delete provider",
-			args: args{project: "myproject", prefix: "local-admin"},
+			args: args{project: "myproject", prefix: "loc"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -83,11 +83,18 @@ func Test_deleteAuthProvider(t *testing.T) {
 					},
 				},
 			},
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin"}, Default: []string{"local-admin"}[0]}, &surveyMatchReturnValue},
+					paramsReturned: []interface{}{nil, "local-admin"},
+				},
+			},
 			wantErr: true,
 		},
 		{
 			name: "prefix matches one provider and provider is succesfully deleted",
-			args: args{project: "myproject", prefix: "local-admin"},
+			args: args{project: "myproject", prefix: "loc"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -118,6 +125,13 @@ func Test_deleteAuthProvider(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin"}, Default: []string{"local-admin"}[0]}, &surveyMatchReturnValue},
+					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
 		},

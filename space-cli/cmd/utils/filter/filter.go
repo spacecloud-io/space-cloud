@@ -9,7 +9,7 @@ import (
 )
 
 // DeleteOptions filters the resource id based on prefix to delete
-func DeleteOptions(project, prefix string, resources []string, doesResourceExist bool) (string, error) {
+func DeleteOptions(prefix string, resources []string, doesResourceExist bool) (string, error) {
 	filteredResources := []string{}
 	for _, resource := range resources {
 		if prefix != "" && strings.HasPrefix(strings.ToLower(resource), strings.ToLower(prefix)) {
@@ -19,12 +19,8 @@ func DeleteOptions(project, prefix string, resources []string, doesResourceExist
 	}
 
 	if doesResourceExist {
-		if len(filteredResources) == 1 {
-			prefix = filteredResources[0]
-		} else {
-			if err := input.Survey.AskOne(&survey.Select{Message: "Choose the resource ID: ", Options: filteredResources, Default: filteredResources[0]}, &prefix); err != nil {
-				return "", err
-			}
+		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the resource ID: ", Options: filteredResources, Default: filteredResources[0]}, &prefix); err != nil {
+			return "", err
 		}
 	} else {
 		if len(resources) == 1 {
