@@ -290,9 +290,6 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 
 			if req.Options == nil || req.Options.ReturnType == "table" || len(req.Options.Join) == 0 {
 				processAggregate(row, row, isAggregate)
-				if req.PostProcess != nil {
-					_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], row)
-				}
 				array = append(array, row)
 				continue
 			}

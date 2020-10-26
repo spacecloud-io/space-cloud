@@ -192,7 +192,7 @@ func TestBolt_Update(t *testing.T) {
 		},
 	}
 
-	b, err := Init(true, "update.db", "bucketName", nil)
+	b, err := Init(true, "update.db", "bucketName")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}

@@ -12,7 +12,7 @@ import (
 
 func TestBolt_GetCollections(t *testing.T) {
 
-	b, err := Init(true, "bolt.db", "bucketName", nil)
+	b, err := Init(true, "bolt.db", "bucketName")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}
@@ -59,7 +59,7 @@ func TestBolt_GetCollections(t *testing.T) {
 
 func TestBolt_DeleteCollection(t *testing.T) {
 
-	b, err := Init(true, "delete.db", "bucketName", nil)
+	b, err := Init(true, "delete.db", "bucketName")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}

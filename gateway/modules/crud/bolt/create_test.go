@@ -10,7 +10,7 @@ import (
 
 func TestBolt_Create(t *testing.T) {
 
-	b, err := Init(true, "create.db", "bucketName", nil)
+	b, err := Init(true, "create.db", "bucketName")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}

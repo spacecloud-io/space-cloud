@@ -20,12 +20,11 @@ type Mongo struct {
 	connection string
 	dbName     string
 	client     *mongo.Client
-	auth       model.AuthCrudInterface
 }
 
 // Init initialises a new mongo instance
-func Init(enabled bool, connection, dbName string, auth model.AuthCrudInterface) (mongoStub *Mongo, err error) {
-	mongoStub = &Mongo{dbName: dbName, enabled: enabled, connection: connection, client: nil, auth: auth}
+func Init(enabled bool, connection, dbName string) (mongoStub *Mongo, err error) {
+	mongoStub = &Mongo{dbName: dbName, enabled: enabled, connection: connection, client: nil}
 
 	if mongoStub.enabled {
 		err = mongoStub.connect()

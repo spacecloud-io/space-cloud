@@ -92,9 +92,9 @@ func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHoo
 func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName string) (Crud, error) {
 	switch dbType {
 	case model.Mongo:
-		return mgo.Init(enabled, connection, dbName, m.auth)
+		return mgo.Init(enabled, connection, dbName)
 	case model.EmbeddedDB:
-		return bolt.Init(enabled, connection, dbName, m.auth)
+		return bolt.Init(enabled, connection, dbName)
 	case model.MySQL, model.Postgres, model.SQLServer:
 		c, err := sql.Init(dbType, enabled, connection, dbName, m.auth)
 		if err == nil && enabled {

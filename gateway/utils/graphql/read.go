@@ -43,13 +43,17 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 	}
 
 	go func() {
-
-		req.IsBatch = !(len(req.Aggregate) > 0 || isPostProcessingEnabled(req.PostProcess))
+		req.IsBatch = !(len(req.Aggregate) > 0)
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}
 		req.Options.HasOptions = false
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
+
+		// Post process only if joins were not enabled
+		if isPostProcessingEnabled(req.PostProcess) && len(req.Options.Join) == 0 {
+			_ = graph.auth.PostProcessMethod(ctx, req.PostProcess[col], result)
+		}
 
 		cb(dbAlias, col, result, err)
 	}()
@@ -105,9 +109,15 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 
 	go func() {
 		//  batch operation cannot be performed with aggregation or joins or when post processing is applied
-		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0 || isPostProcessingEnabled(req.PostProcess))
+		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0)
 		req.Options.HasOptions = hasOptions
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
+
+		// Post process only if joins were not enabled
+		if isPostProcessingEnabled(req.PostProcess) && len(req.Options.Join) == 0 {
+			_ = graph.auth.PostProcessMethod(ctx, req.PostProcess[col], result)
+		}
+
 		cb(dbAlias, col, result, err)
 	}()
 }

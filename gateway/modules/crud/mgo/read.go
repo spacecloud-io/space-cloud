@@ -88,13 +88,13 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 					asColumnName := getAggregateAsColumnName(function, column)
 					switch function {
 					case "sum":
-						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, getAggregateColumnName(column))
 					case "min":
-						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, getAggregateColumnName(column))
 					case "max":
-						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, getAggregateColumnName(column))
 					case "avg":
-						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, getAggregateColumnName(column))
 					case "count":
 						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, "*")
 					default:
@@ -149,10 +149,6 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 				getNestedObject(doc)
 			}
 
-			if req.PostProcess != nil {
-				_ = m.auth.PostProcessMethod(ctx, req.PostProcess[col], doc)
-			}
-
 			results = append(results, doc)
 		}
 
@@ -183,10 +179,6 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 		err := collection.FindOne(ctx, req.Find, findOneOptions).Decode(&res)
 		if err != nil {
 			return 0, nil, err
-		}
-
-		if req.PostProcess != nil {
-			_ = m.auth.PostProcessMethod(ctx, req.PostProcess[col], res)
 		}
 
 		return 1, res, nil
@@ -291,6 +283,10 @@ func getOptionStage(options *model.ReadOptions, sortFields []string) []bson.M {
 	}
 
 	return optionStage
+}
+
+func getAggregateColumnName(column string) string {
+	return strings.Split(column, ":")[0]
 }
 
 func getAggregateAsColumnName(function, column string) string {
