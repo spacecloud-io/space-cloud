@@ -39,6 +39,11 @@ type Interface interface {
 	ApplyServiceRoutes(ctx context.Context, projectID, serviceID string, routes model.Routes) error
 	GetServiceRoutes(ctx context.Context, projectID string) (map[string]model.Routes, error)
 
+	// Service role
+	ApplyServiceRole(ctx context.Context, role *model.Role) error
+	GetServiceRole(ctx context.Context, projectID string) ([]*model.Role, error)
+	DeleteServiceRole(ctx context.Context, projectID, serviceID, id string) error
+
 	// Secret methods!
 	CreateSecret(ctx context.Context, projectID string, secretObj *model.Secret) error
 	ListSecrets(ctx context.Context, projectID string) ([]*model.Secret, error)
