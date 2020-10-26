@@ -16,13 +16,12 @@ func deleteDBRules(project, dbAlias, prefix string) error {
 		return err
 	}
 
-	doesTableNameExist := false
 	tableNames := []string{}
 	for _, spec := range objs {
 		tableNames = append(tableNames, spec.Meta["col"])
 	}
 
-	resourceID, err := filter.DeleteOptions(prefix, tableNames, doesTableNameExist)
+	resourceID, err := filter.DeleteOptions(prefix, tableNames)
 	if err != nil {
 		return err
 	}
@@ -44,13 +43,12 @@ func deleteDBConfigs(project, prefix string) error {
 		return err
 	}
 
-	doesAliasExist := false
 	aliasNames := []string{}
 	for _, spec := range objs {
 		aliasNames = append(aliasNames, spec.Meta["dbAlias"])
 	}
 
-	resourceID, err := filter.DeleteOptions(prefix, aliasNames, doesAliasExist)
+	resourceID, err := filter.DeleteOptions(prefix, aliasNames)
 	if err != nil {
 		return err
 	}
@@ -72,13 +70,12 @@ func deleteDBPreparedQuery(project, dbAlias, prefix string) error {
 		return err
 	}
 
-	doesPreparedQueryExist := false
 	preparedQueries := []string{}
 	for _, spec := range objs {
 		preparedQueries = append(preparedQueries, spec.Meta["id"])
 	}
 
-	resourceID, err := filter.DeleteOptions(prefix, preparedQueries, doesPreparedQueryExist)
+	resourceID, err := filter.DeleteOptions(prefix, preparedQueries)
 	if err != nil {
 		return err
 	}
@@ -100,13 +97,12 @@ func deleteDBSchemas(project, dbAlias, prefix string) error {
 		return err
 	}
 
-	doesTableExist := false
 	tableNames := []string{}
 	for _, spec := range objs {
 		tableNames = append(tableNames, spec.Meta["col"])
 	}
 
-	resourceID, err := filter.DeleteOptions(prefix, tableNames, doesTableExist)
+	resourceID, err := filter.DeleteOptions(prefix, tableNames)
 	if err != nil {
 		return err
 	}

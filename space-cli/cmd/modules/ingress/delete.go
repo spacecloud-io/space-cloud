@@ -28,13 +28,12 @@ func deleteIngressRoute(project, prefix string) error {
 		return err
 	}
 
-	doesRouteExist := false
 	routeIDs := []string{}
 	for _, spec := range objs {
 		routeIDs = append(routeIDs, spec.Meta["id"])
 	}
 
-	resourceID, err := filter.DeleteOptions(prefix, routeIDs, doesRouteExist)
+	resourceID, err := filter.DeleteOptions(prefix, routeIDs)
 	if err != nil {
 		return err
 	}

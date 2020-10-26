@@ -28,13 +28,12 @@ func deleteFileStoreRule(project, prefix string) error {
 		return err
 	}
 
-	doesRuleExist := false
 	ruleIDs := []string{}
 	for _, spec := range objs {
 		ruleIDs = append(ruleIDs, spec.Meta["id"])
 	}
 
-	resourceID, err := filter.DeleteOptions(prefix, ruleIDs, doesRuleExist)
+	resourceID, err := filter.DeleteOptions(prefix, ruleIDs)
 	if err != nil {
 		return err
 	}

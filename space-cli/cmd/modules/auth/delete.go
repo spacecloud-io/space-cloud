@@ -16,13 +16,12 @@ func deleteAuthProvider(project, prefix string) error {
 		return err
 	}
 
-	doesProviderExist := false
 	providers := []string{}
 	for _, spec := range objs {
 		providers = append(providers, spec.Meta["id"])
 	}
 
-	resourceID, err := filter.DeleteOptions(prefix, providers, doesProviderExist)
+	resourceID, err := filter.DeleteOptions(prefix, providers)
 	if err != nil {
 		return err
 	}
