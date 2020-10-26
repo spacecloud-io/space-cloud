@@ -22,7 +22,7 @@ func deleteDBRules(project, dbAlias, prefix string) error {
 		tableNames = append(tableNames, spec.Meta["col"])
 	}
 
-	prefix, err = filter.DeleteOptions(project, prefix, tableNames, doesTableNameExist)
+	prefix, err = filter.DeleteOptions(prefix, tableNames, doesTableNameExist)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func deleteDBConfigs(project, prefix string) error {
 		aliasNames = append(aliasNames, spec.Meta["dbAlias"])
 	}
 
-	prefix, err = filter.DeleteOptions(project, prefix, aliasNames, doesAliasExist)
+	prefix, err = filter.DeleteOptions(prefix, aliasNames, doesAliasExist)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func deleteDBPreparedQuery(project, dbAlias, prefix string) error {
 		preparedQueries = append(preparedQueries, spec.Meta["id"])
 	}
 
-	prefix, err = filter.DeleteOptions(project, prefix, preparedQueries, doesPreparedQueryExist)
+	prefix, err = filter.DeleteOptions(prefix, preparedQueries, doesPreparedQueryExist)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func deleteDBSchemas(project, dbAlias, prefix string) error {
 		tableNames = append(tableNames, spec.Meta["col"])
 	}
 
-	prefix, err = filter.DeleteOptions(project, prefix, tableNames, doesTableExist)
+	prefix, err = filter.DeleteOptions(prefix, tableNames, doesTableExist)
 	if err != nil {
 		return err
 	}

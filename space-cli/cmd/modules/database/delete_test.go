@@ -57,7 +57,7 @@ func Test_deleteDBRules(t *testing.T) {
 		},
 		{
 			name: "prefix matches one table name but unable to delete db rules",
-			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "users"},
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "a"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -72,7 +72,7 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-users": map[string]interface{}{
+									"dbAlias-age": map[string]interface{}{
 										"isRealtimeEnabled": false,
 										"rules": map[string]interface{}{
 											"id":   "ruleID",
@@ -88,8 +88,8 @@ func Test_deleteDBRules(t *testing.T) {
 					method: "MakeHTTPRequest",
 					args: []interface{}{
 						http.MethodDelete,
-						"/v1/config/projects/myproject/database/dbAlias/collections/users/rules",
-						map[string]string{"dbAlias": "dbAlias", "col": "users"},
+						"/v1/config/projects/myproject/database/dbAlias/collections/age/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "age"},
 						new(model.Response),
 					},
 					paramsReturned: []interface{}{
@@ -104,11 +104,25 @@ func Test_deleteDBRules(t *testing.T) {
 					},
 				},
 			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"age"},
+							Default: []string{"age"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "age"},
+				},
+			},
 			wantErr: true,
 		},
 		{
 			name: "prefix matches one table name and rules deleted successfully",
-			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "users"},
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "a"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -123,7 +137,7 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-users": map[string]interface{}{
+									"dbAlias-age": map[string]interface{}{
 										"isRealtimeEnabled": false,
 										"rules": map[string]interface{}{
 											"id":   "ruleID",
@@ -139,8 +153,8 @@ func Test_deleteDBRules(t *testing.T) {
 					method: "MakeHTTPRequest",
 					args: []interface{}{
 						http.MethodDelete,
-						"/v1/config/projects/myproject/database/dbAlias/collections/users/rules",
-						map[string]string{"dbAlias": "dbAlias", "col": "users"},
+						"/v1/config/projects/myproject/database/dbAlias/collections/age/rules",
+						map[string]string{"dbAlias": "dbAlias", "col": "age"},
 						new(model.Response),
 					},
 					paramsReturned: []interface{}{
@@ -153,6 +167,20 @@ func Test_deleteDBRules(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"age"},
+							Default: []string{"age"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "age"},
 				},
 			},
 		},
@@ -731,7 +759,7 @@ func Test_deleteDBConfigs(t *testing.T) {
 		},
 		{
 			name: "prefix matches one alias but unable to delete config",
-			args: args{project: "myproject", prefix: "mongo"},
+			args: args{project: "myproject", prefix: "m"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -777,11 +805,25 @@ func Test_deleteDBConfigs(t *testing.T) {
 					},
 				},
 			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"mongo"},
+							Default: []string{"mongo"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "mongo"},
+				},
+			},
 			wantErr: true,
 		},
 		{
 			name: "prefix matches one alias and config deleted sucessfully",
-			args: args{project: "myproject", prefix: "mongo"},
+			args: args{project: "myproject", prefix: "m"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -825,6 +867,20 @@ func Test_deleteDBConfigs(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"mongo"},
+							Default: []string{"mongo"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "mongo"},
 				},
 			},
 		},
@@ -1292,7 +1348,7 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 		},
 		{
 			name: "prefix matches one prepared query but unable to delete prepared query",
-			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "prep1"},
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "p"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -1335,11 +1391,25 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 					},
 				},
 			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"prep1"},
+							Default: []string{"prep1"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "prep1"},
+				},
+			},
 			wantErr: true,
 		},
 		{
 			name: "prefix matches one prepared query and prepared query deleted successfully",
-			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "prep1"},
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "p"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -1380,6 +1450,20 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"prep1"},
+							Default: []string{"prep1"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "prep1"},
 				},
 			},
 		},
@@ -1811,7 +1895,7 @@ func Test_deleteDBSchemas(t *testing.T) {
 		},
 		{
 			name: "prefix matches one table name but unable to delete db schemas",
-			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "subscribers"},
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "s"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -1829,11 +1913,6 @@ func Test_deleteDBSchemas(t *testing.T) {
 									"col":     "subscribers",
 									"dbAlias": "dbAlias",
 									"schema":  "type subscribers { id: ID! @primary name: String!}",
-								},
-								map[string]interface{}{
-									"col":     "shops",
-									"dbAlias": "dbAlias",
-									"schema":  "type shops { id: ID! @primary name: String!}",
 								},
 							},
 						},
@@ -1859,11 +1938,25 @@ func Test_deleteDBSchemas(t *testing.T) {
 					},
 				},
 			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"subscribers"},
+							Default: []string{"subscribers"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "subscribers"},
+				},
+			},
 			wantErr: true,
 		},
 		{
 			name: "prefix matches one table name and schemas deleted successfully",
-			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "subscribers"},
+			args: args{project: "myproject", dbAlias: "dbAlias", prefix: "s"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -1881,11 +1974,6 @@ func Test_deleteDBSchemas(t *testing.T) {
 									"col":     "subscribers",
 									"dbAlias": "dbAlias",
 									"schema":  "type subscribers { id: ID! @primary name: String!}",
-								},
-								map[string]interface{}{
-									"col":     "shops",
-									"dbAlias": "dbAlias",
-									"schema":  "type shops { id: ID! @primary name: String!}",
 								},
 							},
 						},
@@ -1909,6 +1997,20 @@ func Test_deleteDBSchemas(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"subscribers"},
+							Default: []string{"subscribers"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "subscribers"},
 				},
 			},
 		},
