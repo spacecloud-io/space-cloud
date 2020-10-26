@@ -81,14 +81,14 @@ func (m *Mongo) connect() error {
 
 	maxIdleTimeout := m.driverConf.MaxIdleTimeout
 	if maxIdleTimeout == 0 {
-		maxIdleTimeout = 0
+		maxIdleTimeout = 60 * 5 * 1000
 	}
 
 	minConn := m.driverConf.MinConn
 	if minConn == 0 {
-		minConn = 0
+		minConn = 10
 	}
-	
+
 	opts = opts.SetMaxPoolSize((uint64)(maxConn))
 	duration := time.Duration(maxIdleTimeout) * time.Millisecond
 	opts = opts.SetMaxConnIdleTime(duration)

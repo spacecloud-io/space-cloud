@@ -119,23 +119,23 @@ func (s *SQL) connect() error {
 
 	maxConn := s.driverConf.MaxConn
 	if maxConn == 0 {
-		maxConn = 10
+		maxConn = 100
 	}
 
 	maxIdleConn := s.driverConf.MaxIdleConn
 	if maxIdleConn == 0 {
-		maxIdleConn = 2
+		maxIdleConn = 50
 	}
 
 	maxIdleTimeout := s.driverConf.MaxIdleTimeout
 	if maxIdleTimeout == 0 {
-		maxIdleTimeout = 0
+		maxIdleTimeout = 60 * 5 * 1000
 	}
 
 	s.client.SetMaxOpenConns(maxConn)
 	s.client.SetMaxIdleConns(maxIdleConn)
-	// duration := time.Duration(maxIdleTimeout) * time.Millisecond
-	// s.client.SetConnMaxIdleTime(duration)
+	duration := time.Duration(maxIdleTimeout) * time.Millisecond
+	s.client.SetConnMaxIdleTime(duration)
 	return sql.PingContext(ctx)
 }
 
