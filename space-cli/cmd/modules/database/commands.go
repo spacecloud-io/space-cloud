@@ -44,148 +44,30 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getrules = &cobra.Command{
-		Use:     "db-rules",
-		Aliases: []string{"db-rule"},
-		RunE:    actionGetDbRules,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			switch len(args) {
-			case 0:
-				project, check := utils.GetProjectID()
-				if !check {
-					utils.LogDebug("Project not specified in flag", nil)
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				objs, err := GetDbRule(project, "db-rule", map[string]string{})
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				var dbAlias []string
-				for _, v := range objs {
-					dbAlias = append(dbAlias, v.Meta["dbAlias"])
-				}
-				return dbAlias, cobra.ShellCompDirectiveDefault
-			case 1:
-				project, check := utils.GetProjectID()
-				if !check {
-					utils.LogDebug("Project not specified in flag", nil)
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				objs, err := GetDbRule(project, "db-rule", map[string]string{})
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				var col []string
-				for _, v := range objs {
-					col = append(col, v.Meta["col"])
-				}
-				return col, cobra.ShellCompDirectiveDefault
-			}
-			return nil, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "db-rules",
+		Aliases:           []string{"db-rule"},
+		RunE:              actionGetDbRules,
+		ValidArgsFunction: dbRulesAutoCompleteFun,
 	}
 
 	var getconfigs = &cobra.Command{
-		Use:     "db-configs",
-		Aliases: []string{"db-config"},
-		RunE:    actionGetDbConfig,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			objs, err := GetDbConfig(project, "db-config", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var dbAlias []string
-			for _, v := range objs {
-				dbAlias = append(dbAlias, v.Meta["dbAlias"])
-			}
-			return dbAlias, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "db-configs",
+		Aliases:           []string{"db-config"},
+		RunE:              actionGetDbConfig,
+		ValidArgsFunction: dbConfigAutoCompleteFun,
 	}
 
 	var getschemas = &cobra.Command{
-		Use:     "db-schemas",
-		Aliases: []string{"db-schema"},
-		RunE:    actionGetDbSchema,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-
-			switch len(args) {
-			case 0:
-				project, check := utils.GetProjectID()
-				if !check {
-					utils.LogDebug("Project not specified in flag", nil)
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				objs, err := GetDbSchema(project, "db-schema", map[string]string{})
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				var dbAlias []string
-				for _, v := range objs {
-					dbAlias = append(dbAlias, v.Meta["dbAlias"])
-				}
-				return dbAlias, cobra.ShellCompDirectiveDefault
-			case 1:
-				project, check := utils.GetProjectID()
-				if !check {
-					utils.LogDebug("Project not specified in flag", nil)
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				objs, err := GetDbSchema(project, "db-schema", map[string]string{})
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				var col []string
-				for _, v := range objs {
-					col = append(col, v.Meta["col"])
-				}
-				return col, cobra.ShellCompDirectiveDefault
-			}
-			return nil, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "db-schemas",
+		Aliases:           []string{"db-schema"},
+		RunE:              actionGetDbSchema,
+		ValidArgsFunction: dbSchemasAutoCompleteFun,
 	}
 
 	var getPreparedQuery = &cobra.Command{
-		Use:  "db-prepared-query",
-		RunE: actionGetDbPreparedQuery,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			switch len(args) {
-			case 0:
-				project, check := utils.GetProjectID()
-				if !check {
-					utils.LogDebug("Project not specified in flag", nil)
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				objs, err := GetDbSchema(project, "db-schema", map[string]string{})
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				var dbAlias []string
-				for _, v := range objs {
-					dbAlias = append(dbAlias, v.Meta["dbAlias"])
-				}
-				return dbAlias, cobra.ShellCompDirectiveDefault
-			case 1:
-				project, check := utils.GetProjectID()
-				if !check {
-					utils.LogDebug("Project not specified in flag", nil)
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				objs, err := GetDbPreparedQuery(project, "db-prepared-query", map[string]string{})
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				var col []string
-				for _, v := range objs {
-					col = append(col, v.Meta["id"])
-				}
-				return col, cobra.ShellCompDirectiveDefault
-			}
-			return nil, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "db-prepared-query",
+		RunE:              actionGetDbPreparedQuery,
+		ValidArgsFunction: dbPreparedQueriesAutoCompleteFun,
 	}
 
 	return []*cobra.Command{getrules, getconfigs, getschemas, getPreparedQuery}
@@ -347,4 +229,132 @@ func actionGenerateDBPreparedQuery(cmd *cobra.Command, args []string) error {
 	}
 
 	return utils.AppendConfigToDisk(preparedQuery, preparedQueryConfigFile)
+}
+
+// DeleteSubCommands is the list of commands the database module exposes
+func DeleteSubCommands() []*cobra.Command {
+
+	var deleteRules = &cobra.Command{
+		Use:               "db-rules",
+		Aliases:           []string{"db-rule"},
+		RunE:              actionDeleteDbRules,
+		ValidArgsFunction: dbRulesAutoCompleteFun,
+		Example:           "space-cli delete db-rules dbAlias ruleID --project myproject",
+	}
+
+	var deleteConfigs = &cobra.Command{
+		Use:               "db-configs",
+		Aliases:           []string{"db-config"},
+		RunE:              actionDeleteDbConfigs,
+		ValidArgsFunction: dbConfigAutoCompleteFun,
+		Example:           "space-cli delete db-configs dbAlias --project myproject",
+	}
+
+	var deletePreparedQuery = &cobra.Command{
+		Use:               "db-prepared-queries",
+		Aliases:           []string{"db-prepared-query"},
+		RunE:              actionDeleteDbPreparedQuery,
+		ValidArgsFunction: dbPreparedQueriesAutoCompleteFun,
+		Example:           "space-cli delete db-prepared-queries dbAlias preparedQueryID --project myproject",
+	}
+
+	var deleteSchemas = &cobra.Command{
+		Use:               "db-schemas",
+		Aliases:           []string{"db-schema"},
+		RunE:              actionDeleteDbSchemas,
+		ValidArgsFunction: dbSchemasAutoCompleteFun,
+		Example:           "space-cli delete db-configs dbAlias tableName --project myproject",
+	}
+
+	return []*cobra.Command{deleteRules, deleteConfigs, deletePreparedQuery, deleteSchemas}
+}
+
+func actionDeleteDbRules(cmd *cobra.Command, args []string) error {
+	// Get the project and url parameters
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	if len(args) != 1 {
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+	}
+	dbAlias := args[0]
+	prefix := ""
+	if len(args) > 1 {
+		prefix = args[1]
+	}
+
+	err := deleteDBRules(project, dbAlias, prefix)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionDeleteDbConfigs(cmd *cobra.Command, args []string) error {
+	// Get the project and url parameters
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	prefix := ""
+	if len(args) > 0 {
+		prefix = args[0]
+	}
+
+	err := deleteDBConfigs(project, prefix)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionDeleteDbPreparedQuery(cmd *cobra.Command, args []string) error {
+	// Get the project and url parameters
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	if len(args) != 1 {
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+	}
+	dbAlias := args[0]
+
+	prefix := ""
+	if len(args) > 1 {
+		prefix = args[1]
+	}
+
+	err := deleteDBPreparedQuery(project, dbAlias, prefix)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func actionDeleteDbSchemas(cmd *cobra.Command, args []string) error {
+	// Get the project and url parameters
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	if len(args) != 1 {
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
+	}
+	dbAlias := args[0]
+
+	prefix := ""
+	if len(args) > 1 {
+		prefix = args[1]
+	}
+
+	err := deleteDBSchemas(project, dbAlias, prefix)
+	if err != nil {
+		return err
+	}
+	return nil
 }

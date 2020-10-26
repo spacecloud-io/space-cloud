@@ -129,3 +129,40 @@ func (i *Istio) ApplyServiceRoutes(ctx context.Context, projectID, serviceID str
 
 	return i.applyVirtualService(ctx, ns, virtualService)
 }
+
+// ApplyServiceRole sets role of each service
+func (i *Istio) ApplyServiceRole(ctx context.Context, role *model.Role) error {
+	switch role.Type {
+	case model.ServiceRoleProject:
+		serviceRole, serviceRoleBinding := i.generateServiceRole(ctx, role)
+
+		// Apply the service role
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service role (%s) in (%s) namespace", serviceRole.Name, role.Project), nil)
+		if err := i.applyServiceRole(ctx, role.Project, serviceRole); err != nil {
+			return err
+		}
+
+		// Apply the service role binding
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service role binding (%s) in (%s) namespace", serviceRoleBinding.Name, role.Project), nil)
+		if err := i.applyServiceRoleBinding(ctx, role.Project, serviceRoleBinding); err != nil {
+			return err
+		}
+	case model.ServiceRoleCluster:
+		serviceClusterRole, serviceClusterRoleBinding := i.generateServiceClusterRole(ctx, role)
+
+		// Apply the service role
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service cluster role (%s)", serviceClusterRole.Name), nil)
+		if err := i.applyServiceClusterRole(ctx, role.Project, serviceClusterRole); err != nil {
+			return err
+		}
+
+		// Apply the service role binding
+		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Applying service cluster role binding (%s)", serviceClusterRoleBinding.Name), nil)
+		if err := i.applyServiceClusterRoleBinding(ctx, role.Project, serviceClusterRoleBinding); err != nil {
+			return err
+		}
+	default:
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid service role type (%s) provided", role.Type), nil, nil)
+	}
+	return nil
+}

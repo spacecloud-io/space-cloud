@@ -14,7 +14,7 @@ import (
 )
 
 type transport interface {
-	Get(method, url string, params map[string]string, vPtr interface{}) error
+	MakeHTTPRequest(method, url string, params map[string]string, vPtr interface{}) error
 	GetLogs(url string) error
 }
 
@@ -27,8 +27,8 @@ func init() {
 	Client = &def{}
 }
 
-// Get gets spec object
-func (d *def) Get(method, url string, params map[string]string, vPtr interface{}) error {
+// MakeHTTPRequest gets spec object
+func (d *def) MakeHTTPRequest(method, url string, params map[string]string, vPtr interface{}) error {
 	account, token, err := utils.LoginWithSelectedAccount()
 	if err != nil {
 		return utils.LogError("Couldn't get account details or login token", err)
@@ -134,8 +134,8 @@ type MocketAuthProviders struct {
 	mock.Mock
 }
 
-// Get gets spec object during test
-func (m *MocketAuthProviders) Get(method, url string, params map[string]string, vPtr interface{}) error {
+// MakeHTTPRequest gets spec object during test
+func (m *MocketAuthProviders) MakeHTTPRequest(method, url string, params map[string]string, vPtr interface{}) error {
 	c := m.Called(method, url, params, vPtr)
 	a, _ := json.Marshal(c[1])
 	_ = json.Unmarshal(a, vPtr)
