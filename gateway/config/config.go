@@ -88,17 +88,26 @@ type ProjectConfig struct {
 	ContextTimeGraphQL int       `json:"contextTimeGraphQL,omitempty" yaml:"contextTimeGraphQL,omitempty"` // contextTime sets the timeout of query
 }
 
+// DriverConfig stores the parameters for drivers of Databases.
+type DriverConfig struct {
+	MaxConn        int    `json:"maxConn,omitempty" yaml:"maxConn,omitempty"`               //for SQL and Mongo
+	MaxIdleTimeout int    `json:"maxIdleTimeout,omitempty" yaml:"maxIdleTimeout,omitempty"` //for SQL and Mongo
+	MinConn        uint64 `json:"minConn,omitempty" yaml:"minConn,omitempty"`               //only for Mongo
+	MaxIdleConn    int    `json:"maxIdleConn,omitempty" yaml:"maxIdleConn,omitempty"`       //only for SQL
+}
+
 // DatabaseConfig stores information of database config
 type DatabaseConfig struct {
-	DbAlias      string `json:"dbAlias,omitempty" yaml:"dbAlias"`
-	Type         string `json:"type,omitempty" yaml:"type"` // database type
-	DBName       string `json:"name,omitempty" yaml:"name"` // name of the logical database or schema name according to the database type
-	Conn         string `json:"conn,omitempty" yaml:"conn"`
-	IsPrimary    bool   `json:"isPrimary" yaml:"isPrimary"`
-	Enabled      bool   `json:"enabled" yaml:"enabled"`
-	BatchTime    int    `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
-	BatchRecords int    `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
-	Limit        int64  `json:"limit,omitempty" yaml:"limit"`               // indicates number of records to send per request
+	DbAlias      string       `json:"dbAlias,omitempty" yaml:"dbAlias"`
+	Type         string       `json:"type,omitempty" yaml:"type"` // database type
+	DBName       string       `json:"name,omitempty" yaml:"name"` // name of the logical database or schema name according to the database type
+	Conn         string       `json:"conn,omitempty" yaml:"conn"`
+	IsPrimary    bool         `json:"isPrimary" yaml:"isPrimary"`
+	Enabled      bool         `json:"enabled" yaml:"enabled"`
+	BatchTime    int          `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
+	BatchRecords int          `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
+	Limit        int64        `json:"limit,omitempty" yaml:"limit"`               // indicates number of records to send per request
+	DriverConf   DriverConfig `json:"driverConf,omitempty" yaml:"driverConf"`
 }
 
 // DatabaseSchema stores information of db schemas

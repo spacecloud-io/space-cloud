@@ -63,7 +63,7 @@ type Crud interface {
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() model.DBType
 	IsClientSafe(ctx context.Context) error
-	IsSame(conn, dbName string) bool
+	IsSame(conn, dbName string, driverConf config.DriverConfig) bool
 	Close() error
 	GetConnectionState(ctx context.Context) bool
 	SetQueryFetchLimit(limit int64)
@@ -74,14 +74,14 @@ func Init() *Module {
 	return &Module{batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
-func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName string) (Crud, error) {
+func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName string, driverConf config.DriverConfig) (Crud, error) {
 	switch dbType {
 	case model.Mongo:
-		return mgo.Init(enabled, connection, dbName)
+		return mgo.Init(enabled, connection, dbName, driverConf)
 	case model.EmbeddedDB:
 		return bolt.Init(enabled, connection, dbName)
 	case model.MySQL, model.Postgres, model.SQLServer:
-		c, err := sql.Init(dbType, enabled, connection, dbName)
+		c, err := sql.Init(dbType, enabled, connection, dbName, driverConf)
 		if err == nil && enabled {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -90,7 +90,7 @@ func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName
 			}
 		}
 		if dbType == model.MySQL {
-			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, dbName), dbName)
+			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, dbName), dbName, driverConf)
 		}
 		return c, err
 	default:
