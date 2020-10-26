@@ -159,26 +159,28 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 }
 
 func getAggregateColumnName(column string) string {
-	return strings.Split(column, ":")[0]
+	return strings.Split(column, ":")[1]
 }
 
 func getAggregateAsColumnName(function, column string) string {
 	format := "nested"
 	arr := strings.Split(column, ":")
-	if len(arr) == 2 && arr[1] == "table" {
+
+	returnField := arr[0]
+	column = arr[1]
+	if len(arr) == 3 && arr[2] == "table" {
 		format = "table"
-		column = arr[0]
 	}
 
-	return fmt.Sprintf("%s___%s___%s___%s", utils.GraphQLAggregate, format, function, strings.Join(strings.Split(column, "."), "__"))
+	return fmt.Sprintf("%s___%s___%s___%s___%s", utils.GraphQLAggregate, format, returnField, function, strings.Join(strings.Split(column, "."), "__"))
 }
 
-func splitAggregateAsColumnName(asColumnName string) (format, functionName, columnName string, isAggregateColumn bool) {
+func splitAggregateAsColumnName(asColumnName string) (format, returnField, functionName, columnName string, isAggregateColumn bool) {
 	v := strings.Split(asColumnName, "___")
-	if len(v) != 4 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
-		return "", "", "", false
+	if len(v) != 5 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
+		return "", "", "", "", false
 	}
-	return v[1], v[2], v[3], true
+	return v[1], v[2], v[3], v[4], true
 }
 
 // Read query document(s) from the database
@@ -307,12 +309,12 @@ func processAggregate(row, m map[string]interface{}, isAggregate bool) {
 	if isAggregate {
 		funcMap := map[string]interface{}{}
 		for asColumnName, value := range row {
-			format, functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
+			format, returnField, functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
 			if isAggregateColumn {
 				delete(row, asColumnName)
 
 				if format == "table" {
-					m[columnName] = value
+					m[returnField] = value
 					continue
 				}
 

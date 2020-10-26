@@ -19,14 +19,14 @@ sleep 10
 cd modules/crud/sql
 
 ## mysql test
-#echo "starting mysql container, it will take 30 seconds"
-#docker run --name integration-mysql -p 3306:3306  -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:latest
-#sleep 30
-#echo "running integration tests for mysql"
-#go test -tags integration -db_type mysql -conn "root:my-secret-pw@tcp(localhost:3306)/"
-#echo "removing mysql container"
-#docker rm -f integration-mysql
-#echo "\n"
+echo "starting mysql container, it will take 30 seconds"
+docker run --name integration-mysql -p 3306:3306  -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:latest
+sleep 30
+echo "running integration tests for mysql"
+go test -tags integration -db_type mysql -conn "root:my-secret-pw@tcp(localhost:3306)/"
+echo "removing mysql container"
+docker rm -f integration-mysql
+echo "\n"
 
 # postgres test
 echo "starting postgres container, it will take 30 seconds"

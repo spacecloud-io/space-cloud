@@ -36,7 +36,7 @@ func TestSQL_CreateDatabaseIfNotExist(t *testing.T) {
 		},
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("CreateDatabaseIfNotExist() Couldn't establishing connection with database", dbType)
 	}
@@ -92,7 +92,7 @@ func TestSQL_GetConnectionState(t *testing.T) {
 		},
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("GetConnectionState() Couldn't establishing connection with database", dbType)
 	}
@@ -132,7 +132,7 @@ func TestSQL_RawBatch(t *testing.T) {
 		},
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("RawBatch() Couldn't establishing connection with database", dbType)
 	}
@@ -199,7 +199,7 @@ func TestSQL_RawQuery(t *testing.T) {
 		},
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("RawQuery() Couldn't establishing connection with database", dbType)
 	}

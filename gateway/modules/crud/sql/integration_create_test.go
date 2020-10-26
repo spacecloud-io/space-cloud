@@ -204,7 +204,7 @@ func TestSQL_Create(t *testing.T) {
 		testCases = sqlCases
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("Create() Couldn't establishing connection with database", dbType)
 	}

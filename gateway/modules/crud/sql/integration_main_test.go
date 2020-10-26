@@ -174,7 +174,7 @@ func TestMain(m *testing.M) {
 	}
 
 	ctx := context.Background()
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Create() Couldn't establishing connection with database", map[string]interface{}{"db": *dbType})
 		os.Exit(-1)

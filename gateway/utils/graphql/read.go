@@ -302,16 +302,23 @@ func extractAggregate(ctx context.Context, v *ast.Field, store utils.M) (map[str
 		// Check if aggregate was found in the directive
 		if len(field.Directives) > 0 && field.Directives[0].Name.Value == "aggregate" {
 			// Get the required parameters
-			op, err := getAggregateArguments(field.Directives[0], store)
+			returnField := field.Name.Value
+			op, fieldName, err := getAggregateArguments(field.Directives[0], store)
 			if err != nil {
 				return nil, err
+			}
+
+			if fieldName == "" {
+				fieldName = returnField
 			}
 
 			colArray, ok := functionMap[op]
 			if !ok {
 				colArray = []string{}
 			}
-			colArray = append(colArray, strings.Join(strings.Split(field.Name.Value, "__"), ".")+":table")
+
+			columnName := fmt.Sprintf("%s:%s:table", returnField, strings.Join(strings.Split(fieldName, "__"), "."))
+			colArray = append(colArray, columnName)
 			functionMap[op] = colArray
 			continue
 		}
@@ -344,7 +351,9 @@ func extractAggregate(ctx context.Context, v *ast.Field, store utils.M) (map[str
 			// get column name
 			for _, selection := range functionField.SelectionSet.Selections {
 				columnField := selection.(*ast.Field)
-				colArray = append(colArray, strings.Join(strings.Split(columnField.Name.Value, "__"), "."))
+				returnFieldName := columnField.Name.Value
+				columnName := strings.Join(strings.Split(columnField.Name.Value, "__"), ".")
+				colArray = append(colArray, fmt.Sprintf("%s:%s", returnFieldName, columnName))
 			}
 			functionMap[functionField.Name.Value] = colArray
 		}
@@ -352,25 +361,42 @@ func extractAggregate(ctx context.Context, v *ast.Field, store utils.M) (map[str
 	return functionMap, nil
 }
 
-func getAggregateArguments(field *ast.Directive, store utils.M) (string, error) {
+func getAggregateArguments(field *ast.Directive, store utils.M) (string, string, error) {
+	var operation, fieldName string
 	for _, arg := range field.Arguments {
 		switch arg.Name.Value {
 		case "op":
 			temp, err := utils.ParseGraphqlValue(arg.Value, store)
 			if err != nil {
-				return "", err
+				return "", "", err
 			}
 
 			op, ok := temp.(string)
 			if !ok {
-				return "", fmt.Errorf("invalid type provided (%s) for aggregate op", reflect.TypeOf(temp))
+				return "", "", fmt.Errorf("invalid type provided (%s) for aggregate op", reflect.TypeOf(temp))
 			}
 
-			return op, nil
+			operation = op
+
+		case "field":
+			temp, err := utils.ParseGraphqlValue(arg.Value, store)
+			if err != nil {
+				return "", "", err
+			}
+
+			f, ok := temp.(string)
+			if !ok {
+				return "", "", fmt.Errorf("invalid type provided (%s) for aggregate op", reflect.TypeOf(temp))
+			}
+
+			fieldName = f
 		}
 	}
+	if operation == "" {
+		return "", "", errors.New("need to provide `op` when using aggregations")
+	}
 
-	return "", errors.New("need to provide `op` when using aggregations")
+	return operation, fieldName, nil
 }
 
 func extractGroupByClause(ctx context.Context, args []*ast.Argument, store utils.M) ([]interface{}, error) {

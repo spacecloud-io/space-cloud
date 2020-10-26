@@ -611,7 +611,7 @@ var queryTestCases = []tests{
 						"power_level": map[string]interface{}{
 							"$eq": 100,
 						}},
-					Aggregate:   map[string][]string{"sum": {"power_level"}},
+					Aggregate:   map[string][]string{"sum": {"power_level:power_level"}},
 					GroupBy:     []interface{}{"power_level"},
 					Operation:   utils.All,
 					Options:     &model.ReadOptions{},
@@ -687,7 +687,7 @@ var queryTestCases = []tests{
 						"power_level": map[string]interface{}{
 							"$eq": 100,
 						}},
-					Aggregate:   map[string][]string{"sum": {"power_level"}},
+					Aggregate:   map[string][]string{"sum": {"power_level:power_level"}},
 					GroupBy:     []interface{}{"power_level"},
 					Operation:   utils.All,
 					Options:     &model.ReadOptions{},
