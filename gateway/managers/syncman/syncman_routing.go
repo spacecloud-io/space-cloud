@@ -174,33 +174,6 @@ func (s *Manager) SetGlobalRouteConfig(ctx context.Context, project string, glob
 	return http.StatusOK, nil
 }
 
-// DeleteGlobalRouteConfig sets the project level ingress routing config
-func (s *Manager) DeleteGlobalRouteConfig(ctx context.Context, project string, params model.RequestParams) (int, error) {
-	// Acquire a lock
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	// Get the provided project's config
-	projectConfig, err := s.getConfigWithoutLock(ctx, project)
-	if err != nil {
-		return http.StatusBadRequest, err
-	}
-
-	// Delete config in project config object
-	projectConfig.IngressGlobal = &config.GlobalRoutesConfig{}
-
-	// Update the routing module
-	s.modules.Routing().SetGlobalConfig(projectConfig.IngressGlobal)
-
-	// Finally lets store the config
-	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceIngressGlobal, "global")
-	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	return http.StatusOK, nil
-}
-
 // GetGlobalRouteConfig returns the project level ingress routing config
 func (s *Manager) GetGlobalRouteConfig(ctx context.Context, project string, params model.RequestParams) (int, interface{}, error) {
 	// Acquire a lock

@@ -158,36 +158,6 @@ func HandleSetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manage
 	}
 }
 
-// HandleDeleteGlobalRouteConfig sets the project level ingress route config
-func HandleDeleteGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Extract the required path parameters
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
-		defer cancel()
-
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(ctx, utils.GetTokenFromHeader(r), "ingress-global", "modify", map[string]string{"project": projectID})
-		if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error handling delete project route in handlers unable to validate token got error message", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
-		status, err := syncMan.DeleteGlobalRouteConfig(ctx, projectID, reqParams)
-		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
-			return
-		}
-
-		// Send an okay response
-		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
-	}
-}
-
 // HandleGetGlobalRouteConfig gets the project level ingress route config
 func HandleGetGlobalRouteConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
