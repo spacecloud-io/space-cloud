@@ -33,7 +33,7 @@ func Test_deleteIngressGlobalConfig(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/routing/ingress/global", map[string]string{}, new(model.Response)},
+					args:   []interface{}{http.MethodPost, "/v1/config/projects/myproject/routing/ingress/global", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{
 						errors.New("bad request"),
 						map[string]interface{}{
@@ -50,7 +50,7 @@ func Test_deleteIngressGlobalConfig(t *testing.T) {
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/routing/ingress/global", map[string]string{}, new(model.Response)},
+					args:   []interface{}{http.MethodPost, "/v1/config/projects/myproject/routing/ingress/global", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{
 						nil,
 						map[string]interface{}{
@@ -124,7 +124,7 @@ func Test_deleteIngressRoute(t *testing.T) {
 		},
 		{
 			name: "Prefix matches one route but unable to delete route",
-			args: args{project: "myproject", prefix: "local-admin"},
+			args: args{project: "myproject", prefix: "l"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -140,19 +140,6 @@ func Test_deleteIngressRoute(t *testing.T) {
 							Result: []interface{}{
 								map[string]interface{}{
 									"id": "local-admin",
-									"source": map[string]interface{}{
-										"url":   "/v1/config/projects/myproject/routing/ingress",
-										"hosts": []string{"www.google.com", "www.facebook.com"},
-									},
-									"targets": []interface{}{
-										map[string]interface{}{
-											"version": "v0.18.0",
-											"host":    "greeting.myproject.svc.cluster.local",
-										},
-									},
-								},
-								map[string]interface{}{
-									"id": "local",
 									"source": map[string]interface{}{
 										"url":   "/v1/config/projects/myproject/routing/ingress",
 										"hosts": []string{"www.google.com", "www.facebook.com"},
@@ -188,11 +175,25 @@ func Test_deleteIngressRoute(t *testing.T) {
 					},
 				},
 			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"local-admin"},
+							Default: []string{"local-admin"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "local-admin"},
+				},
+			},
 			wantErr: true,
 		},
 		{
 			name: "Prefix matches one route and route deleted successfully",
-			args: args{project: "myproject", prefix: "local-admin"},
+			args: args{project: "myproject", prefix: "l"},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -208,19 +209,6 @@ func Test_deleteIngressRoute(t *testing.T) {
 							Result: []interface{}{
 								map[string]interface{}{
 									"id": "local-admin",
-									"source": map[string]interface{}{
-										"url":   "/v1/config/projects/myproject/routing/ingress",
-										"hosts": []string{"www.google.com", "www.facebook.com"},
-									},
-									"targets": []interface{}{
-										map[string]interface{}{
-											"version": "v0.18.0",
-											"host":    "greeting.myproject.svc.cluster.local",
-										},
-									},
-								},
-								map[string]interface{}{
-									"id": "local",
 									"source": map[string]interface{}{
 										"url":   "/v1/config/projects/myproject/routing/ingress",
 										"hosts": []string{"www.google.com", "www.facebook.com"},
@@ -254,6 +242,20 @@ func Test_deleteIngressRoute(t *testing.T) {
 							},
 						},
 					},
+				},
+			},
+			surveyMockArgs: []mockArgs{
+				{
+					method: "AskOne",
+					args: []interface{}{
+						&survey.Select{
+							Message: "Choose the resource ID: ",
+							Options: []string{"local-admin"},
+							Default: []string{"local-admin"}[0],
+						},
+						&surveyMatchReturnValue,
+					},
+					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
 		},

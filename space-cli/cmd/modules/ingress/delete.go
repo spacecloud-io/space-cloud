@@ -15,7 +15,7 @@ func deleteIngressGlobalConfig(project string) error {
 	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress/global", project)
 
 	payload := new(model.Response)
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodPost, url, map[string]string{}, payload); err != nil {
 		return err
 	}
 
