@@ -16,22 +16,20 @@ func deleteDBRules(project, dbAlias, prefix string) error {
 		return err
 	}
 
-	doesTableNameExist := false
 	tableNames := []string{}
 	for _, spec := range objs {
 		tableNames = append(tableNames, spec.Meta["col"])
 	}
 
-	prefix, err = filter.DeleteOptions(prefix, tableNames, doesTableNameExist)
+	resourceID, err := filter.DeleteOptions(prefix, tableNames)
 	if err != nil {
 		return err
 	}
 
 	// Delete the db rules from the server
-	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/collections/%s/rules", project, dbAlias, prefix)
+	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/collections/%s/rules", project, dbAlias, resourceID)
 
-	payload := new(model.Response)
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": dbAlias, "col": prefix}, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": dbAlias, "col": resourceID}, new(model.Response)); err != nil {
 		return err
 	}
 
@@ -45,22 +43,20 @@ func deleteDBConfigs(project, prefix string) error {
 		return err
 	}
 
-	doesAliasExist := false
 	aliasNames := []string{}
 	for _, spec := range objs {
 		aliasNames = append(aliasNames, spec.Meta["dbAlias"])
 	}
 
-	prefix, err = filter.DeleteOptions(prefix, aliasNames, doesAliasExist)
+	resourceID, err := filter.DeleteOptions(prefix, aliasNames)
 	if err != nil {
 		return err
 	}
 
 	// Delete the db config from the server
-	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/config/%s", project, prefix, "database-config")
+	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/config/%s", project, resourceID, "database-config")
 
-	payload := new(model.Response)
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": prefix}, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": resourceID}, new(model.Response)); err != nil {
 		return err
 	}
 
@@ -74,22 +70,20 @@ func deleteDBPreparedQuery(project, dbAlias, prefix string) error {
 		return err
 	}
 
-	doesPreparedQueryExist := false
 	preparedQueries := []string{}
 	for _, spec := range objs {
 		preparedQueries = append(preparedQueries, spec.Meta["id"])
 	}
 
-	prefix, err = filter.DeleteOptions(prefix, preparedQueries, doesPreparedQueryExist)
+	resourceID, err := filter.DeleteOptions(prefix, preparedQueries)
 	if err != nil {
 		return err
 	}
 
 	// Delete the db prepared query from the server
-	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/prepared-queries/%s", project, dbAlias, prefix)
+	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/prepared-queries/%s", project, dbAlias, resourceID)
 
-	payload := new(model.Response)
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": dbAlias, "id": prefix}, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": dbAlias, "id": resourceID}, new(model.Response)); err != nil {
 		return err
 	}
 
@@ -103,22 +97,20 @@ func deleteDBSchemas(project, dbAlias, prefix string) error {
 		return err
 	}
 
-	doesTableExist := false
 	tableNames := []string{}
 	for _, spec := range objs {
 		tableNames = append(tableNames, spec.Meta["col"])
 	}
 
-	prefix, err = filter.DeleteOptions(prefix, tableNames, doesTableExist)
+	resourceID, err := filter.DeleteOptions(prefix, tableNames)
 	if err != nil {
 		return err
 	}
 
 	// Delete the db prepared query from the server
-	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/collections/%s", project, dbAlias, prefix)
+	url := fmt.Sprintf("/v1/config/projects/%s/database/%s/collections/%s", project, dbAlias, resourceID)
 
-	payload := new(model.Response)
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": dbAlias, "col": prefix}, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"dbAlias": dbAlias, "col": resourceID}, new(model.Response)); err != nil {
 		return err
 	}
 

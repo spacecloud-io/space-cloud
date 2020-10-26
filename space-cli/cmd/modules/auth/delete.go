@@ -16,22 +16,20 @@ func deleteAuthProvider(project, prefix string) error {
 		return err
 	}
 
-	doesProviderExist := false
 	providers := []string{}
 	for _, spec := range objs {
 		providers = append(providers, spec.Meta["id"])
 	}
 
-	prefix, err = filter.DeleteOptions(prefix, providers, doesProviderExist)
+	resourceID, err := filter.DeleteOptions(prefix, providers)
 	if err != nil {
 		return err
 	}
 
 	// Delete the provider from the server
-	url := fmt.Sprintf("/v1/config/projects/%s/user-management/provider/%s", project, prefix)
+	url := fmt.Sprintf("/v1/config/projects/%s/user-management/provider/%s", project, resourceID)
 
-	payload := new(model.Response)
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"id": prefix}, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"id": resourceID}, new(model.Response)); err != nil {
 		return err
 	}
 

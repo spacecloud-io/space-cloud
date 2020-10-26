@@ -1,4 +1,4 @@
-package filestore
+package ingress
 
 import (
 	"fmt"
@@ -9,10 +9,10 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
-func deleteFileStoreConfig(project string) error {
+func deleteIngressGlobalConfig(project string) error {
 
-	// Delete the filestore config from the server
-	url := fmt.Sprintf("/v1/config/projects/%s/file-storage/config/%s", project, "filestore-config")
+	// Delete the ingress global config from the server
+	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress/global", project)
 
 	if err := transport.Client.MakeHTTPRequest(http.MethodPost, url, map[string]string{}, new(model.Response)); err != nil {
 		return err
@@ -21,25 +21,25 @@ func deleteFileStoreConfig(project string) error {
 	return nil
 }
 
-func deleteFileStoreRule(project, prefix string) error {
+func deleteIngressRoute(project, prefix string) error {
 
-	objs, err := GetFileStoreRule(project, "filestore-rule", map[string]string{})
+	objs, err := GetIngressRoutes(project, "ingress-route", map[string]string{}, []string{})
 	if err != nil {
 		return err
 	}
 
-	ruleIDs := []string{}
+	routeIDs := []string{}
 	for _, spec := range objs {
-		ruleIDs = append(ruleIDs, spec.Meta["id"])
+		routeIDs = append(routeIDs, spec.Meta["id"])
 	}
 
-	resourceID, err := filter.DeleteOptions(prefix, ruleIDs)
+	resourceID, err := filter.DeleteOptions(prefix, routeIDs)
 	if err != nil {
 		return err
 	}
 
-	// Delete the filestore rule from the server
-	url := fmt.Sprintf("/v1/config/projects/%s/file-storage/rules/%s", project, resourceID)
+	// Delete the ingress route from the server
+	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress/%s", project, resourceID)
 
 	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, new(model.Response)); err != nil {
 		return err

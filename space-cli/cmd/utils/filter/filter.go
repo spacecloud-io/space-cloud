@@ -9,7 +9,8 @@ import (
 )
 
 // DeleteOptions filters the resource id based on prefix to delete
-func DeleteOptions(prefix string, resources []string, doesResourceExist bool) (string, error) {
+func DeleteOptions(prefix string, resources []string) (string, error) {
+	doesResourceExist := false
 	filteredResources := []string{}
 	for _, resource := range resources {
 		if prefix != "" && strings.HasPrefix(strings.ToLower(resource), strings.ToLower(prefix)) {

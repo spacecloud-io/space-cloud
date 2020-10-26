@@ -4,6 +4,7 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/auth"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/database"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/filestore"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/ingress"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +17,7 @@ func FetchDeleteSubCommands() *cobra.Command {
 	}
 	deleteCmd.AddCommand(auth.DeleteSubCommands()...)
 	deleteCmd.AddCommand(database.DeleteSubCommands()...)
+	deleteCmd.AddCommand(ingress.DeleteSubCommands()...)
 	deleteCmd.AddCommand(filestore.DeleteSubCommands()...)
 
 	return deleteCmd
