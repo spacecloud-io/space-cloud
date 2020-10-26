@@ -25,7 +25,7 @@ var essentialFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:   "log-format",
 		EnvVar: "LOG_FORMAT",
-		Usage:  "Set the log format [json | console]",
+		Usage:  "Set the log format [json | text]",
 		Value:  helpers.LogFormatJSON,
 	},
 	cli.StringFlag{
