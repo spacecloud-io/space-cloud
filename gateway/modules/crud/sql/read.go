@@ -124,7 +124,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		query = query.Select(selArray...)
 		if len(req.GroupBy) > 0 {
 			for _, group := range req.GroupBy {
-				if strings.Split(group.(string), ".")[0] != col && req.Options.ReturnType != "table" {
+				if arr := strings.Split(group.(string), "."); len(arr) > 1 && arr[0] != col && req.Options.ReturnType != "table" {
 					return "", nil, fmt.Errorf("use `returnType` `table` to perform group by on joint tables")
 				}
 			}
