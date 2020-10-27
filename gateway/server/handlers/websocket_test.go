@@ -683,7 +683,7 @@ type mockGraphQLModule struct {
 	mock.Mock
 }
 
-func (m *mockGraphQLModule) GetDBAlias(ctx context.Context, field *ast.Field) (string, error) {
+func (m *mockGraphQLModule) GetDBAlias(ctx context.Context, field *ast.Field, token string, store utils.M) (string, error) {
 	c := m.Called(field)
 	return c.String(0), c.Error(1)
 }

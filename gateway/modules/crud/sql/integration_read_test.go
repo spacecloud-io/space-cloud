@@ -4662,7 +4662,7 @@ func TestSQL_Read(t *testing.T) {
 	case model.SQLServer:
 		tests = mssqlCases
 	}
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("Read() Couldn't establishing connection with database", dbType)
 	}
