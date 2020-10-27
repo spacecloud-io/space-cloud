@@ -37,7 +37,7 @@ func TestSQL_GetCollections(t *testing.T) {
 		},
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("GetCollections() Couldn't establishing connection with database", dbType)
 	}

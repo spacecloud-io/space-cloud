@@ -12,7 +12,7 @@ import (
 )
 
 func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.Field, store utils.M, cb model.GraphQLCallback) {
-	serviceName := field.Directives[0].Name.Value
+	serviceName, _ := graph.getDirectiveName(ctx, field.Directives[0], token, store)
 
 	funcName, err := getFuncName(field)
 	if err != nil {

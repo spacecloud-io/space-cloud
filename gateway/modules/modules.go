@@ -55,6 +55,7 @@ func New(nodeID string, managers *managers.Managers, globalMods *global.Global) 
 
 	a := auth.Init(nodeID, c, adminMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
+	c.SetAuth(a)
 
 	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)

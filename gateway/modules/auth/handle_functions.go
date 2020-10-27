@@ -35,7 +35,7 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 
 	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{
 		"args": map[string]interface{}{"auth": auth, "params": params, "token": token},
-	}, auth)
+	}, auth, model.ReturnWhereStub{})
 	if err != nil {
 		return nil, model.RequestParams{}, err
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // AuthorizeRequest authorizes a request using the rule provided
@@ -24,7 +25,7 @@ func (m *Module) AuthorizeRequest(ctx context.Context, rule *config.Rule, projec
 
 	args["auth"] = auth
 	args["token"] = token
-	if _, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth); err != nil {
+	if _, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{}); err != nil {
 		return nil, err
 	}
 

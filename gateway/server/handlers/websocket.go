@@ -237,7 +237,7 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 					continue
 				}
 
-				whereData, err := graphql.ExtractWhereClause(ctx, v.Arguments, utils.M{"vars": m.Payload.Variables})
+				whereData, err := graphql.ExtractWhereClause(v.Arguments, utils.M{"vars": m.Payload.Variables})
 				if err != nil {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					continue

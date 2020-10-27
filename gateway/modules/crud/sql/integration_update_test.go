@@ -1039,7 +1039,7 @@ func TestSQL_Update(t *testing.T) {
 		testCases = mssqlCases
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("Update() Couldn't establishing connection with database", dbType)
 	}

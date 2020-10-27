@@ -61,6 +61,11 @@ type AuthFilestoreInterface interface {
 	IsFileOpAuthorised(ctx context.Context, project, token, path string, op FileOpType, args map[string]interface{}) (*PostProcess, error)
 }
 
+// AuthCrudInterface is an interface consisting of functions of auth module used by crud module
+type AuthCrudInterface interface {
+	PostProcessMethod(ctx context.Context, postProcess *PostProcess, result interface{}) error
+}
+
 // AuthFunctionInterface is an interface consisting of functions of auth module used by Function module
 type AuthFunctionInterface interface {
 	GetSCAccessToken(ctx context.Context) (string, error)
@@ -74,7 +79,7 @@ type EventingRealtimeInterface interface {
 
 // AuthRealtimeInterface is an interface consisting of functions of auth module used by RealTime module
 type AuthRealtimeInterface interface {
-	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, RequestParams, error)
+	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest, stub ReturnWhereStub) (*PostProcess, RequestParams, error)
 	PostProcessMethod(ctx context.Context, postProcess *PostProcess, result interface{}) error
 	GetInternalAccessToken(ctx context.Context) (string, error)
 	GetSCAccessToken(ctx context.Context) (string, error)
@@ -103,7 +108,7 @@ type CrudUserInterface interface {
 
 // AuthUserInterface is an interface consisting of functions of auth module used by User module
 type AuthUserInterface interface {
-	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, RequestParams, error)
+	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest, stub ReturnWhereStub) (*PostProcess, RequestParams, error)
 	PostProcessMethod(ctx context.Context, postProcess *PostProcess, result interface{}) error
 	CreateToken(ctx context.Context, tokenClaims TokenClaims) (string, error)
 	IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *UpdateRequest) (RequestParams, error)
@@ -148,4 +153,12 @@ type TokenClaims map[string]interface{}
 type Response struct {
 	Error  string      `json:"error,omitempty"`
 	Result interface{} `json:"result,omitempty"`
+}
+
+// ReturnWhereStub describes return where stuff
+type ReturnWhereStub struct {
+	Where         map[string]interface{}
+	ReturnWhere   bool
+	Col           string
+	PrefixColName bool
 }

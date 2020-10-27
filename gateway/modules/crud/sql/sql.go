@@ -25,11 +25,12 @@ type SQL struct {
 	client     *sqlx.DB
 	dbType     string
 	name       string // logical db name or schema name according to the database type
+	auth       model.AuthCrudInterface
 }
 
 // Init initialises a new sql instance
-func Init(dbType model.DBType, enabled bool, connection string, dbName string) (s *SQL, err error) {
-	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil}
+func Init(dbType model.DBType, enabled bool, connection string, dbName string, auth model.AuthCrudInterface) (s *SQL, err error) {
+	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil, auth: auth}
 
 	switch dbType {
 	case model.Postgres:

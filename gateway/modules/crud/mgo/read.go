@@ -2,6 +2,7 @@ package mgo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -15,8 +16,11 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// Read querys document(s) from the database
+// Read queries document(s) from the database
 func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
+	if req.Options != nil && len(req.Options.Join) > 0 {
+		return 0, nil, errors.New("cannot perform joins in mongo db")
+	}
 	collection := m.client.Database(m.dbName).Collection(col)
 
 	switch req.Operation {
@@ -81,16 +85,16 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			functionsMap := make(bson.M)
 			for function, colArray := range req.Aggregate {
 				for _, column := range colArray {
-					asColumnName := generateAggregateAsColumnName(function, column)
+					asColumnName := getAggregateAsColumnName(function, column)
 					switch function {
 					case "sum":
-						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, getAggregateColumnName(column))
 					case "min":
-						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, getAggregateColumnName(column))
 					case "max":
-						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, getAggregateColumnName(column))
 					case "avg":
-						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
+						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, getAggregateColumnName(column))
 					case "count":
 						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, "*")
 					default:
@@ -116,10 +120,10 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 		results := []interface{}{}
 
 		if len(req.Aggregate) > 0 {
-			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Mongo aggregate", map[string]interface{}{"pipeline": pipeline})
+			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Mongo aggregate", map[string]interface{}{"col": col, "pipeline": pipeline})
 			cur, err = collection.Aggregate(ctx, pipeline)
 		} else {
-			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Mongo query", map[string]interface{}{"find": req.Find, "options": findOptions})
+			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Mongo query", map[string]interface{}{"col": col, "find": req.Find, "options": findOptions})
 			cur, err = collection.Find(ctx, req.Find, findOptions)
 		}
 		if err != nil {
@@ -144,6 +148,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			if len(req.Aggregate) > 0 {
 				getNestedObject(doc)
 			}
+
 			results = append(results, doc)
 		}
 
@@ -280,27 +285,45 @@ func getOptionStage(options *model.ReadOptions, sortFields []string) []bson.M {
 	return optionStage
 }
 
-func generateAggregateAsColumnName(function, column string) string {
-	return fmt.Sprintf("%s__%s__%s", utils.GraphQLAggregate, function, column)
+func getAggregateColumnName(column string) string {
+	return strings.Split(column, ":")[1]
 }
 
-func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
-	v := strings.Split(asColumnName, "__")
-	if len(v) != 3 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
-		return "", "", false
+func getAggregateAsColumnName(function, column string) string {
+	format := "nested"
+	arr := strings.Split(column, ":")
+
+	returnField := arr[0]
+	column = arr[1]
+	if len(arr) == 3 && arr[2] == "table" {
+		format = "table"
 	}
-	return v[1], v[2], true
+
+	return fmt.Sprintf("%s___%s___%s___%s___%s", utils.GraphQLAggregate, format, returnField, function, strings.Join(strings.Split(column, "."), "__"))
+}
+
+func splitAggregateAsColumnName(asColumnName string) (format, returnField, functionName, columnName string, isAggregateColumn bool) {
+	v := strings.Split(asColumnName, "___")
+	if len(v) != 5 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
+		return "", "", "", "", false
+	}
+	return v[1], v[2], v[3], v[4], true
 }
 
 func getNestedObject(doc map[string]interface{}) {
 	resultObj := make(map[string]interface{})
 	for asColumnName, value := range doc {
-		functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
+		format, returnField, functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
 		if isAggregateColumn {
 			delete(doc, asColumnName)
+
+			if format == "table" {
+				doc[returnField] = value
+				continue
+			}
+
 			funcValue, ok := resultObj[functionName]
 			if !ok {
-
 				// NOTE: This case occurs for count function with no column name (using * operator instead)
 				if columnName == "" {
 					resultObj[functionName] = value

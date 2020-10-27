@@ -195,7 +195,7 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			_, _, err := (auth).IsReadOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
+			_, _, err := (auth).IsReadOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value, model.ReturnWhereStub{})
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Success GoErr", err, "Want Error", test.IsErrExpected)
 			}

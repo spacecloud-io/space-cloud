@@ -19,7 +19,7 @@ import (
 	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 )
 
-func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
 	if project != m.project {
 		return nil, formatError(ctx, rule, errors.New("invalid project details provided"))
 	}
@@ -39,19 +39,19 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return nil, formatError(ctx, rule, errors.New("the operation being performed is denied"))
 
 	case "match":
-		return nil, match(ctx, rule, args)
+		return nil, match(ctx, rule, args, returnWhere)
 
 	case "and":
-		return m.matchAnd(ctx, project, rule, args, auth)
+		return m.matchAnd(ctx, project, rule, args, auth, returnWhere)
 
 	case "or":
-		return m.matchOr(ctx, project, rule, args, auth)
+		return m.matchOr(ctx, project, rule, args, auth, returnWhere)
 
 	case "webhook":
 		return nil, m.matchFunc(ctx, rule, m.makeHTTPRequest, args)
 
 	case "query":
-		return m.matchQuery(ctx, project, rule, m.crud, args, auth)
+		return m.matchQuery(ctx, project, rule, m.crud, args, auth, returnWhere)
 
 	case "force":
 		return m.matchForce(ctx, project, rule, args, auth)
@@ -135,7 +135,7 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 	return nil
 }
 
-func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Rule, crud model.CrudAuthInterface, args, auth map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Rule, crud model.CrudAuthInterface, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
 	// Adjust the find object to load any variables referenced from state
 	find := utils.Adjust(ctx, rule.Find, args).(map[string]interface{})
 
@@ -156,14 +156,14 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 		return nil, formatError(ctx, rule, err)
 	}
 
-	postProcess, err := m.matchRule(ctx, project, rule.Clause, args, auth)
+	postProcess, err := m.matchRule(ctx, project, rule.Clause, args, auth, returnWhere)
 	return postProcess, formatError(ctx, rule, err)
 }
 
-func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
 	completeAction := &model.PostProcess{}
 	for _, r := range rule.Clauses {
-		postProcess, err := m.matchRule(ctx, projectID, r, args, auth)
+		postProcess, err := m.matchRule(ctx, projectID, r, args, auth, returnWhere)
 		// if err is not nil then return error without checking the other clauses.
 		if err != nil {
 			return &model.PostProcess{}, formatError(ctx, rule, err)
@@ -175,22 +175,47 @@ func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Ru
 	return completeAction, nil
 }
 
-func (m *Module) matchOr(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) matchOr(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
 	// append all parameters returned by all clauses! and then return mainStruct
 	var finalError error
+	completeAction := &model.PostProcess{}
+
+	// Make an or array for storing the where clauses
+	or := make([]interface{}, 0)
 	for _, r := range rule.Clauses {
-		postProcess, err := m.matchRule(ctx, projectID, r, args, auth)
+		stub := model.ReturnWhereStub{Where: map[string]interface{}{}, ReturnWhere: returnWhere.ReturnWhere, Col: returnWhere.Col, PrefixColName: returnWhere.PrefixColName}
+		postProcess, err := m.matchRule(ctx, projectID, r, args, auth, stub)
 		if err == nil {
+			// Continue to the next clause if we are populating the where condition
+			if returnWhere.ReturnWhere {
+				if len(stub.Where) > 0 {
+					or = append(or, stub.Where)
+				}
+				if postProcess != nil {
+					completeAction.PostProcessAction = append(completeAction.PostProcessAction, postProcess.PostProcessAction...)
+				}
+				continue
+			}
+
 			// if condition is satisfied -> exit the function
 			return postProcess, nil
 		}
 		finalError = err
 	}
+
+	if returnWhere.ReturnWhere {
+		returnWhere.Where["$or"] = or
+	}
+
 	// if condition is not satisfied -> return empty model.PostProcess and error
-	return nil, formatError(ctx, rule, finalError)
+	return completeAction, formatError(ctx, rule, finalError)
 }
 
-func match(ctx context.Context, rule *config.Rule, args map[string]interface{}) error {
+func match(ctx context.Context, rule *config.Rule, args map[string]interface{}, returnWhere model.ReturnWhereStub) error {
+	if returnWhere.ReturnWhere {
+		return formatError(ctx, rule, matchWhere(rule, args, returnWhere))
+	}
+
 	switch rule.Type {
 	case "string":
 		return formatError(ctx, rule, matchString(ctx, rule, args))
@@ -211,11 +236,12 @@ func match(ctx context.Context, rule *config.Rule, args map[string]interface{}) 
 func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
 	if rule.Clause != nil && rule.Clause.Rule != "" {
 		// Match clause with rule!
-		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth, model.ReturnWhereStub{})
 		if err != nil {
 			return nil, nil
 		}
 	}
+
 	value := rule.Value
 	if stringValue, ok := rule.Value.(string); ok {
 		loadedValue, err := utils.LoadValue(stringValue, args)
@@ -238,7 +264,7 @@ func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.
 func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
 	if rule.Clause != nil && rule.Clause.Rule != "" {
 		// Match clause with rule!
-		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth, model.ReturnWhereStub{})
 		if err != nil {
 			return nil, nil
 		}
@@ -273,7 +299,7 @@ func (m *Module) matchEncrypt(ctx context.Context, projectID string, rule *confi
 	actions := &model.PostProcess{}
 	if rule.Clause != nil && rule.Clause.Rule != "" {
 		// Match clause with rule!
-		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth, model.ReturnWhereStub{})
 		if err != nil {
 			return actions, nil
 		}
@@ -319,7 +345,7 @@ func (m *Module) matchDecrypt(ctx context.Context, projectID string, rule *confi
 	actions := &model.PostProcess{}
 	if rule.Clause != nil && rule.Clause.Rule != "" {
 		// Match clause with rule!
-		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth, model.ReturnWhereStub{})
 		if err != nil {
 			return actions, nil
 		}
@@ -380,7 +406,7 @@ func (m *Module) matchHash(ctx context.Context, projectID string, rule *config.R
 	actions := &model.PostProcess{}
 	if rule.Clause != nil && rule.Clause.Rule != "" {
 		// Match clause with rule!
-		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth, model.ReturnWhereStub{})
 		if err != nil {
 			return actions, nil
 		}

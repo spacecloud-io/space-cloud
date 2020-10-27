@@ -126,11 +126,14 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 			req.Options = new(model.ReadOptions)
 		}
 
+		// Rest API is not allowed to do joins for security reasons
+		req.Options.Join = nil
+
 		// Check if the user is authenticated
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		actions, reqParams, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		actions, reqParams, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req, model.ReturnWhereStub{})
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
 			return
