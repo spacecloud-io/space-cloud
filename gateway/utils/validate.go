@@ -6,6 +6,7 @@ import (
 	"log"
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/spaceuptech/helpers"
@@ -61,6 +62,10 @@ func adjustValTypes(v1, v2 interface{}) (interface{}, interface{}) {
 func Validate(where map[string]interface{}, obj interface{}) bool {
 	if res, ok := obj.(map[string]interface{}); ok {
 		for k, temp := range where {
+			if strings.HasPrefix(k, "'") && strings.HasSuffix(k, "'") {
+				continue
+			}
+
 			if k == "$or" {
 				array, ok := temp.([]interface{})
 				if !ok {

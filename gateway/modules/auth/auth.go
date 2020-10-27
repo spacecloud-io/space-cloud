@@ -169,3 +169,15 @@ func (m *Module) SetMakeHTTPRequest(function utils.TypeMakeHTTPRequest) {
 
 	m.makeHTTPRequest = function
 }
+
+// CloseConfig closes go routines and initializes maps
+func (m *Module) CloseConfig() {
+	m.Lock()
+	defer m.Unlock()
+
+	m.jwt.Close()
+	m.funcRules = new(config.ServicesModule)
+	m.eventingRules = map[string]*config.Rule{}
+	m.fileRules = []*config.FileRule{}
+	m.rules = map[string]*config.CrudStub{}
+}

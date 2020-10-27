@@ -11,7 +11,7 @@ import (
 )
 
 func (graph *Module) genrateDeleteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (model.RequestParams, *model.AllRequest, error) {
-	dbAlias, err := graph.GetDBAlias(ctx, field)
+	dbAlias, err := graph.GetDBAlias(ctx, field, token, store)
 	if err != nil {
 		return model.RequestParams{}, nil, err
 	}
@@ -40,7 +40,7 @@ func generateDeleteRequest(ctx context.Context, field *ast.Field, store utils.M)
 	// Create a delete request object
 	deleteRequest := model.DeleteRequest{Operation: utils.All}
 
-	deleteRequest.Find, err = ExtractWhereClause(ctx, field.Arguments, store)
+	deleteRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
 		return nil, err
 	}

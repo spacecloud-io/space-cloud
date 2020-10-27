@@ -20,6 +20,10 @@ type fieldsToPostProcess struct {
 
 // CrudPostProcess unmarshal's the json field in read request
 func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, result interface{}) error {
+	if dbAlias != string(model.Mongo) {
+		return nil
+	}
+
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -41,10 +45,10 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 		docs = []interface{}{v}
 	}
 
-	dbType, _ := s.crud.GetDBType(dbAlias)
+	// dbType, _ := s.crud.GetDBType(dbAlias)
 	var fieldsToProcess []fieldsToPostProcess
 	for columnName, columnValue := range tableInfo {
-		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime || (dbType == string(model.MySQL) && columnValue.Kind == model.TypeBoolean) {
+		if columnValue.Kind == model.TypeDateTime {
 			fieldsToProcess = append(fieldsToProcess, fieldsToPostProcess{kind: columnValue.Kind, name: columnName})
 		}
 	}
