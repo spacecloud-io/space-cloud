@@ -38,7 +38,7 @@ func (m *Module) Profile(ctx context.Context, token, dbAlias, project, id string
 	req := &model.ReadRequest{Find: find, Operation: utils.One}
 
 	// Check if the user is authenticated
-	actions, reqParams, err := m.auth.IsReadOpAuthorised(ctx, project, dbAlias, "users", token, req)
+	actions, reqParams, err := m.auth.IsReadOpAuthorised(ctx, project, dbAlias, "users", token, req, model.ReturnWhereStub{})
 	if err != nil {
 		return http.StatusForbidden, nil, err
 	}
@@ -69,7 +69,7 @@ func (m *Module) Profiles(ctx context.Context, token, dbAlias, project string) (
 	req := &model.ReadRequest{Find: find, Operation: utils.All}
 
 	// Check if the user is authenticated
-	actions, reqParams, err := m.auth.IsReadOpAuthorised(ctx, project, dbAlias, "users", token, req)
+	actions, reqParams, err := m.auth.IsReadOpAuthorised(ctx, project, dbAlias, "users", token, req, model.ReturnWhereStub{})
 	if err != nil {
 		return http.StatusForbidden, nil, err
 	}

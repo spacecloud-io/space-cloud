@@ -110,8 +110,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-
-	_, ok := projectConfig.Modules.Crud[dbAlias]
+	dbConfig, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok && enabled {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown db alias (%s) provided while setting eventing config", dbAlias), nil, nil)
 	}
@@ -129,6 +128,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 				utils.TableEventingLogs:   {Schema: utils.SchemaEventLogs, Rules: map[string]*config.Rule{"create": {Rule: "deny"}, "read": {Rule: "deny"}, "update": {Rule: "deny"}, "delete": {Rule: "deny"}}},
 				utils.TableInvocationLogs: {Schema: utils.SchemaInvocationLogs, Rules: map[string]*config.Rule{"create": {Rule: "deny"}, "read": {Rule: "deny"}, "update": {Rule: "deny"}, "delete": {Rule: "deny"}}},
 			},
+			DBName: dbConfig.DBName,
 		}); err != nil {
 			return http.StatusInternalServerError, err
 		}

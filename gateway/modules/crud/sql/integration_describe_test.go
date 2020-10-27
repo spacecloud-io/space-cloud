@@ -6274,7 +6274,7 @@ func TestSQL_DescribeTable(t *testing.T) {
 		tests = mssqlTestCases
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("DescribeTable() Couldn't establishing connection with database", dbType)
 	}

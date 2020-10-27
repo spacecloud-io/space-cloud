@@ -128,7 +128,7 @@ func TestSQL_Delete(t *testing.T) {
 		testCases = sqlCases
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("Delete() Couldn't establishing connection with database", dbType)
 	}
@@ -201,7 +201,7 @@ func TestSQL_DeleteCollection(t *testing.T) {
 			wantResult: []interface{}{},
 		},
 	}
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("DeleteCollection Couldn't establishing connection with database", dbType)
 	}

@@ -53,6 +53,7 @@ func newModule(nodeID string, managers *managers.Managers, globalMods *global.Gl
 
 	a := auth.Init(nodeID, c, adminMan, integrationMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
+	c.SetAuth(a)
 
 	fn := functions.Init(a, syncMan, integrationMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
