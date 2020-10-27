@@ -44,25 +44,10 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var gettriggers = &cobra.Command{
-		Use:     "eventing-triggers",
-		Aliases: []string{"eventing-trigger"},
-		RunE:    actionGetEventingTrigger,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			objs, err := GetEventingTrigger(project, "eventing-trigger", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var ids []string
-			for _, v := range objs {
-				ids = append(ids, v.Meta["id"])
-			}
-			return ids, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "eventing-triggers",
+		Aliases:           []string{"eventing-trigger"},
+		RunE:              actionGetEventingTrigger,
+		ValidArgsFunction: eventingTriggersAutoCompleteFun,
 	}
 
 	var getconfigs = &cobra.Command{
@@ -72,47 +57,17 @@ func GetSubCommands() []*cobra.Command {
 	}
 
 	var getschemas = &cobra.Command{
-		Use:     "eventing-schemas",
-		Aliases: []string{"eventing-schema"},
-		RunE:    actionGetEventingSchema,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			objs, err := GetEventingSchema(project, "eventing-schema", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var ids []string
-			for _, v := range objs {
-				ids = append(ids, v.Meta["id"])
-			}
-			return ids, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "eventing-schemas",
+		Aliases:           []string{"eventing-schema"},
+		RunE:              actionGetEventingSchema,
+		ValidArgsFunction: eventingSchemasAutoCompleteFun,
 	}
 
 	var getrules = &cobra.Command{
-		Use:     "eventing-rules",
-		Aliases: []string{"eventing-rule"},
-		RunE:    actionGetEventingSecurityRule,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			objs, err := GetEventingSecurityRule(project, "eventing-rule", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var ids []string
-			for _, v := range objs {
-				ids = append(ids, v.Meta["id"])
-			}
-			return ids, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "eventing-rules",
+		Aliases:           []string{"eventing-rule"},
+		RunE:              actionGetEventingSecurityRule,
+		ValidArgsFunction: eventingRulesAutoCompleteFun,
 	}
 
 	return []*cobra.Command{gettriggers, getconfigs, getschemas, getrules}
@@ -256,4 +211,59 @@ func actionGenerateEventingTrigger(cmd *cobra.Command, args []string) error {
 	}
 
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+}
+
+// DeleteSubCommands is the list of commands the eventing module exposes
+func DeleteSubCommands() []*cobra.Command {
+
+	var deleteConfigs = &cobra.Command{
+		Use:     "eventing-configs",
+		Aliases: []string{"eventing-config"},
+		RunE:    actionDeleteEventingConfig,
+		Example: "space-cli delete eventing-configs --project myproject",
+	}
+	var deleteTriggers = &cobra.Command{
+		Use:               "eventing-triggers",
+		Aliases:           []string{"eventing-trigger"},
+		RunE:              actionDeleteEventingTrigger,
+		ValidArgsFunction: eventingTriggersAutoCompleteFun,
+	}
+
+	var deleteSchemas = &cobra.Command{
+		Use:               "eventing-schemas",
+		Aliases:           []string{"eventing-schema"},
+		RunE:              actionDeleteEventingSchema,
+		ValidArgsFunction: eventingSchemasAutoCompleteFun,
+	}
+
+	var deleteRules = &cobra.Command{
+		Use:               "eventing-rules",
+		Aliases:           []string{"eventing-rule"},
+		RunE:              actionDeleteEventingSecurityRule,
+		ValidArgsFunction: eventingRulesAutoCompleteFun,
+	}
+
+	return []*cobra.Command{deleteTriggers, deleteConfigs, deleteSchemas, deleteRules}
+}
+
+func actionDeleteEventingConfig(cmd *cobra.Command, args []string) error {
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	return deleteEventingConfig(project)
+}
+
+func actionDeleteEventingTrigger(cmd *cobra.Command, args []string) error {
+	return nil
+}
+
+func actionDeleteEventingSchema(cmd *cobra.Command, args []string) error {
+	return nil
+}
+
+func actionDeleteEventingSecurityRule(cmd *cobra.Command, args []string) error {
+	return nil
 }
