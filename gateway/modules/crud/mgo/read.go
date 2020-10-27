@@ -120,10 +120,10 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 		results := []interface{}{}
 
 		if len(req.Aggregate) > 0 {
-			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Mongo aggregate", map[string]interface{}{"pipeline": pipeline})
+			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Mongo aggregate", map[string]interface{}{"col": col, "pipeline": pipeline})
 			cur, err = collection.Aggregate(ctx, pipeline)
 		} else {
-			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Mongo query", map[string]interface{}{"find": req.Find, "options": findOptions})
+			helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Mongo query", map[string]interface{}{"col": col, "find": req.Find, "options": findOptions})
 			cur, err = collection.Find(ctx, req.Find, findOptions)
 		}
 		if err != nil {

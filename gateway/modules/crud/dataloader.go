@@ -2,6 +2,7 @@ package crud
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/dataloader"
@@ -38,8 +39,11 @@ func (holder *resultsHolder) getWhereClauses() []interface{} {
 
 func (holder *resultsHolder) addWhereClause(whereClause map[string]interface{}, matchClause []map[string]interface{}) {
 	holder.Lock()
-	for _, where := range matchClause {
+	for i, where := range matchClause {
 		for k, v := range where {
+			if k == "$or" {
+				k = fmt.Sprintf("%s:%d", k, i)
+			}
 			whereClause[k] = v
 		}
 	}

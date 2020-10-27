@@ -22,7 +22,7 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 	var regxarr []string
 	array := []goqu.Expression{}
 	for k, v := range find {
-		if k == "$or" {
+		if strings.HasPrefix(k, "$or") {
 			orArray := v.([]interface{})
 			orFinalArray := []goqu.Expression{}
 			for _, item := range orArray {
