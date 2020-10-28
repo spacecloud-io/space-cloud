@@ -66,7 +66,7 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 				continue
 			}
 
-			if k == "$or" {
+			if strings.HasPrefix(k, "$or") {
 				array, ok := temp.([]interface{})
 				if !ok {
 					return false
