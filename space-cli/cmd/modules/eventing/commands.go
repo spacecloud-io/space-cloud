@@ -227,6 +227,7 @@ func DeleteSubCommands() []*cobra.Command {
 		Aliases:           []string{"eventing-trigger"},
 		RunE:              actionDeleteEventingTrigger,
 		ValidArgsFunction: eventingTriggersAutoCompleteFun,
+		Example:           "space-cli delete eventing-triggers triggerID --project myproject",
 	}
 
 	var deleteSchemas = &cobra.Command{
@@ -234,6 +235,7 @@ func DeleteSubCommands() []*cobra.Command {
 		Aliases:           []string{"eventing-schema"},
 		RunE:              actionDeleteEventingSchema,
 		ValidArgsFunction: eventingSchemasAutoCompleteFun,
+		Example:           "space-cli delete eventing-schemas schemaID --project myproject",
 	}
 
 	var deleteRules = &cobra.Command{
@@ -241,6 +243,7 @@ func DeleteSubCommands() []*cobra.Command {
 		Aliases:           []string{"eventing-rule"},
 		RunE:              actionDeleteEventingSecurityRule,
 		ValidArgsFunction: eventingRulesAutoCompleteFun,
+		Example:           "space-cli delete eventing-rules ruleID --project myproject",
 	}
 
 	return []*cobra.Command{deleteTriggers, deleteConfigs, deleteSchemas, deleteRules}
@@ -257,13 +260,46 @@ func actionDeleteEventingConfig(cmd *cobra.Command, args []string) error {
 }
 
 func actionDeleteEventingTrigger(cmd *cobra.Command, args []string) error {
-	return nil
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	prefix := ""
+	if len(args) != 0 {
+		prefix = args[0]
+	}
+
+	return deleteEventingTriggers(project, prefix)
 }
 
 func actionDeleteEventingSchema(cmd *cobra.Command, args []string) error {
-	return nil
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	prefix := ""
+	if len(args) != 0 {
+		prefix = args[0]
+	}
+
+	return deleteEventingSchemas(project, prefix)
 }
 
 func actionDeleteEventingSecurityRule(cmd *cobra.Command, args []string) error {
-	return nil
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	prefix := ""
+	if len(args) != 0 {
+		prefix = args[0]
+	}
+
+	return deleteEventingRules(project, prefix)
 }
