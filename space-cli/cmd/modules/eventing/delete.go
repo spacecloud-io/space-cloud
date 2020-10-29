@@ -41,7 +41,7 @@ func deleteEventingTriggers(project string, prefix string) error {
 	// Delete the eventing trigger from the server
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/triggers/%s", project, resourceID)
 
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"id": resourceID}, new(model.Response)); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, new(model.Response)); err != nil {
 		return err
 	}
 
@@ -68,7 +68,7 @@ func deleteEventingSchemas(project string, prefix string) error {
 	// Delete the eventing schema from the server
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/schema/%s", project, resourceID)
 
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"id": resourceID}, new(model.Response)); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, new(model.Response)); err != nil {
 		return err
 	}
 
@@ -77,7 +77,7 @@ func deleteEventingSchemas(project string, prefix string) error {
 
 func deleteEventingRules(project string, prefix string) error {
 
-	objs, err := GetEventingSchema(project, "eventing-rule", map[string]string{})
+	objs, err := GetEventingSecurityRule(project, "eventing-rule", map[string]string{})
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func deleteEventingRules(project string, prefix string) error {
 	// Delete the eventing schema from the server
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/rules/%s", project, resourceID)
 
-	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{"id": resourceID}, new(model.Response)); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, new(model.Response)); err != nil {
 		return err
 	}
 
