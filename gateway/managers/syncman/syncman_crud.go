@@ -26,7 +26,7 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 		return http.StatusBadRequest, err
 	}
 
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get prepared query provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
@@ -170,7 +170,7 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 	}
 
 	if dbAlias != "*" {
-		if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+		if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get prepared query provided db alias (%s) does not exists", dbAlias), nil, nil)
 		}
 
@@ -210,7 +210,7 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 		return http.StatusBadRequest, err
 	}
 
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to set prepared query provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
@@ -243,7 +243,7 @@ func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, i
 		return http.StatusBadRequest, err
 	}
 
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to remove prepared query provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
@@ -274,7 +274,7 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col str
 	}
 
 	// update schema in config
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to modify schema provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
@@ -321,7 +321,7 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col 
 
 func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.Project, project, dbAlias, col string, v *config.DatabaseRule) (int, error) {
 	// update collection rules & is realtime in config
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to set collection rules provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
@@ -356,7 +356,7 @@ func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, c
 		return http.StatusBadRequest, err
 	}
 
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection rules provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
@@ -393,7 +393,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 		return http.StatusBadRequest, err
 	}
 
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, errors.New("specified database not present in config")
 	}
 
@@ -435,7 +435,7 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 	}
 
 	// update schema in config
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, errors.New("specified database not present in config")
 	}
 
@@ -469,7 +469,7 @@ func (s *Manager) RemoveCollection(ctx context.Context, project, dbAlias, col st
 	}
 
 	// update schema in config
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, errors.New("specified database not present in config")
 	}
 
@@ -508,7 +508,7 @@ func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project strin
 func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, projectConfig *config.Project, v config.CrudStub) error {
 
 	// update schema in config
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) {
+	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return errors.New("specified database not present in config")
 	}
 

@@ -55,6 +55,7 @@ func New(clusterID string, nodeID string, managers *managers.Managers, globalMod
 
 	a := auth.Init(clusterID, nodeID, c, adminMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
+	c.SetAuth(a)
 
 	fn := functions.Init(clusterID, a, syncMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
@@ -85,6 +86,9 @@ func New(clusterID string, nodeID string, managers *managers.Managers, globalMod
 // Delete deletes a project
 func (m *Modules) Delete(projectID string) {
 	// Close all the modules here
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of auth module", nil)
+	m.auth.CloseConfig()
+
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of db module", nil)
 	if err := m.db.CloseConfig(); err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing db module config", err, map[string]interface{}{"project": projectID})

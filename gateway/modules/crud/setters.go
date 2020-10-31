@@ -138,6 +138,11 @@ func (m *Module) SetSchema(s model.SchemaCrudInterface) {
 	m.schema = s
 }
 
+// SetAuth sets the auth module
+func (m *Module) SetAuth(a model.AuthCrudInterface) {
+	m.auth = a
+}
+
 // SetHooks sets the internal hooks
 func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHook) {
 	m.hooks = hooks

@@ -25,7 +25,7 @@ func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFee
 	readReq := model.ReadRequest{Find: data.Where, Operation: utils.All}
 
 	// Check if the user is authorised to make the request
-	actions, reqParams, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, &readReq)
+	actions, reqParams, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, &readReq, model.ReturnWhereStub{})
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	_ "github.com/denisenkom/go-mssqldb"                // Import for MsSQL
-	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postfres
+	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
 
@@ -36,19 +36,31 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	}
 
 	dialect := goqu.Dialect(dbType)
-	query := dialect.From(s.getDBName(col)).Prepared(true)
-	var tarr []string
-	if req.Find != nil {
-		// Get the where clause from query object
-		query, tarr = s.generateWhereClause(ctx, query, req.Find)
-	}
+	query := dialect.From(s.getColName(col)).Prepared(true)
+	var regexArr []string
+	// Get the where clause from query object
+	query, regexArr = s.generateWhereClause(ctx, query, req.Find, req.MatchWhere)
 
-	selArray := []interface{}{}
+	selArray := make([]interface{}, 0)
 	if req.Options != nil {
+
+		isJoin := len(req.Options.Join) > 0
+
+		// Throw error if select is not provided during joins
+		if isJoin && len(req.Options.Select) == 0 && len(req.Aggregate) == 0 {
+			return "", nil, errors.New("select cannot be nil when using joins")
+		}
+
 		// Check if the select clause exists
 		if req.Options.Select != nil {
 			for key := range req.Options.Select {
-				selArray = append(selArray, key)
+				if !isJoin {
+					selArray = append(selArray, key)
+					continue
+				}
+
+				arr := strings.Split(key, ".")
+				selArray = append(selArray, goqu.I(key).As(strings.Join(arr, "__")))
 			}
 		}
 		if req.Options.Skip != nil {
@@ -78,7 +90,14 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 			}
 			query = query.Order(orderBys...)
 		}
+
+		q, err := s.processJoins(ctx, query, req.Options.Join)
+		if err != nil {
+			return "", nil, err
+		}
+		query = q
 	}
+
 	switch req.Operation {
 	case utils.Count:
 		query = query.Select(goqu.COUNT("*"))
@@ -93,16 +112,16 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	case utils.All:
 		for function, colArray := range req.Aggregate {
 			for _, column := range colArray {
-				asColumnName := generateAggregateAsColumnName(function, column)
+				asColumnName := getAggregateAsColumnName(function, column)
 				switch function {
 				case "sum":
-					selArray = append(selArray, goqu.SUM(column).As(asColumnName))
+					selArray = append(selArray, goqu.SUM(getAggregateColumnName(column)).As(asColumnName))
 				case "max":
-					selArray = append(selArray, goqu.MAX(column).As(asColumnName))
+					selArray = append(selArray, goqu.MAX(getAggregateColumnName(column)).As(asColumnName))
 				case "min":
-					selArray = append(selArray, goqu.MIN(column).As(asColumnName))
+					selArray = append(selArray, goqu.MIN(getAggregateColumnName(column)).As(asColumnName))
 				case "avg":
-					selArray = append(selArray, goqu.AVG(column).As(asColumnName))
+					selArray = append(selArray, goqu.AVG(getAggregateColumnName(column)).As(asColumnName))
 				case "count":
 					selArray = append(selArray, goqu.COUNT("*").As(asColumnName))
 				default:
@@ -112,6 +131,11 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		}
 		query = query.Select(selArray...)
 		if len(req.GroupBy) > 0 {
+			for _, group := range req.GroupBy {
+				if arr := strings.Split(group.(string), "."); len(arr) > 1 && arr[0] != col && req.Options.ReturnType != "table" {
+					return "", nil, fmt.Errorf("use `returnType` `table` to perform group by on joint tables")
+				}
+			}
 			query = query.GroupBy(req.GroupBy...)
 		}
 	}
@@ -121,9 +145,10 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	if err != nil {
 		return "", nil, err
 	}
+
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 
-	for _, v := range tarr {
+	for _, v := range regexArr {
 		switch s.dbType {
 		case "mysql":
 			vReplaced := strings.Replace(v, "=", "REGEXP", -1)
@@ -140,16 +165,30 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	}
 	return sqlString, args, nil
 }
-func generateAggregateAsColumnName(function, column string) string {
-	return fmt.Sprintf("%s__%s__%s", utils.GraphQLAggregate, function, column)
+
+func getAggregateColumnName(column string) string {
+	return strings.Split(column, ":")[1]
 }
 
-func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
-	v := strings.Split(asColumnName, "__")
-	if len(v) != 3 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
-		return "", "", false
+func getAggregateAsColumnName(function, column string) string {
+	format := "nested"
+	arr := strings.Split(column, ":")
+
+	returnField := arr[0]
+	column = arr[1]
+	if len(arr) == 3 && arr[2] == "table" {
+		format = "table"
 	}
-	return v[1], v[2], true
+
+	return fmt.Sprintf("%s___%s___%s___%s___%s", utils.GraphQLAggregate, format, returnField, function, strings.Join(strings.Split(column, "."), "__"))
+}
+
+func splitAggregateAsColumnName(asColumnName string) (format, returnField, functionName, columnName string, isAggregateColumn bool) {
+	v := strings.Split(asColumnName, "___")
+	if len(v) != 5 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
+		return "", "", "", "", false
+	}
+	return v[1], v[2], v[3], v[4], true
 }
 
 // Read query document(s) from the database
@@ -167,10 +206,13 @@ func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, exec
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Executing sql read query", map[string]interface{}{"sqlQuery": sqlString, "queryArgs": args})
 	}
 
-	return s.readexec(ctx, sqlString, args, req.Operation, executor, len(req.Aggregate) > 0)
+	return s.readExec(ctx, col, sqlString, args, executor, req)
 }
 
-func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}, operation string, executor executor, isAggregate bool) (int64, interface{}, error) {
+func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, error) {
+	operation := req.Operation
+	isAggregate := len(req.Aggregate) > 0
+
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
 		return 0, nil, err
@@ -229,58 +271,142 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 			mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
 		}
 
+		processAggregate(mapping, mapping, isAggregate)
+		if req.PostProcess != nil {
+			_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], mapping)
+		}
+
 		return 1, mapping, nil
 
 	case utils.All, utils.Distinct:
-		array := []interface{}{}
+		array := make([]interface{}, 0)
+		mapping := make(map[string]map[string]interface{})
 		var count int64
 		for rows.Next() {
 
 			// Increment the counter
 			count++
 
-			mapping := make(map[string]interface{})
-			err := rows.MapScan(mapping)
+			row := make(map[string]interface{})
+			err := rows.MapScan(row)
 			if err != nil {
 				return 0, nil, err
 			}
+
 			switch s.GetDBType() {
 			case model.MySQL, model.Postgres, model.SQLServer:
-				mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
-			}
-			if isAggregate {
-				funcMap := map[string]interface{}{}
-				for asColumnName, value := range mapping {
-					functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
-					if isAggregateColumn {
-						delete(mapping, asColumnName)
-						// check if function name already exists
-						funcValue, ok := funcMap[functionName]
-						if !ok {
-							// set new function
-							// NOTE: This case occurs for count function with no column name (using * operator instead)
-							if columnName == "" {
-								funcMap[functionName] = value
-							} else {
-								funcMap[functionName] = map[string]interface{}{columnName: value}
-							}
-							continue
-						}
-						// add new column to existing function
-						funcValue.(map[string]interface{})[columnName] = value
-					}
-				}
-				if len(funcMap) > 0 {
-					mapping[utils.GraphQLAggregate] = funcMap
-				}
+				mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, row)
 			}
 
-			array = append(array, mapping)
+			if req.Options == nil || req.Options.ReturnType == "table" || len(req.Options.Join) == 0 {
+				processAggregate(row, row, isAggregate)
+				array = append(array, row)
+				continue
+			}
+
+			s.processRows(ctx, []string{col}, isAggregate, row, req.Options.Join, mapping, &array, req.PostProcess)
 		}
 
 		return count, array, nil
 
 	default:
 		return 0, nil, utils.ErrInvalidParams
+	}
+}
+func processAggregate(row, m map[string]interface{}, isAggregate bool) {
+	if isAggregate {
+		funcMap := map[string]interface{}{}
+		for asColumnName, value := range row {
+			format, returnField, functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
+			if isAggregateColumn {
+				delete(row, asColumnName)
+
+				if format == "table" {
+					m[returnField] = value
+					continue
+				}
+
+				// check if function name already exists
+				funcValue, ok := funcMap[functionName]
+				if !ok {
+					// set new function
+					// NOTE: This case occurs for count function with no column name (using * operator instead)
+					if columnName == "" {
+						funcMap[functionName] = value
+					} else {
+						funcMap[functionName] = map[string]interface{}{columnName: value}
+					}
+					continue
+				}
+				// add new column to existing function
+				funcValue.(map[string]interface{})[columnName] = value
+			}
+		}
+		if len(funcMap) > 0 {
+			m[utils.GraphQLAggregate] = funcMap
+		}
+	}
+}
+func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool, row map[string]interface{}, join []model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess) {
+	m := map[string]interface{}{}
+	keyMap := map[string]interface{}{}
+
+	length := len(table) - 1
+
+	// Get keys of this table
+	for k, v := range row {
+		a := strings.Split(k, "__")
+		if utils.StringExists(table, a[0]) {
+			keyMap[a[1]] = v
+		}
+		if table[length] == a[0] {
+			m[a[1]] = v
+		}
+	}
+
+	// Generate unique key for row. fmt.Sprintf internally sorts all keys
+	// hence returns a deterministic key.
+	key := fmt.Sprintf("%v", keyMap)
+
+	// Check if key exists in mapping. This can happen if the row has multiple
+	// sub rows else append self to final array.
+	var mapLength int
+	if m2, p := mapping[key]; p {
+		mapLength = len(m2)
+		m = m2
+	} else {
+		mapLength = len(m)
+		mapping[key] = m
+		*finalArray = append(*finalArray, m)
+
+		// Perform post processing
+		if postProcess != nil {
+			_ = s.auth.PostProcessMethod(ctx, postProcess[table[length]], m)
+		}
+
+		// Process aggregate field only if its the root table that we are processing
+		if length == 0 {
+			processAggregate(row, m, isAggregate)
+		}
+	}
+
+	if mapLength == 0 {
+		return
+	}
+
+	// Process joint tables for rows
+	for _, j := range join {
+		var arr []interface{}
+
+		// Check if table name is already present in parent row. If not, create a new array
+		if arrTemp, p := m[j.Table]; p {
+			arr = arrTemp.([]interface{})
+		} else {
+			arr = []interface{}{}
+		}
+
+		// Recursively call the same function again
+		s.processRows(ctx, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess)
+		m[j.Table] = arr
 	}
 }
