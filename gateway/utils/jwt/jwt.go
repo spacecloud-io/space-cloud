@@ -19,6 +19,7 @@ type JWT struct {
 	lock                 sync.RWMutex
 	staticSecrets        map[string]*config.Secret
 	jwkSecrets           map[string]*jwkSecret
+	closeJwkRoutineChan  chan struct{}
 	mapJwkKidToSecretKid map[string]string
 }
 
@@ -34,15 +35,22 @@ const defaultRefreshTime = 1 * time.Hour
 
 // New initializes the package
 func New() *JWT {
+	ch := make(chan struct{}, 1)
 	j := &JWT{
 		staticSecrets:        map[string]*config.Secret{},
 		jwkSecrets:           map[string]*jwkSecret{},
 		mapJwkKidToSecretKid: map[string]string{},
+		closeJwkRoutineChan:  ch,
 	}
 	go func() {
 		tick := time.NewTicker(defaultRefreshTime)
-		for t := range tick.C {
-			j.fetchJWKRoutine(t)
+		for {
+			select {
+			case t := <-tick.C:
+				j.fetchJWKRoutine(t)
+			case <-ch:
+				return
+			}
 		}
 	}()
 	return j

@@ -42,7 +42,6 @@ func TestModule_ExecGraphQLQuery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			mockCrud := mockGraphQLCrudInterface{}
 			for _, m := range tt.crudMockArgs {
 				mockCrud.On(m.method, m.args...).Return(m.paramsReturned...)

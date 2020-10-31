@@ -4,14 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
+	"text/template"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 )
 
 func shallowClone(obj utils.M) utils.M {
@@ -23,6 +26,69 @@ func shallowClone(obj utils.M) utils.M {
 	return temp
 }
 
+func (graph *Module) getDirectiveName(ctx context.Context, directive *ast.Directive, token string, store utils.M) (string, error) {
+	if directive.Name.Value == "template" {
+		return graph.processTemplateDirective(ctx, directive, token, store)
+	}
+
+	return directive.Name.Value, nil
+}
+
+func (graph *Module) processTemplateDirective(ctx context.Context, directive *ast.Directive, token string, store utils.M) (string, error) {
+	// Set default values for our flags
+	goTmpl := "none"
+
+	for _, args := range directive.Arguments {
+		if args.Name.Value == "value" {
+			goTmplTemp, err := utils.ParseGraphqlValue(args.Value, store)
+			if err != nil {
+				return "", err
+			}
+
+			var ok bool
+			goTmpl, ok = goTmplTemp.(string)
+			if !ok {
+				return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid template type (%s) provided for directive", reflect.TypeOf(goTmplTemp)), nil, nil)
+			}
+
+			break
+		}
+	}
+
+	// Throw error if template value not provided
+	if goTmpl == "none" {
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "The `@template` directive cannot be used without a `value` argument", nil, nil)
+	}
+
+	// Get claims from the store
+	var claims map[string]interface{}
+	claimsTemp, p := store["auth-claims"]
+	if p {
+		claims, _ = claimsTemp.(map[string]interface{})
+	}
+
+	// Parse the token if claims dont exist already
+	var err error
+	if claims == nil {
+		claims, err = graph.auth.ParseToken(ctx, token)
+		if err != nil {
+			return "", err
+		}
+
+		// Store the claims for future use
+		store["auth-claims"] = claims
+	}
+
+	t := template.New("template-directive")
+	t = t.Funcs(tmpl2.CreateGoFuncMaps(nil))
+	t, err = t.Parse(goTmpl)
+	if err != nil {
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse provided template in security rule (Webhook)", err, nil)
+	}
+
+	return tmpl2.ExecTemplate(ctx, t, map[string]interface{}{"auth": claims})
+}
+
 func getFieldName(field *ast.Field) string {
 	if field.Alias != nil {
 		return field.Alias.Value
@@ -32,11 +98,14 @@ func getFieldName(field *ast.Field) string {
 }
 
 // GetDBAlias returns the dbAlias of the request
-func (graph *Module) GetDBAlias(ctx context.Context, field *ast.Field) (string, error) {
+func (graph *Module) GetDBAlias(ctx context.Context, field *ast.Field, token string, store utils.M) (string, error) {
 	if len(field.Directives) == 0 {
 		return "", errors.New("database / service directive not provided")
 	}
-	dbAlias := field.Directives[0].Name.Value
+	dbAlias, err := graph.getDirectiveName(ctx, field.Directives[0], token, store)
+	if err != nil {
+		return "", err
+	}
 
 	if _, err := graph.crud.GetDBType(dbAlias); err == nil {
 		return dbAlias, nil
@@ -279,4 +348,16 @@ func addFieldPath(store utils.M, field string) {
 	}
 
 	store["path"] = store["path"].(string) + "." + field
+}
+
+func isPostProcessingEnabled(actions map[string]*model.PostProcess) bool {
+	for _, v := range actions {
+		if v == nil {
+			continue
+		}
+		if len(v.PostProcessAction) > 0 {
+			return true
+		}
+	}
+	return false
 }

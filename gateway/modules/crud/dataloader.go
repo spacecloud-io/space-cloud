@@ -2,6 +2,7 @@ package crud
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/dataloader"
@@ -36,8 +37,16 @@ func (holder *resultsHolder) getWhereClauses() []interface{} {
 	return holder.whereClauses
 }
 
-func (holder *resultsHolder) addWhereClause(whereClause map[string]interface{}) {
+func (holder *resultsHolder) addWhereClause(whereClause map[string]interface{}, matchClause []map[string]interface{}) {
 	holder.Lock()
+	for i, where := range matchClause {
+		for k, v := range where {
+			if k == "$or" {
+				k = fmt.Sprintf("%s:%d", k, i)
+			}
+			whereClause[k] = v
+		}
+	}
 	holder.whereClauses = append(holder.whereClauses, whereClause)
 	holder.Unlock()
 }
@@ -60,7 +69,7 @@ func (holder *resultsHolder) fillResults(res []interface{}) {
 		// Get the where clause
 		whereClause := holder.whereClauses[index]
 
-		docs := []interface{}{}
+		docs := make([]interface{}, 0)
 		for _, doc := range res {
 			if utils.Validate(whereClause.(map[string]interface{}), doc) {
 				docs = append(docs, doc)
@@ -157,7 +166,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 		}
 
 		// Append the where clause to the list
-		holder.addWhereClause(req.Req.Find)
+		holder.addWhereClause(req.Req.Find, req.Req.MatchWhere)
 	}
 
 	// Wait for all results to be done

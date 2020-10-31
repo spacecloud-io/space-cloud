@@ -27,12 +27,13 @@ type SQL struct {
 	client          *sqlx.DB
 	dbType          string
 	name            string // logical db name or schema name according to the database type
+	auth            model.AuthCrudInterface
 	driverConf      config.DriverConfig
 }
 
 // Init initialises a new sql instance
-func Init(dbType model.DBType, enabled bool, connection string, dbName string, driverConf config.DriverConfig) (s *SQL, err error) {
-	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil, driverConf: driverConf}
+func Init(dbType model.DBType, enabled bool, connection string, dbName string, auth model.AuthCrudInterface, driverConf config.DriverConfig) (s *SQL, err error) {
+	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil, auth: auth, driverConf: driverConf}
 
 	switch dbType {
 	case model.Postgres:

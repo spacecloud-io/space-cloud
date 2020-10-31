@@ -16,7 +16,7 @@ import (
 )
 
 func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (model.RequestParams, []*model.AllRequest, []interface{}, error) {
-	dbAlias, err := graph.GetDBAlias(ctx, field)
+	dbAlias, err := graph.GetDBAlias(ctx, field, token, store)
 	if err != nil {
 		return model.RequestParams{}, nil, nil, err
 	}
