@@ -89,32 +89,10 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
+		defer utils.CloseTheCloser(r.Body)
 
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
-		defer cancel()
-
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(ctx, token, "project", "modify", map[string]string{"project": projectID})
-		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
-
-		status, err := syncMan.DeleteProjectConfig(ctx, projectID, reqParams)
-		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
-			return
-		}
-
-		_ = helpers.Response.SendOkayResponse(ctx, status, w)
-
+		// Give negative acknowledgement
+		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, "Operation not supported")
 	}
 }
 
