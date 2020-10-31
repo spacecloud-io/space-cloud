@@ -54,7 +54,7 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
     try {
       api.deleteNamespacedConfigMap(name, "space-cloud", null, null, null, null, null, new V1DeleteOptions())
     } catch {
-      case ex: Throwable => println("Unable tot delete config maps:", ex.getMessage)
+      case ex: Throwable => println("Unable to delete config maps:", ex.getMessage)
     }
   }
 

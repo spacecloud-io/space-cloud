@@ -18,17 +18,19 @@ import org.json4s._
 import org.json4s.jackson.JsonMethods._
 
 object Utils {
-  def startMongoWatcher(projectId: String, dbAlias: String, conn: String, dbName: String, executorService: ExecutorService, actor: ActorRef[Database.Command]): java.util.concurrent.Future[_] = {
+  def startMongoWatcher(projectId: String, dbAlias: String, conn: String, dbName: String, executorService: ExecutorService, actor: ActorRef[Database.Command]): MongoStatus = {
+    // Make a mongo client
     val connectionString = new MongoClientURI(conn)
     val mongoClient = new MongoClient(connectionString)
     val db = mongoClient.getDatabase(dbName)
 
-    val offsetStore = new KubeOffsetBackingStore()
+    // Start the offsetStore
+    val offsetStore = new MongoStore()
     offsetStore.setName(s"$projectId-$dbAlias")
     offsetStore.start()
 
-    val key = StandardCharsets.UTF_8.encode("resume-token")
-    val resumeToken = offsetStore.get(java.util.Arrays.asList(Array(key))).get().get(key)
+    // Retrieve the resume token
+    val resumeToken = offsetStore.get()
 
     var t = Calendar.getInstance().getTime
 
@@ -41,15 +43,14 @@ object Utils {
       if (Calendar.getInstance().getTime.after(cal.getTime)) {
         t = Calendar.getInstance().getTime
 
-        val value = StandardCharsets.UTF_8.encode(doc.getResumeToken.toJson)
-        offsetStore.set(java.util.Collections.singletonMap(key, value), null)
+       offsetStore.set(doc.getResumeToken)
       }
 
       doc.getOperationType match {
         case OperationType.INSERT =>
           actor ! ChangeRecord(
             payload = ChangeRecordPayload(
-              op = Some("c"),
+              op = "c",
               before = None,
               after = Some(mongoDocumentToMap(doc.getFullDocument)),
               source = getMongoSource(projectId, dbAlias, doc)
@@ -62,7 +63,7 @@ object Utils {
         case OperationType.UPDATE | OperationType.REPLACE =>
           actor ! ChangeRecord(
             payload = ChangeRecordPayload(
-              op = Some("u"),
+              op = "u",
               before = Option(mongoDocumentKeyToMap(doc.getDocumentKey)),
               after = Some(mongoDocumentToMap(doc.getFullDocument)),
               source = getMongoSource(projectId, dbAlias, doc)
@@ -75,7 +76,7 @@ object Utils {
         case OperationType.DELETE =>
           actor ! ChangeRecord(
             payload = ChangeRecordPayload(
-              op = Some("d"),
+              op = "d",
               before = Option(mongoDocumentKeyToMap(doc.getDocumentKey)),
               after = None,
               source = getMongoSource(projectId, dbAlias, doc)
@@ -90,16 +91,20 @@ object Utils {
       }
     }
 
-    executorService.submit(new Callable[Unit] {
+    val f = executorService.submit(new Callable[Unit] {
       override def call(): Unit = {
 
         var w = db.watch().fullDocument(FullDocument.UPDATE_LOOKUP)
-        if (resumeToken != null) {
-          w = w.resumeAfter(mongoByteBufferToBsonDocument(resumeToken))
+        resumeToken match {
+          case Some(value) => w = w.resumeAfter(value)
+          case None =>
         }
+
         w.forEach(consumer)
       }
     })
+
+    MongoStatus(future = f, store = offsetStore)
   }
 
   def mongoByteBufferToBsonDocument(data: ByteBuffer): BsonDocument = {
@@ -144,9 +149,14 @@ object Utils {
 
       // Marshal the string only if the json string is not null
       if (jsonString != null) {
-        // Parse the json value and forward it to our actor
-        val payload = parse(jsonString).extract[ChangeRecordPayload]
-        actor ! ChangeRecord(payload, source.project, source.dbAlias, source.dbType)
+        try {
+          // Parse the json value and forward it to our actor
+          val payload = parse(jsonString).extract[ChangeRecordPayload]
+          actor ! ChangeRecord(payload, source.project, source.dbAlias, source.dbType)
+        } catch {
+          case ex: Throwable => println(s"Unable to parse database change event (${source.project}:${source.dbAlias}) - ${ex.getMessage}")
+        }
+
       }
 
     }).build()

@@ -9,10 +9,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 package object database {
 
-  case class ChangeRecordPayload(op: Option[String], before: Option[Map[String, Any]], after: Option[Map[String, Any]], source: ChangeRecordPayloadSource)
+  case class ChangeRecordPayload(op: String, before: Option[Map[String, Any]], after: Option[Map[String, Any]], source: ChangeRecordPayloadSource)
   case class ChangeRecordPayloadSource(name: String, ts_ms: Long, table: String)
 
   case class DebeziumStatus(error: String, future: java.util.concurrent.Future[_], engine: DebeziumEngine[ChangeEvent[String, String]])
+  case class MongoStatus(future: java.util.concurrent.Future[_], store: MongoStore)
 
   def getConnString(projectId: String, conn: String)(implicit system: ClassicActorSystemProvider, executor: ExecutionContext): Future[String] = {
     if (!conn.startsWith("secrets")) {

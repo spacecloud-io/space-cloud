@@ -48,7 +48,9 @@ package object spacecloud {
 
   case class Project(id: String, secret: String)
 
-  case class EventingConfig(enabled: Boolean)
+  case class EventingConfig(enabled: Boolean, dbAlias: String, broker: Option[EventingBrokerConfig])
+
+  case class EventingBrokerConfig(`type`: String, conn: String)
 
   case class DatabaseConfig(dbAlias: String, `type`: String, name: String, conn: String, enabled: Boolean)
 

@@ -2,76 +2,92 @@ package com.spaceuptech.dbevents.database
 
 import java.util.concurrent.Executors
 
-import akka.actor.typed.{ActorSystem, Behavior, PostStop, Signal}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, TimerScheduler}
-import com.spaceuptech.dbevents.{DatabaseSource, Global}
+import akka.actor.typed.{ActorRef, ActorSystem, Behavior, PostStop, Signal}
+import com.spaceuptech.dbevents.DatabaseSource
+import com.spaceuptech.dbevents.pubsub.RabbitMQ
 import com.spaceuptech.dbevents.spacecloud._
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
 
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration.DurationInt
-import sys.process._
+import scala.sys.process._
+import scala.util.{Failure, Success}
 
-class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[Database.Command], projectId: String, config: DatabaseConfig) extends AbstractBehavior[Database.Command](context) {
+class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[Database.Command], projectId: String, broker: ActorRef[RabbitMQ.Command]) extends AbstractBehavior[Database.Command](context) {
+
   import Database._
 
   // Lets get the connection string first
   implicit val system: ActorSystem[Nothing] = context.system
   implicit val executionContext: ExecutionContextExecutor = system.executionContext
-  private val connString = Await.result(getConnString(projectId, config.conn), 10.seconds)
-  private val source = generateDatabaseSource(projectId, connString, config)
-
-  // Extract name of actor
-  private val name = Utils.generateConnectorName(source)
-  context.log.info(s"Staring debezium engine $name")
-
-  // Start the debezium engine
   private val executor = Executors.newSingleThreadExecutor
-  private var status = Utils.startDebeziumEngine(source, executor, context.self)
+
+  // The status variables
+  private var name: String = ""
+  private var connString: String = ""
+  private var status: Option[DebeziumStatus] = None
+  private var source: DatabaseSource = _
+
 
   // Start task for status check
-  timers.startTimerAtFixedRate(name, CheckEngineStatus(), 30.second)
+  timers.startTimerAtFixedRate(CheckEngineStatus(), 30.second)
 
   override def onMessage(msg: Command): Behavior[Command] = {
     // No need to handle any messages
     msg match {
-      case Database.CheckEngineStatus() =>
-        // Try starting the debezium engine again only if it wasn't running already
-        if (status.future.isDone || status.future.isCancelled) {
-          // Just making sure its closed first
-          status.engine.close()
-          status.future.cancel(true)
+      case CheckEngineStatus() =>
+        status match {
+          case Some(value) =>
+            // Try starting the debezium engine again only if it wasn't running already
+            if (value.future.isDone || value.future.isCancelled) {
+              // Just making sure its closed first
+              value.engine.close()
+              value.future.cancel(true)
 
-          context.log.info(s"Debezium engine $name is closed. Restarting...")
-          status = Utils.startDebeziumEngine(source, executor, context.self)
+              context.log.info(s"Debezium engine $name is closed. Restarting...")
+              status = Some(Utils.startDebeziumEngine(source, executor, context.self))
+            }
+
+          // No need to do anything if status isn't defined
+          case None =>
         }
+
         this
 
-      case ChangeRecord(payload, project, dbAlias, dbType) =>
+      case UpdateEngineConfig(config) =>
+        getConnString(projectId, config.conn) onComplete {
+          case Success(conn) =>
+            // Simply return if there are no changes to the connection string
+            if (conn == connString) return this
+
+            // Store the connection string for future reference
+            this.connString = conn
+
+            // Kill the previous debezium engine
+            stopOperations()
+
+            source = generateDatabaseSource(projectId, connString, config)
+            name = Utils.generateConnectorName(source)
+
+            context.log.info(s"Staring debezium engine $name")
+
+            // Start the debezium engine
+            status = Some(Utils.startDebeziumEngine(source, executor, context.self))
+          case Failure(ex) =>
+            context.log.error(s"Unable to get connection string for debezium engine ($name) - ${ex.getMessage}")
+        }
+
+
+        this
+
+      case record: ChangeRecord =>
+        broker ! RabbitMQ.EmitEvent(record)
         this
 
       case Stop() => Behaviors.stopped
     }
-  }
-
-  override def onSignal: PartialFunction[Signal, Behavior[Command]] = {
-    case PostStop =>
-      // Shutdown the timer
-      timers.cancelAll()
-
-      // Shut down the debezium engine
-      if (!status.future.isCancelled && !status.future.isDone) {
-        context.log.info(s"Closing debezium engine - $name")
-        status.engine.close()
-        status.future.cancel(true)
-        context.log.info(s"Closed debezium engine - $name")
-      }
-
-      // Shut down the main executor
-      executor.shutdownNow()
-
-      this
   }
 
   private def generateDatabaseSource(projectId: String, conn: String, db: DatabaseConfig): DatabaseSource = {
@@ -91,4 +107,32 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
     DatabaseSource(projectId, db.dbAlias, db.`type`, config)
   }
 
+  override def onSignal: PartialFunction[Signal, Behavior[Command]] = {
+    case PostStop =>
+      // Shutdown the timer
+      timers.cancelAll()
+
+      // Stop the engine
+      stopOperations()
+
+      // Shut down the main executor
+      executor.shutdownNow()
+      this
+  }
+
+  private def stopOperations(): Unit = {
+    status match {
+      case Some(value) =>
+        // Shut down the debezium engine
+        if (!value.future.isCancelled && !value.future.isDone) {
+          context.log.info(s"Closing debezium engine - $name")
+          value.engine.close()
+          value.future.cancel(true)
+          context.log.info(s"Closed debezium engine - $name")
+        }
+
+      // No need to do anything if status isn't defined
+      case None =>
+    }
+  }
 }
