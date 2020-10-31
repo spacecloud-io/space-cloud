@@ -6,6 +6,7 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/eventing"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/filestore"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/ingress"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/letsencrypt"
 	"github.com/spf13/cobra"
 )
 
@@ -21,6 +22,7 @@ func FetchDeleteSubCommands() *cobra.Command {
 	deleteCmd.AddCommand(ingress.DeleteSubCommands()...)
 	deleteCmd.AddCommand(filestore.DeleteSubCommands()...)
 	deleteCmd.AddCommand(eventing.DeleteSubCommands()...)
+	deleteCmd.AddCommand(letsencrypt.DeleteSubCommands()...)
 
 	return deleteCmd
 }
