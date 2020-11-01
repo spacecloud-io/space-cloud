@@ -276,3 +276,141 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 		})
 	}
 }
+
+func TestModule_HookStage(t *testing.T) {
+	var res interface{}
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		ctx    context.Context
+		intent *model.EventIntent
+		err    error
+	}
+	tests := []struct {
+		name          string
+		m             *Module
+		args          args
+		crudMockArgs  []mockArgs
+		syncMockArgs  []mockArgs
+		adminMockArgs []mockArgs
+		authMockArgs  []mockArgs
+	}{
+		{
+			name: "intent is invalid",
+			m:    &Module{},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{Invalid: true}},
+		},
+		{
+			name: "error is not nil",
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: "notUpdate"}}}, err: errors.New("some error")},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "InternalUpdate",
+					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"batchid": "batchid"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": "cancel", "remark": "some error"}}}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+		},
+		{
+			name: "error is not nil and unable to update internal",
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: "notUpdate"}}}, err: errors.New("some error")},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "InternalUpdate",
+					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"batchid": "batchid"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": "cancel", "remark": "some error"}}}},
+					paramsReturned: []interface{}{errors.New("some error")},
+				},
+			},
+		},
+		{
+			name: "error is nil and unable to update internal",
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: "notUpdate"}}}},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "InternalUpdate",
+					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"batchid": "batchid"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": "staged"}}}},
+					paramsReturned: []interface{}{errors.New("some error")},
+				},
+			},
+		},
+		{
+			name: "event is staged",
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: "notUpdate"}}}},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "InternalUpdate",
+					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"batchid": "batchid"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": "staged"}}}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			syncMockArgs: []mockArgs{
+				{
+					method:         "GetAssignedSpaceCloudURL",
+					args:           []interface{}{mock.Anything, "abc", 50},
+					paramsReturned: []interface{}{"url", nil},
+				},
+				{
+					method:         "MakeHTTPRequest",
+					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{Status: "staged", Type: "notUpdate"}}, &res},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			adminMockArgs: []mockArgs{
+				{
+					method:         "GetInternalAccessToken",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{mock.Anything, nil},
+				},
+			},
+			authMockArgs: []mockArgs{
+				{
+					method:         "GetSCAccessToken",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{mock.Anything, nil},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockCrud := mockCrudInterface{}
+			mockAuth := mockAuthEventingInterface{}
+			mockAdmin := mockAdminEventingInterface{}
+			mockSyncman := mockSyncmanEventingInterface{}
+
+			for _, m := range tt.crudMockArgs {
+				mockCrud.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.syncMockArgs {
+				mockSyncman.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.adminMockArgs {
+				mockAdmin.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.authMockArgs {
+				mockAuth.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			tt.m.crud = &mockCrud
+			tt.m.syncMan = &mockSyncman
+			tt.m.adminMan = &mockAdmin
+			tt.m.auth = &mockAuth
+
+			tt.m.HookStage(context.Background(), tt.args.intent, tt.args.err)
+
+			mockCrud.AssertExpectations(t)
+			mockSyncman.AssertExpectations(t)
+			mockAdmin.AssertExpectations(t)
+			mockAuth.AssertExpectations(t)
+		})
+	}
+}

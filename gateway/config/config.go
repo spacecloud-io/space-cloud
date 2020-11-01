@@ -127,9 +127,16 @@ type DatabaseRule struct {
 
 // EventingConfig stores information of eventing config
 type EventingConfig struct {
-	Enabled       bool             `json:"enabled" yaml:"enabled"`
-	DBAlias       string           `json:"dbAlias" yaml:"dbAlias"`
-	InternalRules EventingTriggers `json:"internalRules" yaml:"internalRules"`
+	Enabled       bool                  `json:"enabled" yaml:"enabled"`
+	DBAlias       string                `json:"dbAlias" yaml:"dbAlias"`
+	InternalRules EventingTriggers      `json:"internalRules" yaml:"internalRules"`
+	Broker        *EventingBrokerConfig `json:"broker" yaml:"broker"`
+}
+
+// EventingBrokerConfig describes the config of the broker
+type EventingBrokerConfig struct {
+	Type string `json:"type" yaml:"type"`
+	Conn string `json:"conn" yaml:"conn"`
 }
 
 // EventingSchema stores information of eventing schema

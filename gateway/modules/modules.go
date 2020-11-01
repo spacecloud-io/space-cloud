@@ -6,7 +6,6 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/managers"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
@@ -64,13 +63,7 @@ func New(clusterID string, nodeID string, managers *managers.Managers, globalMod
 	e := eventing.New(a, c, s, adminMan, syncMan, f, metrics.AddEventingType)
 	f.SetEventingModule(e)
 
-	c.SetHooks(&model.CrudHooks{
-		Create: e.HookDBCreateIntent,
-		Update: e.HookDBUpdateIntent,
-		Delete: e.HookDBDeleteIntent,
-		Batch:  e.HookDBBatchIntent,
-		Stage:  e.HookStage,
-	}, metrics.AddDBOperation)
+	c.SetHooks(metrics.AddDBOperation)
 
 	rt, err := realtime.Init(nodeID, e, a, c, s, metrics, syncMan)
 	if err != nil {

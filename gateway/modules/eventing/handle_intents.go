@@ -61,7 +61,7 @@ func (m *Module) processIntents(t *time.Time) {
 			continue
 		}
 
-		if t.After(timestamp.Add(30 * time.Second)) {
+		if t.After(timestamp.Add(5 * time.Minute)) {
 			go m.processIntent(eventDoc)
 		}
 	}
