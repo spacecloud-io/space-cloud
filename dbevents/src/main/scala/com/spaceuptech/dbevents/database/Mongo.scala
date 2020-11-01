@@ -39,7 +39,7 @@ class Mongo(context: ActorContext[Database.Command], timers: TimerScheduler[Data
               value.future.cancel(true)
               value.store.stop()
 
-              context.log.info(s"Mongo watcher $name is closed. Restarting...")
+              println(s"Mongo watcher $name is closed. Restarting...")
               status = Some(Utils.startMongoWatcher(projectId, dbConfig.dbAlias, connString, dbConfig.name, executor, context.self))
             }
 
@@ -70,12 +70,12 @@ class Mongo(context: ActorContext[Database.Command], timers: TimerScheduler[Data
             dbConfig = config
 
             // Start the engine
-            context.log.info(s"Staring debezium engine $name")
+            println(s"Staring debezium engine $name")
 
             status = Some(Utils.startMongoWatcher(projectId, config.dbAlias, connString, config.name, executor, context.self))
 
           case Failure(ex) =>
-            context.log.error(s"Unable to get connection string for mongo engine ($name) - ${ex.getMessage}")
+            println(s"Unable to get connection string for mongo engine ($name) - ${ex.getMessage}")
 
         }
         this
@@ -90,10 +90,10 @@ class Mongo(context: ActorContext[Database.Command], timers: TimerScheduler[Data
     status match {
       case Some(value) =>
         if (!value.future.isCancelled && !value.future.isDone) {
-          context.log.info(s"Closing mongo watcher - $name")
+          println(s"Closing mongo watcher - $name")
           value.future.cancel(true)
           value.store.stop()
-          context.log.info(s"Closed mongo watcher - $name")
+          println(s"Closed mongo watcher - $name")
         }
 
       // No need to do anything if status isn't defined

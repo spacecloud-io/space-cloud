@@ -46,7 +46,7 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
               value.engine.close()
               value.future.cancel(true)
 
-              context.log.info(s"Debezium engine $name is closed. Restarting...")
+              println(s"Debezium engine $name is closed. Restarting...")
               status = Some(Utils.startDebeziumEngine(source, executor, context.self))
             }
 
@@ -71,12 +71,12 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
             source = generateDatabaseSource(projectId, connString, config)
             name = Utils.generateConnectorName(source)
 
-            context.log.info(s"Staring debezium engine $name")
+            println(s"Staring debezium engine $name")
 
             // Start the debezium engine
             status = Some(Utils.startDebeziumEngine(source, executor, context.self))
           case Failure(ex) =>
-            context.log.error(s"Unable to get connection string for debezium engine ($name) - ${ex.getMessage}")
+            println(s"Unable to get connection string for debezium engine ($name) - ${ex.getMessage}")
         }
 
 
@@ -125,10 +125,10 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
       case Some(value) =>
         // Shut down the debezium engine
         if (!value.future.isCancelled && !value.future.isDone) {
-          context.log.info(s"Closing debezium engine - $name")
+          println(s"Closing debezium engine - $name")
           value.engine.close()
           value.future.cancel(true)
-          context.log.info(s"Closed debezium engine - $name")
+          println(s"Closed debezium engine - $name")
         }
 
       // No need to do anything if status isn't defined

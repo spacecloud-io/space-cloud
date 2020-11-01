@@ -97,8 +97,6 @@ func (s *SQL) IsClientSafe(ctx context.Context) error {
 		}
 	}
 
-	s.client.Set
-
 	return nil
 }
 

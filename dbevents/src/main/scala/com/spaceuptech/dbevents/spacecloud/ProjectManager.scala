@@ -59,7 +59,7 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     val response: Future[Response[DatabaseConfig]] = fetchSpaceCloudResource(s"http://${Global.gatewayUrl}/v1/config/projects/$projectId/database/config")
     response.onComplete {
       case Success(value) => processDatabaseConfig(value.result)
-      case Failure(ex) => context.log.error(s"Unable to fetch database config for project ($projectId)", ex)
+      case Failure(ex) => println(s"Unable to fetch database config for project ($projectId)", ex)
     }
   }
 
@@ -99,7 +99,7 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     val response: Future[Response[EventingConfig]] = fetchSpaceCloudResource(s"http://${Global.gatewayUrl}/v1/config/projects/$projectId/eventing/config")
     response.onComplete {
       case Success(value) => processEventingConfig(value.result(0))
-      case Failure(ex) => context.log.error(s"Unable to fetch eventing config for project ($projectId)", ex)
+      case Failure(ex) => println(s"Unable to fetch eventing config for project ($projectId)", ex)
     }
   }
 

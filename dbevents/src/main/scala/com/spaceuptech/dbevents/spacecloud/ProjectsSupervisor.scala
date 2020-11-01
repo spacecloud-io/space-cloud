@@ -60,7 +60,7 @@ class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], time
     // Make http request
     fetchSpaceCloudResource[Project](s"http://${Global.gatewayUrl}/v1/config/projects/*").onComplete {
       case Success(res) => processProjects(res.result)
-      case Failure(ex) => context.log.error("Unable to fetch projects", ex)
+      case Failure(ex) => println("Unable to fetch projects", ex)
     }
   }
 

@@ -10,7 +10,7 @@ object EventsSupervisor {
 }
 
 class EventsSupervisor(context: ActorContext[Nothing]) extends AbstractBehavior[Nothing](context) {
-  context.log.info("DB events source app started")
+  println("DB events source app started")
 
   // Start the projects supervisor
   private val projects = context.spawn(ProjectsSupervisor(), "projects")
@@ -22,7 +22,7 @@ class EventsSupervisor(context: ActorContext[Nothing]) extends AbstractBehavior[
   override def onSignal: PartialFunction[Signal, Behavior[Nothing]] = {
     case PostStop =>
       projects ! ProjectsSupervisor.Stop()
-      context.log.info("DB events source app stopped")
+      println("DB events source app stopped")
       this
   }
 }

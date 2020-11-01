@@ -52,7 +52,7 @@ class RabbitMQ(context: ActorContext[RabbitMQ.Command], projectId: String) exten
             connect(c)
 
           case Failure(ex) =>
-            context.log.error(s"Unable to get connection string for rabbitmq ($projectId) - ${ex.getMessage}")
+            println(s"Unable to get connection string for rabbitmq ($projectId) - ${ex.getMessage}")
         }
         this
 
@@ -104,7 +104,7 @@ class RabbitMQ(context: ActorContext[RabbitMQ.Command], projectId: String) exten
           client.ch.exchangeDeclare(exchangeName, "fanout", false, true, null)
           client.ch.basicPublish(exchangeName, "", null, json.getBytes(StandardCharsets.UTF_8))
         } catch {
-          case ex: Throwable => context.log.error(s"Unable to publish message ($exchangeName) - ${ex.getMessage}")
+          case ex: Throwable => println(s"Unable to publish message ($exchangeName) - ${ex.getMessage}")
         }
       case None =>
         buffer :+= ev
