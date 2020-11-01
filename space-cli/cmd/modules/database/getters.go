@@ -22,22 +22,23 @@ func GetDbRule(project, commandName string, params map[string]string) ([]*model.
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
 		obj := item.(map[string]interface{})
-		for key, value := range obj {
-			str := strings.Split(key, "-")
-			if str[1] == "event_logs" || str[1] == "invocation_logs" {
-				continue
-			}
-			meta := map[string]string{"project": project, "col": str[1], "dbAlias": str[0]}
-
-			delete(obj, "schema")
-
-			// Generating the object
-			s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules", commandName, meta, value)
-			if err != nil {
-				return nil, err
-			}
-			objs = append(objs, s)
+		table := obj["table"].(string)
+		dbAlias := obj["dbAlias"].(string)
+		if table == "event_logs" || table == "invocation_logs" {
+			continue
 		}
+		meta := map[string]string{"project": project, "col": table, "dbAlias": dbAlias}
+
+		delete(obj, "schema")
+		delete(obj, "col")
+		delete(obj, "dbAlias")
+
+		// Generating the object
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules", commandName, meta, obj)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, s)
 	}
 	return objs, nil
 }
@@ -53,21 +54,22 @@ func GetDbConfig(project, commandName string, params map[string]string) ([]*mode
 
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
-		spec := item.(map[string]interface{})
-		for key, value := range spec {
-			configID := fmt.Sprintf("%s-config", key)
-			meta := map[string]string{"project": project, "dbAlias": key, "id": configID}
+		obj := item.(map[string]interface{})
+		dbAlias := obj["dbAlias"]
+		configID := fmt.Sprintf("%s-config", dbAlias.(string))
+		meta := map[string]string{"project": project, "dbAlias": dbAlias.(string), "id": configID}
 
-			// Delete the unwanted keys from spec
-			delete(spec, "id")
+		// Delete the unwanted keys from spec
+		delete(obj, "id")
+		delete(obj, "dbAlias")
 
-			// Generating the object
-			s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/config/{id}", commandName, meta, value)
-			if err != nil {
-				return nil, err
-			}
-			objs = append(objs, s)
+		// Generating the object
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/config/{id}", commandName, meta, obj)
+		if err != nil {
+			return nil, err
 		}
+		objs = append(objs, s)
+
 	}
 
 	return objs, nil
