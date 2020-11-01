@@ -14,7 +14,7 @@ func GetDbRule(project, commandName string, params map[string]string) ([]*model.
 	url := fmt.Sprintf("/v1/config/projects/%s/database/collections/rules", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -47,7 +47,7 @@ func GetDbConfig(project, commandName string, params map[string]string) ([]*mode
 	url := fmt.Sprintf("/v1/config/projects/%s/database/config", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -80,7 +80,7 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -109,7 +109,7 @@ func GetDbPreparedQuery(project, commandName string, params map[string]string) (
 	url := fmt.Sprintf("/v1/config/projects/%s/database/prepared-queries", project)
 
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 

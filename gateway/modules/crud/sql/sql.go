@@ -14,6 +14,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"   // Import for MySQL
 	_ "github.com/lib/pq"                // Import for postgres
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -26,11 +27,13 @@ type SQL struct {
 	client          *sqlx.DB
 	dbType          string
 	name            string // logical db name or schema name according to the database type
+	auth            model.AuthCrudInterface
+	driverConf      config.DriverConfig
 }
 
 // Init initialises a new sql instance
-func Init(dbType model.DBType, enabled bool, connection string, dbName string) (s *SQL, err error) {
-	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil}
+func Init(dbType model.DBType, enabled bool, connection string, dbName string, auth model.AuthCrudInterface, driverConf config.DriverConfig) (s *SQL, err error) {
+	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil, auth: auth, driverConf: driverConf}
 
 	switch dbType {
 	case model.Postgres:
@@ -55,8 +58,8 @@ func Init(dbType model.DBType, enabled bool, connection string, dbName string) (
 }
 
 // IsSame checks if we've got the same connection string
-func (s *SQL) IsSame(conn, dbName string) bool {
-	return strings.HasPrefix(s.connection, conn) && dbName == s.name
+func (s *SQL) IsSame(conn, dbName string, driverConf config.DriverConfig) bool {
+	return strings.HasPrefix(s.connection, conn) && dbName == s.name && driverConf.MaxConn == s.driverConf.MaxConn && driverConf.MaxIdleTimeout == s.driverConf.MaxIdleTimeout && driverConf.MaxIdleConn == s.driverConf.MaxIdleConn
 }
 
 // Close gracefully the SQL client
@@ -115,8 +118,25 @@ func (s *SQL) connect() error {
 
 	s.client = sql
 
-	s.client.SetMaxOpenConns(10)
-	s.client.SetMaxIdleConns(0)
+	maxConn := s.driverConf.MaxConn
+	if maxConn == 0 {
+		maxConn = 100
+	}
+
+	maxIdleConn := s.driverConf.MaxIdleConn
+	if maxIdleConn == 0 {
+		maxIdleConn = 50
+	}
+
+	maxIdleTimeout := s.driverConf.MaxIdleTimeout
+	if maxIdleTimeout == 0 {
+		maxIdleTimeout = 60 * 5 * 1000
+	}
+
+	s.client.SetMaxOpenConns(maxConn)
+	s.client.SetMaxIdleConns(maxIdleConn)
+	duration := time.Duration(maxIdleTimeout) * time.Millisecond
+	s.client.SetConnMaxIdleTime(duration)
 	return sql.PingContext(ctx)
 }
 

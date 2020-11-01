@@ -18,11 +18,14 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
+	v12 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
+
+const defaultAPIGroup string = "rbac.authorization.k8s.io"
 
 func (i *Istio) prepareContainers(service *model.Service, listOfSecrets map[string]*v1.Secret) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
@@ -1015,4 +1018,83 @@ func getDefaultAutoScaleConfig() *model.AutoScaleConfig {
 		MaxReplicas:      100,
 		Triggers:         []model.AutoScaleTrigger{},
 	}
+}
+
+func (i *Istio) generateServiceRole(ctx context.Context, role *model.Role) (*v12.Role, *v12.RoleBinding) {
+	rules := make([]v12.PolicyRule, 0)
+	for _, rule := range role.Rules {
+		rules = append(rules, v12.PolicyRule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
+
+	}
+
+	return &v12.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      role.ID,
+				Namespace: role.Project,
+				Labels:    i.generateServiceRoleLabels(role),
+			},
+			Rules: rules,
+		}, &v12.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      role.ID,
+				Namespace: role.Project,
+				Labels:    i.generateServiceRoleLabels(role),
+			},
+			Subjects: []v12.Subject{
+				{
+					Kind:     "ServiceAccount",
+					Name:     getServiceAccountName(role.Service),
+					APIGroup: "",
+				},
+			},
+			RoleRef: v12.RoleRef{
+				Kind:     "Role",
+				Name:     role.ID,
+				APIGroup: defaultAPIGroup,
+			},
+		}
+
+}
+
+func (i *Istio) generateServiceClusterRole(ctx context.Context, role *model.Role) (*v12.ClusterRole, *v12.ClusterRoleBinding) {
+	rules := make([]v12.PolicyRule, 0)
+	for _, rule := range role.Rules {
+		rules = append(rules, v12.PolicyRule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
+
+	}
+
+	return &v12.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   role.ID,
+				Labels: i.generateServiceRoleLabels(role),
+			},
+			Rules: rules,
+		}, &v12.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   role.ID,
+				Labels: i.generateServiceRoleLabels(role),
+			},
+			Subjects: []v12.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      getServiceAccountName(role.Service),
+					APIGroup:  "",
+					Namespace: role.Project,
+				},
+			},
+			RoleRef: v12.RoleRef{
+				Kind:     "ClusterRole",
+				Name:     role.ID,
+				APIGroup: defaultAPIGroup,
+			},
+		}
+}
+
+func (i *Istio) generateServiceRoleLabels(role *model.Role) map[string]string {
+	labels := make(map[string]string)
+	labels["app"] = role.Service
+	labels["app.kubernetes.io/name"] = role.Service
+	labels["app.kubernetes.io/managed-by"] = "space-cloud"
+	labels["space-cloud.io/version"] = model.Version
+	return labels
 }
