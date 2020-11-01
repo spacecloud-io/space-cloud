@@ -3,7 +3,6 @@ package database
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
