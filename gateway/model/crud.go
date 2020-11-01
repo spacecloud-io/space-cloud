@@ -9,13 +9,15 @@ type CreateRequest struct {
 
 // ReadRequest is the http body received for a read request
 type ReadRequest struct {
-	GroupBy   []interface{}          `json:"group"`
-	Aggregate map[string][]string    `json:"aggregate"`
-	Find      map[string]interface{} `json:"find"`
-	Operation string                 `json:"op"`
-	Options   *ReadOptions           `json:"options"`
-	IsBatch   bool                   `json:"isBatch"`
-	Extras    map[string]interface{} `json:"extras"`
+	GroupBy     []interface{}          `json:"group"`
+	Aggregate   map[string][]string    `json:"aggregate"`
+	Find        map[string]interface{} `json:"find"`
+	Operation   string                 `json:"op"`
+	Options     *ReadOptions           `json:"options"`
+	IsBatch     bool                   `json:"isBatch"`
+	Extras      map[string]interface{} `json:"extras"`
+	PostProcess map[string]*PostProcess
+	MatchWhere  []map[string]interface{}
 }
 
 // ReadOptions is the options required for a read request
@@ -25,7 +27,17 @@ type ReadOptions struct {
 	Skip       *int64           `json:"skip"`
 	Limit      *int64           `json:"limit"`
 	Distinct   *string          `json:"distinct"`
+	Join       []JoinOption     `json:"join"`
+	ReturnType string           `json:"returnType"`
 	HasOptions bool             `json:"hasOptions"` // used internally
+}
+
+// JoinOption describes the way a join needs to be performed
+type JoinOption struct {
+	Type  string                 `json:"type" mapstructure:"type"`
+	Table string                 `json:"table" mapstructure:"table"`
+	On    map[string]interface{} `json:"on" mapstructure:"on"`
+	Join  []JoinOption           `json:"join" mapstructure:"join"`
 }
 
 // UpdateRequest is the http body received for an update request
@@ -87,4 +99,7 @@ const (
 
 	// SQLServer is the type used for MsSQL
 	SQLServer DBType = "sqlserver"
+
+	// DefaultFetchLimit is the default value to be used as a limit to fetch rows/collection in each read query
+	DefaultFetchLimit = 1000
 )

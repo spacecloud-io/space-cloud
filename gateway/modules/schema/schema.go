@@ -24,22 +24,23 @@ type Schema struct {
 	SchemaDoc model.Type
 	crud      model.CrudSchemaInterface
 	project   string
-	config    config.Crud
+	dbSchemas config.DatabaseSchemas
+	clusterID string
 }
 
 // Init creates a new instance of the schema object
-func Init(crud model.CrudSchemaInterface) *Schema {
-	return &Schema{SchemaDoc: model.Type{}, crud: crud}
+func Init(clusterID string, crud model.CrudSchemaInterface) *Schema {
+	return &Schema{clusterID: clusterID, SchemaDoc: model.Type{}, crud: crud}
 }
 
 // SetConfig modifies the tables according to the schema on save
-func (s *Schema) SetConfig(conf config.Crud, project string) error {
+func (s *Schema) SetConfig(c config.DatabaseSchemas, project string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.config = conf
+	s.dbSchemas = c
 	s.project = project
 
-	if err := s.parseSchema(conf); err != nil {
+	if err := s.parseSchema(c); err != nil {
 		return err
 	}
 
@@ -70,7 +71,7 @@ func (s *Schema) GetSchema(dbAlias, col string) (model.Fields, bool) {
 }
 
 // parseSchema Initializes Schema field in Module struct
-func (s *Schema) parseSchema(crud config.Crud) error {
+func (s *Schema) parseSchema(crud config.DatabaseSchemas) error {
 	schema, err := s.Parser(crud)
 	if err != nil {
 		return err
@@ -80,33 +81,34 @@ func (s *Schema) parseSchema(crud config.Crud) error {
 }
 
 // Parser function parses the schema im module
-func (s *Schema) Parser(crud config.Crud) (model.Type, error) {
-	schema := make(model.Type, len(crud))
-	for dbName, v := range crud {
-		collection := model.Collection{}
-		for collectionName, v := range v.Collections {
-			if v.Schema == "" {
-				continue
-			}
-			s := source.NewSource(&source.Source{
-				Body: []byte(v.Schema),
-			})
-			// parse the source
-			doc, err := parser.Parse(parser.ParseParams{Source: s})
-			if err != nil {
-				return nil, err
-			}
-			value, err := getCollectionSchema(doc, dbName, collectionName)
-			if err != nil {
-				return nil, err
-			}
-
-			if len(value) <= 1 { // schema might have an id by default
-				continue
-			}
-			collection[collectionName] = value
+func (s *Schema) Parser(dbSchemas config.DatabaseSchemas) (model.Type, error) {
+	schema := make(model.Type)
+	for _, dbSchema := range dbSchemas {
+		if dbSchema.Schema == "" {
+			continue
 		}
-		schema[dbName] = collection
+		s := source.NewSource(&source.Source{
+			Body: []byte(dbSchema.Schema),
+		})
+		// parse the source
+		doc, err := parser.Parse(parser.ParseParams{Source: s})
+		if err != nil {
+			return nil, err
+		}
+		value, err := getCollectionSchema(doc, dbSchema.DbAlias, dbSchema.Table)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(value) <= 1 { // schema might have an id by default
+			continue
+		}
+		_, ok := schema[dbSchema.DbAlias]
+		if !ok {
+			schema[dbSchema.DbAlias] = model.Collection{dbSchema.Table: value}
+		} else {
+			schema[dbSchema.DbAlias][dbSchema.Table] = value
+		}
 	}
 	return schema, nil
 }
@@ -131,7 +133,8 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 			}
 
 			fieldTypeStuct := model.FieldType{
-				FieldName: field.Name.Value,
+				FieldName:  field.Name.Value,
+				TypeIDSize: 50,
 			}
 			if len(field.Directives) > 0 {
 				// Loop over all directives
@@ -144,6 +147,18 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 						fieldTypeStuct.IsCreatedAt = true
 					case model.DirectiveUpdatedAt:
 						fieldTypeStuct.IsUpdatedAt = true
+					case model.DirectiveVarcharSize:
+						for _, arg := range directive.Arguments {
+							switch arg.Name.Value {
+							case "value":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								size, ok := val.(int)
+								if !ok {
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+								}
+								fieldTypeStuct.TypeIDSize = size
+							}
+						}
 					case model.DirectiveDefault:
 						fieldTypeStuct.IsDefault = true
 

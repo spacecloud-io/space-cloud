@@ -54,11 +54,11 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, f
 
 		// field type
 		if model.DBType(dbType) == model.Postgres {
-			if err := inspectionPostgresCheckFieldType(field.FieldType, &fieldDetails); err != nil {
+			if err := inspectionPostgresCheckFieldType(field.VarcharSize, field.FieldType, &fieldDetails); err != nil {
 				return nil, err
 			}
 		} else {
-			if err := inspectionMySQLCheckFieldType(field.FieldType, &fieldDetails); err != nil {
+			if err := inspectionMySQLCheckFieldType(field.VarcharSize, field.FieldType, &fieldDetails); err != nil {
 				return nil, err
 			}
 		}
@@ -133,13 +133,14 @@ func getGroupNameFromIndexName(indexName string) string {
 	return strings.Split(indexName, "__")[2]
 }
 
-func inspectionMySQLCheckFieldType(typeName string, fieldDetails *model.FieldType) error {
-	if typeName == "varchar(-1)" {
+func inspectionMySQLCheckFieldType(size int, typeName string, fieldDetails *model.FieldType) error {
+	if typeName == "varchar(-1)" || typeName == "varchar(max)" {
 		fieldDetails.Kind = model.TypeString
 		return nil
 	}
 	if strings.HasPrefix(typeName, "varchar(") {
 		fieldDetails.Kind = model.TypeID
+		fieldDetails.TypeIDSize = size
 		return nil
 	}
 
@@ -164,9 +165,10 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *model.FieldTyp
 	return nil
 }
 
-func inspectionPostgresCheckFieldType(typeName string, fieldDetails *model.FieldType) error {
+func inspectionPostgresCheckFieldType(size int, typeName string, fieldDetails *model.FieldType) error {
 	if typeName == "character varying" {
 		fieldDetails.Kind = model.TypeID
+		fieldDetails.TypeIDSize = size
 		return nil
 	}
 
@@ -196,11 +198,9 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *model.Field
 func (s *Schema) GetCollectionSchema(ctx context.Context, project, dbType string) (map[string]*config.TableRule, error) {
 
 	collections := []string{}
-	for dbName, crudValue := range s.config {
-		if dbName == dbType {
-			for colName := range crudValue.Collections {
-				collections = append(collections, colName)
-			}
+	for _, dbSchema := range s.dbSchemas {
+		if dbSchema.DbAlias == dbType {
+			collections = append(collections, dbSchema.Table)
 			break
 		}
 	}

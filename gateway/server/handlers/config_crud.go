@@ -131,7 +131,7 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 
-		v := config.CrudStub{}
+		v := config.DatabaseConfig{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
@@ -146,7 +146,7 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		}
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, v)
-		status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams)
+		status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, &v, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return
@@ -282,7 +282,7 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 		projectID := vars["project"]
 		id := vars["id"]
 
-		v := config.PreparedQuery{}
+		v := config.DatbasePreparedQuery{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
@@ -355,7 +355,7 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		projectID := vars["project"]
 		col := vars["col"]
 
-		v := config.TableRule{}
+		v := config.DatabaseSchema{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
@@ -437,7 +437,7 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 		projectID := vars["project"]
 		col := vars["col"]
 
-		v := config.TableRule{}
+		v := config.DatabaseRule{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
@@ -501,6 +501,43 @@ func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http
 			return
 		}
 		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: dbConfig})
+	}
+}
+
+// HandleDeleteTableRules is an endpoint handler which deletes database collection rules in config
+func HandleDeleteTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
+		col := vars["col"]
+
+		v := config.TableRule{}
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
+
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "db-rule", "delete", map[string]string{"project": projectID, "db": dbAlias, "col": col})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		reqParams = utils.ExtractRequestParams(r, reqParams, v)
+		status, err := syncman.DeleteCollectionRules(ctx, projectID, dbAlias, col, reqParams)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 

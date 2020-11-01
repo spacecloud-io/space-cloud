@@ -1039,7 +1039,7 @@ func TestSQL_Update(t *testing.T) {
 		testCases = mssqlCases
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("Update() Couldn't establishing connection with database", dbType)
 	}
@@ -1088,7 +1088,7 @@ func TestSQL_Update(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("Update() Scanning error", err)
 				}
-				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(context.Background(), model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if !reflect.DeepEqual(tt.readResult, readResult) {

@@ -62,6 +62,10 @@ rules:
       - "keda.sh"
     resources: ["*"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups:
+      - "rbac.authorization.k8s.io"
+    resources: ["clusterroles", "roles", "clusterrolebindings", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 # This cluster role binding allows anyone in the "manager" group to read secrets in any namespace.
@@ -231,11 +235,13 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: spaceuptech/runner:0.19.3
+          image: spaceuptech/runner:0.20.0
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "LOG_LEVEL"
               value: "debug"
+            - name: "LOG_FORMAT"
+              value: "json"
             - name: "PROMETHEUS_ADDR"
               value: "http://prometheus.space-cloud.svc.cluster.local:9090"
             - name: "JWT_SECRET"
@@ -387,7 +393,7 @@ metadata:
   labels:
     app: gateway
 spec:
-  replicas: 1
+  replicas: 2
   serviceName: gateway
   selector:
     matchLabels:
@@ -402,7 +408,7 @@ spec:
       containers:
         - name: gateway
           command: ["./app", "run"]
-          image: spaceuptech/gateway:0.19.3
+          image: spaceuptech/gateway:0.20.0
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "NODE_ID"
@@ -421,6 +427,8 @@ spec:
               value: "some-secret"
             - name: "LOG_LEVEL"
               value: "debug"
+            - name: "LOG_FORMAT"
+              value: "json"
             - name: "STORE_TYPE"
               value: "kube"
             - name: "LETSENCRYPT_STORE"

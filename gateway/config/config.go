@@ -6,9 +6,11 @@ import (
 
 // Config holds the entire configuration
 type Config struct {
-	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
-	SSL      *SSL       `json:"ssl" yaml:"ssl"`
-	Admin    *Admin     `json:"admin" yaml:"admin"`
+	Projects         Projects         `json:"projects" yaml:"projects"` // The key here is the project id
+	SSL              *SSL             `json:"ssl" yaml:"ssl"`
+	ClusterConfig    *ClusterConfig   `json:"clusterConfig" yaml:"clusterConfig"`
+	Integrations     Integrations     `json:"integrations" yaml:"integrations"`
+	IntegrationHooks IntegrationHooks `json:"integrationsHooks" yaml:"integrationsHooks"`
 }
 
 // ClusterConfig holds the cluster level configuration
@@ -17,17 +19,135 @@ type ClusterConfig struct {
 	EnableTelemetry  bool   `json:"enableTelemetry" yaml:"enableTelemetry"`
 }
 
+// Projects is a map which stores config information of all project in a cluster
+type Projects map[string]*Project // Key here is project id
+
+// DatabaseConfigs is a map which stores database config information
+type DatabaseConfigs map[string]*DatabaseConfig // Key here is resource id --> clusterId--projectId--resourceType--dbAlias
+
+// DatabaseSchemas is a map which stores database schema information
+type DatabaseSchemas map[string]*DatabaseSchema // Key here is resource id --> clusterId--projectId--resourceType--dbAlias-tableName
+
+// DatabaseRules is a map which stores database rules information
+type DatabaseRules map[string]*DatabaseRule // Key here is resource id --> clusterId--projectId--resourceType--dbAlias-tableName-rule
+
+// DatabasePreparedQueries is a map which stores database prepared query information
+type DatabasePreparedQueries map[string]*DatbasePreparedQuery // Key here is resource id --> clusterId--projectId--resourceType--dbAlias-prepareQueryId
+
+// EventingSchemas is a map which stores eventing schema information
+type EventingSchemas map[string]*EventingSchema // Key here is resource id --> clusterId--projectId--resourceType--schemaId
+
+// EventingRules is a map which stores database config information
+type EventingRules map[string]*Rule // Key here is resource id --> clusterId--projectId--resourceType--ruleId
+
+// EventingTriggers is a map which stores database config information
+type EventingTriggers map[string]*EventingTrigger // Key here is resource id --> clusterId--projectId--resourceType--triggerId
+
+// FileStoreRules is a map which stores database config information
+type FileStoreRules map[string]*FileRule // Key here is resource id --> clusterId--projectId--resourceType--fileRuleId
+
+// IngressRoutes is a map which stores database config information
+type IngressRoutes map[string]*Route // Key here is resource id --> clusterId--projectId--resourceType--routeId
+
 // Project holds the project level configuration
 type Project struct {
+	ProjectConfig *ProjectConfig `json:"projectConfig" yaml:"projectConfig"`
+
+	DatabaseConfigs         DatabaseConfigs         `json:"dbConfigs" yaml:"dbConfigs"`
+	DatabaseSchemas         DatabaseSchemas         `json:"dbSchemas" yaml:"dbSchemas"`
+	DatabaseRules           DatabaseRules           `json:"dbRules" yaml:"dbRules"`
+	DatabasePreparedQueries DatabasePreparedQueries `json:"dbPreparedQuery" yaml:"dbPreparedQuery"`
+
+	EventingConfig   *EventingConfig  `json:"eventingConfig" yaml:"eventingConfig"`
+	EventingSchemas  EventingSchemas  `json:"eventingSchemas" yaml:"eventingSchemas"`
+	EventingRules    EventingRules    `json:"eventingRules" yaml:"eventingRules"`
+	EventingTriggers EventingTriggers `json:"eventingTriggers" yaml:"eventingTriggers"`
+
+	FileStoreConfig *FileStoreConfig `json:"fileStoreConfig" yaml:"fileStoreConfig"`
+	FileStoreRules  FileStoreRules   `json:"fileStoreRules" yaml:"fileStoreRules"`
+
+	Auths Auths `json:"auths" yaml:"auths"`
+
+	LetsEncrypt *LetsEncrypt `json:"letsencrypt" yaml:"letsencrypt"`
+
+	IngressRoutes IngressRoutes       `json:"ingressRoute" yaml:"ingressRoute"`
+	IngressGlobal *GlobalRoutesConfig `json:"ingressGlobal" yaml:"ingressGlobal"`
+
+	RemoteService Services `json:"remoteServices" yaml:"remoteServices"`
+}
+
+// ProjectConfig stores information of individual project
+type ProjectConfig struct {
+	ID                 string    `json:"id,omitempty" yaml:"id,omitempty"`
+	Name               string    `json:"name,omitempty" yaml:"name,omitempty"`
 	Secrets            []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty"`
 	SecretSource       string    `json:"secretSource,omitempty" yaml:"secretSource,omitempty"`
 	IsIntegration      bool      `json:"isIntegration,omitempty" yaml:"isIntegration,omitempty"`
 	AESKey             string    `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
-	ID                 string    `json:"id,omitempty" yaml:"id,omitempty"`
-	Name               string    `json:"name,omitempty" yaml:"name,omitempty"`
 	DockerRegistry     string    `json:"dockerRegistry,omitempty" yaml:"dockerRegistry,omitempty"`
-	Modules            *Modules  `json:"modules,omitempty" yaml:"modules,omitempty"`
 	ContextTimeGraphQL int       `json:"contextTimeGraphQL,omitempty" yaml:"contextTimeGraphQL,omitempty"` // contextTime sets the timeout of query
+}
+
+// DriverConfig stores the parameters for drivers of Databases.
+type DriverConfig struct {
+	MaxConn        int    `json:"maxConn,omitempty" yaml:"maxConn,omitempty"`               //for SQL and Mongo
+	MaxIdleTimeout int    `json:"maxIdleTimeout,omitempty" yaml:"maxIdleTimeout,omitempty"` //for SQL and Mongo
+	MinConn        uint64 `json:"minConn,omitempty" yaml:"minConn,omitempty"`               //only for Mongo
+	MaxIdleConn    int    `json:"maxIdleConn,omitempty" yaml:"maxIdleConn,omitempty"`       //only for SQL
+}
+
+// DatabaseConfig stores information of database config
+type DatabaseConfig struct {
+	DbAlias      string       `json:"dbAlias,omitempty" yaml:"dbAlias"`
+	Type         string       `json:"type,omitempty" yaml:"type"` // database type
+	DBName       string       `json:"name,omitempty" yaml:"name"` // name of the logical database or schema name according to the database type
+	Conn         string       `json:"conn,omitempty" yaml:"conn"`
+	IsPrimary    bool         `json:"isPrimary" yaml:"isPrimary"`
+	Enabled      bool         `json:"enabled" yaml:"enabled"`
+	BatchTime    int          `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
+	BatchRecords int          `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
+	Limit        int64        `json:"limit,omitempty" yaml:"limit"`               // indicates number of records to send per request
+	DriverConf   DriverConfig `json:"driverConf,omitempty" yaml:"driverConf"`
+}
+
+// DatabaseSchema stores information of db schemas
+type DatabaseSchema struct {
+	Table   string `json:"table,omitempty" yaml:"table"`
+	DbAlias string `json:"dbAlias,omitempty" yaml:"dbAlias"`
+	Schema  string `json:"schema,omitempty" yaml:"schema"`
+}
+
+// DatabaseRule stores information of db rule
+type DatabaseRule struct {
+	Table             string           `json:"table,omitempty" yaml:"table"`
+	DbAlias           string           `json:"dbAlias,omitempty" yaml:"dbAlias"`
+	IsRealTimeEnabled bool             `json:"isRealtimeEnabled,omitempty" yaml:"isRealtimeEnabled"`
+	Rules             map[string]*Rule `json:"rules,omitempty" yaml:"rules"`
+}
+
+// EventingConfig stores information of eventing config
+type EventingConfig struct {
+	Enabled       bool             `json:"enabled" yaml:"enabled"`
+	DBAlias       string           `json:"dbAlias" yaml:"dbAlias"`
+	InternalRules EventingTriggers `json:"internalRules" yaml:"internalRules"`
+}
+
+// EventingSchema stores information of eventing schema
+type EventingSchema struct {
+	ID     string `json:"id,omitempty" yaml:"id,omitempty"`
+	Schema string `json:"schema" yaml:"schema"`
+}
+
+// FileStoreConfig stores information of file store config
+type FileStoreConfig struct {
+	Enabled        bool   `json:"enabled" yaml:"enabled"`
+	StoreType      string `json:"storeType" yaml:"storeType"`
+	Conn           string `json:"conn" yaml:"conn"`
+	Endpoint       string `json:"endpoint" yaml:"endpoint"`
+	Bucket         string `json:"bucket" yaml:"bucket"`
+	Secret         string `json:"secret" yaml:"secret"`
+	DisableSSL     *bool  `json:"disableSSL,omitempty" yaml:"disableSSL,omitempty"`
+	ForcePathStyle *bool  `json:"forcePathStyle,omitempty" yaml:"forcePathStyle,omitempty"`
 }
 
 // Secret describes the a secret object
@@ -39,6 +159,9 @@ type Secret struct {
 
 	JwkURL string      `json:"jwkUrl" yaml:"jwkUrl"`
 	JwkKey interface{} `json:"-" yaml:"-"`
+
+	Audience []string `json:"aud" yaml:"aud"`
+	Issuer   []string `json:"iss" yaml:"iss"`
 
 	// Used for HMAC256 secret
 	Secret string `json:"secret" yaml:"secret"`
@@ -88,20 +211,6 @@ type SSL struct {
 	Key     string `json:"key" yaml:"key"`
 }
 
-// Modules holds the config of all the modules of that environment
-type Modules struct {
-	Crud         Crud                `json:"db" yaml:"db"`
-	Auth         Auth                `json:"userMan" yaml:"userMan"`
-	Services     *ServicesModule     `json:"remoteServices" yaml:"remoteServices"`
-	FileStore    *FileStore          `json:"fileStore" yaml:"fileStore"`
-	Eventing     Eventing            `json:"eventing,omitempty" yaml:"eventing,omitempty"`
-	LetsEncrypt  LetsEncrypt         `json:"letsencrypt" yaml:"letsencrypt"`
-	Routes       Routes              `json:"ingressRoutes" yaml:"ingressRoutes"`
-	GlobalRoutes *GlobalRoutesConfig `json:"ingressRoutesGlobal" yaml:"ingressRoutesGlobal"`
-	Deployments  Deployments         `json:"deployments" yaml:"deployments"`
-	Secrets      interface{}         `json:"secrets" yaml:"secrets"`
-}
-
 // Deployments store all services information for particular project
 type Deployments struct {
 	Services interface{} `json:"services" yaml:"services"`
@@ -112,22 +221,24 @@ type Crud map[string]*CrudStub // The key here is the alias for database type
 
 // CrudStub holds the config at the database level
 type CrudStub struct {
-	Type            string                    `json:"type,omitempty" yaml:"type"` // database type
-	DBName          string                    `json:"name,omitempty" yaml:"name"` // name of the logical database or schema name according to the database type
-	Conn            string                    `json:"conn,omitempty" yaml:"conn"`
-	Collections     map[string]*TableRule     `json:"collections,omitempty" yaml:"collections"` // The key here is table name
-	PreparedQueries map[string]*PreparedQuery `json:"preparedQueries,omitempty" yaml:"preparedQueries"`
-	IsPrimary       bool                      `json:"isPrimary" yaml:"isPrimary"`
-	Enabled         bool                      `json:"enabled" yaml:"enabled"`
-	BatchTime       int                       `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
-	BatchRecords    int                       `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
+	Type            string                           `json:"type,omitempty" yaml:"type"` // database type
+	DBName          string                           `json:"name,omitempty" yaml:"name"` // name of the logical database or schema name according to the database type
+	Conn            string                           `json:"conn,omitempty" yaml:"conn"`
+	Collections     map[string]*TableRule            `json:"collections,omitempty" yaml:"collections"` // The key here is table name
+	PreparedQueries map[string]*DatbasePreparedQuery `json:"preparedQueries,omitempty" yaml:"preparedQueries"`
+	IsPrimary       bool                             `json:"isPrimary" yaml:"isPrimary"`
+	Enabled         bool                             `json:"enabled" yaml:"enabled"`
+	BatchTime       int                              `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
+	BatchRecords    int                              `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
+	Limit           int64                            `json:"limit,omitempty" yaml:"limit"`               // indicates number of records per batch
 }
 
-// PreparedQuery contains the config at the collection level
-type PreparedQuery struct {
+// DatbasePreparedQuery stores information of prepared query
+type DatbasePreparedQuery struct {
 	ID        string   `json:"id" yaml:"id"`
 	SQL       string   `json:"sql" yaml:"sql"`
 	Rule      *Rule    `json:"rule" yaml:"rule"`
+	DbAlias   string   `json:"dbAlias" yaml:"dbAlias"`
 	Arguments []string `json:"args" yaml:"args"`
 }
 
@@ -164,8 +275,8 @@ type Rule struct {
 	OpFormat string                 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
 }
 
-// Auth holds the mapping of the sign in method
-type Auth map[string]*AuthStub // The key here is the sign in method
+// Auths holds the mapping of the sign in method
+type Auths map[string]*AuthStub // The key here is the sign in method
 
 // AuthStub holds the config at a single sign in level
 type AuthStub struct {
@@ -291,16 +402,16 @@ type StaticRoute struct {
 
 // Eventing holds the config for the eventing module (task queue)
 type Eventing struct {
-	Enabled       bool                     `json:"enabled" yaml:"enabled"`
-	DBAlias       string                   `json:"dbAlias" yaml:"dbAlias"`
-	Rules         map[string]*EventingRule `json:"triggers,omitempty" yaml:"triggers"`
-	InternalRules map[string]*EventingRule `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty"`
-	SecurityRules map[string]*Rule         `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
-	Schemas       map[string]SchemaObject  `json:"schemas,omitempty" yaml:"schemas,omitempty"`
+	Enabled       bool                        `json:"enabled" yaml:"enabled"`
+	DBAlias       string                      `json:"dbAlias" yaml:"dbAlias"`
+	Rules         map[string]*EventingTrigger `json:"triggers,omitempty" yaml:"triggers"`
+	InternalRules map[string]*EventingTrigger `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty"`
+	SecurityRules map[string]*Rule            `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
+	Schemas       map[string]SchemaObject     `json:"schemas,omitempty" yaml:"schemas,omitempty"`
 }
 
-// EventingRule holds an eventing rule
-type EventingRule struct {
+// EventingTrigger stores information of eventing trigger
+type EventingTrigger struct {
 	Type            string            `json:"type" yaml:"type"`
 	Retries         int               `json:"retries" yaml:"retries"`
 	Timeout         int               `json:"timeout" yaml:"timeout"` // Timeout is in milliseconds

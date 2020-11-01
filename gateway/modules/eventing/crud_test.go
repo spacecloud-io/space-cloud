@@ -43,19 +43,19 @@ func TestModule_processCreateDocs(t *testing.T) {
 	}{
 		{
 			name: "length of rules is 0",
-			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"rule": {Type: "someType", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"rule": {Type: "someType", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, eventDocID: "eventid", batchID: "batchid", dbAlias: "db", col: "col", rows: nil},
 			want: nil,
 		},
 		{
 			name: "rows are nil",
-			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, eventDocID: "eventid", batchID: "batchid", dbAlias: "db", col: "col", rows: nil},
 			want: []*model.EventDocument{},
 		},
 		{
 			name: "eventing is not possible",
-			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, eventDocID: "eventid", batchID: "batchid", dbAlias: "db", col: "col", rows: []interface{}{map[string]interface{}{"key": "value"}}},
 			schemaMockArgs: []mockArgs{
 				{
@@ -68,7 +68,7 @@ func TestModule_processCreateDocs(t *testing.T) {
 		},
 		{
 			name: "doc are created",
-			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, batchID: "batchid", dbAlias: "db", col: "col", rows: []interface{}{map[string]interface{}{"key": "value"}}},
 			schemaMockArgs: []mockArgs{
 				{
@@ -150,14 +150,14 @@ func TestModule_processUpdateDeleteHook(t *testing.T) {
 	}{
 		{
 			name:  "no rules matched",
-			m:     &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"rule": {Type: "nottype", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:     &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"rule": {Type: "nottype", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args:  args{token: 50, eventType: "type", batchID: "batchid", dbAlias: "db", col: "col", find: map[string]interface{}{"key": "value"}},
 			want:  nil,
 			want1: false,
 		},
 		{
 			name: "eventing is not possible",
-			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"rule": {Type: "type", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"rule": {Type: "type", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, eventType: "type", batchID: "batchid", dbAlias: "db", col: "col", find: map[string]interface{}{"key": "value"}},
 			schemaMockArgs: []mockArgs{
 				{
@@ -171,7 +171,7 @@ func TestModule_processUpdateDeleteHook(t *testing.T) {
 		},
 		{
 			name: "docs are updated",
-			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"rule": {Type: "type", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"rule": {Type: "type", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, eventType: "type", batchID: "batchid", dbAlias: "db", col: "col", find: map[string]interface{}{"key": "value"}},
 			schemaMockArgs: []mockArgs{
 				{
@@ -516,7 +516,7 @@ func TestModule_hookDBUpdateDeleteIntent(t *testing.T) {
 	}{
 		{
 			name: "update delete hook not ok",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]*config.EventingRule{"rule": {Type: "notEvType", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]*config.EventingTrigger{"rule": {Type: "notEvType", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{ctx: context.Background(), eventType: "evType", dbAlias: "db", col: "col", find: map[string]interface{}{}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -528,7 +528,7 @@ func TestModule_hookDBUpdateDeleteIntent(t *testing.T) {
 		},
 		{
 			name: "error in internal create",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]*config.EventingRule{"rule": {Type: "evType", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]*config.EventingTrigger{"rule": {Type: "evType", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{ctx: context.Background(), eventType: "evType", dbAlias: "db", col: "col", find: map[string]interface{}{}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -555,7 +555,7 @@ func TestModule_hookDBUpdateDeleteIntent(t *testing.T) {
 		},
 		{
 			name: "no errors",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]*config.EventingRule{"rule": {Type: "evType", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]*config.EventingTrigger{"rule": {Type: "evType", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{ctx: context.Background(), eventType: "evType", dbAlias: "db", col: "col", find: map[string]interface{}{}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -664,7 +664,7 @@ func TestModule_HookDBDeleteIntent(t *testing.T) {
 	}{
 		{
 			name: " eventing not enabled",
-			m:    &Module{config: &config.Eventing{Enabled: false, Rules: map[string]*config.EventingRule{"rule": {Type: "not delete"}}}},
+			m:    &Module{config: &config.Eventing{Enabled: false, Rules: map[string]*config.EventingTrigger{"rule": {Type: "not delete"}}}},
 			args: args{context.Background(), "db", "col", nil},
 			want: &model.EventIntent{Invalid: true},
 		},
@@ -727,7 +727,7 @@ func TestModule_HookDBUpdateIntent(t *testing.T) {
 	}{
 		{
 			name: " eventing not enabled",
-			m:    &Module{config: &config.Eventing{Enabled: false, Rules: map[string]*config.EventingRule{"rule": {Type: "not update"}}}},
+			m:    &Module{config: &config.Eventing{Enabled: false, Rules: map[string]*config.EventingTrigger{"rule": {Type: "not update"}}}},
 			args: args{context.Background(), "db", "col", nil},
 			want: &model.EventIntent{Invalid: true},
 		},
@@ -810,7 +810,7 @@ func TestModule_HookDBCreateIntent(t *testing.T) {
 		},
 		{
 			name: "error creating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", col: "col", req: &model.CreateRequest{Operation: "one", Document: map[string]interface{}{"key": "value"}, IsBatch: true}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -836,7 +836,7 @@ func TestModule_HookDBCreateIntent(t *testing.T) {
 		},
 		{
 			name: "no errors",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", col: "col", req: &model.CreateRequest{Operation: "one", Document: map[string]interface{}{"key": "value"}, IsBatch: true}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -963,7 +963,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		},
 		{
 			name: "error creating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "create", Col: "col", Document: map[string]interface{}{"key": "value"}, Operation: "one"}}}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -989,7 +989,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		},
 		{
 			name: "r.type create case",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "create", Col: "col", Document: map[string]interface{}{"key": "value"}, Operation: "one"}}}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -1015,7 +1015,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		},
 		{
 			name: "r.type update case where not ok",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: "not update", Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: "not update", Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "update", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -1027,7 +1027,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		},
 		{
 			name: "r.type update case",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventDBUpdate, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventDBUpdate, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "update", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
 			syncmanMockArgs: []mockArgs{
 				{
@@ -1053,7 +1053,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		},
 		{
 			name: "r.type delete case",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingRule{"rule": {Type: utils.EventDBDelete, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventDBDelete, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "delete", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
 			syncmanMockArgs: []mockArgs{
 				{

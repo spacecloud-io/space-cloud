@@ -43,9 +43,10 @@ func (j *JWT) ParseToken(ctx context.Context, token string) (map[string]interfac
 			}
 			return j.verifyTokenSignature(ctx, token, &tempSecret)
 		}
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "No secret with given kid found", nil, map[string]interface{}{"kid": kid})
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse token or secret with given kid does not exists", err, map[string]interface{}{"kid": kid})
 	}
 
+	var er error
 	for _, secret := range j.staticSecrets {
 		tempSecret := *secret
 		// normal token
@@ -60,8 +61,9 @@ func (j *JWT) ParseToken(ctx context.Context, token string) (map[string]interfac
 		if err == nil {
 			return claims, nil
 		}
+		er = err
 	}
-	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Authentication secrets not set in space cloud config", err, nil)
+	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to parse token or authentication secrets not set in space cloud config", er, nil)
 }
 
 // CreateToken create a token with primary secret
@@ -106,4 +108,16 @@ func (j *JWT) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (s
 		}
 	}
 	return "", errors.New("no primary secret provided")
+}
+
+// Close closes the go routine of jwk fetch routing
+func (j *JWT) Close() {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	j.closeJwkRoutineChan <- struct{}{}
+
+	j.staticSecrets = map[string]*config.Secret{}
+	j.jwkSecrets = map[string]*jwkSecret{}
+	j.mapJwkKidToSecretKid = map[string]string{}
 }

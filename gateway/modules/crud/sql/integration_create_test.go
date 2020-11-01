@@ -204,7 +204,7 @@ func TestSQL_Create(t *testing.T) {
 		testCases = sqlCases
 	}
 
-	db, err := Init(model.DBType(*dbType), true, *connection, "myproject")
+	db, err := Init(model.DBType(*dbType), true, *connection, "myproject", nil)
 	if err != nil {
 		t.Fatal("Create() Couldn't establishing connection with database", dbType)
 	}
@@ -241,7 +241,7 @@ func TestSQL_Create(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("Create() Scanning error", err)
 				}
-				mysqlTypeCheck(model.DBType(*dbType), rowTypes, v)
+				mysqlTypeCheck(context.Background(), model.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if len(tt.wantReadResult) != len(readResult) {

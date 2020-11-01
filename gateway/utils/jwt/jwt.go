@@ -19,10 +19,13 @@ type JWT struct {
 	lock                 sync.RWMutex
 	staticSecrets        map[string]*config.Secret
 	jwkSecrets           map[string]*jwkSecret
+	closeJwkRoutineChan  chan struct{}
 	mapJwkKidToSecretKid map[string]string
 }
 
 type jwkSecret struct {
+	audience    []string
+	issuer      []string
 	url         string
 	refreshTime time.Time
 	set         *jwk.Set
@@ -32,15 +35,22 @@ const defaultRefreshTime = 1 * time.Hour
 
 // New initializes the package
 func New() *JWT {
+	ch := make(chan struct{}, 1)
 	j := &JWT{
 		staticSecrets:        map[string]*config.Secret{},
 		jwkSecrets:           map[string]*jwkSecret{},
 		mapJwkKidToSecretKid: map[string]string{},
+		closeJwkRoutineChan:  ch,
 	}
 	go func() {
 		tick := time.NewTicker(defaultRefreshTime)
-		for t := range tick.C {
-			j.fetchJWKRoutine(t)
+		for {
+			select {
+			case t := <-tick.C:
+				j.fetchJWKRoutine(t)
+			case <-ch:
+				return
+			}
 		}
 	}()
 	return j
@@ -69,6 +79,8 @@ func (j *JWT) SetSecrets(secrets []*config.Secret) error {
 				if err != nil {
 					return err
 				}
+				jwkSecretInfo.audience = secret.Audience
+				jwkSecretInfo.issuer = secret.Issuer
 
 				newJwkSecrets[secret.KID] = jwkSecretInfo
 				for _, key := range jwkSecretInfo.set.Keys {
@@ -78,6 +90,8 @@ func (j *JWT) SetSecrets(secrets []*config.Secret) error {
 			}
 
 			// add existing secret to new map
+			obj.audience = secret.Audience
+			obj.issuer = secret.Issuer
 			newJwkSecrets[secret.KID] = obj
 			for key, value := range j.mapJwkKidToSecretKid {
 				if value == secret.KID {

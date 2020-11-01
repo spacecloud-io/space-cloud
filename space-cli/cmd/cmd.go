@@ -106,6 +106,7 @@ func GetRootCommand() *cobra.Command {
 
 	rootCmd.AddCommand(modules.FetchGenerateSubCommands())
 	rootCmd.AddCommand(modules.FetchGetSubCommands())
+	rootCmd.AddCommand(modules.FetchDeleteSubCommands())
 	rootCmd.AddCommand(addons.Commands()...)
 	rootCmd.AddCommand(deploy.Commands()...)
 	rootCmd.AddCommand(operations.Commands()...)

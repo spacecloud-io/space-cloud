@@ -115,8 +115,14 @@ type mockSchemaEventingInterface struct {
 	mock.Mock
 }
 
+func (m *mockSchemaEventingInterface) GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error) {
+	c := m.Called(ctx, dbAlias, col, format)
+	return c.Get(0).([]interface{}), c.Error(1)
+}
+
 func (m *mockSchemaEventingInterface) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
-	panic("implement me")
+	c := m.Called(ctx, dbAlias, project, col)
+	return c.String(0), c.Error(1)
 }
 
 func (m *mockSchemaEventingInterface) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
@@ -124,8 +130,8 @@ func (m *mockSchemaEventingInterface) CheckIfEventingIsPossible(dbAlias, col str
 	return map[string]interface{}{}, c.Bool(1)
 }
 
-func (m *mockSchemaEventingInterface) Parser(crud config.Crud) (model.Type, error) {
-	c := m.Called(crud)
+func (m *mockSchemaEventingInterface) Parser(dbSchemas config.DatabaseSchemas) (model.Type, error) {
+	c := m.Called(dbSchemas)
 	return nil, c.Error(1)
 }
 
@@ -134,7 +140,7 @@ func (m *mockSchemaEventingInterface) SchemaValidator(ctx context.Context, col s
 	return nil, c.Error(1)
 }
 
-func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
+func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables config.DatabaseSchemas) error {
 	c := m.Called(ctx, dbAlias, logicalDBName, tables)
 	return c.Error(0)
 }

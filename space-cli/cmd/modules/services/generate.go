@@ -179,3 +179,84 @@ func GenerateServiceRoute(projectID string) (*model.SpecObject, error) {
 
 	return v, nil
 }
+
+// GenerateServiceRole creates a service role struct
+func GenerateServiceRole(projectID string) (*model.SpecObject, error) {
+	if projectID == "" {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project ID:"}, &projectID); err != nil {
+			return nil, err
+		}
+	}
+
+	roleID := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Role ID:"}, &roleID); err != nil {
+		return nil, err
+	}
+
+	serviceID := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter serviceID:"}, &serviceID); err != nil {
+		return nil, err
+	}
+	Types := []string{"Project", "Cluster"}
+	Type := ""
+	if err := input.Survey.AskOne(&survey.Select{Message: "Choose the Type of role: ", Options: Types, Default: Types[0]}, &Type); err != nil {
+		return nil, err
+	}
+
+	rules := make([]model.Rule, 0)
+	repeat := "YES"
+	for repeat == "YES" {
+		apiGroup := ""
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter APIGroups:"}, &apiGroup); err != nil {
+			return nil, err
+		}
+		apiGroups := strings.Split(apiGroup, ",")
+		if apiGroups[len(apiGroups)-1] == "" {
+			return nil, utils.LogError(fmt.Sprintf("Last element of APIGroups not Specified"), nil)
+		}
+
+		verb := ""
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Verbs:"}, &verb); err != nil {
+			return nil, err
+		}
+		verbs := strings.Split(verb, ",")
+		if verbs[len(verbs)-1] == "" {
+			return nil, utils.LogError(fmt.Sprintf("Last element of Verbs not Specified"), nil)
+		}
+
+		resource := ""
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Resources:"}, &resource); err != nil {
+			return nil, err
+		}
+		resources := strings.Split(resource, ",")
+		if resources[len(resources)-1] == "" {
+			return nil, utils.LogError(fmt.Sprintf("Last element of Resources not Specified"), nil)
+		}
+
+		rule := model.Rule{
+			APIGroups: apiGroups,
+			Verbs:     verbs,
+			Resources: resources,
+		}
+		rules = append(rules, rule)
+
+		again := []string{"YES", "NO"}
+		if err := input.Survey.AskOne(&survey.Select{Message: "Do you want to add another rule: ", Options: again, Default: again[1]}, &repeat); err != nil {
+			return nil, err
+		}
+	}
+	v := &model.SpecObject{
+		API:  "/v1/runner/{project}/service-roles/{serviceId}/{roleId}",
+		Type: "service-role",
+		Meta: map[string]string{
+			"roleId":    roleID,
+			"project":   projectID,
+			"serviceId": serviceID,
+		},
+		Spec: &model.Role{
+			Type:  Type,
+			Rules: rules,
+		},
+	}
+	return v, nil
+}

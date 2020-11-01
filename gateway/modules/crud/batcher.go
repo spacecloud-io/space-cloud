@@ -47,27 +47,30 @@ func (m *Module) closeBatchOperation() {
 }
 
 // initBatchOperation creates go routines for executing batch operation associated with individual collection
-func (m *Module) initBatchOperation(project string, crud config.Crud) {
+func (m *Module) initBatchOperation(project string, crud config.DatabaseSchemas) error {
 	batch := batchMap{}
-	for dbAlias, dbInfo := range crud {
+	for _, schema := range crud {
+		dbInfo, err := m.getDBInfo(schema.DbAlias)
+		if err != nil {
+			return err
+		}
 		if dbInfo.Enabled {
-			for tableName := range dbInfo.Collections {
-				closeC := make(chan struct{})                    // channel for closing go routine
-				addInsertToBatchCh := make(batchRequestChan, 20) // channel for adding request to batch op
-				go m.insertBatchExecutor(closeC, addInsertToBatchCh, dbInfo.BatchTime, project, dbAlias, tableName, dbInfo.BatchRecords)
-				if batch[project] == nil {
-					batch[project] = map[string]map[string]batchChannels{dbAlias: {tableName: {request: addInsertToBatchCh, closeC: closeC}}}
-					continue
-				}
-				if batch[project][dbAlias] == nil {
-					batch[project][dbAlias] = map[string]batchChannels{tableName: {request: addInsertToBatchCh, closeC: closeC}}
-					continue
-				}
-				batch[project][dbAlias][tableName] = batchChannels{request: addInsertToBatchCh, closeC: closeC}
+			closeC := make(chan struct{})                    // channel for closing go routine
+			addInsertToBatchCh := make(batchRequestChan, 20) // channel for adding request to batch op
+			go m.insertBatchExecutor(closeC, addInsertToBatchCh, dbInfo.BatchTime, project, schema.DbAlias, schema.Table, dbInfo.BatchRecords)
+			if batch[project] == nil {
+				batch[project] = map[string]map[string]batchChannels{schema.DbAlias: {schema.Table: {request: addInsertToBatchCh, closeC: closeC}}}
+				continue
 			}
+			if batch[project][schema.DbAlias] == nil {
+				batch[project][schema.DbAlias] = map[string]batchChannels{schema.Table: {request: addInsertToBatchCh, closeC: closeC}}
+				continue
+			}
+			batch[project][schema.DbAlias][schema.Table] = batchChannels{request: addInsertToBatchCh, closeC: closeC}
 		}
 	}
 	m.batchMapTableToChan = batch
+	return nil
 }
 
 func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batchRequestChan, batchTime int, project, dbAlias, tableName string, batchRecordLimit int) {

@@ -6,10 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestManager_SetFileStore(t *testing.T) {
@@ -21,7 +20,7 @@ func TestManager_SetFileStore(t *testing.T) {
 	type args struct {
 		ctx     context.Context
 		project string
-		value   *config.FileStore
+		value   *config.FileStoreConfig
 	}
 	tests := []struct {
 		name            string
@@ -32,59 +31,68 @@ func TestManager_SetFileStore(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{}}}}}},
-			args:    args{ctx: context.Background(), project: "2", value: &config.FileStore{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Rules: []*config.FileRule{}, Secret: "secret", StoreType: "local"}},
+			name: "Project config not found",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject"},
+						},
+					},
+				},
+			},
+			args:    args{ctx: context.Background(), project: "2", value: &config.FileStoreConfig{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Secret: "secret", StoreType: "local"}},
 			wantErr: true,
 		},
 		{
-			name: "unable to set filestore config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{}}}}}},
-			args: args{ctx: context.Background(), project: "1", value: &config.FileStore{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Rules: []*config.FileRule{}, Secret: "secret", StoreType: "local"}},
+			name: "Unable to set file store config",
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
+			args: args{ctx: context.Background(), project: "1", value: &config.FileStoreConfig{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Secret: "secret", StoreType: "local"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
+					args:           []interface{}{mock.Anything, "1", &config.FileStoreConfig{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Secret: "secret", StoreType: "local"}},
 					paramsReturned: []interface{}{errors.New("cannot get secrets from runner")},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{}}}}}},
-			args: args{ctx: context.Background(), project: "1", value: &config.FileStore{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Rules: []*config.FileRule{}, Secret: "secret", StoreType: "local"}},
+			name: "Unable to set resource",
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
+			args: args{ctx: context.Background(), project: "1", value: &config.FileStoreConfig{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Secret: "secret", StoreType: "local"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
+					args:           []interface{}{mock.Anything, "1", &config.FileStoreConfig{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Secret: "secret", StoreType: "local"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceFileStoreConfig, "filestore"), &config.FileStoreConfig{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Secret: "secret", StoreType: "local"}},
 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "filestore is set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{}}}}}},
-			args: args{ctx: context.Background(), project: "1", value: &config.FileStore{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Rules: []*config.FileRule{}, Secret: "secret", StoreType: "local"}},
+			name: "File store config is set",
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
+			args: args{ctx: context.Background(), project: "1", value: &config.FileStoreConfig{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Secret: "secret", StoreType: "local"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
+					args:           []interface{}{mock.Anything, "1", &config.FileStoreConfig{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Secret: "secret", StoreType: "local"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceFileStoreConfig, "filestore"), &config.FileStoreConfig{Enabled: true, Bucket: "bucket", Conn: "conn", Endpoint: "endpoint", Secret: "secret", StoreType: "local"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -129,16 +137,16 @@ func TestManager_GetFileStoreConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{}}}}}},
+			name:    "Unable to get project config",
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
 			args:    args{ctx: context.Background(), project: "2"},
 			wantErr: true,
 		},
 		{
-			name: "got filestore config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{}}}}}},
+			name: "Got filestore config",
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{StoreType: "local"}}}}},
 			args: args{ctx: context.Background(), project: "1"},
-			want: []interface{}{config.FileStore{}},
+			want: []interface{}{&config.FileStoreConfig{StoreType: "local"}},
 		},
 	}
 	for _, tt := range tests {
@@ -176,39 +184,26 @@ func TestManager_SetFileRule(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
+			name:    "Project config not found",
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
 			args:    args{ctx: context.Background(), id: "ruleID", project: "2", value: &config.FileRule{ID: "id"}},
 			wantErr: true,
 		},
 		{
-			name: "rules does not exist and unable to set file store config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
-			args: args{ctx: context.Background(), id: "id", project: "1", value: &config.FileRule{ID: "id"}},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{errors.New("cannot get secrets from runner")},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "rules does not exist and unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
 			args: args{ctx: context.Background(), id: "id", project: "1", value: &config.FileRule{ID: "id"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetFileStoreSecurityRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.FileStoreRules{config.GenerateResourceID("chicago", "1", config.ResourceFileStoreRule, "id"): &config.FileRule{ID: "id"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceFileStoreRule, "id"), &config.FileRule{ID: "id"}},
 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 				},
 			},
@@ -216,71 +211,38 @@ func TestManager_SetFileRule(t *testing.T) {
 		},
 		{
 			name: "rules does not exist and file rule is set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
 			args: args{ctx: context.Background(), id: "id", project: "1", value: &config.FileRule{ID: "id"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetFileStoreSecurityRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.FileStoreRules{config.GenerateResourceID("chicago", "1", config.ResourceFileStoreRule, "id"): &config.FileRule{ID: "id"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceFileStoreRule, "id"), &config.FileRule{ID: "id"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
-		},
-		{
-			name: "unable to set file store config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
-			args: args{ctx: context.Background(), id: "ruleID", project: "1", value: &config.FileRule{ID: "id"}},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{errors.New("cannot get secrets from runner")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
-			args: args{ctx: context.Background(), id: "ruleID", project: "1", value: &config.FileRule{ID: "id"}},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("Invalid config file type")},
-				},
-			},
-			wantErr: true,
 		},
 		{
 			name: "file rule is set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
-			args: args{ctx: context.Background(), id: "ruleID", project: "1", value: &config.FileRule{ID: "id"}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
+			args: args{ctx: context.Background(), id: "id", project: "1", value: &config.FileRule{ID: "id"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetFileStoreSecurityRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.FileStoreRules{config.GenerateResourceID("chicago", "1", config.ResourceFileStoreRule, "id"): &config.FileRule{ID: "id"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceFileStoreRule, "id"), &config.FileRule{ID: "id"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -333,38 +295,25 @@ func TestManager_SetDeleteFileRule(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
 			args:    args{ctx: context.Background(), filename: "ruleID", project: "2"},
 			wantErr: true,
 		},
 		{
-			name: "unable to set file store config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
+			name: "unable to delete resource",
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreRules: config.FileStoreRules{}, FileStoreConfig: &config.FileStoreConfig{}}}}},
 			args: args{ctx: context.Background(), filename: "ruleID", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{errors.New("cannot get secrets from runner")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
-			args: args{ctx: context.Background(), filename: "ruleID", project: "1"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetFileStoreSecurityRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.FileStoreRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "DeleteResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceFileStoreRule, "ruleID")},
 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 				},
 			},
@@ -372,19 +321,19 @@ func TestManager_SetDeleteFileRule(t *testing.T) {
 		},
 		{
 			name: "file rule deleted",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreRules: config.FileStoreRules{}, FileStoreConfig: &config.FileStoreConfig{}}}}},
 			args: args{ctx: context.Background(), filename: "ruleID", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetFileStoreConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetFileStoreSecurityRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.FileStoreRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "DeleteResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceFileStoreRule, "ruleID")},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -431,25 +380,25 @@ func TestManager_GetFileStoreRules(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
 			args:    args{ctx: context.Background(), project: "2", ruleID: "ruleID"},
 			wantErr: true,
 		},
 		{
 			name:    "file rule not present in config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}}}}},
 			args:    args{ctx: context.Background(), project: "1", ruleID: "notRuleID"},
 			wantErr: true,
 		},
 		{
 			name: "got file store rule",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}, FileStoreRules: config.FileStoreRules{config.GenerateResourceID("chicago", "1", config.ResourceFileStoreRule, "ruleID"): &config.FileRule{ID: "ruleID"}}}}}},
 			args: args{ctx: context.Background(), project: "1", ruleID: "ruleID"},
 			want: []interface{}{&config.FileRule{ID: "ruleID"}},
 		},
 		{
 			name: "got all file store rule",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, FileStoreConfig: &config.FileStoreConfig{}, FileStoreRules: config.FileStoreRules{config.GenerateResourceID("chicago", "1", config.ResourceFileStoreRule, "ruleID"): &config.FileRule{ID: "ruleID"}}}}}},
 			args: args{ctx: context.Background(), project: "1", ruleID: "*"},
 			want: []interface{}{&config.FileRule{ID: "ruleID"}},
 		},

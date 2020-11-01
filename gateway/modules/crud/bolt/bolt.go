@@ -6,16 +6,18 @@ import (
 	"github.com/spaceuptech/helpers"
 	"go.etcd.io/bbolt"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Bolt holds the bolt session
 type Bolt struct {
-	enabled    bool
-	connection string
-	bucketName string
-	client     *bbolt.DB
+	queryFetchLimit *int64
+	enabled         bool
+	connection      string
+	bucketName      string
+	client          *bbolt.DB
 }
 
 // Init initialises a new bolt instance
@@ -39,8 +41,8 @@ func (b *Bolt) Close() error {
 }
 
 // IsSame checks if we've got the same connection string
-func (b *Bolt) IsSame(conn, dbName string) bool {
-	return b.connection == conn && dbName == b.bucketName
+func (b *Bolt) IsSame(conn, dbName string, driverConf config.DriverConfig) bool {
+	return b.connection == conn && dbName == b.bucketName //DriverConfig is not used for now.
 }
 
 // IsClientSafe checks whether database is enabled and connected
@@ -75,4 +77,9 @@ func (b *Bolt) connect() error {
 // GetDBType returns the dbType of the crud block
 func (b *Bolt) GetDBType() model.DBType {
 	return model.EmbeddedDB
+}
+
+// SetQueryFetchLimit sets data fetch limit
+func (b *Bolt) SetQueryFetchLimit(limit int64) {
+	b.queryFetchLimit = &limit
 }

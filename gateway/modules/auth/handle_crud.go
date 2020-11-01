@@ -16,7 +16,7 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(ctx, dbAlias, col, token, model.Create)
+	rule, auth, err := m.authenticateCrudRequest(ctx, project, dbAlias, col, token, model.Create)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -35,7 +35,7 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 
 	for _, row := range rows {
 		args["doc"] = row
-		_, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+		_, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 		if err != nil {
 			return model.RequestParams{}, err
 		}
@@ -46,17 +46,26 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 }
 
 // IsReadOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*model.PostProcess, model.RequestParams, error) {
+func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest, stub model.ReturnWhereStub) (*model.PostProcess, model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(ctx, dbAlias, col, token, model.Read)
+	rule, auth, err := m.authenticateCrudRequest(ctx, project, dbAlias, col, token, model.Read)
 	if err != nil {
 		return nil, model.RequestParams{}, err
 	}
 
-	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
-	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	opts := map[string]interface{}{}
+	if req.Options != nil {
+		if req.Options.Limit != nil {
+			opts["limit"] = *req.Options.Limit
+		}
+		if req.Options.Skip != nil {
+			opts["skip"] = *req.Options.Skip
+		}
+	}
+	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token, "opts": opts}
+	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, stub)
 	if err != nil {
 		return nil, model.RequestParams{}, err
 	}
@@ -70,13 +79,13 @@ func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(ctx, dbAlias, col, token, model.Update)
+	rule, auth, err := m.authenticateCrudRequest(ctx, project, dbAlias, col, token, model.Update)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "update": req.Update, "token": token}
-	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -90,13 +99,13 @@ func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(ctx, dbAlias, col, token, model.Delete)
+	rule, auth, err := m.authenticateCrudRequest(ctx, project, dbAlias, col, token, model.Delete)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
-	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -110,13 +119,13 @@ func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbAlias, 
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(ctx, dbAlias, col, token, model.Aggregation)
+	rule, auth, err := m.authenticateCrudRequest(ctx, project, dbAlias, col, token, model.Aggregation)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "pipeline": req.Pipeline, "token": token}
-	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -130,13 +139,13 @@ func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticatePreparedQueryRequest(ctx, dbAlias, id, token)
+	rule, auth, err := m.authenticatePreparedQueryRequest(ctx, project, dbAlias, id, token)
 	if err != nil {
 		return nil, model.RequestParams{}, err
 	}
 
 	args := map[string]interface{}{"auth": auth, "params": req.Params, "token": token}
-	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 	if err != nil {
 		return nil, model.RequestParams{}, err
 	}
@@ -145,9 +154,9 @@ func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias
 	return actions, model.RequestParams{Claims: auth, Resource: "db-prepared-query", Op: "access", Attributes: attr}, nil
 }
 
-func (m *Module) authenticateCrudRequest(ctx context.Context, dbAlias, col, token string, op model.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {
+func (m *Module) authenticateCrudRequest(ctx context.Context, projectID, dbAlias, col, token string, op model.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {
 	// Get rule
-	rule, err = m.getCrudRule(ctx, dbAlias, col, op)
+	rule, err = m.getCrudRule(ctx, projectID, dbAlias, col, op)
 	if err != nil {
 		return
 	}
@@ -162,9 +171,9 @@ func (m *Module) authenticateCrudRequest(ctx context.Context, dbAlias, col, toke
 	return
 }
 
-func (m *Module) authenticatePreparedQueryRequest(ctx context.Context, dbAlias, id, token string) (rule *config.Rule, auth map[string]interface{}, err error) {
+func (m *Module) authenticatePreparedQueryRequest(ctx context.Context, projectID, dbAlias, id, token string) (rule *config.Rule, auth map[string]interface{}, err error) {
 	// Get rule
-	rule, err = m.getPrepareQueryRule(ctx, dbAlias, id)
+	rule, err = m.getPrepareQueryRule(ctx, projectID, dbAlias, id)
 	if err != nil {
 		return
 	}
@@ -179,32 +188,32 @@ func (m *Module) authenticatePreparedQueryRequest(ctx context.Context, dbAlias, 
 	return
 }
 
-func (m *Module) getCrudRule(ctx context.Context, dbAlias, col string, query model.OperationType) (*config.Rule, error) {
-	if dbRules, p1 := m.rules[dbAlias]; p1 {
-		if collection, p2 := dbRules.Collections[col]; p2 {
-			if rule, p3 := collection.Rules[string(query)]; p3 {
-				return rule, nil
-			}
-			if defaultCol, p := dbRules.Collections["default"]; p {
-				if rule, p := defaultCol.Rules[string(query)]; p {
-					return rule, nil
-				}
+func (m *Module) getCrudRule(ctx context.Context, projectID, dbAlias, col string, query model.OperationType) (*config.Rule, error) {
+	resourceIDs := []string{
+		config.GenerateResourceID(m.clusterID, projectID, config.ResourceDatabaseRule, dbAlias, col, "rule"),
+		config.GenerateResourceID(m.clusterID, projectID, config.ResourceDatabaseRule, dbAlias, "default", "rule"),
+	}
+	for _, resourceID := range resourceIDs {
+		rule, ok := m.dbRules[resourceID]
+		if ok {
+			if r, p3 := rule.Rules[string(query)]; p3 {
+				return r, nil
 			}
 		}
 	}
 	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Security rule not defined for collection/table (%s) in database (%s). Ensure your table has correct access rights", col, dbAlias), nil, nil)
 }
 
-func (m *Module) getPrepareQueryRule(ctx context.Context, dbAlias, id string) (*config.Rule, error) {
-	dbRules, p1 := m.rules[dbAlias]
-	if !p1 {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to get security rule of prepared query", fmt.Errorf("db alias (%s) does not exist", dbAlias), nil)
+func (m *Module) getPrepareQueryRule(ctx context.Context, projectID, dbAlias, id string) (*config.Rule, error) {
+	resourceIDs := []string{
+		config.GenerateResourceID(m.clusterID, projectID, config.ResourceDatabasePreparedQuery, dbAlias, id),
+		config.GenerateResourceID(m.clusterID, projectID, config.ResourceDatabasePreparedQuery, dbAlias, "default"),
 	}
-	if dbPreparedQuery, p2 := dbRules.PreparedQueries[id]; p2 && dbPreparedQuery.Rule != nil {
-		return dbPreparedQuery.Rule, nil
-	}
-	if defaultPreparedQuery, p2 := dbRules.PreparedQueries["default"]; p2 && defaultPreparedQuery.Rule != nil {
-		return defaultPreparedQuery.Rule, nil
+	for _, resourceID := range resourceIDs {
+		rule, ok := m.dbPrepQueryRules[resourceID]
+		if ok && rule.Rule != nil {
+			return rule.Rule, nil
+		}
 	}
 	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("No security rule found for prepared Query (%s) in database with alias (%s)", id, dbAlias), nil, nil)
 }

@@ -10,21 +10,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Mongo holds the mongo session
 type Mongo struct {
-	enabled    bool
-	connection string
-	dbName     string
-	client     *mongo.Client
+	queryFetchLimit *int64
+	enabled         bool
+	connection      string
+	dbName          string
+	client          *mongo.Client
+	driverConf      config.DriverConfig
 }
 
 // Init initialises a new mongo instance
-func Init(enabled bool, connection, dbName string) (mongoStub *Mongo, err error) {
-	mongoStub = &Mongo{dbName: dbName, enabled: enabled, connection: connection, client: nil}
+func Init(enabled bool, connection, dbName string, driverConf config.DriverConfig) (mongoStub *Mongo, err error) {
+	mongoStub = &Mongo{dbName: dbName, enabled: enabled, connection: connection, client: nil, driverConf: driverConf}
 
 	if mongoStub.enabled {
 		err = mongoStub.connect()
@@ -42,8 +45,8 @@ func (m *Mongo) Close() error {
 }
 
 // IsSame checks if we've got the same connection string
-func (m *Mongo) IsSame(conn, dbName string) bool {
-	return strings.HasPrefix(m.connection, conn) && dbName == m.dbName
+func (m *Mongo) IsSame(conn, dbName string, driverConf config.DriverConfig) bool {
+	return strings.HasPrefix(m.connection, conn) && dbName == m.dbName && driverConf.MaxConn == m.driverConf.MaxConn && driverConf.MaxIdleTimeout == m.driverConf.MaxIdleTimeout && driverConf.MinConn == m.driverConf.MinConn
 }
 
 // IsClientSafe checks whether database is enabled and connected
@@ -68,7 +71,29 @@ func (m *Mongo) connect() error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
 	defer cancel()
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(m.connection))
+	opts := options.Client().ApplyURI(m.connection)
+
+	maxConn := m.driverConf.MaxConn
+	if maxConn == 0 {
+		maxConn = 100
+	}
+
+	maxIdleTimeout := m.driverConf.MaxIdleTimeout
+	if maxIdleTimeout == 0 {
+		maxIdleTimeout = 60 * 5 * 1000
+	}
+
+	minConn := m.driverConf.MinConn
+	if minConn == 0 {
+		minConn = 10
+	}
+
+	opts = opts.SetMaxPoolSize((uint64)(maxConn))
+	duration := time.Duration(maxIdleTimeout) * time.Millisecond
+	opts = opts.SetMaxConnIdleTime(duration)
+	opts = opts.SetMinPoolSize(minConn)
+	client, err := mongo.NewClient(opts)
+
 	if err != nil {
 		return err
 	}
@@ -88,4 +113,9 @@ func (m *Mongo) connect() error {
 // GetDBType returns the dbType of the crud block
 func (m *Mongo) GetDBType() model.DBType {
 	return model.Mongo
+}
+
+// SetQueryFetchLimit sets data fetch limit
+func (m *Mongo) SetQueryFetchLimit(limit int64) {
+	m.queryFetchLimit = &limit
 }

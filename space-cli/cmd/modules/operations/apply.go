@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Apply reads the config file(s) from the provided file / directory and applies it to the server
-func Apply(applyName string) error {
+func Apply(applyName string, delay time.Duration) error {
 	if !strings.HasSuffix(applyName, ".yaml") {
 		dirName := applyName
 		if err := os.Chdir(dirName); err != nil {
@@ -52,6 +53,7 @@ func Apply(applyName string) error {
 					if err := ApplySpec(token, account, spec); err != nil {
 						return utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
 					}
+					time.Sleep(delay)
 				}
 			}
 		}
@@ -73,6 +75,7 @@ func Apply(applyName string) error {
 		if err := ApplySpec(token, account, spec); err != nil {
 			return utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
 		}
+		time.Sleep(delay)
 	}
 
 	return nil

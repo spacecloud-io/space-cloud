@@ -6,6 +6,7 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // RealtimeInterface is used to mock the realtime module
@@ -20,6 +21,6 @@ type RealtimeInterface interface {
 
 // GraphQLInterface is used to mock the graphql module
 type GraphQLInterface interface {
-	GetDBAlias(ctx context.Context, field *ast.Field) (string, error)
+	GetDBAlias(ctx context.Context, field *ast.Field, token string, store utils.M) (string, error)
 	ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb model.GraphQLCallback)
 }

@@ -15,16 +15,24 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
+// ExecTemplate executes a template and returns the string result
+func ExecTemplate(ctx context.Context, tmpl *template.Template, object map[string]interface{}) (string, error) {
+	var b strings.Builder
+	if err := tmpl.Execute(&b, object); err != nil {
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to execute golang template", err, nil)
+	}
+
+	return b.String(), nil
+}
+
 // GoTemplate executes a go template
 func GoTemplate(ctx context.Context, tmpl *template.Template, format, token string, claims, params interface{}) (interface{}, error) {
 	// Prepare the object
 	object := map[string]interface{}{"args": params, "auth": claims, "token": token}
-	var b strings.Builder
-	if err := tmpl.Execute(&b, object); err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to execute golang template", err, nil)
+	s, err := ExecTemplate(ctx, tmpl, object)
+	if err != nil {
+		return nil, err
 	}
-
-	s := b.String()
 
 	var newParams interface{}
 	switch format {

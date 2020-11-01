@@ -15,7 +15,7 @@ func GetDbRule(project, commandName string, params map[string]string) ([]*model.
 	url := fmt.Sprintf("/v1/config/projects/%s/database/collections/rules", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -47,7 +47,7 @@ func GetDbConfig(project, commandName string, params map[string]string) ([]*mode
 	url := fmt.Sprintf("/v1/config/projects/%s/database/config", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -79,30 +79,26 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
 		obj := item.(map[string]interface{})
-		for key, value := range obj {
-			str := strings.Split(key, "-")
-			if str[1] == "event_logs" || str[1] == "invocation_logs" {
-				continue
-			}
-			meta := map[string]string{"project": project, "col": str[1], "dbAlias": str[0]}
-
-			delete(obj, "isRealtimeEnabled")
-			delete(obj, "rules")
-
-			// Generating the object
-			s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate", commandName, meta, value)
-			if err != nil {
-				return nil, err
-			}
-			objs = append(objs, s)
+		tableName := obj["col"]
+		dbAlias := obj["dbAlias"]
+		if tableName == "event_logs" || tableName == "invocation_logs" || tableName == "default" {
+			continue
 		}
+		meta := map[string]string{"project": project, "col": tableName.(string), "dbAlias": dbAlias.(string)}
+
+		// Generating the object
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate", commandName, meta, map[string]interface{}{"schema": obj["schema"]})
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, s)
 	}
 	return objs, nil
 }
@@ -112,7 +108,7 @@ func GetDbPreparedQuery(project, commandName string, params map[string]string) (
 	url := fmt.Sprintf("/v1/config/projects/%s/database/prepared-queries", project)
 
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 

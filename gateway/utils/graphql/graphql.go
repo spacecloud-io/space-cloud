@@ -42,18 +42,18 @@ func (graph *Module) GetProjectID() string {
 // ExecGraphQLQuery executes the provided graphql query
 func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb model.GraphQLCallback) {
 
-	source := source.NewSource(&source.Source{
+	s := source.NewSource(&source.Source{
 		Body: []byte(req.Query),
 		Name: req.OperationName,
 	})
 	// parse the source
-	doc, err := parser.Parse(parser.ParseParams{Source: source})
+	doc, err := parser.Parse(parser.ParseParams{Source: s})
 	if err != nil {
 		cb(nil, err)
 		return
 	}
 
-	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": ""}, nil, createCallback(cb))
+	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": "", "directive": ""}, nil, createCallback(cb))
 }
 
 type dbCallback func(dbAlias, col string, op interface{}, err error)
@@ -76,6 +76,7 @@ func createCallback(cb model.GraphQLCallback) model.GraphQLCallback {
 		cb(result, err)
 	}
 }
+
 func createDBCallback(cb dbCallback) dbCallback {
 	var lock sync.Mutex
 	var isCalled bool
@@ -109,8 +110,17 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 	case kinds.OperationDefinition:
 		op := node.(*ast.OperationDefinition)
+		// query { --> operation definition
+		//    everything under bracket is selection set
+		// 	users @db{} --> Field
+		// 	posts @db{} --> Field
+		// }
+		// mutation { --> operation definition
+		// 	insert_users @db{}
+		// 	insert_posts @db{}
+		// }
 		switch op.Operation {
-		case "query":
+		case ast.OperationTypeQuery:
 			obj := utils.NewObject()
 
 			// Create a wait group
@@ -137,7 +147,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			wg.Wait()
 			cb(obj.GetAll(), nil)
 			return
-		case "mutation":
+		case ast.OperationTypeMutation:
 			graph.handleMutation(ctx, node, token, store, cb)
 			return
 
@@ -147,12 +157,25 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 		}
 
 	case kinds.Field:
+		// users @db { --> Field
+		//    everything under bracket is selection set
+		// 	  @db --> directive
+		// 	id
+		// 	name
+		// 	age
+		// }
 		field := node.(*ast.Field)
 
 		// No directive means its a nested field
-		if len(field.Directives) > 0 {
-			directive := field.Directives[0].Name.Value
+		if len(field.Directives) > 0 && field.Directives[0].Name.Value != "aggregate" {
+			directive, err := graph.getDirectiveName(ctx, field.Directives[0], token, store)
+			if err != nil {
+				cb(nil, err)
+				return
+			}
+
 			kind := graph.getQueryKind(directive, field.Name.Value)
+			// database query
 			if kind == "read" {
 				graph.execReadRequest(ctx, field, token, store, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 					if err != nil {
@@ -168,6 +191,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 				return
 			}
 
+			// database prepared query
 			if kind == "prepared-queries" {
 				graph.execPreparedQueryRequest(ctx, field, token, store, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 					if err != nil {
@@ -180,6 +204,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 				return
 			}
 
+			// remote service call
 			if kind == "func" {
 				graph.execFuncCall(ctx, token, field, store, createCallback(func(result interface{}, err error) {
 					if err != nil {
@@ -196,24 +221,26 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			return
 		}
 
-		if schema != nil {
-			fieldStruct, p := schema[field.Name.Value]
-			if p && fieldStruct.IsLinked {
-				linkedInfo := fieldStruct.LinkedTable
-				loadKey := fmt.Sprintf("%s.%s", store["coreParentKey"], linkedInfo.From)
-				val, err := utils.LoadValue(loadKey, store)
-				if err != nil {
-					cb(nil, nil)
-					return
-				}
-				req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}}
-				graph.processLinkedResult(ctx, field, *fieldStruct, token, req, store, cb)
-				return
-			}
-		}
-
 		currentValue, err := utils.LoadValue(fmt.Sprintf("%s.%s", store["coreParentKey"], field.Name.Value), store)
 		if err != nil {
+			// This part of code won't be executed until called by post process result
+			// If the selection set of query has a field which is of typed linked, we will trigger another read request
+			if schema != nil {
+				fieldStruct, p := schema[field.Name.Value]
+				if p && fieldStruct.IsLinked {
+					linkedInfo := fieldStruct.LinkedTable
+					loadKey := fmt.Sprintf("%s.%s", store["coreParentKey"], linkedInfo.From)
+					val, err := utils.LoadValue(loadKey, store)
+					if err != nil {
+						cb(nil, nil)
+						return
+					}
+					req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}, PostProcess: map[string]*model.PostProcess{}}
+					graph.processLinkedResult(ctx, field, *fieldStruct, token, req, store, cb)
+					return
+				}
+			}
+
 			// if the field isn't found in the store means that field did not exist in the result. so return nil as error
 			cb(nil, nil)
 			return

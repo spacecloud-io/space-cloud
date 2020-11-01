@@ -14,6 +14,169 @@ var number int64 = 5
 
 var queryTestCases = []tests{
 	{
+		name: "Query: Simple Query with templated directive",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db_t1"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db_t1", "pokemons"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db_t1"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db_t1", "pokemons", &model.ReadRequest{
+					Extras:    map[string]interface{}{},
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+					},
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db_t1", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "ParseToken",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{map[string]interface{}{"tenant": "t1"}, nil},
+			},
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons @template(value: "db_{{.auth.tenant}}") {
+									id
+									name
+									power_level
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}},
+	},
+	{
+		name:           "Query: Simple Query with invalid templated directive",
+		crudMockArgs:   []mockArgs{},
+		schemaMockArgs: []mockArgs{},
+		authMockArgs:   []mockArgs{},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons @template {
+									id
+									name
+									power_level
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr: true,
+	},
+	{
+		name: "Query: Simple Query with templated directive in variables",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db_t1"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db_t1", "pokemons"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db_t1"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db_t1", "pokemons", &model.ReadRequest{
+					Extras:    map[string]interface{}{},
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+					},
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db_t1", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "ParseToken",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{map[string]interface{}{"role": "t1"}, nil},
+			},
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons @template(value: $tmpl) {
+									id
+									name
+									power_level
+								}
+							}`,
+				Variables: map[string]interface{}{"tmpl": "db_{{.auth.role}}"},
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}},
+	},
+	{
 		name: "Query: Simple Query",
 		crudMockArgs: []mockArgs{
 			{
@@ -42,7 +205,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
 			},
@@ -59,11 +223,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -112,7 +271,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
 			},
@@ -129,11 +289,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, errors.New("request not authorized")},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -182,7 +337,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
 			},
@@ -199,11 +355,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, errors.New("request not authorized")},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -252,7 +403,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
 			},
@@ -269,11 +421,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, errors.New("request not authorized")},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -325,7 +472,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
 			},
@@ -342,11 +490,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -401,7 +544,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
 			},
@@ -418,11 +562,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -472,11 +611,12 @@ var queryTestCases = []tests{
 						"power_level": map[string]interface{}{
 							"$eq": 100,
 						}},
-					Aggregate: map[string][]string{"sum": {"power_level"}},
-					GroupBy:   []interface{}{"power_level"},
-					Operation: utils.All,
-					Options:   &model.ReadOptions{},
-					IsBatch:   false,
+					Aggregate:   map[string][]string{"sum": {"power_level:power_level"}},
+					GroupBy:     []interface{}{"power_level"},
+					Operation:   utils.All,
+					Options:     &model.ReadOptions{},
+					IsBatch:     false,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"aggregate": map[string]interface{}{"sum": map[string]interface{}{"power_level": 100}}}}, nil},
 			},
@@ -493,11 +633,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -552,11 +687,12 @@ var queryTestCases = []tests{
 						"power_level": map[string]interface{}{
 							"$eq": 100,
 						}},
-					Aggregate: map[string][]string{"sum": {"power_level"}},
-					GroupBy:   []interface{}{"power_level"},
-					Operation: utils.All,
-					Options:   &model.ReadOptions{},
-					IsBatch:   false,
+					Aggregate:   map[string][]string{"sum": {"power_level:power_level"}},
+					GroupBy:     []interface{}{"power_level"},
+					Operation:   utils.All,
+					Options:     &model.ReadOptions{},
+					IsBatch:     false,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"aggregate": map[string]interface{}{"sum": map[string]interface{}{"power_level": 100}}}}, nil},
 			},
@@ -573,11 +709,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -639,7 +770,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "4", "name": "snorlax", "power_level": 30}, map[string]interface{}{"id": "5", "name": "jigglypuff", "power_level": 40}, map[string]interface{}{"id": "5", "name": "squirtle", "power_level": 50}}, nil},
 			},
@@ -656,11 +788,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -718,7 +845,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
 			},
@@ -735,11 +863,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -797,7 +920,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}, map[string]interface{}{"id": "2", "name": "ditto", "power_level": 50}}, nil},
 			},
@@ -814,11 +938,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -876,7 +995,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "4", "name": "snorlax", "power_level": 30}, map[string]interface{}{"id": "5", "name": "jigglypuff", "power_level": 40}}, nil},
 			},
@@ -893,11 +1013,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -955,7 +1070,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "4", "name": "snorlax", "power_level": 30}, map[string]interface{}{"id": "5", "name": "jigglypuff", "power_level": 40}, map[string]interface{}{"id": "5", "name": "squirtle", "power_level": 50}}, nil},
 			},
@@ -972,11 +1088,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -1034,7 +1145,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
 			},
@@ -1051,11 +1163,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -1113,7 +1220,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}, map[string]interface{}{"id": "5", "name": "squirtle", "power_level": 50}}, nil},
 			},
@@ -1130,11 +1238,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -1192,7 +1295,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
 			},
@@ -1209,11 +1313,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -1356,7 +1455,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, nil},
 			},
@@ -1373,11 +1473,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -1445,7 +1540,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, nil},
 			},
@@ -1462,11 +1558,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -1533,7 +1624,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, nil},
 			},
@@ -1550,11 +1642,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -1695,7 +1782,8 @@ var queryTestCases = []tests{
 						Sort:       []string{"name"},
 						HasOptions: true,
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
@@ -1712,11 +1800,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -1768,7 +1851,8 @@ var queryTestCases = []tests{
 						Sort:       []string{"name", "-caught_on"},
 						HasOptions: true,
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"caught_pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash", "caught_on": "2019-06-01"}, map[string]interface{}{"id": "2", "name": "james", "caught_on": "2019-06-01"}}, nil},
 			},
@@ -1785,11 +1869,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -1915,7 +1994,8 @@ var queryTestCases = []tests{
 						Distinct:   &distinct,
 						HasOptions: true,
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"type": "fire"}, map[string]interface{}{"type": "water"}}, nil},
 			},
@@ -1932,11 +2012,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -1987,7 +2062,8 @@ var queryTestCases = []tests{
 						Limit:      &number,
 						HasOptions: true,
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
@@ -2004,11 +2080,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -2060,7 +2131,8 @@ var queryTestCases = []tests{
 						Skip:       &number,
 						HasOptions: true,
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
@@ -2077,11 +2149,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -2135,7 +2202,8 @@ var queryTestCases = []tests{
 						Limit:      &number,
 						HasOptions: true,
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
@@ -2152,11 +2220,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -2282,7 +2345,8 @@ var queryTestCases = []tests{
 						Sort:       []string{"name"},
 						HasOptions: true,
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
@@ -2299,11 +2363,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -2357,7 +2416,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
@@ -2387,7 +2447,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"type": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"type": "water", "name": "bulbasur"}, map[string]interface{}{"type": "fire", "name": "charmander"}}, nil},
 			},
@@ -2409,11 +2470,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -2465,7 +2521,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
@@ -2495,7 +2552,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"type": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"type": "water", "name": "bulbasur"}, map[string]interface{}{"type": "fire", "name": "charmander"}}, nil},
 			},
@@ -2517,11 +2575,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -2573,31 +2626,34 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{PostProcessAction: nil}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
 			{
 				method: "Read",
 				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
-					Find:      map[string]interface{}{"trainer_id": "1"},
-					Operation: utils.All,
-					Options:   &model.ReadOptions{},
-					GroupBy:   []interface{}{},
-					Aggregate: map[string][]string{},
-					IsBatch:   true,
+					Find:        map[string]interface{}{"trainer_id": "1"},
+					Operation:   utils.All,
+					Options:     &model.ReadOptions{},
+					GroupBy:     []interface{}{},
+					Aggregate:   map[string][]string{},
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
 			},
 			{
 				method: "Read",
 				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
-					Find:      map[string]interface{}{"trainer_id": "2"},
-					Operation: utils.All,
-					GroupBy:   []interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{},
-					IsBatch:   true,
+					Find:        map[string]interface{}{"trainer_id": "2"},
+					Operation:   utils.All,
+					GroupBy:     []interface{}{},
+					Options:     &model.ReadOptions{},
+					Aggregate:   map[string][]string{},
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
 			},
@@ -2620,11 +2676,6 @@ var queryTestCases = []tests{
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
 			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
-			},
 		},
 		args: args{
 			req: &model.GraphQLRequest{
@@ -2646,6 +2697,117 @@ var queryTestCases = []tests{
 		wantErr:    false,
 		wantResult: map[string]interface{}{"trainers": []interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}}},
 	},
+	{
+		name: "Query: Sorting Nested Queries",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "trainers", &model.ReadRequest{
+					Extras:    map[string]interface{}{},
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"id": 1, "name": 1},
+					},
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": {PostProcessAction: nil}},
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
+					Find: map[string]interface{}{
+						"trainer_id": "1",
+					},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						HasOptions: true,
+						Sort:       []string{"name"},
+					},
+					GroupBy:     []interface{}{},
+					Aggregate:   map[string][]string{},
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": {PostProcessAction: nil}},
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}, nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
+					Find: map[string]interface{}{
+						"trainer_id": "2",
+					},
+					Operation: utils.All,
+					GroupBy:   []interface{}{},
+					Options: &model.ReadOptions{
+						HasOptions: true,
+						Sort:       []string{"name"},
+					},
+					Aggregate:   map[string][]string{},
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": {PostProcessAction: nil}},
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", DBType: "db", From: "id", To: "trainer_id"}}}, true},
+			},
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "trainer_id": &model.FieldType{FieldName: "trainer_id", IsFieldTypeRequired: true, Kind: model.TypeID, IsForeign: true, JointTable: &model.TableProperties{Table: "trainers", To: "id"}}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								trainers @db {
+									id
+									name
+									pokemons(sort: ["name"]) {
+										id
+										name
+									}
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"trainers": []interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}}}},
+	},
+
 	{
 		name: "Query: Performing joins on the fly",
 		crudMockArgs: []mockArgs{
@@ -2675,7 +2837,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
@@ -2697,7 +2860,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
 			},
@@ -2714,7 +2878,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
 			},
@@ -2736,11 +2901,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -2796,7 +2956,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
@@ -2818,7 +2979,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
 			},
@@ -2835,7 +2997,8 @@ var queryTestCases = []tests{
 					Options: &model.ReadOptions{
 						Select: map[string]int32{"id": 1, "name": 1},
 					},
-					IsBatch: true,
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
 			},
@@ -2857,11 +3020,6 @@ var queryTestCases = []tests{
 				method:         "IsReadOpAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
-			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
 			},
 		},
 		args: args{
@@ -2890,6 +3048,66 @@ var queryTestCases = []tests{
 	}}
 
 var mutationTestCases = []tests{
+	{
+		name: "Mutation: Insert single object with templated directed",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db_t1"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Create",
+				args: []interface{}{mock.Anything, "db_t1", "trainers", &model.CreateRequest{
+					Document:  []interface{}{map[string]interface{}{"id": "1", "name": "ash"}},
+					Operation: utils.All,
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db_t1", "trainers"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", From: "id", To: "trainer_id"}}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "ParseToken",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{map[string]interface{}{"tenant": "t1"}, nil},
+			},
+			{
+				method:         "IsCreateOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{model.RequestParams{}, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  insert_trainers(
+								    docs: [
+								      {id: "1", name: "ash"}
+								    ]
+								  ) @template(value: "db_{{.auth.tenant}}") {
+								    status
+								    error
+								    returning {
+								      id
+								      name
+								    }
+								  }
+								}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"insert_trainers": map[string]interface{}{"error": nil, "status": 200, "returning": []interface{}{map[string]interface{}{"id": "1", "name": "ash"}}}},
+	},
 	{
 		name: "Mutation: Insert single object",
 		crudMockArgs: []mockArgs{

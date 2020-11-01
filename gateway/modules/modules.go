@@ -39,7 +39,7 @@ type Modules struct {
 }
 
 // New creates a new modules instance
-func New(nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
+func New(clusterID string, nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
 
 	// Extract managers
 	adminMan := managers.Admin()
@@ -50,13 +50,14 @@ func New(nodeID string, managers *managers.Managers, globalMods *global.Global) 
 
 	c := crud.Init()
 	c.SetGetSecrets(syncMan.GetSecrets)
-	s := schema.Init(c)
+	s := schema.Init(clusterID, c)
 	c.SetSchema(s)
 
-	a := auth.Init(nodeID, c, adminMan)
+	a := auth.Init(clusterID, nodeID, c, adminMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
+	c.SetAuth(a)
 
-	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
+	fn := functions.Init(clusterID, a, syncMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
 	f.SetGetSecrets(syncMan.GetSecrets)
 
@@ -85,6 +86,9 @@ func New(nodeID string, managers *managers.Managers, globalMods *global.Global) 
 // Delete deletes a project
 func (m *Modules) Delete(projectID string) {
 	// Close all the modules here
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of auth module", nil)
+	m.auth.CloseConfig()
+
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of db module", nil)
 	if err := m.db.CloseConfig(); err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing db module config", err, map[string]interface{}{"project": projectID})

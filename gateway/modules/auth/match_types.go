@@ -9,8 +9,38 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
+
+func matchWhere(rule *config.Rule, args map[string]interface{}, stub model.ReturnWhereStub) error {
+	f1, f2 := getMatchFields(rule.F1, rule.F2)
+
+	f1 = getRuleFieldForReturnWhere(f1, args, stub, true)
+	f2 = getRuleFieldForReturnWhere(f2, args, stub, false)
+
+	f1String := f1.(string)
+	switch rule.Eval {
+	case "==":
+		stub.Where[f1String] = map[string]interface{}{"$eq": f2}
+	case "!=":
+		stub.Where[f1String] = map[string]interface{}{"$ne": f2}
+	case "<":
+		stub.Where[f1String] = map[string]interface{}{"$lt": f2}
+	case "<=":
+		stub.Where[f1String] = map[string]interface{}{"$lte": f2}
+	case ">":
+		stub.Where[f1String] = map[string]interface{}{"$gt": f2}
+	case ">=":
+		stub.Where[f1String] = map[string]interface{}{"$gte": f2}
+	case "in":
+		stub.Where[f1String] = map[string]interface{}{"$in": f2}
+	case "notIn":
+		stub.Where[f1String] = map[string]interface{}{"$nin": f2}
+	}
+
+	return nil
+}
 
 func matchString(ctx context.Context, rule *config.Rule, args map[string]interface{}) error {
 	var f2String []interface{}
@@ -57,7 +87,7 @@ func matchString(ctx context.Context, rule *config.Rule, args map[string]interfa
 			}
 		case "in":
 			return matchIn(ctx, f2String, f1, args)
-		case "notin":
+		case "notIn":
 			return matchNotIn(ctx, f2String, f1, args)
 		}
 	case []interface{}:
@@ -65,7 +95,7 @@ func matchString(ctx context.Context, rule *config.Rule, args map[string]interfa
 		switch rule.Eval {
 		case "in":
 			return matchIn(ctx, f2String, f1, args)
-		case "notin":
+		case "notIn":
 			return matchNotIn(ctx, f2String, f1, args)
 		}
 	default:
@@ -188,7 +218,7 @@ func matchNumber(ctx context.Context, rule *config.Rule, args map[string]interfa
 		}
 	case "in":
 		return matchIn(ctx, f2Number, f1, args)
-	case "notin":
+	case "notIn":
 		return matchNotIn(ctx, f2Number, f1, args)
 	}
 

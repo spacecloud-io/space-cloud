@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/graphql-go/graphql/language/ast"
+	"github.com/mitchellh/mapstructure"
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -14,11 +16,18 @@ import (
 )
 
 func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field, dbAlias, col, token string, req *model.ReadRequest, store utils.M, cb dbCallback) {
+	dbType, _ := graph.crud.GetDBType(dbAlias)
 	// Check if read op is authorised
-	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
+	returnWhere := model.ReturnWhereStub{Col: col, PrefixColName: false, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}
+	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req, returnWhere)
 	if err != nil {
 		cb("", "", nil, err)
 		return
+	}
+	req.PostProcess[col] = actions
+
+	if len(returnWhere.Where) > 0 {
+		req.MatchWhere = append(req.MatchWhere, returnWhere.Where)
 	}
 
 	req.GroupBy, err = extractGroupByClause(ctx, field.Arguments, store)
@@ -27,28 +36,38 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
-	req.Aggregate, err = extractAggregate(ctx, field)
+	var hasOptions bool
+	req.Options, hasOptions, err = generateOptions(ctx, field.Arguments, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+	req.Options.HasOptions = hasOptions
+
+	req.Aggregate, err = extractAggregate(ctx, field, store)
 	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
 
 	go func() {
-
 		req.IsBatch = !(len(req.Aggregate) > 0)
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}
-		req.Options.HasOptions = false
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
-		_ = graph.auth.PostProcessMethod(ctx, actions, result)
+
+		// Post process only if joins were not enabled
+		if isPostProcessingEnabled(req.PostProcess) && len(req.Options.Join) == 0 {
+			_ = graph.auth.PostProcessMethod(ctx, req.PostProcess[col], result)
+		}
 
 		cb(dbAlias, col, result, err)
 	}()
 }
 
 func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
-	dbAlias, err := graph.GetDBAlias(ctx, field)
+	dbAlias, err := graph.GetDBAlias(ctx, field, token, store)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -65,30 +84,75 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		return
 	}
 
-	selectionSet := graph.extractSelectionSet(field, dbAlias, col)
-	if len(selectionSet) > 0 {
-		req.Options.Select = selectionSet
-	}
-
-	// Check if read op is authorised
-	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
+	selectionSet, err := graph.extractSelectionSet(field, dbAlias, col, req.Options.Join, len(req.Options.Join) > 0, req.Options.ReturnType)
 	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
 
+	if len(selectionSet) > 0 {
+		req.Options.Select = selectionSet
+	}
+
+	// Check if read op is authorised
+	dbType, _ := graph.crud.GetDBType(dbAlias)
+
+	returnWhere := model.ReturnWhereStub{Col: col, PrefixColName: len(req.Options.Join) > 0, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}
+	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req, returnWhere)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+	if len(returnWhere.Where) > 0 {
+		req.MatchWhere = append(req.MatchWhere, returnWhere.Where)
+	}
+
+	req.PostProcess[col] = actions
+
+	if err := graph.runAuthForJoins(ctx, dbType, dbAlias, token, req, req.Options.Join); err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
 	go func() {
-		//  batch operation cannot be performed with aggregation
-		req.IsBatch = !(len(req.Aggregate) > 0)
+		//  batch operation cannot be performed with aggregation or joins or when post processing is applied
+		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0)
 		req.Options.HasOptions = hasOptions
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
-		_ = graph.auth.PostProcessMethod(ctx, actions, result)
+
+		// Post process only if joins were not enabled
+		if isPostProcessingEnabled(req.PostProcess) && len(req.Options.Join) == 0 {
+			_ = graph.auth.PostProcessMethod(ctx, req.PostProcess[col], result)
+		}
+
 		cb(dbAlias, col, result, err)
 	}()
 }
 
+func (graph *Module) runAuthForJoins(ctx context.Context, dbType, dbAlias, token string, req *model.ReadRequest, join []model.JoinOption) error {
+	for _, j := range join {
+		returnWhere := model.ReturnWhereStub{Col: j.Table, PrefixColName: len(req.Options.Join) > 0, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}
+		actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, j.Table, token, req, returnWhere)
+		if err != nil {
+			return err
+		}
+
+		if len(returnWhere.Where) > 0 {
+			req.MatchWhere = append(req.MatchWhere, returnWhere.Where)
+		}
+
+		req.PostProcess[j.Table] = actions
+
+		if err := graph.runAuthForJoins(ctx, dbType, dbAlias, token, req, j.Join); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
-	dbAlias, err := graph.GetDBAlias(ctx, field)
+	dbAlias, err := graph.GetDBAlias(ctx, field, token, store)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -120,9 +184,9 @@ func generateReadRequest(ctx context.Context, field *ast.Field, store utils.M) (
 	var err error
 
 	// Create a read request object
-	readRequest := model.ReadRequest{Operation: utils.All, Options: new(model.ReadOptions)}
+	readRequest := model.ReadRequest{Operation: utils.All, Options: new(model.ReadOptions), PostProcess: map[string]*model.PostProcess{}}
 
-	readRequest.Find, err = ExtractWhereClause(ctx, field.Arguments, store)
+	readRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
 		return nil, false, err
 	}
@@ -132,7 +196,7 @@ func generateReadRequest(ctx context.Context, field *ast.Field, store utils.M) (
 		return nil, false, err
 	}
 
-	readRequest.Aggregate, err = extractAggregate(ctx, field)
+	readRequest.Aggregate, err = extractAggregate(ctx, field, store)
 	if err != nil {
 		return nil, false, err
 	}
@@ -176,11 +240,11 @@ func generateArguments(ctx context.Context, field *ast.Field, store utils.M) map
 	return obj
 }
 
-func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string) map[string]int32 {
+func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string, join []model.JoinOption, isJoin bool, returnType string) (map[string]int32, error) {
 	selectMap := map[string]int32{}
 	schemaFields, _ := graph.schema.GetSchema(dbAlias, col)
 	if field.SelectionSet == nil {
-		return nil
+		return nil, nil
 	}
 	for _, selection := range field.SelectionSet.Selections {
 		v := selection.(*ast.Field)
@@ -188,19 +252,52 @@ func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string) 
 		if v.Name.Value == utils.GraphQLAggregate || len(v.Directives) > 0 {
 			continue
 		}
+
+		joinTable, isJointTable := isJointTable(v.Name.Value, join)
+
 		if schemaFields != nil {
-			// skip linked fields
+			// skip linked fields but allow joint tables
 			fieldStruct, p := schemaFields[v.Name.Value]
-			if p && fieldStruct.IsLinked {
+			if p && fieldStruct.IsLinked && !isJointTable {
 				continue
 			}
 		}
-		selectMap[v.Name.Value] = 1
+
+		if isJointTable {
+			if v.SelectionSet == nil {
+				return nil, errors.New("joint tables cannot have an empty selection set")
+			}
+
+			m, err := graph.extractSelectionSet(v, dbAlias, joinTable.Table, joinTable.Join, isJoin, returnType)
+			if err != nil {
+				return nil, err
+			}
+
+			for k, v := range m {
+				selectMap[k] = v
+			}
+			continue
+		}
+
+		// Need to make thing
+		key := v.Name.Value
+		if isJoin {
+			if returnType == "table" {
+				arr := strings.Split(key, "__")
+				if len(arr) != 2 {
+					return nil, fmt.Errorf("field name must be of the format `table__column`")
+				}
+				key = arr[0] + "." + arr[1]
+			} else {
+				key = col + "." + key
+			}
+		}
+		selectMap[key] = 1
 	}
-	return selectMap
+	return selectMap, nil
 }
 
-func extractAggregate(ctx context.Context, v *ast.Field) (map[string][]string, error) {
+func extractAggregate(ctx context.Context, v *ast.Field, store utils.M) (map[string][]string, error) {
 	functionMap := make(map[string][]string)
 	aggregateFound := false
 	if v.SelectionSet == nil {
@@ -208,9 +305,35 @@ func extractAggregate(ctx context.Context, v *ast.Field) (map[string][]string, e
 	}
 	for _, selection := range v.SelectionSet.Selections {
 		field := selection.(*ast.Field)
+
+		// Check if aggregate was found in the directive
+		if len(field.Directives) > 0 && field.Directives[0].Name.Value == "aggregate" {
+			// Get the required parameters
+			returnField := field.Name.Value
+			op, fieldName, err := getAggregateArguments(field.Directives[0], store)
+			if err != nil {
+				return nil, err
+			}
+
+			if fieldName == "" {
+				fieldName = returnField
+			}
+
+			colArray, ok := functionMap[op]
+			if !ok {
+				colArray = []string{}
+			}
+
+			columnName := fmt.Sprintf("%s:%s:table", returnField, strings.Join(strings.Split(fieldName, "__"), "."))
+			colArray = append(colArray, columnName)
+			functionMap[op] = colArray
+			continue
+		}
+
 		if field.Name.Value != utils.GraphQLAggregate || field.SelectionSet == nil {
 			continue
 		}
+
 		if aggregateFound {
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field", nil, nil)
 		}
@@ -235,12 +358,52 @@ func extractAggregate(ctx context.Context, v *ast.Field) (map[string][]string, e
 			// get column name
 			for _, selection := range functionField.SelectionSet.Selections {
 				columnField := selection.(*ast.Field)
-				colArray = append(colArray, columnField.Name.Value)
+				returnFieldName := columnField.Name.Value
+				columnName := strings.Join(strings.Split(columnField.Name.Value, "__"), ".")
+				colArray = append(colArray, fmt.Sprintf("%s:%s", returnFieldName, columnName))
 			}
 			functionMap[functionField.Name.Value] = colArray
 		}
 	}
 	return functionMap, nil
+}
+
+func getAggregateArguments(field *ast.Directive, store utils.M) (string, string, error) {
+	var operation, fieldName string
+	for _, arg := range field.Arguments {
+		switch arg.Name.Value {
+		case "op":
+			temp, err := utils.ParseGraphqlValue(arg.Value, store)
+			if err != nil {
+				return "", "", err
+			}
+
+			op, ok := temp.(string)
+			if !ok {
+				return "", "", fmt.Errorf("invalid type provided (%s) for aggregate op", reflect.TypeOf(temp))
+			}
+
+			operation = op
+
+		case "field":
+			temp, err := utils.ParseGraphqlValue(arg.Value, store)
+			if err != nil {
+				return "", "", err
+			}
+
+			f, ok := temp.(string)
+			if !ok {
+				return "", "", fmt.Errorf("invalid type provided (%s) for aggregate op", reflect.TypeOf(temp))
+			}
+
+			fieldName = f
+		}
+	}
+	if operation == "" {
+		return "", "", errors.New("need to provide `op` when using aggregations")
+	}
+
+	return operation, fieldName, nil
 }
 
 func extractGroupByClause(ctx context.Context, args []*ast.Argument, store utils.M) ([]interface{}, error) {
@@ -262,7 +425,7 @@ func extractGroupByClause(ctx context.Context, args []*ast.Argument, store utils
 }
 
 // ExtractWhereClause return the where arg of graphql schema
-func ExtractWhereClause(ctx context.Context, args []*ast.Argument, store utils.M) (map[string]interface{}, error) {
+func ExtractWhereClause(args []*ast.Argument, store utils.M) (map[string]interface{}, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "where":
@@ -276,7 +439,7 @@ func ExtractWhereClause(ctx context.Context, args []*ast.Argument, store utils.M
 			if obj, ok := temp.(map[string]interface{}); ok {
 				return obj, nil
 			}
-			return nil, errors.New("Invalid where clause provided")
+			return nil, errors.New("invalid where clause provided")
 		}
 	}
 
@@ -288,6 +451,31 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 	options := model.ReadOptions{}
 	for _, v := range args {
 		switch v.Name.Value {
+		case "join":
+			hasOptions = true
+
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
+			if err != nil {
+				return nil, hasOptions, err
+			}
+
+			join := make([]model.JoinOption, 0)
+			if err := mapstructure.Decode(temp, &join); err != nil {
+				return nil, hasOptions, err
+			}
+			options.Join = join
+		case "returnType":
+			// We won't set hasOptions to true for this one
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
+			if err != nil {
+				return nil, hasOptions, err
+			}
+
+			retType, ok := temp.(string)
+			if !ok {
+				return nil, hasOptions, fmt.Errorf("invalid type provided for returnType; expecting string got (%s)", reflect.TypeOf(temp))
+			}
+			options.ReturnType = retType
 		case "skip":
 			hasOptions = true // Set the flag to true
 
@@ -296,13 +484,17 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 				return nil, hasOptions, err
 			}
 
-			tempInt, ok := temp.(int)
-			if !ok {
-				return nil, hasOptions, errors.New("Invalid type for skip")
+			switch t := temp.(type) {
+			case float64:
+				// This condition occurs if we provide value of limit operator from graphql variables
+				tempInt64 := int64(t)
+				options.Skip = &tempInt64
+			case int:
+				tempInt64 := int64(t)
+				options.Skip = &tempInt64
+			default:
+				return nil, hasOptions, fmt.Errorf("invalid type provided for skip expecting integer got (%s)", reflect.TypeOf(temp))
 			}
-
-			tempInt64 := int64(tempInt)
-			options.Skip = &tempInt64
 
 		case "limit":
 			hasOptions = true // Set the flag to true
@@ -312,13 +504,17 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 				return nil, hasOptions, err
 			}
 
-			tempInt, ok := temp.(int)
-			if !ok {
-				return nil, hasOptions, errors.New("Invalid type for skip")
+			switch t := temp.(type) {
+			case float64:
+				// This condition occurs if we provide value of limit operator from graphql variables
+				tempInt64 := int64(t)
+				options.Limit = &tempInt64
+			case int:
+				tempInt64 := int64(t)
+				options.Limit = &tempInt64
+			default:
+				return nil, hasOptions, fmt.Errorf("invalid type provided for limit expecting integer got (%s)", reflect.TypeOf(temp))
 			}
-
-			tempInt64 := int64(tempInt)
-			options.Limit = &tempInt64
 
 		case "sort":
 			hasOptions = true // Set the flag to true
@@ -354,11 +550,21 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 
 			tempString, ok := temp.(string)
 			if !ok {
-				return nil, hasOptions, errors.New("Invalid type for distinct")
+				return nil, hasOptions, fmt.Errorf("invalid type (%s) for distinct", reflect.TypeOf(temp))
 			}
 
 			options.Distinct = &tempString
 		}
 	}
 	return &options, hasOptions, nil
+}
+
+func isJointTable(table string, join []model.JoinOption) (model.JoinOption, bool) {
+	for _, j := range join {
+		if j.Table == table {
+			return j, true
+		}
+	}
+
+	return model.JoinOption{}, false
 }
