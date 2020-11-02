@@ -28,7 +28,6 @@ func GetDbRule(project, commandName string, params map[string]string) ([]*model.
 		}
 		meta := map[string]string{"project": project, "col": table, "dbAlias": dbAlias}
 
-		delete(obj, "schema")
 		delete(obj, "col")
 		delete(obj, "dbAlias")
 
@@ -54,9 +53,9 @@ func GetDbConfig(project, commandName string, params map[string]string) ([]*mode
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
 		obj := item.(map[string]interface{})
-		dbAlias := obj["dbAlias"]
-		configID := fmt.Sprintf("%s-config", dbAlias.(string))
-		meta := map[string]string{"project": project, "dbAlias": dbAlias.(string), "id": configID}
+		dbAlias := obj["dbAlias"].(string)
+		configID := fmt.Sprintf("%s-config", dbAlias)
+		meta := map[string]string{"project": project, "dbAlias": dbAlias, "id": configID}
 
 		// Delete the unwanted keys from spec
 		delete(obj, "id")
