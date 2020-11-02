@@ -21,12 +21,12 @@ func GetDbRule(project, commandName string, params map[string]string) ([]*model.
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
 		obj := item.(map[string]interface{})
-		table := obj["table"].(string)
+		col := obj["col"].(string)
 		dbAlias := obj["dbAlias"].(string)
-		if table == "event_logs" || table == "invocation_logs" {
+		if col == "event_logs" || col == "invocation_logs" {
 			continue
 		}
-		meta := map[string]string{"project": project, "col": table, "dbAlias": dbAlias}
+		meta := map[string]string{"project": project, "col": col, "dbAlias": dbAlias}
 
 		delete(obj, "col")
 		delete(obj, "dbAlias")
@@ -69,7 +69,6 @@ func GetDbConfig(project, commandName string, params map[string]string) ([]*mode
 		objs = append(objs, s)
 
 	}
-
 	return objs, nil
 }
 
@@ -86,12 +85,12 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
 		obj := item.(map[string]interface{})
-		tableName := obj["col"]
-		dbAlias := obj["dbAlias"]
-		if tableName == "event_logs" || tableName == "invocation_logs" || tableName == "default" {
+		col := obj["col"].(string)
+		dbAlias := obj["dbAlias"].(string)
+		if col == "event_logs" || col == "invocation_logs" || col == "default" {
 			continue
 		}
-		meta := map[string]string{"project": project, "col": tableName.(string), "dbAlias": dbAlias.(string)}
+		meta := map[string]string{"project": project, "col": col, "dbAlias": dbAlias}
 
 		// Generating the object
 		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate", commandName, meta, map[string]interface{}{"schema": obj["schema"]})
