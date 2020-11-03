@@ -42,12 +42,12 @@ func TestGetDbRule(t *testing.T) {
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/collections/rules", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"postgres-event": map[string]interface{}{
-								"isRealtimeEnabled": true,
-								"rules": map[string]interface{}{
-									"id":   "local-admin",
-									"rule": "allow",
-								},
+							"dbAlias":           "postgres",
+							"col":               "event",
+							"isRealtimeEnabled": true,
+							"rules": map[string]interface{}{
+								"id":   "local-admin",
+								"rule": "allow",
 							},
 						},
 						},
@@ -105,12 +105,12 @@ func TestGetDbRule(t *testing.T) {
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/collections/rules", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"postgres-event_logs": map[string]interface{}{
-								"isRealtimeEnabled": true,
-								"rules": map[string]interface{}{
-									"id":   "local-admin",
-									"rule": "allow",
-								},
+							"dbAlias":           "postgres",
+							"col":               "event_logs",
+							"isRealtimeEnabled": true,
+							"rules": map[string]interface{}{
+								"id":   "local-admin",
+								"rule": "allow",
 							},
 						},
 						},
@@ -179,11 +179,10 @@ func TestGetDbConfig(t *testing.T) {
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/config", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"postgres": map[string]interface{}{
-								"enabled": true,
-								"conn":    "connected",
-								"type":    "tcp",
-							},
+							"dbAlias": "postgres",
+							"enabled": true,
+							"conn":    "connected",
+							"type":    "tcp",
 						},
 						},
 					}},
@@ -212,11 +211,10 @@ func TestGetDbConfig(t *testing.T) {
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/config", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"postgres": map[string]interface{}{
-								"enabled": true,
-								"conn":    "connected",
-								"type":    "tcp",
-							},
+							"dbAlias": "postgres",
+							"enabled": true,
+							"conn":    "connected",
+							"type":    "tcp",
 						},
 						},
 					}},

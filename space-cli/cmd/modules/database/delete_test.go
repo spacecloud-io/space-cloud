@@ -72,12 +72,12 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-age": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"col":               "age",
+									"dbAlias":           "dbAlias",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 							},
@@ -137,12 +137,12 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-age": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "age",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 							},
@@ -201,21 +201,21 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-age": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "age",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 								map[string]interface{}{
-									"dbAlias-address": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "address",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 							},
@@ -256,21 +256,21 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-age": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "age",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 								map[string]interface{}{
-									"dbAlias-address": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "address",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 							},
@@ -330,21 +330,21 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-age": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "age",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 								map[string]interface{}{
-									"dbAlias-address": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "address",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 							},
@@ -403,21 +403,21 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-age": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "age",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 								map[string]interface{}{
-									"dbAlias-address": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "address",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 							},
@@ -458,21 +458,21 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-age": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "age",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 								map[string]interface{}{
-									"dbAlias-address": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "address",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 							},
@@ -532,21 +532,21 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-age": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlas",
+									"col":               "age",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 								map[string]interface{}{
-									"dbAlias-address": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlias",
+									"col":               "address",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 							},
@@ -605,12 +605,12 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-age": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlas",
+									"col":               "age",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 							},
@@ -656,12 +656,12 @@ func Test_deleteDBRules(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"dbAlias-age": map[string]interface{}{
-										"isRealtimeEnabled": false,
-										"rules": map[string]interface{}{
-											"id":   "ruleID",
-											"rule": "rule",
-										},
+									"dbAlias":           "dbAlas",
+									"col":               "age",
+									"isRealtimeEnabled": false,
+									"rules": map[string]interface{}{
+										"id":   "ruleID",
+										"rule": "rule",
 									},
 								},
 							},
@@ -774,12 +774,11 @@ func Test_deleteDBConfigs(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"mongo": map[string]interface{}{
-										"enabled": false,
-										"conn":    "mongodb://localhost:27017",
-										"type":    "mongo",
-										"name":    "dbName",
-									},
+									"dbAlias": "mongo",
+									"enabled": false,
+									"conn":    "mongodb://localhost:27017",
+									"type":    "mongo",
+									"name":    "dbName",
 								},
 							},
 						},
@@ -838,12 +837,11 @@ func Test_deleteDBConfigs(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"mongo": map[string]interface{}{
-										"enabled": false,
-										"conn":    "mongodb://localhost:27017",
-										"type":    "mongo",
-										"name":    "dbName",
-									},
+									"dbAlias": "mongo",
+									"enabled": false,
+									"conn":    "mongodb://localhost:27017",
+									"type":    "mongo",
+									"name":    "dbName",
 								},
 							},
 						},
@@ -901,20 +899,18 @@ func Test_deleteDBConfigs(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"mongo": map[string]interface{}{
-										"enabled": false,
-										"conn":    "mongodb://localhost:27017",
-										"type":    "mongo",
-										"name":    "dbName",
-									},
+									"dbAlias": "mongo",
+									"enabled": false,
+									"conn":    "mongodb://localhost:27017",
+									"type":    "mongo",
+									"name":    "dbName",
 								},
 								map[string]interface{}{
-									"mysql": map[string]interface{}{
-										"enabled": false,
-										"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
-										"type":    "mysql",
-										"name":    "dbName",
-									},
+									"dbAlias": "mysql",
+									"enabled": false,
+									"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
+									"type":    "mysql",
+									"name":    "dbName",
 								},
 							},
 						},
@@ -954,20 +950,18 @@ func Test_deleteDBConfigs(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"mongo": map[string]interface{}{
-										"enabled": false,
-										"conn":    "mongodb://localhost:27017",
-										"type":    "mongo",
-										"name":    "dbName",
-									},
+									"dbAlias": "mongo",
+									"enabled": false,
+									"conn":    "mongodb://localhost:27017",
+									"type":    "mongo",
+									"name":    "dbName",
 								},
 								map[string]interface{}{
-									"mysql": map[string]interface{}{
-										"enabled": false,
-										"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
-										"type":    "mysql",
-										"name":    "dbName",
-									},
+									"dbAlias": "mysql",
+									"enabled": false,
+									"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
+									"type":    "mysql",
+									"name":    "dbName",
 								},
 							},
 						},
@@ -1026,20 +1020,18 @@ func Test_deleteDBConfigs(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"mongo": map[string]interface{}{
-										"enabled": false,
-										"conn":    "mongodb://localhost:27017",
-										"type":    "mongo",
-										"name":    "dbName",
-									},
+									"dbAlias": "mongo",
+									"enabled": false,
+									"conn":    "mongodb://localhost:27017",
+									"type":    "mongo",
+									"name":    "dbName",
 								},
 								map[string]interface{}{
-									"mysql": map[string]interface{}{
-										"enabled": false,
-										"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
-										"type":    "mysql",
-										"name":    "dbName",
-									},
+									"dbAlias": "mysql",
+									"enabled": false,
+									"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
+									"type":    "mysql",
+									"name":    "dbName",
 								},
 							},
 						},
@@ -1097,20 +1089,18 @@ func Test_deleteDBConfigs(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"mongo": map[string]interface{}{
-										"enabled": false,
-										"conn":    "mongodb://localhost:27017",
-										"type":    "mongo",
-										"name":    "dbName",
-									},
+									"dbAlias": "mongo",
+									"enabled": false,
+									"conn":    "mongodb://localhost:27017",
+									"type":    "mongo",
+									"name":    "dbName",
 								},
 								map[string]interface{}{
-									"mysql": map[string]interface{}{
-										"enabled": false,
-										"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
-										"type":    "mysql",
-										"name":    "dbName",
-									},
+									"dbAlias": "mysql",
+									"enabled": false,
+									"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
+									"type":    "mysql",
+									"name":    "dbName",
 								},
 							},
 						},
@@ -1150,20 +1140,18 @@ func Test_deleteDBConfigs(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"mongo": map[string]interface{}{
-										"enabled": false,
-										"conn":    "mongodb://localhost:27017",
-										"type":    "mongo",
-										"name":    "dbName",
-									},
+									"dbAlias": "mongo",
+									"enabled": false,
+									"conn":    "mongodb://localhost:27017",
+									"type":    "mongo",
+									"name":    "dbName",
 								},
 								map[string]interface{}{
-									"mysql": map[string]interface{}{
-										"enabled": false,
-										"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
-										"type":    "mysql",
-										"name":    "dbName",
-									},
+									"dbAlias": "mysql",
+									"enabled": false,
+									"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
+									"type":    "mysql",
+									"name":    "dbName",
 								},
 							},
 						},
@@ -1222,20 +1210,18 @@ func Test_deleteDBConfigs(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"mongo": map[string]interface{}{
-										"enabled": false,
-										"conn":    "mongodb://localhost:27017",
-										"type":    "mongo",
-										"name":    "dbName",
-									},
+									"dbAlias": "mongo",
+									"enabled": false,
+									"conn":    "mongodb://localhost:27017",
+									"type":    "mongo",
+									"name":    "dbName",
 								},
 								map[string]interface{}{
-									"mysql": map[string]interface{}{
-										"enabled": false,
-										"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
-										"type":    "mysql",
-										"name":    "dbName",
-									},
+									"dbAlias": "mysql",
+									"enabled": false,
+									"conn":    "root:my-secret-pw@tcp(localhost:3306)/",
+									"type":    "mysql",
+									"name":    "dbName",
 								},
 							},
 						},
