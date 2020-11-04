@@ -62,7 +62,7 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 			block.SetQueryFetchLimit(v.Limit)
 
 			// Skip if the connection string is the same
-			if block.IsSame(connectionString, v.DBName) {
+			if block.IsSame(connectionString, v.DBName, v.DriverConf) {
 				continue
 			}
 			// Close the previous database connection
@@ -75,7 +75,7 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 		var err error
 
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
-		c, err = m.initBlock(model.DBType(v.Type), v.Enabled, connectionString, v.DBName)
+		c, err = m.initBlock(model.DBType(v.Type), v.Enabled, connectionString, v.DBName, v.DriverConf)
 
 		if v.Enabled {
 			if err != nil {
@@ -141,6 +141,11 @@ func (m *Module) SetGetSecrets(function utils.GetSecrets) {
 // SetSchema sets the schema module
 func (m *Module) SetSchema(s model.SchemaCrudInterface) {
 	m.schema = s
+}
+
+// SetAuth sets the auth module
+func (m *Module) SetAuth(a model.AuthCrudInterface) {
+	m.auth = a
 }
 
 // SetHooks sets the internal hooks

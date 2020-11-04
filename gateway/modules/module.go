@@ -53,6 +53,7 @@ func newModule(clusterID, nodeID string, managers *managers.Managers, globalMods
 
 	a := auth.Init(clusterID, nodeID, c, adminMan, integrationMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
+	c.SetAuth(a)
 
 	fn := functions.Init(clusterID, a, syncMan, integrationMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)

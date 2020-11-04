@@ -51,7 +51,7 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 
 	for _, row := range rows {
 		args["doc"] = row
-		_, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+		_, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 		if err != nil {
 			return model.RequestParams{}, err
 		}
@@ -62,7 +62,7 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 }
 
 // IsReadOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*model.PostProcess, model.RequestParams, error) {
+func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest, stub model.ReturnWhereStub) (*model.PostProcess, model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -91,8 +91,17 @@ func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, 
 		}
 	}
 
-	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
-	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	opts := map[string]interface{}{}
+	if req.Options != nil {
+		if req.Options.Limit != nil {
+			opts["limit"] = *req.Options.Limit
+		}
+		if req.Options.Skip != nil {
+			opts["skip"] = *req.Options.Skip
+		}
+	}
+	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token, "opts": opts}
+	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, stub)
 	if err != nil {
 		return nil, model.RequestParams{}, err
 	}
@@ -128,7 +137,7 @@ func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "update": req.Update, "token": token}
-	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -164,7 +173,7 @@ func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
-	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -200,7 +209,7 @@ func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbAlias, 
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "pipeline": req.Pipeline, "token": token}
-	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -236,7 +245,7 @@ func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias
 	}
 
 	args := map[string]interface{}{"auth": auth, "params": req.Params, "token": token}
-	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 	if err != nil {
 		return nil, model.RequestParams{}, err
 	}

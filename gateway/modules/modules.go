@@ -223,6 +223,9 @@ func (m *Modules) Delete(projectID string) {
 
 	if block, p := m.blocks[projectID]; p {
 		// Close all the modules here
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of auth module", nil)
+		block.auth.CloseConfig()
+
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Closing config of db module", nil)
 		if err := block.db.CloseConfig(); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error closing db module config", err, map[string]interface{}{"project": projectID})

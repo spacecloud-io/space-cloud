@@ -113,12 +113,12 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	if !s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias) && enabled {
+
+	dbConfig, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias)
+	if !p && enabled {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown db alias (%s) provided while setting eventing config", dbAlias), nil, nil)
 	}
 
-	dbConfigResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseConfig, dbAlias)
-	dbConfig := projectConfig.DatabaseConfigs[dbConfigResourceID]
 	projectConfig.EventingConfig.DBAlias = dbAlias
 	projectConfig.EventingConfig.Enabled = enabled
 

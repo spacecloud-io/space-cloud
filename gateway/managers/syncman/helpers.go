@@ -108,13 +108,13 @@ func (s *Manager) PingLeader() error {
 	return errors.New("leader unavailable")
 }
 
-func (s *Manager) checkIfDbAliasExists(dbConfigs config.DatabaseConfigs, dbAlias string) bool {
+func (s *Manager) checkIfDbAliasExists(dbConfigs config.DatabaseConfigs, dbAlias string) (*config.DatabaseConfig, bool) {
 	for _, databaseConfig := range dbConfigs {
 		if dbAlias == databaseConfig.DbAlias {
-			return true
+			return databaseConfig, true
 		}
 	}
-	return false
+	return nil, false
 }
 
 // GetNodeID returns node id assigned to sc

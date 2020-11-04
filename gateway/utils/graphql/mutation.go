@@ -41,7 +41,7 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, dbAli
 		if strings.HasPrefix(field.Name.Value, "update_") {
 			col := strings.TrimPrefix(field.Name.Value, "update_")
 
-			reqParams, result, err := graph.genrateUpdateReq(ctx, field, token, store)
+			reqParams, result, err := graph.generateUpdateReq(ctx, field, token, store)
 			if err != nil {
 				return reqParams, nil, nil, err
 			}
@@ -102,7 +102,7 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 		field := v.(*ast.Field)
 
 		// for query insert_... @db {} -> dbAlias is "db"
-		dbAlias, err := graph.GetDBAlias(ctx, field)
+		dbAlias, err := graph.GetDBAlias(ctx, field, token, store)
 		if err != nil {
 			cb(nil, err)
 			return

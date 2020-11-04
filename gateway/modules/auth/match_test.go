@@ -143,7 +143,7 @@ func TestMatch_Rule(t *testing.T) {
 	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := (auth).matchRule(context.Background(), test.project, test.rule, test.args, test.auth)
+			_, err := (auth).matchRule(context.Background(), test.project, test.rule, test.args, test.auth, model.ReturnWhereStub{})
 			if (err != nil) != test.IsErrExpected {
 				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
 			}

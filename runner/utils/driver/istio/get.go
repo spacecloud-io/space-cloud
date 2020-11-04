@@ -316,3 +316,51 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 
 	return serviceRoutes, nil
 }
+
+// GetServiceRole gets the service role rules of each service
+func (i *Istio) GetServiceRole(ctx context.Context, projectID string) ([]*model.Role, error) {
+	ns := projectID
+
+	rolelist, err := i.kube.RbacV1().Roles(ns).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list roles in project (%s)", projectID), err, nil)
+	}
+
+	clusterRoleList, err := i.kube.RbacV1().ClusterRoles().List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list cluster roles in project (%s)", projectID), err, nil)
+	}
+	serviceRole := make([]*model.Role, len(rolelist.Items)+len(clusterRoleList.Items))
+
+	for _, role := range rolelist.Items {
+		serviceID := role.Labels["app"]
+		Role := new(model.Role)
+		Role.ID = role.Name
+		Role.Project = role.Namespace
+		Role.Service = serviceID
+		Role.Type = model.ServiceRoleProject
+		Rules := make([]model.Rule, 0)
+		for _, rule := range role.Rules {
+			Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
+		}
+		Role.Rules = Rules
+		serviceRole = append(serviceRole, Role)
+	}
+
+	for _, role := range clusterRoleList.Items {
+		serviceID := role.Labels["app"]
+		Role := new(model.Role)
+		Role.ID = role.Name
+		Role.Project = projectID
+		Role.Service = serviceID
+		Role.Type = model.ServiceRoleCluster
+		Rules := make([]model.Rule, 0)
+		for _, rule := range role.Rules {
+			Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
+		}
+		Role.Rules = Rules
+		serviceRole = append(serviceRole, Role)
+	}
+
+	return serviceRole, nil
+}
