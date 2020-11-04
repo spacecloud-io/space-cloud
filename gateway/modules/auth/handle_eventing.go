@@ -35,7 +35,7 @@ func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token stri
 
 	if _, err = m.matchRule(ctx, project, rule, map[string]interface{}{
 		"args": map[string]interface{}{"auth": auth, "params": event.Payload, "token": token},
-	}, auth); err != nil {
+	}, auth, model.ReturnWhereStub{}); err != nil {
 		return model.RequestParams{}, err
 	}
 

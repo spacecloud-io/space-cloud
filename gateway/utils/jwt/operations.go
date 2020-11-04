@@ -109,3 +109,15 @@ func (j *JWT) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (s
 	}
 	return "", errors.New("no primary secret provided")
 }
+
+// Close closes the go routine of jwk fetch routing
+func (j *JWT) Close() {
+	j.lock.Lock()
+	defer j.lock.Unlock()
+
+	j.closeJwkRoutineChan <- struct{}{}
+
+	j.staticSecrets = map[string]*config.Secret{}
+	j.jwkSecrets = map[string]*jwkSecret{}
+	j.mapJwkKidToSecretKid = map[string]string{}
+}

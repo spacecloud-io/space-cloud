@@ -64,13 +64,13 @@ func (s *Manager) getConfigWithoutLock(ctx context.Context, projectID string) (*
 	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown project (%s) provided", projectID), nil, nil)
 }
 
-func (s *Manager) checkIfDbAliasExists(dbConfigs config.DatabaseConfigs, dbAlias string) bool {
+func (s *Manager) checkIfDbAliasExists(dbConfigs config.DatabaseConfigs, dbAlias string) (*config.DatabaseConfig, bool) {
 	for _, databaseConfig := range dbConfigs {
 		if dbAlias == databaseConfig.DbAlias {
-			return true
+			return databaseConfig, true
 		}
 	}
-	return false
+	return nil, false
 }
 
 // GetNodeID returns node id assigned to sc

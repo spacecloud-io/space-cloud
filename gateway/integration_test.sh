@@ -2,13 +2,16 @@
 # NOTE: Run this script from the gateway directory
 # 1) ensure port 4122,3306,5432,1433,27017 are not busy
 # 2) ensure docker & golang is installed
+set -e
 
 echo "building and running gateway binary"
 go build .
-sudo kill -9 `sudo lsof -t -i:4122`
 
 # run the gateway in background
-./gateway run --dev --log-format text &> /dev/null &
+sudo kill -9 `sudo lsof -t -i:4122` &
+rm config.yaml &
+./gateway run --dev --log-format text &
+
 sleep 10
 #sc_process_num=$!
 
@@ -22,18 +25,48 @@ sleep 30
 echo "running integration tests for mysql"
 go test -tags integration -db_type mysql -conn "root:my-secret-pw@tcp(localhost:3306)/"
 echo "removing mysql container"
-docker rm -f integration-mysql &> /dev/null
+docker rm -f integration-mysql
 echo "\n"
 
 # postgres test
 echo "starting postgres container, it will take 30 seconds"
-docker run --name integration-postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres:13 &> /dev/null
+docker run --name integration-postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres:13
 sleep 30
 echo "running integration tests for postgres"
 go test -tags integration -db_type postgres -conn "postgres://postgres:mysecretpassword@localhost:5432/postgres?sslmode=disable"
 echo "removing postgres container"
-docker rm -f integration-postgres &> /dev/null
+docker rm -f integration-postgres
 echo "\n"
+
+sudo kill -9 `sudo lsof -t -i:4122`
+rm ../../../config.yaml &
+../../../gateway run --dev --log-format text &
+
+echo "starting postgres container, it will take 30 seconds"
+docker run --name integration-postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres:12.4
+sleep 30
+echo "running integration tests for postgres"
+go test -tags integration -db_type postgres -conn "postgres://postgres:mysecretpassword@localhost:5432/postgres?sslmode=disable"
+echo "removing postgres container"
+docker rm -f integration-postgres
+echo "\n"
+
+sudo kill -9 `sudo lsof -t -i:4122`
+rm ../../../config.yaml &
+../../../gateway run --dev --log-format text &
+
+echo "starting postgres container, it will take 30 seconds"
+docker run --name integration-postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres:11.9
+sleep 30
+echo "running integration tests for postgres"
+go test -tags integration -db_type postgres -conn "postgres://postgres:mysecretpassword@localhost:5432/postgres?sslmode=disable"
+echo "removing postgres container"
+docker rm -f integration-postgres
+echo "\n"
+
+sudo kill -9 `sudo lsof -t -i:4122`
+rm ../../../config.yaml &
+../../../gateway run --dev --log-format text &
 
 ## sqlserver test
 echo "starting sqlserver container,it will take 30 seconds"
@@ -44,13 +77,46 @@ go test -tags integration -db_type sqlserver -conn "Data Source=localhost,1433;I
 docker rm -f integration-sqlserver
 echo "removing sqlserver container"
 
+sudo kill -9 `sudo lsof -t -i:4122`
+rm ../../../config.yaml &
+../../../gateway run --dev --log-format text &
+
 cd ../mgo
 
 # mongo test
 echo "starting mongo container,it will take 30 seconds"
-docker run --name integration-mongo -p 27017:27017 -d mongo:4.2.10
+docker run --name integration-mongo -p 27017:27017 -d mongo:4.4
 sleep 30
 echo "running integration tests for mongo"
 go test -tags integration -db_type mongo -conn "mongodb://localhost:27017"
 echo "removing mongo container"
 docker rm -f integration-mongo
+echo "\n"
+
+sudo kill -9 `sudo lsof -t -i:4122`
+rm ../../../config.yaml &
+../../../gateway run --dev --log-format text &
+
+echo "starting mongo container,it will take 30 seconds"
+docker run --name integration-mongo -p 27017:27017 -d mongo:4.2
+sleep 30
+echo "running integration tests for mongo"
+go test -tags integration -db_type mongo -conn "mongodb://localhost:27017"
+echo "removing mongo container"
+docker rm -f integration-mongo
+echo "\n"
+
+sudo kill -9 `sudo lsof -t -i:4122`
+rm ../../../config.yaml &
+../../../gateway run --dev --log-format text &
+
+echo "starting mongo container,it will take 30 seconds"
+docker run --name integration-mongo -p 27017:27017 -d mongo:4.0
+sleep 30
+echo "running integration tests for mongo"
+go test -tags integration -db_type mongo -conn "mongodb://localhost:27017"
+echo "removing mongo container"
+docker rm -f integration-mongo
+
+sudo kill -9 `sudo lsof -t -i:4122`
+rm ../../../config.yaml &

@@ -41,7 +41,7 @@ func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path st
 	args["token"] = token
 
 	// Match the rule
-	return m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	return m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth, model.ReturnWhereStub{})
 }
 
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {

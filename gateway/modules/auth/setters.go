@@ -46,6 +46,18 @@ func (m *Module) SetConfig(ctx context.Context, fileStoreType string, projectCon
 	return nil
 }
 
+// CloseConfig closes go routines and initializes maps
+func (m *Module) CloseConfig() {
+	m.Lock()
+	defer m.Unlock()
+
+	m.jwt.Close()
+	m.funcRules = map[string]*config.Service{}
+	m.eventingRules = map[string]*config.Rule{}
+	m.fileRules = []*config.FileRule{}
+	m.dbRules = map[string]*config.DatabaseRule{}
+}
+
 // SetRemoteServiceConfig sets the service module config
 func (m *Module) SetRemoteServiceConfig(remoteServices config.Services) {
 	m.Lock()
