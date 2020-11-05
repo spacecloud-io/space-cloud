@@ -114,8 +114,8 @@ func GetDbPreparedQuery(project, commandName string, params map[string]string) (
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
 		obj := item.(map[string]interface{})
-		meta := map[string]string{"project": project, "db": obj["db"].(string), "id": obj["id"].(string)}
-		delete(obj, "db")
+``		meta := map[string]string{"project": project, "db": obj["dbAlias"].(string), "id": obj["id"].(string)}
+		delete(obj, "dbAlias")
 		delete(obj, "id")
 		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{db}/prepared-queries/{id}", commandName, meta, obj)
 		if err != nil {

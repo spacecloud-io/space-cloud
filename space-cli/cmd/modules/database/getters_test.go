@@ -406,10 +406,10 @@ func TestGetDbPreparedQuery(t *testing.T) {
 					args:   []interface{}{"GET", "/v1/config/projects/project/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "prep"}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"id":   "prep",
-							"db":   "dbAlias",
-							"args": []interface{}{"args.id"},
-							"sql":  "select * from users",
+							"id":      "prep",
+							"dbAlias": "dbAlias",
+							"args":    []interface{}{"args.id"},
+							"sql":     "select * from users",
 							"rule": map[string]interface{}{
 								"rule": "allow",
 							},

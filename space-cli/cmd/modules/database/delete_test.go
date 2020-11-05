@@ -1349,9 +1349,9 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"id":  "prep1",
-									"db":  "dbAlias",
-									"sql": "select * from users",
+									"id":      "prep1",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from users",
 								},
 							},
 						},
@@ -1410,9 +1410,9 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"id":  "prep1",
-									"db":  "dbAlias",
-									"sql": "select * from users",
+									"id":      "prep1",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from users",
 								},
 							},
 						},
@@ -1470,14 +1470,14 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"id":  "prep1",
-									"db":  "dbAlias",
-									"sql": "select * from users",
+									"id":      "prep1",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from users",
 								},
 								map[string]interface{}{
-									"id":  "prep2",
-									"db":  "dbAlias",
-									"sql": "select * from age",
+									"id":      "prep2",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from age",
 								},
 							},
 						},
@@ -1517,14 +1517,14 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"id":  "prep1",
-									"db":  "dbAlias",
-									"sql": "select * from users",
+									"id":      "prep1",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from users",
 								},
 								map[string]interface{}{
-									"id":  "prep2",
-									"db":  "dbAlias",
-									"sql": "select * from age",
+									"id":      "prep2",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from age",
 								},
 							},
 						},
@@ -1583,14 +1583,14 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"id":  "prep1",
-									"db":  "dbAlias",
-									"sql": "select * from users",
+									"id":      "prep1",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from users",
 								},
 								map[string]interface{}{
-									"id":  "prep2",
-									"db":  "dbAlias",
-									"sql": "select * from age",
+									"id":      "prep2",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from age",
 								},
 							},
 						},
@@ -1648,14 +1648,14 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"id":  "prep1",
-									"db":  "dbAlias",
-									"sql": "select * from users",
+									"id":      "prep1",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from users",
 								},
 								map[string]interface{}{
-									"id":  "prep2",
-									"db":  "dbAlias",
-									"sql": "select * from age",
+									"id":      "prep2",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from age",
 								},
 							},
 						},
@@ -1695,14 +1695,14 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"id":  "prep1",
-									"db":  "dbAlias",
-									"sql": "select * from users",
+									"id":      "prep1",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from users",
 								},
 								map[string]interface{}{
-									"id":  "prep2",
-									"db":  "dbAlias",
-									"sql": "select * from age",
+									"id":      "prep2",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from age",
 								},
 							},
 						},
@@ -1761,14 +1761,14 @@ func Test_deleteDBPreparedQuery(t *testing.T) {
 						model.Response{
 							Result: []interface{}{
 								map[string]interface{}{
-									"id":  "prep1",
-									"db":  "dbAlias",
-									"sql": "select * from users",
+									"id":      "prep1",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from users",
 								},
 								map[string]interface{}{
-									"id":  "prep2",
-									"db":  "dbAlias",
-									"sql": "select * from age",
+									"id":      "prep2",
+									"dbAlias": "dbAlias",
+									"sql":     "select * from age",
 								},
 							},
 						},
