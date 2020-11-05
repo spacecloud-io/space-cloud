@@ -112,14 +112,14 @@ type DatabaseConfig struct {
 
 // DatabaseSchema stores information of db schemas
 type DatabaseSchema struct {
-	Table   string `json:"col,omitempty" yaml:"table"`
+	Table   string `json:"col,omitempty" yaml:"col"`
 	DbAlias string `json:"dbAlias,omitempty" yaml:"dbAlias"`
 	Schema  string `json:"schema,omitempty" yaml:"schema"`
 }
 
 // DatabaseRule stores information of db rule
 type DatabaseRule struct {
-	Table             string           `json:"col,omitempty" yaml:"table"`
+	Table             string           `json:"col,omitempty" yaml:"col"`
 	DbAlias           string           `json:"dbAlias,omitempty" yaml:"dbAlias"`
 	IsRealTimeEnabled bool             `json:"isRealtimeEnabled,omitempty" yaml:"isRealtimeEnabled"`
 	Rules             map[string]*Rule `json:"rules,omitempty" yaml:"rules"`
