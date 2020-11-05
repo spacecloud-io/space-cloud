@@ -63,25 +63,27 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	}
 	method = endpoint.Method
 
+	/***************** Set the request body *****************/
+
+	newParams, err := m.adjustReqBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, params)
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+
+	/***************** Set the request token ****************/
+
 	// Overwrite the token if provided
 	if endpoint.Token != "" {
 		token = endpoint.Token
 	}
 
 	// Create a new token if claims are provided
-	if endpoint.Claims != nil {
-		newToken, err := m.auth.CreateToken(ctx, endpoint.Claims)
+	if endpoint.Claims != "" {
+		newToken, err := m.generateWebhookToken(ctx, serviceID, endpointID, token, endpoint, auth, params)
 		if err != nil {
 			return http.StatusInternalServerError, nil, err
 		}
 		token = newToken
-	}
-
-	/***************** Set the request body *****************/
-
-	newParams, err := m.adjustReqBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, params)
-	if err != nil {
-		return http.StatusBadRequest, nil, err
 	}
 
 	/******** Fire the request and get the response ********/
@@ -197,6 +199,29 @@ func (m *Module) adjustResBody(ctx context.Context, serviceID, endpointID, token
 		return params, nil
 	}
 	return res, nil
+}
+
+func (m *Module) generateWebhookToken(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (string, error) {
+	var req interface{}
+	var err error
+
+	switch endpoint.Tmpl {
+	case config.TemplatingEngineGo:
+		if tmpl, p := m.templates[getGoTemplateKey("claim", serviceID, endpointID)]; p {
+			req, err = tmpl2.GoTemplate(ctx, tmpl, endpoint.OpFormat, token, auth, params)
+			if err != nil {
+				return "", err
+			}
+		}
+	default:
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"serviceId": serviceID, "endpointId": endpointID})
+		return token, nil
+	}
+
+	if req == nil {
+		return token, nil
+	}
+	return m.auth.CreateToken(ctx, req.(map[string]interface{}))
 }
 
 func adjustPath(ctx context.Context, path string, claims, params interface{}) (string, error) {

@@ -24,26 +24,18 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	url, err := m.syncMan.GetAssignedSpaceCloudURL(ctx, m.project, eventToken)
+	nodeID, err := m.syncMan.GetAssignedSpaceCloudID(ctx, m.project, eventToken)
 	if err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing module could not get space-cloud url", err, nil)
 		return
 	}
 
-	token, err := m.adminMan.GetInternalAccessToken()
-	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing module could not transmit event", err, nil)
+	// Ignore if pubsub client has not been initialised
+	if m.pubsubClient == nil {
 		return
 	}
 
-	scToken, err := m.auth.GetSCAccessToken(ctx)
-	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing module could not transmit event", err, nil)
-		return
-	}
-
-	var res interface{}
-	if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, scToken, eventDocs, &res); err != nil {
+	if err := m.pubsubClient.Send(ctx, getSendTopic(nodeID), eventDocs); err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing module could not transmit event", err, nil)
 	}
 }
@@ -53,7 +45,7 @@ func (m *Module) getSpaceCloudIDFromBatchID(batchID string) string {
 }
 
 func (m *Module) generateBatchID() string {
-	return fmt.Sprintf("%s--%s", ksuid.New().String(), m.syncMan.GetNodeID())
+	return fmt.Sprintf("%s--%s", ksuid.New().String(), m.nodeID)
 }
 
 func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest, batchID string) error {
@@ -107,7 +99,7 @@ func (m *Module) generateQueueEventRequestRaw(ctx context.Context, token int, na
 	}
 
 	// Parse the timestamp provided
-	eventTs, err := time.Parse(time.RFC3339, event.Timestamp)
+	eventTs, err := time.Parse(time.RFC3339Nano, event.Timestamp)
 	if err != nil {
 		// Log warning only if time stamp was provided in the request
 		if event.Timestamp != "" {
@@ -116,13 +108,9 @@ func (m *Module) generateQueueEventRequestRaw(ctx context.Context, token int, na
 		eventTs = timestamp
 	}
 
-	if eventTs.After(timestamp) {
-		timestamp = eventTs
-	}
-
 	// Add the delay if provided. Delay is always provided as milliseconds
 	if event.Delay > 0 {
-		timestamp = timestamp.Add(time.Duration(event.Delay) * time.Millisecond)
+		eventTs = eventTs.Add(time.Duration(event.Delay) * time.Millisecond)
 	}
 
 	data, _ := json.Marshal(event.Payload)
@@ -133,7 +121,7 @@ func (m *Module) generateQueueEventRequestRaw(ctx context.Context, token int, na
 		Type:      event.Type,
 		RuleName:  name,
 		Token:     token,
-		Timestamp: timestamp.Format(time.RFC3339),
+		Timestamp: timestamp.Format(time.RFC3339Nano),
 		Payload:   string(data),
 		Status:    status,
 	}
@@ -264,7 +252,7 @@ func (m *Module) selectRule(name string) (*config.EventingTrigger, error) {
 
 func (m *Module) validate(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
 	if event.Type == utils.EventDBCreate || event.Type == utils.EventDBDelete || event.Type == utils.EventDBUpdate || event.Type == utils.EventFileCreate || event.Type == utils.EventFileDelete {
-		return nil
+		return fmt.Errorf("cannot create internal event (%s) with project token", event.Type)
 	}
 
 	if _, err := m.auth.IsEventingOpAuthorised(ctx, project, token, event); err != nil {
@@ -312,7 +300,7 @@ func (m *Module) adjustReqBody(ctx context.Context, trigger, token string, endpo
 			}
 		}
 	default:
-		helpers.Logger.LogWarn(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"trigger": token})
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"trigger": trigger})
 		return params, nil
 	}
 
@@ -320,4 +308,31 @@ func (m *Module) adjustReqBody(ctx context.Context, trigger, token string, endpo
 		return params, nil
 	}
 	return req, nil
+}
+
+func (m *Module) generateWebhookToken(ctx context.Context, trigger *config.EventingTrigger, doc interface{}) (string, error) {
+	var req interface{}
+	var err error
+
+	switch trigger.Tmpl {
+	case config.TemplatingEngineGo:
+		if tmpl, p := m.templates[getGoTemplateKey("claim", trigger.ID)]; p {
+			req, err = tmpl2.GoTemplate(ctx, tmpl, trigger.OpFormat, "", nil, doc)
+			if err != nil {
+				return "", err
+			}
+		}
+	default:
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", trigger.Tmpl), map[string]interface{}{"trigger": trigger})
+		return m.auth.GetInternalAccessToken(ctx)
+	}
+
+	if req == nil {
+		return m.auth.GetInternalAccessToken(ctx)
+	}
+	return m.auth.CreateToken(ctx, req.(map[string]interface{}))
+}
+
+func getSendTopic(nodeID string) string {
+	return fmt.Sprintf("eventing-%s", nodeID)
 }

@@ -1,6 +1,8 @@
 package realtime
 
 import (
+	"fmt"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -74,4 +76,8 @@ func generateEventRules(dbConfigs config.DatabaseConfigs, dbRules config.Databas
 
 func createGroupKey(dbAlias, col string) string {
 	return dbAlias + "::" + col
+}
+
+func getSendTopic(nodeID string) string {
+	return fmt.Sprintf("realtime-%s", nodeID)
 }

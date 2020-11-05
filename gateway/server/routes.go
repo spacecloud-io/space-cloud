@@ -102,11 +102,10 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	// Initialize the routes for realtime service
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/realtime/handle").HandlerFunc(handlers.HandleRealtimeEvent(s.modules))
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/realtime/process").HandlerFunc(handlers.HandleRealtimeProcessRequest(s.modules))
 
 	// Initialize the routes for eventing service
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/queue").HandlerFunc(handlers.HandleQueueEvent(s.modules))
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/process").HandlerFunc(handlers.HandleProcessEvent(s.managers.Admin(), s.modules))
+	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/admin-queue").HandlerFunc(handlers.HandleAdminQueueEvent(s.managers.Admin(), s.modules))
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/process-event-response").HandlerFunc(handlers.HandleEventResponse(s.modules))
 
 	// Initialize the routes for the crud operations

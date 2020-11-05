@@ -123,7 +123,7 @@ func (s *KubeStore) WatchResources(cb func(eventType, resourceID string, resourc
 
 func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 	pod := obj.(*v1.Pod)
-	id := pod.Name
+	id := string(pod.UID)
 
 	// Ignore if pod isn't running
 	if pod.Status.Phase != v1.PodRunning || pod.Status.PodIP == "" {

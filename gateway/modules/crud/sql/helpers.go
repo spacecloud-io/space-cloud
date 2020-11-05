@@ -187,7 +187,7 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 			case "DATE", "DATETIME":
 				if dbType == model.MySQL {
 					d, _ := time.Parse("2006-01-02 15:04:05", string(v))
-					mapping[colType.Name()] = d.Format(time.RFC3339)
+					mapping[colType.Name()] = d.Format(time.RFC3339Nano)
 					continue
 				}
 				mapping[colType.Name()] = string(v)

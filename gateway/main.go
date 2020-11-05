@@ -166,6 +166,7 @@ func actionRun(c *cli.Context) error {
 	if err := helpers.InitLogger(logLevel, logFormat, isDev); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to initialize loggers", err, nil)
 	}
+
 	// Load flag related to the port
 	port := c.Int("port")
 
@@ -195,6 +196,8 @@ func actionRun(c *cli.Context) error {
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
 	}
+
+	helpers.Logger.LogInfo("start", fmt.Sprintf("Starting node with id - %s", nodeID), nil)
 
 	// Set the ssl config
 	ssl := &config.SSL{}

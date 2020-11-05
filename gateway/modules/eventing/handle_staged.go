@@ -32,7 +32,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 
 	start, end := m.syncMan.GetAssignedTokens()
 
-	readRequest := model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{
+	readRequest := model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Sort: []string{"ts"}, Limit: &limit}, Find: map[string]interface{}{
 		"status": utils.EventStatusStaged,
 		"token": map[string]interface{}{
 			"$gte": start,
@@ -56,11 +56,13 @@ func (m *Module) processStagedEvents(t *time.Time) {
 			continue
 		}
 
-		timestamp, err := time.Parse(time.RFC3339, eventDoc.Timestamp) // We are using event timestamp since intent are processed wrt the time the event was created
+		timestamp, err := time.Parse(time.RFC3339Nano, eventDoc.Timestamp) // We are using event timestamp since intent are processed wrt the time the event was created
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Could not parse time (%s) in staged event doc (%s) as time", eventDoc.Timestamp, eventDoc.ID), err, nil)
 			continue
 		}
+
+		timestamp = timestamp.Add(15 * time.Second)
 
 		if t.After(timestamp) || t.Equal(timestamp) {
 			go m.processStagedEvent(eventDoc)
@@ -80,9 +82,9 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	// Delete the event from the processing list without fail
 	defer m.processingEvents.Delete(eventDoc.ID)
 
-	evType, name := eventDoc.Type, eventDoc.RuleName
+	eventType, triggerName := eventDoc.Type, eventDoc.RuleName
 
-	rule, err := m.selectRule(name)
+	rule, err := m.selectRule(triggerName)
 	if err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Error processing staged event", err, nil)
 		return
@@ -113,11 +115,11 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
 	eventDoc.Payload = doc
 
-	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0", Type: evType, Source: m.syncMan.GetEventSource(), ID: eventDoc.ID,
+	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0", Type: eventType, Source: m.syncMan.GetEventSource(), ID: eventDoc.ID,
 		Time: eventDoc.Timestamp, Data: eventDoc.Payload}
 
 	doc = structs.Map(&cloudEvent)
-	doc, err = m.adjustReqBody(ctx, name, "", rule, nil, doc)
+	doc, err = m.adjustReqBody(ctx, triggerName, "", rule, nil, doc)
 	if err != nil {
 		if err := m.logInvocation(ctx, eventDoc.ID, []byte("{}"), 0, "", err.Error()); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "eventing module couldn't log the invocation ", err, nil)
@@ -126,7 +128,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing staged event handler could not update event doc ", err, nil)
 		}
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to adjust request body according to template for trigger (%s)", name), err, nil)
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to adjust request body according to template for trigger (%s)", triggerName), err, nil)
 		return
 	}
 
@@ -149,6 +151,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		// Reaching here means the event was successfully processed. Let's simply return
 		return
 	}
+
 	if err := m.triggerDLQEvent(ctx, eventDoc); err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Couldn't create DLQ event for event id %v", eventDoc.ID), err, nil)
 	}
@@ -160,7 +163,8 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInterface, rule *config.EventingTrigger, eventDoc *model.EventDocument, params interface{}) error {
 	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(rule.Timeout)*time.Millisecond)
 	defer cancel()
-	internalToken, err := m.auth.GetInternalAccessToken(ctx)
+
+	internalToken, err := m.generateWebhookToken(ctx, rule, params)
 	if err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "error invoking web hook in eventing unable to get internal access token", err, nil)
 	}

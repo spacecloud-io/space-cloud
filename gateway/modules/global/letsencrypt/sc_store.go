@@ -188,7 +188,7 @@ func (s *Storage) Stat(key string) (certmagic.KeyInfo, error) {
 		return certmagic.KeyInfo{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to get stats of lets encrypt key (%s) database service responded with status code (%v)", key, response.Status), fmt.Errorf(response.Error), nil)
 	}
 
-	modifiedTime, err := time.Parse(time.RFC3339, response.Data["modified"].(string))
+	modifiedTime, err := time.Parse(time.RFC3339Nano, response.Data["modified"].(string))
 	if err != nil {
 		return certmagic.KeyInfo{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to parse (modified) field of lets encrypt key (%s) time to string ", key), err, nil)
 	}

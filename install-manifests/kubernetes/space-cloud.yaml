@@ -414,7 +414,7 @@ spec:
             - name: "NODE_ID"
               valueFrom:
                 fieldRef:
-                  fieldPath: metadata.name
+                  fieldPath: uid
             - name: "RUNNER_ADDR"
               value: "runner.space-cloud.svc.cluster.local:4050"
             - name: "GOOGLE_APPLICATION_CREDENTIALS"
@@ -439,6 +439,8 @@ spec:
               value: "true"
             - name: "CLUSTER_ID"
               value: "first-cluster"
+            - name: "REDIS_CONN"
+              value: "redis.space-cloud.svc.cluster.local:6379"
           ports:
             - containerPort: 4122
             - containerPort: 4126

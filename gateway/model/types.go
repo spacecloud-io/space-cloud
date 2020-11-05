@@ -41,6 +41,7 @@ type CrudEventingInterface interface {
 
 // AuthEventingInterface is an interface consisting of functions of auth module used by Eventing module
 type AuthEventingInterface interface {
+	CreateToken(ctx context.Context, tokenClaims TokenClaims) (string, error)
 	GetInternalAccessToken(ctx context.Context) (string, error)
 	GetSCAccessToken(ctx context.Context) (string, error)
 	IsEventingOpAuthorised(ctx context.Context, project, token string, event *QueueEventRequest) (RequestParams, error)
@@ -118,7 +119,7 @@ type AuthUserInterface interface {
 
 // SyncmanEventingInterface is an interface consisting of functions of syncman module used by eventing module
 type SyncmanEventingInterface interface {
-	GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error)
+	GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error)
 	GetAssignedTokens() (start, end int)
 	GetEventSource() string
 	GetSpaceCloudURLFromID(ctx context.Context, nodeID string) (string, error)

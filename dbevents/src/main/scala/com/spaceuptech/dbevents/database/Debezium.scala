@@ -5,7 +5,6 @@ import java.util.concurrent.Executors
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, TimerScheduler}
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior, PostStop, Signal}
 import com.spaceuptech.dbevents.DatabaseSource
-import com.spaceuptech.dbevents.pubsub.RabbitMQ
 import com.spaceuptech.dbevents.spacecloud._
 import org.json4s.DefaultFormats
 import org.json4s.jackson.JsonMethods.parse
@@ -15,7 +14,7 @@ import scala.concurrent.duration.DurationInt
 import scala.sys.process._
 import scala.util.{Failure, Success}
 
-class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[Database.Command], projectId: String, broker: ActorRef[RabbitMQ.Command]) extends AbstractBehavior[Database.Command](context) {
+class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[Database.Command], projectId: String, broker: ActorRef[EventsSink.Command]) extends AbstractBehavior[Database.Command](context) {
 
   import Database._
 
@@ -83,7 +82,7 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
         this
 
       case record: ChangeRecord =>
-        broker ! RabbitMQ.EmitEvent(record)
+        broker ! EventsSink.EmitEvent(record)
         this
 
       case Stop() => Behaviors.stopped

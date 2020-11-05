@@ -3,6 +3,9 @@ package admin
 import (
 	"context"
 	"net/http"
+	"strings"
+
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -28,6 +31,33 @@ func (m *Manager) IsTokenValid(ctx context.Context, token, resource, op string, 
 
 	claims, err := m.parseToken(ctx, token)
 	return model.RequestParams{Resource: resource, Op: op, Attributes: attr, Claims: claims}, err
+}
+
+// CheckIfAdmin simply checks the token
+func (m *Manager) CheckIfAdmin(ctx context.Context, token string) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	if !m.isProd {
+		return nil
+	}
+
+	claims, err := m.parseToken(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	// Check if role is admin
+	role, p := claims["role"]
+	if !p {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid token provided. Claim `role` is absent.", nil, nil)
+	}
+
+	if !strings.Contains(role.(string), "admin") {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Only admins are authorised to make this request.", nil, nil)
+	}
+
+	return nil
 }
 
 // ValidateProjectSyncOperation validates if an operation is permitted based on the mode

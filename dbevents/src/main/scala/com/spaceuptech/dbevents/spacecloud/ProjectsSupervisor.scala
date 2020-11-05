@@ -2,6 +2,7 @@ package com.spaceuptech.dbevents.spacecloud
 
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior, PostStop, Signal}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, TimerScheduler}
+import akka.http.scaladsl.Http
 import com.spaceuptech.dbevents.Global
 
 import scala.concurrent.ExecutionContextExecutor
@@ -22,9 +23,12 @@ object ProjectsSupervisor {
 class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], timers: TimerScheduler[ProjectsSupervisor.Command]) extends AbstractBehavior[ProjectsSupervisor.Command](context) {
 
   import ProjectsSupervisor._
+  implicit val system: ActorSystem[Nothing] = context.system
 
   // Member variables
   private var projectIdToActor: Map[String, ActorRef[ProjectManager.Command]] = Map.empty
+  private val routes = new Routes(context.self)
+  private val serverBinding = Http().newServerAt("0.0.0.0", 8080).bind(routes.routes)
 
   // Start the timer to fetch projects
   timers.startTimerAtFixedRate(fetchProjectsKey, FetchProjects(), 1.minute)
@@ -49,6 +53,10 @@ class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], time
         actor ! ProjectManager.Stop()
       }
       projectIdToActor = Map.empty
+
+      // Stop the server
+      implicit val executionContext: ExecutionContextExecutor = context.executionContext
+      serverBinding.flatMap(_.unbind())
       this
 
   }

@@ -43,24 +43,13 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 			name: "no rules match",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: "not file create"}}}},
 			args: args{ctx: context.Background(), req: &model.CreateFileRequest{Meta: map[string]interface{}{}, Path: "path"}},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetNodeID",
-					paramsReturned: []interface{}{"nodeid"},
-				},
-			},
+
 			want: &model.EventIntent{Invalid: true},
 		},
 		{
 			name: "error creating internal",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventFileCreate}}}},
 			args: args{ctx: context.Background(), req: &model.CreateFileRequest{Meta: map[string]interface{}{}, Path: "path"}},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetNodeID",
-					paramsReturned: []interface{}{"nodeid"},
-				},
-			},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
@@ -74,12 +63,6 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 			name: "file intent request handled",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventFileCreate}}}},
 			args: args{ctx: context.Background(), req: &model.CreateFileRequest{Meta: map[string]interface{}{}, Path: "path"}},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetNodeID",
-					paramsReturned: []interface{}{"nodeid"},
-				},
-			},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
@@ -87,7 +70,7 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: utils.EventFileCreate, RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"meta":{},"path":"path"}`, Status: "intent"}}},
+			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: utils.EventFileCreate, RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339Nano), Payload: `{"meta":{},"path":"path"}`, Status: "intent"}}},
 		},
 	}
 
@@ -127,8 +110,12 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 					if !reflect.DeepEqual(docs[0].RuleName, tt.want.Docs[0].RuleName) {
 						t.Errorf("Module.CreateFileIntentHook() = %v, want %v", docs[0].RuleName, tt.want.Docs[0].RuleName)
 					}
-					if !reflect.DeepEqual(docs[0].Timestamp, tt.want.Docs[0].Timestamp) {
-						t.Errorf("Module.CreateFileIntentHook() = %v, want %v", docs[0].Timestamp, tt.want.Docs[0].Timestamp)
+					t1, _ := time.Parse(time.RFC3339, docs[0].Timestamp)
+					t1 = t1.Truncate(time.Second)
+					t2, _ := time.Parse(time.RFC3339, tt.want.Docs[0].Timestamp)
+					t2 = t2.Truncate(time.Second)
+					if !t1.Equal(t2) {
+						t.Errorf("Module.DeleteFileIntentHook() = %v, want %v", docs[0].Timestamp, tt.want.Docs[0].Timestamp)
 					}
 					if !reflect.DeepEqual(docs[0].Payload, tt.want.Docs[0].Payload) {
 						t.Errorf("Module.CreateFileIntentHook() = %v, want %v", docs[0].Payload, tt.want.Docs[0].Payload)
@@ -175,24 +162,13 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 			name: "no rules match",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: "not file delete"}}}},
 			args: args{ctx: context.Background(), meta: map[string]interface{}{}, path: "path"},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetNodeID",
-					paramsReturned: []interface{}{"nodeid"},
-				},
-			},
+
 			want: &model.EventIntent{Invalid: true},
 		},
 		{
 			name: "error creating internal",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventFileDelete}}}},
 			args: args{ctx: context.Background(), meta: map[string]interface{}{}, path: "path"},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetNodeID",
-					paramsReturned: []interface{}{"nodeid"},
-				},
-			},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
@@ -206,12 +182,6 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 			name: "file intent request handled",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]*config.EventingTrigger{"rule": {Type: utils.EventFileDelete}}}},
 			args: args{ctx: context.Background(), meta: map[string]interface{}{}, path: "path"},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetNodeID",
-					paramsReturned: []interface{}{"nodeid"},
-				},
-			},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
@@ -219,7 +189,7 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: utils.EventFileDelete, RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"meta":{},"path":"path"}`, Status: "intent"}}},
+			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: utils.EventFileDelete, RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339Nano), Payload: `{"meta":{},"path":"path"}`, Status: "intent"}}},
 		},
 	}
 
@@ -259,7 +229,11 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 					if !reflect.DeepEqual(docs[0].RuleName, tt.want.Docs[0].RuleName) {
 						t.Errorf("Module.DeleteFileIntentHook() = %v, want %v", docs[0].RuleName, tt.want.Docs[0].RuleName)
 					}
-					if !reflect.DeepEqual(docs[0].Timestamp, tt.want.Docs[0].Timestamp) {
+					t1, _ := time.Parse(time.RFC3339, docs[0].Timestamp)
+					t1 = t1.Truncate(time.Second)
+					t2, _ := time.Parse(time.RFC3339, tt.want.Docs[0].Timestamp)
+					t2 = t2.Truncate(time.Second)
+					if !t1.Equal(t2) {
 						t.Errorf("Module.DeleteFileIntentHook() = %v, want %v", docs[0].Timestamp, tt.want.Docs[0].Timestamp)
 					}
 					if !reflect.DeepEqual(docs[0].Payload, tt.want.Docs[0].Payload) {
@@ -278,7 +252,6 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 }
 
 func TestModule_HookStage(t *testing.T) {
-	var res interface{}
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -352,28 +325,9 @@ func TestModule_HookStage(t *testing.T) {
 			},
 			syncMockArgs: []mockArgs{
 				{
-					method:         "GetAssignedSpaceCloudURL",
+					method:         "GetAssignedSpaceCloudID",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
-				},
-				{
-					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{Status: "staged", Type: "notUpdate"}}, &res},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
-				},
-			},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetSCAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 		},
@@ -384,7 +338,6 @@ func TestModule_HookStage(t *testing.T) {
 
 			mockCrud := mockCrudInterface{}
 			mockAuth := mockAuthEventingInterface{}
-			mockAdmin := mockAdminEventingInterface{}
 			mockSyncman := mockSyncmanEventingInterface{}
 
 			for _, m := range tt.crudMockArgs {
@@ -393,23 +346,18 @@ func TestModule_HookStage(t *testing.T) {
 			for _, m := range tt.syncMockArgs {
 				mockSyncman.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
-			for _, m := range tt.adminMockArgs {
-				mockAdmin.On(m.method, m.args...).Return(m.paramsReturned...)
-			}
 			for _, m := range tt.authMockArgs {
 				mockAuth.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
 
 			tt.m.crud = &mockCrud
 			tt.m.syncMan = &mockSyncman
-			tt.m.adminMan = &mockAdmin
 			tt.m.auth = &mockAuth
 
 			tt.m.HookStage(context.Background(), tt.args.intent, tt.args.err)
 
 			mockCrud.AssertExpectations(t)
 			mockSyncman.AssertExpectations(t)
-			mockAdmin.AssertExpectations(t)
 			mockAuth.AssertExpectations(t)
 		})
 	}

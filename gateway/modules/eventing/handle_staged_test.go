@@ -15,7 +15,7 @@ import (
 )
 
 func TestModule_processStagedEvents(t *testing.T) {
-	timeValue, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
+	timeValue, _ := time.Parse(time.RFC3339Nano, "2006-01-02T15:04:05Z07:00")
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -49,8 +49,8 @@ func TestModule_processStagedEvents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339)}}, errors.New("some error")},
+					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Sort: []string{"ts"}, Limit: &limit}, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339Nano)}}, errors.New("some error")},
 				},
 			},
 		},
@@ -67,7 +67,7 @@ func TestModule_processStagedEvents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Sort: []string{"ts"}, Limit: &limit}, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{"payload", nil}},
 				},
 			},
@@ -85,8 +85,8 @@ func TestModule_processStagedEvents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339)}}, nil},
+					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Sort: []string{"ts"}, Limit: &limit}, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339Nano)}}, nil},
 				},
 			},
 		},
@@ -336,7 +336,6 @@ func TestModule_invokeWebhook(t *testing.T) {
 			mockHTTP := mockHTTPInterface{}
 			mockCrud := mockCrudInterface{}
 			mockSyncman := mockSyncmanEventingInterface{}
-			mockAdmin := mockAdminEventingInterface{}
 
 			for _, m := range tt.authMockArgs {
 				mockAuth.On(m.method, m.args...).Return(m.paramsReturned...)
@@ -350,15 +349,11 @@ func TestModule_invokeWebhook(t *testing.T) {
 			for _, m := range tt.syncmanMockArgs {
 				mockSyncman.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
-			for _, m := range tt.adminMockArgs {
-				mockAdmin.On(m.method, m.args...).Return(m.paramsReturned...)
-			}
 
 			tt.m.auth = &mockAuth
 			tt.args.client = &mockHTTP
 			tt.m.crud = &mockCrud
 			tt.m.syncMan = &mockSyncman
-			tt.m.adminMan = &mockAdmin
 
 			if err := tt.m.invokeWebhook(context.Background(), tt.args.client, tt.args.rule, tt.args.eventDoc, tt.args.cloudEvent); (err != nil) != tt.wantErr {
 				t.Errorf("Module.invokeWebhook() error = %v, wantErr %v", err, tt.wantErr)
@@ -368,7 +363,6 @@ func TestModule_invokeWebhook(t *testing.T) {
 			mockHTTP.AssertExpectations(t)
 			mockCrud.AssertExpectations(t)
 			mockSyncman.AssertExpectations(t)
-			mockAdmin.AssertExpectations(t)
 		})
 	}
 }

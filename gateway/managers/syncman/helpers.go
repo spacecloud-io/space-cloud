@@ -73,11 +73,6 @@ func (s *Manager) checkIfDbAliasExists(dbConfigs config.DatabaseConfigs, dbAlias
 	return nil, false
 }
 
-// GetNodeID returns node id assigned to sc
-func (s *Manager) GetNodeID() string {
-	return s.nodeID
-}
-
 // GetSpaceCloudURLFromID returns addr for corresponding nodeID
 func (s *Manager) GetSpaceCloudURLFromID(ctx context.Context, nodeID string) (string, error) {
 	for _, service := range s.services {

@@ -12,7 +12,7 @@ import (
 func CheckParse(s string) (time.Time, error) {
 	var value time.Time
 	var err error
-	value, err = time.Parse(time.RFC3339, s)
+	value, err = time.Parse(time.RFC3339Nano, s)
 	if err != nil {
 		value, err = time.Parse("2006-01-02", s)
 		if err != nil {

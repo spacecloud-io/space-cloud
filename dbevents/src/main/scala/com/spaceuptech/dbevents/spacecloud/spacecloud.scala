@@ -3,15 +3,38 @@ package com.spaceuptech.dbevents
 import akka.actor.ClassicActorSystemProvider
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
-import akka.http.scaladsl.model.{HttpHeader, HttpMethods, HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpHeader, HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import org.json4s.DefaultFormats
-import org.json4s.jackson.JsonMethods.parse
+import org.json4s.{DefaultFormats, Extraction}
+import org.json4s.jackson.JsonMethods._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 package object spacecloud {
 
+  def queueEvent(project: String, event: QueueEvent)(implicit system: ClassicActorSystemProvider, executor: ExecutionContext): Future[Unit] = {
+    implicit lazy val serializerFormats: DefaultFormats.type = org.json4s.DefaultFormats
+    val request = HttpRequest(
+      method = HttpMethods.POST,
+      uri = s"http://${Global.gatewayUrl}/v1/api/$project/eventing/admin-queue",
+      headers = Seq[HttpHeader] {
+        Authorization(OAuth2BearerToken(Global.createAdminToken()))
+      },
+      entity = HttpEntity(
+        ContentTypes.`application/json`,
+        compact(render(Extraction.decompose(event)))
+      )
+    )
+
+    Http().singleRequest(request).flatMap {
+      case resp @ HttpResponse(StatusCodes.OK, _, _, _) =>
+        resp.discardEntityBytes()
+        Future{}
+
+      case HttpResponse(code, _, _, _) =>
+        Future.failed(new Exception(s"Invalid status code received (${code.intValue()})"))
+    }
+  }
   def fetchSpaceCloudResource[T](url: String)(implicit system: ClassicActorSystemProvider, executor: ExecutionContext, m: Manifest[Response[T]]): Future[Response[T]] = {
     val request = HttpRequest(
       method = HttpMethods.GET,
@@ -23,14 +46,13 @@ package object spacecloud {
 
     // Fire the request
     val jsonFuture: Future[String] = Http().singleRequest(request).flatMap {
-      case HttpResponse(code, _, entity, _) => {
+      case HttpResponse(code, _, entity, _) =>
         val status = code.intValue()
         if (status != 200) {
           Future.failed(new Exception(s"Invalid status code received ($status)"))
         }
 
         Unmarshal(entity).to[String]
-      }
     }
 
     jsonFuture.flatMap {
@@ -55,4 +77,10 @@ package object spacecloud {
   case class DatabaseConfig(dbAlias: String, `type`: String, name: String, conn: String, enabled: Boolean)
 
   case class Secret(id: String, data: Map[String, String])
+
+  case class QueueEvent(`type`: String, timestamp: String, payload: DatabaseEvent, options: DatabaseEventOptions)
+
+  case class DatabaseEvent(db: String, col: String, doc: Option[Map[String, Any]], find: Option[Map[String, Any]], before: Option[Map[String, Any]])
+
+  case class DatabaseEventOptions(db: String, col: String)
 }

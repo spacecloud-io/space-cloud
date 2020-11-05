@@ -25,6 +25,17 @@ func (m *Module) IsEnabled() bool {
 	return m.config.Enabled
 }
 
+func (m *Module) QueueAdminEvent(ctx context.Context, req *model.QueueEventRequest) error {
+	batchID := m.generateBatchID()
+
+	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to queue admin event cannot batch requests", err, nil)
+	}
+
+	m.metricHook(m.project, req.Type)
+	return nil
+}
+
 // QueueEvent queues a new event
 func (m *Module) QueueEvent(ctx context.Context, project, token string, req *model.QueueEventRequest) (interface{}, error) {
 	m.lock.RLock()

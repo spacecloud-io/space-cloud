@@ -12,6 +12,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+var limit int64 = 1000
+
 type mockHTTPInterface struct {
 	mock.Mock
 }
@@ -50,7 +52,7 @@ type mockSyncmanEventingInterface struct {
 	mock.Mock
 }
 
-func (m *mockSyncmanEventingInterface) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
+func (m *mockSyncmanEventingInterface) GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error) {
 	c := m.Called(ctx, project, token)
 	return c.String(0), c.Error(1)
 }
@@ -83,17 +85,13 @@ func (m *mockSyncmanEventingInterface) MakeHTTPRequest(ctx context.Context, meth
 	return c.Error(0)
 }
 
-type mockAdminEventingInterface struct {
-	mock.Mock
-}
-
-func (m *mockAdminEventingInterface) GetInternalAccessToken() (string, error) {
-	c := m.Called()
-	return c.String(0), c.Error(1)
-}
-
 type mockAuthEventingInterface struct {
 	mock.Mock
+}
+
+func (m *mockAuthEventingInterface) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (string, error) {
+	c := m.Called(ctx, tokenClaims)
+	return c.String(0), c.Error(1)
 }
 
 func (m *mockAuthEventingInterface) IsEventingOpAuthorised(ctx context.Context, project, token string, event *model.QueueEventRequest) (model.RequestParams, error) {

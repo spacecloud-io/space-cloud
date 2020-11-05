@@ -4,7 +4,6 @@ import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, Tim
 import akka.actor.typed._
 import com.spaceuptech.dbevents.Global
 import com.spaceuptech.dbevents.database.Database
-import com.spaceuptech.dbevents.pubsub.RabbitMQ
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -31,8 +30,8 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
   import ProjectManager._
 
   // Member variables
-  var databaseToActor: Map[String, ActorRef[Database.Command]] = Map.empty
-  var broker : Option[ActorRef[RabbitMQ.Command]] = None
+  private var databaseToActor: Map[String, ActorRef[Database.Command]] = Map.empty
+  private val eventsSink = context.spawn(EventsSink(projectId), "event-sink")
 
   // Start the timer
   timers.startTimerAtFixedRate(fetchEventingConfigKey, FetchEventingConfig(), 1.minute)
@@ -70,7 +69,7 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     // Create actor for new projects
     for (db <- filteredDbs) {
       if (!databaseToActor.contains(db.dbAlias)) {
-        val actor = context.spawn(Database.createActor(projectId, db.`type`, broker.get), s"db-${db.dbAlias}")
+        val actor = context.spawn(Database.createActor(projectId, db.`type`, eventsSink), s"db-${db.dbAlias}")
         databaseToActor += db.dbAlias -> actor
       }
 
@@ -108,23 +107,11 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     if (!config.enabled || config.broker.isEmpty) {
       timers.cancel(fetchDatabasesKey)
       removeAllChildren()
-      stopBroker()
       return
     }
 
-    broker match {
-      case Some(actor) =>
-        // Send command to update config of broker
-        actor ! RabbitMQ.UpdateConfig(config.broker.get.conn)
-      case None =>
-        // Create a new broker actor
-        val actor = context.spawn(RabbitMQ(projectId), "broker")
-        actor ! RabbitMQ.UpdateConfig(config.broker.get.conn)
-        broker = Some(actor)
-    }
-
     // Start the timer if its isn't active already
-    if (timers.isTimerActive(fetchDatabasesKey)) {
+    if (!timers.isTimerActive(fetchDatabasesKey)) {
       timers.startTimerAtFixedRate(fetchDatabasesKey, FetchDatabaseConfig(), 1.minute)
     }
 
@@ -138,23 +125,10 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     databaseToActor = Map.empty
   }
 
-  private def stopBroker(): Unit = {
-    broker match {
-      case Some(value) =>
-        // Send command to stop
-        value ! RabbitMQ.Stop()
-
-        // Reset the broker
-        broker = None
-      case None =>
-    }
-  }
-
   override def onSignal: PartialFunction[Signal, Behavior[Command]] = {
     case PostStop =>
       timers.cancelAll()
       removeAllChildren()
-      stopBroker()
       this
   }
 }
