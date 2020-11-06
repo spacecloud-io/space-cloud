@@ -535,9 +535,15 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 				// Make the param mapping array
 				secretTargetRefs := make([]v1alpha1.AuthSecretTargetRef, len(trigger.AuthenticatedRef.SecretMapping))
 				for i, ref := range trigger.AuthenticatedRef.SecretMapping {
+					key := strings.TrimPrefix(ref.Key, "secrets.")
+					arr := strings.Split(key, ".")
+					if len(arr) != 2 {
+						return nil, nil, fmt.Errorf("invalid value (%s) provided for secret key", ref.Key)
+					}
+
 					secretTargetRefs[i] = v1alpha1.AuthSecretTargetRef{
-						Name:      trigger.AuthenticatedRef.SecretName,
-						Key:       ref.Key,
+						Name:      arr[0],
+						Key:       arr[1],
 						Parameter: ref.Parameter,
 					}
 				}

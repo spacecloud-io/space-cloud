@@ -193,21 +193,16 @@ func getTriggerAuthForTrigger(trigger string, refs []v1alpha1.TriggerAuthenticat
 	}
 
 	// Prepare mapping
-	var secretName string
 	mapping := make([]model.AutoScaleAuthRefMapping, len(triggerAuth.Spec.SecretTargetRef))
 	for i, ref := range triggerAuth.Spec.SecretTargetRef {
 		mapping[i] = model.AutoScaleAuthRefMapping{
 			Parameter: ref.Parameter,
-			Key:       ref.Key,
+			Key:       fmt.Sprintf("secrets.%s.%s", ref.Name, ref.Key),
 		}
-
-		// Extract secret name as well. We will have a consistent secret name for each parameter
-		secretName = ref.Name
 	}
 
 	// Finally prepare and return the auto scaling auth reference
 	return &model.AutoScaleAuthRef{
-		SecretName:    secretName,
 		SecretMapping: mapping,
 	}
 }
