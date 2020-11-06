@@ -85,16 +85,3 @@ type GlobalModulesInterface interface {
 	// SetMetricsConfig set the config of the metrics module
 	SetMetricsConfig(isMetricsEnabled bool)
 }
-
-type preparedQueryResponse struct {
-	ID        string       `json:"id"`
-	DBAlias   string       `json:"db"`
-	SQL       string       `json:"sql"`
-	Arguments []string     `json:"args"`
-	Rule      *config.Rule `json:"rule"`
-}
-
-type dbRulesResponse struct {
-	IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
-	Rules             map[string]*config.Rule `json:"rules"`
-}
