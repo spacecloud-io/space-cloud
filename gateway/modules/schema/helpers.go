@@ -67,8 +67,8 @@ func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("primary key must be required"), nil)
 	}
 
-	if realFieldStruct.IsPrimary && realFieldStruct.Kind != model.TypeID {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("primary key should be of type ID"), nil)
+	if realFieldStruct.IsPrimary && !(realFieldStruct.Kind == model.TypeID || realFieldStruct.Kind == model.TypeInteger) {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("primary key should be of type ID or Integer"), nil)
 	}
 
 	if realFieldStruct.Kind == model.TypeJSON && (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked || realFieldStruct.IsIndex) {
