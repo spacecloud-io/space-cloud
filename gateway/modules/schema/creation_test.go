@@ -586,8 +586,8 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col3": &model.FieldType{FieldName: "col3", Kind: model.TypeID, TypeIDSize: model.SQLTypeIDSize, IsFieldTypeRequired: true, IsPrimary: true}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{},
-			wantErr: true,
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col3", "ALTER TABLE table1 ADD col3 bigint", "ALTER TABLE table1 MODIFY col3 bigint NOT NULL"},
+			wantErr: false,
 		},
 		{
 			name: "removing one column",
