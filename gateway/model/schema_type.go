@@ -34,6 +34,7 @@ type (
 		TypeIDSize  int              `json:"size"`
 	}
 
+	// AutoIncrementInfo stores auto increment info of primary key
 	AutoIncrementInfo struct {
 		IsEnabled   bool `json:"IsEnabled"`
 		StartFrom   int  `json:"startFrom"`
