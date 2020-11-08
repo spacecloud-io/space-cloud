@@ -38,6 +38,10 @@ CASE
 	WHEN column_default = '0' THEN 'false'
 	ELSE coalesce(column_default,'')
 END AS 'Default',
+CASE
+	WHEN extra = 'auto_increment' THEN 'true'
+	ELSE 'false'
+END AS 'AutoIncrement',
 coalesce(CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize'
 from information_schema.columns
 where (table_name,table_schema) = (?,?);`
@@ -50,6 +54,10 @@ CASE
     WHEN t.constraint_type = 'UNIQUE' THEN 'UNI'
     ELSE ''
 END AS "Key",
+CASE 
+	WHEN isc.data_type = 'bigint' AND t.constraint_type = 'PRIMARY KEY' THEN 'true'
+	ELSE 'false'
+END AS "AutoIncrement",
 -- Set the null values to 50
 coalesce(isc.character_maximum_length,50) AS "VarcharSize"
 FROM information_schema.columns isc
@@ -73,7 +81,8 @@ ORDER BY isc.ordinal_position;`
            WHEN TC.CONSTRAINT_TYPE = 'FOREIGN KEY' THEN 'MUL'
            ELSE isnull(TC.CONSTRAINT_TYPE,'')
            END AS 'Key',
-coalesce(c.CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize'
+coalesce(c.CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize',
+'false' AS 'AutoIncrement'
 FROM INFORMATION_SCHEMA.COLUMNS AS C
          FULL JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS CC
                    ON C.COLUMN_NAME = CC.COLUMN_NAME

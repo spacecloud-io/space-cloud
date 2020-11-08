@@ -16,6 +16,15 @@ import (
 func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (string, error) {
 
 	switch typename {
+	case model.TypeUUID:
+		if dbType == string(model.Postgres) {
+			return "uuid", nil
+		}
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "UUID type is only supported by postgres database", nil, nil)
+	case model.TypeTime:
+		return "time", nil
+	case model.TypeDate:
+		return "date", nil
 	case model.TypeID:
 		return fmt.Sprintf("varchar(%d)", maxIDSize), nil
 	case model.TypeString:
@@ -57,26 +66,30 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 
 func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 	if realFieldStruct.IsList && !realFieldStruct.IsLinked { // array without directive relation not allowed
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName), nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName), nil, nil)
 	}
 	if realFieldStruct.Kind == model.TypeObject {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("invalid type for field %s - object type not supported in sql creation", realFieldStruct.FieldName), nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type for field %s - object type not supported in sql creation", realFieldStruct.FieldName), nil, nil)
 	}
 
 	if realFieldStruct.IsPrimary && !realFieldStruct.IsFieldTypeRequired {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("primary key must be required"), nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key must be not null", nil, nil)
 	}
 
-	if realFieldStruct.IsPrimary && realFieldStruct.Kind != model.TypeID {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("primary key should be of type ID"), nil)
+	if realFieldStruct.AutoIncrementInfo.IsEnabled && realFieldStruct.Kind != model.TypeInteger {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key with auto increment is only applicable on type integer", nil, nil)
+	}
+
+	if realFieldStruct.IsPrimary && !(realFieldStruct.Kind == model.TypeID || realFieldStruct.Kind == model.TypeInteger) {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key should be of type ID or Integer", nil, nil)
 	}
 
 	if realFieldStruct.Kind == model.TypeJSON && (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked || realFieldStruct.IsIndex) {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("cannot set index with type json"), nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set index with type json", nil, nil)
 	}
 
 	if (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("cannot set default directive with other constraints"), nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set default directive with other constraints", nil, nil)
 	}
 
 	return nil
@@ -297,10 +310,23 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 		if realFieldStruct.IsPrimary {
 			doesPrimaryKeyExists = true
 			if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
-				primaryKeyQuery = realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS PRIMARY KEY NOT NULL, "
+				primaryKeyQuery = realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS PRIMARY KEY NOT NULL , "
 				continue
 			}
-			primaryKeyQuery = realFieldKey + " " + sqlType + " PRIMARY KEY NOT NULL, "
+			var autoIncrement string
+			if realFieldStruct.AutoIncrementInfo.IsEnabled {
+				switch model.DBType(dbType) {
+				case model.SQLServer:
+					autoIncrement = fmt.Sprintf(" IDENTITY(%d,%d)", realFieldStruct.AutoIncrementInfo.StartFrom, realFieldStruct.AutoIncrementInfo.IncrementBy)
+
+				case model.MySQL:
+					autoIncrement = "AUTO_INCREMENT"
+
+				case model.Postgres:
+					sqlType = "bigserial"
+				}
+			}
+			primaryKeyQuery = fmt.Sprintf("%s %s PRIMARY KEY NOT NULL %s, ", realFieldKey, sqlType, autoIncrement)
 			continue
 		}
 

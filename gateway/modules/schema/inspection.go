@@ -64,26 +64,15 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, f
 		}
 
 		// default key
-		if field.FieldDefault != "" {
+		if field.FieldDefault != "" && field.AutoIncrement == "false" {
 			fieldDetails.IsDefault = true
 			if model.DBType(dbType) == model.SQLServer {
-				// replace (( or )) with nothing e.g -> ((9.8)) -> 9.8
-				field.FieldDefault = strings.Replace(strings.Replace(field.FieldDefault, "(", "", -1), ")", "", -1)
 				if fieldDetails.Kind == model.TypeBoolean {
 					if field.FieldDefault == "1" {
 						field.FieldDefault = "true"
 					} else {
 						field.FieldDefault = "false"
 					}
-				}
-			}
-
-			if model.DBType(dbType) == model.Postgres {
-				// split "'default-value'::text" to "default-value"
-				s := strings.Split(field.FieldDefault, "::")
-				field.FieldDefault = s[0]
-				if fieldDetails.Kind == model.TypeString || fieldDetails.Kind == model.TypeDateTime || fieldDetails.Kind == model.TypeID {
-					field.FieldDefault = strings.Split(field.FieldDefault, "'")[1]
 				}
 			}
 
@@ -97,6 +86,10 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, f
 		// check if list
 		if field.FieldKey == "PRI" {
 			fieldDetails.IsPrimary = true
+		}
+		fieldDetails.AutoIncrementInfo = new(model.AutoIncrementInfo)
+		if field.AutoIncrement == "true" {
+			fieldDetails.AutoIncrementInfo = &model.AutoIncrementInfo{IsEnabled: true}
 		}
 
 		// check foreignKey & identify if relation exists
@@ -147,13 +140,17 @@ func inspectionMySQLCheckFieldType(size int, typeName string, fieldDetails *mode
 	result := strings.Split(typeName, "(")
 
 	switch result[0] {
+	case "date":
+		fieldDetails.Kind = model.TypeDate
+	case "time":
+		fieldDetails.Kind = model.TypeTime
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = model.TypeString
 	case "smallint", "mediumint", "int", "bigint":
 		fieldDetails.Kind = model.TypeInteger
 	case "float", "double":
 		fieldDetails.Kind = model.TypeFloat
-	case "date", "time", "datetime", "timestamp", "datetimeoffset":
+	case "datetime", "timestamp", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
 	case "tinyint", "boolean", "bit":
 		fieldDetails.Kind = model.TypeBoolean
@@ -176,13 +173,19 @@ func inspectionPostgresCheckFieldType(size int, typeName string, fieldDetails *m
 	result = strings.Split(result[0], "(")
 
 	switch result[0] {
+	case "uuid":
+		fieldDetails.Kind = model.TypeUUID
+	case "date":
+		fieldDetails.Kind = model.TypeDate
+	case "time":
+		fieldDetails.Kind = model.TypeTime
 	case "character", "bit", "text":
 		fieldDetails.Kind = model.TypeString
-	case "bigint", "bigserial", "integer", "numeric", "smallint", "smallserial", "serial":
+	case "bigint", "bigserial", "integer", "smallint", "smallserial", "serial":
 		fieldDetails.Kind = model.TypeInteger
-	case "float", "double", "real":
+	case "float", "double", "real", "numeric":
 		fieldDetails.Kind = model.TypeFloat
-	case "date", "time", "datetime", "timestamp", "interval", "datetimeoffset":
+	case "datetime", "timestamp", "interval", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
 	case "boolean":
 		fieldDetails.Kind = model.TypeBoolean

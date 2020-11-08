@@ -16,8 +16,8 @@ type (
 		IsList              bool   `json:"isList"`
 		Kind                string `json:"kind"`
 		// Directive           string
-		NestedObject Fields `json:"nestedObject"`
-
+		NestedObject      Fields             `json:"nestedObject"`
+		AutoIncrementInfo *AutoIncrementInfo `json:"autoIncrementInfo"`
 		// For directives
 		IsPrimary   bool             `json:"isPrimary"`
 		IsIndex     bool             `json:"isIndex"`
@@ -34,6 +34,12 @@ type (
 		TypeIDSize  int              `json:"size"`
 	}
 
+	AutoIncrementInfo struct {
+		IsEnabled   bool `json:"IsEnabled"`
+		StartFrom   int  `json:"startFrom"`
+		IncrementBy int  `json:"incrementBy"`
+	}
+
 	// TableProperties are properties of the table
 	TableProperties struct {
 		From, To               string
@@ -46,6 +52,12 @@ type (
 )
 
 const (
+	// TypeDate is variable used for Variable of type Date
+	TypeDate string = "Date"
+	// TypeTime is variable used for Variable of type Time
+	TypeTime string = "Time"
+	// TypeUUID is variable used for Variable of type UUID
+	TypeUUID string = "UUID"
 	// TypeInteger is variable used for Variable of type Integer
 	TypeInteger string = "Integer"
 	// TypeString is variable used for Variable of type String
@@ -94,12 +106,13 @@ const (
 
 // InspectorFieldType is the type for storing sql inspection information
 type InspectorFieldType struct {
-	FieldName    string `db:"Field"`
-	FieldType    string `db:"Type"`
-	FieldNull    string `db:"Null"`
-	FieldKey     string `db:"Key"`
-	FieldDefault string `db:"Default"`
-	VarcharSize  int    `db:"VarcharSize"`
+	FieldName     string `db:"Field"`
+	FieldType     string `db:"Type"`
+	FieldNull     string `db:"Null"`
+	FieldKey      string `db:"Key"`
+	FieldDefault  string `db:"Default"`
+	AutoIncrement string `db:"AutoIncrement"`
+	VarcharSize   int    `db:"VarcharSize"`
 }
 
 // ForeignKeysType is the type for storing  foreignkeys information of sql inspection
