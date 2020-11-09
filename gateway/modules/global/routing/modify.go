@@ -50,7 +50,7 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 	// Set the headers
 	state := map[string]interface{}{"args": params, "auth": auth}
 	headers := append(r.globalConfig.RequestHeaders, route.Modify.RequestHeaders...)
-	prepareHeaders(ctx, headers, state).UpdateHeader(req.Header)
+	prepareHeaders(headers, state).UpdateHeader(req.Header)
 
 	// Don't forget to reset the body
 	if params != nil {
@@ -91,7 +91,7 @@ func (r *Routing) modifyResponse(ctx context.Context, res *http.Response, route 
 	// Set the headers
 	state := map[string]interface{}{"args": params, "auth": auth}
 	headers := append(r.globalConfig.ResponseHeaders, route.Modify.ResponseHeaders...)
-	prepareHeaders(ctx, headers, state).UpdateHeader(res.Header)
+	prepareHeaders(headers, state).UpdateHeader(res.Header)
 
 	// If params is not nil we need to template the response
 	if params != nil {
