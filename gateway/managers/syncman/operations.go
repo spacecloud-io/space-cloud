@@ -34,7 +34,7 @@ func (s *Manager) GetNodesInCluster() int {
 	return len(s.services)
 }
 
-// GetAssignedSpaceCloudURL returns the space cloud id assigned for the provided token
+// GetAssignedSpaceCloudID returns the space cloud id assigned for the provided token
 func (s *Manager) GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()

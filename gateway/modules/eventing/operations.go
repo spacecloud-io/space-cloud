@@ -25,6 +25,8 @@ func (m *Module) IsEnabled() bool {
 	return m.config.Enabled
 }
 
+// QueueAdminEvent queues a new event created by the admin. This does no validation and hence must be used cautiously.
+// For most use cases, consider using QueueEvent instead.
 func (m *Module) QueueAdminEvent(ctx context.Context, req *model.QueueEventRequest) error {
 	batchID := m.generateBatchID()
 

@@ -55,7 +55,7 @@ func HandleEventResponse(modules *modules.Modules) http.HandlerFunc {
 	}
 }
 
-// HandleQueueEvent creates a queue event endpoint
+// HandleAdminQueueEvent creates a queue event endpoint
 func HandleAdminQueueEvent(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
