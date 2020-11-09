@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -119,7 +120,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		Time: eventDoc.Timestamp, Data: eventDoc.Payload}
 
 	doc = structs.Map(&cloudEvent)
-	doc, err = m.adjustReqBody(ctx, triggerName, "", rule, nil, doc)
+	newDoc, err := m.adjustReqBody(ctx, triggerName, "", rule, nil, doc)
 	if err != nil {
 		if err := m.logInvocation(ctx, eventDoc.ID, []byte("{}"), 0, "", err.Error()); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "eventing module couldn't log the invocation ", err, nil)
@@ -132,8 +133,22 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		return
 	}
 
+	// Generate the token
+	token, err := m.generateWebhookToken(ctx, rule, doc, newDoc)
+	if err != nil {
+		if err := m.logInvocation(ctx, eventDoc.ID, []byte("{}"), 0, "", err.Error()); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "eventing module couldn't log the invocation ", err, nil)
+			return
+		}
+		if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing staged event handler could not update event doc ", err, nil)
+		}
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error invoking web hook in eventing unable to get internal access token", err, nil)
+		return
+	}
+
 	for {
-		if err := m.invokeWebhook(ctx, &http.Client{}, rule, eventDoc, doc); err != nil {
+		if err := m.invokeWebhook(ctx, token, &http.Client{}, rule, eventDoc, newDoc); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing staged event handler could not get response from service", err, nil)
 
 			// Increment the retries. Exit the loop if max retries reached.
@@ -160,14 +175,9 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	}
 }
 
-func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInterface, rule *config.EventingTrigger, eventDoc *model.EventDocument, params interface{}) error {
+func (m *Module) invokeWebhook(ctx context.Context, token string, client model.HTTPEventingInterface, rule *config.EventingTrigger, eventDoc *model.EventDocument, params interface{}) error {
 	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(rule.Timeout)*time.Millisecond)
 	defer cancel()
-
-	internalToken, err := m.generateWebhookToken(ctx, rule, params)
-	if err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "error invoking web hook in eventing unable to get internal access token", err, nil)
-	}
 
 	scToken, err := m.auth.GetSCAccessToken(ctx)
 	if err != nil {
@@ -175,8 +185,13 @@ func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInt
 	}
 
 	var eventResponse model.EventResponse
-	if err := m.MakeInvocationHTTPRequest(ctxLocal, client, http.MethodPost, rule.URL, eventDoc.ID, internalToken, scToken, params, &eventResponse); err != nil {
+	if err := m.MakeInvocationHTTPRequest(ctxLocal, client, http.MethodPost, rule.URL, eventDoc.ID, token, scToken, params, &eventResponse); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error invoking web hook in eventing unable to send http request to url %s", rule.URL), err, nil)
+	}
+
+	// Check if response contains an error
+	if eventResponse.Error != "" {
+		return errors.New(eventResponse.Error)
 	}
 
 	var eventRequests []*model.QueueEventRequest
@@ -195,7 +210,7 @@ func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInt
 			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error invoking web hook in eventing unable to get sc addr from batchID %s", eventDoc.BatchID), err, nil)
 		}
 		url = fmt.Sprintf("http://%s/v1/api/%s/eventing/process-event-response", url, m.project)
-		if err := m.syncMan.MakeHTTPRequest(ctxLocal, http.MethodPost, url, internalToken, scToken, map[string]interface{}{"batchID": eventDoc.BatchID, "response": eventResponse.Response}, &map[string]interface{}{}); err != nil {
+		if err := m.syncMan.MakeHTTPRequest(ctxLocal, http.MethodPost, url, token, scToken, map[string]interface{}{"batchID": eventDoc.BatchID, "response": eventResponse.Response}, &map[string]interface{}{}); err != nil {
 			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error invoking web hook in eventing unable to send http request for synchronous response to url %s", url), err, nil)
 		}
 	}

@@ -25,7 +25,7 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 	token := rand.Intn(utils.MaxEventTokens)
 	batchID := m.generateBatchID()
 
-	rules := m.getMatchingRules(utils.EventFileCreate, map[string]string{})
+	rules := m.getMatchingRules(ctx, &model.QueueEventRequest{Type: utils.EventFileCreate, Options: map[string]string{}})
 
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
@@ -72,7 +72,7 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map
 	batchID := m.generateBatchID()
 	token := rand.Intn(utils.MaxEventTokens)
 
-	rules := m.getMatchingRules(utils.EventFileDelete, map[string]string{})
+	rules := m.getMatchingRules(ctx, &model.QueueEventRequest{Type: utils.EventFileDelete, Options: map[string]string{}})
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {

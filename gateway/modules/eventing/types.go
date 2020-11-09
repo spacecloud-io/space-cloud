@@ -89,6 +89,10 @@ type mockAuthEventingInterface struct {
 	mock.Mock
 }
 
+func (m *mockAuthEventingInterface) MatchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
+	return nil, nil
+}
+
 func (m *mockAuthEventingInterface) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (string, error) {
 	c := m.Called(ctx, tokenClaims)
 	return c.String(0), c.Error(1)

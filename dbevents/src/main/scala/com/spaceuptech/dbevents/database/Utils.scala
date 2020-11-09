@@ -12,7 +12,7 @@ import com.mongodb.{MongoClient, MongoClientURI}
 import com.spaceuptech.dbevents.database.Database.ChangeRecord
 import com.spaceuptech.dbevents.{DatabaseSource, Global}
 import io.debezium.engine.format.Json
-import io.debezium.engine.DebeziumEngine
+import io.debezium.engine.{ChangeEvent, DebeziumEngine}
 import org.bson.{BsonDocument, Document}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
@@ -34,60 +34,67 @@ object Utils {
 
     var t = Calendar.getInstance().getTime
 
-    val consumer: Consumer[ChangeStreamDocument[Document]] = (doc) => {
-      // Check if 60 minutes have elapsed since last timer
-      val cal = Calendar.getInstance()
-      cal.setTime(t)
-      cal.add(Calendar.MINUTE, 60)
+    val consumer: Consumer[ChangeStreamDocument[Document]] = new Consumer[ChangeStreamDocument[Document]] {
+      override def accept(doc: ChangeStreamDocument[Document]): Unit = {
+        // Simply return if its a change from internal tables
+        if (doc.getNamespace.getCollectionName == "event_logs" || doc.getNamespace.getCollectionName == "invocation_logs") {
+          return
+        }
 
-      if (Calendar.getInstance().getTime.after(cal.getTime)) {
-        t = Calendar.getInstance().getTime
+        // Check if 60 minutes have elapsed since last timer
+        val cal = Calendar.getInstance()
+        cal.setTime(t)
+        cal.add(Calendar.MINUTE, 60)
 
-       offsetStore.set(doc.getResumeToken)
-      }
+        if (Calendar.getInstance().getTime.after(cal.getTime)) {
+          t = Calendar.getInstance().getTime
 
-      doc.getOperationType match {
-        case OperationType.INSERT =>
-          actor ! ChangeRecord(
-            payload = ChangeRecordPayload(
-              op = "c",
-              before = None,
-              after = Some(mongoDocumentToMap(doc.getFullDocument)),
-              source = getMongoSource(projectId, dbAlias, doc)
-            ),
-            project = projectId,
-            dbAlias = dbAlias,
-            dbType = "mongo"
-          )
+          offsetStore.set(doc.getResumeToken)
+        }
 
-        case OperationType.UPDATE | OperationType.REPLACE =>
-          actor ! ChangeRecord(
-            payload = ChangeRecordPayload(
-              op = "u",
-              before = Option(mongoDocumentKeyToMap(doc.getDocumentKey)),
-              after = Some(mongoDocumentToMap(doc.getFullDocument)),
-              source = getMongoSource(projectId, dbAlias, doc)
-            ),
-            project = projectId,
-            dbAlias = dbAlias,
-            dbType = "mongo"
-          )
+        doc.getOperationType match {
+          case OperationType.INSERT =>
+            actor ! ChangeRecord(
+              payload = ChangeRecordPayload(
+                op = "c",
+                before = None,
+                after = Some(mongoDocumentToMap(doc.getFullDocument)),
+                source = getMongoSource(projectId, dbAlias, doc)
+              ),
+              project = projectId,
+              dbAlias = dbAlias,
+              dbType = "mongo"
+            )
 
-        case OperationType.DELETE =>
-          actor ! ChangeRecord(
-            payload = ChangeRecordPayload(
-              op = "d",
-              before = Option(mongoDocumentKeyToMap(doc.getDocumentKey)),
-              after = None,
-              source = getMongoSource(projectId, dbAlias, doc)
-            ),
-            project = projectId,
-            dbAlias = dbAlias,
-            dbType = "mongo"
-          )
+          case OperationType.UPDATE | OperationType.REPLACE =>
+            actor ! ChangeRecord(
+              payload = ChangeRecordPayload(
+                op = "u",
+                before = Option(mongoDocumentKeyToMap(doc.getDocumentKey)),
+                after = Some(mongoDocumentToMap(doc.getFullDocument)),
+                source = getMongoSource(projectId, dbAlias, doc)
+              ),
+              project = projectId,
+              dbAlias = dbAlias,
+              dbType = "mongo"
+            )
 
-        case _ =>
-          println(s"Invalid operation type (${doc.getOperationType.getValue}) received")
+          case OperationType.DELETE =>
+            actor ! ChangeRecord(
+              payload = ChangeRecordPayload(
+                op = "d",
+                before = Option(mongoDocumentKeyToMap(doc.getDocumentKey)),
+                after = None,
+                source = getMongoSource(projectId, dbAlias, doc)
+              ),
+              project = projectId,
+              dbAlias = dbAlias,
+              dbType = "mongo"
+            )
+
+          case _ =>
+            println(s"Invalid operation type (${doc.getOperationType.getValue}) received")
+        }
       }
     }
 
@@ -141,24 +148,23 @@ object Utils {
     }
 
     // Create a new debezium engine
+    val engine = DebeziumEngine.create(classOf[Json]).using(props).notifying(new Consumer[ChangeEvent[String, String]] {
+      override def accept(record: ChangeEvent[String, String]): Unit = {
+        implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
+        // Extract the change feed value
+        val jsonString = record.value()
 
-    val engine = DebeziumEngine.create(classOf[Json]).using(props).notifying(record => {
-      implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
-      // Extract the change feed value
-      val jsonString = record.value()
-
-      // Marshal the string only if the json string is not null
-      if (jsonString != null) {
-        try {
-          // Parse the json value and forward it to our actor
-          val payload = parse(jsonString).extract[ChangeRecordPayload]
-          actor ! ChangeRecord(payload, source.project, source.dbAlias, source.dbType)
-        } catch {
-          case ex: Throwable => println(s"Unable to parse database change event (${source.project}:${source.dbAlias}) - ${ex.getMessage}")
+        // Marshal the string only if the json string is not null
+        if (jsonString != null) {
+          try {
+            // Parse the json value and forward it to our actor
+            val payload = parse(jsonString).extract[ChangeRecordPayload]
+            actor ! ChangeRecord(payload, source.project, source.dbAlias, source.dbType)
+          } catch {
+            case ex: Throwable => println(s"Unable to parse database change event (${source.project}:${source.dbAlias}) - ${ex.getMessage}")
+          }
         }
-
       }
-
     }).build()
 
     // Run the engine asynchronously
@@ -184,6 +190,7 @@ object Utils {
     props.setProperty("database.ssl.mode", source.config.getOrElse("sslMode", "disabled"))
     props.setProperty("database.history", getDatabaseHistoryStorageClass)
     props.setProperty("database.history.file.filename", "./dbhistory.dat")
+    props.setProperty("table.exclude.list", "event_logs,invocation_logs")
 
     props
   }
@@ -205,6 +212,7 @@ object Utils {
     props.setProperty("database.password", source.config.getOrElse("password", "mypassword"))
     props.setProperty("database.dbname", source.config.getOrElse("db", "test"))
     props.setProperty("database.server.name", s"${generateConnectorName(source)}_connector")
+    props.setProperty("table.exclude.list", "event_logs,invocation_logs")
 
     props
   }
@@ -233,6 +241,7 @@ object Utils {
     props.setProperty("schema.include.list", source.config.getOrElse("schema", "test"))
     props.setProperty("database.server.name", s"${generateConnectorName(source)}_connector")
     props.setProperty("database.sslmode", source.config.getOrElse("sslMode", "disable"))
+    props.setProperty("table.exclude.list", "event_logs,invocation_logs")
 
     props
   }

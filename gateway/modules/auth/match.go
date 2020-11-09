@@ -19,6 +19,14 @@ import (
 	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 )
 
+// MatchRule checks if the rule is matched or not
+func (m *Module) MatchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	return m.matchRule(ctx, project, rule, args, auth, returnWhere)
+}
+
 func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
 	if project != m.project {
 		return nil, formatError(ctx, rule, errors.New("invalid project details provided"))

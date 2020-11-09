@@ -64,7 +64,7 @@ func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token 
 	for _, req := range requests {
 
 		// Iterate over matching rules
-		rules := m.getMatchingRules(req.Type, map[string]string{})
+		rules := m.getMatchingRules(ctx, req)
 		for _, r := range rules {
 			eventDoc := m.generateQueueEventRequest(ctx, token, r.ID, batchID, utils.EventStatusStaged, req)
 			eventDocs = append(eventDocs, eventDoc)
@@ -202,21 +202,53 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 	return rows
 }
 
-func (m *Module) getMatchingRules(name string, options map[string]string) []*config.EventingTrigger {
+func (m *Module) getMatchingRules(ctx context.Context, req *model.QueueEventRequest) []*config.EventingTrigger {
 	rules := make([]*config.EventingTrigger, 0)
 
 	for n, rule := range m.config.Rules {
-		if rule.Type == name && isOptionsValid(rule.Options, options) {
-			rule.ID = n
-			rules = append(rules, rule)
+		// Skip trigger if its event type does not match incoming request
+		if rule.Type != req.Type {
+			continue
 		}
+
+		// Skip rule if the options do not match
+		if !isOptionsValid(rule.Options, req.Options) {
+			continue
+		}
+
+		// Skip rules if filter does not match
+		if rule.Filter != nil && req.Payload != nil {
+			if _, err := m.auth.MatchRule(ctx, m.project, rule.Filter, req.Payload.(map[string]interface{}), nil, model.ReturnWhereStub{}); err != nil {
+				continue
+			}
+		}
+
+		// Add rule to list of returned rules
+		rule.ID = n
+		rules = append(rules, rule)
 	}
 
 	for n, rule := range m.config.InternalRules {
-		if rule.Type == name && isOptionsValid(rule.Options, options) {
-			rule.ID = n
-			rules = append(rules, rule)
+		// Skip trigger if its event type does not match incoming request
+		if rule.Type != req.Type {
+			continue
 		}
+
+		// Skip rule if the options do not match
+		if !isOptionsValid(rule.Options, req.Options) {
+			continue
+		}
+
+		// Skip rules if filter does not match
+		if rule.Filter != nil {
+			if _, err := m.auth.MatchRule(ctx, m.project, rule.Filter, req.Payload.(map[string]interface{}), nil, model.ReturnWhereStub{}); err != nil {
+				continue
+			}
+		}
+
+		// Add rule to list of returned rules
+		rule.ID = n
+		rules = append(rules, rule)
 	}
 	return rules
 }
@@ -233,7 +265,8 @@ func convertToArray(eventDocs []*model.EventDocument) []interface{} {
 
 func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 	for k, v := range ruleOptions {
-		if v2, p := providedOptions[k]; !p || v != v2 {
+		arr := strings.Split(v, ",")
+		if v2, p := providedOptions[k]; !p || !utils.StringExists(arr, v2) {
 			return false
 		}
 	}
@@ -310,14 +343,14 @@ func (m *Module) adjustReqBody(ctx context.Context, trigger, token string, endpo
 	return req, nil
 }
 
-func (m *Module) generateWebhookToken(ctx context.Context, trigger *config.EventingTrigger, doc interface{}) (string, error) {
+func (m *Module) generateWebhookToken(ctx context.Context, trigger *config.EventingTrigger, doc, newDoc interface{}) (string, error) {
 	var req interface{}
 	var err error
 
 	switch trigger.Tmpl {
 	case config.TemplatingEngineGo:
 		if tmpl, p := m.templates[getGoTemplateKey("claim", trigger.ID)]; p {
-			req, err = tmpl2.GoTemplate(ctx, tmpl, trigger.OpFormat, "", nil, doc)
+			req, err = tmpl2.GoTemplate(ctx, tmpl, trigger.OpFormat, "", nil, map[string]interface{}{"payload": doc, "newPayload": newDoc})
 			if err != nil {
 				return "", err
 			}

@@ -429,6 +429,7 @@ type EventingTrigger struct {
 	RequestTemplate string            `json:"requestTemplate,omitempty" yaml:"requestTemplate,omitempty"`
 	OpFormat        string            `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
 	Claims          string            `json:"claims" yaml:"claims"`
+	Filter          *Rule             `json:"filter" yaml:"filter"`
 }
 
 // SchemaObject is the body of the request for adding schema

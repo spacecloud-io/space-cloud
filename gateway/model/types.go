@@ -45,6 +45,7 @@ type AuthEventingInterface interface {
 	GetInternalAccessToken(ctx context.Context) (string, error)
 	GetSCAccessToken(ctx context.Context) (string, error)
 	IsEventingOpAuthorised(ctx context.Context, project, token string, event *QueueEventRequest) (RequestParams, error)
+	MatchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}, returnWhere ReturnWhereStub) (*PostProcess, error)
 }
 
 // AuthSyncManInterface is an interface consisting of functions of auth module used by sync man

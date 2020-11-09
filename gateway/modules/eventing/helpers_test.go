@@ -228,8 +228,7 @@ func Test_convertToArray(t *testing.T) {
 
 func TestModule_getMatchingRules(t *testing.T) {
 	type args struct {
-		name    string
-		options map[string]string
+		req *model.QueueEventRequest
 	}
 	tests := []struct {
 		name string
@@ -242,7 +241,7 @@ func TestModule_getMatchingRules(t *testing.T) {
 			m: &Module{config: &config.Eventing{
 				Rules:         map[string]*config.EventingTrigger{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
 				InternalRules: map[string]*config.EventingTrigger{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
-			args: args{name: "name", options: map[string]string{"option": "value"}},
+			args: args{req: &model.QueueEventRequest{Type: "name", Options: map[string]string{"option": "value"}}},
 			want: []*config.EventingTrigger{},
 		},
 		{
@@ -250,7 +249,7 @@ func TestModule_getMatchingRules(t *testing.T) {
 			m: &Module{config: &config.Eventing{
 				Rules:         map[string]*config.EventingTrigger{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
 				InternalRules: map[string]*config.EventingTrigger{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
-			args: args{name: "rule", options: map[string]string{"wrongOption": "value"}},
+			args: args{req: &model.QueueEventRequest{Type: "rule", Options: map[string]string{"wrong-option": "value"}}},
 			want: []*config.EventingTrigger{},
 		},
 		{
@@ -258,7 +257,7 @@ func TestModule_getMatchingRules(t *testing.T) {
 			m: &Module{config: &config.Eventing{
 				Rules:         map[string]*config.EventingTrigger{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
 				InternalRules: map[string]*config.EventingTrigger{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
-			args: args{name: "rule", options: map[string]string{"option": "value"}},
+			args: args{req: &model.QueueEventRequest{Type: "rule", Options: map[string]string{"option": "value"}}},
 			want: []*config.EventingTrigger{{Type: "rule", Retries: 0, Timeout: 0, ID: "some-rule", Options: map[string]string{"option": "value"}}},
 		},
 		{
@@ -266,13 +265,13 @@ func TestModule_getMatchingRules(t *testing.T) {
 			m: &Module{config: &config.Eventing{
 				Rules:         map[string]*config.EventingTrigger{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
 				InternalRules: map[string]*config.EventingTrigger{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
-			args: args{name: "internalRule", options: map[string]string{"option": "value"}},
+			args: args{req: &model.QueueEventRequest{Type: "internalRule", Options: map[string]string{"option": "value"}}},
 			want: []*config.EventingTrigger{{Type: "internalRule", Retries: 0, Timeout: 0, ID: "some-internal-rule", Options: map[string]string{"option": "value"}}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.m.getMatchingRules(tt.args.name, tt.args.options); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.m.getMatchingRules(context.Background(), tt.args.req); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Module.getMatchingRules() got = %v, want %v", got, tt.want)
 			}
 		})
