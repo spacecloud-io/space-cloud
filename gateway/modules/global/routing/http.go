@@ -19,6 +19,12 @@ type modulesInterface interface {
 	Auth() *auth.Module
 }
 
+var httpClient = http.Client{
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
+
 // HandleRoutes handles incoming http requests and routes them according to the configured rules.
 func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
@@ -36,7 +42,7 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 			return
 		}
 
-		token, auth, status, err := r.modifyRequest(request.Context(), modules, route, request)
+		token, claims, status, err := r.modifyRequest(request.Context(), modules, route, request)
 		if err != nil {
 			writer.WriteHeader(status)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
@@ -59,7 +65,7 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 		}
 
 		// TODO: Use http2 client if that was the incoming request protocol
-		response, err := http.DefaultClient.Do(request)
+		response, err := httpClient.Do(request)
 		if err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
@@ -68,7 +74,7 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 		}
 		defer utils.CloseTheCloser(response.Body)
 
-		if err := r.modifyResponse(request.Context(), response, route, token, auth); err != nil {
+		if err := r.modifyResponse(request.Context(), response, route, token, claims); err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
 			return
@@ -128,7 +134,7 @@ func setRequest(ctx context.Context, request *http.Request, route *config.Route,
 	return nil
 }
 
-func prepareHeaders(ctx context.Context, headers config.Headers, state map[string]interface{}) config.Headers {
+func prepareHeaders(headers config.Headers, state map[string]interface{}) config.Headers {
 	out := make([]config.Header, len(headers))
 	for i, header := range headers {
 		// First create a new header object
