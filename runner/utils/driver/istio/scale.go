@@ -43,7 +43,7 @@ func (i *Istio) WaitForService(ctx context.Context, service *model.Service) erro
 
 // ScaleUp is notifies keda to scale up a service
 func (i *Istio) ScaleUp(ctx context.Context, projectID, serviceID, version string) error {
-	if err := i.kedaScaler.ScaleUp(projectID, serviceID, version); err != nil {
+	if err := i.kedaScaler.ScaleUp(ctx, projectID, serviceID, version); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to scale up service", err, map[string]interface{}{"project": projectID, "service": serviceID, "version": version})
 	}
 

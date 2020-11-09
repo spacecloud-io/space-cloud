@@ -151,9 +151,6 @@ func getScaleConfigFromKedaConfig(service, version string, scaledObjList []v1alp
 		autoScaleTriggers[i] = t
 	}
 
-	// Get triggers for cpu and memory usage as well
-	autoScaleTriggers = append(autoScaleTriggers, getTriggersFromAdvancedConfig(scaledObject.Spec.Advanced)...)
-
 	// Prepare an auto scale object
 	autoScale := &model.AutoScaleConfig{
 		CoolDownInterval: *scaledObject.Spec.CooldownPeriod,
@@ -193,51 +190,18 @@ func getTriggerAuthForTrigger(trigger string, refs []v1alpha1.TriggerAuthenticat
 	}
 
 	// Prepare mapping
-	var secretName string
 	mapping := make([]model.AutoScaleAuthRefMapping, len(triggerAuth.Spec.SecretTargetRef))
 	for i, ref := range triggerAuth.Spec.SecretTargetRef {
 		mapping[i] = model.AutoScaleAuthRefMapping{
 			Parameter: ref.Parameter,
-			Key:       ref.Key,
+			Key:       fmt.Sprintf("secrets.%s.%s", ref.Name, ref.Key),
 		}
-
-		// Extract secret name as well. We will have a consistent secret name for each parameter
-		secretName = ref.Name
 	}
 
 	// Finally prepare and return the auto scaling auth reference
 	return &model.AutoScaleAuthRef{
-		SecretName:    secretName,
 		SecretMapping: mapping,
 	}
-}
-
-func getTriggersFromAdvancedConfig(advancedConfig *v1alpha1.AdvancedConfig) []model.AutoScaleTrigger {
-	triggers := make([]model.AutoScaleTrigger, 0)
-
-	// Return if advanced config is nil
-	if advancedConfig == nil {
-		return triggers
-	}
-
-	// Return if hpa config is nil
-	hpa := advancedConfig.HorizontalPodAutoscalerConfig
-	if hpa == nil {
-		return triggers
-	}
-
-	// Iterate over resource metrics to get resource scalers
-	for _, config := range hpa.ResourceMetrics {
-		triggers = append(triggers, model.AutoScaleTrigger{
-			Name: string(config.Name),
-			Type: string(config.Name),
-			MetaData: map[string]string{
-				"target": strconv.Itoa(int(*config.Target.AverageUtilization)),
-			},
-		})
-	}
-
-	return triggers
 }
 
 func extractPreferredServiceAffinityObject(arr []v1.WeightedPodAffinityTerm, multiplier int32) []model.Affinity {

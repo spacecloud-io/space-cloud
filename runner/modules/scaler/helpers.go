@@ -1,12 +1,23 @@
 package scaler
 
 import (
+	"context"
 	"fmt"
+	"time"
 )
 
+type isActiveStream struct {
+	ch chan bool
+}
+
+func (s *isActiveStream) Notify() {
+	s.ch <- true
+}
+
 func (s *Scaler) isStreamActive(project, service, version, minReplicas string) bool {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	// Create a context
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// Return true if min replicas is not equal to zero.
 	if minReplicas != "0" {
@@ -14,12 +25,23 @@ func (s *Scaler) isStreamActive(project, service, version, minReplicas string) b
 	}
 
 	// Check if stream exists
-	stream, p := s.isActiveStreams[generateKey(project, service, version)]
-	if !p {
-		return false
-	}
+	count := 0
+	for {
+		// Return if count is 3
+		if count == 3 {
+			return false
+		}
 
-	return stream.IsActive()
+		// Check if key exists
+		exists, err := s.pubsubClient.CheckIfKeyExists(ctx, generateKey(project, service, version))
+		if err != nil {
+			count++
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		return exists
+	}
 }
 
 func (s *Scaler) addIsActiveStream(project, service, version string, ch chan bool) {
@@ -50,5 +72,5 @@ func (s *Scaler) removeIsActiveStream(project, service, version string) {
 }
 
 func generateKey(project, service, version string) string {
-	return fmt.Sprintf("%s--%s--%s", project, service, version)
+	return fmt.Sprintf("%s---%s---%s", project, service, version)
 }

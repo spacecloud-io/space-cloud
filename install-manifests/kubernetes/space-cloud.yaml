@@ -248,14 +248,16 @@ spec:
               value: "some-secret"
             - name: "CLUSTER_ID"
               value: "first-cluster"
+            - name: "REDIS_CONN"
+              value: "redis.space-cloud.svc.cluster.local:6379"
           ports:
             - containerPort: 4050
             - containerPort: 4055
             - containerPort: 4060
           resources:
             requests:
-              memory: "1024Mi"
-              cpu: "500m"
+              memory: "512Mi"
+              cpu: "250m"
 ---
 #############################################################################################
 ########################## Configure the istio side of the gateway  #########################
@@ -393,7 +395,7 @@ metadata:
   labels:
     app: gateway
 spec:
-  replicas: 2
+  replicas: 1
   serviceName: gateway
   selector:
     matchLabels:

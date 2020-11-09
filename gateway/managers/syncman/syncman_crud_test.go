@@ -362,7 +362,7 @@ func TestManager_GetPreparedQuery(t *testing.T) {
 			name: "dbAlias is empty",
 			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "id"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "*", id: "id", project: "1"},
-			want: []interface{}{&preparedQueryResponse{ID: "id", DBAlias: "alias", SQL: "field"}},
+			want: []interface{}{&config.DatbasePreparedQuery{ID: "id", DbAlias: "alias", SQL: "field"}},
 		},
 		{
 			name:    "dbAlias is not present in config",
@@ -380,13 +380,13 @@ func TestManager_GetPreparedQuery(t *testing.T) {
 			name: "id is not empty and present in prepared queries",
 			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DBName: "DBName", DbAlias: "alias"}}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "key"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "key", SQL: "field"}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", id: "key", project: "1"},
-			want: []interface{}{&preparedQueryResponse{ID: "key", DBAlias: "alias", SQL: "field"}},
+			want: []interface{}{&config.DatbasePreparedQuery{ID: "key", DbAlias: "alias", SQL: "field"}},
 		},
 		{
 			name: "id is empty",
 			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DBName: "DBName", DbAlias: "alias"}}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "key"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "key", SQL: "field"}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", id: "*", project: "1"},
-			want: []interface{}{&preparedQueryResponse{ID: "key", DBAlias: "alias", SQL: "field"}},
+			want: []interface{}{&config.DatbasePreparedQuery{ID: "key", DbAlias: "alias", SQL: "field"}},
 		},
 	}
 	for _, tt := range tests {
@@ -1658,13 +1658,13 @@ func TestManager_GetDatabaseConfig(t *testing.T) {
 			name: "got db alias config",
 			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{Conn: "mongo:conn", Type: "mongo", Enabled: true, DbAlias: "alias"}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", project: "1"},
-			want: []interface{}{config.Crud{"alias": {Enabled: true, Conn: "mongo:conn", Type: "mongo"}}},
+			want: []interface{}{&config.DatabaseConfig{DbAlias: "alias", Enabled: true, Conn: "mongo:conn", Type: "mongo"}},
 		},
 		{
 			name: "got services config",
 			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{Conn: "mongo:conn", Type: "mongo", Enabled: true, DbAlias: "alias"}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "*", project: "1"},
-			want: []interface{}{config.Crud{"alias": {Enabled: true, Conn: "mongo:conn", Type: "mongo"}}},
+			want: []interface{}{&config.DatabaseConfig{DbAlias: "alias", Enabled: true, Conn: "mongo:conn", Type: "mongo"}},
 		},
 	}
 	for _, tt := range tests {
@@ -1711,19 +1711,19 @@ func TestManager_GetCollectionRules(t *testing.T) {
 			name: "got collection rules for specific db alias and collection",
 			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseRules: config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{Table: "tableName", IsRealTimeEnabled: true, DbAlias: "alias", Rules: map[string]*config.Rule{"create": {ID: "id"}}}}}}}},
 			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
-			want: []interface{}{map[string]*dbRulesResponse{"alias-tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"create": {ID: "id"}}}}},
+			want: []interface{}{&config.DatabaseRule{Table: "tableName", DbAlias: "alias", IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"create": {ID: "id"}}}},
 		},
 		{
 			name: "col is empty and got collection rules",
 			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseRules: config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{Table: "tableName", IsRealTimeEnabled: true, DbAlias: "alias", Rules: map[string]*config.Rule{"create": {ID: "id"}}}}}}}},
 			args: args{ctx: context.Background(), col: "*", dbAlias: "alias", project: "1"},
-			want: []interface{}{map[string]*dbRulesResponse{"alias-tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"create": {ID: "id"}}}}},
+			want: []interface{}{&config.DatabaseRule{Table: "tableName", DbAlias: "alias", IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"create": {ID: "id"}}}},
 		},
 		{
 			name: "col and dbalias is empty and got collection rules",
 			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseRules: config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{Table: "tableName", IsRealTimeEnabled: true, DbAlias: "alias", Rules: map[string]*config.Rule{"create": {ID: "id"}}}}}}}},
 			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "1"},
-			want: []interface{}{map[string]*dbRulesResponse{"alias-tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"create": {ID: "id"}}}}},
+			want: []interface{}{&config.DatabaseRule{Table: "tableName", DbAlias: "alias", IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"create": {ID: "id"}}}},
 		},
 	}
 	for _, tt := range tests {
