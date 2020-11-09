@@ -184,12 +184,14 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 				if err != nil {
 					helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error:%v", err), nil)
 				}
-			case "DATE", "DATETIME":
+			case "DATETIME":
 				if dbType == model.MySQL {
 					d, _ := time.Parse("2006-01-02 15:04:05", string(v))
 					mapping[colType.Name()] = d.Format(time.RFC3339)
 					continue
 				}
+				mapping[colType.Name()] = string(v)
+			case "TIME", "DATE": // For mysql
 				mapping[colType.Name()] = string(v)
 			}
 		case int64:
@@ -202,8 +204,16 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 				}
 			}
 		case time.Time:
+			switch typeName {
+			// For postgres & SQL server
+			case "TIME":
+				mapping[colType.Name()] = v.Format("15:04:05")
+				continue
+			case "DATE":
+				mapping[colType.Name()] = v.Format("2006-01-02")
+				continue
+			}
 			mapping[colType.Name()] = v.UTC().Format(time.RFC3339Nano)
-
 		case primitive.DateTime:
 			mapping[colType.Name()] = v.Time().UTC().Format(time.RFC3339Nano)
 		}
