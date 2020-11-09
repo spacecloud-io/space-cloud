@@ -217,7 +217,10 @@ func (i *Istio) applyServiceRole(ctx context.Context, ns string, role *v12.Role)
 	if kubeErrors.IsNotFound(err) {
 		// Create a service role if it doesn't already exist
 		_, err := i.kube.RbacV1().Roles(ns).Create(ctx, role, metav1.CreateOptions{})
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create service role in project (%s)", ns), err, nil)
+		if err != nil {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create service role in project (%s)", ns), err, nil)
+		}
+		return nil
 	}
 	if err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get service role in project (%s)", ns), err, nil)
@@ -227,7 +230,10 @@ func (i *Istio) applyServiceRole(ctx context.Context, ns string, role *v12.Role)
 	prevServiceRole.Labels = role.Labels
 	prevServiceRole.Rules = role.Rules
 	_, err = i.kube.RbacV1().Roles(ns).Update(ctx, prevServiceRole, metav1.UpdateOptions{})
-	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to update service role in project (%s)", ns), err, nil)
+	if err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to update service role in project (%s)", ns), err, nil)
+	}
+	return nil
 }
 
 func (i *Istio) applyServiceRoleBinding(ctx context.Context, ns string, rolebinding *v12.RoleBinding) error {
@@ -235,7 +241,10 @@ func (i *Istio) applyServiceRoleBinding(ctx context.Context, ns string, rolebind
 	if kubeErrors.IsNotFound(err) {
 		// Create a service role binding if it doesn't already exist
 		_, err := i.kube.RbacV1().RoleBindings(ns).Create(ctx, rolebinding, metav1.CreateOptions{})
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create service role binding in project (%s)", ns), err, nil)
+		if err != nil {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create service role binding in project (%s)", ns), err, nil)
+		}
+		return nil
 	}
 	if err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get service role binding in project (%s)", ns), err, nil)
@@ -246,7 +255,10 @@ func (i *Istio) applyServiceRoleBinding(ctx context.Context, ns string, rolebind
 	prevServiceRoleBinding.Subjects = rolebinding.Subjects
 	prevServiceRoleBinding.RoleRef = rolebinding.RoleRef
 	_, err = i.kube.RbacV1().RoleBindings(ns).Update(ctx, prevServiceRoleBinding, metav1.UpdateOptions{})
-	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to update service role binding in project (%s)", ns), err, nil)
+	if err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to update service role binding in project (%s)", ns), err, nil)
+	}
+	return nil
 }
 
 func (i *Istio) applyServiceClusterRole(ctx context.Context, ns string, clusterRole *v12.ClusterRole) error {
@@ -254,7 +266,10 @@ func (i *Istio) applyServiceClusterRole(ctx context.Context, ns string, clusterR
 	if kubeErrors.IsNotFound(err) {
 		// Create a service clusterRole if it doesn't already exist
 		_, err := i.kube.RbacV1().ClusterRoles().Create(ctx, clusterRole, metav1.CreateOptions{})
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create service cluster role in project (%s)", ns), err, nil)
+		if err != nil {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create service cluster role in project (%s)", ns), err, nil)
+		}
+		return nil
 	}
 	if err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get service cluster role in project (%s)", ns), err, nil)
@@ -264,7 +279,10 @@ func (i *Istio) applyServiceClusterRole(ctx context.Context, ns string, clusterR
 	prevServiceClusterRole.Labels = clusterRole.Labels
 	prevServiceClusterRole.Rules = clusterRole.Rules
 	_, err = i.kube.RbacV1().ClusterRoles().Update(ctx, prevServiceClusterRole, metav1.UpdateOptions{})
-	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to update service cluster role in project (%s)", ns), err, nil)
+	if err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to update service cluster role in project (%s)", ns), err, nil)
+	}
+	return nil
 }
 
 func (i *Istio) applyServiceClusterRoleBinding(ctx context.Context, ns string, clusterRoleBinding *v12.ClusterRoleBinding) error {
@@ -272,7 +290,10 @@ func (i *Istio) applyServiceClusterRoleBinding(ctx context.Context, ns string, c
 	if kubeErrors.IsNotFound(err) {
 		// Create a service cluster role binding if it doesn't already exist
 		_, err := i.kube.RbacV1().ClusterRoleBindings().Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create service cluster role binding in project (%s)", ns), err, nil)
+		if err != nil {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create service cluster role binding in project (%s)", ns), err, nil)
+		}
+		return nil
 	}
 	if err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get service cluster role binding in project (%s)", ns), err, nil)
@@ -283,5 +304,8 @@ func (i *Istio) applyServiceClusterRoleBinding(ctx context.Context, ns string, c
 	prevServiceClusterRoleBinding.Subjects = clusterRoleBinding.Subjects
 	prevServiceClusterRoleBinding.RoleRef = clusterRoleBinding.RoleRef
 	_, err = i.kube.RbacV1().ClusterRoleBindings().Update(ctx, prevServiceClusterRoleBinding, metav1.UpdateOptions{})
-	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to update service cluster role binding in project (%s)", ns), err, nil)
+	if err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to update service cluster role binding in project (%s)", ns), err, nil)
+	}
+	return nil
 }

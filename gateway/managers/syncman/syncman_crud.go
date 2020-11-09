@@ -180,19 +180,19 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 			if !ok {
 				return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Prepared Queries with id (%s) not present in config", id), nil, nil)
 			}
-			return http.StatusOK, []interface{}{&preparedQueryResponse{ID: id, DBAlias: dbAlias, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments, Rule: preparedQuery.Rule}}, nil
+			return http.StatusOK, []interface{}{preparedQuery}, nil
 		}
 		coll := make([]interface{}, 0)
 		for _, value := range projectConfig.DatabasePreparedQueries {
 			if value.DbAlias == dbAlias {
-				coll = append(coll, &preparedQueryResponse{ID: value.ID, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: value.Rule})
+				coll = append(coll, value)
 			}
 		}
 		return http.StatusOK, coll, nil
 	}
 	coll := make([]interface{}, 0)
 	for _, dbPreparedQuery := range projectConfig.DatabasePreparedQueries {
-		coll = append(coll, &preparedQueryResponse{ID: dbPreparedQuery.ID, DBAlias: dbPreparedQuery.DbAlias, SQL: dbPreparedQuery.SQL, Arguments: dbPreparedQuery.Arguments, Rule: dbPreparedQuery.Rule})
+		coll = append(coll, dbPreparedQuery)
 	}
 	return http.StatusOK, coll, nil
 }
@@ -551,12 +551,12 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 		if !ok {
 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("specified dbAlias (%s) not present in config", dbAlias), nil, nil)
 		}
-		return http.StatusOK, []interface{}{config.Crud{dbAlias: {Enabled: dbConfig.Enabled, Conn: dbConfig.Conn, Type: dbConfig.Type, DBName: dbConfig.DBName}}}, nil
+		return http.StatusOK, []interface{}{dbConfig}, nil
 	}
 
 	services := []interface{}{}
 	for _, value := range projectConfig.DatabaseConfigs {
-		services = append(services, config.Crud{value.DbAlias: {Enabled: value.Enabled, Conn: value.Conn, Type: value.Type, DBName: value.DBName}})
+		services = append(services, value)
 	}
 	return http.StatusOK, services, nil
 }
@@ -576,23 +576,19 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 		if !ok {
 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("specified collection (%s) not present in config for dbAlias (%s) )", col, dbAlias), nil, nil)
 		}
-		return http.StatusOK, []interface{}{map[string]*dbRulesResponse{fmt.Sprintf("%s-%s", dbAlias, col): {IsRealTimeEnabled: collectionInfo.IsRealTimeEnabled, Rules: collectionInfo.Rules}}}, nil
+		return http.StatusOK, []interface{}{collectionInfo}, nil
 	} else if dbAlias != "*" {
-		coll := map[string]*dbRulesResponse{}
+		rules := make([]interface{}, 0)
 		for _, value := range projectConfig.DatabaseRules {
 			if value.DbAlias == dbAlias {
-				coll[fmt.Sprintf("%s-%s", dbAlias, value.Table)] = &dbRulesResponse{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
+				rules = append(rules, value)
 			}
 		}
-		return http.StatusOK, []interface{}{coll}, nil
+		return http.StatusOK, rules, nil
 	}
 	result := make([]interface{}, 0)
-	coll := map[string]*dbRulesResponse{}
 	for _, dbRule := range projectConfig.DatabaseRules {
-		coll[fmt.Sprintf("%s-%s", dbRule.DbAlias, dbRule.Table)] = &dbRulesResponse{IsRealTimeEnabled: dbRule.IsRealTimeEnabled, Rules: dbRule.Rules}
-	}
-	if len(coll) > 0 {
-		result = append(result, coll)
+		result = append(result, dbRule)
 	}
 	return http.StatusOK, result, nil
 }

@@ -16,7 +16,6 @@ import (
 	"istio.io/client-go/pkg/apis/networking/v1alpha3"
 	"istio.io/client-go/pkg/apis/security/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
 	v12 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -475,37 +474,6 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 	triggers := make([]v1alpha1.ScaleTriggers, 0)
 	for _, trigger := range service.AutoScale.Triggers {
 		switch trigger.Type {
-		case "cpu", "memory":
-			// Create an advanced config object if it doesn't already config
-			if advancedConfig == nil {
-				advancedConfig = &v1alpha1.AdvancedConfig{
-					HorizontalPodAutoscalerConfig: &v1alpha1.HorizontalPodAutoscalerConfig{
-						ResourceMetrics: make([]*v2beta2.ResourceMetricSource, 0, 1),
-					},
-				}
-			}
-
-			// Convert target to int32
-			targetString, p := trigger.MetaData["target"]
-			if !p {
-				return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Missing field (target) in scaling trigger (%s)", trigger.Type), nil, nil)
-			}
-			targetInt, err := strconv.Atoi(targetString)
-			if err != nil {
-				return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid value (%s) for field (target) in scaling trigger (%s)", targetString, trigger.Type), err, nil)
-			}
-			target := int32(targetInt)
-
-			// Add resource trigger to advanced config
-			resourceMetric := &v2beta2.ResourceMetricSource{
-				Name: v1.ResourceName(trigger.Type),
-				Target: v2beta2.MetricTarget{
-					Type:               v2beta2.UtilizationMetricType,
-					AverageUtilization: &target,
-				},
-			}
-			advancedConfig.HorizontalPodAutoscalerConfig.ResourceMetrics = append(advancedConfig.HorizontalPodAutoscalerConfig.ResourceMetrics, resourceMetric)
-
 		case "requests-per-second", "active-requests":
 			// Check if target is provided
 			target, p := trigger.MetaData["target"]
@@ -535,9 +503,15 @@ func (i *Istio) generateKedaConfig(ctx context.Context, service *model.Service) 
 				// Make the param mapping array
 				secretTargetRefs := make([]v1alpha1.AuthSecretTargetRef, len(trigger.AuthenticatedRef.SecretMapping))
 				for i, ref := range trigger.AuthenticatedRef.SecretMapping {
+					key := strings.TrimPrefix(ref.Key, "secrets.")
+					arr := strings.Split(key, ".")
+					if len(arr) != 2 {
+						return nil, nil, fmt.Errorf("invalid value (%s) provided for secret key", ref.Key)
+					}
+
 					secretTargetRefs[i] = v1alpha1.AuthSecretTargetRef{
-						Name:      trigger.AuthenticatedRef.SecretName,
-						Key:       ref.Key,
+						Name:      arr[0],
+						Key:       arr[1],
 						Parameter: ref.Parameter,
 					}
 				}
