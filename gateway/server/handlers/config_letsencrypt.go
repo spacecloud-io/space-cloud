@@ -58,37 +58,6 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 	}
 }
 
-// HandleDeleteLetsEncryptWhitelistedDomain returns the handler to delete white listed domains
-func HandleDeleteLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
-		defer cancel()
-
-		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(ctx, token, "letsencrypt", "modify", map[string]string{"project": projectID})
-		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
-		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
-		status, err := syncMan.DeleteProjectLetsEncryptDomains(ctx, projectID, reqParams)
-		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
-			return
-		}
-
-		_ = helpers.Response.SendOkayResponse(ctx, status, w)
-	}
-}
-
 // HandleGetEncryptWhitelistedDomain returns handler to get Encrypt White listed Domain
 func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

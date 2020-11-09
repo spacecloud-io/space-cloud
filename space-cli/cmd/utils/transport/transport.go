@@ -2,6 +2,7 @@ package transport
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,7 +21,7 @@ type transport interface {
 
 type def struct{}
 
-//Client todo
+// Client todo
 var Client transport
 
 func init() {
@@ -35,7 +36,8 @@ func (d *def) MakeHTTPRequest(method, url string, params map[string]string, vPtr
 	}
 	url = fmt.Sprintf("%s%s", account.ServerURL, url)
 
-	req, err := http.NewRequest(method, url, nil)
+	reqBody, _ := json.Marshal(map[string]string{})
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return err
 	}
@@ -129,7 +131,7 @@ func CloseTheCloser(c io.Closer) {
 	_ = c.Close()
 }
 
-//MocketAuthProviders used during test
+// MocketAuthProviders used during test
 type MocketAuthProviders struct {
 	mock.Mock
 }

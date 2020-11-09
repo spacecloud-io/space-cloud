@@ -31,7 +31,7 @@ func Test_deleteLetsencryptDomains(t *testing.T) {
 				{
 					method: "MakeHTTPRequest",
 					args: []interface{}{
-						http.MethodDelete,
+						http.MethodPost,
 						"/v1/config/projects/myproject/letsencrypt/config/letsencrypt",
 						map[string]string{},
 						new(model.Response),
@@ -53,7 +53,7 @@ func Test_deleteLetsencryptDomains(t *testing.T) {
 				{
 					method: "MakeHTTPRequest",
 					args: []interface{}{
-						http.MethodDelete,
+						http.MethodPost,
 						"/v1/config/projects/myproject/letsencrypt/config/letsencrypt",
 						map[string]string{},
 						new(model.Response),
