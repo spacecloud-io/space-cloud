@@ -64,7 +64,7 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, f
 		}
 
 		// default key
-		if field.FieldDefault != "" && field.AutoIncrement == "false" {
+		if field.FieldDefault != "" {
 			fieldDetails.IsDefault = true
 			if model.DBType(dbType) == model.SQLServer {
 				if fieldDetails.Kind == model.TypeBoolean {
@@ -87,8 +87,16 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, f
 		if field.FieldKey == "PRI" {
 			fieldDetails.IsPrimary = true
 		}
+
+		// Set auto increment
 		fieldDetails.AutoIncrementInfo = new(model.AutoIncrementInfo)
 		if field.AutoIncrement == "true" {
+			fieldDetails.AutoIncrementInfo = &model.AutoIncrementInfo{IsEnabled: true}
+		}
+		if model.DBType(dbType) == model.Postgres && strings.HasPrefix(field.FieldDefault, "nextval") {
+			// override the default value, this is a special case if a postgres column has a auto increment value, the default value that database returns is -> ( nextval(auto_increment_test_auto_increment_test_seq )
+			fieldDetails.Default = ""
+			fieldDetails.IsDefault = false
 			fieldDetails.AutoIncrementInfo = &model.AutoIncrementInfo{IsEnabled: true}
 		}
 

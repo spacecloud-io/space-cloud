@@ -54,10 +54,7 @@ CASE
     WHEN t.constraint_type = 'UNIQUE' THEN 'UNI'
     ELSE ''
 END AS "Key",
-CASE 
-	WHEN isc.data_type = 'bigint' AND t.constraint_type = 'PRIMARY KEY' THEN 'true'
-	ELSE 'false'
-END AS "AutoIncrement",
+'false' AS "AutoIncrement", --The value of auto increment is decided from the default value, if has prefix (nextval) we can safely consider it's an auto increment
 -- Set the null values to 50
 coalesce(isc.character_maximum_length,50) AS "VarcharSize"
 FROM information_schema.columns isc
@@ -72,18 +69,19 @@ ORDER BY isc.ordinal_position;`
 		args = append(args, col, project)
 	case model.SQLServer:
 
-		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' , 
-    case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')') else C.DATA_TYPE end as 'Type',
-    REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') as 'Default',
-       CASE
-           WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
-           WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'
-           WHEN TC.CONSTRAINT_TYPE = 'FOREIGN KEY' THEN 'MUL'
-           ELSE isnull(TC.CONSTRAINT_TYPE,'')
-           END AS 'Key',
-coalesce(c.CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize',
-'false' AS 'AutoIncrement'
+		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' ,
+                case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')') else C.DATA_TYPE end as 'Type',
+                REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') as 'Default',
+                CASE
+                    WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
+                    WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'
+                    WHEN TC.CONSTRAINT_TYPE = 'FOREIGN KEY' THEN 'MUL'
+                    ELSE isnull(TC.CONSTRAINT_TYPE,'')
+                    END AS 'Key',
+                coalesce(c.CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize',
+                CASE WHEN I.NAME IS NOT NULL THEN 'true' ELSE 'false' END AS 'AutoIncrement'
 FROM INFORMATION_SCHEMA.COLUMNS AS C
+         LEFT JOIN SYS.IDENTITY_COLUMNS I ON C.table_name = OBJECT_NAME(I.OBJECT_ID) AND C.COLUMN_NAME = I.NAME
          FULL JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS CC
                    ON C.COLUMN_NAME = CC.COLUMN_NAME
          FULL JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS TC
