@@ -443,6 +443,18 @@ func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.
 
 // DeleteCollectionRules deletes the collection rules of the database
 func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, col string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

@@ -94,6 +94,18 @@ func (s *Manager) GetUserManagement(ctx context.Context, project, providerID str
 
 // DeleteUserManagement deletes the user management
 func (s *Manager) DeleteUserManagement(ctx context.Context, project, provider string, reqParams model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, reqParams)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
