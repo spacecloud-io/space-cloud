@@ -177,8 +177,11 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			if !realColumnInfo.IsLinked {
 				if c.realColumnInfo.Kind != c.currentColumnInfo.Kind || (c.realColumnInfo.Kind == model.TypeID && c.currentColumnInfo.Kind == model.TypeID && c.realColumnInfo.TypeIDSize != c.currentColumnInfo.TypeIDSize) {
 					// As we are making sure that tables can only be created with primary key, this condition will occur if primary key is removed from a field
-					if !c.realColumnInfo.IsPrimary && c.currentColumnInfo.IsPrimary {
+					if c.realColumnInfo.IsPrimary {
 						return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Cannot change type of field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), nil, nil)
+					}
+					if !c.realColumnInfo.IsPrimary && c.currentColumnInfo.IsPrimary {
+						return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Cannot remove primary constraint on field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), nil, nil)
 					}
 					// for changing the type of column, drop the column then add new column
 					queries := c.modifyColumnType(dbType)

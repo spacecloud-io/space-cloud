@@ -143,6 +143,17 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 					switch directive.Name.Value {
 					case model.DirectivePrimary:
 						fieldTypeStuct.IsPrimary = true
+						for _, argument := range directive.Arguments {
+							if argument.Name.Value == "autoIncrement" {
+								val, _ := utils.ParseGraphqlValue(argument.Value, nil)
+								switch t := val.(type) {
+								case bool:
+									fieldTypeStuct.IsAutoIncrement = t
+								default:
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, argument.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": argument.Name.Value})
+								}
+							}
+						}
 					case model.DirectiveCreatedAt:
 						fieldTypeStuct.IsCreatedAt = true
 					case model.DirectiveUpdatedAt:
@@ -320,6 +331,13 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *model.Field
 			return model.TypeBoolean, nil
 		case model.TypeJSON:
 			return model.TypeJSON, nil
+		case model.TypeTime:
+			return model.TypeTime, nil
+		case model.TypeDate:
+			return model.TypeDate, nil
+		case model.TypeUUID:
+			return model.TypeUUID, nil
+
 		default:
 			if fieldTypeStuct.IsLinked {
 				// Since the field is actually a link. We'll store the type as is. This type must correspond to a table or a primitive type

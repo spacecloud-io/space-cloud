@@ -35,6 +35,10 @@ func (s *Schema) SchemaValidator(ctx context.Context, col string, collectionFiel
 			continue
 		}
 
+		if fieldValue.IsAutoIncrement {
+			continue
+		}
+
 		if !ok && fieldValue.IsDefault {
 			value = fieldValue.Default
 			ok = true
@@ -133,7 +137,7 @@ func (s *Schema) checkType(ctx context.Context, col string, value interface{}, f
 				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col), nil, nil)
 			}
 			return unitTimeInRFC3339Nano, nil
-		case model.TypeID, model.TypeString:
+		case model.TypeID, model.TypeString, model.TypeTime, model.TypeDate:
 			return value, nil
 		default:
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type received for field %s in collection %s - wanted %s got String", fieldValue.FieldName, col, fieldValue.Kind), nil, nil)

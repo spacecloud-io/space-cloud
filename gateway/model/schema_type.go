@@ -17,21 +17,21 @@ type (
 		Kind                string `json:"kind"`
 		// Directive           string
 		NestedObject Fields `json:"nestedObject"`
-
+		IsPrimary    bool   `json:"isPrimary"`
 		// For directives
-		IsPrimary   bool             `json:"isPrimary"`
-		IsIndex     bool             `json:"isIndex"`
-		IsUnique    bool             `json:"isUnique"`
-		IsCreatedAt bool             `json:"isCreatedAt"`
-		IsUpdatedAt bool             `json:"isUpdatedAt"`
-		IsLinked    bool             `json:"isLinked"`
-		IsForeign   bool             `json:"isForeign"`
-		IsDefault   bool             `json:"isDefault"`
-		IndexInfo   *TableProperties `json:"indexInfo"`
-		LinkedTable *TableProperties `json:"linkedTable"`
-		JointTable  *TableProperties `json:"jointTable"`
-		Default     interface{}      `json:"default"`
-		TypeIDSize  int              `json:"size"`
+		IsAutoIncrement bool             `json:"isAutoIncrement"`
+		IsIndex         bool             `json:"isIndex"`
+		IsUnique        bool             `json:"isUnique"`
+		IsCreatedAt     bool             `json:"isCreatedAt"`
+		IsUpdatedAt     bool             `json:"isUpdatedAt"`
+		IsLinked        bool             `json:"isLinked"`
+		IsForeign       bool             `json:"isForeign"`
+		IsDefault       bool             `json:"isDefault"`
+		IndexInfo       *TableProperties `json:"indexInfo"`
+		LinkedTable     *TableProperties `json:"linkedTable"`
+		JointTable      *TableProperties `json:"jointTable"`
+		Default         interface{}      `json:"default"`
+		TypeIDSize      int              `json:"size"`
 	}
 
 	// TableProperties are properties of the table
@@ -46,6 +46,12 @@ type (
 )
 
 const (
+	// TypeDate is variable used for Variable of type Date
+	TypeDate string = "Date"
+	// TypeTime is variable used for Variable of type Time
+	TypeTime string = "Time"
+	// TypeUUID is variable used for Variable of type UUID
+	TypeUUID string = "UUID"
 	// TypeInteger is variable used for Variable of type Integer
 	TypeInteger string = "Integer"
 	// TypeString is variable used for Variable of type String
@@ -94,12 +100,13 @@ const (
 
 // InspectorFieldType is the type for storing sql inspection information
 type InspectorFieldType struct {
-	FieldName    string `db:"Field"`
-	FieldType    string `db:"Type"`
-	FieldNull    string `db:"Null"`
-	FieldKey     string `db:"Key"`
-	FieldDefault string `db:"Default"`
-	VarcharSize  int    `db:"VarcharSize"`
+	FieldName     string `db:"Field"`
+	FieldType     string `db:"Type"`
+	FieldNull     string `db:"Null"`
+	FieldKey      string `db:"Key"`
+	FieldDefault  string `db:"Default"`
+	AutoIncrement string `db:"AutoIncrement"`
+	VarcharSize   int    `db:"VarcharSize"`
 }
 
 // ForeignKeysType is the type for storing  foreignkeys information of sql inspection
