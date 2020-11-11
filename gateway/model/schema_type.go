@@ -16,29 +16,22 @@ type (
 		IsList              bool   `json:"isList"`
 		Kind                string `json:"kind"`
 		// Directive           string
-		NestedObject      Fields             `json:"nestedObject"`
-		AutoIncrementInfo *AutoIncrementInfo `json:"autoIncrementInfo"`
+		NestedObject Fields `json:"nestedObject"`
+		IsPrimary    bool   `json:"isPrimary"`
 		// For directives
-		IsPrimary   bool             `json:"isPrimary"`
-		IsIndex     bool             `json:"isIndex"`
-		IsUnique    bool             `json:"isUnique"`
-		IsCreatedAt bool             `json:"isCreatedAt"`
-		IsUpdatedAt bool             `json:"isUpdatedAt"`
-		IsLinked    bool             `json:"isLinked"`
-		IsForeign   bool             `json:"isForeign"`
-		IsDefault   bool             `json:"isDefault"`
-		IndexInfo   *TableProperties `json:"indexInfo"`
-		LinkedTable *TableProperties `json:"linkedTable"`
-		JointTable  *TableProperties `json:"jointTable"`
-		Default     interface{}      `json:"default"`
-		TypeIDSize  int              `json:"size"`
-	}
-
-	// AutoIncrementInfo stores auto increment info of primary key
-	AutoIncrementInfo struct {
-		IsEnabled   bool `json:"IsEnabled"`
-		StartFrom   int  `json:"startFrom"`
-		IncrementBy int  `json:"incrementBy"`
+		IsAutoIncrement bool             `json:"isAutoIncrement"`
+		IsIndex         bool             `json:"isIndex"`
+		IsUnique        bool             `json:"isUnique"`
+		IsCreatedAt     bool             `json:"isCreatedAt"`
+		IsUpdatedAt     bool             `json:"isUpdatedAt"`
+		IsLinked        bool             `json:"isLinked"`
+		IsForeign       bool             `json:"isForeign"`
+		IsDefault       bool             `json:"isDefault"`
+		IndexInfo       *TableProperties `json:"indexInfo"`
+		LinkedTable     *TableProperties `json:"linkedTable"`
+		JointTable      *TableProperties `json:"jointTable"`
+		Default         interface{}      `json:"default"`
+		TypeIDSize      int              `json:"size"`
 	}
 
 	// TableProperties are properties of the table

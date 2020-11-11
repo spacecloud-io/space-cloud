@@ -136,7 +136,6 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 				FieldName:  field.Name.Value,
 				TypeIDSize: 50,
 			}
-			fieldTypeStuct.AutoIncrementInfo = new(model.AutoIncrementInfo)
 			if len(field.Directives) > 0 {
 				// Loop over all directives
 
@@ -149,31 +148,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								val, _ := utils.ParseGraphqlValue(argument.Value, nil)
 								switch t := val.(type) {
 								case bool:
-									fieldTypeStuct.AutoIncrementInfo.IsEnabled = t
-									fieldTypeStuct.AutoIncrementInfo.IncrementBy = 1
-									fieldTypeStuct.AutoIncrementInfo.StartFrom = 1
-								case map[string]interface{}:
-									value := t["incrementBy"]
-									if value == nil {
-										value = 1
-									}
-									incrementBy, ok := value.(int)
-									if !ok {
-										return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected int", fieldTypeStuct.FieldName, directive.Name.Value, argument.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": argument.Name.Value})
-									}
-
-									value = t["startFrom"]
-									if value == nil {
-										value = 1
-									}
-									startFrom, ok := value.(int)
-									if !ok {
-										return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected int", fieldTypeStuct.FieldName, directive.Name.Value, argument.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": argument.Name.Value})
-									}
-
-									fieldTypeStuct.AutoIncrementInfo.IsEnabled = true
-									fieldTypeStuct.AutoIncrementInfo.IncrementBy = incrementBy
-									fieldTypeStuct.AutoIncrementInfo.StartFrom = startFrom
+									fieldTypeStuct.IsAutoIncrement = t
 								default:
 									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, argument.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": argument.Name.Value})
 								}

@@ -35,7 +35,7 @@ func (s *Schema) SchemaValidator(ctx context.Context, col string, collectionFiel
 			continue
 		}
 
-		if fieldValue.AutoIncrementInfo.IsEnabled {
+		if fieldValue.IsAutoIncrement {
 			continue
 		}
 

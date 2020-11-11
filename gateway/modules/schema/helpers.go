@@ -76,7 +76,7 @@ func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key must be not null", nil, nil)
 	}
 
-	if realFieldStruct.AutoIncrementInfo.IsEnabled && realFieldStruct.Kind != model.TypeInteger {
+	if realFieldStruct.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key with auto increment is only applicable on type integer", nil, nil)
 	}
 
@@ -314,10 +314,10 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 				continue
 			}
 			var autoIncrement string
-			if realFieldStruct.AutoIncrementInfo.IsEnabled {
+			if realFieldStruct.IsAutoIncrement {
 				switch model.DBType(dbType) {
 				case model.SQLServer:
-					autoIncrement = fmt.Sprintf(" IDENTITY(%d,%d)", realFieldStruct.AutoIncrementInfo.StartFrom, realFieldStruct.AutoIncrementInfo.IncrementBy)
+					autoIncrement = " IDENTITY(1,1)"
 
 				case model.MySQL:
 					autoIncrement = "AUTO_INCREMENT"
