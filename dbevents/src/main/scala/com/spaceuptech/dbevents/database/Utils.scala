@@ -1,8 +1,7 @@
 package com.spaceuptech.dbevents.database
 
 import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-import java.util.{Calendar, HashMap, Properties}
+import java.util.{Calendar, Properties}
 import java.util.concurrent.{Callable, ExecutorService}
 import java.util.function.Consumer
 
@@ -26,7 +25,7 @@ object Utils {
 
     // Start the offsetStore
     val offsetStore = new MongoStore()
-    offsetStore.setName(s"$projectId-$dbAlias")
+    offsetStore.setName(s"dbevents-$projectId-$dbAlias")
     offsetStore.start()
 
     // Retrieve the resume token
@@ -44,7 +43,7 @@ object Utils {
         // Check if 60 minutes have elapsed since last timer
         val cal = Calendar.getInstance()
         cal.setTime(t)
-        cal.add(Calendar.MINUTE, 60)
+        cal.add(Calendar.MINUTE, 1)
 
         if (Calendar.getInstance().getTime.after(cal.getTime)) {
           t = Calendar.getInstance().getTime
@@ -103,8 +102,11 @@ object Utils {
 
         var w = db.watch().fullDocument(FullDocument.UPDATE_LOOKUP)
         resumeToken match {
-          case Some(value) => w = w.resumeAfter(value)
+          case Some(value) =>
+            println("Mongo resume token found:", value.toJson)
+            w = w.startAfter(value)
           case None =>
+            println("Mongo resume nothing")
         }
 
         w.forEach(consumer)
@@ -119,15 +121,35 @@ object Utils {
   }
 
   def mongoDocumentKeyToMap(find: BsonDocument): Map[String, Any] =  {
-    val id = find.getObjectId("_id").getValue.toHexString
+    var id: String = ""
+    val field = find.get("_id")
+
+    if (field.isObjectId) {
+      id = field.asObjectId().getValue.toHexString
+    } else if (field.isString) {
+      id = field.asString().getValue
+    } else {
+      id = field.toString
+    }
+
     Map("_id" -> id)
   }
 
   def mongoDocumentToMap(doc: Document): Map[String, Any] =  {
     implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
 
+    // Convert to json object
     val jsonString = doc.toJson
-    parse(jsonString).extract[Map[String, Any]]
+    var m = parse(jsonString).extract[Map[String, Any]]
+
+    // See _id is an object id
+    try {
+      m += "_id" -> doc.getObjectId("_id").toHexString
+    } catch {
+      case _: Throwable =>
+    }
+
+    m
   }
 
   def getMongoSource(projectId: String, dbAlias: String, doc: ChangeStreamDocument[Document]): ChangeRecordPayloadSource = {
@@ -159,7 +181,9 @@ object Utils {
           try {
             // Parse the json value and forward it to our actor
             val payload = parse(jsonString).extract[ChangeRecordPayload]
-            actor ! ChangeRecord(payload, source.project, source.dbAlias, source.dbType)
+            if (payload.source.table != "invocation_logs" && payload.source.table != "event_logs") {
+              actor ! ChangeRecord(payload, source.project, source.dbAlias, source.dbType)
+            }
           } catch {
             case ex: Throwable => println(s"Unable to parse database change event (${source.project}:${source.dbAlias}) - ${ex.getMessage}")
           }
@@ -173,11 +197,13 @@ object Utils {
   }
 
   def prepareMySQLConfig(source: DatabaseSource): Properties = {
+    val name = generateConnectorName(source)
+
     val props = io.debezium.config.Configuration.empty().asProperties()
     props.setProperty("name", generateConnectorName(source))
     props.setProperty("connector.class", "io.debezium.connector.mysql.MySqlConnector")
     props.setProperty("offset.storage", getOffsetStorageClass)
-    props.setProperty("offset.storage.file.filename", "./offsets.dat")
+    props.setProperty("offset.storage.file.filename", s"./dbevents-offsets-$name.dat")
     props.setProperty("offset.flush.interval.ms", "60000")
     props.setProperty("converter.schemas.enable", "false")
     /* begin connector properties */
@@ -189,7 +215,7 @@ object Utils {
     props.setProperty("database.server.name", s"${generateConnectorName(source)}_connector")
     props.setProperty("database.ssl.mode", source.config.getOrElse("sslMode", "disabled"))
     props.setProperty("database.history", getDatabaseHistoryStorageClass)
-    props.setProperty("database.history.file.filename", "./dbhistory.dat")
+    props.setProperty("database.history.file.filename", s"./dbevents-dbhistory-$name.dat")
     props.setProperty("table.exclude.list", "event_logs,invocation_logs")
 
     props
@@ -202,7 +228,7 @@ object Utils {
     props.setProperty("name", name)
     props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
     props.setProperty("offset.storage", getOffsetStorageClass)
-    props.setProperty("offset.storage.file.filename", "./offsets.dat")
+    props.setProperty("offset.storage.file.filename", s"./dbevents-offsets-$name.dat")
     props.setProperty("offset.flush.interval.ms", "60000")
     props.setProperty("converter.schemas.enable", "false")
     /* begin connector properties */
@@ -226,7 +252,7 @@ object Utils {
     props.setProperty("name", name)
     props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
     props.setProperty("offset.storage", getOffsetStorageClass)
-    props.setProperty("offset.storage.file.filename", "./offsets.dat")
+    props.setProperty("offset.storage.file.filename", s"./dbevents-offsets-$name.dat")
     props.setProperty("offset.flush.interval.ms", "60000")
     props.setProperty("converter.schemas.enable", "false")
     /* begin connector properties */

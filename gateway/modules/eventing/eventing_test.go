@@ -46,7 +46,7 @@ func TestModule_SetConfig(t *testing.T) {
 
 			tt.m.schema = mockSchema
 
-			if err := tt.m.SetConfig(tt.args.eventing); (err != nil) != tt.wantErr {
+			if err := tt.m.SetConfig("projectID", tt.args.eventing); (err != nil) != tt.wantErr {
 				t.Errorf("Module.SetConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

@@ -30,6 +30,11 @@ func (m *Module) IsEnabled() bool {
 func (m *Module) QueueAdminEvent(ctx context.Context, req *model.QueueEventRequest) error {
 	batchID := m.generateBatchID()
 
+	// Prepare the find object for update and delete events
+	if err := m.prepareFindObject(req); err != nil {
+		return err
+	}
+
 	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to queue admin event cannot batch requests", err, nil)
 	}
@@ -77,8 +82,8 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	return nil, nil
 }
 
-// SendEventResponse sends response to client via channel
-func (m *Module) SendEventResponse(ctx context.Context, batchID string, payload interface{}) {
+// ProcessEventResponseMessage sends response to client via channel
+func (m *Module) ProcessEventResponseMessage(ctx context.Context, batchID string, payload interface{}) {
 	// get channel from map
 	value, ok := m.eventChanMap.Load(batchID)
 	if !ok {

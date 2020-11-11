@@ -73,3 +73,9 @@ type DatabaseEventMessage struct {
 	Find   interface{} `json:"find" mapstructure:"find"`
 	Before interface{} `json:"before,omitempty" mapstructure:"before"`
 }
+
+// EventResponseMessage describes the format for event response message
+type EventResponseMessage struct {
+	BatchID  string      `json:"batchId" mapstructure:"batchId"`
+	Response interface{} `json:"response" mapstructure:"response"`
+}

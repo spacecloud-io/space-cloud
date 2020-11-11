@@ -37,6 +37,7 @@ type CrudEventingInterface interface {
 	InternalCreate(ctx context.Context, dbAlias, project, col string, req *CreateRequest, isIgnoreMetrics bool) error
 	InternalUpdate(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
 	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, error)
+	GetDBType(dbAlias string) (string, error)
 }
 
 // AuthEventingInterface is an interface consisting of functions of auth module used by Eventing module
@@ -123,7 +124,6 @@ type SyncmanEventingInterface interface {
 	GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error)
 	GetAssignedTokens() (start, end int)
 	GetEventSource() string
-	GetSpaceCloudURLFromID(ctx context.Context, nodeID string) (string, error)
 	GetNodeID() string
 	MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
 }

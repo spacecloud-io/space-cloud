@@ -3,7 +3,6 @@ package eventing
 import (
 	"context"
 	"errors"
-	"net/http"
 	"testing"
 	"time"
 
@@ -174,126 +173,6 @@ func TestModule_invokeWebhook(t *testing.T) {
 				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "error getting space cloud url from id",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: &config.EventingTrigger{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetSCAccessToken",
-					paramsReturned: []interface{}{"scToken", nil},
-				},
-			},
-			crudMockArgs: []mockArgs{
-				{
-					method:         "InternalCreate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", mock.Anything, mock.Anything, false},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			httpMockArgs: []mockArgs{
-				{
-					paramsReturned: []interface{}{&http.Response{
-						Proto:      "HTTP/1.1",
-						ProtoMajor: 1,
-						ProtoMinor: 1,
-					}, nil},
-				},
-			},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetSpaceCloudURLFromID",
-					args:           []interface{}{"url"},
-					paramsReturned: []interface{}{"", errors.New("some error")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "error making http request",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: &config.EventingTrigger{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetSCAccessToken",
-					paramsReturned: []interface{}{"scToken", nil},
-				},
-			},
-			crudMockArgs: []mockArgs{
-				{
-					method:         "InternalCreate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", mock.Anything, mock.Anything, false},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			httpMockArgs: []mockArgs{
-				{
-					paramsReturned: []interface{}{&http.Response{
-						Proto:      "HTTP/1.1",
-						ProtoMajor: 1,
-						ProtoMinor: 1,
-					}, nil},
-				},
-			},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetSpaceCloudURLFromID",
-					args:           []interface{}{"url"},
-					paramsReturned: []interface{}{"url", nil},
-				},
-				{
-					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "http://url/v1/api/abc/eventing/process-event-response", "", "scToken", mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "no error making invocation http request and a valid response",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]*config.EventingTrigger{}}},
-			args: args{ctx: context.Background(), rule: &config.EventingTrigger{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetSCAccessToken",
-					paramsReturned: []interface{}{"scToken", nil},
-				},
-			},
-			crudMockArgs: []mockArgs{
-				{
-					method:         "InternalCreate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", mock.Anything, mock.Anything, false},
-					paramsReturned: []interface{}{nil},
-				},
-				{
-					method:         "InternalUpdate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"_id": "id"}, Operation: "all", Update: map[string]interface{}{"$set": map[string]interface{}{"status": utils.EventStatusProcessed}}}},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			httpMockArgs: []mockArgs{
-				{
-					paramsReturned: []interface{}{&http.Response{
-						Proto:      "HTTP/1.1",
-						ProtoMajor: 1,
-						ProtoMinor: 1,
-					}, nil},
-				},
-			},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetSpaceCloudURLFromID",
-					args:           []interface{}{"url"},
-					paramsReturned: []interface{}{"url", nil},
-				},
-				{
-					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "http://url/v1/api/abc/eventing/process-event-response", "", "scToken", mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			adminMockArgs: []mockArgs{},
 		},
 	}
 

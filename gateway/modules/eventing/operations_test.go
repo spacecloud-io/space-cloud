@@ -139,13 +139,13 @@ func TestModule_SendEventResponse(t *testing.T) {
 
 			tt.m.eventChanMap.Store("batchid", eventResponse{time: time.Now(), response: resultChan})
 
-			tt.m.SendEventResponse(context.Background(), tt.args.batchID, tt.args.payload)
+			tt.m.ProcessEventResponseMessage(context.Background(), tt.args.batchID, tt.args.payload)
 
 			if len(resultChan) > 1 {
 				close(resultChan)
 				for response := range resultChan {
 					if !reflect.DeepEqual(response, tt.rcv) {
-						t.Fatalf("SendEventResponse() = got - %v; wanted - %v", response, tt.rcv)
+						t.Fatalf("ProcessEventResponseMessage() = got - %v; wanted - %v", response, tt.rcv)
 					}
 				}
 			}

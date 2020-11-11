@@ -73,16 +73,6 @@ func (s *Manager) checkIfDbAliasExists(dbConfigs config.DatabaseConfigs, dbAlias
 	return nil, false
 }
 
-// GetSpaceCloudURLFromID returns addr for corresponding nodeID
-func (s *Manager) GetSpaceCloudURLFromID(ctx context.Context, nodeID string) (string, error) {
-	for _, service := range s.services {
-		if nodeID == service.id {
-			return service.addr, nil
-		}
-	}
-	return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Space cloud service with nodeId (%s) doesn't exists", nodeID), nil, nil)
-}
-
 func splitResourceID(ctx context.Context, resourceID string) (clusterID string, projectID string, resource config.Resource, err error) {
 	arr := strings.Split(resourceID, "--")
 	// ResourceId format --> clusterId--ProjectId--resourceType--someId-...

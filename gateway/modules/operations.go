@@ -46,8 +46,13 @@ func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.P
 		}
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting config of eventing module", nil)
-		if err := m.eventing.SetConfig(project.EventingConfig); err != nil {
+		if err := m.eventing.SetConfig(projectID, project.EventingConfig); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set eventing module config", err, nil)
+		}
+
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting triggers of eventing module", nil)
+		if err := m.eventing.SetTriggerConfig(project.EventingTriggers); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set eventing module triggers", err, nil)
 		}
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting config of realtime module", nil)
@@ -145,7 +150,7 @@ func (m *Modules) SetFileStoreSecurityRuleConfig(ctx context.Context, projectID 
 // SetEventingConfig sets the config of eventing module
 func (m *Modules) SetEventingConfig(ctx context.Context, projectID string, eventingConfig *config.EventingConfig) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting config of eventing module", nil)
-	if err := m.eventing.SetConfig(eventingConfig); err != nil {
+	if err := m.eventing.SetConfig(projectID, eventingConfig); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set eventing module config", err, nil)
 	}
 	return nil

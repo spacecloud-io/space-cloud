@@ -25,9 +25,9 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, isDev bool, adminUserInfo *config.AdminUser, ssl *config.SSL) (*Server, error) {
+func New(nodeID, clusterID, storeType, runnerAddr string, isDev bool, adminUserInfo *config.AdminUser, ssl *config.SSL) (*Server, error) {
 
-	managers, err := managers.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, isDev, adminUserInfo, ssl)
+	managers, err := managers.New(nodeID, clusterID, storeType, runnerAddr, isDev, adminUserInfo, ssl)
 	if err != nil {
 		return nil, err
 	}

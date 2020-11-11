@@ -22,6 +22,8 @@ object ProjectManager {
 
   case class FetchDatabaseConfig() extends Command
 
+  case class CreateDatabaseActor(db: DatabaseConfig) extends Command
+
   case class Stop() extends Command
 }
 
@@ -32,9 +34,11 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
   // Member variables
   private var databaseToActor: Map[String, ActorRef[Database.Command]] = Map.empty
   private val eventsSink = context.spawn(EventsSink(projectId), "event-sink")
+  private var isEventingEnabled = false
 
   // Start the timer
   timers.startTimerAtFixedRate(fetchEventingConfigKey, FetchEventingConfig(), 1.minute)
+  timers.startTimerAtFixedRate(fetchDatabasesKey, FetchDatabaseConfig(), 1.minute)
 
   override def onMessage(msg: Command): Behavior[Command] = {
     msg match {
@@ -43,9 +47,16 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
         this
 
       case FetchDatabaseConfig() =>
-        fetchDatabaseConfig()
+        if (isEventingEnabled) fetchDatabaseConfig()
         this
 
+      case CreateDatabaseActor(db) =>
+        if (!databaseToActor.contains(db.dbAlias)) {
+          val actor = context.spawn(Database.createActor(projectId, db.`type`, eventsSink), s"db-${db.dbAlias}")
+          actor ! Database.UpdateEngineConfig(db)
+          databaseToActor += db.dbAlias -> actor
+        }
+        this
 
       case Stop() => Behaviors.stopped
     }
@@ -55,9 +66,14 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     implicit val system: ActorSystem[Nothing] = context.system
     implicit val executionContext: ExecutionContextExecutor = system.executionContext
 
-    val response: Future[Response[DatabaseConfig]] = fetchSpaceCloudResource(s"http://${Global.gatewayUrl}/v1/config/projects/$projectId/database/config")
+    val response: Future[DatabaseConfigResponse] = fetchSpaceCloudResource[DatabaseConfigResponse](s"http://${Global.gatewayUrl}/v1/config/projects/$projectId/database/config")
     response.onComplete {
-      case Success(value) => processDatabaseConfig(value.result)
+      case Success(value) =>
+        if (value.error.isDefined) {
+          println(s"Unable to fetch database config for project ($projectId)", value.error.get)
+          return
+        }
+        processDatabaseConfig(value.result)
       case Failure(ex) => println(s"Unable to fetch database config for project ($projectId)", ex)
     }
   }
@@ -69,14 +85,13 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     // Create actor for new projects
     for (db <- filteredDbs) {
       if (!databaseToActor.contains(db.dbAlias)) {
-        val actor = context.spawn(Database.createActor(projectId, db.`type`, eventsSink), s"db-${db.dbAlias}")
-        databaseToActor += db.dbAlias -> actor
-      }
-
-      // Send update engine command
-      databaseToActor.get(db.dbAlias) match {
-        case Some(actor) => actor ! Database.UpdateEngineConfig(db)
-        case None => // Nothing to be done here
+        context.self ! CreateDatabaseActor(db)
+      } else {
+        // Send update engine command
+        databaseToActor.get(db.dbAlias) match {
+          case Some(actor) => actor ! Database.UpdateEngineConfig(db)
+          case None => // Nothing to be done here
+        }
       }
     }
 
@@ -95,25 +110,28 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     implicit val system: ActorSystem[Nothing] = context.system
     implicit val executionContext: ExecutionContextExecutor = system.executionContext
 
-    val response: Future[Response[EventingConfig]] = fetchSpaceCloudResource(s"http://${Global.gatewayUrl}/v1/config/projects/$projectId/eventing/config")
+    val response: Future[EventingConfigResponse] = fetchSpaceCloudResource[EventingConfigResponse](s"http://${Global.gatewayUrl}/v1/config/projects/$projectId/eventing/config")
     response.onComplete {
-      case Success(value) => processEventingConfig(value.result(0))
+      case Success(value) =>
+        if (value.error.isDefined) {
+          println(s"Unable to fetch eventing config for project ($projectId)", value.error.get)
+          return
+        }
+
+        processEventingConfig(value.result(0))
       case Failure(ex) => println(s"Unable to fetch eventing config for project ($projectId)", ex)
     }
   }
 
   private def processEventingConfig(config: EventingConfig): Unit = {
     // Stop and remove all children if eventing is disabled
-    if (!config.enabled || config.broker.isEmpty) {
-      timers.cancel(fetchDatabasesKey)
+    if (!config.enabled) {
+      isEventingEnabled = false
       removeAllChildren()
       return
     }
 
-    // Start the timer if its isn't active already
-    if (!timers.isTimerActive(fetchDatabasesKey)) {
-      timers.startTimerAtFixedRate(fetchDatabasesKey, FetchDatabaseConfig(), 1.minute)
-    }
+    isEventingEnabled = true
 
     context.self ! FetchDatabaseConfig()
   }

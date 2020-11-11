@@ -85,12 +85,13 @@ func New(projectID, nodeID string, auth model.AuthEventingInterface, crud model.
 	go m.routineProcessIntents()
 	go m.routineProcessStaged()
 	go m.routineHandleMessages()
+	go m.routineHandleEventResponseMessages()
 
 	return m, nil
 }
 
 // SetConfig sets the module config
-func (m *Module) SetConfig(eventing *config.EventingConfig) error {
+func (m *Module) SetConfig(projectID string, eventing *config.EventingConfig) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -103,6 +104,7 @@ func (m *Module) SetConfig(eventing *config.EventingConfig) error {
 		return errors.New("invalid eventing config provided")
 	}
 
+	m.project = projectID
 	m.config.Enabled = eventing.Enabled
 	m.config.DBAlias = eventing.DBAlias
 

@@ -2,7 +2,7 @@ package com.spaceuptech.dbevents
 
 
 import akka.actor.ClassicActorSystemProvider
-import com.spaceuptech.dbevents.spacecloud.{Secret, fetchSpaceCloudResource}
+import com.spaceuptech.dbevents.spacecloud.{Secret, SecretResponse, fetchSpaceCloudResource}
 import io.debezium.engine.{ChangeEvent, DebeziumEngine}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -21,8 +21,9 @@ package object database {
     }
 
     val secret = conn.split('.')(1)
-    fetchSpaceCloudResource[Secret](s"http://${Global.gatewayUrl}/v1/runner/$projectId/secrets?id=$secret").flatMap {
+    fetchSpaceCloudResource[SecretResponse](s"http://${Global.gatewayUrl}/v1/runner/$projectId/secrets?id=$secret").flatMap {
       secretResponse =>
+        if (secretResponse.error.isDefined) return Future.failed(new Exception(s"Error received while fetching secret - ${secretResponse.error.get}"))
         secretResponse.result(0).data.get("CONN") match {
           case Some(conn) => Future{conn}
           case _ => Future.failed(new Exception("Secret does not have a valid resonse"))

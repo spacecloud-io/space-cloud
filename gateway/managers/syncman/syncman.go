@@ -20,11 +20,10 @@ type Manager struct {
 	projectConfig *config.Config
 
 	// Configuration for cluster information
-	nodeID        string
-	clusterID     string
-	advertiseAddr string
-	runnerAddr    string
-	port          int
+	nodeID     string
+	clusterID  string
+	runnerAddr string
+	port       int
 
 	// Configuration for clustering
 	storeType string
@@ -40,22 +39,21 @@ type Manager struct {
 }
 
 type service struct {
-	id   string
-	addr string
+	id string
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager, ssl *config.SSL) (*Manager, error) {
+func New(nodeID, clusterID, storeType, runnerAddr string, adminMan *admin.Manager, ssl *config.SSL) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
 	var s Store
 	var err error
 	switch storeType {
 	case "local":
-		s, err = NewLocalStore(nodeID, advertiseAddr, ssl)
+		s, err = NewLocalStore(nodeID, ssl)
 	case "kube":
 		s, err = NewKubeStore(clusterID)
 	default:

@@ -139,22 +139,19 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 		return services
 	}
 
-	addr := fmt.Sprintf("%s.gateway.space-cloud.svc.cluster.local:4122", pod.Name)
-
 	doesExist := false
 	for _, service := range services {
 		if service.id == id {
-			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating space cloud service in kubernetes", map[string]interface{}{"id": id, "addr": addr})
+			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating space cloud service in kubernetes", map[string]interface{}{"id": id})
 			doesExist = true
-			service.addr = addr
 			break
 		}
 	}
 
 	// add service if it doesn't exist
 	if !doesExist {
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Adding a space cloud service in kubernetes", map[string]interface{}{"id": id, "addr": addr})
-		services = append(services, &service{id: id, addr: addr})
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Adding a space cloud service in kubernetes", map[string]interface{}{"id": id})
+		services = append(services, &service{id: id})
 	}
 	return services
 }

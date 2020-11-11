@@ -93,7 +93,7 @@ func TestManager_GetAssignedSpaceCloudID(t *testing.T) {
 	}{
 		{
 			name: "got assigned space cloud id",
-			s:    &Manager{storeType: "kube", services: []*service{{id: "1", addr: "some.com"}}},
+			s:    &Manager{storeType: "kube", services: []*service{{id: "1"}}},
 			args: args{ctx: context.Background(), project: "project", token: 0},
 			want: "1",
 		},
@@ -124,7 +124,7 @@ func TestManager_GetSpaceCloudNodeIDs(t *testing.T) {
 	}{
 		{
 			name: "got space cloud urls",
-			s:    &Manager{services: []*service{{id: "1", addr: "some.com"}}},
+			s:    &Manager{services: []*service{{id: "1"}}},
 			args: args{project: "project"},
 			want: []string{"1"},
 		},

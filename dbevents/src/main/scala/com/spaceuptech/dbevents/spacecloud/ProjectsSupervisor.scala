@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, Tim
 import akka.http.scaladsl.Http
 import com.spaceuptech.dbevents.Global
 
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
@@ -15,6 +15,9 @@ object ProjectsSupervisor {
   sealed trait Command
 
   case class FetchProjects() extends Command
+
+  case class CreateProjectActor(id: String) extends Command
+
   case class Stop() extends Command
 
   val fetchProjectsKey: String = "fetch-projects"
@@ -37,6 +40,15 @@ class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], time
     msg match {
       case FetchProjects() =>
         fetchProjects()
+        this
+
+      case CreateProjectActor(id) =>
+        if (!this.projectIdToActor.contains(id)) {
+          val actor = context.spawn(ProjectManager(id), id)
+          actor ! ProjectManager.FetchEventingConfig()
+          projectIdToActor += id -> actor
+        }
+
         this
 
       case Stop() => Behaviors.stopped
@@ -66,8 +78,13 @@ class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], time
     implicit val executionContext: ExecutionContextExecutor = system.executionContext
 
     // Make http request
-    fetchSpaceCloudResource[Project](s"http://${Global.gatewayUrl}/v1/config/projects/*").onComplete {
-      case Success(res) => processProjects(res.result)
+    fetchSpaceCloudResource[ProjectResponse](s"http://${Global.gatewayUrl}/v1/config/projects/*").onComplete {
+      case Success(res) =>
+        if (res.error.isDefined) {
+          println("Unable to fetch projects", res.error.get)
+          return
+        }
+        if (res.result != null) processProjects(res.result)
       case Failure(ex) => println("Unable to fetch projects", ex)
     }
   }
@@ -76,14 +93,16 @@ class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], time
     // Create an actor for new projects
     projects.foreach(project => {
       if (!this.projectIdToActor.contains(project.id)) {
-        val actor = context.spawn(ProjectManager(project.id), project.id)
-        actor ! ProjectManager.FetchEventingConfig()
-        projectIdToActor += project.id -> actor
+        context.self ! CreateProjectActor(project.id)
       }
     })
 
     // Close old project actors
     this.projectIdToActor = this.projectIdToActor.filter(elem => removeProjectIfInactive(projects, elem._1, elem._2))
+
+    for ((_, actor) <- this.projectIdToActor) {
+      actor ! ProjectManager.FetchEventingConfig()
+    }
   }
 
   private def removeProjectIfInactive(projects: Array[Project], projectId: String, actor: ActorRef[ProjectManager.Command]): Boolean = {

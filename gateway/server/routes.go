@@ -106,7 +106,6 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	// Initialize the routes for eventing service
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/queue").HandlerFunc(handlers.HandleQueueEvent(s.modules))
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/admin-queue").HandlerFunc(handlers.HandleAdminQueueEvent(s.managers.Admin(), s.modules))
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/process-event-response").HandlerFunc(handlers.HandleEventResponse(s.modules))
 
 	// Initialize the routes for the crud operations
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/crud/{dbAlias}/batch").HandlerFunc(handlers.HandleCrudBatch(s.modules))

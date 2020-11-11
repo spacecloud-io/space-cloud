@@ -644,6 +644,11 @@ func (i *Istio) generateDeployment(service *model.Service, listOfSecrets map[str
 		}
 	}
 
+	// Set default labels if not present already
+	if service.Labels == nil {
+		service.Labels = map[string]string{}
+	}
+
 	labels := service.Labels
 	labels["app"] = service.ID
 	labels["version"] = service.Version

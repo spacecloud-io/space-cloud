@@ -35,7 +35,7 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 		return
 	}
 
-	if err := m.pubsubClient.Send(ctx, getSendTopic(nodeID), eventDocs); err != nil {
+	if err := m.pubsubClient.Send(ctx, getEventingTopic(nodeID), eventDocs); err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing module could not transmit event", err, nil)
 	}
 }
@@ -121,7 +121,7 @@ func (m *Module) generateQueueEventRequestRaw(ctx context.Context, token int, na
 		Type:      event.Type,
 		RuleName:  name,
 		Token:     token,
-		Timestamp: timestamp.Format(time.RFC3339Nano),
+		Timestamp: eventTs.Format(time.RFC3339Nano),
 		Payload:   string(data),
 		Status:    status,
 	}
@@ -218,7 +218,7 @@ func (m *Module) getMatchingRules(ctx context.Context, req *model.QueueEventRequ
 
 		// Skip rules if filter does not match
 		if rule.Filter != nil && req.Payload != nil {
-			if _, err := m.auth.MatchRule(ctx, m.project, rule.Filter, req.Payload.(map[string]interface{}), nil, model.ReturnWhereStub{}); err != nil {
+			if _, err := m.auth.MatchRule(ctx, m.project, rule.Filter, map[string]interface{}{"args": map[string]interface{}{"data": req.Payload}}, map[string]interface{}{}, model.ReturnWhereStub{}); err != nil {
 				continue
 			}
 		}
@@ -366,6 +366,10 @@ func (m *Module) generateWebhookToken(ctx context.Context, trigger *config.Event
 	return m.auth.CreateToken(ctx, req.(map[string]interface{}))
 }
 
-func getSendTopic(nodeID string) string {
+func getEventingTopic(nodeID string) string {
 	return fmt.Sprintf("eventing-%s", nodeID)
+}
+
+func getEventResponseTopic(nodeID string) string {
+	return fmt.Sprintf("event-response-%s", nodeID)
 }

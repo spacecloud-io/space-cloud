@@ -50,7 +50,7 @@ class MongoStore {
           val resumeToken = value.get(java.util.Arrays.asList(key)).get().get(key)
 
           // Return the resume token if it isn't null
-          if (resumeToken == null) {
+          if (resumeToken != null) {
             return Some(mongoByteBufferToBsonDocument(resumeToken))
           }
         } catch {

@@ -27,6 +27,10 @@ type mockCrudInterface struct {
 	mock.Mock
 }
 
+func (m *mockCrudInterface) GetDBType(dbAlias string) (string, error) {
+	panic("implement me")
+}
+
 func (m *mockCrudInterface) InternalCreate(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest, isIgnoreMetrics bool) error {
 	c := m.Called(ctx, dbAlias, project, col, req, isIgnoreMetrics)
 	if err := c.Error(0); err != nil {

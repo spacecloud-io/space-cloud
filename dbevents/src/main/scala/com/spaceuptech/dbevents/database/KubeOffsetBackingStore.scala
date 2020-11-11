@@ -10,6 +10,7 @@ import io.kubernetes.client.openapi.apis.CoreV1Api
 import io.kubernetes.client.openapi.models.{V1ConfigMap, V1ConfigMapBuilder, V1DeleteOptions}
 import io.kubernetes.client.openapi.{ApiClient, ApiException, Configuration}
 import io.kubernetes.client.util.ClientBuilder
+import org.apache.commons.codec.binary.Hex
 import org.apache.commons.lang3.concurrent.ConcurrentUtils
 import org.apache.kafka.connect.runtime.WorkerConfig
 import org.apache.kafka.connect.storage.OffsetBackingStore
@@ -24,9 +25,9 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
 
   // Create kubernetes client
   val client: ApiClient = ClientBuilder.cluster().build()
-  Configuration.setDefaultApiClient(client)
 
   override def start(): Unit = {
+
     // Check if the store has already been configured
     if (name == "") {
       throw new Exception("Call configure before calling start")
@@ -34,14 +35,20 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
 
     // Create an empty config map if it doesn't already exist
     try {
+      println("Creating config map for offset:", name)
+
+      val client: ApiClient = ClientBuilder.cluster().build()
+
       val api = new CoreV1Api()
+      api.setApiClient(client)
+
       val configMap = new V1ConfigMapBuilder()
-        .withNewMetadata().withName(name).endMetadata()
-        .withData(new util.HashMap[String, String]())
+        .withNewMetadata().withName(name).withLabels(Map("app" -> "debezium").asJava).endMetadata()
+        .withData(Map("test" -> "key").asJava)
         .build()
       api.createNamespacedConfigMap("space-cloud", configMap, null, null, null)
     } catch {
-      case ex: ApiException => println("Unable to create config map for offset storage", ex.getMessage)
+      case ex: Throwable => println("Unable to create config map for offset storage", ex.getMessage)
     }
   }
 
@@ -49,9 +56,11 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
 
     // Create a v1 api client
     val api = new CoreV1Api()
+    api.setApiClient(client)
 
     // Go ahead and delete all config maps associated with this connector
     try {
+      println("Deleting config map for offset:", name)
       api.deleteNamespacedConfigMap(name, "space-cloud", null, null, null, null, null, new V1DeleteOptions())
     } catch {
       case ex: Throwable => println("Unable to delete config maps:", ex.getMessage)
@@ -64,17 +73,19 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
 
     // Create a v1 api client
     val api = new CoreV1Api()
+    api.setApiClient(client)
 
     // Get the config map
+    println("Getting config map for offset:", name)
     val configMap = api.readNamespacedConfigMap(name, "space-cloud", null,null, null)
 
     // Iterate over the keys
     val itr = keys.iterator()
     while(itr.hasNext) {
       val key = itr.next()
-      val value = configMap.getData.get(Base64.getEncoder.encodeToString(key.array()), "")
+      val value = configMap.getData.get(Hex.encodeHexString(key.array(), true))
       if (value != null) {
-        result.put(key, ByteBuffer.wrap(Base64.getDecoder.decode(value)))
+        result.put(key, ByteBuffer.wrap(Hex.decodeHex(value)))
       } else {
         result.put(key, null)
       }
@@ -87,20 +98,27 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
     try {
       // Create a v1 api client
       val api = new CoreV1Api()
+      api.setApiClient(client)
 
       // Get the config map
+      println("Getting config map to set for offset:", name)
       val configMap = api.readNamespacedConfigMap(name, "space-cloud", null, null, null)
       val currentValues = configMap.getData
 
       // Store the values in the config map
       val map = values.asScala
       for ((k, v) <- map) {
-        currentValues.put(Base64.getEncoder.encodeToString(k.array()), Base64.getEncoder.encodeToString(v.array()))
+        currentValues.put(Hex.encodeHexString(k.array(), true), Hex.encodeHexString(v.array(), true))
       }
       configMap.setData(currentValues)
 
       // Update the config map
-      api.replaceNamespacedConfigMap(name, "space-cloud", configMap, null, null, null)
+      println("Setting config map for offset:", name)
+      val configMap2 = new V1ConfigMapBuilder()
+        .withNewMetadata().withName(name).withLabels(Map("app" -> "debezium").asJava).endMetadata()
+        .withData(currentValues)
+        .build()
+      api.replaceNamespacedConfigMap(name, "space-cloud", configMap2, null, null, null)
 
       if (callback != null) callback.onCompletion(null, null)
     } catch {
@@ -111,7 +129,7 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
   }
 
   override def configure(config: WorkerConfig): Unit = {
-    setName(config.getString("name"))
+    setName(config.getString("offset.storage.file.filename"))
     println()
     println("************************************")
     println("Offset backing store name:", name)
@@ -120,6 +138,6 @@ class KubeOffsetBackingStore extends OffsetBackingStore {
   }
 
   def setName(value: String): Unit = {
-    name = value.replaceAll("_","-").toLowerCase
+    name = value.replaceAll("_","-").replaceAll("[.]", "").replaceAll("/", "").toLowerCase
   }
 }

@@ -1,11 +1,10 @@
 package com.spaceuptech.dbevents.spacecloud
 
 import java.time.{Instant, OffsetDateTime, ZoneId}
-import java.util.Calendar
 
 import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import com.spaceuptech.dbevents.database.Database.{ChangeRecord, Command}
+import com.spaceuptech.dbevents.database.Database.ChangeRecord
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.util.{Failure, Success}
@@ -27,7 +26,7 @@ class EventsSink(context: ActorContext[EventsSink.Command], projectId: String) e
       case EventsSink.EmitEvent(record) =>
         // Queue event in gateway
         queueEvent(projectId, prepareQueueRequest(record)).onComplete {
-          case Success(_) => println("Event logged successfully")
+          case Success(_) => println(s"Event logged successfully - ${record.dbAlias}:${record.payload.source.table}")
           case Failure(exception) => println(s"Unable to log event - ${exception.getMessage}")
         }
         this
@@ -37,10 +36,10 @@ class EventsSink(context: ActorContext[EventsSink.Command], projectId: String) e
   private def prepareQueueRequest(record: ChangeRecord): QueueEvent = {
     QueueEvent(
       `type` = record.payload.op match {
-        case "c" => "DB_INSERT"
+        case "c" | "r" => "DB_INSERT"
         case "u" => "DB_UPDATE"
         case "d" => "DB_DELETE"
-        case _ => "UNKNOWN_OP"
+        case _ => s"UNKNOWN_OP_${record.payload.op}"
       },
       payload = DatabaseEvent(
         db = record.dbAlias,

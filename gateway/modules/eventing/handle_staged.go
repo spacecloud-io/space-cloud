@@ -205,13 +205,12 @@ func (m *Module) invokeWebhook(ctx context.Context, token string, client model.H
 	}
 
 	if eventResponse.Response != nil {
-		url, err := m.syncMan.GetSpaceCloudURLFromID(ctx, m.getSpaceCloudIDFromBatchID(eventDoc.BatchID))
-		if err != nil {
-			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error invoking web hook in eventing unable to get sc addr from batchID %s", eventDoc.BatchID), err, nil)
-		}
-		url = fmt.Sprintf("http://%s/v1/api/%s/eventing/process-event-response", url, m.project)
-		if err := m.syncMan.MakeHTTPRequest(ctxLocal, http.MethodPost, url, token, scToken, map[string]interface{}{"batchID": eventDoc.BatchID, "response": eventResponse.Response}, &map[string]interface{}{}); err != nil {
-			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error invoking web hook in eventing unable to send http request for synchronous response to url %s", url), err, nil)
+		if m.pubsubClient != nil {
+			sendTopic := getEventResponseTopic(m.getSpaceCloudIDFromBatchID(eventDoc.BatchID))
+			err = m.pubsubClient.Send(ctxLocal, sendTopic, model.EventResponseMessage{BatchID: eventDoc.BatchID, Response: eventResponse.Response})
+			if err != nil {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error invoking web hook in eventing unable to send http request for synchronous response to node %s", sendTopic), err, nil)
+			}
 		}
 	}
 

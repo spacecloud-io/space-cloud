@@ -35,7 +35,8 @@ package object spacecloud {
         Future.failed(new Exception(s"Invalid status code received (${code.intValue()})"))
     }
   }
-  def fetchSpaceCloudResource[T](url: String)(implicit system: ClassicActorSystemProvider, executor: ExecutionContext, m: Manifest[Response[T]]): Future[Response[T]] = {
+
+  def fetchSpaceCloudResource[T: Manifest](url: String)(implicit system: ClassicActorSystemProvider, executor: ExecutionContext): Future[T] = {
     val request = HttpRequest(
       method = HttpMethods.GET,
       uri = url,
@@ -58,24 +59,24 @@ package object spacecloud {
     jsonFuture.flatMap {
       json =>
         implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
-        val res = parse(json).extract[Response[T]]
-        if (res.error != "") Future.failed(new Exception(res.error))
+        val res = parse(json).extract[T]
         Future {
           res
         }
     }
   }
 
-  case class Response[T](result: Array[T], error: String)
 
-  case class Project(id: String, secret: String)
+  case class ProjectResponse(result: Array[Project], error: Option[String])
+  case class Project(id: String)
 
-  case class EventingConfig(enabled: Boolean, dbAlias: String, broker: Option[EventingBrokerConfig])
+  case class EventingConfigResponse(result: Array[EventingConfig], error: Option[String])
+  case class EventingConfig(enabled: Boolean, dbAlias: String)
 
-  case class EventingBrokerConfig(`type`: String, conn: String)
-
+  case class DatabaseConfigResponse(result: Array[DatabaseConfig], error: Option[String])
   case class DatabaseConfig(dbAlias: String, `type`: String, name: String, conn: String, enabled: Boolean)
 
+  case class SecretResponse(result: Array[Secret], error: Option[String])
   case class Secret(id: String, data: Map[String, String])
 
   case class QueueEvent(`type`: String, timestamp: String, payload: DatabaseEvent, options: DatabaseEventOptions)

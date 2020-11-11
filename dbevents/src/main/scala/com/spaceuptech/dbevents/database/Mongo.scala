@@ -36,7 +36,6 @@ class Mongo(context: ActorContext[Database.Command], timers: TimerScheduler[Data
             if (value.future.isCancelled || value.future.isDone) {
               // Just making sure its closed first
               value.future.cancel(true)
-              value.store.stop()
 
               println(s"Mongo watcher $name is closed. Restarting...")
               status = Some(Utils.startMongoWatcher(projectId, dbConfig.dbAlias, connString, dbConfig.name, executor, context.self))
@@ -61,7 +60,7 @@ class Mongo(context: ActorContext[Database.Command], timers: TimerScheduler[Data
             // Store the connection string for future reference
             this.connString = conn
 
-            // Kill the previous debezium engine
+            // Kill the previous mongo engine
             stopOperations()
 
             // Store the name and db config object for later use
@@ -69,7 +68,7 @@ class Mongo(context: ActorContext[Database.Command], timers: TimerScheduler[Data
             dbConfig = config
 
             // Start the engine
-            println(s"Staring debezium engine $name")
+            println(s"Staring mongo engine $name")
 
             status = Some(Utils.startMongoWatcher(projectId, config.dbAlias, connString, config.name, executor, context.self))
 
@@ -85,7 +84,7 @@ class Mongo(context: ActorContext[Database.Command], timers: TimerScheduler[Data
   }
 
   private def stopOperations(): Unit = {
-    // Shut down the debezium engine
+    // Shut down the mongo engine
     status match {
       case Some(value) =>
         if (!value.future.isCancelled && !value.future.isDone) {
