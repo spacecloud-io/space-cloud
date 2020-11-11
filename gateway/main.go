@@ -52,12 +52,6 @@ var essentialFlags = []cli.Flag{
 		Value:  "",
 	},
 	cli.StringFlag{
-		Name:   "advertise-addr",
-		Usage:  "The address which will be broadcast to other space cloud instances",
-		EnvVar: "ADVERTISE_ADDR",
-		Value:  "localhost:4122",
-	},
-	cli.StringFlag{
 		Name:   "store-type",
 		Usage:  "The config store to use for storing project configs and other meta data",
 		EnvVar: "STORE_TYPE",
@@ -166,6 +160,7 @@ func actionRun(c *cli.Context) error {
 	if err := helpers.InitLogger(logLevel, logFormat, isDev); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to initialize loggers", err, nil)
 	}
+
 	// Load flag related to the port
 	port := c.Int("port")
 
@@ -184,7 +179,6 @@ func actionRun(c *cli.Context) error {
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
-	advertiseAddr := c.String("advertise-addr")
 	if clusterID == "" {
 		return fmt.Errorf("provider cluster id through --cluster flag or using setting enviornment vairable CLUSTER_ID")
 	}
@@ -195,6 +189,8 @@ func actionRun(c *cli.Context) error {
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
 	}
+
+	helpers.Logger.LogInfo("start", fmt.Sprintf("Starting node with id - %s", nodeID), nil)
 
 	// Set the ssl config
 	ssl := &config.SSL{}
@@ -213,7 +209,7 @@ func actionRun(c *cli.Context) error {
 		adminSecret = "some-secret"
 	}
 	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, isDev, adminUserInfo, ssl)
+	s, err := server.New(nodeID, clusterID, storeType, runnerAddr, isDev, adminUserInfo, ssl)
 	if err != nil {
 		return err
 	}

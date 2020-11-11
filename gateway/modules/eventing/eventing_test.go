@@ -8,7 +8,6 @@ import (
 
 func TestModule_SetConfig(t *testing.T) {
 	type args struct {
-		project  string
 		eventing *config.EventingConfig
 	}
 	type mockArgs struct {
@@ -26,13 +25,13 @@ func TestModule_SetConfig(t *testing.T) {
 		{
 			name:           "eventing is not enabled",
 			m:              &Module{config: &config.Eventing{Enabled: true}},
-			args:           args{project: "abc", eventing: &config.EventingConfig{Enabled: false, DBAlias: "mysql"}},
+			args:           args{eventing: &config.EventingConfig{Enabled: false, DBAlias: "mysql"}},
 			schemaMockArgs: []mockArgs{},
 		},
 		{
 			name:    "DBType not mentioned",
 			m:       &Module{config: &config.Eventing{Enabled: true}},
-			args:    args{project: "abc", eventing: &config.EventingConfig{Enabled: true, DBAlias: ""}},
+			args:    args{eventing: &config.EventingConfig{Enabled: true, DBAlias: ""}},
 			wantErr: true,
 		},
 	}
@@ -47,7 +46,7 @@ func TestModule_SetConfig(t *testing.T) {
 
 			tt.m.schema = mockSchema
 
-			if err := tt.m.SetConfig(tt.args.project, tt.args.eventing); (err != nil) != tt.wantErr {
+			if err := tt.m.SetConfig("projectID", tt.args.eventing); (err != nil) != tt.wantErr {
 				t.Errorf("Module.SetConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

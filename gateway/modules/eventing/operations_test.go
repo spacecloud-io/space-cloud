@@ -139,13 +139,13 @@ func TestModule_SendEventResponse(t *testing.T) {
 
 			tt.m.eventChanMap.Store("batchid", eventResponse{time: time.Now(), response: resultChan})
 
-			tt.m.SendEventResponse(context.Background(), tt.args.batchID, tt.args.payload)
+			tt.m.ProcessEventResponseMessage(context.Background(), tt.args.batchID, tt.args.payload)
 
 			if len(resultChan) > 1 {
 				close(resultChan)
 				for response := range resultChan {
 					if !reflect.DeepEqual(response, tt.rcv) {
-						t.Fatalf("SendEventResponse() = got - %v; wanted - %v", response, tt.rcv)
+						t.Fatalf("ProcessEventResponseMessage() = got - %v; wanted - %v", response, tt.rcv)
 					}
 				}
 			}
@@ -155,7 +155,6 @@ func TestModule_SendEventResponse(t *testing.T) {
 
 func TestModule_QueueEvent(t *testing.T) {
 	ctx := context.Background()
-	var res interface{}
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -181,7 +180,7 @@ func TestModule_QueueEvent(t *testing.T) {
 		{
 			name: "error validating",
 			m:    &Module{project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingTrigger{"rule": {Type: "someType", Options: make(map[string]string)}}}},
-			args: args{ctx: ctx, project: "project", token: "token", req: &model.QueueEventRequest{Type: "someType", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
+			args: args{ctx: ctx, project: "project", token: "token", req: &model.QueueEventRequest{Type: "someType", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339Nano), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			authMockArgs: []mockArgs{
 				{
 					method:         "IsEventingOpAuthorised",
@@ -193,15 +192,8 @@ func TestModule_QueueEvent(t *testing.T) {
 		},
 		{
 			name: "error batching requests",
-			m:    &Module{project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingTrigger{"rule": {Type: "DB_INSERT", Options: make(map[string]string)}}}},
-			args: args{ctx: ctx, project: "project", token: "token", req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetNodeID",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{"nodeID"},
-				},
-			},
+			m:    &Module{project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingTrigger{"rule": {Type: "some rule", Options: make(map[string]string)}}}},
+			args: args{ctx: ctx, project: "project", token: "token", req: &model.QueueEventRequest{Type: "some rule", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339Nano), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
@@ -209,12 +201,19 @@ func TestModule_QueueEvent(t *testing.T) {
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
+			authMockArgs: []mockArgs{
+				{
+					method:         "IsEventingOpAuthorised",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{model.RequestParams{}, nil},
+				},
+			},
 			wantErr: true,
 		},
 		{
 			name: "event is queued",
-			m:    &Module{metricHook: func(project, eventingType string) {}, project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingTrigger{"rule": {Type: "DB_INSERT", Options: make(map[string]string)}}}},
-			args: args{ctx: ctx, project: "project", token: "token", req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
+			m:    &Module{metricHook: func(project, eventingType string) {}, project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingTrigger{"rule": {Type: "sb", Options: make(map[string]string)}}}},
+			args: args{ctx: ctx, project: "project", token: "token", req: &model.QueueEventRequest{Type: "sb", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339Nano), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
@@ -224,33 +223,17 @@ func TestModule_QueueEvent(t *testing.T) {
 			},
 			syncmanMockArgs: []mockArgs{
 				{
-					method:         "GetNodeID",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{"nodeID"},
-				},
-				{
-					method:         "GetAssignedSpaceCloudURL",
+					method:         "GetAssignedSpaceCloudID",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
-				{
-					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", mock.Anything, mock.Anything, mock.Anything, mock.Anything, &res},
-					paramsReturned: []interface{}{nil},
-				},
 			},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
-				},
-			},
+			adminMockArgs: []mockArgs{},
 			authMockArgs: []mockArgs{
 				{
-					method:         "GetSCAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
+					method:         "IsEventingOpAuthorised",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{model.RequestParams{}, nil},
 				},
 			},
 			want: nil,
@@ -261,7 +244,6 @@ func TestModule_QueueEvent(t *testing.T) {
 
 			mockCrud := mockCrudInterface{}
 			mockSyncman := mockSyncmanEventingInterface{}
-			mockAdmin := mockAdminEventingInterface{}
 			mockAuth := mockAuthEventingInterface{}
 
 			for _, m := range tt.crudMockArgs {
@@ -270,16 +252,12 @@ func TestModule_QueueEvent(t *testing.T) {
 			for _, m := range tt.syncmanMockArgs {
 				mockSyncman.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
-			for _, m := range tt.adminMockArgs {
-				mockAdmin.On(m.method, m.args...).Return(m.paramsReturned...)
-			}
 			for _, m := range tt.authMockArgs {
 				mockAuth.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
 
 			tt.m.crud = &mockCrud
 			tt.m.syncMan = &mockSyncman
-			tt.m.adminMan = &mockAdmin
 			tt.m.auth = &mockAuth
 
 			got, err := tt.m.QueueEvent(context.Background(), tt.args.project, tt.args.token, tt.args.req)
@@ -293,7 +271,6 @@ func TestModule_QueueEvent(t *testing.T) {
 
 			mockCrud.AssertExpectations(t)
 			mockSyncman.AssertExpectations(t)
-			mockAdmin.AssertExpectations(t)
 			mockAuth.AssertExpectations(t)
 		})
 	}

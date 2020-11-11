@@ -25,7 +25,7 @@ There are multiple ways to contribute to Space Cloud:
 
 ## Project Structure
 
-- The core components of Space Cloud are `gateway`, `runner`, `metric-proxy` and `space-cli`.
+- The core components of Space Cloud are `gateway`, `runner` and `space-cli`.
 - The codebase is a monorepo consisting of the core components and their sub modules.
 
 ## Branching Strategy and Guidelines

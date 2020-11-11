@@ -2,8 +2,10 @@ package realtime
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/spaceuptech/helpers"
 
@@ -50,4 +52,44 @@ func (m *Module) helperSendFeed(ctx context.Context, data *model.FeedData) {
 		})
 		return true
 	})
+}
+
+func (m *Module) routineHandleMessages() {
+	ch, err := m.pubsubClient.Subscribe(context.Background(), getSendTopic(m.nodeID))
+	if err != nil {
+		panic(err)
+	}
+
+	for msg := range ch {
+		pubsubMsg := new(model.PubSubMessage)
+		if err := json.Unmarshal([]byte(msg.Payload), pubsubMsg); err != nil {
+			_ = helpers.Logger.LogError("realtime-process", "Unable to marshal incoming realtime process request", err, map[string]interface{}{"payload": msg.Payload})
+			continue
+		}
+
+		go m.handlePubSubMessage(pubsubMsg)
+	}
+}
+
+func (m *Module) handlePubSubMessage(msg *model.PubSubMessage) {
+	// Create a context
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Unmarshal the incoming message
+	var event *model.CloudEventPayload
+	if err := msg.Unmarshal(event); err != nil {
+		_ = helpers.Logger.LogError("realtime-process", "Unable to extract cloud event doc from incoming process realtime event request", err, map[string]interface{}{"payload": msg.Payload})
+		_ = m.pubsubClient.SendAck(ctx, msg.ReplyTo, false)
+		return
+	}
+
+	// Process the cloud event doc
+	if err := m.ProcessRealtimeRequests(ctx, event); err != nil {
+		_ = helpers.Logger.LogError("realtime-process", "Unable to extract event docs from incoming process event request", err, map[string]interface{}{"payload": msg.Payload})
+		_ = m.pubsubClient.SendAck(ctx, msg.ReplyTo, false)
+		return
+	}
+
+	_ = m.pubsubClient.SendAck(ctx, msg.ReplyTo, true)
 }

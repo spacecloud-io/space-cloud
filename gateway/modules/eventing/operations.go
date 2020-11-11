@@ -25,6 +25,24 @@ func (m *Module) IsEnabled() bool {
 	return m.config.Enabled
 }
 
+// QueueAdminEvent queues a new event created by the admin. This does no validation and hence must be used cautiously.
+// For most use cases, consider using QueueEvent instead.
+func (m *Module) QueueAdminEvent(ctx context.Context, req *model.QueueEventRequest) error {
+	batchID := m.generateBatchID()
+
+	// Prepare the find object for update and delete events
+	if err := m.prepareFindObject(req); err != nil {
+		return err
+	}
+
+	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to queue admin event cannot batch requests", err, nil)
+	}
+
+	m.metricHook(m.project, req.Type)
+	return nil
+}
+
 // QueueEvent queues a new event
 func (m *Module) QueueEvent(ctx context.Context, project, token string, req *model.QueueEventRequest) (interface{}, error) {
 	m.lock.RLock()
@@ -64,8 +82,8 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	return nil, nil
 }
 
-// SendEventResponse sends response to client via channel
-func (m *Module) SendEventResponse(ctx context.Context, batchID string, payload interface{}) {
+// ProcessEventResponseMessage sends response to client via channel
+func (m *Module) ProcessEventResponseMessage(ctx context.Context, batchID string, payload interface{}) {
 	// get channel from map
 	value, ok := m.eventChanMap.Load(batchID)
 	if !ok {

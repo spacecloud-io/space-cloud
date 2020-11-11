@@ -144,7 +144,6 @@ func (m *Module) SetAuth(a model.AuthCrudInterface) {
 }
 
 // SetHooks sets the internal hooks
-func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHook) {
-	m.hooks = hooks
+func (m *Module) SetHooks(metricHook model.MetricCrudHook) {
 	m.metricHook = metricHook
 }

@@ -52,10 +52,6 @@ func (m *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTT
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("x-sc-token", "Bearer "+scToken)
 
-	// if s.storeType && s.isConsulConnectEnabled && strings.Contains(url, "https") && strings.Contains(url, ".consul") {
-	// 	 client = s.consulService.HTTPClient()
-	// }
-
 	req = req.WithContext(ctx)
 	resp, err := client.Do(req)
 	if err != nil {

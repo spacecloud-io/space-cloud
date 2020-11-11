@@ -77,7 +77,7 @@ func TestManager_GetNodesInCluster(t *testing.T) {
 	}
 }
 
-func TestManager_GetAssignedSpaceCloudURL(t *testing.T) {
+func TestManager_GetAssignedSpaceCloudID(t *testing.T) {
 
 	type args struct {
 		ctx     context.Context
@@ -92,27 +92,27 @@ func TestManager_GetAssignedSpaceCloudURL(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "got assigned space cloud url",
-			s:    &Manager{storeType: "kube", services: []*service{{id: "1", addr: "some.com"}}},
+			name: "got assigned space cloud id",
+			s:    &Manager{storeType: "kube", services: []*service{{id: "1"}}},
 			args: args{ctx: context.Background(), project: "project", token: 0},
-			want: "http://some.com/v1/api/project/eventing/process",
+			want: "1",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetAssignedSpaceCloudURL(context.Background(), tt.args.project, tt.args.token)
+			got, err := tt.s.GetAssignedSpaceCloudID(context.Background(), tt.args.project, tt.args.token)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Manager.GetAssignedSpaceCloudURL() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Manager.GetAssignedSpaceCloudID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("Manager.GetAssignedSpaceCloudURL() = %v, want %v", got, tt.want)
+				t.Errorf("Manager.GetAssignedSpaceCloudID() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestManager_GetSpaceCloudNodeURLs(t *testing.T) {
+func TestManager_GetSpaceCloudNodeIDs(t *testing.T) {
 	type args struct {
 		project string
 	}
@@ -124,15 +124,15 @@ func TestManager_GetSpaceCloudNodeURLs(t *testing.T) {
 	}{
 		{
 			name: "got space cloud urls",
-			s:    &Manager{services: []*service{{id: "1", addr: "some.com"}}},
+			s:    &Manager{services: []*service{{id: "1"}}},
 			args: args{project: "project"},
-			want: []string{"http://some.com/v1/api/project/realtime/process"},
+			want: []string{"1"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.s.GetSpaceCloudNodeURLs(tt.args.project); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Manager.GetSpaceCloudNodeURLs() = %v, want %v", got, tt.want)
+			if got := tt.s.GetSpaceCloudNodeIDs(tt.args.project); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Manager.GetSpaceCloudNodeIDs() = %v, want %v", got, tt.want)
 			}
 		})
 	}

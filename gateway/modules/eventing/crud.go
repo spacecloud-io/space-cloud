@@ -1,295 +1,60 @@
 package eventing
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
-	"math/rand"
-	"time"
-
-	"github.com/spaceuptech/helpers"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// HookDBCreateIntent handles the create intent request
-func (m *Module) HookDBCreateIntent(ctx context.Context, dbAlias, col string, req *model.CreateRequest) (*model.EventIntent, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	// Return if eventing module isn't enabled
-	if !m.config.Enabled {
-		return &model.EventIntent{Invalid: true}, nil
-	}
-
-	rows := getCreateRows(req.Document, req.Operation)
-
-	// Create the meta information
-	token := rand.Intn(utils.MaxEventTokens)
-	batchID := m.generateBatchID()
-
-	// Process the documents
-	eventDocs := m.processCreateDocs(ctx, token, batchID, dbAlias, col, rows)
-
-	// Mark event as invalid if no events are generated
-	if len(eventDocs) == 0 {
-		return &model.EventIntent{Invalid: true}, nil
-	}
-
-	// Persist the event intent
-	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-	if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
-		return nil, errors.New("eventing module couldn't log the request - " + err.Error())
-	}
-
-	return &model.EventIntent{BatchID: batchID, Token: token, Docs: eventDocs}, nil
-}
-
-// HookDBBatchIntent handles the batch intent requests
-func (m *Module) HookDBBatchIntent(ctx context.Context, dbAlias string, req *model.BatchRequest) (*model.EventIntent, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	// Return if eventing module isn't enabled
-	if !m.config.Enabled {
-		return &model.EventIntent{Invalid: true}, nil
-	}
-
-	// Create the meta information
-	token := rand.Intn(utils.MaxEventTokens)
-	batchID := m.generateBatchID()
-	eventDocs := make([]*model.EventDocument, 0)
-
-	// Iterate over all batched requests
-	for _, r := range req.Requests {
-		switch r.Type {
-		case string(model.Create):
-			// Get the rows
-			rows := getCreateRows(r.Document, r.Operation)
-			docs := m.processCreateDocs(ctx, token, batchID, dbAlias, r.Col, rows)
-			eventDocs = append(eventDocs, docs...)
-
-		case string(model.Update):
-			docs, ok := m.processUpdateDeleteHook(ctx, token, utils.EventDBUpdate, batchID, dbAlias, r.Col, r.Find)
-			if ok {
-				eventDocs = append(eventDocs, docs...)
-			}
-
-		case string(model.Delete):
-			docs, ok := m.processUpdateDeleteHook(ctx, token, utils.EventDBDelete, batchID, dbAlias, r.Col, r.Find)
-			if ok {
-				eventDocs = append(eventDocs, docs...)
-			}
-
-		default:
-			return nil, errors.New("invalid batch request type")
-		}
-	}
-
-	// Mark event as invalid if no events are generated
-	if len(eventDocs) == 0 {
-		return &model.EventIntent{Invalid: true}, nil
-	}
-
-	// Persist the event intent
-	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-	if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
-		return nil, errors.New("eventing module couldn't log the request -" + err.Error())
-	}
-
-	return &model.EventIntent{BatchID: batchID, Token: token, Docs: eventDocs}, nil
-}
-
-// HookDBUpdateIntent handles the update intent requests
-func (m *Module) HookDBUpdateIntent(ctx context.Context, dbAlias, col string, req *model.UpdateRequest) (*model.EventIntent, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	// Return if eventing module isn't enabled
-	if !m.config.Enabled {
-		return &model.EventIntent{Invalid: true}, nil
-	}
-
-	return m.hookDBUpdateDeleteIntent(ctx, utils.EventDBUpdate, dbAlias, col, req.Find)
-}
-
-// HookDBDeleteIntent handles the delete intent requests
-func (m *Module) HookDBDeleteIntent(ctx context.Context, dbAlias, col string, req *model.DeleteRequest) (*model.EventIntent, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	// Return if eventing module isn't enabled
-	if !m.config.Enabled {
-		return &model.EventIntent{Invalid: true}, nil
-	}
-
-	return m.hookDBUpdateDeleteIntent(ctx, utils.EventDBDelete, dbAlias, col, req.Find)
-}
-
-// hookDBUpdateDeleteIntent is used as the hook for update and delete events
-func (m *Module) hookDBUpdateDeleteIntent(ctx context.Context, eventType, dbAlias, col string, find map[string]interface{}) (*model.EventIntent, error) {
-	// Create a unique batch id and token
-	batchID := m.generateBatchID()
-	token := rand.Intn(utils.MaxEventTokens)
-
-	eventDocs, ok := m.processUpdateDeleteHook(ctx, token, eventType, batchID, dbAlias, col, find)
-	if ok {
-		// Persist the event intent
-		createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-		if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
-			return nil, errors.New("eventing module couldn't log the request - " + err.Error())
-		}
-
-		return &model.EventIntent{BatchID: batchID, Token: token, Docs: eventDocs}, nil
-	}
-
-	return &model.EventIntent{Invalid: true}, nil
-}
-
-// HookStage stages the event so that it can be processed
-func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	// Return if the intent is invalid
-	if intent.Invalid {
-		return
-	}
-
-	set := map[string]interface{}{}
-	if err != nil {
-		// Set the status to cancelled if error occurred
-		set["status"] = utils.EventStatusCancelled
-		set["remark"] = err.Error()
-		intent.Invalid = true
-	} else {
-		// Set the status to staged if no error occurred
-		set["status"] = utils.EventStatusStaged
-	}
-
-	// Create the find and update clauses
-	find := map[string]interface{}{"batchid": intent.BatchID}
-	update := map[string]interface{}{"$set": set}
-
-	updateRequest := model.UpdateRequest{Find: find, Operation: utils.All, Update: update}
-	if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, &updateRequest); err != nil {
-		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Eventing Error: event could not be updated", map[string]interface{}{"error": err})
-		return
-	}
-
-	for _, doc := range intent.Docs {
-		// Mark all docs as staged
-		doc.Status = utils.EventStatusStaged
-
-		// TODO: Optimise this step
-		if doc.Type == utils.EventDBUpdate {
-			dbEvent := new(model.DatabaseEventMessage)
-			if err := json.Unmarshal([]byte(doc.Payload.(string)), dbEvent); err != nil {
-				helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Eventing Staging Error:", map[string]interface{}{"error": err})
-				continue
-			}
-
-			req := &model.ReadRequest{
-				Find:      dbEvent.Find.(map[string]interface{}),
-				Operation: utils.One,
-			}
-
-			attr := map[string]string{"project": m.project, "db": dbEvent.DBType, "col": dbEvent.Col}
-			reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
-			result, err := m.crud.Read(ctx, dbEvent.DBType, dbEvent.Col, req, reqParams)
-			if err != nil {
-				helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Eventing Staging Error:", map[string]interface{}{"error": err})
-				continue
-			}
-
-			dbEvent.Doc = result
-
-			data, err := json.Marshal(dbEvent)
-			if err != nil {
-				helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Eventing Staging Error:", map[string]interface{}{"error": err})
-				continue
-			}
-
-			doc.Payload = string(data)
-			doc.Timestamp = time.Now().Format(time.RFC3339)
-
-			updateRequest := model.UpdateRequest{
-				Find:      map[string]interface{}{"_id": doc.ID},
-				Operation: utils.All,
-				Update:    map[string]interface{}{"$set": map[string]interface{}{"payload": doc.Payload}},
-			}
-			if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, &updateRequest); err != nil {
-				helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Eventing Error: event could not be updated", map[string]interface{}{"error": err})
-				return
-			}
-		}
-	}
-
-	// Broadcast the event so the concerned worker can process it immediately
-	if !intent.Invalid {
-		m.transmitEvents(intent.Token, intent.Docs)
-	}
-}
-
-func (m *Module) processCreateDocs(ctx context.Context, token int, batchID, dbAlias, col string, rows []interface{}) []*model.EventDocument {
-	// Get event listeners
-	rules := m.getMatchingRules(utils.EventDBCreate, map[string]string{"col": col, "db": dbAlias})
-
-	// Return if length of rules is zero
-	if len(rules) == 0 {
+func (m *Module) prepareFindObject(req *model.QueueEventRequest) error {
+	if req.Type != utils.EventDBUpdate && req.Type != utils.EventDBDelete {
 		return nil
 	}
 
-	eventDocs := make([]*model.EventDocument, 0)
-	for _, doc := range rows {
+	// Get the database event message
+	dbRequest := new(model.DatabaseEventMessage)
+	if err := mapstructure.Decode(req.Payload, dbRequest); err != nil {
+		return err
+	}
 
-		findForCreate, possible := m.schema.CheckIfEventingIsPossible(dbAlias, col, doc.(map[string]interface{}), false)
-		if !possible {
-			return nil
+	// Get the DB type
+	dbType, err := m.crud.GetDBType(dbRequest.DBType)
+	if err != nil {
+		return err
+	}
+
+	// Simply return if this is mongo
+	if dbType == string(model.Mongo) {
+		return nil
+	}
+
+	var source map[string]interface{}
+	if req.Type == utils.EventDBUpdate {
+		source = dbRequest.Doc.(map[string]interface{})
+	} else {
+		source = dbRequest.Find.(map[string]interface{})
+	}
+
+	// Find the primary keys for the table
+	primaryKeys := []string{}
+	fields, p := m.schema.GetSchema(dbRequest.DBType, dbRequest.Col)
+	if p {
+		for fieldName, value := range fields {
+			if value.IsPrimary {
+				primaryKeys = append(primaryKeys, fieldName)
+			}
 		}
+	}
 
-		// Iterate over all rules
-		for _, rule := range rules {
-			eventDoc := m.generateQueueEventRequest(ctx, token, rule.ID, batchID, utils.EventStatusIntent, &model.QueueEventRequest{
-				Type:    utils.EventDBCreate,
-				Payload: model.DatabaseEventMessage{DBType: dbAlias, Col: col, Doc: doc, Find: findForCreate},
-			})
-			eventDocs = append(eventDocs, eventDoc)
+	// Extract primary keys from source and put it in find
+	find := map[string]interface{}{}
+	for _, key := range primaryKeys {
+		if v, p := source[key]; p {
+			find[key] = v
 		}
 	}
 
-	return eventDocs
-}
-
-func (m *Module) processUpdateDeleteHook(ctx context.Context, token int, eventType, batchID, dbAlias, col string, find map[string]interface{}) ([]*model.EventDocument, bool) {
-	// Get event listeners
-	rules := m.getMatchingRules(eventType, map[string]string{"col": col, "db": dbAlias})
-
-	// Return if length of rules is zero
-	if len(rules) == 0 {
-		return nil, false
-	}
-
-	findForUpdate, possible := m.schema.CheckIfEventingIsPossible(dbAlias, col, find, true)
-	if !possible {
-		return nil, false
-	}
-
-	eventDocs := make([]*model.EventDocument, len(rules))
-
-	for i, rule := range rules {
-		// Create an event doc
-		eventDocs[i] = m.generateQueueEventRequest(ctx, token, rule.ID, batchID, utils.EventStatusIntent, &model.QueueEventRequest{
-			Type:    eventType,
-			Payload: model.DatabaseEventMessage{DBType: dbAlias, Col: col, Find: findForUpdate}, // The doc here contains the where clause
-		})
-	}
-
-	// Mark event as invalid if no events are generated
-	if len(eventDocs) == 0 {
-		return nil, false
-	}
-
-	return eventDocs, true
+	req.Payload.(map[string]interface{})["find"] = find
+	return nil
 }

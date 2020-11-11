@@ -6,7 +6,6 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/managers"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
@@ -39,7 +38,7 @@ type Modules struct {
 }
 
 // New creates a new modules instance
-func New(clusterID string, nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
+func New(projectID, clusterID, nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
 
 	// Extract managers
 	adminMan := managers.Admin()
@@ -61,18 +60,16 @@ func New(clusterID string, nodeID string, managers *managers.Managers, globalMod
 	f := filestore.Init(a, metrics.AddFileOperation)
 	f.SetGetSecrets(syncMan.GetSecrets)
 
-	e := eventing.New(a, c, s, adminMan, syncMan, f, metrics.AddEventingType)
+	e, err := eventing.New(projectID, nodeID, a, c, s, syncMan, f, metrics.AddEventingType)
+	if err != nil {
+		return nil, err
+	}
+
 	f.SetEventingModule(e)
 
-	c.SetHooks(&model.CrudHooks{
-		Create: e.HookDBCreateIntent,
-		Update: e.HookDBUpdateIntent,
-		Delete: e.HookDBDeleteIntent,
-		Batch:  e.HookDBBatchIntent,
-		Stage:  e.HookStage,
-	}, metrics.AddDBOperation)
+	c.SetHooks(metrics.AddDBOperation)
 
-	rt, err := realtime.Init(nodeID, e, a, c, s, metrics, syncMan)
+	rt, err := realtime.Init(projectID, nodeID, e, a, c, s, metrics, syncMan)
 	if err != nil {
 		return nil, err
 	}
