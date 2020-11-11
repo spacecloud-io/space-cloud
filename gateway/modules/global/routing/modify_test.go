@@ -114,12 +114,12 @@ func TestRouting_modifyResponse(t *testing.T) {
 			}
 			// Make an instance of the route
 			modify := struct {
-				Tmpl            config.TemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
-				ReqTmpl         string                  `json:"requestTemplate" yaml:"requestTemplate"`
-				ResTmpl         string                  `json:"responseTemplate" yaml:"responseTemplate"`
-				OpFormat        string                  `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
-				RequestHeaders  config.Headers          `json:"headers" yaml:"headers"`
-				ResponseHeaders config.Headers          `json:"resHeaders" yaml:"resHeaders"`
+				Tmpl            config.TemplatingEngine `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
+				ReqTmpl         string                  `json:"requestTemplate" yaml:"requestTemplate" mapstructure:"requestTemplate"`
+				ResTmpl         string                  `json:"responseTemplate" yaml:"responseTemplate" mapstructure:"responseTemplate"`
+				OpFormat        string                  `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
+				RequestHeaders  config.Headers          `json:"headers" yaml:"headers" mapstructure:"headers"`
+				ResponseHeaders config.Headers          `json:"resHeaders" yaml:"resHeaders" mapstructure:"resHeaders"`
 			}{Tmpl: config.TemplatingEngineGo, ResTmpl: tt.args.resTmpl, OpFormat: "json", ResponseHeaders: tt.args.routeHeaders}
 			route := &config.Route{ID: "id", Project: "p", Modify: modify}
 
