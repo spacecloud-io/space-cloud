@@ -31,12 +31,12 @@ type InvocationDocument struct {
 
 // CloudEventPayload is the the JSON event spec by Cloud Events Specification
 type CloudEventPayload struct {
-	SpecVersion string      `json:"specversion" structs:"specversion"`
-	Type        string      `json:"type" structs:"type"`
-	Source      string      `json:"source" structs:"source"`
-	ID          string      `json:"id" structs:"id"`
-	Time        string      `json:"time" structs:"time"`
-	Data        interface{} `json:"data" structs:"data"`
+	SpecVersion string      `json:"specversion" structs:"specversion" mapstructure:"specversion"`
+	Type        string      `json:"type" structs:"type" mapstructure:"type"`
+	Source      string      `json:"source" structs:"source" mapstructure:"source"`
+	ID          string      `json:"id" structs:"id" mapstructure:"id"`
+	Time        string      `json:"time" structs:"time" mapstructure:"time"`
+	Data        interface{} `json:"data" structs:"data" mapstructure:"data"`
 }
 
 // EventResponse is struct response of events
@@ -71,4 +71,11 @@ type DatabaseEventMessage struct {
 	Col    string      `json:"col" mapstructure:"col"`
 	Doc    interface{} `json:"doc" mapstructure:"doc"`
 	Find   interface{} `json:"find" mapstructure:"find"`
+	Before interface{} `json:"before,omitempty" mapstructure:"before"`
+}
+
+// EventResponseMessage describes the format for event response message
+type EventResponseMessage struct {
+	BatchID  string      `json:"batchId" mapstructure:"batchId"`
+	Response interface{} `json:"response" mapstructure:"response"`
 }

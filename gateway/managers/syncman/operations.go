@@ -16,6 +16,11 @@ func (s *Manager) GetEventSource() string {
 	return fmt.Sprintf("sc-%s", s.nodeID)
 }
 
+// GetNodeID returns node id assigned to sc
+func (s *Manager) GetNodeID() string {
+	return s.nodeID
+}
+
 // GetClusterID get cluster id
 func (s *Manager) GetClusterID() string {
 	return s.clusterID
@@ -29,28 +34,28 @@ func (s *Manager) GetNodesInCluster() int {
 	return len(s.services)
 }
 
-// GetAssignedSpaceCloudURL returns the space cloud url assigned for the provided token
-func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
+// GetAssignedSpaceCloudID returns the space cloud id assigned for the provided token
+func (s *Manager) GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	index := calcIndex(token, utils.MaxEventTokens, len(s.services))
 
-	return fmt.Sprintf("http://%s/v1/api/%s/eventing/process", s.services[index].addr, project), nil
+	return s.services[index].id, nil
 }
 
-// GetSpaceCloudNodeURLs returns the array of space cloud urls
-func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
+// GetSpaceCloudNodeIDs returns the array of space cloud ids
+func (s *Manager) GetSpaceCloudNodeIDs(project string) []string {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	urls := make([]string, len(s.services))
+	ids := make([]string, len(s.services))
 
 	for i, svc := range s.services {
-		urls[i] = fmt.Sprintf("http://%s/v1/api/%s/realtime/process", svc.addr, project)
+		ids[i] = svc.id
 	}
 
-	return urls
+	return ids
 }
 
 // GetRealtimeURL get the url of realtime

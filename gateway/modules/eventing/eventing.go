@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"text/template"
 	"time"
@@ -12,9 +13,9 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils/pubsub"
 )
 
 // Module is responsible for managing the eventing system
@@ -22,6 +23,7 @@ type Module struct {
 	lock sync.RWMutex
 
 	// Configurable variables
+	nodeID  string
 	project string
 	config  *config.Eventing
 
@@ -33,7 +35,6 @@ type Module struct {
 	crud   model.CrudEventingInterface
 	schema model.SchemaEventingInterface
 
-	adminMan  model.AdminEventingInterface
 	syncMan   model.SyncmanEventingInterface
 	fileStore model.FilestoreEventingInterface
 
@@ -46,6 +47,9 @@ type Module struct {
 
 	// Templates for body transformation
 	templates map[string]*template.Template
+
+	// Pub sub network
+	pubsubClient *pubsub.Module
 }
 
 // synchronous event response
@@ -55,30 +59,39 @@ type eventResponse struct {
 }
 
 // New creates a new instance of the eventing module
-func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, schemaModule model.SchemaEventingInterface, adminMan *admin.Manager, syncMan *syncman.Manager, file model.FilestoreEventingInterface, hook model.MetricEventingHook) *Module {
+func New(projectID, nodeID string, auth model.AuthEventingInterface, crud model.CrudEventingInterface, schemaModule model.SchemaEventingInterface, syncMan *syncman.Manager, file model.FilestoreEventingInterface, hook model.MetricEventingHook) (*Module, error) {
+	// Create a pub sub client
+	pubsubClient, err := pubsub.New(projectID, os.Getenv("REDIS_CONN"))
+	if err != nil {
+		return nil, err
+	}
 
 	m := &Module{
-		auth:       auth,
-		crud:       crud,
-		schema:     schemaModule,
-		adminMan:   adminMan,
-		syncMan:    syncMan,
-		schemas:    map[string]model.Fields{},
-		fileStore:  file,
-		metricHook: hook,
-		config:     &config.Eventing{Enabled: false, InternalRules: make(config.EventingTriggers)},
-		templates:  map[string]*template.Template{},
+		project:      projectID,
+		nodeID:       nodeID,
+		auth:         auth,
+		crud:         crud,
+		schema:       schemaModule,
+		syncMan:      syncMan,
+		schemas:      map[string]model.Fields{},
+		fileStore:    file,
+		metricHook:   hook,
+		config:       &config.Eventing{Enabled: false, InternalRules: make(config.EventingTriggers)},
+		templates:    map[string]*template.Template{},
+		pubsubClient: pubsubClient,
 	}
 
 	// Start the internal processes
 	go m.routineProcessIntents()
 	go m.routineProcessStaged()
+	go m.routineHandleMessages()
+	go m.routineHandleEventResponseMessages()
 
-	return m
+	return m, nil
 }
 
 // SetConfig sets the module config
-func (m *Module) SetConfig(project string, eventing *config.EventingConfig) error {
+func (m *Module) SetConfig(projectID string, eventing *config.EventingConfig) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -91,7 +104,7 @@ func (m *Module) SetConfig(project string, eventing *config.EventingConfig) erro
 		return errors.New("invalid eventing config provided")
 	}
 
-	m.project = project
+	m.project = projectID
 	m.config.Enabled = eventing.Enabled
 	m.config.DBAlias = eventing.DBAlias
 
@@ -133,7 +146,9 @@ func (m *Module) SetTriggerConfig(triggers config.EventingTriggers) error {
 	}
 
 	m.templates = map[string]*template.Template{}
-	for _, trigger := range m.config.Rules {
+	for name, trigger := range m.config.Rules {
+		trigger.ID = name
+
 		// Set default templating engine
 		if trigger.Tmpl == "" {
 			trigger.Tmpl = config.TemplatingEngineGo
@@ -148,6 +163,11 @@ func (m *Module) SetTriggerConfig(triggers config.EventingTriggers) error {
 		case config.TemplatingEngineGo:
 			if trigger.RequestTemplate != "" {
 				if err := m.createGoTemplate("trigger", trigger.ID, trigger.RequestTemplate); err != nil {
+					return err
+				}
+			}
+			if trigger.Claims != "" {
+				if err := m.createGoTemplate("claim", trigger.ID, trigger.Claims); err != nil {
 					return err
 				}
 			}
@@ -172,6 +192,9 @@ func (m *Module) CloseConfig() error {
 	// Acquire a lock
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
+	// Close the pub sub client
+	m.pubsubClient.Close()
 
 	// erase map
 	m.processingEvents.Range(func(key interface{}, value interface{}) bool {

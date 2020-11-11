@@ -55,13 +55,13 @@ func (m *Module) processIntents(t *time.Time) {
 			continue
 		}
 
-		timestamp, err := time.Parse(time.RFC3339, eventDoc.EventTimestamp) // We are using event timestamp since intent are processed wrt the time the event was created
+		timestamp, err := time.Parse(time.RFC3339Nano, eventDoc.EventTimestamp) // We are using event timestamp since intent are processed wrt the time the event was created
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Could not parse (%s) in intent event doc (%s) as time", eventDoc.EventTimestamp, eventDoc.ID), err, nil)
 			continue
 		}
 
-		if t.After(timestamp.Add(30 * time.Second)) {
+		if t.After(timestamp.Add(5 * time.Minute)) {
 			go m.processIntent(eventDoc)
 		}
 	}
@@ -80,93 +80,6 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	eventID := eventDoc.ID
 
 	switch eventDoc.Type {
-
-	case utils.EventDBCreate:
-		// Unmarshal the payload
-		createEvent := model.DatabaseEventMessage{}
-		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &createEvent)
-
-		// Check if document exists in database
-		attr := map[string]string{"project": m.project, "db": createEvent.DBType, "col": createEvent.Col}
-		reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
-		readRequest := &model.ReadRequest{Operation: utils.One, Find: createEvent.Find.(map[string]interface{})}
-		if _, err := m.crud.Read(ctx, createEvent.DBType, createEvent.Col, readRequest, reqParams); err != nil {
-
-			// Mark event as cancelled if it document doesn't exist
-			if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Couldn't cancel intent", err, nil)
-			}
-			return
-		}
-
-		// Mark event as staged if document does exist
-		if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Couldn't update intent to staged", err, nil)
-			return
-		}
-
-		// Broadcast the event so the concerned worker can process it immediately
-		eventDoc.Status = utils.EventStatusStaged
-		m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
-
-	case utils.EventDBUpdate:
-		// Unmarshal the payload
-		updateEvent := model.DatabaseEventMessage{}
-		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &updateEvent)
-
-		// Get the document from the database
-		timestamp := time.Now()
-		readRequest := &model.ReadRequest{Operation: utils.One, Find: updateEvent.Find.(map[string]interface{})}
-		attr := map[string]string{"project": m.project, "db": updateEvent.DBType, "col": updateEvent.Col}
-		reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
-		result, err := m.crud.Read(ctx, updateEvent.DBType, updateEvent.Col, readRequest, reqParams)
-		if err != nil {
-			// Do nothing if there is an error while reading
-			return
-		}
-
-		// Update the payload and mark event as staged
-		updateEvent.Doc = result
-		data, _ := json.Marshal(updateEvent)
-		if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, &model.UpdateRequest{
-			Find: map[string]interface{}{"_id": eventID},
-			Update: map[string]interface{}{
-				"$set": map[string]interface{}{
-					"status":    utils.EventStatusStaged,
-					"payload":   string(data),
-					"timestamp": timestamp,
-				},
-			},
-		}); err == nil {
-			// Broadcast the event so the concerned worker can process it immediately
-			eventDoc.Status = utils.EventStatusStaged
-			eventDoc.Payload = string(data)
-			eventDoc.Timestamp = timestamp.Format(time.RFC3339)
-			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
-		}
-
-	case utils.EventDBDelete:
-		// Unmarshal the payload
-		deleteEvent := model.DatabaseEventMessage{}
-		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &deleteEvent)
-
-		// Check if document exists in database
-		readRequest := &model.ReadRequest{Operation: utils.One, Find: deleteEvent.Find.(map[string]interface{})}
-		attr := map[string]string{"project": m.project, "db": deleteEvent.DBType, "col": deleteEvent.Col}
-		reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
-		if _, err := m.crud.Read(ctx, deleteEvent.DBType, deleteEvent.Col, readRequest, reqParams); err == nil {
-
-			// Mark the event as cancelled if the document still exists
-			_ = m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID))
-			return
-		}
-
-		// Mark the event as staged if the document doesn't exist
-		if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err == nil {
-			// Broadcast the event so the concerned worker can process it immediately
-			eventDoc.Status = utils.EventStatusStaged
-			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
-		}
 	case utils.EventFileCreate:
 
 		filePayload := model.FilePayload{}
@@ -220,6 +133,5 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 			eventDoc.Status = utils.EventStatusStaged
 			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
 		}
-
 	}
 }

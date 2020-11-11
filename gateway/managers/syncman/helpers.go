@@ -2,12 +2,10 @@ package syncman
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/getlantern/deepcopy"
 	"github.com/mitchellh/mapstructure"
@@ -69,45 +67,6 @@ func (s *Manager) checkIfLeaderGateway(nodeID string) bool {
 	return strings.HasSuffix(nodeID, "-0")
 }
 
-func (s *Manager) getLeaderGateway() (*service, error) {
-	for _, service := range s.services {
-		if s.checkIfLeaderGateway(service.id) {
-			return service, nil
-		}
-	}
-	return nil, errors.New("leader gateway not found")
-}
-func (s *Manager) PingLeader() error {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	for i := 0; i <= 3; i++ {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		service, err := s.getLeaderGateway()
-		if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to ping server", err, nil)
-
-			// Sleep for 5 seconds before trying again
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		if err := s.MakeHTTPRequest(ctx, "GET", fmt.Sprintf("http://%s/v1/config/env", service.addr), "", "", struct{}{}, &map[string]interface{}{}); err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to ping server", err, nil)
-
-			// Sleep for 5 seconds before trying again
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		return nil
-	}
-
-	return errors.New("leader unavailable")
-}
-
 func (s *Manager) checkIfDbAliasExists(dbConfigs config.DatabaseConfigs, dbAlias string) (*config.DatabaseConfig, bool) {
 	for _, databaseConfig := range dbConfigs {
 		if dbAlias == databaseConfig.DbAlias {
@@ -115,21 +74,6 @@ func (s *Manager) checkIfDbAliasExists(dbConfigs config.DatabaseConfigs, dbAlias
 		}
 	}
 	return nil, false
-}
-
-// GetNodeID returns node id assigned to sc
-func (s *Manager) GetNodeID() string {
-	return s.nodeID
-}
-
-// GetSpaceCloudURLFromID returns addr for corresponding nodeID
-func (s *Manager) GetSpaceCloudURLFromID(ctx context.Context, nodeID string) (string, error) {
-	for _, service := range s.services {
-		if nodeID == service.id {
-			return service.addr, nil
-		}
-	}
-	return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Space cloud service with nodeId (%s) doesn't exists", nodeID), nil, nil)
 }
 
 func splitResourceID(ctx context.Context, resourceID string) (clusterID string, projectID string, resource config.Resource, err error) {

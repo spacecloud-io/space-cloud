@@ -50,8 +50,13 @@ func (m *Module) SetInitialProjectConfig(ctx context.Context, projects config.Pr
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set eventing module config", err, nil)
 		}
 
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting triggers of eventing module", nil)
+		if err := m.eventing.SetTriggerConfig(project.EventingTriggers); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set eventing module triggers", err, nil)
+		}
+
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting config of realtime module", nil)
-		if err := m.realtime.SetConfig(projectID, project.DatabaseConfigs, project.DatabaseRules, project.DatabaseSchemas); err != nil {
+		if err := m.realtime.SetConfig(project.DatabaseConfigs, project.DatabaseRules, project.DatabaseSchemas); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set realtime module config", err, nil)
 		}
 

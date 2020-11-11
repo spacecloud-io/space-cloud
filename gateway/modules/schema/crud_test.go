@@ -87,7 +87,7 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 }
 
 func returntime(s string) time.Time {
-	t, err := time.Parse(time.RFC3339, s)
+	t, err := time.Parse(time.RFC3339Nano, s)
 	if err != nil {
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("invalid string format of datetime (%s)", s), map[string]interface{}{"error": err})
 		return time.Now()

@@ -46,7 +46,6 @@ type AutoScaleTrigger struct {
 
 // AutoScaleAuthRef describes the authentication reference for a scaler
 type AutoScaleAuthRef struct {
-	SecretName    string                    `json:"secretName" yaml:"secretName"`
 	SecretMapping []AutoScaleAuthRefMapping `json:"secretMapping" yaml:"secretMapping"`
 }
 

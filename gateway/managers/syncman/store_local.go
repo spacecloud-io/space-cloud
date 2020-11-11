@@ -19,7 +19,7 @@ type LocalStore struct {
 }
 
 // NewLocalStore creates a new local store
-func NewLocalStore(nodeID, advertiseAddr string, ssl *config.SSL) (*LocalStore, error) {
+func NewLocalStore(nodeID string, ssl *config.SSL) (*LocalStore, error) {
 	configPath := os.Getenv("CONFIG")
 	if configPath == "" {
 		configPath = "config.yaml"
@@ -39,7 +39,7 @@ func NewLocalStore(nodeID, advertiseAddr string, ssl *config.SSL) (*LocalStore, 
 		conf.SSL = ssl
 	}
 	services := scServices{}
-	return &LocalStore{configPath: configPath, globalConfig: conf, services: append(services, &service{id: nodeID, addr: advertiseAddr})}, nil
+	return &LocalStore{configPath: configPath, globalConfig: conf, services: append(services, &service{id: nodeID})}, nil
 }
 
 // Register registers space cloud to the local store

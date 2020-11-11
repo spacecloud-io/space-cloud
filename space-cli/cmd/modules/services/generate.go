@@ -212,7 +212,7 @@ func GenerateServiceRole(projectID string) (*model.SpecObject, error) {
 		}
 		apiGroups := strings.Split(apiGroup, ",")
 		if apiGroups[len(apiGroups)-1] == "" {
-			return nil, utils.LogError(fmt.Sprintf("Last element of APIGroups not Specified"), nil)
+			return nil, utils.LogError("Last element of APIGroups not Specified", nil)
 		}
 
 		verb := ""
@@ -221,7 +221,7 @@ func GenerateServiceRole(projectID string) (*model.SpecObject, error) {
 		}
 		verbs := strings.Split(verb, ",")
 		if verbs[len(verbs)-1] == "" {
-			return nil, utils.LogError(fmt.Sprintf("Last element of Verbs not Specified"), nil)
+			return nil, utils.LogError("Last element of Verbs not Specified", nil)
 		}
 
 		resource := ""
@@ -230,7 +230,7 @@ func GenerateServiceRole(projectID string) (*model.SpecObject, error) {
 		}
 		resources := strings.Split(resource, ",")
 		if resources[len(resources)-1] == "" {
-			return nil, utils.LogError(fmt.Sprintf("Last element of Resources not Specified"), nil)
+			return nil, utils.LogError("Last element of Resources not Specified", nil)
 		}
 
 		rule := model.Rule{

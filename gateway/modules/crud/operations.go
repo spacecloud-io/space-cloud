@@ -40,12 +40,6 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 		return err
 	}
 
-	// Invoke the create intent hook
-	intent, err := m.hooks.Create(ctx, dbAlias, col, req)
-	if err != nil {
-		return err
-	}
-
 	var n int64
 	if req.IsBatch {
 		// add the request for batch operation
@@ -60,8 +54,6 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 		m.metricHook(m.project, dbAlias, col, n, model.Create)
 	}
 
-	// Invoke the stage hook
-	m.hooks.Stage(ctx, intent, err)
 	return err
 }
 
@@ -155,12 +147,6 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 		return err
 	}
 
-	// Invoke the update intent hook
-	intent, err := m.hooks.Update(ctx, dbAlias, col, req)
-	if err != nil {
-		return err
-	}
-
 	// Perform the update operation
 	n, err := crud.Update(ctx, col, req)
 
@@ -169,8 +155,6 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 		m.metricHook(m.project, dbAlias, col, n, model.Update)
 	}
 
-	// Invoke the stage hook
-	m.hooks.Stage(ctx, intent, err)
 	return err
 }
 
@@ -205,12 +189,6 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 		return nil
 	}
 
-	// Invoke the delete intent hook
-	intent, err := m.hooks.Delete(ctx, dbAlias, col, req)
-	if err != nil {
-		return err
-	}
-
 	// Perform the delete operation
 	n, err := crud.Delete(ctx, col, req)
 
@@ -219,8 +197,6 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 		m.metricHook(m.project, dbAlias, col, n, model.Delete)
 	}
 
-	// Invoke the stage hook
-	m.hooks.Stage(ctx, intent, err)
 	return err
 }
 
@@ -342,12 +318,6 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 		return err
 	}
 
-	// Invoke the batch intent hook
-	intent, err := m.hooks.Batch(ctx, dbAlias, req)
-	if err != nil {
-		return err
-	}
-
 	// Perform the batch operation
 	counts, err := crud.Batch(ctx, req)
 
@@ -358,8 +328,6 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 		}
 	}
 
-	// Invoke the stage hook
-	m.hooks.Stage(ctx, intent, err)
 	return err
 }
 

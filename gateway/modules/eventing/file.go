@@ -5,6 +5,8 @@ import (
 	"errors"
 	"math/rand"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -23,7 +25,7 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 	token := rand.Intn(utils.MaxEventTokens)
 	batchID := m.generateBatchID()
 
-	rules := m.getMatchingRules(utils.EventFileCreate, map[string]string{})
+	rules := m.getMatchingRules(ctx, &model.QueueEventRequest{Type: utils.EventFileCreate, Options: map[string]string{}})
 
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
@@ -70,7 +72,7 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map
 	batchID := m.generateBatchID()
 	token := rand.Intn(utils.MaxEventTokens)
 
-	rules := m.getMatchingRules(utils.EventFileDelete, map[string]string{})
+	rules := m.getMatchingRules(ctx, &model.QueueEventRequest{Type: utils.EventFileDelete, Options: map[string]string{}})
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {
@@ -95,4 +97,46 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map
 	}
 
 	return &model.EventIntent{BatchID: batchID, Token: token, Docs: eventDocs}, nil
+}
+
+// HookStage stages the event so that it can be processed
+func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	// Return if the intent is invalid
+	if intent.Invalid {
+		return
+	}
+
+	set := map[string]interface{}{}
+	if err != nil {
+		// Set the status to cancelled if error occurred
+		set["status"] = utils.EventStatusCancelled
+		set["remark"] = err.Error()
+		intent.Invalid = true
+	} else {
+		// Set the status to staged if no error occurred
+		set["status"] = utils.EventStatusStaged
+	}
+
+	// Create the find and update clauses
+	find := map[string]interface{}{"batchid": intent.BatchID}
+	update := map[string]interface{}{"$set": set}
+
+	updateRequest := model.UpdateRequest{Find: find, Operation: utils.All, Update: update}
+	if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, &updateRequest); err != nil {
+		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Eventing Error: event could not be updated", map[string]interface{}{"error": err})
+		return
+	}
+
+	for _, doc := range intent.Docs {
+		// Mark all docs as staged
+		doc.Status = utils.EventStatusStaged
+	}
+
+	// Broadcast the event so the concerned worker can process it immediately
+	if !intent.Invalid {
+		m.transmitEvents(intent.Token, intent.Docs)
+	}
 }

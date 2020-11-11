@@ -155,7 +155,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			}
 		}
 		if strings.HasPrefix(function, "now") {
-			return time.Now().UTC().Format(time.RFC3339), nil
+			return time.Now().UTC().Format(time.RFC3339Nano), nil
 		}
 		if strings.HasPrefix(function, "addDuration") {
 			params0 := strings.TrimSpace(params[0])
@@ -177,7 +177,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			if err != nil {
 				return "", err
 			}
-			return param0.Add(paresedtime).Format(time.RFC3339), nil
+			return param0.Add(paresedtime).Format(time.RFC3339Nano), nil
 		}
 		if strings.HasPrefix(function, "roundUpDate") {
 			params0 := strings.TrimSpace(params[0])
@@ -212,7 +212,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			default:
 				return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid parameter (%s) provided for space cloud internal function (utils.roundUpDate)", params1), nil, nil)
 			}
-			return timeDate.Format(time.RFC3339), nil
+			return timeDate.Format(time.RFC3339Nano), nil
 		}
 
 		return nil, errors.New("Invalid utils operation")

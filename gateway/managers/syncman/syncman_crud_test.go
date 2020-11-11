@@ -2001,6 +2001,7 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 
 			mockModules := mockModulesInterface{}
 			mockStore := mockStoreInterface{}
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			for _, m := range tt.modulesMockArgs {
 				mockModules.On(m.method, m.args...).Return(m.paramsReturned...)

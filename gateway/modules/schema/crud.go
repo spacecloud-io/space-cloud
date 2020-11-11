@@ -95,9 +95,9 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 				case model.TypeDateTime:
 					switch v := column.(type) {
 					case time.Time:
-						doc[field.name] = v.UTC().Format(time.RFC3339)
+						doc[field.name] = v.UTC().Format(time.RFC3339Nano)
 					case primitive.DateTime:
-						doc[field.name] = v.Time().UTC().Format(time.RFC3339)
+						doc[field.name] = v.Time().UTC().Format(time.RFC3339Nano)
 					}
 				}
 			}
@@ -139,7 +139,7 @@ func (s *Schema) AdjustWhereClause(ctx context.Context, dbAlias string, dbType m
 		case model.TypeDateTime:
 			switch param := v.(type) {
 			case string:
-				t, err := time.Parse(time.RFC3339, param)
+				t, err := time.Parse(time.RFC3339Nano, param)
 				if err != nil {
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid string format of datetime (%s) provided for field (%s)", param, k), err, nil)
 				}
@@ -160,7 +160,7 @@ func (s *Schema) AdjustWhereClause(ctx context.Context, dbAlias string, dbType m
 					}
 
 					// Try parsing it to time.Time
-					t, err := time.Parse(time.RFC3339, paramString)
+					t, err := time.Parse(time.RFC3339Nano, paramString)
 					if err != nil {
 						return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid string format of datetime (%s) provided for field (%s)", param, k), nil, nil)
 					}

@@ -29,7 +29,7 @@ type Modules struct {
 }
 
 // New creates a new modules instance
-func New(clusterID string, nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
+func New(projectID, clusterID, nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
 	return &Modules{
 		blocks:     map[string]*Module{},
 		clusterID:  clusterID,
@@ -275,7 +275,11 @@ func (m *Modules) newModule(config *config.ProjectConfig) (*Module, error) {
 		return nil, errors.New("upgrade your plan to create new project")
 	}
 
-	module := newModule(m.clusterID, m.nodeID, m.Managers, m.GlobalMods)
+	module, err := newModule(config.ID, m.clusterID, m.nodeID, m.Managers, m.GlobalMods)
+	if err != nil {
+		return nil, err
+	}
+
 	m.blocks[config.ID] = module
 	return module, nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"reflect"
 	"testing"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -1103,17 +1102,17 @@ func TestLoadValue(t *testing.T) {
 			// want:    true,
 			wantErr: true,
 		},
+		// {
+		// 	name: "utils.addDuration testing 1",
+		// 	args: args{
+		// 		key:   "utils.addDuration('utils.now()', '0h')",
+		// 		state: map[string]interface{}{},
+		// 	},
+		// 	want:    time.Now().UTC().Format(time.RFC3339Nano),
+		// 	wantErr: false,
+		// },
 		{
-			name: "utils.addDuration testing",
-			args: args{
-				key:   "utils.addDuration('utils.now()', '0h')",
-				state: map[string]interface{}{},
-			},
-			want:    time.Now().UTC().Format(time.RFC3339),
-			wantErr: false,
-		},
-		{
-			name: "utils.addDuration testing",
+			name: "utils.addDuration testing 2",
 			args: args{
 				key:   "utils.addDuration('2020-01-01T00:00:00Z', '4h')",
 				state: map[string]interface{}{},
@@ -1122,7 +1121,7 @@ func TestLoadValue(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "utils.roundUpDate testing",
+			name: "utils.roundUpDate testing 3",
 			args: args{
 				key:   "utils.roundUpDate('2020-03-25', 'month')",
 				state: map[string]interface{}{},

@@ -52,6 +52,10 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/user-management/provider/{id}").HandlerFunc(handlers.HandleSetUserManagement(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/user-management/provider/{id}").HandlerFunc(handlers.HandleDeleteUserManagement(s.managers.Admin(), s.managers.Sync()))
 
+	router.Methods(http.MethodGet).Path("/v1/config/caching/config").HandlerFunc(handlers.HandleGetCacheConfig())
+	router.Methods(http.MethodPost).Path("/v1/config/caching/config/{id}").HandlerFunc(handlers.HandleSetCacheConfig())
+	router.Methods(http.MethodGet).Path("/v1/external/caching/connection-state").HandlerFunc(handlers.HandleGetCacheConnectionState())
+
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/config").HandlerFunc(handlers.HandleGetEventingConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/config/{id}").HandlerFunc(handlers.HandleSetEventingConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/triggers").HandlerFunc(handlers.HandleGetEventingTriggers(s.managers.Admin(), s.managers.Sync()))
@@ -114,12 +118,10 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	// Initialize the routes for realtime service
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/realtime/handle").HandlerFunc(handlers.HandleRealtimeEvent(s.modules))
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/realtime/process").HandlerFunc(handlers.HandleRealtimeProcessRequest(s.modules))
 
 	// Initialize the routes for eventing service
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/queue").HandlerFunc(handlers.HandleQueueEvent(s.modules))
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/process").HandlerFunc(handlers.HandleProcessEvent(s.managers.Admin(), s.modules))
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/process-event-response").HandlerFunc(handlers.HandleEventResponse(s.modules))
+	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/admin-queue").HandlerFunc(handlers.HandleAdminQueueEvent(s.managers.Admin(), s.modules))
 
 	// Initialize the routes for the crud operations
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/crud/{dbAlias}/batch").HandlerFunc(handlers.HandleCrudBatch(s.modules))

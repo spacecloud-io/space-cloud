@@ -85,6 +85,11 @@ func (m *Module) SetConfig(project string, c config.Services) error {
 						return err
 					}
 				}
+				if endpoint.Claims != "" {
+					if err := m.createGoTemplate("claim", service.ID, endpointID, endpoint.Claims); err != nil {
+						return err
+					}
+				}
 			default:
 				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided", endpoint.Tmpl), nil, nil)
 			}

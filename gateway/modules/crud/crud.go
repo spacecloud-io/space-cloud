@@ -36,7 +36,6 @@ type Module struct {
 
 	dataLoader loader
 	// Variables to store the hooks
-	hooks      *model.CrudHooks
 	metricHook model.MetricCrudHook
 
 	// Extra variables for enterprise
