@@ -271,7 +271,7 @@ type Rule struct {
 	Store    string                 `json:"store,omitempty" yaml:"store,omitempty" mapstructure:"store"`
 	Claims   map[string]interface{} `json:"claims,omitempty" yaml:"claims,omitempty" mapstructure:"claims"`
 	Template TemplatingEngine       `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
-	ReqTmpl  string                 `json:"requestTemplate" yaml:"requestTemplate" mapstructure:"requestTemplate"`
+	ReqTmpl  string                 `json:"requestTemplate,omitempty" yaml:"requestTemplate,omitempty" mapstructure:"requestTemplate"`
 	OpFormat string                 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
 }
 
