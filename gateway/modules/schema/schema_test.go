@@ -1,9 +1,9 @@
 package schema
 
 import (
-	"encoding/json"
-	"reflect"
 	"testing"
+
+	"github.com/go-test/deep"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -170,23 +170,27 @@ func TestParseSchema(t *testing.T) {
 				"mongo": model.Collection{
 					"tweet": model.Fields{
 						"ID": &model.FieldType{
-							FieldName:  "ID",
-							Kind:       model.TypeID,
-							TypeIDSize: model.SQLTypeIDSize,
-							IsPrimary:  true,
+							FieldName:       "ID",
+							IsAutoIncrement: false,
+							Kind:            model.TypeID,
+							TypeIDSize:      model.SQLTypeIDSize,
+							IsPrimary:       true,
 						},
 						"age": &model.FieldType{
-							FieldName:  "age",
-							TypeIDSize: model.SQLTypeIDSize,
-							Kind:       model.TypeFloat,
+							FieldName:       "age",
+							IsAutoIncrement: false,
+							TypeIDSize:      model.SQLTypeIDSize,
+							Kind:            model.TypeFloat,
 						},
 						"spec": &model.FieldType{
-							FieldName:  "spec",
-							TypeIDSize: model.SQLTypeIDSize,
-							Kind:       model.TypeJSON,
+							FieldName:       "spec",
+							IsAutoIncrement: false,
+							TypeIDSize:      model.SQLTypeIDSize,
+							Kind:            model.TypeJSON,
 						},
 						"customer_id": &model.FieldType{
 							FieldName:           "customer_id",
+							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
@@ -221,18 +225,21 @@ func TestParseSchema(t *testing.T) {
 				"mongo": model.Collection{
 					"tweet": model.Fields{
 						"ID": &model.FieldType{
-							FieldName:  "ID",
-							Kind:       model.TypeID,
-							TypeIDSize: model.SQLTypeIDSize,
-							IsPrimary:  true,
+							FieldName:       "ID",
+							IsAutoIncrement: false,
+							Kind:            model.TypeID,
+							TypeIDSize:      model.SQLTypeIDSize,
+							IsPrimary:       true,
 						},
 						"age": &model.FieldType{
-							FieldName:  "age",
-							Kind:       model.TypeFloat,
-							TypeIDSize: model.SQLTypeIDSize,
+							FieldName:       "age",
+							IsAutoIncrement: false,
+							Kind:            model.TypeFloat,
+							TypeIDSize:      model.SQLTypeIDSize,
 						},
 						"role": &model.FieldType{
 							FieldName:           "role",
+							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
@@ -240,24 +247,28 @@ func TestParseSchema(t *testing.T) {
 							Default:             "user",
 						},
 						"spec": &model.FieldType{
-							FieldName:  "spec",
-							Kind:       model.TypeJSON,
-							TypeIDSize: model.SQLTypeIDSize,
+							FieldName:       "spec",
+							IsAutoIncrement: false,
+							Kind:            model.TypeJSON,
+							TypeIDSize:      model.SQLTypeIDSize,
 						},
 						"createdAt": &model.FieldType{
-							FieldName:   "createdAt",
-							Kind:        model.TypeDateTime,
-							TypeIDSize:  model.SQLTypeIDSize,
-							IsCreatedAt: true,
+							FieldName:       "createdAt",
+							IsAutoIncrement: false,
+							Kind:            model.TypeDateTime,
+							TypeIDSize:      model.SQLTypeIDSize,
+							IsCreatedAt:     true,
 						},
 						"updatedAt": &model.FieldType{
-							FieldName:   "updatedAt",
-							Kind:        model.TypeDateTime,
-							TypeIDSize:  model.SQLTypeIDSize,
-							IsUpdatedAt: true,
+							FieldName:       "updatedAt",
+							IsAutoIncrement: false,
+							Kind:            model.TypeDateTime,
+							TypeIDSize:      model.SQLTypeIDSize,
+							IsUpdatedAt:     true,
 						},
 						"first_name": &model.FieldType{
 							FieldName:           "first_name",
+							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
@@ -270,6 +281,7 @@ func TestParseSchema(t *testing.T) {
 						},
 						"name": &model.FieldType{
 							FieldName:           "name",
+							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
@@ -283,6 +295,7 @@ func TestParseSchema(t *testing.T) {
 						},
 						"customer_id": &model.FieldType{
 							FieldName:           "customer_id",
+							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
@@ -295,11 +308,12 @@ func TestParseSchema(t *testing.T) {
 							},
 						},
 						"order_dates": &model.FieldType{
-							FieldName:  "order_dates",
-							IsList:     true,
-							Kind:       model.TypeDateTime,
-							TypeIDSize: model.SQLTypeIDSize,
-							IsLinked:   true,
+							FieldName:       "order_dates",
+							IsAutoIncrement: false,
+							IsList:          true,
+							Kind:            model.TypeDateTime,
+							TypeIDSize:      model.SQLTypeIDSize,
+							IsLinked:        true,
 							LinkedTable: &model.TableProperties{
 								Table:  "order",
 								From:   "id",
@@ -341,20 +355,8 @@ func TestParseSchema(t *testing.T) {
 				t.Errorf("\n Schema.parseSchema() error = expected error-%v,got error-%v", testCase.IsErrExpected, err)
 				return
 			}
-			if !reflect.DeepEqual(r, testCase.schema) {
-				t.Error("Schema.parseSchema() error =", r, testCase.schema)
-				v, err := json.MarshalIndent(r, "", " ")
-				if err != nil {
-					t.Log(err)
-					return
-				}
-				t.Log("Got", string(v))
-				v, err = json.MarshalIndent(testCase.schema, "", " ")
-				if err != nil {
-					t.Log(err)
-					return
-				}
-				t.Log("Want", string(v))
+			if arr := deep.Equal(r, testCase.schema); len(arr) > 0 {
+				t.Errorf("generateInspection() differences = %v", arr)
 			}
 		})
 	}
