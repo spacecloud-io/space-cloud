@@ -3,13 +3,20 @@ package syncman
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils/leader"
+	"github.com/spaceuptech/space-cloud/gateway/utils/pubsub"
 )
+
+const pubSubOperationRenew = "renew"
+const pubSubOperationUpgrade = "upgrade"
 
 // Manager syncs the project config between folders
 type Manager struct {
@@ -24,10 +31,12 @@ type Manager struct {
 	runnerAddr string
 	port       int
 
+	leader       *leader.Module
+	pubsubClient *pubsub.Module
 	// Configuration for clustering
 	storeType string
 	store     Store
-	services  []*service
+	services  model.ScServices
 
 	// For authentication
 	adminMan       AdminSyncmanInterface
@@ -36,10 +45,6 @@ type Manager struct {
 	// Modules
 	modules       ModulesInterface
 	globalModules GlobalModulesInterface
-}
-
-type service struct {
-	id string
 }
 
 // New creates a new instance of the sync manager
@@ -66,11 +71,47 @@ func New(nodeID, clusterID, storeType, runnerAddr string, adminMan AdminSyncmanI
 	m.store = s
 	m.store.Register()
 
+	pubsubClient, err := pubsub.New("license-manager", os.Getenv("REDIS_CONN"))
+	if err != nil {
+		return nil, helpers.Logger.LogError("syncman-new", "Unable to initialize pub sub client required for sync module, ensure that redis database is running", err, nil)
+	}
+	m.pubsubClient = pubsubClient
+	m.leader = leader.New(nodeID, pubsubClient)
+
+	if err := m.SetPubSubRoutines(nodeID); err != nil {
+		return nil, err
+	}
+
 	return m, nil
 }
 
 // Start begins the sync manager operations
 func (s *Manager) Start(port int) error {
+
+	// Start routine to observe space cloud projects
+	if err := s.store.WatchServices(func(eventType, serviceID string, services model.ScServices) {
+		s.lock.Lock()
+		defer s.lock.Unlock()
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services, "eventType": eventType, "id": serviceID})
+
+		s.adminMan.SetServices(eventType, services)
+		s.services = services
+	}); err != nil {
+		return err
+	}
+
+	count := 1
+	maxRetryCount := 6
+	incrementBy := 10
+	for len(s.services) == 0 {
+		helpers.Logger.LogDebug("syncman-start", fmt.Sprintf("Waiting for gateway services to register - retry count (%d)", count), nil)
+		time.Sleep(time.Duration(count*incrementBy) * time.Second)
+		if count == maxRetryCount {
+			return helpers.Logger.LogError("syncman-start", "Cannot start gateway, gateway service not registered", nil, nil)
+		}
+		count++
+	}
+
 	// Save the ports
 	s.port = port
 	// NOTE: SSL is not set in config
@@ -92,10 +133,15 @@ func (s *Manager) Start(port int) error {
 	if err := s.modules.SetInitialProjectConfig(context.TODO(), globalConfig.Projects); err != nil {
 		return err
 	}
-	_ = s.adminMan.SetConfig(globalConfig.License, true)
+	s.adminMan.SetServices(config.ResourceAddEvent, s.services)
+	_ = s.adminMan.SetConfig(globalConfig.License)
 	s.adminMan.SetIntegrationConfig(globalConfig.Integrations)
 	_ = s.integrationMan.SetConfig(globalConfig.Integrations, globalConfig.IntegrationHooks)
-
+	s.leader.AddCallBack("admin-set-service", func() {
+		s.lock.RLock()
+		s.adminMan.SetServices(config.ResourceDeleteEvent, s.services)
+		s.lock.RUnlock()
+	})
 	// Start routine to observe space cloud project level resources
 	if err := s.store.WatchResources(func(eventType, resourceID string, resourceType config.Resource, resource interface{}) {
 		s.lock.Lock()
@@ -184,7 +230,7 @@ func (s *Manager) Start(port int) error {
 			s.integrationMan.SetIntegrationHooks(s.projectConfig.IntegrationHooks)
 
 		case config.ResourceLicense:
-			if err := s.adminMan.SetConfig(s.projectConfig.License, false); err != nil {
+			if err := s.adminMan.SetConfig(s.projectConfig.License); err != nil {
 				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
 				return
 			}
@@ -196,17 +242,21 @@ func (s *Manager) Start(port int) error {
 	}); err != nil {
 		return err
 	}
+	s.store.WatchLicense(func(eventType, resourceID string, resourceType config.Resource, resource *config.License) {
 
-	// Start routine to observe space cloud projects
-	if err := s.store.WatchServices(func(services scServices) {
-		s.lock.Lock()
-		defer s.lock.Unlock()
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services})
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating license", map[string]interface{}{"event": eventType, "resourceId": resourceID, "resource": resource, "resourceType": resourceType})
 
-		s.services = services
-	}); err != nil {
-		return err
-	}
+		if resourceType == config.ResourceLicense {
+			if err := s.adminMan.SetConfig(resource); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
+				return
+			}
+			s.lock.Lock()
+			s.projectConfig.License = resource
+			s.lock.Unlock()
+		}
+
+	})
 
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Exiting syncman start", nil)
 	return nil

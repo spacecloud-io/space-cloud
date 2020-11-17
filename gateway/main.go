@@ -186,7 +186,7 @@ func actionRun(c *cli.Context) error {
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
-		nodeID = fmt.Sprintf("auto-%s-0", ksuid.New().String())
+		nodeID = fmt.Sprintf("auto-%s", ksuid.New().String())
 	}
 
 	helpers.Logger.LogInfo("start", fmt.Sprintf("Starting node with id - %s", nodeID), nil)

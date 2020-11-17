@@ -16,3 +16,9 @@ type RequestParams struct {
 	Path       string                 `json:"path"`
 	Payload    interface{}            `json:"payload"`
 }
+
+type LicenseUpgradeRequest struct {
+	LicenseKey   string `json:"licenseKey" mapstructure:"licenseKey"`
+	LicenseValue string `json:"licenseValue" mapstructure:"licenseValue"`
+	ClusterName  string `json:"clusterName" mapstructure:"clusterName"`
+}

@@ -162,8 +162,18 @@ func (m *Manager) GetCredentials() map[string]interface{} {
 func (m *Manager) GetClusterID() string {
 	return m.clusterID
 }
-func (m *Manager) GetSessionID() string {
-	return m.sessionID
+func (m *Manager) GetSessionID() (string, error) {
+	if licenseMode == licenseModeOffline {
+		return m.getOfflineLicenseSessionID(), nil
+	}
+	if m.isEnterpriseMode() {
+		licenseObj, err := m.decryptLicense(m.license.License)
+		if err != nil {
+			return "", helpers.Logger.LogError("get-session-id", "Unable to validate license key", err, nil)
+		}
+		return licenseObj.SessionID, nil
+	}
+	return selectRandomSessionID(m.services), nil // first time license renewal
 }
 
 func (m *Manager) GetEnterpriseClusterID() string {

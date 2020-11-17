@@ -41,7 +41,7 @@ func (s *Manager) GetAssignedSpaceCloudID(ctx context.Context, project string, t
 
 	index := calcIndex(token, utils.MaxEventTokens, len(s.services))
 
-	return s.services[index].id, nil
+	return s.services[index].ID, nil
 }
 
 // GetSpaceCloudNodeIDs returns the array of space cloud ids
@@ -52,7 +52,7 @@ func (s *Manager) GetSpaceCloudNodeIDs(project string) []string {
 	ids := make([]string, len(s.services))
 
 	for i, svc := range s.services {
-		ids[i] = svc.id
+		ids[i] = svc.ID
 	}
 
 	return ids
@@ -124,8 +124,9 @@ func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestPara
 func (s *Manager) SetLicense(ctx context.Context, license *config.License) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	s.projectConfig.License = license
 	resourceID := config.GenerateResourceID(s.clusterID, "noProject", config.ResourceLicense, "license")
-	return s.store.SetResource(ctx, resourceID, license)
+	return s.store.SetLicense(ctx, resourceID, license)
 }
 
 // GetConfig returns the config present in the state

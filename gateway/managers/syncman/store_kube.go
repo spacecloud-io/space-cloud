@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // KubeStore is an object for storing kubestore information
@@ -49,6 +50,75 @@ func NewKubeStore(clusterID string) (*KubeStore, error) {
 // Register registers space cloud to the kube store
 func (s *KubeStore) Register() {
 	// kubernetes will handle this automatically
+}
+
+func onAddOrUpdateLicenses(eventType string, obj interface{}) (string, string, config.Resource, *config.License) {
+	secret := obj.(*v1.Secret)
+
+	resourceID, ok := secret.Data["id"]
+	if !ok {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("%s event occured on resource config map, but (id) field was not found in config map data", eventType), nil, nil)
+		return "", "", "", nil
+	}
+
+	resourceType, ok := secret.Labels["kind"]
+	if !ok {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("%s event occured on resource config map, but (kind) label was not found in config map", eventType), nil, nil)
+		return "", "", "", nil
+	}
+
+	dataJSONString, ok := secret.Data["data"]
+	if !ok {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "data field does not exists in license secret", nil, nil)
+		return "", "", "", nil
+	}
+
+	licenseConfig := new(config.License)
+	if err := json.Unmarshal(dataJSONString, licenseConfig); err != nil {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to unmarshal license secret data while watching kube license secret", nil, map[string]interface{}{})
+		return "", "", "", nil
+	}
+	return eventType, string(resourceID), config.Resource(resourceType), licenseConfig
+}
+
+func (s *KubeStore) WatchLicense(cb func(eventType, resourceID string, resourceType config.Resource, resource *config.License)) {
+	go func() {
+		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
+			options.LabelSelector = fmt.Sprintf("clusterId=%s,kind=%s", s.clusterID, config.ResourceLicense)
+		}
+		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 0, informers.WithTweakListOptions(options)).Core().V1().Secrets().Informer()
+		stopper := make(chan struct{})
+		defer close(stopper)
+		defer runtime.HandleCrash() // handles a crash & logs an error
+
+		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				evenType, resourceID, resourceType, resource := onAddOrUpdateLicenses(config.ResourceAddEvent, obj)
+				if resource == nil || resourceID == "" {
+					return
+				}
+				cb(evenType, resourceID, resourceType, resource)
+			},
+			UpdateFunc: func(old, obj interface{}) {
+				evenType, resourceID, resourceType, resource := onAddOrUpdateLicenses(config.ResourceUpdateEvent, obj)
+				if resource == nil || resourceID == "" {
+					return
+				}
+				cb(evenType, resourceID, resourceType, resource)
+			},
+			DeleteFunc: func(obj interface{}) {
+				evenType, resourceID, resourceType, resource := onAddOrUpdateLicenses(config.ResourceDeleteEvent, obj)
+				if resource == nil || resourceID == "" {
+					return
+				}
+				cb(evenType, resourceID, resourceType, resource)
+			},
+		})
+
+		go informer.Run(stopper)
+		<-stopper
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Stopped watching over projects in kube store", nil)
+	}()
 }
 
 func onAddOrUpdateResource(eventType string, obj interface{}) (string, string, config.Resource, interface{}) {
@@ -121,7 +191,7 @@ func (s *KubeStore) WatchResources(cb func(eventType, resourceID string, resourc
 	return nil
 }
 
-func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
+func onAddOrUpdateServices(obj interface{}, services model.ScServices) (string, model.ScServices) {
 	pod := obj.(*v1.Pod)
 	id := string(pod.UID)
 
@@ -129,19 +199,19 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 	if pod.Status.Phase != v1.PodRunning || pod.Status.PodIP == "" {
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Pod (%s) isn't running yet. Current status - %s", id, pod.Status.Phase), nil)
 		for index, service := range services {
-			if service.id == id {
+			if service.ID == id {
 				helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Removing space cloud service from kubernetes", map[string]interface{}{"id": id})
 				services[index] = services[len(services)-1]
 				services = services[:len(services)-1]
 				break
 			}
 		}
-		return services
+		return id, services
 	}
 
 	doesExist := false
 	for _, service := range services {
-		if service.id == id {
+		if service.ID == id {
 			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating space cloud service in kubernetes", map[string]interface{}{"id": id})
 			doesExist = true
 			break
@@ -151,15 +221,16 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 	// add service if it doesn't exist
 	if !doesExist {
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Adding a space cloud service in kubernetes", map[string]interface{}{"id": id})
-		services = append(services, &service{id: id})
+		services = append(services, &model.Service{ID: id})
 	}
-	return services
+	return id, services
 }
 
 // WatchServices maintains consistency over all services
-func (s *KubeStore) WatchServices(cb func(scServices)) error {
+func (s *KubeStore) WatchServices(cb func(string, string, model.ScServices)) error {
 	go func() {
-		services := scServices{}
+		services := model.ScServices{}
+		var serviceID string
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
 			options.LabelSelector = fmt.Sprintf("app=%s,clusterId=%s", "gateway", s.clusterID)
 		}
@@ -170,15 +241,15 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				services = onAddOrUpdateServices(obj, services)
+				serviceID, services = onAddOrUpdateServices(obj, services)
 				sort.Stable(services)
-				cb(services)
+				cb(config.ResourceAddEvent, serviceID, services)
 			},
 			DeleteFunc: func(obj interface{}) {
 				pod := obj.(*v1.Pod)
-				id := pod.Name
+				id := string(pod.UID)
 				for index, service := range services {
-					if service.id == id {
+					if service.ID == id {
 						// remove service
 						helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Removing space cloud service from kubernetes", map[string]interface{}{"id": id})
 						services[index] = services[len(services)-1]
@@ -187,12 +258,12 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 					}
 				}
 				sort.Stable(services)
-				cb(services)
+				cb(config.ResourceDeleteEvent, id, services)
 			},
 			UpdateFunc: func(old, obj interface{}) {
-				services = onAddOrUpdateServices(obj, services)
+				serviceID, services = onAddOrUpdateServices(obj, services)
 				sort.Stable(services)
-				cb(services)
+				cb(config.ResourceUpdateEvent, serviceID, services)
 			},
 		})
 
@@ -259,6 +330,54 @@ func (s *KubeStore) SetResource(ctx context.Context, resourceID string, resource
 	return err
 }
 
+// SetResource sets the project of the kube store
+func (s *KubeStore) SetLicense(ctx context.Context, resourceID string, resource *config.License) error {
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting License", map[string]interface{}{"resourceId": resourceID})
+
+	resourceJSONString, err := json.Marshal(resource)
+	if err != nil {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set project in kube store couldn't unmarshal project config", err, nil)
+		return err
+	}
+
+	encodedData := map[string][]byte{
+		"data": resourceJSONString,
+		"id":   []byte(resourceID), // This is the resource ID
+	}
+
+	secretInfo, err := s.kube.CoreV1().Secrets(spaceCloud).Get(makeIDConfigMapCompatible(resourceID), v12.GetOptions{})
+	if kubeErrors.IsNotFound(err) {
+		// Create a new Secret
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Creating secret (%s)", resourceID), nil)
+		secObj := &v1.Secret{
+			Type: v1.SecretTypeOpaque,
+			ObjectMeta: v12.ObjectMeta{
+				Name:      makeIDConfigMapCompatible(resourceID),
+				Namespace: spaceCloud,
+				Labels: map[string]string{
+					"app":                          "space-cloud",
+					"clusterId":                    s.clusterID,
+					"kind":                         string(config.ResourceLicense),
+					"projectId":                    "noProject",
+					"app.kubernetes.io/name":       "license",
+					"app.kubernetes.io/managed-by": "space-cloud",
+				},
+			},
+			Data: encodedData,
+		}
+		_, err = s.kube.CoreV1().Secrets(spaceCloud).Create(secObj)
+		return err
+	} else if err != nil {
+		return err
+	}
+
+	secretInfo.Data = encodedData
+	if _, err := s.kube.CoreV1().Secrets(spaceCloud).Update(secretInfo); err != nil {
+		return err
+	}
+	return nil
+}
+
 // DeleteResource deletes a resource from cluster
 func (s *KubeStore) DeleteResource(ctx context.Context, resourceID string) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Deleting resource", map[string]interface{}{"resourceId": resourceID})
@@ -302,6 +421,17 @@ func (s *KubeStore) GetGlobalConfig() (*config.Config, error) {
 			if err := validateResource(context.TODO(), eventType, globalConfig, resourceID, resourceType, resource); err != nil {
 				return nil, err
 			}
+		}
+	}
+
+	secrets, err := s.kube.CoreV1().Secrets(spaceCloud).List(v12.ListOptions{LabelSelector: fmt.Sprintf("clusterId=%s,kind=%s", s.clusterID, config.ResourceLicense)})
+	if err != nil {
+		return nil, err
+	}
+	for _, configMap := range secrets.Items {
+		eventType, resourceID, _, resource := onAddOrUpdateLicenses(config.ResourceAddEvent, &configMap)
+		if err := validateResource(context.TODO(), eventType, globalConfig, resourceID, config.ResourceLicense, resource); err != nil {
+			return nil, err
 		}
 	}
 	s.projectsConfig = globalConfig

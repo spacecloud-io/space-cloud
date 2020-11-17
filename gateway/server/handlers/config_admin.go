@@ -47,7 +47,11 @@ func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 			return
 		}
 
-		isProd, plan, quotas, loginURL, clusterName, licenseRenewal, licenseKey, licenseValue, sessionID, licenseMode := adminMan.LoadEnv()
+		isProd, plan, quotas, loginURL, clusterName, licenseRenewal, licenseKey, licenseValue, sessionID, licenseMode, err := adminMan.LoadEnv()
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{
 			"isProd":       isProd,
 			"plan":         plan,

@@ -8,20 +8,17 @@ import (
 
 	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // HandleUpgrade returns the handler to load the projects via a REST endpoint
 func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerFunc {
-	type request struct {
-		LicenseKey   string `json:"licenseKey"`
-		LicenseValue string `json:"licenseValue"`
-		ClusterName  string `json:"clusterName"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		req := new(request)
+		req := new(model.LicenseUpgradeRequest)
 		_ = json.NewDecoder(r.Body).Decode(req)
 		defer utils.CloseTheCloser(r.Body)
 
@@ -35,7 +32,7 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		err := manager.ConvertToEnterprise(ctx, token, req.LicenseKey, req.LicenseValue, req.ClusterName)
+		err := manager.ConvertToEnterprise(ctx, req)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
@@ -46,7 +43,7 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 	}
 }
 
-func HandleDownGrade(admin *admin.Manager) http.HandlerFunc {
+func HandleDownGrade(admin *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		defer utils.CloseTheCloser(r.Body)
@@ -65,7 +62,11 @@ func HandleDownGrade(admin *admin.Manager) http.HandlerFunc {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, "Cannot remove license already running in open source mode")
 			return
 		}
-		admin.ResetQuotas()
+
+		if err := syncMan.SetLicense(ctx, &config.License{}); err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
+			return
+		}
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), `Successfully removed license`, nil)
 		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
@@ -88,7 +89,7 @@ func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.RenewLicense(ctx, token); err != nil {
+		if err := syncMan.RenewLicense(ctx); err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
 		}

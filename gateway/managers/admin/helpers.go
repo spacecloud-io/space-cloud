@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -25,33 +26,65 @@ func (m *Manager) fetchPublicKeyWithLock() error {
 	return m.fetchPublicKeyWithoutLock()
 }
 
-func (m *Manager) licenseRenewalRoutine() {
-	// Create a new ticker
-	ticker := time.NewTicker(24 * time.Hour) // renew license every day
-	defer ticker.Stop()
-
+func (m *Manager) licenseRenewalCumValidationRoutine() {
+	// Create a random ticker
+	min := 6
+	max := 24
 	for {
+		randomInt := rand.Intn(max-min) + min
+		t := time.Duration(randomInt) * time.Hour
 		select {
-		case <-ticker.C:
+		case <-time.After(t):
 			// Operate if in enterprise mode
 			if m.isEnterpriseMode() {
-				if m.checkIfLeaderGateway() && licenseMode == "online" {
-					// Fetch the public key periodically
-					if err := m.RenewLicense(false); err != nil {
+				isLeader, err := m.syncMan.CheckIfLeaderGateway(m.nodeID)
+				if err != nil {
+					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to renew/validate license, cannot find leader gateway", err, nil)
+					break
+				}
+				if isLeader && licenseMode == licenseModeOnline {
+					helpers.Logger.LogDebug("licenseRenewalCumValidationRoutine", "leader renewing the license", nil)
+					m.lock.Lock()
+					if err := m.renewLicenseWithoutLock(false); err != nil {
 						_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to renew license. Has your subscription expired?", err, nil)
+						m.lock.Unlock()
 						break
 					}
-					go func() {
-						if err := m.syncMan.SetLicense(context.Background(), m.license); err != nil {
-							_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to save admin config", err, nil)
-						}
-					}()
+					m.lock.Unlock()
 				} else {
 					// Check if the license has expired
-					_ = m.ValidateLicense()
+					helpers.Logger.LogDebug("licenseRenewalCumValidationRoutine", "Follower validating the license", nil)
+					m.lock.Lock()
+					m.validationRoutine()
+					m.lock.Unlock()
 				}
 			}
 		}
+	}
+}
+
+func (m *Manager) validationRoutine() {
+	// Number 6 denotes a total time 30 minutes, with an interval 0f 5 minutes
+	maxRetryCount := 6
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+	doesExists := false
+	var err error
+	currentCount := 0
+	for range ticker.C {
+		currentCount++
+		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("License validation retry count (%d)", currentCount), nil)
+		_, doesExists, err = m.validateSessionID(m.services, m.license.License)
+		if err != nil {
+			continue
+		}
+		if currentCount == maxRetryCount || doesExists {
+			break
+		}
+	}
+	if !doesExists {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("License validation has failed, unable to match license session id with gateway services"), nil, nil)
+		m.resetQuotasWithoutLock()
 	}
 }
 
@@ -63,7 +96,7 @@ func (m *Manager) fetchPublicKeyRoutine() {
 	select {
 	case <-ticker.C:
 		// Operate if in enterprise mode
-		if m.isEnterpriseMode() && licenseMode == "online" {
+		if m.isEnterpriseMode() && licenseMode == licenseModeOnline {
 			// Fetch the public key periodically
 			if err := m.fetchPublicKeyWithLock(); err != nil {
 				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Could not fetch public key for license file", err, nil)
@@ -75,11 +108,11 @@ func (m *Manager) fetchPublicKeyRoutine() {
 
 func (m *Manager) fetchPublicKeyWithoutLock() error {
 	// Check if offline licensing mode is used
-	if licenseMode == "offline" {
+	if licenseMode == licenseModeOffline {
 		// Marshal the public key
 		publicKey, err := jwt.ParseRSAPublicKeyFromPEM([]byte(licensePublicKey))
 		if err != nil {
-			return err
+			return helpers.Logger.LogError("fetch-public-key-without-lock", "Unable to parse public key from pem", err, nil)
 		}
 
 		// Set the public key
@@ -119,13 +152,62 @@ func (m *Manager) fetchPublicKeyWithoutLock() error {
 	return nil
 }
 
-func (m *Manager) ValidateLicense() error {
+func (m *Manager) ValidateLicense(services model.ScServices) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+	return m.validateLicenseWithoutLock(services)
+}
 
-	if _, err := m.decryptLicense(m.license.License); err != nil {
-		m.ResetQuotas()
-		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to validate license key", err, nil)
+func (m *Manager) validateSessionID(services model.ScServices, license string) (*model.License, bool, error) {
+	if m.publicKey == nil {
+		if err := m.fetchPublicKeyWithoutLock(); err != nil {
+			return nil, false, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch public key", err, nil)
+		}
+	}
+
+	licenseObj, err := m.decryptLicense(license)
+	if err != nil {
+		m.resetQuotasWithoutLock()
+		return nil, false, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to validate license key", err, nil)
+	}
+
+	isFound := false
+	if licenseMode == licenseModeOffline {
+		if licenseObj.SessionID != m.getOfflineLicenseSessionID() {
+			return nil, false, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to validate license key", errors.New("session id of license file doesn't match with internal session id"), nil)
+		}
+		isFound = true
+	} else {
+		for _, service := range services {
+			if licenseObj.SessionID == service.ID {
+				isFound = true
+				break
+			}
+		}
+	}
+
+	return licenseObj, isFound, nil
+}
+
+func (m *Manager) validateLicenseWithoutLock(services model.ScServices) error {
+	licenseObj, isFound, err := m.validateSessionID(services, m.license.License)
+	if err != nil {
+		return err
+	}
+	if isFound {
+		m.setQuotas(licenseObj)
+		return nil
+	}
+
+	isLeader, err := m.syncMan.CheckIfLeaderGateway(m.nodeID)
+	if err != nil {
+		return helpers.Logger.LogError("validate-license-without-lock", "Unable to check who is the current leader gateway", err, nil)
+	}
+	if isLeader && licenseMode == licenseModeOnline {
+		if err := m.renewLicenseWithoutLock(false); err != nil {
+			m.resetQuotasWithoutLock()
+			return helpers.Logger.LogError("validate-license-without-lock", "Unable to renew license. Has your subscription expired?", err, nil)
+		}
 	}
 
 	return nil
@@ -135,12 +217,17 @@ func (m *Manager) RenewLicense(force bool) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	if !m.checkIfLeaderGateway() {
+	isLeader, err := m.syncMan.CheckIfLeaderGateway(m.nodeID)
+	if err != nil {
+		return err
+	}
+
+	if !isLeader {
 		return errors.New("only the leader can fetch the license")
 	}
 
 	// Throw error if licensing mode is set to offline
-	if licenseMode == "offline" {
+	if licenseMode == licenseModeOffline {
 		return errors.New("cannot renew license in offline licensing mode")
 	}
 
@@ -149,16 +236,17 @@ func (m *Manager) RenewLicense(force bool) error {
 
 func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	// Marshal the request body
+	sessionID := selectRandomSessionID(m.services)
 	data, _ := json.Marshal(map[string]interface{}{
 		"params": model.RenewLicense{
 			LicenseKey:       m.license.LicenseKey,
 			LicenseValue:     m.license.LicenseValue,
 			License:          m.license.License,
-			CurrentSessionID: m.sessionID,
+			CurrentSessionID: sessionID,
 		},
 		"timeout": 10,
 	})
-	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), `Renewing admin license`, map[string]interface{}{"clusterId": m.license.LicenseKey, "clusterKey": m.license.LicenseValue, "sessionId": m.sessionID})
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), `Renewing admin license`, map[string]interface{}{"clusterId": m.license.LicenseKey, "clusterKey": m.license.LicenseValue, "sessionId": sessionID})
 	// Fire the request
 	res, err := http.Post("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/renewLicense", "application/json", bytes.NewBuffer(data))
 	if err != nil {
@@ -192,23 +280,35 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 		m.licenseFetchErrorCount = 0
 	}
 
-	m.license.License = v.Result.License
-	if err := m.setQuotas(v.Result.License); err != nil {
+	licenseObj, isSessionValid, err := m.validateSessionID(m.services, v.Result.License)
+	if err != nil {
 		return err
 	}
+	if !isSessionValid {
+		return helpers.Logger.LogError("renew-license-without-lock", "Found invalid session id in the newly renewed license", nil, nil)
+	}
+
+	m.license.License = v.Result.License
+	m.setQuotas(licenseObj)
 
 	go func() { _ = m.syncMan.SetLicense(context.TODO(), m.license) }()
 	return nil
 }
 
 func (m *Manager) ResetQuotas() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.resetQuotasWithoutLock()
+}
+
+func (m *Manager) resetQuotasWithoutLock() {
 	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Resetting space cloud to run in open source model. You will have to re-register the cluster again.", nil)
 	m.quotas.MaxProjects = 1
 	m.quotas.MaxDatabases = 1
 	m.quotas.IntegrationLevel = 0
 	m.plan = "space-cloud-open--monthly"
 
-	if licenseMode == "online" {
+	if licenseMode == licenseModeOnline {
 		m.license.LicenseKey = ""
 		m.license.LicenseValue = ""
 	}
@@ -217,29 +317,20 @@ func (m *Manager) ResetQuotas() {
 
 	m.clusterName = ""
 
-	go func() {
-		if err := m.syncMan.SetLicense(context.Background(), m.license); err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to save admin config", err, nil)
-		}
-	}()
+	isLeader, err := m.syncMan.CheckIfLeaderGateway(m.nodeID)
+	if err != nil {
+		_ = helpers.Logger.LogError("reset-quotas-without-lock", "Unable to check who is the current leader gateway", err, nil)
+	}
+	if isLeader {
+		go func() {
+			if err := m.syncMan.SetLicense(context.Background(), m.license); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to save admin config", err, nil)
+			}
+		}()
+	}
 }
 
-func (m *Manager) setQuotas(license string) error {
-	if m.publicKey == nil {
-		if err := m.fetchPublicKeyWithoutLock(); err != nil {
-			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch public key", err, nil)
-		}
-	}
-	licenseObj, err := m.decryptLicense(license)
-	if err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to decrypt license key", err, nil)
-	}
-
-	if licenseMode == "offline" && m.sessionID != licenseObj.SessionID {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Invalid license key provided. Make sure you use the license key for this cluster.", nil, nil)
-		m.ResetQuotas()
-	}
-
+func (m *Manager) setQuotas(licenseObj *model.License) {
 	// set quotas
 	m.quotas.MaxProjects = licenseObj.Meta.ProductMeta.MaxProjects
 	m.quotas.MaxDatabases = licenseObj.Meta.ProductMeta.MaxDatabases
@@ -247,7 +338,7 @@ func (m *Manager) setQuotas(license string) error {
 	m.clusterName = licenseObj.Meta.LicenseKeyMeta.ClusterName
 	m.licenseRenewalDate = licenseObj.LicenseRenewal
 	m.plan = licenseObj.Plan
-	return nil
+	helpers.Logger.LogInfo("set-quotas", fmt.Sprintf("Gateway is running with %s plan ", licenseObj.Plan), nil)
 }
 
 func (m *Manager) isEnterpriseMode() bool {
@@ -296,6 +387,20 @@ func (m *Manager) parseLicenseToken(tokenString string) (map[string]interface{},
 	return nil, errors.New("unable to parse license token")
 }
 
-func (m *Manager) checkIfLeaderGateway() bool {
-	return strings.HasSuffix(m.nodeID, "-0")
+func selectRandomSessionID(gateways model.ScServices) string {
+	if len(gateways) == 0 {
+		helpers.Logger.LogWarn(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Length of gateways is zero"), nil)
+		return ""
+	}
+	min := 0
+	max := len(gateways)
+	// get an int from min...max-1 range
+	rand.Seed(time.Now().UnixNano())
+	index := rand.Intn(max-min) + min
+	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Selecting session id (%s)", gateways[index].ID), nil)
+	return gateways[index].ID
+}
+
+func (m *Manager) getOfflineLicenseSessionID() string {
+	return m.license.LicenseKey + m.license.LicenseValue
 }

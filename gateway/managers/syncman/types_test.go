@@ -71,6 +71,14 @@ type mockAdminSyncmanInterface struct {
 	mock.Mock
 }
 
+func (m *mockAdminSyncmanInterface) SetServices(eventType string, services model.ScServices) {
+	m.Called(eventType, services)
+}
+
+func (m *mockAdminSyncmanInterface) SetSessionID(sessionID string) {
+	m.Called(sessionID)
+}
+
 func (m *mockAdminSyncmanInterface) SetIntegrationConfig(integrations config.Integrations) {
 	m.Called(integrations)
 }
@@ -93,8 +101,8 @@ func (m *mockAdminSyncmanInterface) IsRegistered() bool {
 	return m.Called().Bool(0)
 }
 
-func (m *mockAdminSyncmanInterface) GetSessionID() string {
-	return m.Called().String(0)
+func (m *mockAdminSyncmanInterface) GetSessionID() (string, error) {
+	return m.Called().String(0), nil
 }
 
 func (m *mockAdminSyncmanInterface) RenewLicense(b bool) error {
@@ -105,8 +113,8 @@ func (m *mockAdminSyncmanInterface) ValidateProjectSyncOperation(projects *confi
 	return m.Called(projects, projectID).Bool(0)
 }
 
-func (m *mockAdminSyncmanInterface) SetConfig(admin *config.License, isFirst bool) error {
-	return m.Called(admin, isFirst).Error(0)
+func (m *mockAdminSyncmanInterface) SetConfig(admin *config.License) error {
+	return m.Called(admin).Error(0)
 }
 
 func (m *mockAdminSyncmanInterface) IsTokenValid(_ context.Context, token, resource, op string, attr map[string]string) (model.RequestParams, error) {
@@ -239,6 +247,15 @@ type mockStoreInterface struct {
 	mock.Mock
 }
 
+func (m *mockStoreInterface) WatchLicense(cb func(eventType string, resourceId string, resourceType config.Resource, resource *config.License)) {
+	m.Called(cb)
+}
+
+func (m *mockStoreInterface) SetLicense(ctx context.Context, resourceID string, resource *config.License) error {
+	c := m.Called(ctx, resourceID, resource)
+	return c.Error(0)
+}
+
 func (m *mockStoreInterface) GetGlobalConfig() (*config.Config, error) {
 	c := m.Called()
 	return c.Get(0).(*config.Config), c.Error(1)
@@ -270,7 +287,7 @@ func (m *mockStoreInterface) WatchProjects(cb func(projects []*config.Project)) 
 	return c.Error(0)
 }
 
-func (m *mockStoreInterface) WatchServices(cb func(projects scServices)) error {
+func (m *mockStoreInterface) WatchServices(cb func(evenType string, serviceId string, projects model.ScServices)) error {
 	c := m.Called(cb)
 	return c.Error(0)
 }
