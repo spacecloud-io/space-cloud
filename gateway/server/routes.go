@@ -21,7 +21,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	router.Methods(http.MethodPost).Path("/v1/config/upgrade").HandlerFunc(handlers.HandleUpgrade(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/offline-license").HandlerFunc(handlers.HandleSetOfflineLicense(s.managers.Admin(), s.managers.Sync()))
-	router.Methods(http.MethodPost).Path("/v1/config/degrade").HandlerFunc(handlers.HandleDownGrade(s.managers.Admin()))
+	router.Methods(http.MethodPost).Path("/v1/config/degrade").HandlerFunc(handlers.HandleDownGrade(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/renew-license").HandlerFunc(handlers.HandleRenewLicense(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/generate-token").HandlerFunc(handlers.HandleGenerateAdminToken(s.managers.Admin()))
 

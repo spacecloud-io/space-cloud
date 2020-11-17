@@ -26,7 +26,6 @@ var ResourceFetchingOrder = []Resource{
 	ResourceCluster,
 	ResourceIntegration,
 	ResourceIntegrationHook,
-	ResourceLicense,
 }
 
 // Resource is a resource type

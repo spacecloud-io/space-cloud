@@ -22,9 +22,9 @@ type ClusterConfig struct {
 
 // License holds license information
 type License struct {
-	LicenseKey   string `json:"licenseKey" yaml:"licenseKey"`
-	LicenseValue string `json:"licenseValue" yaml:"licenseValue"`
-	License      string `json:"license" yaml:"license"`
+	LicenseKey   string `json:"licenseKey" yaml:"licenseKey" mapstructure:"licenseKey"`
+	LicenseValue string `json:"licenseValue" yaml:"licenseValue" mapstructure:"licenseValue"`
+	License      string `json:"license" yaml:"license" mapstructure:"license"`
 }
 
 // Projects is a map which stores config information of all project in a cluster

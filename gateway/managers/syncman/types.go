@@ -14,10 +14,11 @@ type AdminSyncmanInterface interface {
 	GetInternalAccessToken() (string, error)
 	IsTokenValid(ctx context.Context, token, resource, op string, attr map[string]string) (model.RequestParams, error)
 	IsRegistered() bool
-	GetSessionID() string
+	GetSessionID() (string, error)
+	SetServices(eventType string, services model.ScServices)
 	RenewLicense(bool) error
 	ValidateProjectSyncOperation(c *config.Config, project *config.ProjectConfig) bool
-	SetConfig(admin *config.License, isFirst bool) error
+	SetConfig(admin *config.License) error
 	GetConfig() *config.License
 	SetIntegrationConfig(integrations config.Integrations)
 

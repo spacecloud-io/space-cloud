@@ -6,13 +6,14 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // LocalStore is an object for storing localstore information
 type LocalStore struct {
 	configPath   string
 	globalConfig *config.Config
-	services     scServices
+	services     model.ScServices
 
 	// Callbacks
 	watchAdminCB func(clusters []*config.Admin)
@@ -38,8 +39,8 @@ func NewLocalStore(nodeID string, ssl *config.SSL) (*LocalStore, error) {
 	if ssl.Enabled {
 		conf.SSL = ssl
 	}
-	services := scServices{}
-	return &LocalStore{configPath: configPath, globalConfig: conf, services: append(services, &service{id: nodeID})}, nil
+	services := model.ScServices{}
+	return &LocalStore{configPath: configPath, globalConfig: conf, services: append(services, &model.Service{ID: "single-node-cluster"})}, nil
 }
 
 // Register registers space cloud to the local store
@@ -51,9 +52,19 @@ func (s *LocalStore) WatchResources(cb func(eventType, resourceId string, resour
 }
 
 // WatchServices maintains consistency over all services
-func (s *LocalStore) WatchServices(cb func(scServices)) error {
-	cb(s.services)
+func (s *LocalStore) WatchServices(cb func(string, string, model.ScServices)) error {
+	cb(config.ResourceAddEvent, s.services[0].ID, s.services)
 	return nil
+}
+
+// WatchLicense watches over changes in license secret
+func (s *LocalStore) WatchLicense(cb func(eventType, resourceID string, resourceType config.Resource, resource *config.License)) {
+	cb(config.ResourceAddEvent, config.GenerateResourceID("", "noProject", config.ResourceLicense, "license"), config.ResourceLicense, s.globalConfig.License)
+}
+
+func (s *LocalStore) SetLicense(ctx context.Context, resourceID string, resource *config.License) error {
+	s.globalConfig.License = resource
+	return config.StoreConfigToFile(s.globalConfig, s.configPath)
 }
 
 // SetResource sets the project of the local globalConfig

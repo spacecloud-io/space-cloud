@@ -9,6 +9,7 @@ import (
 
 type SyncManAdminInterface interface {
 	SetLicense(ctx context.Context, cluster *config.License) error
+	CheckIfLeaderGateway(nodeID string) (bool, error)
 }
 
 // SchemaCrudInterface is an interface consisting of functions of schema module used by auth module
@@ -170,3 +171,13 @@ type ReturnWhereStub struct {
 	Col           string
 	PrefixColName bool
 }
+
+type Service struct {
+	ID string
+}
+
+type ScServices []*Service
+
+func (a ScServices) Len() int           { return len(a) }
+func (a ScServices) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ScServices) Less(i, j int) bool { return a[i].ID < a[j].ID }
