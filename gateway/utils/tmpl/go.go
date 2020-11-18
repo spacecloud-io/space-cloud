@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
+	"github.com/getlantern/deepcopy"
 	"github.com/ghodss/yaml"
 	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
@@ -68,6 +69,11 @@ func CreateGoFuncMaps(auth authModule) template.FuncMap {
 	m["marshalJSON"] = func(a interface{}) (string, error) {
 		data, err := json.Marshal(a)
 		return string(data), err
+	}
+	m["copy"] = func(a interface{}) (interface{}, error) {
+		var b interface{}
+		err := deepcopy.Copy(&b, a)
+		return b, err
 	}
 	if auth != nil {
 		m["encrypt"] = auth.Encrypt
