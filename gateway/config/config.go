@@ -423,6 +423,7 @@ type EventingTrigger struct {
 	OpFormat        string            `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
 	Claims          string            `json:"claims" yaml:"claims" mapstructure:"claims"`
 	Filter          *Rule             `json:"filter" yaml:"filter" mapstructure:"filter"`
+	TriggerType     string            `json:"triggerType" yaml:"triggerType" mapstructure:"triggerType"`
 }
 
 // SchemaObject is the body of the request for adding schema
