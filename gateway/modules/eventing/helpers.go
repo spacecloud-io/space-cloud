@@ -66,7 +66,7 @@ func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token 
 		// Iterate over matching rules
 		rules := m.getMatchingRules(ctx, req)
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(ctx, token, r.ID, batchID, utils.EventStatusStaged, req)
+			eventDoc := m.generateQueueEventRequest(ctx, token, r, batchID, utils.EventStatusStaged, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -87,11 +87,11 @@ func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token 
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(ctx context.Context, token int, name, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
-	return m.generateQueueEventRequestRaw(ctx, token, name, "", batchID, status, event)
+func (m *Module) generateQueueEventRequest(ctx context.Context, token int, rule *config.EventingTrigger, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
+	return m.generateQueueEventRequestRaw(ctx, token, rule, "", batchID, status, event)
 }
 
-func (m *Module) generateQueueEventRequestRaw(ctx context.Context, token int, name, eventDocID, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequestRaw(ctx context.Context, token int, rule *config.EventingTrigger, eventDocID, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
 	timestamp := time.Now()
 
 	if eventDocID == "" {
@@ -116,14 +116,15 @@ func (m *Module) generateQueueEventRequestRaw(ctx context.Context, token int, na
 	data, _ := json.Marshal(event.Payload)
 
 	return &model.EventDocument{
-		ID:        eventDocID,
-		BatchID:   batchID,
-		Type:      event.Type,
-		RuleName:  name,
-		Token:     token,
-		Timestamp: eventTs.Format(time.RFC3339Nano),
-		Payload:   string(data),
-		Status:    status,
+		ID:          eventDocID,
+		BatchID:     batchID,
+		Type:        event.Type,
+		RuleName:    rule.ID,
+		Token:       token,
+		Timestamp:   eventTs.Format(time.RFC3339Nano),
+		Payload:     string(data),
+		Status:      status,
+		TriggerType: rule.TriggerType,
 	}
 }
 
@@ -205,7 +206,7 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 func (m *Module) getMatchingRules(ctx context.Context, req *model.QueueEventRequest) []*config.EventingTrigger {
 	rules := make([]*config.EventingTrigger, 0)
 
-	for n, rule := range m.config.Rules {
+	for _, rule := range m.config.Rules {
 		// Skip trigger if its event type does not match incoming request
 		if rule.Type != req.Type {
 			continue
@@ -224,11 +225,11 @@ func (m *Module) getMatchingRules(ctx context.Context, req *model.QueueEventRequ
 		}
 
 		// Add rule to list of returned rules
-		rule.ID = n
+		rule.TriggerType = "external"
 		rules = append(rules, rule)
 	}
 
-	for n, rule := range m.config.InternalRules {
+	for _, rule := range m.config.InternalRules {
 		// Skip trigger if its event type does not match incoming request
 		if rule.Type != req.Type {
 			continue
@@ -241,13 +242,13 @@ func (m *Module) getMatchingRules(ctx context.Context, req *model.QueueEventRequ
 
 		// Skip rules if filter does not match
 		if rule.Filter != nil {
-			if _, err := m.auth.MatchRule(ctx, m.project, rule.Filter, req.Payload.(map[string]interface{}), nil, model.ReturnWhereStub{}); err != nil {
+			if _, err := m.auth.MatchRule(ctx, m.project, rule.Filter, map[string]interface{}{"args": map[string]interface{}{"data": req.Payload}}, map[string]interface{}{}, model.ReturnWhereStub{}); err != nil {
 				continue
 			}
 		}
 
 		// Add rule to list of returned rules
-		rule.ID = n
+		rule.TriggerType = "internal"
 		rules = append(rules, rule)
 	}
 	return rules
@@ -343,14 +344,14 @@ func (m *Module) adjustReqBody(ctx context.Context, trigger, token string, endpo
 	return req, nil
 }
 
-func (m *Module) generateWebhookToken(ctx context.Context, trigger *config.EventingTrigger, doc, newDoc interface{}) (string, error) {
+func (m *Module) generateWebhookToken(ctx context.Context, trigger *config.EventingTrigger, doc interface{}) (string, error) {
 	var req interface{}
 	var err error
 
 	switch trigger.Tmpl {
 	case config.TemplatingEngineGo:
 		if tmpl, p := m.templates[getGoTemplateKey("claim", trigger.ID)]; p {
-			req, err = tmpl2.GoTemplate(ctx, tmpl, trigger.OpFormat, "", nil, map[string]interface{}{"payload": doc, "newPayload": newDoc})
+			req, err = tmpl2.GoTemplate(ctx, tmpl, trigger.OpFormat, "", nil, doc)
 			if err != nil {
 				return "", err
 			}

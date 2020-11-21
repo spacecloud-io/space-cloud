@@ -28,37 +28,37 @@ func TestModule_SetRealtimeTriggers(t *testing.T) {
 			name: "no rules with prefix 'realtime'",
 			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingTrigger{"notrealtime": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{eventingRules: []*config.EventingTrigger{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}},
-			want: map[string]*config.EventingTrigger{"notrealtime": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}},
+			want: map[string]*config.EventingTrigger{"notrealtime": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": {ID: "realtime-db-col-type", Type: "type", Options: map[string]string{"db": "db", "col": "col"}}},
 		},
 		{
 			name: "rules with prefix 'realtime'",
 			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingTrigger{"realtime-abc": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{eventingRules: []*config.EventingTrigger{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}},
-			want: map[string]*config.EventingTrigger{"realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}},
+			want: map[string]*config.EventingTrigger{"realtime-db-col-type": {ID: "realtime-db-col-type", Type: "type", Options: map[string]string{"db": "db", "col": "col"}}},
 		},
 		{
 			name: "add eventing rules when no internal rules exist",
 			m:    &Module{config: &config.Eventing{InternalRules: make(map[string]*config.EventingTrigger)}},
 			args: args{eventingRules: []*config.EventingTrigger{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
-			want: map[string]*config.EventingTrigger{"realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
+			want: map[string]*config.EventingTrigger{"realtime-db-col-type": {ID: "realtime-db-col-type", Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {ID: "realtime-db1-col1-type1", Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
 		},
 		{
 			name: "add eventing rules when no realtime internal rules exist",
 			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingTrigger{"notrealtime": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{eventingRules: []*config.EventingTrigger{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
-			want: map[string]*config.EventingTrigger{"notrealtime": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
+			want: map[string]*config.EventingTrigger{"notrealtime": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": {ID: "realtime-db-col-type", Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {ID: "realtime-db1-col1-type1", Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
 		},
 		{
 			name: "add eventing rules when realtime internal rules exist",
 			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingTrigger{"realtime-abc": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-def": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{eventingRules: []*config.EventingTrigger{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
-			want: map[string]*config.EventingTrigger{"realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
+			want: map[string]*config.EventingTrigger{"realtime-db-col-type": {ID: "realtime-db-col-type", Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {ID: "realtime-db1-col1-type1", Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
 		},
 		{
 			name: "add eventing rules when realtime and non-realtime internal rules exist",
 			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingTrigger{"realtime-abc": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "nonrealtime-def": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{eventingRules: []*config.EventingTrigger{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
-			want: map[string]*config.EventingTrigger{"nonrealtime-def": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
+			want: map[string]*config.EventingTrigger{"nonrealtime-def": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": {ID: "realtime-db-col-type", Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {ID: "realtime-db1-col1-type1", Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
 		},
 	}
 	for _, tt := range tests {
