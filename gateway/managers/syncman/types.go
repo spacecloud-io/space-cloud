@@ -27,8 +27,7 @@ type ModulesInterface interface {
 	SetProjectConfig(ctx context.Context, config *config.ProjectConfig) error
 
 	// SetDatabaseConfig sets the config of crud, auth, schema and realtime modules
-	SetDatabaseConfig(ctx context.Context, projectID string, crudConfigs config.DatabaseConfigs) error
-
+	SetDatabaseConfig(ctx context.Context, projectID string, databaseConfigs config.DatabaseConfigs, schemaConfigs config.DatabaseSchemas, ruleConfigs config.DatabaseRules) error
 	SetDatabaseSchemaConfig(ctx context.Context, projectID string, schemaConfigs config.DatabaseSchemas) error
 	SetDatabaseRulesConfig(ctx context.Context, ruleConfigs config.DatabaseRules) error
 	SetDatabasePreparedQueryConfig(ctx context.Context, prepConfigs config.DatabasePreparedQueries) error
@@ -46,7 +45,7 @@ type ModulesInterface interface {
 	SetIngressGlobalRouteConfig(ctx context.Context, projectID string, c *config.GlobalRoutesConfig) error
 
 	// SetEventingConfig sets the config of eventing module
-	SetEventingConfig(ctx context.Context, projectID string, eventingConfigs *config.EventingConfig) error
+	SetEventingConfig(ctx context.Context, projectID string, eventingConfig *config.EventingConfig, secureObj config.EventingRules, eventingSchemas config.EventingSchemas, eventingTriggers config.EventingTriggers) error
 	SetEventingSchemaConfig(ctx context.Context, schemaObj config.EventingSchemas) error
 	SetEventingTriggerConfig(ctx context.Context, triggerObj config.EventingTriggers) error
 	SetEventingRuleConfig(ctx context.Context, secureObj config.EventingRules) error

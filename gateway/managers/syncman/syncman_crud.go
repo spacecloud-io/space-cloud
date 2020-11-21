@@ -67,7 +67,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 		projectConfig.DatabaseConfigs[resourceID] = v
 	}
 
-	if err := s.modules.SetDatabaseConfig(ctx, project, projectConfig.DatabaseConfigs); err != nil {
+	if err := s.modules.SetDatabaseConfig(ctx, project, projectConfig.DatabaseConfigs, projectConfig.DatabaseSchemas, projectConfig.DatabaseRules); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
@@ -93,7 +93,7 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseConfig, dbAlias)
 	delete(projectConfig.DatabaseConfigs, resourceID)
 
-	if err := s.modules.SetDatabaseConfig(ctx, project, projectConfig.DatabaseConfigs); err != nil {
+	if err := s.modules.SetDatabaseConfig(ctx, project, projectConfig.DatabaseConfigs, projectConfig.DatabaseSchemas, projectConfig.DatabaseRules); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 

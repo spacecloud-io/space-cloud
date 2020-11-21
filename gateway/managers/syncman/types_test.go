@@ -47,8 +47,8 @@ func (m *mockModulesInterface) SetInitialProjectConfig(ctx context.Context, conf
 	return a.Error(0)
 }
 
-func (m *mockModulesInterface) SetDatabaseConfig(ctx context.Context, projectID string, crudConfigs config.DatabaseConfigs) error {
-	return m.Called(ctx, projectID, crudConfigs).Error(0)
+func (m *mockModulesInterface) SetDatabaseConfig(ctx context.Context, projectID string, databaseConfigs config.DatabaseConfigs, schemaConfigs config.DatabaseSchemas, ruleConfigs config.DatabaseRules) error {
+	return m.Called(ctx, projectID, databaseConfigs).Error(0)
 }
 
 func (m *mockModulesInterface) SetDatabaseSchemaConfig(ctx context.Context, projectID string, schemaConfigs config.DatabaseSchemas) error {
@@ -88,8 +88,8 @@ func (m *mockModulesInterface) SetIngressGlobalRouteConfig(ctx context.Context, 
 	return m.Called(ctx, projectID, c).Error(0)
 }
 
-func (m *mockModulesInterface) SetEventingConfig(ctx context.Context, projectID string, eventingConfigs *config.EventingConfig) error {
-	c := m.Called(ctx, projectID, eventingConfigs)
+func (m *mockModulesInterface) SetEventingConfig(ctx context.Context, projectID string, eventingConfig *config.EventingConfig, secureObj config.EventingRules, eventingSchemas config.EventingSchemas, eventingTriggers config.EventingTriggers) error {
+	c := m.Called(ctx, projectID, eventingConfig)
 	return c.Error(0)
 }
 
