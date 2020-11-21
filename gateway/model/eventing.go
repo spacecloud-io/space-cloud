@@ -72,7 +72,6 @@ type DatabaseEventMessage struct {
 	Col    string      `json:"col" mapstructure:"col"`
 	Doc    interface{} `json:"doc" mapstructure:"doc"`
 	Find   interface{} `json:"find" mapstructure:"find"`
-	Before interface{} `json:"before,omitempty" mapstructure:"before"`
 }
 
 // EventResponseMessage describes the format for event response message

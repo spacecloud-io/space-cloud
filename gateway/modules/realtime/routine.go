@@ -77,7 +77,7 @@ func (m *Module) handlePubSubMessage(msg *model.PubSubMessage) {
 	defer cancel()
 
 	// Unmarshal the incoming message
-	var event *model.CloudEventPayload
+	event := new(model.CloudEventPayload)
 	if err := msg.Unmarshal(event); err != nil {
 		_ = helpers.Logger.LogError("realtime-process", "Unable to extract cloud event doc from incoming process realtime event request", err, map[string]interface{}{"payload": msg.Payload})
 		_ = m.pubsubClient.SendAck(ctx, msg.ReplyTo, false)
