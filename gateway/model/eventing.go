@@ -15,6 +15,7 @@ type EventDocument struct {
 	Payload        interface{} `structs:"payload" json:"payload" bson:"payload" mapstructure:"payload"`
 	Status         string      `structs:"status" json:"status" bson:"status" mapstructure:"status"`
 	Remark         string      `structs:"remark" json:"remark" bson:"remark" mapstructure:"remark"`
+	TriggerType    string      `structs:"trigger_type,omitempty" json:"trigger_type,omitempty" bson:"trigger_type" mapstructure:"trigger_type"`
 }
 
 // InvocationDocument is the format in which the invocation are persistent on disk
@@ -71,7 +72,6 @@ type DatabaseEventMessage struct {
 	Col    string      `json:"col" mapstructure:"col"`
 	Doc    interface{} `json:"doc" mapstructure:"doc"`
 	Find   interface{} `json:"find" mapstructure:"find"`
-	Before interface{} `json:"before,omitempty" mapstructure:"before"`
 }
 
 // EventResponseMessage describes the format for event response message

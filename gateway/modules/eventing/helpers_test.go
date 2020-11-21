@@ -258,7 +258,7 @@ func TestModule_getMatchingRules(t *testing.T) {
 				Rules:         map[string]*config.EventingTrigger{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
 				InternalRules: map[string]*config.EventingTrigger{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
 			args: args{req: &model.QueueEventRequest{Type: "rule", Options: map[string]string{"option": "value"}}},
-			want: []*config.EventingTrigger{{Type: "rule", Retries: 0, Timeout: 0, ID: "some-rule", Options: map[string]string{"option": "value"}}},
+			want: []*config.EventingTrigger{{Type: "rule", TriggerType: "external", Retries: 0, Timeout: 0, Options: map[string]string{"option": "value"}}},
 		},
 		{
 			name: "rule matching in InternalRules",
@@ -266,7 +266,7 @@ func TestModule_getMatchingRules(t *testing.T) {
 				Rules:         map[string]*config.EventingTrigger{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
 				InternalRules: map[string]*config.EventingTrigger{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
 			args: args{req: &model.QueueEventRequest{Type: "internalRule", Options: map[string]string{"option": "value"}}},
-			want: []*config.EventingTrigger{{Type: "internalRule", Retries: 0, Timeout: 0, ID: "some-internal-rule", Options: map[string]string{"option": "value"}}},
+			want: []*config.EventingTrigger{{Type: "internalRule", TriggerType: "internal", Retries: 0, Timeout: 0, Options: map[string]string{"option": "value"}}},
 		},
 	}
 	for _, tt := range tests {
@@ -644,7 +644,7 @@ func TestModule_generateQueueEventRequestRaw(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.m.generateQueueEventRequestRaw(context.Background(), tt.args.token, tt.args.name, tt.args.eventDocID, tt.args.batchID, tt.args.status, tt.args.event)
+			got := tt.m.generateQueueEventRequestRaw(context.Background(), tt.args.token, &config.EventingTrigger{ID: tt.args.name}, tt.args.eventDocID, tt.args.batchID, tt.args.status, tt.args.event)
 			if got != nil {
 				if !reflect.DeepEqual(got.BatchID, tt.want.BatchID) {
 					t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)

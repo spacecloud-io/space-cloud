@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/Masterminds/sprig"
+	"github.com/getlantern/deepcopy"
 	"github.com/ghodss/yaml"
 	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
@@ -69,6 +71,28 @@ func CreateGoFuncMaps(auth authModule) template.FuncMap {
 		data, err := json.Marshal(a)
 		return string(data), err
 	}
+	m["copy"] = func(a interface{}) (interface{}, error) {
+		var b interface{}
+		err := deepcopy.Copy(&b, a)
+		return b, err
+	}
+	m["parseTimeInMillis"] = func(a interface{}) time.Time {
+		var t int64
+		switch v := a.(type) {
+		case float32:
+			t = int64(v)
+		case float64:
+			t = int64(v)
+		case int64:
+			t = v
+		case int32:
+			t = int64(v)
+		case int:
+			t = int64(v)
+		}
+		return time.Unix(0, t*int64(time.Millisecond))
+	}
+
 	if auth != nil {
 		m["encrypt"] = auth.Encrypt
 	}

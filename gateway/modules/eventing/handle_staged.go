@@ -134,7 +134,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	}
 
 	// Generate the token
-	token, err := m.generateWebhookToken(ctx, rule, doc, newDoc)
+	token, err := m.generateWebhookToken(ctx, rule, doc)
 	if err != nil {
 		if err := m.logInvocation(ctx, eventDoc.ID, []byte("{}"), 0, "", err.Error()); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "eventing module couldn't log the invocation ", err, nil)

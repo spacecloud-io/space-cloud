@@ -109,6 +109,7 @@ func (m *Module) SetRealtimeTriggers(eventingRules []*config.EventingTrigger) {
 
 	for _, incomingRule := range eventingRules {
 		key := strings.Join([]string{"realtime", incomingRule.Options["db"], incomingRule.Options["col"], incomingRule.Type}, "-")
+		incomingRule.ID = key
 		m.config.InternalRules[key] = incomingRule
 	}
 }
