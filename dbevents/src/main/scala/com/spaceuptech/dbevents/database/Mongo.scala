@@ -54,6 +54,8 @@ class Mongo(context: ActorContext[Database.Command], timers: TimerScheduler[Data
         // Start mongo watcher
         getConnString(projectId, config.conn) onComplete {
           case Success(conn) =>
+            println(s"Reloading db config for db '${config.dbAlias}' - ${conn}")
+
             // Simply return if there are no changes to the connection string
             if (conn == connString) return this
 

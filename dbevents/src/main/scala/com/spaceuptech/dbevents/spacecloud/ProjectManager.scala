@@ -43,15 +43,20 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
   override def onMessage(msg: Command): Behavior[Command] = {
     msg match {
       case FetchEventingConfig() =>
+        println(s"Fetching eventing config for project '$projectId'")
         fetchEventingConfig()
         this
 
       case FetchDatabaseConfig() =>
-        if (isEventingEnabled) fetchDatabaseConfig()
+        if (isEventingEnabled) {
+          println(s"Fetching database config for project '$projectId'")
+          fetchDatabaseConfig()
+        }
         this
 
       case CreateDatabaseActor(db) =>
         if (!databaseToActor.contains(db.dbAlias)) {
+          println(s"Creating new database actor - ${db.dbAlias}")
           val actor = context.spawn(Database.createActor(projectId, db.`type`, eventsSink), s"db-${db.dbAlias}")
           actor ! Database.UpdateEngineConfig(db)
           databaseToActor += db.dbAlias -> actor

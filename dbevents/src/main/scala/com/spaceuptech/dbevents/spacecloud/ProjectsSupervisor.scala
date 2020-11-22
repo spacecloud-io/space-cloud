@@ -39,11 +39,13 @@ class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], time
   override def onMessage(msg: Command): Behavior[Command] = {
     msg match {
       case FetchProjects() =>
+        println("Fetching projects list")
         fetchProjects()
         this
 
       case CreateProjectActor(id) =>
         if (!this.projectIdToActor.contains(id)) {
+          println("Creating project", id)
           val actor = context.spawn(ProjectManager(id), id)
           actor ! ProjectManager.FetchEventingConfig()
           projectIdToActor += id -> actor

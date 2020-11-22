@@ -58,6 +58,8 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
       case UpdateEngineConfig(config) =>
         getConnString(projectId, config.conn) onComplete {
           case Success(conn) =>
+            println(s"Reloading db config for db '${config.dbAlias}' - ${conn}")
+
             // Simply return if there are no changes to the connection string
             if (conn == connString) return this
 
@@ -101,6 +103,7 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
     db.`type` match {
       case "mysql" => config += "db" -> db.name
       case "postgres" => config += "schema" -> db.name
+      case _ =>
     }
 
     DatabaseSource(projectId, db.dbAlias, db.`type`, config)
