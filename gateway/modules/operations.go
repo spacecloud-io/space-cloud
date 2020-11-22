@@ -88,7 +88,7 @@ func (m *Modules) SetProjectConfig(ctx context.Context, p *config.ProjectConfig)
 }
 
 // SetDatabaseConfig sets the config of db, auth, schema and realtime modules
-func (m *Modules) SetDatabaseConfig(ctx context.Context, projectID string, databaseConfigs config.DatabaseConfigs, schemaConfigs config.DatabaseSchemas, ruleConfigs config.DatabaseRules) error {
+func (m *Modules) SetDatabaseConfig(ctx context.Context, projectID string, databaseConfigs config.DatabaseConfigs, schemaConfigs config.DatabaseSchemas, ruleConfigs config.DatabaseRules, prepConfigs config.DatabasePreparedQueries) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of db module", nil)
 	if err := m.db.SetConfig(projectID, databaseConfigs); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set db module config", err, nil)
@@ -104,6 +104,11 @@ func (m *Modules) SetDatabaseConfig(ctx context.Context, projectID string, datab
 
 	// Set the db rule config too
 	if err := m.SetDatabaseRulesConfig(ctx, ruleConfigs); err != nil {
+		return err
+	}
+
+	// Set the db prepared queries
+	if err := m.SetDatabasePreparedQueryConfig(ctx, prepConfigs); err != nil {
 		return err
 	}
 

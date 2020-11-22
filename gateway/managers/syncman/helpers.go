@@ -97,6 +97,60 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		resourceType = rt
 	}
 
+	// check cluster level resources first
+	switch resourceType {
+	case config.ResourceCluster:
+		switch eventType {
+		case config.ResourceAddEvent, config.ResourceUpdateEvent:
+			value := new(config.ClusterConfig)
+			if err := mapstructure.Decode(resource, value); err != nil {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.ClusterConfig{}", reflect.TypeOf(resource)), nil, nil)
+			}
+
+			globalConfig.ClusterConfig = value
+		case config.ResourceDeleteEvent:
+		}
+		return nil
+
+	case config.ResourceIntegration:
+		switch eventType {
+		case config.ResourceAddEvent, config.ResourceUpdateEvent:
+			value := new(config.IntegrationConfig)
+			if err := mapstructure.Decode(resource, value); err != nil {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.IntegrationConfig{}", reflect.TypeOf(resource)), nil, nil)
+			}
+
+			if globalConfig.Integrations == nil {
+				globalConfig.Integrations = config.Integrations{resourceID: value}
+			} else {
+				globalConfig.Integrations[resourceID] = value
+			}
+
+		case config.ResourceDeleteEvent:
+			delete(globalConfig.Integrations, resourceID)
+		}
+		return nil
+
+	case config.ResourceIntegrationHook:
+		switch eventType {
+		case config.ResourceAddEvent, config.ResourceUpdateEvent:
+			value := new(config.IntegrationHook)
+			if err := mapstructure.Decode(resource, value); err != nil {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.IntegrationHook{}", reflect.TypeOf(resource)), nil, nil)
+			}
+
+			if globalConfig.Integrations == nil {
+				globalConfig.IntegrationHooks = config.IntegrationHooks{resourceID: value}
+			} else {
+				globalConfig.IntegrationHooks[resourceID] = value
+			}
+
+		case config.ResourceDeleteEvent:
+			delete(globalConfig.IntegrationHooks, resourceID)
+		}
+		return nil
+	}
+
 	if resourceType == config.ResourceProject {
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
@@ -389,52 +443,6 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		}
 
 		return nil
-
-	case config.ResourceCluster:
-		switch eventType {
-		case config.ResourceAddEvent, config.ResourceUpdateEvent:
-			value := new(config.ClusterConfig)
-			if err := mapstructure.Decode(resource, value); err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.Auth{}", reflect.TypeOf(resource)), nil, nil)
-			}
-
-			globalConfig.ClusterConfig = value
-		case config.ResourceDeleteEvent:
-		}
-
-	case config.ResourceIntegration:
-		switch eventType {
-		case config.ResourceAddEvent, config.ResourceUpdateEvent:
-			value := new(config.IntegrationConfig)
-			if err := mapstructure.Decode(resource, value); err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.Auth{}", reflect.TypeOf(resource)), nil, nil)
-			}
-
-			if globalConfig.Integrations == nil {
-				globalConfig.Integrations = config.Integrations{resourceID: value}
-			} else {
-				globalConfig.Integrations[resourceID] = value
-			}
-		case config.ResourceDeleteEvent:
-			delete(globalConfig.Integrations, resourceID)
-		}
-
-	case config.ResourceIntegrationHook:
-		switch eventType {
-		case config.ResourceAddEvent, config.ResourceUpdateEvent:
-			value := new(config.IntegrationHook)
-			if err := mapstructure.Decode(resource, value); err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.Auth{}", reflect.TypeOf(resource)), nil, nil)
-			}
-
-			if globalConfig.Integrations == nil {
-				globalConfig.IntegrationHooks = config.IntegrationHooks{resourceID: value}
-			} else {
-				globalConfig.IntegrationHooks[resourceID] = value
-			}
-		case config.ResourceDeleteEvent:
-			delete(globalConfig.IntegrationHooks, resourceID)
-		}
 
 	default:
 		return fmt.Errorf("unknown resource type (%s) provided", resourceType)

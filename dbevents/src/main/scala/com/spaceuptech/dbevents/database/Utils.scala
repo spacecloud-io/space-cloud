@@ -200,6 +200,7 @@ object Utils {
     val name = generateConnectorName(source)
 
     val props = io.debezium.config.Configuration.empty().asProperties()
+    props.setProperty("snapshot.mode", "schema_only")
     props.setProperty("name", generateConnectorName(source))
     props.setProperty("connector.class", "io.debezium.connector.mysql.MySqlConnector")
     props.setProperty("offset.storage", getOffsetStorageClass)
@@ -225,6 +226,7 @@ object Utils {
     val name = generateConnectorName(source)
 
     val props = io.debezium.config.Configuration.empty().asProperties()
+    props.setProperty("snapshot.mode", "schema_only")
     props.setProperty("name", name)
     props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
     props.setProperty("offset.storage", getOffsetStorageClass)
@@ -249,6 +251,7 @@ object Utils {
     val name = generateConnectorName(source)
 
     val props = io.debezium.config.Configuration.empty().asProperties()
+    props.setProperty("snapshot.mode", "never")
     props.setProperty("name", name)
     props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
     props.setProperty("offset.storage", getOffsetStorageClass)

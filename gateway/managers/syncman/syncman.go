@@ -128,7 +128,7 @@ func (s *Manager) Start(port int) error {
 
 		case config.ResourceDatabaseConfig:
 			p := s.projectConfig.Projects[projectID]
-			_ = s.modules.SetDatabaseConfig(ctx, projectID, p.DatabaseConfigs, p.DatabaseSchemas, p.DatabaseRules)
+			_ = s.modules.SetDatabaseConfig(ctx, projectID, p.DatabaseConfigs, p.DatabaseSchemas, p.DatabaseRules, p.DatabasePreparedQueries)
 
 		case config.ResourceDatabaseSchema:
 			_ = s.modules.SetDatabaseSchemaConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabaseSchemas)

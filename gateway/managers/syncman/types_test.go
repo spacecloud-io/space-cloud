@@ -47,7 +47,7 @@ func (m *mockModulesInterface) SetInitialProjectConfig(ctx context.Context, conf
 	return a.Error(0)
 }
 
-func (m *mockModulesInterface) SetDatabaseConfig(ctx context.Context, projectID string, databaseConfigs config.DatabaseConfigs, schemaConfigs config.DatabaseSchemas, ruleConfigs config.DatabaseRules) error {
+func (m *mockModulesInterface) SetDatabaseConfig(ctx context.Context, projectID string, databaseConfigs config.DatabaseConfigs, schemaConfigs config.DatabaseSchemas, ruleConfigs config.DatabaseRules, prepConfigs config.DatabasePreparedQueries) error {
 	return m.Called(ctx, projectID, databaseConfigs).Error(0)
 }
 
