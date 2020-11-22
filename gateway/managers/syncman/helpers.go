@@ -447,5 +447,4 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 	default:
 		return fmt.Errorf("unknown resource type (%s) provided", resourceType)
 	}
-	return nil
 }
