@@ -224,7 +224,7 @@ func TestManager_GetGatewayIndex(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.s.GetGatewayIndex(); got != tt.want {
+			if got := tt.s.getGatewayIndex(); got != tt.want {
 				t.Errorf("Manager.GetGatewayIndex() = %v, want %v", got, tt.want)
 			}
 		})

@@ -25,7 +25,8 @@ object Utils {
 
     // Start the offsetStore
     val offsetStore = new MongoStore()
-    offsetStore.setName(s"dbevents-$projectId-$dbAlias")
+    val name = s"dbevents-$projectId-$dbAlias"
+    offsetStore.setName(name)
     offsetStore.start()
 
     // Retrieve the resume token
@@ -92,7 +93,7 @@ object Utils {
             )
 
           case _ =>
-            println(s"Invalid operation type (${doc.getOperationType.getValue}) received")
+            println(s"Invalid operation type (${doc.getOperationType.getValue}) received - $name")
         }
       }
     }
@@ -103,13 +104,14 @@ object Utils {
         var w = db.watch().fullDocument(FullDocument.UPDATE_LOOKUP)
         resumeToken match {
           case Some(value) =>
-            println("Mongo resume token found:", value.toJson)
+            println(s"Mongo ($name) resume token found:", value.toJson)
             w = w.startAfter(value)
           case None =>
-            println("Mongo resume nothing")
+            println(s"Mongo ($name) resume nothing")
         }
 
         w.forEach(consumer)
+        println(s"Mongo this shouldn't be happening - $name")
       }
     })
 

@@ -14,7 +14,8 @@ import (
 
 // Manager syncs the project config between folders
 type Manager struct {
-	lock sync.RWMutex
+	lock         sync.RWMutex
+	lockServices sync.RWMutex
 
 	// Config related to cluster config
 	projectConfig *config.Config
@@ -187,8 +188,8 @@ func (s *Manager) Start(port int) error {
 
 	// Start routine to observe active space-cloud services
 	if err := s.store.WatchServices(func(services scServices) {
-		s.lock.Lock()
-		defer s.lock.Unlock()
+		s.lockServices.Lock()
+		defer s.lockServices.Unlock()
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services})
 
 		s.services = services

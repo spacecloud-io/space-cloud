@@ -506,17 +506,22 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 		return errors.New("specified database not present in config")
 	}
 
+	if projectConfig.DatabaseSchemas == nil {
+		projectConfig.DatabaseSchemas = make(config.DatabaseSchemas)
+	}
+
 	dbSchemas := make(config.DatabaseSchemas)
 	for colName, colValue := range v.Collections {
 		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseSchema, dbAlias, colName)
 		dbSchemas[resourceID] = &config.DatabaseSchema{Table: colName, DbAlias: dbAlias, Schema: colValue.Schema}
+		projectConfig.DatabaseSchemas[resourceID] = &config.DatabaseSchema{Table: colName, DbAlias: dbAlias, Schema: colValue.Schema}
 	}
 
 	if err := s.modules.GetSchemaModuleForSyncMan().SchemaModifyAll(ctx, dbAlias, v.DBName, dbSchemas); err != nil {
 		return err
 	}
 
-	if err := s.modules.SetDatabaseSchemaConfig(ctx, project, dbSchemas); err != nil {
+	if err := s.modules.SetDatabaseSchemaConfig(ctx, project, projectConfig.DatabaseSchemas); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 

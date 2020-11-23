@@ -39,8 +39,7 @@ func calcIndex(token, totalTokens, n int) int {
 	return token / bucketSize
 }
 
-// GetGatewayIndex returns the position of the current gateway instance
-func (s *Manager) GetGatewayIndex() int {
+func (s *Manager) getGatewayIndex() int {
 	index := 0
 
 	for i, v := range s.services {
