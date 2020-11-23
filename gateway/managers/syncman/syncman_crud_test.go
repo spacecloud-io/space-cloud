@@ -1260,12 +1260,17 @@ func TestManager_RemoveSchemaInspection(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{}}}}},
+			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{}, DatabaseRules: config.DatabaseRules{}}}}},
 			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseSchemaConfig",
 					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{}},
+					paramsReturned: []interface{}{nil},
+				},
+				{
+					method:         "SetDatabaseRulesConfig",
+					args:           []interface{}{mock.Anything, config.DatabaseRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -1280,12 +1285,17 @@ func TestManager_RemoveSchemaInspection(t *testing.T) {
 		},
 		{
 			name: "schema inspection is removed",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{}}}}},
+			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias"}}, DatabaseRules: config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{Table: "tableName", DbAlias: "alias"}}}}}},
 			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseSchemaConfig",
 					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{}},
+					paramsReturned: []interface{}{nil},
+				},
+				{
+					method:         "SetDatabaseRulesConfig",
+					args:           []interface{}{mock.Anything, config.DatabaseRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
