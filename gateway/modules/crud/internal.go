@@ -9,13 +9,13 @@ import (
 // InternalCreate inserts a documents (or multiple when op is "all") into the database based on dbAlias.
 // It does not invoke any hooks. This should only be used by the eventing module.
 func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest, isIgnoreMetrics bool) error {
-	m.RLock()
-	defer m.RUnlock()
-
 	// First step is to validate the create operation
 	if err := m.schema.ValidateCreateOperation(ctx, dbAlias, col, req); err != nil {
 		return err
 	}
+
+	m.RLock()
+	defer m.RUnlock()
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {

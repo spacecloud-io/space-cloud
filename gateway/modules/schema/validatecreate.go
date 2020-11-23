@@ -16,7 +16,6 @@ import (
 
 // SchemaValidator function validates the schema which it gets from module
 func (s *Schema) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
-
 	for schemaKey := range doc {
 		if _, p := collectionFields[schemaKey]; !p {
 			return nil, errors.New("The field " + schemaKey + " is not present in schema of " + col)
@@ -73,6 +72,8 @@ func (s *Schema) SchemaValidator(ctx context.Context, col string, collectionFiel
 
 // ValidateCreateOperation validates schema on create operation
 func (s *Schema) ValidateCreateOperation(ctx context.Context, dbAlias, col string, req *model.CreateRequest) error {
+	s.lock.RLock()
+	s.lock.RUnlock()
 
 	if s.SchemaDoc == nil {
 		return errors.New("schema not initialized")
