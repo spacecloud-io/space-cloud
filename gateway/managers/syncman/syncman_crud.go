@@ -44,6 +44,10 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 	dbRulesResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
 	delete(projectConfig.DatabaseRules, dbRulesResourceID)
 
+	if err := s.modules.SetDatabaseRulesConfig(ctx, projectConfig.DatabaseRules); err != nil {
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+	}
+
 	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -489,6 +493,10 @@ func (s *Manager) RemoveCollection(ctx context.Context, project, dbAlias, col st
 
 	dbRulesResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
 	delete(projectConfig.DatabaseRules, dbRulesResourceID)
+
+	if err := s.modules.SetDatabaseRulesConfig(ctx, projectConfig.DatabaseRules); err != nil {
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+	}
 
 	if err := s.store.DeleteResource(ctx, dbSchemaResourceID); err != nil {
 		return http.StatusInternalServerError, err
