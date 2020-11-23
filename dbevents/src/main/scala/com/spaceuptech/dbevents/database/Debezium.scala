@@ -58,7 +58,7 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
       case UpdateEngineConfig(config) =>
         getConnString(projectId, config.conn) onComplete {
           case Success(conn) =>
-            println(s"Reloading db config for db '${config.dbAlias}' - ${conn}")
+            println(s"Reloading db config for db '${config.dbAlias}'")
 
             // Simply return if there are no changes to the connection string
             if (conn == connString) return this
@@ -87,7 +87,9 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
         broker ! EventsSink.EmitEvent(record)
         this
 
-      case Stop() => Behaviors.stopped
+      case Stop() =>
+        println(s"Got close command for debezium watcher - $name")
+        Behaviors.stopped
     }
   }
 

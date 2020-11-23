@@ -40,6 +40,8 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
   timers.startTimerAtFixedRate(fetchEventingConfigKey, FetchEventingConfig(), 1.minute)
   timers.startTimerAtFixedRate(fetchDatabasesKey, FetchDatabaseConfig(), 1.minute)
 
+  println(s"Starting project manager - '$projectId'")
+
   override def onMessage(msg: Command): Behavior[Command] = {
     msg match {
       case FetchEventingConfig() =>
@@ -63,7 +65,9 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
         }
         this
 
-      case Stop() => Behaviors.stopped
+      case Stop() =>
+        println(s"Got close command for project - $projectId")
+        Behaviors.stopped
     }
   }
 
@@ -152,6 +156,7 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     case PostStop =>
       timers.cancelAll()
       removeAllChildren()
+      println(s"Closing project manager - '$projectId'")
       this
   }
 }
