@@ -73,7 +73,7 @@ func (s *Schema) SchemaValidator(ctx context.Context, col string, collectionFiel
 // ValidateCreateOperation validates schema on create operation
 func (s *Schema) ValidateCreateOperation(ctx context.Context, dbAlias, col string, req *model.CreateRequest) error {
 	s.lock.RLock()
-	s.lock.RUnlock()
+	defer s.lock.RUnlock()
 
 	if s.SchemaDoc == nil {
 		return errors.New("schema not initialized")
