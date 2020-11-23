@@ -228,7 +228,7 @@ object Utils {
     val props = io.debezium.config.Configuration.empty().asProperties()
     props.setProperty("snapshot.mode", "schema_only")
     props.setProperty("name", name)
-    props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
+    props.setProperty("connector.class", "io.debezium.connector.sqlserver.SqlServerConnector")
     props.setProperty("offset.storage", getOffsetStorageClass)
     props.setProperty("offset.storage.file.filename", s"./dbevents-offsets-$name.dat")
     props.setProperty("offset.flush.interval.ms", "60000")
