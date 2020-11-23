@@ -51,18 +51,6 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 			return "", nil, errors.New("select cannot be nil when using joins")
 		}
 
-		// Check if the select clause exists
-		if req.Options.Select != nil {
-			for key := range req.Options.Select {
-				if !isJoin {
-					selArray = append(selArray, key)
-					continue
-				}
-
-				arr := strings.Split(key, ".")
-				selArray = append(selArray, goqu.I(key).As(strings.Join(arr, "__")))
-			}
-		}
 		if req.Options.Skip != nil {
 			query = query.Offset(uint(*req.Options.Skip))
 		}
@@ -91,11 +79,23 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 			query = query.Order(orderBys...)
 		}
 
-		q, err := s.processJoins(ctx, query, req.Options.Join)
+		q, err := s.processJoins(ctx, query, req.Options.Join, req.Options.Select)
 		if err != nil {
 			return "", nil, err
 		}
 		query = q
+		// Check if the select clause exists
+		if req.Options.Select != nil {
+			for key := range req.Options.Select {
+				if !isJoin {
+					selArray = append(selArray, key)
+					continue
+				}
+
+				arr := strings.Split(key, ".")
+				selArray = append(selArray, goqu.I(key).As(strings.Join(arr, "__")))
+			}
+		}
 	}
 
 	switch req.Operation {

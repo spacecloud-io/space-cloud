@@ -238,7 +238,7 @@ func TestSQL_generateReadQuery(t *testing.T) {
 						},
 					},
 					Operation: "all"}},
-			want:    []string{"SELECT t1.col1 AS t1__col1 FROM t1 LEFT JOIN t2 ON (t1.col1 = t2.col2) LEFT JOIN t3 ON (t2.col3 = t3.col4) WHERE (t1.col1 = ?)"},
+			want:    []string{"SELECT t1.col1 AS t1__col1, t2.col2 AS t2__col2, t3.col4 AS t3__col4 FROM t1 LEFT JOIN t2 ON (t1.col1 = t2.col2) LEFT JOIN t3 ON (t2.col3 = t3.col4) WHERE (t1.col1 = ?)"},
 			want1:   []interface{}{int64(1)},
 			wantErr: false,
 		},
@@ -579,10 +579,10 @@ func TestSQL_generateReadQuery(t *testing.T) {
 				return
 			}
 			if found := find(tt.want, got); !found {
-				t.Errorf("SQL.generateReadQuery() got = %v, want %v", got, tt.want[0])
+				t.Errorf("SQL.generateReadQuery() got = %v,\n want %v", got, tt.want[0])
 			}
 			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("SQL.generateReadQuery() got1 = %v, want1 %v", got1, tt.want1)
+				t.Errorf("SQL.generateReadQuery() got1 = %v,\n want1 %v", got1, tt.want1)
 			}
 		})
 	}

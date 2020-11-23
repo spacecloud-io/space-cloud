@@ -17,6 +17,7 @@ import (
 	"github.com/doug-martin/goqu/v8"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin bool) (goqu.Expression, []string) {
@@ -221,7 +222,7 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 	}
 }
 
-func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join []model.JoinOption) (*goqu.SelectDataset, error) {
+func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join []model.JoinOption, sel map[string]int32) (*goqu.SelectDataset, error) {
 	for _, j := range join {
 		on, _ := s.generator(ctx, j.On, true)
 		switch j.Type {
@@ -237,8 +238,13 @@ func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join 
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid join type (%s) provided", j.Type), nil, nil)
 		}
 
+		isValidJoin, columnName := utils.IsValidJoin(j.On, j.Table)
+		if isValidJoin {
+			sel[j.Table+"."+columnName] = 1
+		}
+
 		if j.Join != nil {
-			q, err := s.processJoins(ctx, query, j.Join)
+			q, err := s.processJoins(ctx, query, j.Join, sel)
 			if err != nil {
 				return nil, err
 			}
