@@ -82,6 +82,7 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 		m.config = v
 		m.block = c
 		m.alias = strings.TrimPrefix(v.DbAlias, "sql-")
+		m.block.SetQueryFetchLimit(v.Limit)
 	}
 
 	return nil

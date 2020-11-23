@@ -30,7 +30,8 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	if req.Options == nil {
 		req.Options = &model.ReadOptions{}
 	}
-	if req.Options.Limit == nil {
+	isDefaultLimit := req.Options.Limit == nil
+	if isDefaultLimit {
 		req.Options.Limit = s.queryFetchLimit
 		req.Options.HasOptions = true
 	}
@@ -64,6 +65,9 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 			}
 		}
 		if req.Options.Skip != nil {
+			if model.DBType(s.dbType) == model.SQLServer && len(req.Options.Sort) == 0 {
+				return "", nil, fmt.Errorf("provide sort option for skip operation to work")
+			}
 			query = query.Offset(uint(*req.Options.Skip))
 		}
 
@@ -147,6 +151,10 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	}
 
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
+
+	if model.DBType(s.dbType) == model.SQLServer {
+		sqlString = mutateSQLServerLimitAndOffsetOperation(sqlString, isDefaultLimit, req)
+	}
 
 	for _, v := range regexArr {
 		switch s.dbType {

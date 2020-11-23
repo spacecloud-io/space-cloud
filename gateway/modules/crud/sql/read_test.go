@@ -532,10 +532,34 @@ func TestSQL_generateReadQuery(t *testing.T) {
 			args: args{project: "test", col: "table",
 				req: &model.ReadRequest{
 					Find:      map[string]interface{}{"Column1": map[string]interface{}{"$eq": 1}},
-					Options:   &model.ReadOptions{Skip: iti(2), Limit: iti(10)},
+					Options:   &model.ReadOptions{Skip: iti(2), Limit: iti(10), Sort: []string{"age"}},
 					Operation: "all"}},
-			want:    []string{"SELECT * FROM test.table WHERE (Column1 = @p1) LIMIT @p2 OFFSET @p3"},
+			want:    []string{"SELECT * FROM test.table WHERE (Column1 = @p1) ORDER BY age ASC OFFSET @p3 ROWS FETCH NEXT @p2 ROWS ONLY"},
 			want1:   []interface{}{int64(1), int64(10), int64(2)},
+			wantErr: false,
+		},
+		{
+			name:   "Column1 = ?, limit = ?",
+			fields: fields{dbType: "sqlserver"},
+			args: args{project: "test", col: "table",
+				req: &model.ReadRequest{
+					Find:      map[string]interface{}{"Column1": map[string]interface{}{"$eq": 1}},
+					Options:   &model.ReadOptions{Limit: iti(20)},
+					Operation: "all"}},
+			want:    []string{"SELECT TOP 20 * FROM test.table WHERE (Column1 = @p1)"},
+			want1:   []interface{}{int64(1), int64(20)},
+			wantErr: false,
+		},
+		{
+			name:   "Column1 = ?, offset = ?",
+			fields: fields{dbType: "sqlserver"},
+			args: args{project: "test", col: "table",
+				req: &model.ReadRequest{
+					Find:      map[string]interface{}{"Column1": map[string]interface{}{"$eq": 1}},
+					Options:   &model.ReadOptions{Skip: iti(2), Sort: []string{"age"}},
+					Operation: "all"}},
+			want:    []string{"SELECT * FROM test.table WHERE (Column1 = @p1) ORDER BY age ASC OFFSET @p2 ROWS"},
+			want1:   []interface{}{int64(1), int64(2)},
 			wantErr: false,
 		},
 		{
