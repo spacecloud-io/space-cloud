@@ -551,18 +551,6 @@ func TestSQL_generateReadQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "Column1 = ?, offset = ?",
-			fields: fields{dbType: "sqlserver"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{"Column1": map[string]interface{}{"$eq": 1}},
-					Options:   &model.ReadOptions{Skip: iti(2), Sort: []string{"age"}},
-					Operation: "all"}},
-			want:    []string{"SELECT * FROM test.table WHERE (Column1 = @p1) ORDER BY age ASC OFFSET @p2 ROWS"},
-			want1:   []interface{}{int64(1), int64(2)},
-			wantErr: false,
-		},
-		{
 			name:   "Column1 = ? and select Column1 from all doc",
 			fields: fields{dbType: "sqlserver"},
 			args: args{project: "test", col: "table",

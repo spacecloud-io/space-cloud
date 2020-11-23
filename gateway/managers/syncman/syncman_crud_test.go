@@ -7,9 +7,10 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestManager_SetDatabaseConnection(t *testing.T) {
@@ -1291,7 +1292,12 @@ func TestManager_RemoveSchemaInspection(t *testing.T) {
 			storeMockArgs: []mockArgs{
 				{
 					method:         "DeleteResource",
-					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"), mock.Anything},
+					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName")},
+					paramsReturned: []interface{}{nil},
+				},
+				{
+					method:         "DeleteResource",
+					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule")},
 					paramsReturned: []interface{}{nil},
 				},
 			},

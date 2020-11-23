@@ -279,24 +279,14 @@ func replaceSQLOperationWithPlaceHolder(replace, sqlString string, replaceWith f
 	return dollarValue, strings.TrimSpace(sqlString)
 }
 
-func mutateSQLServerLimitAndOffsetOperation(sqlString string, isDefaultLimit bool, req *model.ReadRequest) string {
-	if req.Options.Skip != nil && req.Options.Limit != nil && !isDefaultLimit {
+func mutateSQLServerLimitAndOffsetOperation(sqlString string, req *model.ReadRequest) string {
+	if req.Options.Skip != nil && req.Options.Limit != nil {
 		offsetValue, sqlString := replaceSQLOperationWithPlaceHolder("OFFSET", sqlString, func(value string) string {
 			return ""
 		})
 
 		_, sqlString = replaceSQLOperationWithPlaceHolder("LIMIT", sqlString, func(value string) string {
 			return fmt.Sprintf("OFFSET %s ROWS FETCH NEXT %s ROWS ONLY", offsetValue, value)
-		})
-		return sqlString
-	}
-	if req.Options.Skip != nil {
-		_, sqlString = replaceSQLOperationWithPlaceHolder("LIMIT", sqlString, func(value string) string {
-			return ""
-		})
-
-		_, sqlString = replaceSQLOperationWithPlaceHolder("OFFSET", sqlString, func(value string) string {
-			return fmt.Sprintf("OFFSET %s ROWS", value)
 		})
 		return sqlString
 	}
