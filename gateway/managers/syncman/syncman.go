@@ -14,7 +14,8 @@ import (
 
 // Manager syncs the project config between folders
 type Manager struct {
-	lock sync.RWMutex
+	lock         sync.RWMutex
+	lockServices sync.RWMutex
 
 	// Config related to cluster config
 	projectConfig *config.Config
@@ -81,15 +82,19 @@ func (s *Manager) Start(port int) error {
 	if err != nil {
 		return err
 	}
-	// Set admin config
+
+	// Set metric config
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Successfully loaded initial copy of config file", map[string]interface{}{})
 	s.globalModules.SetMetricsConfig(globalConfig.ClusterConfig.EnableTelemetry)
+
+	// Set letsencrypt config
 	if globalConfig.ClusterConfig.LetsEncryptEmail != "" {
 		s.modules.LetsEncrypt().SetLetsEncryptEmail(globalConfig.ClusterConfig.LetsEncryptEmail)
 	}
-	// TODO: Set admin config in enterprise
+
 	s.projectConfig = globalConfig
 
+	// Set initial project config
 	if err := s.modules.SetInitialProjectConfig(context.TODO(), globalConfig.Projects); err != nil {
 		return err
 	}
@@ -98,13 +103,16 @@ func (s *Manager) Start(port int) error {
 	if err := s.store.WatchResources(func(eventType, resourceID string, resourceType config.Resource, resource interface{}) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
+
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancel()
+
 		_, projectID, _, err := splitResourceID(ctx, resourceID)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to split resource id in watch resources", err, nil)
 			return
 		}
+
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating resources", map[string]interface{}{"event": eventType, "resourceId": resourceID, "resource": resource, "projectId": projectID, "resourceType": resourceType})
 
 		if err := validateResource(ctx, eventType, s.projectConfig, resourceID, resourceType, resource); err != nil {
@@ -115,11 +123,13 @@ func (s *Manager) Start(port int) error {
 		switch resourceType {
 		case config.ResourceProject:
 			_ = s.modules.SetProjectConfig(ctx, s.projectConfig.Projects[projectID].ProjectConfig)
+
 		case config.ResourceAuthProvider:
 			_ = s.modules.SetUsermanConfig(ctx, projectID, s.projectConfig.Projects[projectID].Auths)
 
 		case config.ResourceDatabaseConfig:
-			_ = s.modules.SetDatabaseConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabaseConfigs)
+			p := s.projectConfig.Projects[projectID]
+			_ = s.modules.SetDatabaseConfig(ctx, projectID, p.DatabaseConfigs, p.DatabaseSchemas, p.DatabaseRules, p.DatabasePreparedQueries)
 
 		case config.ResourceDatabaseSchema:
 			_ = s.modules.SetDatabaseSchemaConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabaseSchemas)
@@ -131,7 +141,8 @@ func (s *Manager) Start(port int) error {
 			_ = s.modules.SetDatabasePreparedQueryConfig(ctx, s.projectConfig.Projects[projectID].DatabasePreparedQueries)
 
 		case config.ResourceEventingConfig:
-			_ = s.modules.SetEventingConfig(ctx, projectID, s.projectConfig.Projects[projectID].EventingConfig)
+			p := s.projectConfig.Projects[projectID]
+			_ = s.modules.SetEventingConfig(ctx, projectID, p.EventingConfig, p.EventingRules, p.EventingSchemas, p.EventingTriggers)
 
 		case config.ResourceEventingSchema:
 			_ = s.modules.SetEventingSchemaConfig(ctx, s.projectConfig.Projects[projectID].EventingSchemas)
@@ -177,8 +188,8 @@ func (s *Manager) Start(port int) error {
 
 	// Start routine to observe active space-cloud services
 	if err := s.store.WatchServices(func(services scServices) {
-		s.lock.Lock()
-		defer s.lock.Unlock()
+		s.lockServices.Lock()
+		defer s.lockServices.Unlock()
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services})
 
 		s.services = services

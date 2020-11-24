@@ -240,21 +240,6 @@ func TestManager_RemoveDatabaseConfig(t *testing.T) {
 					args:           []interface{}{mock.Anything, "1", config.DatabaseConfigs{}},
 					paramsReturned: []interface{}{nil},
 				},
-				{
-					method:         "SetDatabaseSchemaConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{}},
-					paramsReturned: []interface{}{nil},
-				},
-				{
-					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{mock.Anything, config.DatabaseRules{}},
-					paramsReturned: []interface{}{nil},
-				},
-				{
-					method:         "SetDatabasePreparedQueryConfig",
-					args:           []interface{}{mock.Anything, config.DatabasePreparedQueries{}},
-					paramsReturned: []interface{}{nil},
-				},
 			},
 			storeMockArgs: []mockArgs{
 				{

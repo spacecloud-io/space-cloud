@@ -28,6 +28,9 @@ func (s *Manager) GetClusterID() string {
 
 // GetNodesInCluster get total number of gateways
 func (s *Manager) GetNodesInCluster() int {
+	s.lockServices.RLock()
+	defer s.lockServices.RUnlock()
+
 	if len(s.services) == 0 {
 		return 1
 	}
@@ -36,8 +39,8 @@ func (s *Manager) GetNodesInCluster() int {
 
 // GetAssignedSpaceCloudID returns the space cloud id assigned for the provided token
 func (s *Manager) GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lockServices.RLock()
+	defer s.lockServices.RUnlock()
 
 	index := calcIndex(token, utils.MaxEventTokens, len(s.services))
 
@@ -46,8 +49,8 @@ func (s *Manager) GetAssignedSpaceCloudID(ctx context.Context, project string, t
 
 // GetSpaceCloudNodeIDs returns the array of space cloud ids
 func (s *Manager) GetSpaceCloudNodeIDs(project string) []string {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lockServices.RLock()
+	defer s.lockServices.RUnlock()
 
 	ids := make([]string, len(s.services))
 
@@ -65,12 +68,20 @@ func (s *Manager) GetRealtimeURL(project string) string {
 
 // GetAssignedTokens returns the array or tokens assigned to this node
 func (s *Manager) GetAssignedTokens() (start, end int) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+	s.lockServices.RLock()
+	defer s.lockServices.RUnlock()
 
-	index := s.GetGatewayIndex()
+	index := s.getGatewayIndex()
 
 	return calcTokens(len(s.services), utils.MaxEventTokens, index)
+}
+
+// GetGatewayIndex returns the index of the current node
+func (s *Manager) GetGatewayIndex() int {
+	s.lockServices.RLock()
+	defer s.lockServices.RUnlock()
+
+	return s.getGatewayIndex()
 }
 
 // SetClusterConfig applies the set cluster config
