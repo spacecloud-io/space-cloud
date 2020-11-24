@@ -34,8 +34,7 @@ func calcIndex(token, totalTokens, n int) int {
 	return token / bucketSize
 }
 
-// GetGatewayIndex returns the position of the current gateway instance
-func (s *Manager) GetGatewayIndex() int {
+func (s *Manager) getGatewayIndex() int {
 	index := 0
 
 	for i, v := range s.services {
@@ -90,6 +89,7 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 	if err != nil {
 		return err
 	}
+
 	// if resource type not provided extract in from resource id
 	if resourceType == "" {
 		resourceType = rt
@@ -162,13 +162,13 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 
 	// check project level resources
 	if resourceType == config.ResourceProject {
-
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.ProjectConfig)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.ProjectConfig{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			projectConfig, ok := globalConfig.Projects[projectID]
 			if !ok {
 				globalConfig.Projects[projectID] = config.GenerateEmptyProject(value)
@@ -188,13 +188,13 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 
 	switch resourceType {
 	case config.ResourceAuthProvider:
-
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.AuthStub)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.AuthStub{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.Auths == nil {
 				project.Auths = config.Auths{resourceID: value}
 			} else {
@@ -205,14 +205,15 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		}
 
 		return nil
-	case config.ResourceDatabaseConfig:
 
+	case config.ResourceDatabaseConfig:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.DatabaseConfig)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.DatabaseConfig{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.DatabaseConfigs == nil {
 				project.DatabaseConfigs = config.DatabaseConfigs{resourceID: value}
 			} else {
@@ -224,13 +225,13 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 
 		return nil
 	case config.ResourceDatabaseSchema:
-
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.DatabaseSchema)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.DatabaseSchema{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.DatabaseSchemas == nil {
 				project.DatabaseSchemas = config.DatabaseSchemas{resourceID: value}
 			} else {
@@ -241,14 +242,15 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		}
 
 		return nil
-	case config.ResourceDatabaseRule:
 
+	case config.ResourceDatabaseRule:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.DatabaseRule)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.DatabaseRule{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.DatabaseRules == nil {
 				project.DatabaseRules = config.DatabaseRules{resourceID: value}
 			} else {
@@ -259,14 +261,15 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		}
 
 		return nil
-	case config.ResourceDatabasePreparedQuery:
 
+	case config.ResourceDatabasePreparedQuery:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.DatbasePreparedQuery)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.DatbasePreparedQuery{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.DatabasePreparedQueries == nil {
 				project.DatabasePreparedQueries = config.DatabasePreparedQueries{resourceID: value}
 			} else {
@@ -277,28 +280,31 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		}
 
 		return nil
-	case config.ResourceEventingConfig:
 
+	case config.ResourceEventingConfig:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.EventingConfig)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.EventingConfig{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			project.EventingConfig = value
 
 		case config.ResourceDeleteEvent:
+			project.EventingConfig.Enabled = false
 		}
 
 		return nil
-	case config.ResourceEventingSchema:
 
+	case config.ResourceEventingSchema:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.EventingSchema)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.EventingSchema{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.EventingSchemas == nil {
 				project.EventingSchemas = config.EventingSchemas{resourceID: value}
 			} else {
@@ -309,14 +315,15 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		}
 
 		return nil
-	case config.ResourceEventingRule:
 
+	case config.ResourceEventingRule:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.Rule)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.Rule{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.EventingRules == nil {
 				project.EventingRules = config.EventingRules{resourceID: value}
 			} else {
@@ -327,14 +334,15 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		}
 
 		return nil
-	case config.ResourceEventingTrigger:
 
+	case config.ResourceEventingTrigger:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.EventingTrigger)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.EventingTrigger{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.EventingTriggers == nil {
 				project.EventingTriggers = config.EventingTriggers{resourceID: value}
 			} else {
@@ -345,27 +353,29 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		}
 
 		return nil
-	case config.ResourceFileStoreConfig:
 
+	case config.ResourceFileStoreConfig:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.FileStoreConfig)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.FileStoreConfig{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			project.FileStoreConfig = value
 		case config.ResourceDeleteEvent:
 		}
 
 		return nil
-	case config.ResourceFileStoreRule:
 
+	case config.ResourceFileStoreRule:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.FileRule)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.FileRule{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.FileStoreRules == nil {
 				project.FileStoreRules = config.FileStoreRules{resourceID: value}
 			} else {
@@ -375,27 +385,29 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		}
 
 		return nil
-	case config.ResourceProjectLetsEncrypt:
 
+	case config.ResourceProjectLetsEncrypt:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.LetsEncrypt)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.LetsEncrypt{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			project.LetsEncrypt = value
 		case config.ResourceDeleteEvent:
 		}
 
 		return nil
-	case config.ResourceIngressRoute:
 
+	case config.ResourceIngressRoute:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.Route)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.Route{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.IngressRoutes == nil {
 				project.IngressRoutes = config.IngressRoutes{resourceID: value}
 			} else {
@@ -406,32 +418,35 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 		}
 
 		return nil
-	case config.ResourceIngressGlobal:
 
+	case config.ResourceIngressGlobal:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.GlobalRoutesConfig)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.GlobalRoutesConfig{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			project.IngressGlobal = value
 		case config.ResourceDeleteEvent:
 		}
 
 		return nil
-	case config.ResourceRemoteService:
 
+	case config.ResourceRemoteService:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
 			value := new(config.Service)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.Service{}", reflect.TypeOf(resource)), nil, nil)
 			}
+
 			if project.RemoteService == nil {
 				project.RemoteService = config.Services{resourceID: value}
 			} else {
 				project.RemoteService[resourceID] = value
 			}
+
 		case config.ResourceDeleteEvent:
 			delete(project.RemoteService, resourceID)
 		}

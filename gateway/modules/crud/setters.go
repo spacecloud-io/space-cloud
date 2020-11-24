@@ -84,9 +84,9 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Successfully connected to database", map[string]interface{}{"project": project, "dbAlias": v.DbAlias, "dbType": v.Type})
 		}
 
-		m.dbType = v.Type
 		m.databaseConfigs[blockKey] = v
 		m.blocks[blockKey] = c
+		c.SetQueryFetchLimit(v.Limit)
 	}
 
 	return nil

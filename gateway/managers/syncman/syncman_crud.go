@@ -53,7 +53,18 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 		return http.StatusInternalServerError, err
 	}
 
+	dbRulesResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
+	delete(projectConfig.DatabaseRules, dbRulesResourceID)
+
+	if err := s.modules.SetDatabaseRulesConfig(ctx, project, projectConfig.DatabaseRules); err != nil {
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+	}
+
 	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if err := s.store.DeleteResource(ctx, dbRulesResourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -91,7 +102,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 		projectConfig.DatabaseConfigs[resourceID] = v
 	}
 
-	if err := s.modules.SetDatabaseConfig(ctx, project, projectConfig.DatabaseConfigs); err != nil {
+	if err := s.modules.SetDatabaseConfig(ctx, project, projectConfig.DatabaseConfigs, projectConfig.DatabaseSchemas, projectConfig.DatabaseRules, projectConfig.DatabasePreparedQueries); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
@@ -125,55 +136,49 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 		return http.StatusBadRequest, err
 	}
 
+	resourceIDs := make([]string, 0)
+
 	// update database config
 	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseConfig, dbAlias)
+	resourceIDs = append(resourceIDs, resourceID)
 	delete(projectConfig.DatabaseConfigs, resourceID)
 
-	if err := s.modules.SetDatabaseConfig(ctx, project, projectConfig.DatabaseConfigs); err != nil {
-		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
-	}
-
-	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
-		return http.StatusInternalServerError, err
+	// delete rules
+	for _, databaseRule := range projectConfig.DatabaseRules {
+		if databaseRule.DbAlias == dbAlias {
+			resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, databaseRule.Table, "rule")
+			resourceIDs = append(resourceIDs, resourceID)
+			delete(projectConfig.DatabaseRules, resourceID)
+		}
 	}
 
 	// delete schemas
 	for _, databaseSchema := range projectConfig.DatabaseSchemas {
-		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseSchema, dbAlias, databaseSchema.Table)
-		delete(projectConfig.DatabaseSchemas, resourceID)
-
-		if err := s.store.DeleteResource(ctx, resourceID); err != nil {
-			return http.StatusInternalServerError, err
+		if databaseSchema.DbAlias == dbAlias {
+			resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseSchema, dbAlias, databaseSchema.Table)
+			resourceIDs = append(resourceIDs, resourceID)
+			delete(projectConfig.DatabaseSchemas, resourceID)
 		}
-	}
-	if err := s.modules.SetDatabaseSchemaConfig(ctx, project, projectConfig.DatabaseSchemas); err != nil {
-		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
-	}
-
-	// delete rules
-	for _, databaseRule := range projectConfig.DatabaseRules {
-		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, databaseRule.Table, "rule")
-		delete(projectConfig.DatabaseRules, resourceID)
-
-		if err := s.store.DeleteResource(ctx, resourceID); err != nil {
-			return http.StatusInternalServerError, err
-		}
-	}
-	if err := s.modules.SetDatabaseRulesConfig(ctx, project, projectConfig.DatabaseRules); err != nil {
-		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
 	// delete prepared queries
 	for _, preparedQuery := range projectConfig.DatabasePreparedQueries {
-		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabasePreparedQuery, dbAlias, preparedQuery.ID)
-		delete(projectConfig.DatabasePreparedQueries, resourceID)
+		if preparedQuery.DbAlias == dbAlias {
+			resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabasePreparedQuery, dbAlias, preparedQuery.ID)
+			resourceIDs = append(resourceIDs, resourceID)
+			delete(projectConfig.DatabasePreparedQueries, resourceID)
+		}
+	}
 
+	if err := s.modules.SetDatabaseConfig(ctx, project, projectConfig.DatabaseConfigs, projectConfig.DatabaseSchemas, projectConfig.DatabaseRules, projectConfig.DatabasePreparedQueries); err != nil {
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+	}
+
+	// Delete resources from store
+	for _, resourceID := range resourceIDs {
 		if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 			return http.StatusInternalServerError, err
 		}
-	}
-	if err := s.modules.SetDatabasePreparedQueryConfig(ctx, project, projectConfig.DatabasePreparedQueries); err != nil {
-		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
 	return http.StatusOK, nil
@@ -616,14 +621,25 @@ func (s *Manager) RemoveCollection(ctx context.Context, project, dbAlias, col st
 		return http.StatusBadRequest, errors.New("specified database not present in config")
 	}
 
-	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseSchema, dbAlias, col)
-	delete(projectConfig.DatabaseSchemas, resourceID)
+	dbSchemaResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseSchema, dbAlias, col)
+	delete(projectConfig.DatabaseSchemas, dbSchemaResourceID)
 
 	if err := s.modules.SetDatabaseSchemaConfig(ctx, project, projectConfig.DatabaseSchemas); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting crud config", err, nil)
 	}
 
-	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
+	dbRulesResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
+	delete(projectConfig.DatabaseRules, dbRulesResourceID)
+
+	if err := s.modules.SetDatabaseRulesConfig(ctx, project, projectConfig.DatabaseRules); err != nil {
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+	}
+
+	if err := s.store.DeleteResource(ctx, dbSchemaResourceID); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if err := s.store.DeleteResource(ctx, dbRulesResourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -667,10 +683,15 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 		return errors.New("specified database not present in config")
 	}
 
+	if projectConfig.DatabaseSchemas == nil {
+		projectConfig.DatabaseSchemas = make(config.DatabaseSchemas)
+	}
+
 	dbSchemas := make(config.DatabaseSchemas)
 	for colName, colValue := range v.Collections {
 		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseSchema, dbAlias, colName)
 		dbSchemas[resourceID] = &config.DatabaseSchema{Table: colName, DbAlias: dbAlias, Schema: colValue.Schema}
+		projectConfig.DatabaseSchemas[resourceID] = &config.DatabaseSchema{Table: colName, DbAlias: dbAlias, Schema: colValue.Schema}
 	}
 
 	schemaEventing, err := s.modules.GetSchemaModuleForSyncMan(project)
@@ -682,7 +703,7 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 		return err
 	}
 
-	if err := s.modules.SetDatabaseSchemaConfig(ctx, project, dbSchemas); err != nil {
+	if err := s.modules.SetDatabaseSchemaConfig(ctx, project, projectConfig.DatabaseSchemas); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 

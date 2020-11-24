@@ -122,7 +122,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	projectConfig.EventingConfig.DBAlias = dbAlias
 	projectConfig.EventingConfig.Enabled = enabled
 
-	if err := s.modules.SetEventingConfig(ctx, project, projectConfig.EventingConfig); err != nil {
+	if err := s.modules.SetEventingConfig(ctx, project, projectConfig.EventingConfig, projectConfig.EventingRules, projectConfig.EventingSchemas, projectConfig.EventingTriggers); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 

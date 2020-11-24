@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/spaceuptech/helpers"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -16,6 +17,7 @@ import (
 	"github.com/doug-martin/goqu/v8"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin bool) (goqu.Expression, []string) {
@@ -220,7 +222,7 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 	}
 }
 
-func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join []model.JoinOption) (*goqu.SelectDataset, error) {
+func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join []model.JoinOption, sel map[string]int32) (*goqu.SelectDataset, error) {
 	for _, j := range join {
 		on, _ := s.generator(ctx, j.On, true)
 		switch j.Type {
@@ -236,8 +238,13 @@ func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join 
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid join type (%s) provided", j.Type), nil, nil)
 		}
 
+		isValidJoin, columnName := utils.IsValidJoin(j.On, j.Table)
+		if isValidJoin {
+			sel[j.Table+"."+columnName] = 1
+		}
+
 		if j.Join != nil {
-			q, err := s.processJoins(ctx, query, j.Join)
+			q, err := s.processJoins(ctx, query, j.Join, sel)
 			if err != nil {
 				return nil, err
 			}
@@ -247,4 +254,55 @@ func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join 
 	}
 
 	return query, nil
+}
+
+// replaceSQLOperationWithPlaceHolder
+// e.g-> sql string -> select * from users limit $1
+// this function will replace (limit $1) to an value that you specify
+func replaceSQLOperationWithPlaceHolder(replace, sqlString string, replaceWith func(value string) string) (string, string) {
+	startIndex := strings.Index(sqlString, replace)
+	if startIndex == -1 {
+		return "", sqlString
+	}
+	endIndex := 0
+	dollarEndIndex := startIndex + len(replace) + 1
+	if dollarEndIndex > len(sqlString) {
+		return "", sqlString
+	}
+	tempArr := sqlString[dollarEndIndex:]
+	dollarValue := ""
+	for index, value := range tempArr {
+		dollarValue += string(value)
+		if unicode.IsSpace(value) || len(tempArr)-1 == index {
+			endIndex = dollarEndIndex + index + 1
+			break
+		}
+	}
+	dollarValue = strings.TrimSpace(dollarValue)
+	arr1 := sqlString[:startIndex]
+	arr2 := sqlString[endIndex:]
+	sqlString = arr1 + replaceWith(dollarValue) + " " + arr2
+	return dollarValue, strings.TrimSpace(sqlString)
+}
+
+func mutateSQLServerLimitAndOffsetOperation(sqlString string, req *model.ReadRequest) string {
+	if req.Options.Skip != nil && req.Options.Limit != nil {
+		offsetValue, sqlString := replaceSQLOperationWithPlaceHolder("OFFSET", sqlString, func(value string) string {
+			return ""
+		})
+
+		_, sqlString = replaceSQLOperationWithPlaceHolder("LIMIT", sqlString, func(value string) string {
+			return fmt.Sprintf("OFFSET %s ROWS FETCH NEXT %s ROWS ONLY", offsetValue, value)
+		})
+		return sqlString
+	}
+	if req.Options.Limit != nil {
+		_, sqlString = replaceSQLOperationWithPlaceHolder("LIMIT", sqlString, func(value string) string {
+			return ""
+		})
+
+		sqlString = strings.Replace(sqlString, "SELECT", fmt.Sprintf("SELECT TOP %d", uint(*req.Options.Limit)), 1)
+		return sqlString
+	}
+	return sqlString
 }

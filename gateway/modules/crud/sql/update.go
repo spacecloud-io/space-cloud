@@ -67,7 +67,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 		return count, nil
 
 	case utils.Upsert:
-		count, _, err := s.read(ctx, col, &model.ReadRequest{Find: req.Find, Operation: utils.All}, executor)
+		count, _, _, err := s.read(ctx, col, &model.ReadRequest{Find: req.Find, Operation: utils.All}, executor)
 		if err != nil {
 			return 0, err
 		}

@@ -28,6 +28,9 @@ func (m *Module) IsEnabled() bool {
 // QueueAdminEvent queues a new event created by the admin. This does no validation and hence must be used cautiously.
 // For most use cases, consider using QueueEvent instead.
 func (m *Module) QueueAdminEvent(ctx context.Context, req *model.QueueEventRequest) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	batchID := m.generateBatchID()
 
 	// Prepare the find object for update and delete events
@@ -35,8 +38,15 @@ func (m *Module) QueueAdminEvent(ctx context.Context, req *model.QueueEventReque
 		return err
 	}
 
-	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to queue admin event cannot batch requests", err, nil)
+	for i := 1; i <= 3; i++ {
+		if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
+			if i == 3 {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to queue admin event cannot batch requests", err, nil)
+			}
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		break
 	}
 
 	m.metricHook(m.project, req.Type)

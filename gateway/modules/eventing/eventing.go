@@ -118,6 +118,12 @@ func (m *Module) SetConfig(projectID string, eventing *config.EventingConfig) er
 
 // SetSchemaConfig sets schema config of eventing module
 func (m *Module) SetSchemaConfig(evSchemas config.EventingSchemas) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	// Reset the existing schema
+	m.schemas = map[string]model.Fields{}
+
 	for _, evSchema := range evSchemas {
 		resourceID := ksuid.New().String()
 		dummyDBSchema := config.DatabaseSchemas{
@@ -140,7 +146,10 @@ func (m *Module) SetSchemaConfig(evSchemas config.EventingSchemas) error {
 
 // SetTriggerConfig sets eventing trigger config of eventing module
 func (m *Module) SetTriggerConfig(triggers config.EventingTriggers) error {
-	m.config.Rules = make(config.EventingTriggers)
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	m.config.Rules = make(config.EventingTriggers, len(triggers))
 	for _, trigger := range triggers {
 		m.config.Rules[trigger.ID] = trigger
 	}

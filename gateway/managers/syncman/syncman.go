@@ -20,7 +20,8 @@ const pubSubOperationUpgrade = "upgrade"
 
 // Manager syncs the project config between folders
 type Manager struct {
-	lock sync.RWMutex
+	lock         sync.RWMutex
+	lockServices sync.RWMutex
 
 	// Config related to cluster config
 	projectConfig *config.Config
@@ -122,14 +123,19 @@ func (s *Manager) Start(port int) error {
 	if err != nil {
 		return err
 	}
-	// Set admin config
+
+	// Set metric config
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Successfully loaded initial copy of config file", map[string]interface{}{})
 	s.globalModules.SetMetricsConfig(globalConfig.ClusterConfig.EnableTelemetry)
+
+	// Set letsencrypt config
 	if globalConfig.ClusterConfig.LetsEncryptEmail != "" {
 		s.modules.LetsEncrypt().SetLetsEncryptEmail(globalConfig.ClusterConfig.LetsEncryptEmail)
 	}
+
 	s.projectConfig = globalConfig
 
+	// Set initial project config
 	if err := s.modules.SetInitialProjectConfig(context.TODO(), globalConfig.Projects); err != nil {
 		return err
 	}
@@ -155,6 +161,7 @@ func (s *Manager) Start(port int) error {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to split resource id in watch resources", err, nil)
 			return
 		}
+
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating resources", map[string]interface{}{"event": eventType, "resourceId": resourceID, "resource": resource, "projectId": projectID, "resourceType": resourceType})
 
 		if err := validateResource(ctx, eventType, s.projectConfig, resourceID, resourceType, resource); err != nil {
@@ -174,7 +181,8 @@ func (s *Manager) Start(port int) error {
 			_ = s.modules.SetUsermanConfig(ctx, projectID, s.projectConfig.Projects[projectID].Auths)
 
 		case config.ResourceDatabaseConfig:
-			_ = s.modules.SetDatabaseConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabaseConfigs)
+			p := s.projectConfig.Projects[projectID]
+			_ = s.modules.SetDatabaseConfig(ctx, projectID, p.DatabaseConfigs, p.DatabaseSchemas, p.DatabaseRules, p.DatabasePreparedQueries)
 
 		case config.ResourceDatabaseSchema:
 			_ = s.modules.SetDatabaseSchemaConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabaseSchemas)
@@ -186,7 +194,8 @@ func (s *Manager) Start(port int) error {
 			_ = s.modules.SetDatabasePreparedQueryConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabasePreparedQueries)
 
 		case config.ResourceEventingConfig:
-			_ = s.modules.SetEventingConfig(ctx, projectID, s.projectConfig.Projects[projectID].EventingConfig)
+			p := s.projectConfig.Projects[projectID]
+			_ = s.modules.SetEventingConfig(ctx, projectID, p.EventingConfig, p.EventingRules, p.EventingSchemas, p.EventingTriggers)
 
 		case config.ResourceEventingSchema:
 			_ = s.modules.SetEventingSchemaConfig(ctx, projectID, s.projectConfig.Projects[projectID].EventingSchemas)

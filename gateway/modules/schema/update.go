@@ -15,6 +15,9 @@ import (
 
 // ValidateUpdateOperation validates the types of schema during a update request
 func (s *Schema) ValidateUpdateOperation(ctx context.Context, dbAlias, col, op string, updateDoc, find map[string]interface{}) error {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
 	if len(updateDoc) == 0 {
 		return nil
 	}

@@ -40,25 +40,34 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
   timers.startTimerAtFixedRate(fetchEventingConfigKey, FetchEventingConfig(), 1.minute)
   timers.startTimerAtFixedRate(fetchDatabasesKey, FetchDatabaseConfig(), 1.minute)
 
+  println(s"Starting project manager - '$projectId'")
+
   override def onMessage(msg: Command): Behavior[Command] = {
     msg match {
       case FetchEventingConfig() =>
+        println(s"Fetching eventing config for project '$projectId'")
         fetchEventingConfig()
         this
 
       case FetchDatabaseConfig() =>
-        if (isEventingEnabled) fetchDatabaseConfig()
+        if (isEventingEnabled) {
+          println(s"Fetching database config for project '$projectId'")
+          fetchDatabaseConfig()
+        }
         this
 
       case CreateDatabaseActor(db) =>
         if (!databaseToActor.contains(db.dbAlias)) {
+          println(s"Creating new database actor - ${db.dbAlias}")
           val actor = context.spawn(Database.createActor(projectId, db.`type`, eventsSink), s"db-${db.dbAlias}")
           actor ! Database.UpdateEngineConfig(db)
           databaseToActor += db.dbAlias -> actor
         }
         this
 
-      case Stop() => Behaviors.stopped
+      case Stop() =>
+        println(s"Got close command for project - $projectId")
+        Behaviors.stopped
     }
   }
 
@@ -80,7 +89,7 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
 
   private def processDatabaseConfig(dbs: Array[DatabaseConfig]): Unit = {
     // Filter all disabled databases
-    val filteredDbs: Array[DatabaseConfig] = dbs.filter(db => db.enabled)
+    val filteredDbs: Array[DatabaseConfig] = dbs.filter(db => db.enabled && db.`type` != "sqlserver")
 
     // Create actor for new projects
     for (db <- filteredDbs) {
@@ -147,6 +156,7 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     case PostStop =>
       timers.cancelAll()
       removeAllChildren()
+      println(s"Closing project manager - '$projectId'")
       this
   }
 }

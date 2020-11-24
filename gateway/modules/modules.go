@@ -67,12 +67,12 @@ func (m *Modules) SetProjectConfig(ctx context.Context, config *config.ProjectCo
 }
 
 // SetDatabaseConfig sets the config of db, auth, schema and realtime modules
-func (m *Modules) SetDatabaseConfig(ctx context.Context, projectID string, crudConfig config.DatabaseConfigs) error {
+func (m *Modules) SetDatabaseConfig(ctx context.Context, projectID string, databaseConfigs config.DatabaseConfigs, schemaConfigs config.DatabaseSchemas, ruleConfigs config.DatabaseRules, prepConfigs config.DatabasePreparedQueries) error {
 	module, err := m.loadModule(projectID)
 	if err != nil {
 		return err
 	}
-	return module.SetDatabaseConfig(ctx, projectID, crudConfig)
+	return module.SetDatabaseConfig(ctx, projectID, databaseConfigs, schemaConfigs, ruleConfigs, prepConfigs)
 }
 
 // SetDatabaseSchemaConfig sets database schema config
@@ -122,12 +122,12 @@ func (m *Modules) SetFileStoreSecurityRuleConfig(ctx context.Context, projectID 
 }
 
 // SetEventingConfig sets the config of eventing module
-func (m *Modules) SetEventingConfig(ctx context.Context, projectID string, eventingConfig *config.EventingConfig) error {
+func (m *Modules) SetEventingConfig(ctx context.Context, projectID string, eventingConfig *config.EventingConfig, secureObj config.EventingRules, eventingSchemas config.EventingSchemas, eventingTriggers config.EventingTriggers) error {
 	module, err := m.loadModule(projectID)
 	if err != nil {
 		return err
 	}
-	return module.SetEventingConfig(ctx, projectID, eventingConfig)
+	return module.SetEventingConfig(ctx, projectID, eventingConfig, secureObj, eventingSchemas, eventingTriggers)
 }
 
 // SetEventingSchemaConfig sets the config of eventing module

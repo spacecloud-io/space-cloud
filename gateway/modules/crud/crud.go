@@ -24,7 +24,6 @@ import (
 type Module struct {
 	sync.RWMutex
 
-	dbType  string
 	project string
 	schema  model.SchemaCrudInterface
 	auth    model.AuthCrudInterface
@@ -54,7 +53,7 @@ type loader struct {
 // Crud abstracts the implementation crud operations of databases
 type Crud interface {
 	Create(ctx context.Context, col string, req *model.CreateRequest) (int64, error)
-	Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error)
+	Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error)
 	Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error)
 	Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error)
 	Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error)

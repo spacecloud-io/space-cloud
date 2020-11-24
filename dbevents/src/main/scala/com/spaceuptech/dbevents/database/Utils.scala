@@ -25,7 +25,8 @@ object Utils {
 
     // Start the offsetStore
     val offsetStore = new MongoStore()
-    offsetStore.setName(s"dbevents-$projectId-$dbAlias")
+    val name = s"dbevents-$projectId-$dbAlias"
+    offsetStore.setName(name)
     offsetStore.start()
 
     // Retrieve the resume token
@@ -66,6 +67,7 @@ object Utils {
             )
 
           case OperationType.UPDATE | OperationType.REPLACE =>
+            if (doc.getFullDocument == null) return
             actor ! ChangeRecord(
               payload = ChangeRecordPayload(
                 op = "u",
@@ -92,24 +94,32 @@ object Utils {
             )
 
           case _ =>
-            println(s"Invalid operation type (${doc.getOperationType.getValue}) received")
+            println(s"Invalid operation type (${doc.getOperationType.getValue}) received - $name")
         }
       }
     }
 
     val f = executorService.submit(new Callable[Unit] {
       override def call(): Unit = {
+        try {
+          var w = db.watch().fullDocument(FullDocument.UPDATE_LOOKUP)
+          resumeToken match {
+            case Some(value) =>
+              println(s"Mongo ($name) resume token found:", value.toJson)
+              w = w.startAfter(value)
+            case None =>
+              println(s"Mongo ($name) resume nothing")
+          }
 
-        var w = db.watch().fullDocument(FullDocument.UPDATE_LOOKUP)
-        resumeToken match {
-          case Some(value) =>
-            println("Mongo resume token found:", value.toJson)
-            w = w.startAfter(value)
-          case None =>
-            println("Mongo resume nothing")
+          w.forEach(consumer)
+          println(s"Mongo this shouldn't be happening - $name")
+        } catch {
+          case ex: Throwable =>
+            println("*****************************")
+            println(s"Mongo watcher error", ex, ex.getStackTrace.mkString("Array(", ", ", ")"))
+            println("*****************************")
         }
 
-        w.forEach(consumer)
       }
     })
 
@@ -200,6 +210,7 @@ object Utils {
     val name = generateConnectorName(source)
 
     val props = io.debezium.config.Configuration.empty().asProperties()
+    props.setProperty("snapshot.mode", "schema_only")
     props.setProperty("name", generateConnectorName(source))
     props.setProperty("connector.class", "io.debezium.connector.mysql.MySqlConnector")
     props.setProperty("offset.storage", getOffsetStorageClass)
@@ -225,8 +236,9 @@ object Utils {
     val name = generateConnectorName(source)
 
     val props = io.debezium.config.Configuration.empty().asProperties()
+    props.setProperty("snapshot.mode", "schema_only")
     props.setProperty("name", name)
-    props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
+    props.setProperty("connector.class", "io.debezium.connector.sqlserver.SqlServerConnector")
     props.setProperty("offset.storage", getOffsetStorageClass)
     props.setProperty("offset.storage.file.filename", s"./dbevents-offsets-$name.dat")
     props.setProperty("offset.flush.interval.ms", "60000")
@@ -238,8 +250,8 @@ object Utils {
     props.setProperty("database.password", source.config.getOrElse("password", "mypassword"))
     props.setProperty("database.dbname", source.config.getOrElse("db", "test"))
     props.setProperty("database.server.name", s"${generateConnectorName(source)}_connector")
-    props.setProperty("table.exclude.list", "event_logs,invocation_logs")
-
+    props.setProperty("database.history", getDatabaseHistoryStorageClass)
+    props.setProperty("database.history.file.filename", s"./dbevents-dbhistory-$name.dat")
     props
   }
 
@@ -249,6 +261,7 @@ object Utils {
     val name = generateConnectorName(source)
 
     val props = io.debezium.config.Configuration.empty().asProperties()
+    props.setProperty("snapshot.mode", "never")
     props.setProperty("name", name)
     props.setProperty("connector.class", "io.debezium.connector.postgresql.PostgresConnector")
     props.setProperty("offset.storage", getOffsetStorageClass)
