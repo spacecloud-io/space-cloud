@@ -42,7 +42,8 @@ func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
 
 // RawQuery query document(s) from the database
 func (s *SQL) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
-	return s.readExec(ctx, "", query, args, s.client, &model.ReadRequest{Operation: utils.All})
+	count, result, _, err := s.readExec(ctx, "", query, args, s.client, &model.ReadRequest{Operation: utils.All})
+	return count, result, err
 }
 
 // GetConnectionState : Function to get connection state
