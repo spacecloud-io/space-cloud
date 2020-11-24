@@ -238,7 +238,7 @@ func TestSQL_generateReadQuery(t *testing.T) {
 						},
 					},
 					Operation: "all"}},
-			want:    []string{"SELECT t1.col1 AS t1__col1 FROM t1 LEFT JOIN t2 ON (t1.col1 = t2.col2) LEFT JOIN t3 ON (t2.col3 = t3.col4) WHERE (t1.col1 = ?)"},
+			want:    []string{"SELECT t1.col1 AS t1__col1, t2.col2 AS t2__col2, t3.col4 AS t3__col4 FROM t1 LEFT JOIN t2 ON (t1.col1 = t2.col2) LEFT JOIN t3 ON (t2.col3 = t3.col4) WHERE (t1.col1 = ?)"},
 			want1:   []interface{}{int64(1)},
 			wantErr: false,
 		},
@@ -532,10 +532,22 @@ func TestSQL_generateReadQuery(t *testing.T) {
 			args: args{project: "test", col: "table",
 				req: &model.ReadRequest{
 					Find:      map[string]interface{}{"Column1": map[string]interface{}{"$eq": 1}},
-					Options:   &model.ReadOptions{Skip: iti(2), Limit: iti(10)},
+					Options:   &model.ReadOptions{Skip: iti(2), Limit: iti(10), Sort: []string{"age"}},
 					Operation: "all"}},
-			want:    []string{"SELECT * FROM test.table WHERE (Column1 = @p1) LIMIT @p2 OFFSET @p3"},
+			want:    []string{"SELECT * FROM test.table WHERE (Column1 = @p1) ORDER BY age ASC OFFSET @p3 ROWS FETCH NEXT @p2 ROWS ONLY"},
 			want1:   []interface{}{int64(1), int64(10), int64(2)},
+			wantErr: false,
+		},
+		{
+			name:   "Column1 = ?, limit = ?",
+			fields: fields{dbType: "sqlserver"},
+			args: args{project: "test", col: "table",
+				req: &model.ReadRequest{
+					Find:      map[string]interface{}{"Column1": map[string]interface{}{"$eq": 1}},
+					Options:   &model.ReadOptions{Limit: iti(20)},
+					Operation: "all"}},
+			want:    []string{"SELECT TOP 20 * FROM test.table WHERE (Column1 = @p1)"},
+			want1:   []interface{}{int64(1), int64(20)},
 			wantErr: false,
 		},
 		{
@@ -567,10 +579,10 @@ func TestSQL_generateReadQuery(t *testing.T) {
 				return
 			}
 			if found := find(tt.want, got); !found {
-				t.Errorf("SQL.generateReadQuery() got = %v, want %v", got, tt.want[0])
+				t.Errorf("SQL.generateReadQuery() got = %v,\n want %v", got, tt.want[0])
 			}
 			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("SQL.generateReadQuery() got1 = %v, want1 %v", got1, tt.want1)
+				t.Errorf("SQL.generateReadQuery() got1 = %v,\n want1 %v", got1, tt.want1)
 			}
 		})
 	}
@@ -720,7 +732,7 @@ func Test_processRows(t *testing.T) {
 			finalArray := make([]interface{}, 0)
 			mapping := map[string]map[string]interface{}{}
 			for _, row := range tt.args.rows {
-				s.processRows(context.Background(), []string{tt.args.table}, tt.args.isAggregate, row.(map[string]interface{}), tt.args.join, mapping, &finalArray, nil)
+				s.processRows(context.Background(), []string{tt.args.table}, tt.args.isAggregate, row.(map[string]interface{}), tt.args.join, mapping, &finalArray, nil, map[string]map[string]string{})
 			}
 
 			if !reflect.DeepEqual(finalArray, tt.result) {

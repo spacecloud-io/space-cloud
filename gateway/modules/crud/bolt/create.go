@@ -40,7 +40,7 @@ func (b *Bolt) Create(ctx context.Context, col string, req *model.CreateRequest)
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to insert data _id not found in create request", nil, nil)
 				}
 				// check if specified already exists in database
-				count, _, err := b.Read(ctx, col, &model.ReadRequest{
+				count, _, _, err := b.Read(ctx, col, &model.ReadRequest{
 					Find: map[string]interface{}{
 						"_id": id,
 					},
