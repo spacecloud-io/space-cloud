@@ -89,7 +89,7 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
 
   private def processDatabaseConfig(dbs: Array[DatabaseConfig]): Unit = {
     // Filter all disabled databases
-    val filteredDbs: Array[DatabaseConfig] = dbs.filter(db => db.enabled)
+    val filteredDbs: Array[DatabaseConfig] = dbs.filter(db => db.enabled && db.`type` != "sqlserver")
 
     // Create actor for new projects
     for (db <- filteredDbs) {

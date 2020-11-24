@@ -67,6 +67,7 @@ object Utils {
             )
 
           case OperationType.UPDATE | OperationType.REPLACE =>
+            if (doc.getFullDocument == null) return
             actor ! ChangeRecord(
               payload = ChangeRecordPayload(
                 op = "u",
@@ -100,18 +101,25 @@ object Utils {
 
     val f = executorService.submit(new Callable[Unit] {
       override def call(): Unit = {
+        try {
+          var w = db.watch().fullDocument(FullDocument.UPDATE_LOOKUP)
+          resumeToken match {
+            case Some(value) =>
+              println(s"Mongo ($name) resume token found:", value.toJson)
+              w = w.startAfter(value)
+            case None =>
+              println(s"Mongo ($name) resume nothing")
+          }
 
-        var w = db.watch().fullDocument(FullDocument.UPDATE_LOOKUP)
-        resumeToken match {
-          case Some(value) =>
-            println(s"Mongo ($name) resume token found:", value.toJson)
-            w = w.startAfter(value)
-          case None =>
-            println(s"Mongo ($name) resume nothing")
+          w.forEach(consumer)
+          println(s"Mongo this shouldn't be happening - $name")
+        } catch {
+          case ex: Throwable =>
+            println("*****************************")
+            println(s"Mongo watcher error", ex, ex.getStackTrace.mkString("Array(", ", ", ")"))
+            println("*****************************")
         }
 
-        w.forEach(consumer)
-        println(s"Mongo this shouldn't be happening - $name")
       }
     })
 
@@ -242,8 +250,8 @@ object Utils {
     props.setProperty("database.password", source.config.getOrElse("password", "mypassword"))
     props.setProperty("database.dbname", source.config.getOrElse("db", "test"))
     props.setProperty("database.server.name", s"${generateConnectorName(source)}_connector")
-    props.setProperty("table.exclude.list", "event_logs,invocation_logs")
-
+    props.setProperty("database.history", getDatabaseHistoryStorageClass)
+    props.setProperty("database.history.file.filename", s"./dbevents-dbhistory-$name.dat")
     props
   }
 
