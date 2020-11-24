@@ -41,7 +41,18 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 		return http.StatusInternalServerError, err
 	}
 
+	dbRulesResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
+	delete(projectConfig.DatabaseRules, dbRulesResourceID)
+
+	if err := s.modules.SetDatabaseRulesConfig(ctx, projectConfig.DatabaseRules); err != nil {
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+	}
+
 	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if err := s.store.DeleteResource(ctx, dbRulesResourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -473,14 +484,25 @@ func (s *Manager) RemoveCollection(ctx context.Context, project, dbAlias, col st
 		return http.StatusBadRequest, errors.New("specified database not present in config")
 	}
 
-	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseSchema, dbAlias, col)
-	delete(projectConfig.DatabaseSchemas, resourceID)
+	dbSchemaResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseSchema, dbAlias, col)
+	delete(projectConfig.DatabaseSchemas, dbSchemaResourceID)
 
 	if err := s.modules.SetDatabaseSchemaConfig(ctx, project, projectConfig.DatabaseSchemas); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting crud config", err, nil)
 	}
 
-	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
+	dbRulesResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
+	delete(projectConfig.DatabaseRules, dbRulesResourceID)
+
+	if err := s.modules.SetDatabaseRulesConfig(ctx, projectConfig.DatabaseRules); err != nil {
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+	}
+
+	if err := s.store.DeleteResource(ctx, dbSchemaResourceID); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if err := s.store.DeleteResource(ctx, dbRulesResourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 

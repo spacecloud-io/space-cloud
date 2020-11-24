@@ -73,7 +73,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		return dataLoader.Load(ctx, key)()
 	}
 
-	n, result, err := crud.Read(ctx, col, req)
+	n, result, _, err := crud.Read(ctx, col, req)
 
 	// Process the response
 	if err := m.schema.CrudPostProcess(ctx, dbAlias, col, result); err != nil {
