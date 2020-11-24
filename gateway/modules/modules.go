@@ -41,12 +41,16 @@ func New(projectID, clusterID, nodeID string, managers *managers.Managers, globa
 
 // SetInitialProjectConfig sets the config all modules
 func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.Projects) error {
-	for projectID, module := range m.blocks {
-		value, ok := projects[projectID]
-		if !ok {
-			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Cannot set initial project config", fmt.Errorf("cannot find project (%s) in module block", projectID), map[string]interface{}{"project": projectID})
+	for projectID, project := range projects {
+		module, err := m.loadModule(projectID)
+		if err != nil {
+			module, err = m.newModule(project.ProjectConfig)
+			if err != nil {
+				return err
+			}
 		}
-		if err := module.SetInitialProjectConfig(ctx, config.Projects{projectID: value}); err != nil {
+
+		if err := module.SetInitialProjectConfig(ctx, config.Projects{projectID: project}); err != nil {
 			return err
 		}
 	}

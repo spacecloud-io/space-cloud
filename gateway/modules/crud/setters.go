@@ -2,7 +2,6 @@ package crud
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/graph-gophers/dataloader"
@@ -104,9 +103,6 @@ func (m *Module) SetPreparedQueryConfig(ctx context.Context, prepQueries config.
 
 	temp := make(config.DatabasePreparedQueries)
 	for _, preparedQuery := range prepQueries {
-		if _, err := m.getDBInfo(preparedQuery.DbAlias); err != nil {
-			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown dbAlias (%s) provided in prepared query", preparedQuery.DbAlias), err, map[string]interface{}{"queryId": preparedQuery.ID})
-		}
 		temp[getPreparedQueryKey(strings.TrimPrefix(preparedQuery.DbAlias, "sql-"), preparedQuery.ID)] = preparedQuery
 	}
 	m.queries = temp

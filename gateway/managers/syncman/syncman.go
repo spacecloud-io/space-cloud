@@ -91,8 +91,8 @@ func (s *Manager) Start(port int) error {
 
 	// Start routine to observe space cloud projects
 	if err := s.store.WatchServices(func(eventType, serviceID string, services model.ScServices) {
-		s.lock.Lock()
-		defer s.lock.Unlock()
+		s.lockServices.Lock()
+		defer s.lockServices.Unlock()
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services, "eventType": eventType, "id": serviceID})
 
 		s.adminMan.SetServices(eventType, services)
@@ -124,6 +124,17 @@ func (s *Manager) Start(port int) error {
 		return err
 	}
 
+	_ = s.adminMan.SetConfig(globalConfig.License)
+	s.adminMan.SetServices(config.ResourceAddEvent, s.services)
+	s.adminMan.SetIntegrationConfig(globalConfig.Integrations)
+	_ = s.integrationMan.SetConfig(globalConfig.Integrations, globalConfig.IntegrationHooks)
+
+	s.leader.AddCallBack("admin-set-service", func() {
+		s.lockServices.RLock()
+		s.adminMan.SetServices(config.ResourceDeleteEvent, s.services)
+		s.lockServices.RUnlock()
+	})
+
 	// Set metric config
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Successfully loaded initial copy of config file", map[string]interface{}{})
 	s.globalModules.SetMetricsConfig(globalConfig.ClusterConfig.EnableTelemetry)
@@ -139,15 +150,7 @@ func (s *Manager) Start(port int) error {
 	if err := s.modules.SetInitialProjectConfig(context.TODO(), globalConfig.Projects); err != nil {
 		return err
 	}
-	s.adminMan.SetServices(config.ResourceAddEvent, s.services)
-	_ = s.adminMan.SetConfig(globalConfig.License)
-	s.adminMan.SetIntegrationConfig(globalConfig.Integrations)
-	_ = s.integrationMan.SetConfig(globalConfig.Integrations, globalConfig.IntegrationHooks)
-	s.leader.AddCallBack("admin-set-service", func() {
-		s.lock.RLock()
-		s.adminMan.SetServices(config.ResourceDeleteEvent, s.services)
-		s.lock.RUnlock()
-	})
+
 	// Start routine to observe space cloud project level resources
 	if err := s.store.WatchResources(func(eventType, resourceID string, resourceType config.Resource, resource interface{}) {
 		s.lock.Lock()
