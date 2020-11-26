@@ -19,6 +19,10 @@ import (
 
 // HandleAdminQueueEvent creates a queue event endpoint
 func HandleAdminQueueEvent(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
+	type request struct {
+		Events []*model.QueueEventRequest `json:"events"`
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
@@ -32,7 +36,7 @@ func HandleAdminQueueEvent(adminMan *admin.Manager, modules *modules.Modules) ht
 		}
 
 		// Load the params from the body
-		req := model.QueueEventRequest{}
+		req := request{}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
@@ -53,7 +57,7 @@ func HandleAdminQueueEvent(adminMan *admin.Manager, modules *modules.Modules) ht
 		}
 
 		// Queue the event
-		if err := eventing.QueueAdminEvent(ctx, &req); err != nil {
+		if err := eventing.QueueAdminEvent(ctx, req.Events); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling queue event request", err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return

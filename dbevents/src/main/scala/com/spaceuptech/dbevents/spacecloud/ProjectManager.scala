@@ -156,6 +156,7 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     case PostStop =>
       timers.cancelAll()
       removeAllChildren()
+      eventsSink ! EventsSink.Stop()
       println(s"Closing project manager - '$projectId'")
       this
   }
