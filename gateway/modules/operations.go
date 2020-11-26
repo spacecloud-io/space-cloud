@@ -81,7 +81,7 @@ func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.P
 func (m *Modules) SetProjectConfig(ctx context.Context, p *config.ProjectConfig) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting project config", nil)
 	if err := m.auth.SetProjectConfig(p); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set project config", err, nil)
+		return err
 	}
 	m.graphql.SetConfig(p.ID)
 	return nil
@@ -123,7 +123,7 @@ func (m *Modules) SetDatabaseSchemaConfig(ctx context.Context, projectID string,
 	}
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of schema module", nil)
 	if err := m.schema.SetConfig(schemaConfigs, projectID); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set schema module config", err, nil)
+		return err
 	}
 	m.realtime.SetDatabaseSchemas(schemaConfigs)
 	return nil
@@ -158,7 +158,7 @@ func (m *Modules) SetFileStoreConfig(ctx context.Context, projectID string, file
 }
 
 // SetFileStoreSecurityRuleConfig sets the config of auth and filestore modules
-func (m *Modules) SetFileStoreSecurityRuleConfig(ctx context.Context, projectID string, fileStoreRules config.FileStoreRules) {
+func (m *Modules) SetFileStoreSecurityRuleConfig(ctx context.Context, _ string, fileStoreRules config.FileStoreRules) {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of file store rules in auth module", nil)
 	m.auth.SetFileStoreRules(fileStoreRules)
 }
@@ -210,7 +210,7 @@ func (m *Modules) SetEventingRuleConfig(ctx context.Context, secureObj config.Ev
 }
 
 // SetUsermanConfig set the config of the userman module
-func (m *Modules) SetUsermanConfig(ctx context.Context, projectID string, auth config.Auths) error {
+func (m *Modules) SetUsermanConfig(ctx context.Context, _ string, auth config.Auths) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of user management module", nil)
 	m.user.SetConfig(auth)
 	return nil
@@ -225,14 +225,11 @@ func (m *Modules) SetLetsencryptConfig(ctx context.Context, projectID string, c 
 // SetIngressRouteConfig set the config of routing module
 func (m *Modules) SetIngressRouteConfig(ctx context.Context, projectID string, routes config.IngressRoutes) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of routing module", nil)
-	if err := m.GlobalMods.Routing().SetProjectRoutes(projectID, routes); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set routing module config", err, nil)
-	}
-	return nil
+	return m.GlobalMods.Routing().SetProjectRoutes(projectID, routes)
 }
 
 // SetIngressGlobalRouteConfig set config of routing module
-func (m *Modules) SetIngressGlobalRouteConfig(ctx context.Context, projectID string, c *config.GlobalRoutesConfig) error {
+func (m *Modules) SetIngressGlobalRouteConfig(ctx context.Context, _ string, c *config.GlobalRoutesConfig) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of global routing", nil)
 	m.GlobalMods.Routing().SetGlobalConfig(c)
 	return nil
@@ -244,8 +241,5 @@ func (m *Modules) SetRemoteServiceConfig(ctx context.Context, projectID string, 
 	m.auth.SetRemoteServiceConfig(services)
 
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of remote service module", nil)
-	if err := m.functions.SetConfig(projectID, services); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set config of remote service module", err, nil)
-	}
-	return nil
+	return m.functions.SetConfig(projectID, services)
 }

@@ -52,6 +52,13 @@ func getJWKRefreshTime(url string) (*jwkSecret, error) {
 		var cacheTime string
 		for _, value := range strings.Split(values, ",") {
 			value = strings.TrimSpace(value)
+
+			// Make default cache time 5 minutes
+			if value == "no-cache" {
+				cacheTime = strconv.Itoa(5 * 60)
+				break
+			}
+
 			if strings.HasPrefix(value, "max-age") {
 				cacheTime = strings.Split(value, "=")[1]
 				break
@@ -63,7 +70,7 @@ func getJWKRefreshTime(url string) (*jwkSecret, error) {
 		}
 		duration, err := strconv.Atoi(cacheTime)
 		if err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to process jwt url (%s), Cache-control header contains data of inavlid type expecting string", url), nil, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to process jwt url (%s), Cache-control header contains data of inavlid type expecting string", url), err, nil)
 		}
 		obj.refreshTime = time.Now().Add(time.Duration(duration) * time.Second)
 		return obj, nil
