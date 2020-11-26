@@ -752,7 +752,7 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 			tt.m.syncMan = &mockSyncman
 			tt.m.auth = &mockAuth
 
-			if err := tt.m.batchRequestsRaw(context.Background(), tt.args.eventDocID, tt.args.token, tt.args.requests, tt.args.batchID); (err != nil) != tt.wantErr {
+			if err := tt.m.batchRequestsRaw(context.Background(), tt.args.token, tt.args.requests, tt.args.batchID); (err != nil) != tt.wantErr {
 				t.Errorf("Module.batchRequests() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

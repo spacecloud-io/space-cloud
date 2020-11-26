@@ -12,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 package object spacecloud {
 
-  def queueEvent(project: String, event: QueueEvent)(implicit system: ClassicActorSystemProvider, executor: ExecutionContext): Future[Unit] = {
+  def queueEvent(project: String, events: Array[QueueEvent])(implicit system: ClassicActorSystemProvider, executor: ExecutionContext): Future[Unit] = {
     implicit lazy val serializerFormats: DefaultFormats.type = org.json4s.DefaultFormats
     val request = HttpRequest(
       method = HttpMethods.POST,
@@ -22,7 +22,7 @@ package object spacecloud {
       },
       entity = HttpEntity(
         ContentTypes.`application/json`,
-        compact(render(Extraction.decompose(event)))
+        compact(render(Extraction.decompose(QueueEvenRequest(events))))
       )
     )
 
@@ -79,6 +79,7 @@ package object spacecloud {
   case class SecretResponse(result: Array[Secret], error: Option[String])
   case class Secret(id: String, data: Map[String, String])
 
+  case class QueueEvenRequest(events: Array[QueueEvent])
   case class QueueEvent(`type`: String, timestamp: String, payload: DatabaseEvent, options: DatabaseEventOptions)
 
   case class DatabaseEvent(db: String, col: String, doc: Option[Map[String, Any]], find: Option[Map[String, Any]], before: Option[Map[String, Any]])

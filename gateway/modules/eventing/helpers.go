@@ -49,9 +49,9 @@ func (m *Module) generateBatchID() string {
 }
 
 func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest, batchID string) error {
-	return m.batchRequestsRaw(ctx, "", rand.Intn(utils.MaxEventTokens), requests, batchID)
+	return m.batchRequestsRaw(ctx, rand.Intn(utils.MaxEventTokens), requests, batchID)
 }
-func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token int, requests []*model.QueueEventRequest, batchID string) error {
+func (m *Module) batchRequestsRaw(ctx context.Context, token int, requests []*model.QueueEventRequest, batchID string) error {
 	// Create the meta information
 	if token == 0 {
 		token = rand.Intn(utils.MaxEventTokens)
@@ -77,7 +77,7 @@ func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token 
 	}
 
 	// Persist the events
-	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
+	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: len(eventDocs) < 100}
 	if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 		return errors.New("eventing module couldn't log the request -" + err.Error())
 	}
