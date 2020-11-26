@@ -29,7 +29,7 @@ type Modules struct {
 }
 
 // New creates a new modules instance
-func New(projectID, clusterID, nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
+func New(_, clusterID, nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
 	return &Modules{
 		blocks:     map[string]*Module{},
 		clusterID:  clusterID,
@@ -66,8 +66,7 @@ func (m *Modules) SetProjectConfig(ctx context.Context, config *config.ProjectCo
 			return err
 		}
 	}
-	_ = module.SetProjectConfig(ctx, config)
-	return nil
+	return module.SetProjectConfig(ctx, config)
 }
 
 // SetDatabaseConfig sets the config of db, auth, schema and realtime modules
@@ -167,8 +166,7 @@ func (m *Modules) SetUsermanConfig(ctx context.Context, projectID string, auth c
 	if err != nil {
 		return err
 	}
-	_ = module.SetUsermanConfig(ctx, projectID, auth)
-	return nil
+	return module.SetUsermanConfig(ctx, projectID, auth)
 }
 
 // SetLetsencryptConfig set the config of letsencrypt module
@@ -177,8 +175,7 @@ func (m *Modules) SetLetsencryptConfig(ctx context.Context, projectID string, c 
 	if err != nil {
 		return err
 	}
-	_ = module.SetLetsencryptConfig(ctx, projectID, c)
-	return nil
+	return module.SetLetsencryptConfig(ctx, projectID, c)
 }
 
 // SetIngressRouteConfig set the config of routing module
@@ -187,8 +184,7 @@ func (m *Modules) SetIngressRouteConfig(ctx context.Context, projectID string, r
 	if err != nil {
 		return err
 	}
-	_ = module.SetIngressRouteConfig(ctx, projectID, routes)
-	return nil
+	return module.SetIngressRouteConfig(ctx, projectID, routes)
 }
 
 // SetIngressGlobalRouteConfig set config of routing module
@@ -197,8 +193,7 @@ func (m *Modules) SetIngressGlobalRouteConfig(ctx context.Context, projectID str
 	if err != nil {
 		return err
 	}
-	_ = module.SetIngressGlobalRouteConfig(ctx, projectID, c)
-	return nil
+	return module.SetIngressGlobalRouteConfig(ctx, projectID, c)
 }
 
 // SetRemoteServiceConfig set config of functions module
