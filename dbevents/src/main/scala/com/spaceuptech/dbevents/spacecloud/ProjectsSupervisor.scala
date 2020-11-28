@@ -16,7 +16,7 @@ object ProjectsSupervisor {
 
   case class FetchProjects() extends Command
 
-  case class CreateProjectActor(id: String) extends Command
+  case class ProcessProjects(projects: Array[Project]) extends Command
 
   case class Stop() extends Command
 
@@ -43,14 +43,8 @@ class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], time
         fetchProjects()
         this
 
-      case CreateProjectActor(id) =>
-        if (!this.projectIdToActor.contains(id)) {
-          println("Creating project", id)
-          val actor = context.spawn(ProjectManager(id), id)
-          actor ! ProjectManager.FetchEventingConfig()
-          projectIdToActor += id -> actor
-        }
-
+      case ProcessProjects(projects) =>
+        processProjects(projects)
         this
 
       case Stop() => Behaviors.stopped
@@ -86,7 +80,7 @@ class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], time
           println("Unable to fetch projects", res.error.get)
           return
         }
-        if (res.result != null) processProjects(res.result)
+        if (res.result != null) context.self ! ProcessProjects(res.result)
       case Failure(ex) => println("Unable to fetch projects", ex)
     }
   }
@@ -95,7 +89,10 @@ class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], time
     // Create an actor for new projects
     projects.foreach(project => {
       if (!this.projectIdToActor.contains(project.id)) {
-        context.self ! CreateProjectActor(project.id)
+          println("Creating project", project.id)
+          val actor = context.spawn(ProjectManager(project.id), project.id)
+          actor ! ProjectManager.FetchEventingConfig()
+          projectIdToActor += project.id -> actor
       }
     })
 
@@ -109,6 +106,7 @@ class ProjectsSupervisor(context: ActorContext[ProjectsSupervisor.Command], time
 
   private def removeProjectIfInactive(projects: Array[Project], projectId: String, actor: ActorRef[ProjectManager.Command]): Boolean = {
     if (!projects.exists(project => project.id == projectId)) {
+      println(s"Removing project - $projectId")
       actor ! ProjectManager.Stop()
       return false
     }

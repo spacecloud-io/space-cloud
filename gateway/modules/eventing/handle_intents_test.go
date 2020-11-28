@@ -121,6 +121,7 @@ func TestModule_processIntents(t *testing.T) {
 
 		tt.m.syncMan = &mockSyncman
 		tt.m.crud = &mockCrud
+		tt.m.updateEventC = make(chan *queueUpdateEvent, 5)
 
 		t.Run(tt.name, func(t *testing.T) {
 			tt.m.processIntents(tt.args.t)
@@ -177,13 +178,6 @@ func TestModule_processIntent(t *testing.T) {
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
-			crudMockArgs: []mockArgs{
-				{
-					method:         "InternalUpdate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
 			authMockArgs: []mockArgs{
 				{
 					method:         "GetInternalAccessToken",
@@ -199,13 +193,6 @@ func TestModule_processIntent(t *testing.T) {
 				{
 					method:         "DoesExists",
 					args:           []interface{}{mock.Anything, "abc", "token", "path"},
-					paramsReturned: []interface{}{errors.New("some error")},
-				},
-			},
-			crudMockArgs: []mockArgs{
-				{
-					method:         "InternalUpdate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
@@ -293,13 +280,6 @@ func TestModule_processIntent(t *testing.T) {
 					method:         "DoesExists",
 					args:           []interface{}{mock.Anything, "abc", "token", "path"},
 					paramsReturned: []interface{}{nil},
-				},
-			},
-			crudMockArgs: []mockArgs{
-				{
-					method:         "InternalUpdate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
 			authMockArgs: []mockArgs{
@@ -393,6 +373,7 @@ func TestModule_processIntent(t *testing.T) {
 			tt.m.syncMan = &mockSyncman
 			tt.m.auth = &mockAuth
 			tt.m.fileStore = &mockFileStore
+			tt.m.updateEventC = make(chan *queueUpdateEvent, 5)
 
 			tt.m.processIntent(tt.args.eventDoc)
 

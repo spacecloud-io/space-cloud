@@ -1,6 +1,9 @@
 package com.spaceuptech.dbevents
 
+import java.io.File
+
 import akka.actor.typed.ActorSystem
+import com.typesafe.config.{Config, ConfigFactory}
 
 object EventsApp extends App {
   // Load env variables
@@ -8,6 +11,7 @@ object EventsApp extends App {
   Global.secret = scala.util.Properties.envOrElse("SC_ADMIN_SECRET", "some-secret")
   Global.storageType = scala.util.Properties.envOrElse("STORAGE_TYPE", "local")
 
+  val conf = ConfigFactory.load(ConfigFactory.parseFile(new File("/config/application.conf")))
   // Create the main actor system
-  val a = ActorSystem[Nothing](EventsSupervisor(), "db-events")
+  val a = ActorSystem[Nothing](EventsSupervisor(), "db-events", conf)
 }

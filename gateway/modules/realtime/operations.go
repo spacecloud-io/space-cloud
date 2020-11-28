@@ -48,16 +48,15 @@ func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFee
 	feedData := make([]*model.FeedData, 0)
 	array, ok := result.([]interface{})
 	if ok {
-		timeStamp := time.Now().Unix()
 		for _, row := range array {
 			// Get the appropriate find object
-			find, _ := m.schema.CheckIfEventingIsPossible(data.DBType, data.Group, row.(map[string]interface{}), false)
+			find := m.prepareFindObject(data.DBType, data.Group, row.(map[string]interface{}))
 
 			// Create the feed data object
 			feedData = append(feedData, &model.FeedData{
 				Group:     data.Group,
 				Type:      utils.RealtimeInitial,
-				TimeStamp: timeStamp,
+				TimeStamp: 1,
 				Find:      find,
 				DBType:    data.DBType,
 				Payload:   row,

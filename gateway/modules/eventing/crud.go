@@ -1,14 +1,18 @@
 package eventing
 
 import (
+	"context"
+	"time"
+
 	"github.com/mitchellh/mapstructure"
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func (m *Module) prepareFindObject(req *model.QueueEventRequest) error {
-	if req.Type != utils.EventDBUpdate && req.Type != utils.EventDBDelete {
+	if req.Type != utils.EventDBCreate && req.Type != utils.EventDBUpdate && req.Type != utils.EventDBDelete {
 		return nil
 	}
 
@@ -25,19 +29,19 @@ func (m *Module) prepareFindObject(req *model.QueueEventRequest) error {
 	}
 
 	// Simply return if this is mongo
-	if dbType == string(model.Mongo) {
+	if dbType == string(model.Mongo) && req.Type != utils.EventDBCreate {
 		return nil
 	}
 
 	var source map[string]interface{}
-	if req.Type == utils.EventDBUpdate {
-		source = dbRequest.Doc.(map[string]interface{})
-	} else {
+	if req.Type == utils.EventDBDelete {
 		source = dbRequest.Find.(map[string]interface{})
+	} else {
+		source = dbRequest.Doc.(map[string]interface{})
 	}
 
 	// Find the primary keys for the table
-	primaryKeys := []string{}
+	primaryKeys := make([]string, 0)
 	fields, p := m.schema.GetSchema(dbRequest.DBType, dbRequest.Col)
 	if p {
 		for fieldName, value := range fields {
@@ -57,4 +61,13 @@ func (m *Module) prepareFindObject(req *model.QueueEventRequest) error {
 
 	req.Payload.(map[string]interface{})["find"] = find
 	return nil
+}
+
+func (m *Module) queueUpdateEvent(ev *queueUpdateEvent) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := m.crud.InternalUpdate(ctx, ev.db, ev.project, ev.col, ev.req); err != nil {
+		_ = helpers.Logger.LogError("eventing-update", ev.err, err, nil)
+	}
 }

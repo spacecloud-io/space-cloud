@@ -43,6 +43,29 @@ func isRealTimeEnabled(dbAlias, table string, dbRules config.DatabaseRules) bool
 	return false
 }
 
+func (m *Module) prepareFindObject(db, col string, row map[string]interface{}) map[string]interface{} {
+	// Find the primary keys for the table
+	primaryKeys := make([]string, 0)
+	fields, p := m.schema.GetSchema(db, col)
+	if p {
+		for fieldName, value := range fields {
+			if value.IsPrimary {
+				primaryKeys = append(primaryKeys, fieldName)
+			}
+		}
+	}
+
+	// Extract primary keys from source and put it in find
+	find := map[string]interface{}{}
+	for _, key := range primaryKeys {
+		if v, p := row[key]; p {
+			find[key] = v
+		}
+	}
+
+	return find
+}
+
 func generateEventRules(dbConfigs config.DatabaseConfigs, dbRules config.DatabaseRules, dbSchemas config.DatabaseSchemas, project, url string) []*config.EventingTrigger {
 
 	var eventingRules []*config.EventingTrigger

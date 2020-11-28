@@ -201,6 +201,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 			tt.args.client = &mockHTTP
 			tt.m.crud = &mockCrud
 			tt.m.syncMan = &mockSyncman
+			tt.m.updateEventC = make(chan *queueUpdateEvent, 5)
 
 			if err := tt.m.invokeWebhook(context.Background(), "", tt.args.client, tt.args.rule, tt.args.eventDoc, tt.args.cloudEvent); (err != nil) != tt.wantErr {
 				t.Errorf("Module.invokeWebhook() error = %v, wantErr %v", err, tt.wantErr)
@@ -312,6 +313,7 @@ func TestModule_processStagedEvent(t *testing.T) {
 			tt.m.syncMan = &mockSyncman
 			tt.m.auth = &mockAuth
 			tt.m.crud = &mockCrud
+			tt.m.updateEventC = make(chan *queueUpdateEvent, 5)
 
 			tt.m.processStagedEvent(tt.args.eventDoc)
 
