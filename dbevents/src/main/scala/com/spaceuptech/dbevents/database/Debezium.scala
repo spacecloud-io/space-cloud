@@ -97,7 +97,7 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
     this.source = generateDatabaseSource(projectId, this.connString, config)
     this.name = Utils.generateConnectorName(this.source)
 
-    println(s"Staring debezium engine $this.name")
+    println(s"Staring debezium engine ${this.name}")
 
     // Start the debezium engine
     this.status = Some(Utils.startDebeziumEngine(this.source, this.executor, context.self))
