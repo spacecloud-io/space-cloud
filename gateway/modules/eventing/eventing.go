@@ -50,6 +50,9 @@ type Module struct {
 
 	// Pub sub network
 	pubsubClient *pubsub.Module
+
+	// Channel for queuing eventing updates
+	updateEventC chan *queueUpdateEvent
 }
 
 // synchronous event response
@@ -86,6 +89,7 @@ func New(projectID, nodeID string, auth model.AuthEventingInterface, crud model.
 	go m.routineProcessStaged()
 	go m.routineHandleMessages()
 	go m.routineHandleEventResponseMessages()
+	m.createProcessUpdateEventsRoutine()
 
 	return m, nil
 }

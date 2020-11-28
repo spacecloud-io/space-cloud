@@ -20,9 +20,11 @@ object ProjectManager {
 
   case class FetchEventingConfig() extends Command
 
+  case class ProcessEventingConfig(config: EventingConfig) extends Command
+
   case class FetchDatabaseConfig() extends Command
 
-  case class CreateDatabaseActor(db: DatabaseConfig) extends Command
+  case class ProcessDatabaseConfig(dbs: Array[DatabaseConfig]) extends Command
 
   case class Stop() extends Command
 }
@@ -49,6 +51,10 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
         fetchEventingConfig()
         this
 
+      case ProcessEventingConfig(config) =>
+        processEventingConfig(config)
+        this
+
       case FetchDatabaseConfig() =>
         if (isEventingEnabled) {
           println(s"Fetching database config for project '$projectId'")
@@ -56,13 +62,8 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
         }
         this
 
-      case CreateDatabaseActor(db) =>
-        if (!databaseToActor.contains(db.dbAlias)) {
-          println(s"Creating new database actor - ${db.dbAlias}")
-          val actor = context.spawn(Database.createActor(projectId, db.`type`, eventsSink), s"db-${db.dbAlias}")
-          actor ! Database.UpdateEngineConfig(db)
-          databaseToActor += db.dbAlias -> actor
-        }
+      case ProcessDatabaseConfig(dbs) =>
+        processDatabaseConfig(dbs)
         this
 
       case Stop() =>
@@ -82,7 +83,8 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
           println(s"Unable to fetch database config for project ($projectId)", value.error.get)
           return
         }
-        processDatabaseConfig(value.result)
+
+        context.self ! ProcessDatabaseConfig(value.result)
       case Failure(ex) => println(s"Unable to fetch database config for project ($projectId)", ex)
     }
   }
@@ -94,7 +96,10 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     // Create actor for new projects
     for (db <- filteredDbs) {
       if (!databaseToActor.contains(db.dbAlias)) {
-        context.self ! CreateDatabaseActor(db)
+        println(s"Creating new database actor - ${db.dbAlias}")
+        val actor = context.spawn(Database.createActor(projectId, db.`type`, eventsSink), s"db-${db.dbAlias}")
+        actor ! Database.UpdateEngineConfig(db)
+        databaseToActor += db.dbAlias -> actor
       } else {
         // Send update engine command
         databaseToActor.get(db.dbAlias) match {
@@ -109,6 +114,7 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
 
   private def removeDatabaseIfInactive(dbs: Array[DatabaseConfig], dbAlias: String, actor: ActorRef[Database.Command]): Boolean = {
     if (!dbs.exists(db => db.dbAlias == dbAlias)) {
+      println(s"Removing database ($dbAlias) in project ($projectId)")
       actor ! Database.Stop()
       return false
     }
@@ -122,12 +128,12 @@ class ProjectManager(context: ActorContext[ProjectManager.Command], timers: Time
     val response: Future[EventingConfigResponse] = fetchSpaceCloudResource[EventingConfigResponse](s"http://${Global.gatewayUrl}/v1/config/projects/$projectId/eventing/config")
     response.onComplete {
       case Success(value) =>
-        if (value.error.isDefined) {
+        if (value.error.isDefined || value.result.length == 0) {
           println(s"Unable to fetch eventing config for project ($projectId)", value.error.get)
           return
         }
 
-        processEventingConfig(value.result(0))
+        context.self ! ProcessEventingConfig(value.result(0))
       case Failure(ex) => println(s"Unable to fetch eventing config for project ($projectId)", ex)
     }
   }

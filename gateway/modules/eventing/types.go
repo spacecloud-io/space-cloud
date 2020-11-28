@@ -14,6 +14,12 @@ import (
 
 var limit int64 = 1000
 
+type queueUpdateEvent struct {
+	project, db, col string
+	req              *model.UpdateRequest
+	err              string
+}
+
 type mockHTTPInterface struct {
 	mock.Mock
 }

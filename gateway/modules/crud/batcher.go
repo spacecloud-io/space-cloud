@@ -77,10 +77,10 @@ func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batc
 	responseChannels := make([]batchResponseChan, 0)
 	batchRequests := make([]interface{}, 0)
 	if batchTime <= 0 { // when new project is created set default time to 100 milli seconds
-		batchTime = 100
+		batchTime = 200
 	}
 	if batchRecordLimit <= 0 {
-		batchRecordLimit = 100 // when new project is created set default batch record limit to 100
+		batchRecordLimit = 200 // when new project is created set default batch record limit to 100
 	}
 	ticker := time.NewTicker(time.Duration(batchTime) * time.Millisecond)
 	for {

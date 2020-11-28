@@ -95,8 +95,12 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		if err := m.fileStore.DoesExists(ctx, m.project, token, filePayload.Path); err != nil {
 
 			// Mark event as cancelled if it document doesn't exist
-			if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing: Couldn't cancel intent", err, nil)
+			m.updateEventC <- &queueUpdateEvent{
+				project: m.project,
+				db:      m.config.DBAlias,
+				col:     utils.TableEventingLogs,
+				req:     m.generateCancelEventRequest(eventID),
+				err:     "Eventing: Couldn't cancel intent",
 			}
 			return
 		}
@@ -123,7 +127,13 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		if err := m.fileStore.DoesExists(ctx, m.project, token, filePayload.Path); err == nil {
 			// Mark the event as cancelled if the object still exists
-			_ = m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID))
+			m.updateEventC <- &queueUpdateEvent{
+				project: m.project,
+				db:      m.config.DBAlias,
+				col:     utils.TableEventingLogs,
+				req:     m.generateCancelEventRequest(eventID),
+				err:     "Eventing: Couldn't update intent to cancelled",
+			}
 			return
 		}
 
