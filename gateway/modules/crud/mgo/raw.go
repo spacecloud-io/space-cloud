@@ -3,6 +3,9 @@ package mgo
 import (
 	"context"
 	"errors"
+	"fmt"
+
+	"github.com/spaceuptech/helpers"
 )
 
 // RawBatch performs a batch operation for schema creation
@@ -24,7 +27,13 @@ func (m *Mongo) GetConnectionState(ctx context.Context) bool {
 
 	// Ping to check if connection is established
 	err := m.client.Ping(ctx, nil)
-	return err == nil
+	if err != nil {
+		_ = m.client.Disconnect(ctx)
+		m.client = nil
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to ping mongo database - %s", m.dbName), err, nil)
+		return false
+	}
+	return true
 }
 
 // CreateDatabaseIfNotExist creates a database if not exist which has same name of project
