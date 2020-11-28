@@ -44,8 +44,6 @@ libraryDependencies += "io.kubernetes" % "client-java" % "10.0.0"
 // https://mvnrepository.com/artifact/commons-io/commons-io
 libraryDependencies += "commons-io" % "commons-io" % "2.8.0"
 
-
-// Dependencies for rabbitmq client
-libraryDependencies += "com.rabbitmq" % "amqp-client" % "5.10.0"
+libraryDependencies += "com.typesafe" % "config" % "1.4.1"
 
 enablePlugins(JavaAppPackaging)

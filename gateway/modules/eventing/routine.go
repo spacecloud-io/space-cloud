@@ -10,6 +10,19 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+func (m *Module) createProcessUpdateEventsRoutine() {
+	m.updateEventC = make(chan *queueUpdateEvent, 1000)
+	for i := 0; i < 50; i++ {
+		go m.routineProcessUpdateEvents()
+	}
+}
+
+func (m *Module) routineProcessUpdateEvents() {
+	for ev := range m.updateEventC {
+		m.queueUpdateEvent(ev)
+	}
+}
+
 func (m *Module) routineProcessIntents() {
 	m.tickerIntent = time.NewTicker(10 * time.Second)
 	for t := range m.tickerIntent.C {

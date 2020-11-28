@@ -56,31 +56,11 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
         this
 
       case UpdateEngineConfig(config) =>
-        getConnString(projectId, config.conn) onComplete {
-          case Success(conn) =>
-            println(s"Reloading db config for db '${config.dbAlias}'")
+        updateEngineConfig(config)
+        this
 
-            // Simply return if there are no changes to the connection string
-            if (conn == connString) return this
-
-            // Store the connection string for future reference
-            this.connString = conn
-
-            // Kill the previous debezium engine
-            stopOperations()
-
-            source = generateDatabaseSource(projectId, connString, config)
-            name = Utils.generateConnectorName(source)
-
-            println(s"Staring debezium engine $name")
-
-            // Start the debezium engine
-            status = Some(Utils.startDebeziumEngine(source, executor, context.self))
-          case Failure(ex) =>
-            println(s"Unable to get connection string for debezium engine ($name) - ${ex.getMessage}")
-        }
-
-
+      case ProcessEngineConfig(conn, config) =>
+        processEngineConfig(conn, config)
         this
 
       case record: ChangeRecord =>
@@ -91,6 +71,36 @@ class Debezium(context: ActorContext[Database.Command], timers: TimerScheduler[D
         println(s"Got close command for debezium watcher - $name")
         Behaviors.stopped
     }
+  }
+
+  private def updateEngineConfig(config: DatabaseConfig): Unit = {
+    getConnString(projectId, config.conn) onComplete {
+      case Success(conn) =>
+        context.self ! ProcessEngineConfig(conn, config)
+      case Failure(ex) =>
+        println(s"Unable to get connection string for debezium engine ($name) - ${ex.getMessage}")
+    }
+  }
+
+  private def processEngineConfig(conn: String, config: DatabaseConfig): Unit = {
+    println(s"Reloading db config for db '${config.dbAlias}'")
+
+    // Simply return if there are no changes to the connection string
+    if (conn == connString) return
+
+    // Store the connection string for future reference
+    this.connString = conn
+
+    // Kill the previous debezium engine
+    stopOperations()
+
+    this.source = generateDatabaseSource(projectId, this.connString, config)
+    this.name = Utils.generateConnectorName(this.source)
+
+    println(s"Staring debezium engine ${this.name}")
+
+    // Start the debezium engine
+    this.status = Some(Utils.startDebeziumEngine(this.source, this.executor, context.self))
   }
 
   private def generateDatabaseSource(projectId: String, conn: String, db: DatabaseConfig): DatabaseSource = {

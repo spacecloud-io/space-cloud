@@ -17,6 +17,7 @@ object Database {
   case class ChangeRecord(payload: ChangeRecordPayload, project: String, dbAlias: String, dbType: String) extends Command
   case class CheckEngineStatus() extends Command
   case class UpdateEngineConfig(config: DatabaseConfig) extends Command
+  case class ProcessEngineConfig(conn: String, config: DatabaseConfig) extends Command
   case class Stop() extends Command
 }
 

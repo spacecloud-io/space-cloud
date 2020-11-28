@@ -51,39 +51,49 @@ class Mongo(context: ActorContext[Database.Command], timers: TimerScheduler[Data
         this
 
       case UpdateEngineConfig(config) =>
-        // Start mongo watcher
-        getConnString(projectId, config.conn) onComplete {
-          case Success(conn) =>
-            println(s"Reloading db config for db '${config.dbAlias}'")
+        updateEngineConfig(config)
+        this
 
-            // Simply return if there are no changes to the connection string
-            if (conn == connString) return this
-
-            // Store the connection string for future reference
-            this.connString = conn
-
-            // Kill the previous mongo engine
-            stopOperations()
-
-            // Store the name and db config object for later use
-            name = s"$projectId:${config.dbAlias}"
-            dbConfig = config
-
-            // Start the engine
-            println(s"Staring mongo engine $name")
-
-            status = Some(Utils.startMongoWatcher(projectId, config.dbAlias, connString, config.name, executor, context.self))
-
-          case Failure(ex) =>
-            println(s"Unable to get connection string for mongo engine ($name) - ${ex.getMessage}")
-
-        }
+      case ProcessEngineConfig(conn, config) =>
+        processEngineConfig(conn, config)
         this
 
       case Stop() =>
         println(s"Got close command for mongo watcher - $name")
         Behaviors.stopped
     }
+  }
+
+  private def updateEngineConfig(config: DatabaseConfig): Unit = {
+    getConnString(projectId, config.conn) onComplete {
+      case Success(conn) =>
+        context.self ! ProcessEngineConfig(conn, config)
+      case Failure(ex) =>
+        println(s"Unable to get connection string for debezium engine ($name) - ${ex.getMessage}")
+    }
+  }
+
+  private def processEngineConfig(conn: String, config: DatabaseConfig): Unit = {
+    println(s"Reloading db config for db '${config.dbAlias}'")
+
+    // Simply return if there are no changes to the connection string
+    if (conn == connString) return
+
+    // Store the connection string for future reference
+    this.connString = conn
+
+    // Kill the previous mongo engine
+    stopOperations()
+
+    // Store the name and db config object for later use
+    name = s"$projectId:${config.dbAlias}"
+    dbConfig = config
+
+    // Start the engine
+    println(s"Staring mongo engine $name")
+
+    status = Some(Utils.startMongoWatcher(projectId, config.dbAlias, connString, config.name, executor, context.self))
+
   }
 
   private def stopOperations(): Unit = {
@@ -93,9 +103,9 @@ class Mongo(context: ActorContext[Database.Command], timers: TimerScheduler[Data
         if (!value.future.isCancelled && !value.future.isDone) {
           println(s"Closing mongo watcher - $name")
           value.future.cancel(true)
-          value.store.stop()
           println(s"Closed mongo watcher - $name")
         }
+        value.store.stop()
 
       // No need to do anything if status isn't defined
       case None =>

@@ -126,8 +126,12 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "eventing module couldn't log the invocation ", err, nil)
 			return
 		}
-		if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing staged event handler could not update event doc ", err, nil)
+		m.updateEventC <- &queueUpdateEvent{
+			project: m.project,
+			db:      m.config.DBAlias,
+			col:     utils.TableEventingLogs,
+			req:     m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached"),
+			err:     "Eventing staged event handler could not update event doc",
 		}
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to adjust request body according to template for trigger (%s)", triggerName), err, nil)
 		return
@@ -140,8 +144,12 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "eventing module couldn't log the invocation ", err, nil)
 			return
 		}
-		if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing staged event handler could not update event doc ", err, nil)
+		m.updateEventC <- &queueUpdateEvent{
+			project: m.project,
+			db:      m.config.DBAlias,
+			col:     utils.TableEventingLogs,
+			req:     m.generateFailedEventRequest(eventDoc.ID, "Unable to generate token"),
+			err:     "Eventing staged event handler could not update event doc",
 		}
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "error invoking web hook in eventing unable to get internal access token", err, nil)
 		return
@@ -170,8 +178,13 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	if err := m.triggerDLQEvent(ctx, eventDoc); err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Couldn't create DLQ event for event id %v", eventDoc.ID), err, nil)
 	}
-	if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing staged event handler could not update event doc", err, nil)
+
+	m.updateEventC <- &queueUpdateEvent{
+		project: m.project,
+		db:      m.config.DBAlias,
+		col:     utils.TableEventingLogs,
+		req:     m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached"),
+		err:     "Eventing staged event handler could not update event doc",
 	}
 }
 
@@ -220,6 +233,12 @@ func (m *Module) invokeWebhook(ctx context.Context, token string, client model.H
 		}
 	}
 
-	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateProcessedEventRequest(eventDoc.ID))
+	m.updateEventC <- &queueUpdateEvent{
+		project: m.project,
+		db:      m.config.DBAlias,
+		col:     utils.TableEventingLogs,
+		req:     m.generateProcessedEventRequest(eventDoc.ID),
+		err:     "Eventing: Couldn't update staged event to processed",
+	}
 	return nil
 }
