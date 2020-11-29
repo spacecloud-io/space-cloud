@@ -1,15 +1,12 @@
 apiVersion: v3
 name: mysql
+version: 0.1.0 # Chart version
 description: Fast, reliable, scalable, and easy to use open-source relational database system.
 type: application
 keywords:
 - mysql
 - database
 - sql
-home: https://www.mysql.com/
-icon: https://www.mysql.com/common/logos/logo-mysql-170x115.png
+home: https://spaceuptech.com/
 sources:
-- https://github.com/kubernetes/charts
-- https://github.com/docker-library/mysql
-version: 0.1.0
-appVersion: 1.16.0
+  - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo

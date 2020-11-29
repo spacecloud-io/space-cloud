@@ -48,8 +48,8 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('local-chart-dir')", nil)
 			}
-			if err := viper.BindPFlag("values", cmd.Flags().Lookup("values")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('values')", nil)
+			if err := viper.BindPFlag("file", cmd.Flags().Lookup("file")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('file')", nil)
 			}
 			if err := viper.BindPFlag("set", cmd.Flags().Lookup("set")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('set')", nil)
@@ -64,10 +64,10 @@ func Commands() []*cobra.Command {
 		_ = utils.LogError("Unable to bind flag ('local-chart-dir') to environment variables", nil)
 	}
 
-	setup.Flags().StringP("values", "f", "", "Path to the config yaml file")
-	err = viper.BindEnv("values", "VALUES")
+	setup.Flags().StringP("file", "f", "", "Path to the config yaml file")
+	err = viper.BindEnv("file", "FILE")
 	if err != nil {
-		_ = utils.LogError("Unable to bind flag ('values' to environment variables", nil)
+		_ = utils.LogError("Unable to bind flag ('file' to environment variables", nil)
 	}
 
 	setup.Flags().StringP("set", "", "", "Set root string values of chart in format foo1=bar1,foo2=bar2")
@@ -142,7 +142,7 @@ func Commands() []*cobra.Command {
 
 func actionSetup(cmd *cobra.Command, args []string) error {
 	chartDir := viper.GetString("local-chart-dir")
-	valuesYamlFile := viper.GetString("values")
+	valuesYamlFile := viper.GetString("file")
 	setValue := viper.GetString("set")
 
 	return Setup(setValue, valuesYamlFile, chartDir)

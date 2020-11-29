@@ -99,9 +99,9 @@ spec:
         - name: KUBE_NAMESPACE
           value: "db"
         - name: MONGODB_USERNAME
-          value: "user"
+          value: {{ .Values.credentials.username }}
         - name: MONGODB_PASSWORD
-          value: "pass"
+          value: {{ .Values.credentials.password }}
         - name: MONGODB_DATABASE
           value: "admin"
         - name: MONGO_PORT

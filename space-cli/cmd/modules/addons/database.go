@@ -38,7 +38,8 @@ func addDatabase(chartReleaseName, dbType, setValuesFlag, valuesYamlFile, chartL
 		return fmt.Errorf("unkown database (%s) provided as argument", chartReleaseName)
 	}
 
-	return utils.HelmInstall(chartReleaseName, chartLocation, downloadURL, helmDatabaseNamespace, valuesFileObj)
+	_, err = utils.HelmInstall(chartReleaseName, chartLocation, downloadURL, helmDatabaseNamespace, valuesFileObj)
+	return err
 }
 
 func removeDatabase(dbType string) error {

@@ -8,6 +8,11 @@ import (
 // Destroy cleans the environment which has been setup. It removes the containers, secrets & host file
 func Destroy() error {
 
+	account, _, err := utils.LoginWithSelectedAccount()
+	if err != nil {
+		return utils.LogError("Ensure cluster is up and running & space cloud is accessible outside the cluster", err)
+	}
+
 	// Delete all projects
 	objects, err := project.GetProjectConfig("*", "projects", nil)
 	if err != nil {
@@ -24,5 +29,5 @@ func Destroy() error {
 		}
 	}
 
-	return utils.HelmUninstall("space-cloud")
+	return utils.HelmUninstall(account.ID)
 }

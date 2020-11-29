@@ -16,11 +16,11 @@ import (
 )
 
 // HelmInstall install helm chart
-func HelmInstall(chartReleaseName, chartLocation, downloadURL, namespace string, valuesFileObj map[string]interface{}) error {
+func HelmInstall(chartReleaseName, chartLocation, downloadURL, namespace string, valuesFileObj map[string]interface{}) (*chart.Chart, error) {
 	settings := cli.New()
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), log.Printf); err != nil {
-		return err
+		return nil, err
 	}
 
 	var helmChart *chart.Chart
@@ -28,19 +28,19 @@ func HelmInstall(chartReleaseName, chartLocation, downloadURL, namespace string,
 	if chartLocation == "" {
 		res, err := http.Get(downloadURL)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if res.StatusCode != http.StatusOK {
-			return fmt.Errorf("received invalid status code (%s)", res.Status)
+			return nil, fmt.Errorf("received invalid status code (%s)", res.Status)
 		}
 		helmChart, err = loader.LoadArchive(res.Body)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		helmChart, err = loader.Load(chartLocation)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -51,10 +51,10 @@ func HelmInstall(chartReleaseName, chartLocation, downloadURL, namespace string,
 	iCli.Devel = true
 	rel, err := iCli.Run(helmChart, valuesFileObj)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	LogInfo(fmt.Sprintf("Successfully installed chart: (%s)", rel.Name))
-	return nil
+	return rel.Chart, nil
 }
 
 // HelmUninstall uninstall helm chart

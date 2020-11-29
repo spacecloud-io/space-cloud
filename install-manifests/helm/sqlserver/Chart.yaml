@@ -1,12 +1,10 @@
 apiVersion: v3
 name: sqlserver
-version: 0.1.0
-appVersion: 1.16.0
+version: 0.1.0 # Chart version
 description: SQL Server Helm Chart
 type: application
 keywords:
 - database
-home: https://hub.docker.com/r/microsoft/mssql-server-linux/
-icon: https://img-prod-cms-rt-microsoft-com.akamaized.net/cms/api/am/imageFileData/RE1I4Dx
+home: https://spaceuptech.com/
 sources:
-- https://hub.docker.com/r/microsoft/mssql-server-linux/
+  - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
