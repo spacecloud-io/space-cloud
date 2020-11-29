@@ -1,0 +1,19 @@
+apiVersion: v3
+name: postgres
+version: 0.1.0
+appVersion: 1.16.0
+description: Chart for PostgreSQL, an object-relational database management system (ORDBMS) with an emphasis on extensibility and on standards-compliance.
+type: application
+keywords:
+  - postgresql
+  - postgres
+  - database
+  - sql
+  - replication
+  - cluster
+home: https://www.postgresql.org/
+icon: https://bitnami.com/assets/stacks/postgresql/img/postgresql-stack-110x117.png
+sources:
+  - https://github.com/bitnami/bitnami-docker-postgresql
+maintainers: []
+engine: gotpl

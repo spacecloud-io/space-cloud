@@ -1,0 +1,19 @@
+# Default values for mongo
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+credentials:
+  password: yourStrong(!)Password
+  username: sqlserver
+
+# name used for creating kubernetes resources
+name: "sqlserver"
+
+image:
+  name: "mcr.microsoft.com/mssql/server"
+  tag: "latest"
+  pullPolicy: IfNotPresent # IfNotPresent | Always
+
+resources:
+  memory: 500Mi
+  cpu: 500m
