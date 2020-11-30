@@ -65,9 +65,9 @@ spec:
              value: "k8s"
          resources:
            limits:
-             memory: "{{ .Values.dbEvents.resources.memory }}"
-             cpu: "{{ .Values.dbEvents.resources.cpu }}"
+             memory: "{{ .Values.dbEvents.resources.limits.memory }}"
+             cpu: "{{ .Values.dbEvents.resources.limits.cpu }}"
            requests:
-             cpu: 100m
-             memory: 256Mi
+             cpu: "{{ .Values.dbEvents.resources.requests.cpu }}"
+             memory: "{{ .Values.dbEvents.resources.requests.memory }}"
      terminationGracePeriodSeconds: 300

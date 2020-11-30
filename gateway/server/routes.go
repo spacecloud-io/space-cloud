@@ -92,6 +92,9 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleSetProjectRoute(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.managers.Admin(), s.managers.Sync()))
 
+	// Health check
+	router.Methods(http.MethodGet).Path("/v1/api/health-check").HandlerFunc(handlers.HandleHealthCheck(s.managers.Sync()))
+
 	// Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.modules, s.managers.Sync()))
 

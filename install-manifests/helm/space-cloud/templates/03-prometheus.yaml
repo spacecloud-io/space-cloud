@@ -310,11 +310,11 @@ spec:
            successThreshold: 1
          resources:
            limits:
-             cpu: 500m
-             memory: 512Mi
+             cpu: {{ .Values.prometheus.resources.limits.cpu }}
+             memory: {{ .Values.prometheus.resources.limits.memory }}
            requests:
-             memory: {{ .Values.prometheus.resources.memory }}
-             cpu: {{ .Values.prometheus.resources.cpu }}
+             memory: {{ .Values.prometheus.resources.requests.memory }}
+             cpu: {{ .Values.prometheus.resources.requests.cpu }}
          volumeMounts:
            - name: config-volume
              mountPath: /etc/config

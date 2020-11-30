@@ -187,6 +187,13 @@ spec:
           command: [ "./app", "run" ]
           image: spaceuptech/gateway:0.20.0
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
+          livenessProbe:
+            exec:
+              command:
+                - ./app
+                - health-check
+            initialDelaySeconds: 100
+            periodSeconds: 10
           env:
             - name: "NODE_ID"
               valueFrom:

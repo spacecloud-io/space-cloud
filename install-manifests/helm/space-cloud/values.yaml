@@ -5,6 +5,7 @@
 clusterId: "default"
 devMode: "true" # Turn this to false for production mode
 version: "0.20.0" # This ensures both runner & gateway using the same version
+isKedaEnabled: false # Set this to true to enable keda
 
 admin:
   username: "admin" # Log in username
@@ -20,9 +21,13 @@ gateway:
   image:
     name: "spaceuptech/gateway"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always
-  resources: 
-    memory: "256Mi"
-    cpu: "200m"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
   ssl:
     enabled: "true"
     custom_ssl_secret: "" # If required change this to the Kubernetes secret name containing custom SSL cert
@@ -42,9 +47,13 @@ runner:
   image:
     name: "spaceuptech/runner"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always
-  resources: 
-    memory: "256Mi"
-    cpu: "200m"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
   autoScaler: 
     averageCPUUtilization: 70
     minReplicas: 1
@@ -57,9 +66,13 @@ redis:
     name: "redis"
     version: "6.0"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always
-  resources: 
-    memory: "100Mi"
-    cpu: "100m"  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
 
 # Prometheus service configuration
 prometheus:
@@ -67,9 +80,13 @@ prometheus:
     name: "prom/prometheus"
     version: "v2.19.0"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always
-  resources: 
-    memory: "256Mi"
-    cpu: "100m"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
 
 # DB events service configuration
 dbEvents:
@@ -78,8 +95,12 @@ dbEvents:
     version: "0.1.0"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always
   resources:
-    memory: "500Mi"
-    cpu: "512m"
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
 
 # Connection string used by gateway & runner to connect to other services
 connections:

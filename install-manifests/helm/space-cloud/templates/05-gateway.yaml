@@ -187,6 +187,13 @@ spec:
           command: [ "./app", "run" ]
           image: "{{ .Values.gateway.image.name }}:{{ .Values.version }}"
           imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
+          livenessProbe:
+            exec:
+              command:
+                - ./app
+                - health-check
+            initialDelaySeconds: 100
+            periodSeconds: 10
           env:
             - name: "NODE_ID"
               valueFrom:
@@ -232,21 +239,24 @@ spec:
           volumeMounts:
           - name: ssl_certs
             mountPath: "/secrets"
-          {{ end }}                         
+          {{ end }}
           ports:
             - containerPort: 4122
             - containerPort: 4126
           resources:
+            limits:
+              memory: "{{ .Values.gateway.resources.limits.memory }}"
+              cpu: "{{ .Values.gateway.resources.limits.cpu }}"
             requests:
-              memory: "{{ .Values.gateway.resources.memory }}"
-              cpu: "{{ .Values.gateway.resources.cpu }}"
+              memory: "{{ .Values.gateway.resources.requests.memory }}"
+              cpu: "{{ .Values.gateway.resources.requests.cpu }}"
       {{ if .Values.gateway.custom_ssl_secret }}
       volumes:
       - name: ssl_certs
         secret:
           secretName: "{{ .Values.gateway.custom_ssl_secret }}"
           defaultMode: 0400
-      {{ end }}               
+      {{ end }}
       terminationGracePeriodSeconds: 300
 ---
 apiVersion: autoscaling/v2beta2

@@ -3,6 +3,9 @@ package mgo
 import (
 	"context"
 	"errors"
+	"fmt"
+
+	"github.com/spaceuptech/helpers"
 )
 
 // RawBatch performs a batch operation for schema creation
@@ -27,6 +30,7 @@ func (m *Mongo) GetConnectionState(ctx context.Context) bool {
 	if err != nil {
 		_ = m.client.Disconnect(context.Background())
 		m.client = nil
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to ping mongo database - %s", m.dbName), err, nil)
 		return false
 	}
 

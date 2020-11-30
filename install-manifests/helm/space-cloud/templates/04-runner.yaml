@@ -191,7 +191,7 @@ spec:
               value: {{ .Values.clusterId }}
             - name: "REDIS_CONN"
               value: {{ .Values.connections.redisConn }}
-          {{ range $key, $value := .Values.gateway.envs }}
+          {{ range $key, $value := .Values.runner.envs }}
             - name: {{ $key | quote }}
               value: {{ $value | quote}}
           {{ end -}}
@@ -200,9 +200,12 @@ spec:
             - containerPort: 4055
             - containerPort: 4060
           resources:
+            limits:
+              memory: {{ .Values.runner.resources.limits.memory }}
+              cpu: {{ .Values.runner.resources.limits.cpu }}
             requests:
-              memory: {{ .Values.prometheus.resources.memory }}
-              cpu: {{ .Values.prometheus.resources.cpu }}
+              memory: {{ .Values.runner.resources.requests.memory }}
+              cpu: {{ .Values.runner.resources.requests.cpu }}
 ---
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
@@ -216,12 +219,12 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: runner
-  minReplicas: {{ .Values.gateway.autoScaler.minReplicas }}
-  maxReplicas: {{ .Values.gateway.autoScaler.maxReplicas }}
+  minReplicas: {{ .Values.runner.autoScaler.minReplicas }}
+  maxReplicas: {{ .Values.runner.autoScaler.maxReplicas }}
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.gateway.autoScaler.averageCPUUtilization }}
+          averageUtilization: {{ .Values.runner.autoScaler.averageCPUUtilization }}

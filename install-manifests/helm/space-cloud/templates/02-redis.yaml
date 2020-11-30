@@ -98,9 +98,9 @@ spec:
             - containerPort: 6379
           resources:
             limits:
-              cpu: 500m
-              memory: 512Mi
+              cpu: {{ .Values.redis.resources.limits.cpu }}
+              memory: {{ .Values.redis.resources.limits.memory }}
             requests:
-              memory: {{ .Values.redis.resources.memory }}
-              cpu: {{ .Values.redis.resources.cpu }}            
+              memory: {{ .Values.redis.resources.requests.memory }}
+              cpu: {{ .Values.redis.resources.requests.cpu }}
       terminationGracePeriodSeconds: 300

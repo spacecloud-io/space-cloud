@@ -57,6 +57,7 @@ func (s *SQL) GetConnectionState(ctx context.Context) bool {
 	if err != nil {
 		_ = s.client.Close()
 		s.client = nil
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to ping sql database - %s", s.name), err, nil)
 		return false
 	}
 
