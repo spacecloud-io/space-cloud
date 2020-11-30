@@ -3,14 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
-	"time"
 
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
-	"github.com/spaceuptech/space-cloud/runner/utils"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
 	"github.com/spaceuptech/space-cloud/runner/utils/driver"
 
@@ -71,29 +68,4 @@ func actionRunner(c *cli.Context) error {
 	}
 
 	return r.Start()
-}
-
-func actionHealthCheck(c *cli.Context) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	// Make a request object
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost:4122/v1/api/health-check", nil)
-	if err != nil {
-		return err
-	}
-	// Create a http client and fire the request
-	client := &http.Client{}
-
-	req = req.WithContext(ctx)
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer utils.CloseTheCloser(resp.Body)
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("health check return status code (%v)", resp.Status)
-	}
-	return nil
 }

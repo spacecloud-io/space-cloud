@@ -85,9 +85,12 @@ spec:
         - containerPort: 27017
           protocol: TCP
         resources:
+          limits:
+            memory: "{{ .Values.resources.limits.memory }}"
+            cpu: "{{ .Values.resources.limits.cpu }}"
           requests:
-            cpu: {{ .Values.resources.cpu }}
-            memory: {{ .Values.resources.memory }}
+            memory: "{{ .Values.resources.requests.memory }}"
+            cpu: "{{ .Values.resources.requests.cpu }}"
         volumeMounts:
         - mountPath: /data/db
           name: {{ .Values.name }}-storage

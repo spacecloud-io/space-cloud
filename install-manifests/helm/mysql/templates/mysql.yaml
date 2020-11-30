@@ -46,9 +46,12 @@ spec:
         - containerPort: 3306
           protocol: TCP
         resources:
+          limits:
+            memory: "{{ .Values.resources.limits.memory }}"
+            cpu: "{{ .Values.resources.limits.cpu }}"
           requests:
-            cpu: {{ .Values.resources.cpu }}
-            memory: {{ .Values.resources.memory }}
+            memory: "{{ .Values.resources.requests.memory }}"
+            cpu: "{{ .Values.resources.requests.cpu }}"
         volumeMounts:
         - mountPath: /var/lib/mysql
           name: {{ .Values.name }}-storage

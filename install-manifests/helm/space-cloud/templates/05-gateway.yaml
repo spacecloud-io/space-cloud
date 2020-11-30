@@ -236,6 +236,8 @@ spec:
               value: "/secrets/{{ .Values.gateway.custom_ssl_cert_key }}"
             - name: "SSL_KEY"
               value: "/secrets/{{ .Values.gateway.custom_ssl_private_key }}"
+          {{ end }}
+          {{ if .Values.gateway.custom_ssl_secret }}
           volumeMounts:
           - name: ssl_certs
             mountPath: "/secrets"

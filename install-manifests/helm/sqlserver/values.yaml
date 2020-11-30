@@ -15,5 +15,9 @@ image:
   pullPolicy: IfNotPresent # IfNotPresent | Always
 
 resources:
-  memory: 500Mi
-  cpu: 500m
+  requests:
+    memory: "500Mi"
+    cpu: "250m"
+  limits:
+    memory: "1000Mi"
+    cpu: "500m"
