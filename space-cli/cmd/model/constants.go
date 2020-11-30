@@ -28,3 +28,6 @@ const (
 	// HelmMongoChartDownloadURL url of mongo helm chart
 	HelmMongoChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/mongo.tgz"
 )
+
+// Version version of space cli
+const Version string = "0.20.0"

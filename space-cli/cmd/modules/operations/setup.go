@@ -34,6 +34,12 @@ func Setup(setValuesFlag, valuesYamlFile, chartLocation string) error {
 		valuesFileObj["clusterId"] = newClusterID
 	}
 
+	_, ok = valuesFileObj["version"]
+	if !ok {
+		// set the version
+		valuesFileObj["version"] = model.Version
+	}
+
 	helmChart, err := utils.HelmInstall(newClusterID, chartLocation, model.HelmSpaceCloudChartDownloadURL, "", valuesFileObj)
 	if err != nil {
 		return err
