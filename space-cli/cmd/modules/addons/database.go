@@ -48,6 +48,9 @@ func addDatabase(chartReleaseName, dbType, setValuesFlag, valuesYamlFile, chartL
 	}
 
 	_, err = utils.HelmInstall(chartReleaseName, chartLocation, downloadURL, helmDatabaseNamespace, valuesFileObj)
+	if err != nil {
+		return err
+	}
 
 	settings := cli.New()
 	actionConfig := new(action.Configuration)
@@ -56,6 +59,9 @@ func addDatabase(chartReleaseName, dbType, setValuesFlag, valuesYamlFile, chartL
 	}
 
 	kubeClint, err := actionConfig.KubernetesClientSet()
+	if err != nil {
+		return err
+	}
 	w, err := kubeClint.CoreV1().Pods(helmDatabaseNamespace).Watch(context.Background(), metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s", chartReleaseName)})
 	if err != nil {
 		return nil
@@ -76,9 +82,9 @@ func addDatabase(chartReleaseName, dbType, setValuesFlag, valuesYamlFile, chartL
 			if pod.Status.Phase == v1.PodRunning {
 				utils.LogInfo(fmt.Sprintf("Database is up & running, use this domain name (%s.%s.svc.cluster.local) in mission control for adding database to space cloud", chartReleaseName, helmDatabaseNamespace))
 				return nil
-			} else {
-				utils.LogInfo(fmt.Sprintf("Database pod status (%s)", pod.Status.Phase))
 			}
+			utils.LogInfo(fmt.Sprintf("Database pod status (%s)", pod.Status.Phase))
+
 		case <-ticker.C:
 			utils.LogInfo("Database has been provisioned on kubernetes cluster")
 			utils.LogInfo("But it is taking to much time to start, check if you have enough resource on the cluster or")
