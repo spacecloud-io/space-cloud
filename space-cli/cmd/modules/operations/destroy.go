@@ -29,5 +29,13 @@ func Destroy() error {
 		}
 	}
 
-	return utils.HelmUninstall(account.ID)
+	if err := utils.HelmUninstall(account.ID); err != nil {
+		return err
+	}
+
+	if err := utils.RemoveAccount(account.ID); err != nil {
+		return err
+	}
+	utils.LogInfo("Space cloud cluster has been destroyed successfully 😢")
+	return nil
 }

@@ -46,7 +46,7 @@ func (s *SQL) RawQuery(ctx context.Context, query string, args []interface{}) (i
 	return count, result, err
 }
 
-// GetConnectionState : Function to get connection state
+// GetConnectionState : function to check connection state
 func (s *SQL) GetConnectionState(ctx context.Context) bool {
 	if !s.enabled || s.client == nil {
 		return false
@@ -54,7 +54,13 @@ func (s *SQL) GetConnectionState(ctx context.Context) bool {
 
 	// Ping to check if connection is established
 	err := s.client.PingContext(ctx)
-	return err == nil
+	if err != nil {
+		_ = s.client.Close()
+		s.client = nil
+		return false
+	}
+
+	return true
 }
 
 // CreateDatabaseIfNotExist creates a schema / database

@@ -68,3 +68,6 @@ gateway/testbolt.db
 
 
 npm-debug.log
+
+# ignore space-cloud helm chart
+!install-manifests/helm/space-cloud

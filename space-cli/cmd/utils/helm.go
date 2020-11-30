@@ -69,7 +69,7 @@ func HelmUninstall(releaseName string) error {
 	if err != nil {
 		return err
 	}
-	LogInfo(fmt.Sprintf("Successfully removed space cloud: (%s)", rel.Release.Name))
+	LogInfo(fmt.Sprintf("Successfully removed chart: (%s)", rel.Release.Name))
 	return nil
 }
 

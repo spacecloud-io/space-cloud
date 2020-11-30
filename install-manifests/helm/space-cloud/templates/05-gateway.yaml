@@ -1,0 +1,272 @@
+#############################################################################################
+############################### Service Account and Roles  ##################################
+#############################################################################################
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: space-cloud-gateway
+  namespace: space-cloud
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: space-cloud-gateway
+  namespace: space-cloud
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: space-cloud-gateway
+  namespace: space-cloud
+subjects:
+  - kind: ServiceAccount
+    name: space-cloud-gateway # Name is case sensitive
+    namespace: space-cloud
+roleRef:
+  kind: ClusterRole
+  name: space-cloud-gateway
+  apiGroup: rbac.authorization.k8s.io
+---
+#############################################################################################
+################################### Istio related config  ###################################
+#############################################################################################
+apiVersion: "security.istio.io/v1beta1"
+kind: "AuthorizationPolicy"
+metadata:
+  name: "auth-gateway"
+  namespace: space-cloud
+spec:
+  selector:
+    matchLabels:
+      app: gateway
+  rules:
+    - {}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: "space-cloud-gateway"
+  namespace: space-cloud
+spec:
+  host: "gateway.space-cloud.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: sc-gateway
+  namespace: space-cloud
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - "*"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: gateway
+  namespace: space-cloud
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - sc-gateway
+  http:
+    - route:
+        - destination:
+            port:
+              number: 4122
+            host: gateway.space-cloud.svc.cluster.local
+  tls:
+    - match:
+        - port: 443
+          sniHosts:
+            - '*'
+      route:
+        - destination:
+            port:
+              number: 4126
+            host: gateway.space-cloud.svc.cluster.local
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: space-cloud-gateway
+  namespace: space-cloud
+spec:
+  hosts:
+    - "gateway.space-cloud.svc.cluster.local"
+  http:
+    - match:
+        - port: 4122
+      route:
+        - destination:
+            host: "gateway.space-cloud.svc.cluster.local"
+            port:
+              number: 4122
+      retries:
+        attempts: 3
+        perTryTimeout: 60s
+    - match:
+        - port: 4126
+      route:
+        - destination:
+            host: "gateway.space-cloud.svc.cluster.local"
+            port:
+              number: 4126
+      retries:
+        attempts: 3
+        perTryTimeout: 60s
+---
+#############################################################################################
+##################################### Kubernetes config  ####################################
+#############################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: space-cloud
+  labels:
+    app: gateway
+    service: gateway
+spec:
+  ports:
+    - targetPort: 4122
+      port: 4122
+      name: http
+    - targetPort: 4126
+      port: 4126
+      name: https
+  selector:
+    app: gateway
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: space-cloud
+  labels:
+    app: gateway
+spec:
+  selector:
+    matchLabels:
+      app: gateway
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: gateway
+        clusterId: "{{ .Values.clusterId }}"
+    spec:
+      serviceAccountName: space-cloud-gateway
+      containers:
+        - name: gateway
+          command: [ "./app", "run" ]
+          image: "{{ .Values.gateway.image.name }}:{{ .Values.version }}"
+          imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
+          env:
+            - name: "NODE_ID"
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: "RUNNER_ADDR"
+              value: "runner.space-cloud.svc.cluster.local:4050"
+            - name: "GOOGLE_APPLICATION_CREDENTIALS"
+              value: "/root/.gcp/credentials.json"
+            - name: "ADMIN_USER"
+              value: "{{ .Values.admin.username }}"
+            - name: "ADMIN_PASS"
+              value: "{{ .Values.admin.password }}"
+            - name: "ADMIN_SECRET"
+              value: "{{ .Values.admin.secret }}"
+            - name: "LOG_LEVEL"
+              value: "{{ .Values.meta.logLevel }}"
+            - name: "LOG_FORMAT"
+              value: "{{ .Values.meta.logFormat }}"
+            - name: "STORE_TYPE"
+              value: "kube"
+            - name: "LETSENCRYPT_STORE"
+              value: "kube"
+            - name: "DEV"
+              value: "{{ .Values.devMode }}"
+            - name: "SSL_ENABLE"
+              value: "true"
+            - name: "CLUSTER_ID"
+              value: "{{ .Values.clusterId }}"
+            - name: "REDIS_CONN"
+              value: "{{ .Values.connections.redisConn }}"
+            - name: "DISABLE_UI"
+              value: "{{ .Values.gateway.disableUI }}"
+          {{ range $key, $value := .Values.gateway.envs }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote}}
+          {{ end -}}
+          {{ if .Values.gateway.custom_ssl_secret }}
+            - name: "SSL_CERT"
+              value: "/secrets/{{ .Values.gateway.custom_ssl_cert_key }}"
+            - name: "SSL_KEY"
+              value: "/secrets/{{ .Values.gateway.custom_ssl_private_key }}"
+          volumeMounts:
+          - name: ssl_certs
+            mountPath: "/secrets"
+          {{ end }}                         
+          ports:
+            - containerPort: 4122
+            - containerPort: 4126
+          resources:
+            requests:
+              memory: "{{ .Values.gateway.resources.memory }}"
+              cpu: "{{ .Values.gateway.resources.cpu }}"
+      {{ if .Values.gateway.custom_ssl_secret }}
+      volumes:
+      - name: ssl_certs
+        secret:
+          secretName: "{{ .Values.gateway.custom_ssl_secret }}"
+          defaultMode: 0400
+      {{ end }}               
+      terminationGracePeriodSeconds: 300
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gateway
+  namespace: space-cloud
+  labels:
+    app: gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gateway
+  minReplicas: {{ .Values.gateway.autoScaler.minReplicas }}
+  maxReplicas: {{ .Values.gateway.autoScaler.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.gateway.autoScaler.averageCPUUtilization }}
