@@ -118,7 +118,7 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 	s.adminMan.SetIntegrationConfig(integrations)
 	s.projectConfig.Integrations = integrations
 
-	if err := s.store.SetResource(ctx, resourceID, s.projectConfig.Integrations); err != nil {
+	if err := s.store.SetResource(ctx, resourceID, integrationConfig); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -179,7 +179,7 @@ func (s *Manager) RemoveIntegration(ctx context.Context, id string, params model
 		// remove integration hook belonging to particular integration
 		if hook.IntegrationID == id {
 			resourceID := config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegrationHook, hook.ID)
-			delete(s.projectConfig.Integrations, resourceID)
+			delete(s.projectConfig.IntegrationHooks, resourceID)
 			if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 				return http.StatusInternalServerError, err
 			}
@@ -191,7 +191,7 @@ func (s *Manager) RemoveIntegration(ctx context.Context, id string, params model
 	_ = s.integrationMan.SetConfig(s.projectConfig.Integrations, s.projectConfig.IntegrationHooks)
 
 	// Update the stores
-	if err := s.store.DeleteResource(ctx, projectResourceID); err != nil {
+	if err := s.store.DeleteProject(ctx, id); err != nil {
 		return http.StatusInternalServerError, err
 	}
 	if err := s.store.DeleteResource(ctx, integrationResourceID); err != nil {
@@ -272,7 +272,7 @@ func (s *Manager) AddIntegrationHook(ctx context.Context, integrationID string, 
 	}
 
 	// Add the hook and store the config
-	resourceID = config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, hookConfig.ID)
+	resourceID = config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegrationHook, hookConfig.ID)
 	s.projectConfig.IntegrationHooks[resourceID] = hookConfig
 	s.integrationMan.SetIntegrationHooks(s.projectConfig.IntegrationHooks)
 
@@ -309,7 +309,7 @@ func (s *Manager) RemoveIntegrationHook(ctx context.Context, integrationID, hook
 	}
 
 	// Delete the hook
-	resourceID = config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, hookID)
+	resourceID = config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegrationHook, hookID)
 	delete(s.projectConfig.IntegrationHooks, resourceID)
 	s.integrationMan.SetIntegrationHooks(s.projectConfig.IntegrationHooks)
 
@@ -347,7 +347,7 @@ func (s *Manager) GetIntegrationHooks(ctx context.Context, integrationID, hookID
 
 	// Return the provided hook if id is present
 	if hookID != "*" {
-		resourceID = config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegration, hookID)
+		resourceID = config.GenerateResourceID(s.clusterID, "noProject", config.ResourceIntegrationHook, hookID)
 		hook, ok := s.projectConfig.IntegrationHooks[resourceID]
 		if !ok {
 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Integration hook (%s) does not exist", hookID), nil, nil)

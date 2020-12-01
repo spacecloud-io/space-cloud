@@ -36,7 +36,7 @@ func (c *Cache) SetCachingConfig(ctx context.Context, cacheConfig *config.CacheC
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if cacheConfig == nil {
+	if cacheConfig == nil || !cacheConfig.Enabled {
 		return nil
 	}
 
