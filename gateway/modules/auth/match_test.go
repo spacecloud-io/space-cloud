@@ -738,11 +738,11 @@ func TestModule_matchFunc(t *testing.T) {
 			args: args{
 				httpParams: params{
 					url:    "http://localhost/validate",
-					claims: map[string]interface{}{"role": "admin"},
-					params: map[string]interface{}{"auth": map[string]interface{}{}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"},
+					claims: map[string]interface{}{"id": "4f42ofgrlg34o", "name": "tony"},
+					params: map[string]interface{}{"auth": map[string]interface{}{"id": "4f42ofgrlg34o"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRmNDJvZmdybGczNG8iLCJuYW1lIjoidG9ueSJ9.8ckk11R62P6KXly3d5Fx2I2NAaSukqTA0Zx-FreebpE"},
 				},
-				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: map[string]interface{}{"role": "admin"}},
-				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"}}},
+				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: "{\"id\": \"{{ .auth.id }}\", \"name\": \"tony\"}"},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"id": "4f42ofgrlg34o"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRmNDJvZmdybGczNG8iLCJuYW1lIjoidG9ueSJ9.8ckk11R62P6KXly3d5Fx2I2NAaSukqTA0Zx-FreebpE"}}},
 			want:    nil,
 			wantErr: false,
 		},
@@ -752,11 +752,11 @@ func TestModule_matchFunc(t *testing.T) {
 			args: args{
 				httpParams: params{
 					url:    "http://localhost/validate",
-					claims: map[string]interface{}{"role": "admin"},
+					claims: map[string]interface{}{"id": "4f42ofgrlg34o", "name": "tony"},
 					params: map[string]interface{}{"service": "http://localhost:9000/"},
 				},
-				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: map[string]interface{}{"role": "admin"}, ReqTmpl: `{"service":"{{.args.auth.serviceAddr}}"}`, Template: config.TemplatingEngineGo},
-				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"serviceAddr": "http://localhost:9000/"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"}}},
+				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: "{\"id\": \"{{ .args.auth.id }}\", \"name\": \"tony\"}", ReqTmpl: `{"service":"{{.args.auth.serviceAddr}}"}`, Template: config.TemplatingEngineGo},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"id": "4f42ofgrlg34o", "serviceAddr": "http://localhost:9000/"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRmNDJvZmdybGczNG8ifQ.kUx6dq6qHDYX2HyPthgthi3Rch5UPUrqm5Io1cbKVr0"}}},
 			want:    nil,
 			wantErr: false,
 		},

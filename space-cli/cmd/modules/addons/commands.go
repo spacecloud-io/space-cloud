@@ -123,7 +123,7 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 
 	name := viper.GetString("name")
 	if name == "" {
-		utils.LogInfo(fmt.Sprintf("--name flag not provided using the name (%s) for database", name))
+		utils.LogInfo(fmt.Sprintf("--name flag not provided using the name (%s) for database", dbType))
 		name = dbType
 	}
 
