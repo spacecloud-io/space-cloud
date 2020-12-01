@@ -8,6 +8,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/caching"
 	"github.com/spaceuptech/space-cloud/gateway/modules/global/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/modules/global/routing"
 )
@@ -133,6 +134,10 @@ func (m *mockAdminSyncmanInterface) GetConfig() *config.License {
 
 type mockModulesInterface struct {
 	mock.Mock
+}
+
+func (m *mockModulesInterface) Caching() *caching.Cache {
+	return m.Called().Get(0).(*caching.Cache)
 }
 
 func (m *mockModulesInterface) SetInitialProjectConfig(ctx context.Context, config config.Projects) error {

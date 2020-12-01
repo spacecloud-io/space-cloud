@@ -62,6 +62,10 @@ type mockSyncmanEventingInterface struct {
 	mock.Mock
 }
 
+func (m *mockSyncmanEventingInterface) GetSpaceCloudPort() int {
+	return 4122
+}
+
 func (m *mockSyncmanEventingInterface) GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error) {
 	c := m.Called(ctx, project, token)
 	return c.String(0), c.Error(1)

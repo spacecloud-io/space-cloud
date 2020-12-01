@@ -92,6 +92,18 @@ func (m *Manager) IsDBConfigValid(config config.DatabaseConfigs) error {
 	return nil
 }
 
+// CheckIfCachingCanBeEnabled checks if the user can configure caching module
+func (m *Manager) CheckIfCachingCanBeEnabled(ctx context.Context) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	if m.quotas.IntegrationLevel < 5 {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "plan needs to be upgraded to use caching module", nil, nil)
+	}
+
+	return nil
+}
+
 // ValidateProjectSyncOperation validates if an operation is permitted based on the mode
 func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config.ProjectConfig) bool {
 	m.lock.RLock()

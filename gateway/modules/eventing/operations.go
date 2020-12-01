@@ -10,6 +10,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // IsEnabled returns whether the eventing module is enabled or not
@@ -126,5 +127,37 @@ func (m *Module) SetRealtimeTriggers(eventingRules []*config.EventingTrigger) {
 		key := strings.Join([]string{"realtime", incomingRule.Options["db"], incomingRule.Options["col"], incomingRule.Type}, "-")
 		incomingRule.ID = key
 		m.config.InternalRules[key] = incomingRule
+	}
+}
+
+func (m *Module) SetInternalTriggersFromDbRules(dbRules config.DatabaseRules) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	// first delete the cache internal rules
+	for _, internalRule := range m.config.InternalRules {
+		if strings.HasPrefix("cache", internalRule.ID) {
+			delete(m.config.InternalRules, internalRule.ID)
+		}
+	}
+
+	mutations := []string{utils.EventDBCreate, utils.EventDBUpdate, utils.EventDBDelete}
+	for _, databaseSchema := range dbRules {
+		if databaseSchema.EnableCacheInvalidation {
+			// create events on db mutation
+			for _, mutationType := range mutations {
+				genEventTriggerName := fmt.Sprintf("cache--%s--%s--%s", databaseSchema.DbAlias, databaseSchema.Table, mutationType)
+				m.config.InternalRules[genEventTriggerName] = &config.EventingTrigger{
+					ID:       genEventTriggerName,
+					URL:      fmt.Sprintf("http://127.0.0.1:%d/v1/external/caching/%s/instant-invalidate", m.syncMan.GetSpaceCloudPort(), m.project),
+					Type:     mutationType,
+					Retries:  3,
+					Timeout:  5000,
+					Options:  map[string]string{"col": databaseSchema.Table, "db": databaseSchema.DbAlias},
+					Tmpl:     config.TemplatingEngineGo,
+					OpFormat: "yaml",
+				}
+			}
+		}
 	}
 }

@@ -11,6 +11,11 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
+// GetSpaceCloudPort returns the port sc is running on
+func (s *Manager) GetSpaceCloudPort() int {
+	return s.port
+}
+
 // GetEventSource returns the source id for the space cloud instance
 func (s *Manager) GetEventSource() string {
 	return fmt.Sprintf("sc-%s", s.nodeID)

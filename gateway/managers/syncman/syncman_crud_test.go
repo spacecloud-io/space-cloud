@@ -7,10 +7,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/caching"
+
+	"github.com/stretchr/testify/mock"
 )
 
 func TestManager_SetDatabaseConnection(t *testing.T) {
@@ -240,6 +241,11 @@ func TestManager_RemoveDatabaseConfig(t *testing.T) {
 					method:         "SetDatabaseConfig",
 					args:           []interface{}{mock.Anything, "1", config.DatabaseConfigs{}},
 					paramsReturned: []interface{}{nil},
+				},
+				{
+					method:         "Caching",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{caching.Init("chicago", "nodeid")},
 				},
 			},
 			storeMockArgs: []mockArgs{

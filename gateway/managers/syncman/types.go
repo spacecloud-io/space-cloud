@@ -5,6 +5,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/caching"
 	"github.com/spaceuptech/space-cloud/gateway/modules/global/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/modules/global/routing"
 )
@@ -75,6 +76,7 @@ type ModulesInterface interface {
 	GetAuthModuleForSyncMan(projectID string) (model.AuthSyncManInterface, error)
 	LetsEncrypt() *letsencrypt.LetsEncrypt
 	Routing() *routing.Routing
+	Caching() *caching.Cache
 
 	// Delete
 	Delete(projectID string)

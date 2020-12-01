@@ -149,6 +149,7 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 
 	// Create a new read request
 	req := &model.ReadRequest{Find: find, Operation: utils.All}
+	req.Cache = rule.Cache
 
 	// Execute the read request
 	attr := map[string]string{"project": project, "db": rule.DB, "col": rule.Col}

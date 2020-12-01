@@ -191,7 +191,11 @@ type TypeMakeHTTPRequest func(ctx context.Context, method, url, token, scToken s
 type GetSecrets func(project, secretName, key string) (string, error)
 
 // DefaultContextTime used for creating default context time for endpoints
-const DefaultContextTime = 10
+const DefaultContextTime = 100
+
+// DefaultCacheTTLTimeout used for setting default ttl expiry if not specified
+// the value is in seconds, current value corresponds to 5 minutes
+const DefaultCacheTTLTimeout = 60 * 5
 
 // AdminSecretKID describes the kid to be used for admin secrets
 const AdminSecretKID = "sc-admin-kid"

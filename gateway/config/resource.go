@@ -26,6 +26,7 @@ var ResourceFetchingOrder = []Resource{
 	ResourceCluster,
 	ResourceIntegration,
 	ResourceIntegrationHook,
+	ResourceCacheConfig,
 }
 
 // Resource is a resource type
@@ -80,6 +81,9 @@ const (
 	ResourceCluster Resource = "cluster"
 	// ResourceLicense is a resource
 	ResourceLicense Resource = "license"
+
+	// ResourceLicense is a resource
+	ResourceCacheConfig Resource = "cache-config"
 
 	// ResourceDeployService is a resource
 	// ResourceDeployService Resource = "service"

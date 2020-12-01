@@ -11,6 +11,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -115,8 +116,8 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 	}
 
 	go func() {
-		//  batch operation cannot be performed with aggregation or joins or when post processing is applied
-		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0)
+		//  batch operation cannot be performed with aggregation or joins or when post processing is applied or when cache is not nil
+		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0 || req.Cache != nil)
 		req.Options.HasOptions = hasOptions
 		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
 
@@ -211,6 +212,11 @@ func generateReadRequest(ctx context.Context, field *ast.Field, store utils.M) (
 		readRequest.Operation = utils.Distinct
 	}
 
+	readRequest.Cache, err = generateCacheOptions(ctx, field.Directives, store)
+	if err != nil {
+		return nil, false, err
+	}
+
 	// Get extra arguments
 	readRequest.Extras = generateArguments(ctx, field, store)
 
@@ -250,6 +256,11 @@ func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string, 
 		v := selection.(*ast.Field)
 		// skip aggregate field & fields with directives
 		if v.Name.Value == utils.GraphQLAggregate || len(v.Directives) > 0 {
+			continue
+		}
+
+		// Skip dbFetchTs fields
+		if v.Name.Value == "_dbFetchTs" {
 			continue
 		}
 
@@ -444,6 +455,50 @@ func ExtractWhereClause(args []*ast.Argument, store utils.M) (map[string]interfa
 	}
 
 	return utils.M{}, nil
+}
+
+func generateCacheOptions(ctx context.Context, directives []*ast.Directive, store utils.M) (*config.ReadCacheOptions, error) {
+	for _, directive := range directives {
+		for _, argument := range directive.Arguments {
+			switch argument.Name.Value {
+			case "cache":
+				temp, err := utils.ParseGraphqlValue(argument.Value, store)
+				if err != nil {
+					return nil, err
+				}
+
+				cacheObj, ok := temp.(map[string]interface{})
+				if !ok {
+					return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type provided for field cache in arguments expecting (object) got %v", reflect.TypeOf(temp)), err, nil)
+				}
+				ttlValue, ok := cacheObj["ttl"]
+				if !ok {
+					ttlValue = 0
+				}
+
+				ttl, ok := ttlValue.(int)
+				if !ok {
+					return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type provided for field ttl in arguments expecting (integer) got %v", reflect.TypeOf(temp)), err, nil)
+				}
+
+				instantInvalidateObj, ok := cacheObj["instantInvalidate"]
+				if !ok {
+					instantInvalidateObj = false
+				}
+
+				instantInvalidate, ok := instantInvalidateObj.(bool)
+				if !ok {
+					return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type provided for field instantInvalidate in arguments expecting (bool) got %v", reflect.TypeOf(temp)), err, nil)
+				}
+
+				return &config.ReadCacheOptions{
+					TTL:               int64(ttl),
+					InstantInvalidate: instantInvalidate,
+				}, nil
+			}
+		}
+	}
+	return nil, nil
 }
 
 func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (*model.ReadOptions, bool, error) {

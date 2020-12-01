@@ -73,6 +73,8 @@ func (m *Module) SetInitialProjectConfig(ctx context.Context, projects config.Pr
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set routing module config", err, nil)
 		}
 		m.GlobalMods.Routing().SetGlobalConfig(project.IngressGlobal)
+		m.eventing.SetInternalTriggersFromDbRules(project.DatabaseRules)
+		m.GlobalMods.Caching().AddDBRules(projectID, project.DatabaseRules)
 	}
 	return nil
 }
@@ -103,7 +105,7 @@ func (m *Module) SetDatabaseConfig(ctx context.Context, projectID string, databa
 	}
 
 	// Set the db rule config too
-	if err := m.SetDatabaseRulesConfig(ctx, ruleConfigs); err != nil {
+	if err := m.SetDatabaseRulesConfig(ctx, projectID, ruleConfigs); err != nil {
 		return err
 	}
 
@@ -130,10 +132,12 @@ func (m *Module) SetDatabaseSchemaConfig(ctx context.Context, projectID string, 
 }
 
 // SetDatabaseRulesConfig set database rules of db module
-func (m *Module) SetDatabaseRulesConfig(ctx context.Context, ruleConfigs config.DatabaseRules) error {
+func (m *Module) SetDatabaseRulesConfig(ctx context.Context, projectID string, ruleConfigs config.DatabaseRules) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of db rule in db module", nil)
 	m.auth.SetDatabaseRules(ruleConfigs)
 	m.realtime.SetDatabaseRules(ruleConfigs)
+	m.eventing.SetInternalTriggersFromDbRules(ruleConfigs)
+	m.GlobalMods.Caching().AddDBRules(projectID, ruleConfigs)
 	return nil
 }
 

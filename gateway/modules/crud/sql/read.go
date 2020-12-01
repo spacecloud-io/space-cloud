@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
@@ -46,7 +47,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 
 		isJoin := len(req.Options.Join) > 0
 
-		// Throw error if select is not provided during joins
+		// Throw error if both select and aggregate is not provided during joins
 		if isJoin && len(req.Options.Select) == 0 && len(req.Aggregate) == 0 {
 			return "", nil, errors.New("select cannot be nil when using joins")
 		}
@@ -87,6 +88,10 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		// Check if the select clause exists
 		if req.Options.Select != nil {
 			for key := range req.Options.Select {
+				if key == "_dbFetchTs" {
+					continue
+				}
+
 				if !isJoin {
 					selArray = append(selArray, key)
 					continue
@@ -280,6 +285,8 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], mapping)
 		}
 
+		mapping["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+
 		return 1, mapping, make(map[string]map[string]string), nil
 
 	case utils.All, utils.Distinct:
@@ -305,6 +312,7 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 
 			if req.Options == nil || req.Options.ReturnType == "table" || len(req.Options.Join) == 0 {
 				processAggregate(row, row, isAggregate)
+				row["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 				array = append(array, row)
 				continue
 			}
@@ -352,6 +360,7 @@ func processAggregate(row, m map[string]interface{}, isAggregate bool) {
 		}
 	}
 }
+
 func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool, row map[string]interface{}, join []model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess, joinMapping map[string]map[string]string) {
 	m := map[string]interface{}{}
 	keyMap := map[string]interface{}{}
@@ -392,6 +401,7 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 		// Process aggregate field only if its the root table that we are processing
 		if length == 0 {
 			processAggregate(row, m, isAggregate)
+			m["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 		}
 	}
 
@@ -399,7 +409,6 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 		return
 	}
 
-	// Process joint tables for rows
 	for _, j := range join {
 		var arr []interface{}
 		utils.GenerateJoinKeys(j.Table, j.On, row, joinMapping)

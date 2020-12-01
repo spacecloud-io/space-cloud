@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spaceuptech/helpers"
 	"go.mongodb.org/mongo-driver/bson"
@@ -153,6 +154,8 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 				return 0, nil, nil, err
 			}
 
+			doc["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+
 			if len(req.Aggregate) > 0 {
 				getNestedObject(doc)
 			}
@@ -188,6 +191,8 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 		if err != nil {
 			return 0, nil, nil, err
 		}
+
+		res["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 
 		return 1, res, nil, nil
 
