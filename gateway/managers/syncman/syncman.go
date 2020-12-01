@@ -135,6 +135,11 @@ func (s *Manager) Start(port int) error {
 		s.lockServices.RUnlock()
 	})
 
+	// Set caching config
+	if err := s.modules.Caching().SetCachingConfig(context.TODO(), globalConfig.CacheConfig); err != nil {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set config of caching module, ensure redis instance is running", err, nil)
+	}
+
 	// Set metric config
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Successfully loaded initial copy of config file", map[string]interface{}{})
 	s.globalModules.SetMetricsConfig(globalConfig.ClusterConfig.EnableTelemetry)
@@ -246,7 +251,11 @@ func (s *Manager) Start(port int) error {
 				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
 				return
 			}
-
+		case config.ResourceCacheConfig:
+			if err := s.modules.Caching().SetCachingConfig(ctx, s.projectConfig.CacheConfig); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
+				return
+			}
 		default:
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unknown resource type provided", err, map[string]interface{}{"resourceType": resourceType})
 			return

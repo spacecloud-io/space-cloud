@@ -12,11 +12,11 @@ import (
 
 // CallWithContext invokes function on a service. The response from the function is returned back along with
 // any errors if they occurred.
-func (m *Module) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, params interface{}) (int, interface{}, error) {
+func (m *Module) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, req *model.FunctionsRequest) (int, interface{}, error) {
 	reqParams.Payload = map[string]interface{}{
 		"service":  service,
 		"endpoint": function,
-		"params":   params,
+		"params":   req.Params,
 	}
 	hookResponse := m.integrationMan.InvokeHook(ctx, reqParams)
 	if hookResponse.CheckResponse() {
@@ -29,7 +29,8 @@ func (m *Module) CallWithContext(ctx context.Context, service, function, token s
 		return hookResponse.Status(), hookResponse.Result(), nil
 	}
 
-	status, result, err := m.handleCall(ctx, service, function, token, reqParams.Claims, params)
+	// TODO: Add metric hook for cache
+	status, result, err := m.handleCall(ctx, service, function, token, reqParams.Claims, req.Params, req.Cache)
 	if err != nil {
 		return status, result, err
 	}

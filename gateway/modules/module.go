@@ -46,6 +46,7 @@ func newModule(projectID, clusterID, nodeID string, managers *managers.Managers,
 	c.SetAdminManager(adminMan)
 	c.SetGetSecrets(syncMan.GetSecrets)
 	c.SetIntegrationManager(integrationMan)
+	c.SetCachingModule(globalMods.Caching())
 
 	s := schema.Init(clusterID, c)
 	c.SetSchema(s)
@@ -55,10 +56,11 @@ func newModule(projectID, clusterID, nodeID string, managers *managers.Managers,
 	c.SetAuth(a)
 
 	fn := functions.Init(clusterID, a, syncMan, integrationMan, metrics.AddFunctionOperation)
+	fn.SetCachingModule(globalMods.Caching())
 	f := filestore.Init(a, metrics.AddFileOperation)
 	f.SetGetSecrets(syncMan.GetSecrets)
 
-	e, err := eventing.New(projectID, nodeID, a, c, s, syncMan, f, metrics.AddEventingType)
+	e, err := eventing.New(clusterID, projectID, nodeID, a, c, s, syncMan, f, metrics.AddEventingType)
 	if err != nil {
 		return nil, err
 	}

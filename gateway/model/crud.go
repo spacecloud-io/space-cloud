@@ -1,5 +1,7 @@
 package model
 
+import "github.com/spaceuptech/space-cloud/gateway/config"
+
 // CreateRequest is the http body received for a create request
 type CreateRequest struct {
 	Document  interface{} `json:"doc"`
@@ -16,8 +18,9 @@ type ReadRequest struct {
 	Options     *ReadOptions           `json:"options"`
 	IsBatch     bool                   `json:"isBatch"`
 	Extras      map[string]interface{} `json:"extras"`
-	PostProcess map[string]*PostProcess
-	MatchWhere  []map[string]interface{}
+	PostProcess map[string]*PostProcess `json:"postProcess"`
+	MatchWhere  []map[string]interface{} `json:"matchWhere"`
+	Cache     *config.ReadCacheOptions `json:"cache"`
 }
 
 // ReadOptions is the options required for a read request

@@ -181,6 +181,8 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 		}
 	}
 
+	_ = s.modules.Caching().PurgeCache(ctx, project, &model.CachePurgeRequest{Resource: config.ResourceDatabaseSchema, DbAlias: dbAlias, ID: "*"})
+
 	return http.StatusOK, nil
 }
 
@@ -748,7 +750,7 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 		return http.StatusOK, []interface{}{dbConfig}, nil
 	}
 
-	services := []interface{}{}
+	services := make([]interface{}, 0)
 	for _, value := range projectConfig.DatabaseConfigs {
 		services = append(services, value)
 	}
