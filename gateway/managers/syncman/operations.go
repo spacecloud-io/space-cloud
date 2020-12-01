@@ -121,3 +121,10 @@ func (s *Manager) GetConfig(projectID string) (*config.ProjectConfig, error) {
 
 	return nil, errors.New("given project is not present in state")
 }
+
+// HealthCheck checks the health of gateway
+func (s *Manager) HealthCheck() error {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return nil
+}

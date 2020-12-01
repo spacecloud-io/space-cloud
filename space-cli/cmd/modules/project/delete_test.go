@@ -79,7 +79,7 @@ func Test_deleteProject(t *testing.T) {
 
 			transport.Client = &mockTransport
 
-			if err := deleteProject(tt.args.project); (err != nil) != tt.wantErr {
+			if err := DeleteProject(tt.args.project); (err != nil) != tt.wantErr {
 				t.Errorf("deleteProject() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

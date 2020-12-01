@@ -44,161 +44,47 @@ func Commands() []*cobra.Command {
 		Use:   "setup",
 		Short: "setup development environment",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			err := viper.BindPFlag("username", cmd.Flags().Lookup("username"))
+			err := viper.BindPFlag("local-chart-dir", cmd.Flags().Lookup("local-chart-dir"))
 			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('username')", nil)
+				_ = utils.LogError("Unable to bind the flag ('local-chart-dir')", nil)
 			}
-			err = viper.BindPFlag("key", cmd.Flags().Lookup("key"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('key')", nil)
+			if err := viper.BindPFlag("file", cmd.Flags().Lookup("file")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('file')", nil)
 			}
-			err = viper.BindPFlag("config", cmd.Flags().Lookup("config"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('config')", nil)
-			}
-			err = viper.BindPFlag("version", cmd.Flags().Lookup("version"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('version')", nil)
-			}
-			err = viper.BindPFlag("secret", cmd.Flags().Lookup("secret"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('secret')", nil)
-			}
-			err = viper.BindPFlag("dev", cmd.Flags().Lookup("dev"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('dev')", nil)
-			}
-			err = viper.BindPFlag("port-http", cmd.Flags().Lookup("port-http"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('port-http", nil)
-			}
-			err = viper.BindPFlag("port-https", cmd.Flags().Lookup("port-https"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('port-https", nil)
-			}
-			err = viper.BindPFlag("volume", cmd.Flags().Lookup("volume"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('v')", nil)
-			}
-			err = viper.BindPFlag("env", cmd.Flags().Lookup("env"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('e')", nil)
-			}
-			err = viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name"))
-			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
-			}
-			if err := viper.BindPFlag("image-prefix", cmd.Flags().Lookup("image-prefix")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('image-prefix')", nil)
+			if err := viper.BindPFlag("set", cmd.Flags().Lookup("set")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('set')", nil)
 			}
 		},
 		RunE: actionSetup,
 	}
 
-	setup.Flags().StringP("username", "", "", "The username used for login")
-	err := viper.BindEnv("username", "USER_NAME")
+	setup.Flags().StringP("local-chart-dir", "c", "", "Path to the space cloud helm chart directory")
+	err := viper.BindEnv("local-chart-dir", "LOCAL_CHART_DIR")
 	if err != nil {
-		_ = utils.LogError("Unable to bind flag ('username') to environment variables", nil)
+		_ = utils.LogError("Unable to bind flag ('local-chart-dir') to environment variables", nil)
 	}
 
-	setup.Flags().StringP("key", "", "", "The access key used for login")
-	err = viper.BindEnv("key", "KEY")
+	setup.Flags().StringP("file", "f", "", "Path to the config yaml file")
+	err = viper.BindEnv("file", "FILE")
 	if err != nil {
-		_ = utils.LogError("Unable to bind flag ('key' to environment variables", nil)
+		_ = utils.LogError("Unable to bind flag ('file' to environment variables", nil)
 	}
 
-	setup.Flags().StringP("config", "", "", "The config used to bind config file")
-	err = viper.BindEnv("config", "CONFIG")
+	setup.Flags().StringP("set", "", "", "Set root string values of chart in format foo1=bar1,foo2=bar2")
+	err = viper.BindEnv("`set`", "SET")
 	if err != nil {
-		_ = utils.LogError("Unable to bind flag ('config') to environment variables", nil)
-	}
-
-	setup.Flags().StringP("version", "", "", "The version is used to set SC version")
-	err = viper.BindEnv("version", "VERSION")
-	if err != nil {
-		_ = utils.LogError("Unable to bind flag ('version') to environment variables", nil)
-	}
-
-	setup.Flags().StringP("secret", "", "", "The jwt secret to start space-cloud with")
-	err = viper.BindEnv("secret", "JWT_SECRET")
-	if err != nil {
-		_ = utils.LogError("Unable to bind flag ('secret') to environment variables", nil)
-	}
-
-	setup.Flags().BoolP("dev", "", false, "Run space cloud in development mode")
-
-	setup.Flags().Int64P("port-http", "", 4122, "The port to use for HTTP")
-	err = viper.BindEnv("port-http", "PORT_HTTP")
-	if err != nil {
-		_ = utils.LogError("Unable to bind flag ('port-http') to environment variables", nil)
-	}
-
-	setup.Flags().Int64P("port-https", "", 4126, "The port to use for HTTPS")
-	err = viper.BindEnv("port-https", "PORT_HTTPS")
-	if err != nil {
-		_ = utils.LogError("Unable to bind flag ('port-https') to environment variables", nil)
-	}
-
-	setup.Flags().StringSliceP("volume", "v", []string{}, "Volumes to be attached to gateway")
-
-	setup.Flags().StringSliceP("env", "e", []string{}, "Environment variables to be provided to gateway")
-
-	setup.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
-	err = viper.BindEnv("cluster-name", "CLUSTER_NAME")
-	if err != nil {
-		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
-	}
-	setup.Flags().StringP("image-prefix", "", "spaceuptech", "Prefix to use for providing custom image names")
-
-	if err := setup.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
-		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
-	}
-
-	var upgrade = &cobra.Command{
-		Use:   "upgrade",
-		Short: "Upgrade development environment",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
-			}
-			if err := viper.BindPFlag("version", cmd.Flags().Lookup("version")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('version')", nil)
-			}
-			if err := viper.BindPFlag("image-prefix", cmd.Flags().Lookup("image-prefix")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('image-prefix')", nil)
-			}
-		},
-		RunE: actionUpgrade,
-	}
-	upgrade.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
-	upgrade.Flags().StringP("version", "", "default", "version to use for upgrade")
-	upgrade.Flags().StringP("image-prefix", "", "spaceuptech", "Prefix to use for providing custom image names")
-
-	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
-		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
-	}
-
-	if err := upgrade.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
-		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
+		_ = utils.LogError("Unable to bind flag ('`SET`' to environment variables", nil)
 	}
 
 	var destroy = &cobra.Command{
 		Use:   "destroy",
-		Short: "clean development environment & remove secrets",
+		Short: "Remove the space cloud cluster from kubernetes",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
 		RunE: actionDestroy,
-	}
-	destroy.Flags().StringP("cluster-name", "", "default", "The name of  space-cloud cluster")
-	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
-		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
-	}
-
-	if err := destroy.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
-		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
 	}
 
 	var apply = &cobra.Command{
@@ -250,37 +136,20 @@ func Commands() []*cobra.Command {
 	if err := stop.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
 		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
 	}
-	return []*cobra.Command{setup, upgrade, destroy, apply, start, stop}
+	return []*cobra.Command{setup, destroy, apply, start, stop}
 
 }
 
 func actionSetup(cmd *cobra.Command, args []string) error {
-	userName := viper.GetString("username")
-	key := viper.GetString("key")
-	config := viper.GetString("config")
-	version := viper.GetString("version")
-	secret := viper.GetString("secret")
-	local := viper.GetBool("dev")
-	portHTTP := viper.GetInt64("port-http")
-	portHTTPS := viper.GetInt64("port-https")
-	volumes := viper.GetStringSlice("volume")
-	environmentVariables := viper.GetStringSlice("env")
-	clusterName := viper.GetString("cluster-name")
-	imagePrefix := viper.GetString("image-prefix")
+	chartDir := viper.GetString("local-chart-dir")
+	valuesYamlFile := viper.GetString("file")
+	setValue := viper.GetString("set")
 
-	return Setup(userName, key, config, version, secret, imagePrefix, clusterName, local, portHTTP, portHTTPS, volumes, environmentVariables)
-}
-
-func actionUpgrade(cmd *cobra.Command, args []string) error {
-	clusterName := viper.GetString("cluster-name")
-	version := viper.GetString("version")
-	imagePrefix := viper.GetString("image-prefix")
-	return Upgrade(clusterName, version, imagePrefix)
+	return Setup(setValue, valuesYamlFile, chartDir)
 }
 
 func actionDestroy(cmd *cobra.Command, args []string) error {
-	clusterName := viper.GetString("cluster-name")
-	return Destroy(clusterName)
+	return Destroy()
 }
 
 func actionApply(cmd *cobra.Command, args []string) error {

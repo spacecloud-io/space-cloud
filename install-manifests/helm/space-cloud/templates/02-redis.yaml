@@ -1,0 +1,106 @@
+#############################################################################################
+############################### Service Account and Roles  ##################################
+#############################################################################################
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis
+  namespace: space-cloud
+---
+#############################################################################################
+################################### Istio related config  ###################################
+#############################################################################################
+apiVersion: "security.istio.io/v1beta1"
+kind: "AuthorizationPolicy"
+metadata:
+  name: "auth-redis"
+  namespace: space-cloud
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  rules:
+    - {}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: "space-cloud-redis"
+  namespace: space-cloud
+spec:
+  host: "redis.space-cloud.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: space-cloud-redis
+  namespace: space-cloud
+spec:
+  hosts:
+    - "redis.space-cloud.svc.cluster.local"
+  tcp:
+    - match:
+        - port: 6379
+      route:
+        - destination:
+            host: "redis.space-cloud.svc.cluster.local"
+            port:
+              number: 6379
+---
+#############################################################################################
+##################################### Kubernetes config  ####################################
+#############################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: redis
+    service: redis
+  name: redis
+  namespace: space-cloud
+spec:
+  ports:
+    - name: tcp
+      port: 6379
+      protocol: TCP
+      targetPort: 6379
+  selector:
+    app: redis
+  sessionAffinity: None
+  type: "ClusterIP"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis
+  name: redis
+  namespace: space-cloud
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      serviceAccountName: redis
+      containers:
+        - name: redis
+          image: "{{ .Values.redis.image.name }}:{{ .Values.redis.image.version }}"
+          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              cpu: {{ .Values.redis.resources.limits.cpu }}
+              memory: {{ .Values.redis.resources.limits.memory }}
+            requests:
+              memory: {{ .Values.redis.resources.requests.memory }}
+              cpu: {{ .Values.redis.resources.requests.cpu }}
+      terminationGracePeriodSeconds: 300
