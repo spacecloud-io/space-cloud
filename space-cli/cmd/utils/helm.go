@@ -17,31 +17,9 @@ import (
 
 // HelmInstall install helm chart
 func HelmInstall(chartReleaseName, chartLocation, downloadURL, namespace string, valuesFileObj map[string]interface{}) (*chart.Chart, error) {
-	settings := cli.New()
-	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), log.Printf); err != nil {
+	actionConfig, helmChart, err := createChart(chartLocation, downloadURL)
+	if err != nil {
 		return nil, err
-	}
-
-	var helmChart *chart.Chart
-	var err error
-	if chartLocation == "" {
-		res, err := http.Get(downloadURL)
-		if err != nil {
-			return nil, err
-		}
-		if res.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("received invalid status code (%s)", res.Status)
-		}
-		helmChart, err = loader.LoadArchive(res.Body)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		helmChart, err = loader.Load(chartLocation)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	iCli := action.NewInstall(actionConfig)
@@ -53,6 +31,7 @@ func HelmInstall(chartReleaseName, chartLocation, downloadURL, namespace string,
 	if err != nil {
 		return nil, err
 	}
+
 	LogInfo(fmt.Sprintf("Successfully installed chart: (%s)", rel.Name))
 	return rel.Chart, nil
 }
@@ -69,8 +48,57 @@ func HelmUninstall(releaseName string) error {
 	if err != nil {
 		return err
 	}
+
 	LogInfo(fmt.Sprintf("Successfully removed chart: (%s)", rel.Release.Name))
 	return nil
+}
+
+// HelmUninstall uninstall helm chart
+func HelmUpgrade(releaseName, chartLocation, downloadURL, namespace string, valuesFileObj map[string]interface{}) (*chart.Chart, error) {
+	actionConfig, helmChart, err := createChart(chartLocation, downloadURL)
+	if err != nil {
+		return nil, err
+	}
+
+	uCli := action.NewUpgrade(actionConfig)
+	uCli.Namespace = namespace
+	rel, err := uCli.Run(releaseName, helmChart, valuesFileObj)
+	if err != nil {
+		return nil, err
+	}
+
+	LogInfo(fmt.Sprintf("Successfully upgraded chart: (%s)", rel.Name))
+	return rel.Chart, nil
+}
+
+func createChart(chartLocation, downloadURL string) (*action.Configuration, *chart.Chart, error) {
+	settings := cli.New()
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), log.Printf); err != nil {
+		return nil, nil, err
+	}
+
+	var helmChart *chart.Chart
+	var err error
+	if chartLocation == "" {
+		res, err := http.Get(downloadURL)
+		if err != nil {
+			return nil, nil, err
+		}
+		if res.StatusCode != http.StatusOK {
+			return nil, nil, fmt.Errorf("received invalid status code (%s)", res.Status)
+		}
+		helmChart, err = loader.LoadArchive(res.Body)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		helmChart, err = loader.Load(chartLocation)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	return actionConfig, helmChart, err
 }
 
 // ExtractValuesObj extract chart values from yaml file & cli flags

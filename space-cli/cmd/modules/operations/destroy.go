@@ -1,6 +1,10 @@
 package operations
 
 import (
+	"fmt"
+
+	"github.com/AlecAivazis/survey/v2"
+
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/project"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
@@ -11,6 +15,17 @@ func Destroy() error {
 	account, _, err := utils.LoginWithSelectedAccount()
 	if err != nil {
 		return utils.LogError("Ensure cluster is up and running & space cloud is accessible outside the cluster", err)
+	}
+
+	isOk := false
+	prompt := &survey.Confirm{
+		Message: fmt.Sprintf("Space cloud cluster with id (%s) will be destoryed, Do you want to continue", account.ID),
+	}
+	if err := survey.AskOne(prompt, &isOk); err != nil {
+		return err
+	}
+	if !isOk {
+		return nil
 	}
 
 	// Delete all projects
