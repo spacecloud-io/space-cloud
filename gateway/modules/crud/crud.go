@@ -41,6 +41,7 @@ type Module struct {
 	blocks         map[string]Crud
 	admin          *admin.Manager
 	integrationMan integrationManagerInterface
+	caching        cachingInterface
 	// function to get secrets from runner
 	getSecrets utils.GetSecrets
 }

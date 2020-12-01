@@ -93,7 +93,7 @@ func (m *Modules) SetDatabaseRulesConfig(ctx context.Context, projectID string, 
 	if err != nil {
 		return err
 	}
-	return module.SetDatabaseRulesConfig(ctx, ruleConfigs)
+	return module.SetDatabaseRulesConfig(ctx, projectID, ruleConfigs)
 }
 
 // SetDatabasePreparedQueryConfig set prepared config of database moudle

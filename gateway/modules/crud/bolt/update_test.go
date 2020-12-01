@@ -223,6 +223,7 @@ func TestBolt_Update(t *testing.T) {
 			if readCount != tt.want {
 				t.Errorf("Read() readCount = %v, want %v", readCount, tt.want)
 			}
+			removeTs(readResult)
 			if !reflect.DeepEqual(readResult, tt.want1) {
 				t.Log(reflect.TypeOf(readResult), reflect.TypeOf(tt.want1))
 				t.Errorf("Read() readResult = %v, want %v", readResult, tt.want1)

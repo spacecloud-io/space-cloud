@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
 	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
 	"github.com/spaceuptech/space-cloud/gateway/modules/functions"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/caching"
 	"github.com/spaceuptech/space-cloud/gateway/modules/global/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/modules/global/routing"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
@@ -120,4 +121,9 @@ func (m *Modules) LetsEncrypt() *letsencrypt.LetsEncrypt {
 // Routing returns the routing module
 func (m *Modules) Routing() *routing.Routing {
 	return m.GlobalMods.Routing()
+}
+
+// Caching returns the caching module
+func (m *Modules) Caching() *caching.Cache {
+	return m.GlobalMods.Caching()
 }

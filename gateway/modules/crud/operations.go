@@ -97,16 +97,37 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		return dataLoader.Load(ctx, key)()
 	}
 
-	n, result, _, err := crud.Read(ctx, col, req)
+	dbCacheOptions, err := m.caching.GetDatabaseKey(ctx, m.project, dbAlias, col, req)
+	if err != nil {
+		return nil, err
+	}
+	// TODO: Add metric hook for cache
+
+	// See if result is present in cache
+	var result interface{}
+	if !dbCacheOptions.IsCacheHit() {
+		// Perform the read operation
+		var n int64
+		var cacheJoinInfo map[string]map[string]string
+		n, result, cacheJoinInfo, err = crud.Read(ctx, col, req)
+
+		// Set result in cache & invoke the metric hook if the operation was successful
+		if err == nil {
+			if err := m.caching.SetDatabaseKey(ctx, m.project, dbAlias, col, &model.CacheDatabaseResult{MetricCount: n, Result: result}, dbCacheOptions, req.Cache, cacheJoinInfo); err != nil {
+				return nil, err
+			}
+
+			m.metricHook(m.project, dbAlias, col, n, model.Read)
+		}
+	} else {
+		cacheResult := dbCacheOptions.GetDatabaseResult()
+		result = cacheResult.Result
+		m.metricHook(m.project, dbAlias, col, cacheResult.MetricCount, model.Read)
+	}
 
 	// Process the response
 	if err := m.schema.CrudPostProcess(ctx, dbAlias, col, result); err != nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col), err, nil)
-	}
-
-	// Invoke the metric hook if the operation was successful
-	if err == nil {
-		m.metricHook(m.project, dbAlias, col, n, model.Read)
 	}
 
 	return result, err
@@ -348,7 +369,7 @@ func (m *Module) DescribeTable(ctx context.Context, dbAlias, col string) ([]mode
 	return crud.DescribeTable(ctx, col)
 }
 
-// RawBatch performs a db operaion for schema creation
+// RawBatch performs a db operation for schema creation
 func (m *Module) RawBatch(ctx context.Context, dbAlias string, batchedQueries []string) error {
 	m.RLock()
 	defer m.RUnlock()

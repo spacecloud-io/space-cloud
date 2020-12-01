@@ -158,3 +158,8 @@ func (m *Module) SetAdminManager(a *admin.Manager) {
 func (m *Module) SetIntegrationManager(i integrationManagerInterface) {
 	m.integrationMan = i
 }
+
+// SetCachingModule sets caching module
+func (m *Module) SetCachingModule(c cachingInterface) {
+	m.caching = c
+}

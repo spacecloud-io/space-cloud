@@ -67,7 +67,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
-		status, result, err := functions.CallWithContext(ctx, serviceID, function, token, reqParams, req.Params)
+		status, result, err := functions.CallWithContext(ctx, serviceID, function, token, reqParams, &req)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Receieved error from service call (%s:%s)", serviceID, function), err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())

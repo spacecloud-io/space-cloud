@@ -9,6 +9,7 @@ func GenerateEmptyConfig() *Config {
 		Integrations:     make(Integrations),
 		IntegrationHooks: make(IntegrationHooks),
 		License:          new(License),
+		CacheConfig:      new(CacheConfig),
 	}
 }
 

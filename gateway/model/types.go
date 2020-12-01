@@ -129,6 +129,7 @@ type SyncmanEventingInterface interface {
 	GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error)
 	GetAssignedTokens() (start, end int)
 	GetEventSource() string
+	GetSpaceCloudPort() int
 	GetNodeID() string
 	MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
 }

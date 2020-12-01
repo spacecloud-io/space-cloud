@@ -5,6 +5,8 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 
@@ -59,6 +61,21 @@ func (m *Module) GetSCAccessToken(ctx context.Context) (string, error) {
 		"id":   m.nodeID,
 		"role": "SpaceCloud",
 	})
+}
+
+func (m *Module) IsSCAccessToken(ctx context.Context, token string) error {
+	claims, err := m.ParseToken(ctx, token)
+	if err != nil {
+		return err
+	}
+	roleValue, ok := claims["role"]
+	if !ok {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Claim (role) not present in jwt token", nil, nil)
+	}
+	if roleValue != "SpaceCloud" {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid sc access token provided, role mismatch", nil, nil)
+	}
+	return nil
 }
 
 // CreateToken generates a new JWT Token with the token claims

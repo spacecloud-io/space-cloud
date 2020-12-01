@@ -159,6 +159,22 @@ func validateResource(ctx context.Context, eventType string, globalConfig *confi
 			globalConfig.License = value
 		case config.ResourceDeleteEvent:
 		}
+
+		return nil
+
+	case config.ResourceCacheConfig:
+		switch eventType {
+		case config.ResourceAddEvent, config.ResourceUpdateEvent:
+			value := new(config.CacheConfig)
+			if err := mapstructure.Decode(resource, value); err != nil {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.Auth{}", reflect.TypeOf(resource)), nil, nil)
+			}
+
+			globalConfig.CacheConfig = value
+		case config.ResourceDeleteEvent:
+			globalConfig.CacheConfig.Enabled = false
+		}
+
 		return nil
 	}
 

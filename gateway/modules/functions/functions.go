@@ -21,6 +21,7 @@ type Module struct {
 	auth           model.AuthFunctionInterface
 	manager        *syncman.Manager
 	integrationMan integrationManagerInterface
+	caching        cachingInterface
 
 	// Variable configuration
 	project    string
@@ -96,4 +97,9 @@ func (m *Module) SetConfig(project string, c config.Services) error {
 		}
 	}
 	return nil
+}
+
+// SetCachingModule sets caching module
+func (m *Module) SetCachingModule(c cachingInterface) {
+	m.caching = c
 }
