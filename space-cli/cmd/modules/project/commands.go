@@ -86,5 +86,5 @@ func actionDeleteProjectConfig(cmd *cobra.Command, args []string) error {
 		return utils.LogError("Project not specified in flag", nil)
 	}
 
-	return deleteProject(project)
+	return DeleteProject(project)
 }

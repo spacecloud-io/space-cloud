@@ -1,0 +1,15 @@
+apiVersion: v3
+name: postgres
+version: 0.1.0 # Chart version
+description: Chart for PostgreSQL, an object-relational database management system (ORDBMS) with an emphasis on extensibility and on standards-compliance.
+type: application
+keywords:
+  - postgresql
+  - postgres
+  - database
+  - sql
+  - replication
+  - cluster
+home: https://spaceuptech.com/
+sources:
+  - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo

@@ -28,11 +28,12 @@ func (m *Mongo) GetConnectionState(ctx context.Context) bool {
 	// Ping to check if connection is established
 	err := m.client.Ping(ctx, nil)
 	if err != nil {
-		_ = m.client.Disconnect(ctx)
+		_ = m.client.Disconnect(context.Background())
 		m.client = nil
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to ping mongo database - %s", m.dbName), err, nil)
 		return false
 	}
+
 	return true
 }
 

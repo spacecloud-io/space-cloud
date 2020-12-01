@@ -179,14 +179,14 @@ spec:
     metadata:
       labels:
         app: gateway
-        clusterId: first-cluster
+        clusterId: "{{ .Values.clusterId }}"
     spec:
       serviceAccountName: space-cloud-gateway
       containers:
         - name: gateway
           command: [ "./app", "run" ]
-          image: spaceuptech/gateway:0.20.0
-          imagePullPolicy: IfNotPresent # IfNotPresent | Always
+          image: "{{ .Values.gateway.image.name }}:{{ .Values.version }}"
+          imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
           livenessProbe:
             exec:
               command:
@@ -204,34 +204,61 @@ spec:
             - name: "GOOGLE_APPLICATION_CREDENTIALS"
               value: "/root/.gcp/credentials.json"
             - name: "ADMIN_USER"
-              value: "admin"
+              value: "{{ .Values.admin.username }}"
             - name: "ADMIN_PASS"
-              value: "1234"
+              value: "{{ .Values.admin.password }}"
             - name: "ADMIN_SECRET"
-              value: "some-secret"
+              value: "{{ .Values.admin.secret }}"
             - name: "LOG_LEVEL"
-              value: "debug"
+              value: "{{ .Values.meta.logLevel }}"
             - name: "LOG_FORMAT"
-              value: "json"
+              value: "{{ .Values.meta.logFormat }}"
             - name: "STORE_TYPE"
               value: "kube"
             - name: "LETSENCRYPT_STORE"
               value: "kube"
             - name: "DEV"
-              value: "true" # Turn this to false for production mode
+              value: "{{ .Values.devMode }}"
             - name: "SSL_ENABLE"
               value: "true"
             - name: "CLUSTER_ID"
-              value: "first-cluster"
+              value: "{{ .Values.clusterId }}"
             - name: "REDIS_CONN"
-              value: "redis.space-cloud.svc.cluster.local:6379"
+              value: "{{ .Values.connections.redisConn }}"
+            - name: "DISABLE_UI"
+              value: "{{ .Values.gateway.disableUI }}"
+          {{ range $key, $value := .Values.gateway.envs }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote}}
+          {{ end -}}
+          {{ if .Values.gateway.custom_ssl_secret }}
+            - name: "SSL_CERT"
+              value: "/secrets/{{ .Values.gateway.custom_ssl_cert_key }}"
+            - name: "SSL_KEY"
+              value: "/secrets/{{ .Values.gateway.custom_ssl_private_key }}"
+          {{ end }}
+          {{ if .Values.gateway.custom_ssl_secret }}
+          volumeMounts:
+          - name: ssl_certs
+            mountPath: "/secrets"
+          {{ end }}
           ports:
             - containerPort: 4122
             - containerPort: 4126
           resources:
+            limits:
+              memory: "{{ .Values.gateway.resources.limits.memory }}"
+              cpu: "{{ .Values.gateway.resources.limits.cpu }}"
             requests:
-              memory: "256Mi"
-              cpu: "200m"
+              memory: "{{ .Values.gateway.resources.requests.memory }}"
+              cpu: "{{ .Values.gateway.resources.requests.cpu }}"
+      {{ if .Values.gateway.custom_ssl_secret }}
+      volumes:
+      - name: ssl_certs
+        secret:
+          secretName: "{{ .Values.gateway.custom_ssl_secret }}"
+          defaultMode: 0400
+      {{ end }}
       terminationGracePeriodSeconds: 300
 ---
 apiVersion: autoscaling/v2beta2
@@ -246,12 +273,12 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: gateway
-  minReplicas: 1
-  maxReplicas: 10
+  minReplicas: {{ .Values.gateway.autoScaler.minReplicas }}
+  maxReplicas: {{ .Values.gateway.autoScaler.maxReplicas }}
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 80
+          averageUtilization: {{ .Values.gateway.autoScaler.averageCPUUtilization }}

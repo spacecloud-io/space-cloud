@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
@@ -58,9 +60,8 @@ var essentialFlags = []cli.Flag{
 		Value:  "local",
 	},
 	cli.IntFlag{
-		Name:   "port",
-		EnvVar: "PORT",
-		Value:  4122,
+		Name:  "port",
+		Value: 4122,
 	},
 	cli.StringFlag{
 		Name:   "restrict-hosts",
@@ -140,6 +141,11 @@ func main() {
 			Usage:  "runs the space cloud instance",
 			Action: actionRun,
 			Flags:  essentialFlags,
+		},
+		{
+			Name:   "health-check",
+			Usage:  "check the health of gateway instance",
+			Action: actionHealthCheck,
 		},
 	}
 
@@ -223,6 +229,31 @@ func actionRun(c *cli.Context) error {
 	}
 
 	return s.Start(false, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
+}
+
+func actionHealthCheck(c *cli.Context) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// Make a request object
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost:4122/v1/api/health-check", nil)
+	if err != nil {
+		return err
+	}
+	// Create a http client and fire the request
+	client := &http.Client{}
+
+	req = req.WithContext(ctx)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer utils.CloseTheCloser(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("health check return status code (%v)", resp.Status)
+	}
+	return nil
 }
 
 func initMissionContol(version string) (string, error) {

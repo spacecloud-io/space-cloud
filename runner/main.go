@@ -60,16 +60,14 @@ func main() {
 					Value:  "default",
 				},
 				cli.StringFlag{
-					Name:   "port",
-					EnvVar: "PORT",
-					Usage:  "The port the runner will bind too",
-					Value:  "4050",
+					Name:  "port",
+					Usage: "The port the runner will bind too",
+					Value: "4050",
 				},
 				cli.StringFlag{
-					Name:   "proxy-port",
-					EnvVar: "PROXY_PORT",
-					Usage:  "The port the proxy will bind too",
-					Value:  "4055",
+					Name:  "proxy-port",
+					Usage: "The port the proxy will bind too",
+					Value: "4055",
 				},
 				cli.StringFlag{
 					Name:   "log-level",

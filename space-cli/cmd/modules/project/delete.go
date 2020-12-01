@@ -8,7 +8,8 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
-func deleteProject(project string) error {
+// DeleteProject deletes the specified project from space cloud
+func DeleteProject(project string) error {
 	// Delete the project config from the server
 	url := fmt.Sprintf("/v1/config/projects/%s", project)
 

@@ -23,7 +23,7 @@ func getSelectedAccount() (*model.Account, error) {
 		return nil, fmt.Errorf("No accounts found, Add an account by created a space cloud cluster")
 	}
 
-	var account *model.Account
+	account := new(model.Account)
 	for _, v := range credential.Accounts {
 		if credential.SelectedAccount == v.ID {
 			account = v
