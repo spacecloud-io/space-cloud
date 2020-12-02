@@ -73,7 +73,7 @@ func HelmList(filterRegex string) ([]*release.Release, error) {
 	return list, nil
 }
 
-// HelmUninstall uninstall helm chart
+// HelmUpgrade upgrade space cloud chart
 func HelmUpgrade(releaseName, chartLocation, downloadURL, namespace string, valuesFileObj map[string]interface{}) (*chart.Chart, error) {
 	actionConfig, helmChart, err := createChart(chartLocation, downloadURL)
 	if err != nil {
