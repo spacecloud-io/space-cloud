@@ -13,14 +13,18 @@ import (
 func Upgrade(setValuesFlag, valuesYamlFile, chartLocation string) error {
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
 
-	selectedAccount, _, err := utils.LoginWithSelectedAccount()
+	charList, err := utils.HelmList(model.HelmSpaceCloudNamespace)
 	if err != nil {
 		return err
+	}
+	if len(charList) < 1 {
+		utils.LogInfo("space cloud cluster not found, setup a new cluster using the setup command")
+		return nil
 	}
 
 	isOk := false
 	prompt := &survey.Confirm{
-		Message: fmt.Sprintf("Space cloud cluster with id (%s) will be upgraded, Do you want to continue", selectedAccount.ID),
+		Message: fmt.Sprintf("Space cloud cluster with id (%s) will be upgraded, Do you want to continue", charList[0].Name),
 	}
 	if err := survey.AskOne(prompt, &isOk); err != nil {
 		return err
@@ -40,17 +44,12 @@ func Upgrade(setValuesFlag, valuesYamlFile, chartLocation string) error {
 		return fmt.Errorf("you cannot set a new cluster id (%s) while upgrading an existing cluster, revmove the value & try again", value)
 	}
 
-	_, err = utils.HelmUpgrade(selectedAccount.ID, chartLocation, model.HelmSpaceCloudChartDownloadURL, "", valuesFileObj)
+	_, err = utils.HelmUpgrade(charList[0].Name, chartLocation, model.HelmSpaceCloudChartDownloadURL, "", valuesFileObj)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println()
-	utils.LogInfo(fmt.Sprintf("Space Cloud (cluster id: \"%s\") has been successfully upgraded! 👍", selectedAccount.ID))
-	utils.LogInfo(fmt.Sprintf("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerURL))
-	utils.LogInfo("Note: The url is only valid if you have done port forwarding using the commnad as per the docs at https://docs.spaceuptech.com/install/kubernetes/minikube/")
-	utils.LogInfo("Command => kubectl port-forward -n istio-system deployments/istio-ingressgateway 4122:8080")
-	utils.LogInfo("If you have done forwarding on other port, use the login command to change the url")
-	utils.LogInfo(fmt.Sprintf("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key))
+	utils.LogInfo(fmt.Sprintf("Space Cloud (cluster id: \"%s\") has been successfully upgraded! 👍", charList[0].Name))
 	return nil
 }

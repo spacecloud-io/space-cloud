@@ -123,6 +123,13 @@ func Commands() []*cobra.Command {
 		RunE: actionDestroy,
 	}
 
+	var list = &cobra.Command{
+		Use:    "list",
+		Short:  "List space-cloud clusters",
+		PreRun: nil,
+		RunE:   actionList,
+	}
+
 	var apply = &cobra.Command{
 		Use:   "apply",
 		Short: "Applies a config file or directory",
@@ -172,7 +179,7 @@ func Commands() []*cobra.Command {
 	if err := stop.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
 		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
 	}
-	return []*cobra.Command{setup, upgrade, destroy, apply, start, stop}
+	return []*cobra.Command{setup, list, upgrade, destroy, apply, start, stop}
 
 }
 
@@ -190,6 +197,10 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 	setValue := viper.GetString("set")
 
 	return Setup(setValue, valuesYamlFile, chartDir)
+}
+
+func actionList(cmd *cobra.Command, args []string) error {
+	return List()
 }
 
 func actionDestroy(cmd *cobra.Command, args []string) error {

@@ -13,6 +13,9 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/release"
+
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 )
 
 // HelmInstall install helm chart
@@ -24,7 +27,7 @@ func HelmInstall(chartReleaseName, chartLocation, downloadURL, namespace string,
 
 	iCli := action.NewInstall(actionConfig)
 	iCli.ReleaseName = chartReleaseName
-	iCli.CreateNamespace = namespace != ""
+	iCli.CreateNamespace = namespace != model.HelmSpaceCloudNamespace // don't create namespace while setting up space cloud cluster
 	iCli.Namespace = namespace
 	iCli.Devel = true
 	rel, err := iCli.Run(helmChart, valuesFileObj)
@@ -51,6 +54,23 @@ func HelmUninstall(releaseName string) error {
 
 	LogInfo(fmt.Sprintf("Successfully removed chart: (%s)", rel.Release.Name))
 	return nil
+}
+
+// HelmList uninstall helm chart
+func HelmList(filterRegex string) ([]*release.Release, error) {
+	settings := cli.New()
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), log.Printf); err != nil {
+		return nil, err
+	}
+	lCli := action.NewList(actionConfig)
+	lCli.Filter = filterRegex
+	list, err := lCli.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	return list, nil
 }
 
 // HelmUninstall uninstall helm chart
