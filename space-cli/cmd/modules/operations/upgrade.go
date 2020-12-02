@@ -18,7 +18,7 @@ func Upgrade(setValuesFlag, valuesYamlFile, chartLocation string) error {
 		return err
 	}
 	if len(charList) < 1 {
-		utils.LogInfo("space cloud cluster not found, setup a new cluster using the setup command")
+		utils.LogInfo("Space cloud cluster not found, setup a new cluster using the setup command")
 		return nil
 	}
 
