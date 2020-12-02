@@ -27,6 +27,8 @@ const (
 	HelmSQLServerCloudChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/sqlserver.tgz"
 	// HelmMongoChartDownloadURL url of mongo helm chart
 	HelmMongoChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/mongo.tgz"
+	// HelmSpaceCloudNamespace space cloud namespace for helm
+	HelmSpaceCloudNamespace = "space-cloud"
 )
 
 // Version version of space cli

@@ -76,6 +76,42 @@ func Commands() []*cobra.Command {
 		_ = utils.LogError("Unable to bind flag ('`SET`' to environment variables", nil)
 	}
 
+	var upgrade = &cobra.Command{
+		Use:   "upgrade",
+		Short: "upgrades the existing space cloud cluster",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("local-chart-dir", cmd.Flags().Lookup("local-chart-dir"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('local-chart-dir')", nil)
+			}
+			if err := viper.BindPFlag("file", cmd.Flags().Lookup("file")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('file')", nil)
+			}
+			if err := viper.BindPFlag("set", cmd.Flags().Lookup("set")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('set')", nil)
+			}
+		},
+		RunE: actionUpgrade,
+	}
+
+	upgrade.Flags().StringP("local-chart-dir", "c", "", "Path to the space cloud helm chart directory")
+	err = viper.BindEnv("local-chart-dir", "LOCAL_CHART_DIR")
+	if err != nil {
+		_ = utils.LogError("Unable to bind flag ('local-chart-dir') to environment variables", nil)
+	}
+
+	upgrade.Flags().StringP("file", "f", "", "Path to the config yaml file")
+	err = viper.BindEnv("file", "FILE")
+	if err != nil {
+		_ = utils.LogError("Unable to bind flag ('file' to environment variables", nil)
+	}
+
+	upgrade.Flags().StringP("set", "", "", "Set root string values of chart in format foo1=bar1,foo2=bar2")
+	err = viper.BindEnv("`set`", "SET")
+	if err != nil {
+		_ = utils.LogError("Unable to bind flag ('`SET`' to environment variables", nil)
+	}
+
 	var destroy = &cobra.Command{
 		Use:   "destroy",
 		Short: "Remove the space cloud cluster from kubernetes",
@@ -85,6 +121,13 @@ func Commands() []*cobra.Command {
 			}
 		},
 		RunE: actionDestroy,
+	}
+
+	var list = &cobra.Command{
+		Use:    "list",
+		Short:  "List space-cloud clusters",
+		PreRun: nil,
+		RunE:   actionList,
 	}
 
 	var apply = &cobra.Command{
@@ -136,8 +179,16 @@ func Commands() []*cobra.Command {
 	if err := stop.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
 		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
 	}
-	return []*cobra.Command{setup, destroy, apply, start, stop}
+	return []*cobra.Command{setup, list, upgrade, destroy, apply, start, stop}
 
+}
+
+func actionUpgrade(cmd *cobra.Command, args []string) error {
+	chartDir := viper.GetString("local-chart-dir")
+	valuesYamlFile := viper.GetString("file")
+	setValue := viper.GetString("set")
+
+	return Upgrade(setValue, valuesYamlFile, chartDir)
 }
 
 func actionSetup(cmd *cobra.Command, args []string) error {
@@ -146,6 +197,10 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 	setValue := viper.GetString("set")
 
 	return Setup(setValue, valuesYamlFile, chartDir)
+}
+
+func actionList(cmd *cobra.Command, args []string) error {
+	return List()
 }
 
 func actionDestroy(cmd *cobra.Command, args []string) error {
