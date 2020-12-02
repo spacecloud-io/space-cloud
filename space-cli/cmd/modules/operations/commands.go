@@ -76,9 +76,9 @@ func Commands() []*cobra.Command {
 		_ = utils.LogError("Unable to bind flag ('`SET`' to environment variables", nil)
 	}
 
-	var upgrade = &cobra.Command{
-		Use:   "upgrade",
-		Short: "upgrades the existing space cloud cluster",
+	var update = &cobra.Command{
+		Use:   "update",
+		Short: "updates the existing space cloud cluster",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := viper.BindPFlag("local-chart-dir", cmd.Flags().Lookup("local-chart-dir"))
 			if err != nil {
@@ -91,22 +91,22 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('set')", nil)
 			}
 		},
-		RunE: actionUpgrade,
+		RunE: actionUpdate,
 	}
 
-	upgrade.Flags().StringP("local-chart-dir", "c", "", "Path to the space cloud helm chart directory")
+	update.Flags().StringP("local-chart-dir", "c", "", "Path to the space cloud helm chart directory")
 	err = viper.BindEnv("local-chart-dir", "LOCAL_CHART_DIR")
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('local-chart-dir') to environment variables", nil)
 	}
 
-	upgrade.Flags().StringP("file", "f", "", "Path to the config yaml file")
+	update.Flags().StringP("file", "f", "", "Path to the config yaml file")
 	err = viper.BindEnv("file", "FILE")
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('file' to environment variables", nil)
 	}
 
-	upgrade.Flags().StringP("set", "", "", "Set root string values of chart in format foo1=bar1,foo2=bar2")
+	update.Flags().StringP("set", "", "", "Set root string values of chart in format foo1=bar1,foo2=bar2")
 	err = viper.BindEnv("`set`", "SET")
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('`SET`' to environment variables", nil)
@@ -179,16 +179,16 @@ func Commands() []*cobra.Command {
 	if err := stop.RegisterFlagCompletionFunc("cluster-name", clusterNameAutoComplete); err != nil {
 		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
 	}
-	return []*cobra.Command{setup, list, upgrade, destroy, apply, start, stop}
+	return []*cobra.Command{setup, list, update, destroy, apply, start, stop}
 
 }
 
-func actionUpgrade(cmd *cobra.Command, args []string) error {
+func actionUpdate(cmd *cobra.Command, args []string) error {
 	chartDir := viper.GetString("local-chart-dir")
 	valuesYamlFile := viper.GetString("file")
 	setValue := viper.GetString("set")
 
-	return Upgrade(setValue, valuesYamlFile, chartDir)
+	return Update(setValue, valuesYamlFile, chartDir)
 }
 
 func actionSetup(cmd *cobra.Command, args []string) error {

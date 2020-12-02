@@ -9,8 +9,8 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
-// Upgrade upgrades existing space cloud cluster
-func Upgrade(setValuesFlag, valuesYamlFile, chartLocation string) error {
+// Update upgrades existing space cloud cluster
+func Update(setValuesFlag, valuesYamlFile, chartLocation string) error {
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
 
 	charList, err := utils.HelmList(model.HelmSpaceCloudNamespace)
