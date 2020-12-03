@@ -50,7 +50,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 				if err != nil {
 					return 0, err
 				}
-				helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Update Query", map[string]interface{}{"sqlQuery": sqlQuery, "queryArgs": sqlQuery})
+				helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Update Query", map[string]interface{}{"sqlQuery": sqlQuery, "queryArgs": args})
 				res, err := doExecContext(ctx, sqlQuery, args, executor)
 				if err != nil {
 					return 0, err
