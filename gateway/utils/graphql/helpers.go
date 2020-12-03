@@ -210,7 +210,7 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 							newCB(nil, nil)
 							return
 						}
-						req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: findVar}}
+						req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: findVar}, PostProcess: map[string]*model.PostProcess{}}
 						graph.processLinkedResult(ctx, field, *linkedFieldSchema, token, req, store, newCB)
 						return
 					}
