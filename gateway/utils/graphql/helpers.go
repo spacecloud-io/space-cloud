@@ -241,7 +241,17 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 		for loopIndex, loopValue := range val {
 			go func(i int, v interface{}) {
 				defer wgArray.Done()
-
+				// users @db {
+				//  everything under bracket is selection set
+				// 	id
+				// 	name
+				// 	age --> This is also a field
+				// 	posts {
+				// 		id
+				// 		name
+				//		date_time
+				// 	}
+				// }
 				if field.SelectionSet == nil {
 					array.Set(i, v)
 					return

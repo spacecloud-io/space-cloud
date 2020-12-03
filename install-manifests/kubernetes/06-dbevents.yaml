@@ -1,0 +1,73 @@
+#############################################################################################
+############################### Service Account and Roles  ##################################
+#############################################################################################
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dbevents
+  namespace: space-cloud
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dbevents
+  namespace: space-cloud
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dbevents
+  namespace: space-cloud
+subjects:
+  - kind: ServiceAccount
+    name: dbevents # Name is case sensitive
+    namespace: space-cloud
+roleRef:
+  kind: ClusterRole
+  name: dbevents
+  apiGroup: rbac.authorization.k8s.io
+---
+#############################################################################################
+##################################### Kubernetes config  ####################################
+#############################################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: dbevents
+  name: dbevents
+  namespace: space-cloud
+spec:
+  selector:
+    matchLabels:
+      app: dbevents
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dbevents
+    spec:
+      serviceAccountName: dbevents
+      containers:
+        - name: dbevents
+          image: "spaceuptech/dbevents:0.1.0"
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: "SC_ADMIN_SECRET"
+              value: "some-secret"
+            - name: "GATEWAY_URL"
+              value: "gateway.space-cloud.svc.cluster.local:4122"
+            - name: "STORAGE_TYPE"
+              value: "k8s"
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+      terminationGracePeriodSeconds: 300

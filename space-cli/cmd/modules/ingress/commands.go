@@ -30,25 +30,10 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getroutes = &cobra.Command{
-		Use:     "ingress-routes",
-		Aliases: []string{"ingress-route"},
-		RunE:    actionGetIngressRoutes,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			objs, err := GetIngressRoutes(project, "ingress-route", map[string]string{}, []string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var ids []string
-			for _, v := range objs {
-				ids = append(ids, v.Meta["id"])
-			}
-			return ids, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "ingress-routes",
+		Aliases:           []string{"ingress-route"},
+		RunE:              actionGetIngressRoutes,
+		ValidArgsFunction: ingressRoutesAutoCompleteFun,
 	}
 
 	var getIngressGlobal = &cobra.Command{
@@ -125,4 +110,49 @@ func actionGetIngressGlobal(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	return nil
+}
+
+// DeleteSubCommands is the list of commands the ingress module exposes
+func DeleteSubCommands() []*cobra.Command {
+
+	var deleteRoutes = &cobra.Command{
+		Use:               "ingress-routes",
+		Aliases:           []string{"ingress-route"},
+		RunE:              actionDeleteIngressRoutes,
+		ValidArgsFunction: ingressRoutesAutoCompleteFun,
+		Example:           "space-cli delete ingress-routes routeID --project myproject",
+	}
+
+	var deleteIngressGlobal = &cobra.Command{
+		Use:     "ingress-global",
+		RunE:    actionDeleteIngressGlobal,
+		Example: "space-cli delete ingress-global --project myproject",
+	}
+
+	return []*cobra.Command{deleteRoutes, deleteIngressGlobal}
+}
+
+func actionDeleteIngressRoutes(cmd *cobra.Command, args []string) error {
+	// Get the project and url parameters
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	prefix := ""
+	if len(args) != 0 {
+		prefix = args[0]
+	}
+
+	return deleteIngressRoute(project, prefix)
+}
+
+func actionDeleteIngressGlobal(cmd *cobra.Command, args []string) error {
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	return deleteIngressGlobalConfig(project)
 }

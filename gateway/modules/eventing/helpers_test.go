@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
-	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
@@ -28,32 +26,32 @@ func TestModule_selectRule(t *testing.T) {
 		name    string
 		m       *Module
 		args    args
-		want    *config.EventingRule
+		want    *config.EventingTrigger
 		wantErr bool
 	}{
 		{
 			name: "event type is an internal type",
-			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingRule{"some-rule": {Type: "DB_INSERT", URL: "abc"}}}},
+			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingTrigger{"some-rule": {Type: "DB_INSERT", URL: "abc"}}}},
 			args: args{name: "some-rule", evType: "DB_INSERT"},
-			want: &config.EventingRule{Type: "DB_INSERT", URL: "abc"},
+			want: &config.EventingTrigger{Type: "DB_INSERT", URL: "abc"},
 		},
 		{
 			name: "event type is found in rules",
-			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"some-rule": {Type: "event"}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"some-rule": {Type: "event"}}}},
 			args: args{name: "some-rule", evType: "event"},
-			want: &config.EventingRule{Type: "event"},
+			want: &config.EventingTrigger{Type: "event"},
 		},
 		{
 			name: "event type is found in internal rules",
-			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingRule{"some-rule": {Type: "event"}}}},
+			m:    &Module{config: &config.Eventing{InternalRules: map[string]*config.EventingTrigger{"some-rule": {Type: "event"}}}},
 			args: args{name: "some-rule", evType: "event"},
-			want: &config.EventingRule{Type: "event"},
+			want: &config.EventingTrigger{Type: "event"},
 		},
 		{
 			name:    "event type is not found",
 			m:       &Module{config: &config.Eventing{}},
 			args:    args{name: "some-rule", evType: "event"},
-			want:    &config.EventingRule{},
+			want:    &config.EventingTrigger{},
 			wantErr: true,
 		},
 	}
@@ -74,32 +72,35 @@ func TestModule_selectRule(t *testing.T) {
 type a struct {
 }
 
-func (new *a) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
+func (new a) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
 	return nil, false
 }
-func (new *a) Parser(crud config.Crud) (model.Type, error) {
+func (new a) Parser(dbSchemas config.DatabaseSchemas) (model.Type, error) {
 	return nil, nil
 }
-func (new *a) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+func (new a) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 	return nil, nil
 }
-func (new *a) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
+func (new a) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, dbSchemas config.DatabaseSchemas) error {
 	return nil
 }
-func (new *a) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
+func (new a) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
 	panic("implement me")
 }
-func (new *a) GetSchema(dbAlias, col string) (model.Fields, bool) {
+func (new a) GetSchema(dbAlias, col string) (model.Fields, bool) {
 	return nil, false
+}
+func (new *a) GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error) {
+	return nil, nil
 }
 
 func TestModule_validate(t *testing.T) {
-	authModule := auth.Init("1", &crud.Module{}, nil)
-	err := authModule.SetConfig("project", "", []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": {Rule: "authenticated"}}})
+	authModule := auth.Init("chicago", "1", &crud.Module{}, nil)
+	err := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{config.GenerateResourceID("chicago", "project", config.ResourceEventingRule, "event"): &config.Rule{ID: "event", Rule: "authenticated"}})
 	if err != nil {
 		t.Fatalf("error setting config (%s)", err.Error())
 	}
-	var newSchema = &a{}
+	var newSchema = a{}
 	type args struct {
 		ctx     context.Context
 		project string
@@ -113,9 +114,10 @@ func TestModule_validate(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "event type is an internal type",
-			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"some-rule": {Type: "DB_INSERT"}}}},
-			args: args{event: &model.QueueEventRequest{Type: "DB_INSERT", Delay: 0, Payload: "something", Options: make(map[string]string)}},
+			name:    "event type is an internal type",
+			m:       &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"some-rule": {Type: "DB_INSERT"}}}},
+			args:    args{event: &model.QueueEventRequest{Type: "DB_INSERT", Delay: 0, Payload: "something", Options: make(map[string]string)}},
+			wantErr: true,
 		},
 		{
 			name:    "invalid project details",
@@ -142,7 +144,7 @@ func TestModule_validate(t *testing.T) {
 			name: "no schema given",
 			m: &Module{
 				schemas: map[string]model.Fields{"event": {}},
-				schema:  newSchema,
+				schema:  &newSchema,
 				auth:    authModule,
 				config: &config.Eventing{
 					SecurityRules: map[string]*config.Rule{
@@ -226,51 +228,50 @@ func Test_convertToArray(t *testing.T) {
 
 func TestModule_getMatchingRules(t *testing.T) {
 	type args struct {
-		name    string
-		options map[string]string
+		req *model.QueueEventRequest
 	}
 	tests := []struct {
 		name string
 		m    *Module
 		args args
-		want []*config.EventingRule
+		want []*config.EventingTrigger
 	}{
 		{
 			name: "rule type is not equal to name",
 			m: &Module{config: &config.Eventing{
-				Rules:         map[string]*config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
-				InternalRules: map[string]*config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
-			args: args{name: "name", options: map[string]string{"option": "value"}},
-			want: []*config.EventingRule{},
+				Rules:         map[string]*config.EventingTrigger{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]*config.EventingTrigger{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+			args: args{req: &model.QueueEventRequest{Type: "name", Options: map[string]string{"option": "value"}}},
+			want: []*config.EventingTrigger{},
 		},
 		{
 			name: "rule options are not valid",
 			m: &Module{config: &config.Eventing{
-				Rules:         map[string]*config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
-				InternalRules: map[string]*config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
-			args: args{name: "rule", options: map[string]string{"wrongOption": "value"}},
-			want: []*config.EventingRule{},
+				Rules:         map[string]*config.EventingTrigger{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]*config.EventingTrigger{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+			args: args{req: &model.QueueEventRequest{Type: "rule", Options: map[string]string{"wrong-option": "value"}}},
+			want: []*config.EventingTrigger{},
 		},
 		{
 			name: "rule matching in Rules",
 			m: &Module{config: &config.Eventing{
-				Rules:         map[string]*config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
-				InternalRules: map[string]*config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
-			args: args{name: "rule", options: map[string]string{"option": "value"}},
-			want: []*config.EventingRule{{Type: "rule", Retries: 0, Timeout: 0, ID: "some-rule", Options: map[string]string{"option": "value"}}},
+				Rules:         map[string]*config.EventingTrigger{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]*config.EventingTrigger{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+			args: args{req: &model.QueueEventRequest{Type: "rule", Options: map[string]string{"option": "value"}}},
+			want: []*config.EventingTrigger{{Type: "rule", TriggerType: "external", Retries: 0, Timeout: 0, Options: map[string]string{"option": "value"}}},
 		},
 		{
 			name: "rule matching in InternalRules",
 			m: &Module{config: &config.Eventing{
-				Rules:         map[string]*config.EventingRule{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
-				InternalRules: map[string]*config.EventingRule{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
-			args: args{name: "internalRule", options: map[string]string{"option": "value"}},
-			want: []*config.EventingRule{{Type: "internalRule", Retries: 0, Timeout: 0, ID: "some-internal-rule", Options: map[string]string{"option": "value"}}},
+				Rules:         map[string]*config.EventingTrigger{"some-rule": {Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]*config.EventingTrigger{"some-internal-rule": {Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+			args: args{req: &model.QueueEventRequest{Type: "internalRule", Options: map[string]string{"option": "value"}}},
+			want: []*config.EventingTrigger{{Type: "internalRule", TriggerType: "internal", Retries: 0, Timeout: 0, Options: map[string]string{"option": "value"}}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.m.getMatchingRules(tt.args.name, tt.args.options); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.m.getMatchingRules(context.Background(), tt.args.req); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Module.getMatchingRules() got = %v, want %v", got, tt.want)
 			}
 		})
@@ -468,8 +469,6 @@ func TestModule_getSpaceCloudIDFromBatchID(t *testing.T) {
 }
 
 func TestModule_generateBatchID(t *testing.T) {
-	admin := admin.New("", "clusterID", false, &config.AdminUser{})
-	syncman, _ := syncman.New("nodeID", "clusterID", "advertiseAddr", "local", "runnerAddr", admin, &config.SSL{})
 	tests := []struct {
 		name string
 		m    *Module
@@ -477,8 +476,8 @@ func TestModule_generateBatchID(t *testing.T) {
 	}{
 		{
 			name: "ID is generated",
-			m:    &Module{syncMan: syncman},
-			want: "nodeID",
+			m:    &Module{nodeID: "abc"},
+			want: "abc",
 		},
 	}
 	for _, tt := range tests {
@@ -493,7 +492,6 @@ func TestModule_generateBatchID(t *testing.T) {
 }
 
 func TestModule_transmitEvents(t *testing.T) {
-	var res interface{}
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -517,7 +515,7 @@ func TestModule_transmitEvents(t *testing.T) {
 			args: args{eventToken: 50, eventDocs: []*model.EventDocument{{ID: "ID", BatchID: "BatchID", Type: "DB_INSERT", RuleName: "encrypt", Token: 50, Payload: "payload", Status: "ok", Remark: "Remark"}}},
 			syncMockArgs: []mockArgs{
 				{
-					method:         "GetAssignedSpaceCloudURL",
+					method:         "GetAssignedSpaceCloudID",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"", errors.New("some error")},
 				},
@@ -529,16 +527,9 @@ func TestModule_transmitEvents(t *testing.T) {
 			args: args{eventToken: 50, eventDocs: []*model.EventDocument{{ID: "ID", BatchID: "BatchID", Type: "DB_INSERT", RuleName: "encrypt", Token: 50, Payload: "payload", Status: "ok", Remark: "Remark"}}},
 			syncMockArgs: []mockArgs{
 				{
-					method:         "GetAssignedSpaceCloudURL",
+					method:         "GetAssignedSpaceCloudID",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
-				},
-			},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{"", errors.New("some error")},
 				},
 			},
 		},
@@ -548,23 +539,9 @@ func TestModule_transmitEvents(t *testing.T) {
 			args: args{eventToken: 50, eventDocs: []*model.EventDocument{{ID: "ID", BatchID: "BatchID", Type: "DB_INSERT", RuleName: "encrypt", Token: 50, Payload: "payload", Status: "ok", Remark: "Remark"}}},
 			syncMockArgs: []mockArgs{
 				{
-					method:         "GetAssignedSpaceCloudURL",
+					method:         "GetAssignedSpaceCloudID",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
-				},
-			},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
-				},
-			},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetSCAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{"", errors.New("some error")},
 				},
 			},
 		},
@@ -574,28 +551,9 @@ func TestModule_transmitEvents(t *testing.T) {
 			args: args{eventToken: 50, eventDocs: []*model.EventDocument{{ID: "ID", BatchID: "BatchID", Type: "DB_INSERT", RuleName: "encrypt", Token: 50, Payload: "payload", Status: "ok", Remark: "Remark"}}},
 			syncMockArgs: []mockArgs{
 				{
-					method:         "GetAssignedSpaceCloudURL",
+					method:         "GetAssignedSpaceCloudID",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
-				},
-				{
-					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{ID: "ID", BatchID: "BatchID", Type: "DB_INSERT", RuleName: "encrypt", Token: 50, Payload: "payload", Status: "ok", Remark: "Remark"}}, &res},
-					paramsReturned: []interface{}{errors.New("some error")},
-				},
-			},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
-				},
-			},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetSCAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 		},
@@ -605,57 +563,33 @@ func TestModule_transmitEvents(t *testing.T) {
 			args: args{eventToken: 50, eventDocs: []*model.EventDocument{{ID: "ID", BatchID: "BatchID", Type: "DB_INSERT", RuleName: "encrypt", Token: 50, Payload: "payload", Status: "ok", Remark: "Remark"}}},
 			syncMockArgs: []mockArgs{
 				{
-					method:         "GetAssignedSpaceCloudURL",
+					method:         "GetAssignedSpaceCloudID",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
 				},
-				{
-					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{ID: "ID", BatchID: "BatchID", Type: "DB_INSERT", RuleName: "encrypt", Token: 50, Payload: "payload", Status: "ok", Remark: "Remark"}}, &res},
-					paramsReturned: []interface{}{nil},
-				},
 			},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
-				},
-			},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetSCAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
-				},
-			},
+			authMockArgs: []mockArgs{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
 			mockAuth := mockAuthEventingInterface{}
-			mockAdmin := mockAdminEventingInterface{}
 			mockSyncman := mockSyncmanEventingInterface{}
 
 			for _, m := range tt.syncMockArgs {
 				mockSyncman.On(m.method, m.args...).Return(m.paramsReturned...)
-			}
-			for _, m := range tt.adminMockArgs {
-				mockAdmin.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
 			for _, m := range tt.authMockArgs {
 				mockAuth.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
 
 			tt.m.syncMan = &mockSyncman
-			tt.m.adminMan = &mockAdmin
 			tt.m.auth = &mockAuth
 
 			tt.m.transmitEvents(tt.args.eventToken, tt.args.eventDocs)
 
 			mockSyncman.AssertExpectations(t)
-			mockAdmin.AssertExpectations(t)
 			mockAuth.AssertExpectations(t)
 		})
 	}
@@ -680,13 +614,13 @@ func TestModule_generateQueueEventRequestRaw(t *testing.T) {
 			name: "error parsing timestamp since it was not provided",
 			m:    &Module{},
 			args: args{token: 50, name: "rule", eventDocID: "eventDocID", batchID: "batchID", status: "ok", event: &model.QueueEventRequest{Delay: int64(0), IsSynchronous: false, Options: make(map[string]string), Payload: "payload", Type: "DB_INSERT"}},
-			want: &model.EventDocument{ID: "eventDocID", BatchID: "batchID", Type: "DB_INSERT", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: "\"payload\"", Status: "ok"},
+			want: &model.EventDocument{ID: "eventDocID", BatchID: "batchID", Type: "DB_INSERT", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339Nano), Payload: "\"payload\"", Status: "ok"},
 		},
 		{
 			name: "error parsing timestamp since it was provided",
 			m:    &Module{},
 			args: args{token: 50, name: "rule", eventDocID: "eventDocID", batchID: "batchID", status: "ok", event: &model.QueueEventRequest{Timestamp: "incorrectTimestamp", Delay: int64(0), IsSynchronous: false, Options: make(map[string]string), Payload: "payload", Type: "DB_INSERT"}},
-			want: &model.EventDocument{ID: "eventDocID", BatchID: "batchID", Type: "DB_INSERT", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: "\"payload\"", Status: "ok"},
+			want: &model.EventDocument{ID: "eventDocID", BatchID: "batchID", Type: "DB_INSERT", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339Nano), Payload: "\"payload\"", Status: "ok"},
 		},
 		{
 			name: "event timestamp > timestamp",
@@ -697,20 +631,20 @@ func TestModule_generateQueueEventRequestRaw(t *testing.T) {
 		{
 			name: "event delay > 0",
 			m:    &Module{},
-			args: args{token: 50, name: "rule", eventDocID: "eventDocID", batchID: "batchID", status: "ok", event: &model.QueueEventRequest{Timestamp: time.Now().Format(time.RFC3339), Delay: int64(10), IsSynchronous: false, Options: make(map[string]string), Payload: "payload", Type: "DB_INSERT"}},
-			want: &model.EventDocument{ID: "eventDocID", BatchID: "batchID", Type: "DB_INSERT", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: "\"payload\"", Status: "ok"},
+			args: args{token: 50, name: "rule", eventDocID: "eventDocID", batchID: "batchID", status: "ok", event: &model.QueueEventRequest{Timestamp: time.Now().Format(time.RFC3339Nano), Delay: int64(10), IsSynchronous: false, Options: make(map[string]string), Payload: "payload", Type: "DB_INSERT"}},
+			want: &model.EventDocument{ID: "eventDocID", BatchID: "batchID", Type: "DB_INSERT", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339Nano), Payload: "\"payload\"", Status: "ok"},
 		},
 		{
 			name: "event request generated",
 			m:    &Module{},
-			args: args{token: 50, name: "rule", eventDocID: "eventDocID", batchID: "batchID", status: "ok", event: &model.QueueEventRequest{Timestamp: time.Now().Format(time.RFC3339), Delay: int64(0), IsSynchronous: false, Options: make(map[string]string), Payload: "payload", Type: "DB_INSERT"}},
-			want: &model.EventDocument{ID: "eventDocID", BatchID: "batchID", Type: "DB_INSERT", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: "\"payload\"", Status: "ok"},
+			args: args{token: 50, name: "rule", eventDocID: "eventDocID", batchID: "batchID", status: "ok", event: &model.QueueEventRequest{Timestamp: time.Now().Format(time.RFC3339Nano), Delay: int64(0), IsSynchronous: false, Options: make(map[string]string), Payload: "payload", Type: "DB_INSERT"}},
+			want: &model.EventDocument{ID: "eventDocID", BatchID: "batchID", Type: "DB_INSERT", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339Nano), Payload: "\"payload\"", Status: "ok"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.m.generateQueueEventRequestRaw(context.Background(), tt.args.token, tt.args.name, tt.args.eventDocID, tt.args.batchID, tt.args.status, tt.args.event)
+			got := tt.m.generateQueueEventRequestRaw(context.Background(), tt.args.token, &config.EventingTrigger{ID: tt.args.name}, tt.args.eventDocID, tt.args.batchID, tt.args.status, tt.args.event)
 			if got != nil {
 				if !reflect.DeepEqual(got.BatchID, tt.want.BatchID) {
 					t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
@@ -739,7 +673,6 @@ func TestModule_generateQueueEventRequestRaw(t *testing.T) {
 }
 
 func TestModule_batchRequestsRaw(t *testing.T) {
-	var res interface{}
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -764,8 +697,8 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 	}{
 		{
 			name: "internalCreate error",
-			m:    &Module{config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingRule{"some-rule": {Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
-			args: args{ctx: context.Background(), eventDocID: mock.Anything, token: 50, batchID: mock.Anything, requests: []*model.QueueEventRequest{{Type: utils.EventDBCreate, Delay: 0, IsSynchronous: false, Options: map[string]string{}, Payload: "payload", Timestamp: time.Now().Format(time.RFC3339)}}},
+			m:    &Module{config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingTrigger{"some-rule": {Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
+			args: args{ctx: context.Background(), eventDocID: mock.Anything, token: 50, batchID: mock.Anything, requests: []*model.QueueEventRequest{{Type: utils.EventDBCreate, Delay: 0, IsSynchronous: false, Options: map[string]string{}, Payload: "payload", Timestamp: time.Now().Format(time.RFC3339Nano)}}},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
@@ -777,8 +710,8 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 		},
 		{
 			name: "requests are batched",
-			m:    &Module{config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingRule{"some-rule": {Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
-			args: args{ctx: context.Background(), eventDocID: mock.Anything, token: 50, batchID: mock.Anything, requests: []*model.QueueEventRequest{{Type: utils.EventDBCreate, Delay: 0, IsSynchronous: false, Options: map[string]string{}, Payload: "payload", Timestamp: time.Now().Format(time.RFC3339)}}},
+			m:    &Module{config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]*config.EventingTrigger{"some-rule": {Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
+			args: args{ctx: context.Background(), eventDocID: mock.Anything, token: 50, batchID: mock.Anything, requests: []*model.QueueEventRequest{{Type: utils.EventDBCreate, Delay: 0, IsSynchronous: false, Options: map[string]string{}, Payload: "payload", Timestamp: time.Now().Format(time.RFC3339Nano)}}},
 			crudMockArgs: []mockArgs{
 				{
 					method:         "InternalCreate",
@@ -788,30 +721,13 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 			},
 			syncmanMockArgs: []mockArgs{
 				{
-					method:         "GetAssignedSpaceCloudURL",
+					method:         "GetAssignedSpaceCloudID",
 					args:           []interface{}{mock.Anything, mock.Anything, 50},
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
-				{
-					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", mock.Anything, mock.Anything, mock.Anything, mock.Anything, &res},
-					paramsReturned: []interface{}{nil},
-				},
 			},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
-				},
-			},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetSCAccessToken",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{mock.Anything, nil},
-				},
-			},
+			adminMockArgs: []mockArgs{},
+			authMockArgs:  []mockArgs{},
 		},
 	}
 
@@ -820,7 +736,6 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 
 			mockCrud := mockCrudInterface{}
 			mockSyncman := mockSyncmanEventingInterface{}
-			mockAdmin := mockAdminEventingInterface{}
 			mockAuth := mockAuthEventingInterface{}
 
 			for _, m := range tt.crudMockArgs {
@@ -829,25 +744,20 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 			for _, m := range tt.syncmanMockArgs {
 				mockSyncman.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
-			for _, m := range tt.adminMockArgs {
-				mockAdmin.On(m.method, m.args...).Return(m.paramsReturned...)
-			}
 			for _, m := range tt.authMockArgs {
 				mockAuth.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
 
 			tt.m.crud = &mockCrud
 			tt.m.syncMan = &mockSyncman
-			tt.m.adminMan = &mockAdmin
 			tt.m.auth = &mockAuth
 
-			if err := tt.m.batchRequestsRaw(context.Background(), tt.args.eventDocID, tt.args.token, tt.args.requests, tt.args.batchID); (err != nil) != tt.wantErr {
+			if err := tt.m.batchRequestsRaw(context.Background(), tt.args.token, tt.args.requests, tt.args.batchID); (err != nil) != tt.wantErr {
 				t.Errorf("Module.batchRequests() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			mockCrud.AssertExpectations(t)
 			mockSyncman.AssertExpectations(t)
-			mockAdmin.AssertExpectations(t)
 			mockAuth.AssertExpectations(t)
 		})
 	}

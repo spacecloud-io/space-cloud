@@ -3,7 +3,6 @@ package eventing
 import (
 	"context"
 	"errors"
-	"net/http"
 	"testing"
 	"time"
 
@@ -15,7 +14,7 @@ import (
 )
 
 func TestModule_processStagedEvents(t *testing.T) {
-	timeValue, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z07:00")
+	timeValue, _ := time.Parse(time.RFC3339Nano, "2006-01-02T15:04:05Z07:00")
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -49,8 +48,8 @@ func TestModule_processStagedEvents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339)}}, errors.New("some error")},
+					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Sort: []string{"ts"}, Limit: &limit}, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339Nano)}}, errors.New("some error")},
 				},
 			},
 		},
@@ -67,7 +66,7 @@ func TestModule_processStagedEvents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Sort: []string{"ts"}, Limit: &limit}, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{"payload", nil}},
 				},
 			},
@@ -85,8 +84,8 @@ func TestModule_processStagedEvents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339)}}, nil},
+					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Sort: []string{"ts"}, Limit: &limit}, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339Nano)}}, nil},
 				},
 			},
 		},
@@ -124,7 +123,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 	type args struct {
 		ctx        context.Context
 		client     model.HTTPEventingInterface
-		rule       *config.EventingRule
+		rule       *config.EventingTrigger
 		eventDoc   *model.EventDocument
 		cloudEvent *model.CloudEventPayload
 	}
@@ -140,26 +139,10 @@ func TestModule_invokeWebhook(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name: "error getting internal access token",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					paramsReturned: []interface{}{"", errors.New("some error")},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "error getting sc access token",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
+			args: args{ctx: context.Background(), rule: &config.EventingTrigger{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					paramsReturned: []interface{}{"internalToken", nil},
-				},
 				{
 					method:         "GetSCAccessToken",
 					paramsReturned: []interface{}{"", errors.New("some error")},
@@ -170,12 +153,8 @@ func TestModule_invokeWebhook(t *testing.T) {
 		{
 			name: "error making invocation http request",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
+			args: args{ctx: context.Background(), rule: &config.EventingTrigger{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					paramsReturned: []interface{}{"internalToken", nil},
-				},
 				{
 					method:         "GetSCAccessToken",
 					paramsReturned: []interface{}{"scToken", nil},
@@ -195,138 +174,6 @@ func TestModule_invokeWebhook(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "error getting space cloud url from id",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					paramsReturned: []interface{}{"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", nil},
-				},
-				{
-					method:         "GetSCAccessToken",
-					paramsReturned: []interface{}{"scToken", nil},
-				},
-			},
-			crudMockArgs: []mockArgs{
-				{
-					method:         "InternalCreate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", mock.Anything, mock.Anything, false},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			httpMockArgs: []mockArgs{
-				{
-					paramsReturned: []interface{}{&http.Response{
-						Proto:      "HTTP/1.1",
-						ProtoMajor: 1,
-						ProtoMinor: 1,
-					}, nil},
-				},
-			},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetSpaceCloudURLFromID",
-					args:           []interface{}{"url"},
-					paramsReturned: []interface{}{"", errors.New("some error")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "error making http request",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					paramsReturned: []interface{}{"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", nil},
-				},
-				{
-					method:         "GetSCAccessToken",
-					paramsReturned: []interface{}{"scToken", nil},
-				},
-			},
-			crudMockArgs: []mockArgs{
-				{
-					method:         "InternalCreate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", mock.Anything, mock.Anything, false},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			httpMockArgs: []mockArgs{
-				{
-					paramsReturned: []interface{}{&http.Response{
-						Proto:      "HTTP/1.1",
-						ProtoMajor: 1,
-						ProtoMinor: 1,
-					}, nil},
-				},
-			},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetSpaceCloudURLFromID",
-					args:           []interface{}{"url"},
-					paramsReturned: []interface{}{"url", nil},
-				},
-				{
-					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "http://url/v1/api/abc/eventing/process-event-response", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", "scToken", mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "no error making invocation http request and a valid response",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]*config.EventingRule{}}},
-			args: args{ctx: context.Background(), rule: &config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
-			authMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					paramsReturned: []interface{}{"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", nil},
-				},
-				{
-					method:         "GetSCAccessToken",
-					paramsReturned: []interface{}{"scToken", nil},
-				},
-			},
-			crudMockArgs: []mockArgs{
-				{
-					method:         "InternalCreate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", mock.Anything, mock.Anything, false},
-					paramsReturned: []interface{}{nil},
-				},
-				{
-					method:         "InternalUpdate",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"_id": "id"}, Operation: "all", Update: map[string]interface{}{"$set": map[string]interface{}{"status": utils.EventStatusProcessed}}}},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			httpMockArgs: []mockArgs{
-				{
-					paramsReturned: []interface{}{&http.Response{
-						Proto:      "HTTP/1.1",
-						ProtoMajor: 1,
-						ProtoMinor: 1,
-					}, nil},
-				},
-			},
-			syncmanMockArgs: []mockArgs{
-				{
-					method:         "GetSpaceCloudURLFromID",
-					args:           []interface{}{"url"},
-					paramsReturned: []interface{}{"url", nil},
-				},
-				{
-					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "http://url/v1/api/abc/eventing/process-event-response", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", "scToken", mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			adminMockArgs: []mockArgs{},
-		},
 	}
 
 	for _, tt := range tests {
@@ -336,7 +183,6 @@ func TestModule_invokeWebhook(t *testing.T) {
 			mockHTTP := mockHTTPInterface{}
 			mockCrud := mockCrudInterface{}
 			mockSyncman := mockSyncmanEventingInterface{}
-			mockAdmin := mockAdminEventingInterface{}
 
 			for _, m := range tt.authMockArgs {
 				mockAuth.On(m.method, m.args...).Return(m.paramsReturned...)
@@ -350,17 +196,14 @@ func TestModule_invokeWebhook(t *testing.T) {
 			for _, m := range tt.syncmanMockArgs {
 				mockSyncman.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
-			for _, m := range tt.adminMockArgs {
-				mockAdmin.On(m.method, m.args...).Return(m.paramsReturned...)
-			}
 
 			tt.m.auth = &mockAuth
 			tt.args.client = &mockHTTP
 			tt.m.crud = &mockCrud
 			tt.m.syncMan = &mockSyncman
-			tt.m.adminMan = &mockAdmin
+			tt.m.updateEventC = make(chan *queueUpdateEvent, 5)
 
-			if err := tt.m.invokeWebhook(context.Background(), tt.args.client, tt.args.rule, tt.args.eventDoc, tt.args.cloudEvent); (err != nil) != tt.wantErr {
+			if err := tt.m.invokeWebhook(context.Background(), "", tt.args.client, tt.args.rule, tt.args.eventDoc, tt.args.cloudEvent); (err != nil) != tt.wantErr {
 				t.Errorf("Module.invokeWebhook() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -368,7 +211,6 @@ func TestModule_invokeWebhook(t *testing.T) {
 			mockHTTP.AssertExpectations(t)
 			mockCrud.AssertExpectations(t)
 			mockSyncman.AssertExpectations(t)
-			mockAdmin.AssertExpectations(t)
 		})
 	}
 }
@@ -397,12 +239,12 @@ func TestModule_processStagedEvent(t *testing.T) {
 		},
 		{
 			name: "error selecting rule",
-			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"notSomeRule": {}}, InternalRules: map[string]*config.EventingRule{"notSomeRule": {}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"notSomeRule": {}}, InternalRules: map[string]*config.EventingTrigger{"notSomeRule": {}}}},
 			args: args{eventDoc: &model.EventDocument{ID: "eventID", Type: "someType", RuleName: "someRule"}},
 		},
 		// {
 		// 	name: "error invoking webhook",
-		// 	m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"someRule": config.EventingRule{}}, InternalRules: map[string]*config.EventingRule{"notSomeRule": config.EventingRule{}}}},
+		// 	m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"someRule": config.EventingTrigger{}}, InternalRules: map[string]*config.EventingTrigger{"notSomeRule": config.EventingTrigger{}}}},
 		// 	args: args{eventDoc: &model.EventDocument{ID: "eventID", Type: "someType", RuleName: "someRule", Payload: "payload"}},
 		// 	syncmanMockArgs: []mockArgs{
 		// 		mockArgs{
@@ -426,7 +268,7 @@ func TestModule_processStagedEvent(t *testing.T) {
 		// },
 		// {
 		// 	name: "error invoking webhook and error in internal update",
-		// 	m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingRule{"someRule": config.EventingRule{Retries: 2}}, InternalRules: map[string]*config.EventingRule{"notSomeRule": config.EventingRule{}}}},
+		// 	m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"someRule": config.EventingTrigger{Retries: 2}}, InternalRules: map[string]*config.EventingTrigger{"notSomeRule": config.EventingTrigger{}}}},
 		// 	args: args{eventDoc: &model.EventDocument{ID: "eventID", Type: "someType", RuleName: "someRule", Payload: "payload"}},
 		// 	syncmanMockArgs: []mockArgs{
 		// 		mockArgs{
@@ -471,6 +313,7 @@ func TestModule_processStagedEvent(t *testing.T) {
 			tt.m.syncMan = &mockSyncman
 			tt.m.auth = &mockAuth
 			tt.m.crud = &mockCrud
+			tt.m.updateEventC = make(chan *queueUpdateEvent, 5)
 
 			tt.m.processStagedEvent(tt.args.eventDoc)
 

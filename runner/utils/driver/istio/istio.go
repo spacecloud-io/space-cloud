@@ -1,8 +1,7 @@
 package istio
 
 import (
-	"sync"
-
+	kedaVersionedClient "github.com/kedacore/keda/pkg/generated/clientset/versioned"
 	versionedclient "istio.io/client-go/pkg/clientset/versioned"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -10,6 +9,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
+	"github.com/spaceuptech/space-cloud/runner/modules/scaler"
 
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
 )
@@ -20,15 +20,11 @@ type Istio struct {
 	auth   *auth.Module
 	config *Config
 
-	// For tacking invocations to adjust scale
-	adjustScaleLock sync.Map
-
 	// Drivers to talk to k8s and istio
-	kube  *kubernetes.Clientset
-	istio *versionedclient.Clientset
-
-	// For caching deployments
-	cache *cache
+	kube       kubernetes.Interface
+	istio      *versionedclient.Clientset
+	keda       *kedaVersionedClient.Clientset
+	kedaScaler *scaler.Scaler
 }
 
 // NewIstioDriver creates a new instance of the istio driver
@@ -57,13 +53,20 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 		return nil, err
 	}
 
-	// Create a cache
-	cache, err := newCache(kube)
+	kedaClient, err := kedaVersionedClient.NewForConfig(restConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Istio{auth: auth, config: c, kube: kube, istio: istio, cache: cache}, nil
+	kedaScaler, err := scaler.New(c.PrometheusAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Start the keda external scaler
+	go kedaScaler.Start()
+
+	return &Istio{auth: auth, config: c, kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}, nil
 }
 
 func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {

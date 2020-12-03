@@ -1,6 +1,10 @@
 package model
 
-import "net/http"
+import (
+	"net/http"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // Config is a map with key = projectId-serviceId and the value being the routes([]Route)
 type Config map[string]Routes // key = projectId-serviceId
@@ -22,4 +26,14 @@ type RequestParams struct {
 	Method     string                 `json:"method"`
 	Path       string                 `json:"path"`
 	Payload    interface{}            `json:"payload"`
+}
+
+// LogRequest represent log request structure
+type LogRequest struct {
+	TaskID    string       `json:"taskId"`
+	ReplicaID string       `json:"replicaId"`
+	Since     *int64       `json:"since"`
+	SinceTime *metav1.Time `json:"sinceTime"`
+	Tail      *int64       `json:"tail"`
+	IsFollow  bool         `json:"isFollow"`
 }

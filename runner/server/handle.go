@@ -144,16 +144,14 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		taskID := r.URL.Query().Get("taskId")
-		replicaID := r.URL.Query().Get("replicaId")
-		if replicaID == "" {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, "replica id not provided in query param")
+		req, err := generateLogRequestFromQueryParams(r.Context(), r.URL)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		_, isFollow := r.URL.Query()["follow"]
 
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Get logs process started", map[string]interface{}{"projectId": projectID, "taskId": taskID, "replicaId": replicaID, "isFollow": isFollow})
-		pipeReader, err := s.driver.GetLogs(r.Context(), isFollow, projectID, taskID, replicaID)
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Get logs process started", map[string]interface{}{"projectId": projectID, "taskId": req.TaskID, "replicaId": req.ReplicaID, "isFollow": req.IsFollow, "tail": req.Tail})
+		pipeReader, err := s.driver.GetLogs(r.Context(), projectID, req)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Failed to get service logs", err, nil)
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
@@ -178,7 +176,7 @@ func (s *Server) handleGetLogs() http.HandlerFunc {
 			default:
 				str, err := reader.ReadString('\n')
 				if err != nil {
-					if err == io.EOF && !isFollow {
+					if err == io.EOF && !req.IsFollow {
 						helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "End of file reached for logs", map[string]interface{}{})
 						return
 					}
@@ -312,7 +310,7 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 			return
 		}
 
-		//var result []interface{}
+		// var result []interface{}
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		serviceID, serviceIDExists := r.URL.Query()["serviceId"]
@@ -452,7 +450,8 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 func (s *Server) handleProxy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
+		defer cancel()
 
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
@@ -484,15 +483,14 @@ func (s *Server) handleProxy() http.HandlerFunc {
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Proxy is making request to host (%s) port (%s)", ogHost, ogPort), nil)
 
-		// Add to active request count
-		// TODO: add support for multiple versions
-		s.chAppend <- &model.ProxyMessage{Service: service, Project: project, Version: ogVersion, NodeID: "s-proxy", ActiveRequests: 1}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-		defer cancel()
+		// Instruct driver to scale up
+		if err := s.driver.ScaleUp(ctx, project, service, ogVersion); err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err.Error())
+			return
+		}
 
 		// Wait for the service to scale up
-		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s", project, service), func() error {
+		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s-%s", project, service, ogVersion), func() error {
 			return s.driver.WaitForService(ctx, &model.Service{ProjectID: project, ID: service, Version: ogVersion})
 		}); err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err.Error())
@@ -510,7 +508,7 @@ func (s *Server) handleProxy() http.HandlerFunc {
 			}
 
 			// TODO: Make this retry logic better
-			if res.StatusCode != http.StatusNotFound && res.StatusCode != http.StatusServiceUnavailable {
+			if res.StatusCode != http.StatusServiceUnavailable {
 				break
 			}
 
@@ -525,7 +523,7 @@ func (s *Server) handleProxy() http.HandlerFunc {
 
 		// Copy headers and status code
 		for k, v := range res.Header {
-			w.Header().Set(k, v[0])
+			w.Header()[k] = v
 		}
 
 		w.WriteHeader(res.StatusCode)

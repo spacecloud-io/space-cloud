@@ -1,17 +1,14 @@
 package eventing
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestModule_SetConfig(t *testing.T) {
 	type args struct {
-		project  string
-		eventing *config.Eventing
+		eventing *config.EventingConfig
 	}
 	type mockArgs struct {
 		method         string
@@ -26,48 +23,16 @@ func TestModule_SetConfig(t *testing.T) {
 		wantErr        bool
 	}{
 		{
-			name: "unable to parse schema",
-			m:    &Module{},
-			args: args{project: "abc", eventing: &config.Eventing{Enabled: true, DBAlias: "mysql", Schemas: map[string]config.SchemaObject{"eventType": {ID: "id", Schema: "schema"}}}},
-			schemaMockArgs: []mockArgs{
-				{
-					method:         "Parser",
-					args:           []interface{}{config.Crud{"dummyDBName": &config.CrudStub{Collections: map[string]*config.TableRule{"eventType": {Schema: "schema"}}}}},
-					paramsReturned: []interface{}{nil, errors.New("some error")},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name:           "eventing is not enabled",
 			m:              &Module{config: &config.Eventing{Enabled: true}},
-			args:           args{project: "abc", eventing: &config.Eventing{Enabled: false, DBAlias: "mysql", Schemas: map[string]config.SchemaObject{"eventType": {ID: "id", Schema: "schema"}}}},
+			args:           args{eventing: &config.EventingConfig{Enabled: false, DBAlias: "mysql"}},
 			schemaMockArgs: []mockArgs{},
 		},
 		{
-			name: "DBType not mentioned",
-			m:    &Module{config: &config.Eventing{Enabled: true}},
-			args: args{project: "abc", eventing: &config.Eventing{Enabled: true, DBAlias: "", Schemas: map[string]config.SchemaObject{"eventType": {ID: "id", Schema: "schema"}}}},
-			schemaMockArgs: []mockArgs{
-				{
-					method:         "Parser",
-					args:           []interface{}{config.Crud{"dummyDBName": &config.CrudStub{Collections: map[string]*config.TableRule{"eventType": {Schema: "schema"}}}}},
-					paramsReturned: []interface{}{model.Type{"dummyDBName": model.Collection{"eventType": model.Fields{}}}, nil},
-				},
-			},
+			name:    "DBType not mentioned",
+			m:       &Module{config: &config.Eventing{Enabled: true}},
+			args:    args{eventing: &config.EventingConfig{Enabled: true, DBAlias: ""}},
 			wantErr: true,
-		},
-		{
-			name: "config is set",
-			m:    &Module{config: &config.Eventing{}},
-			args: args{project: "abc", eventing: &config.Eventing{Enabled: true, DBAlias: "mysql", Schemas: map[string]config.SchemaObject{"eventType": {ID: "id", Schema: "schema"}}}},
-			schemaMockArgs: []mockArgs{
-				{
-					method:         "Parser",
-					args:           []interface{}{config.Crud{"dummyDBName": &config.CrudStub{Collections: map[string]*config.TableRule{"eventType": {Schema: "schema"}}}}},
-					paramsReturned: []interface{}{model.Type{"dummyDBName": model.Collection{"eventType": model.Fields{}}}, nil},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {
@@ -81,7 +46,7 @@ func TestModule_SetConfig(t *testing.T) {
 
 			tt.m.schema = mockSchema
 
-			if err := tt.m.SetConfig(tt.args.project, tt.args.eventing); (err != nil) != tt.wantErr {
+			if err := tt.m.SetConfig("projectID", tt.args.eventing); (err != nil) != tt.wantErr {
 				t.Errorf("Module.SetConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

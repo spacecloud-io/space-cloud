@@ -1,7 +1,10 @@
 package config
 
 // Integrations describes all the integrations registered in the cluster
-type Integrations []*IntegrationConfig
+type Integrations map[string]*IntegrationConfig
+
+// IntegrationHooks describes all the hooks specific to a integration
+type IntegrationHooks map[string]*IntegrationHook
 
 // Get checks if id exists in the integration array and returns it
 func (integrations Integrations) Get(id string) (*IntegrationConfig, bool) {
@@ -15,39 +18,38 @@ func (integrations Integrations) Get(id string) (*IntegrationConfig, bool) {
 
 // IntegrationConfig describes the configuration of a single integration
 type IntegrationConfig struct {
-	ID                  string                      `json:"id" yaml:"id"`
-	Name                string                      `json:"name" yaml:"name"`
-	Key                 string                      `json:"key" yaml:"key"`         // Used for fetching tokens
-	License             string                      `json:"license" yaml:"license"` // Used to store level and id
-	Version             string                      `json:"version" yaml:"version"`
-	ConfigPermissions   []IntegrationPermission     `json:"configPermissions" yaml:"configPermissions"`
-	APIPermissions      []IntegrationPermission     `json:"apiPermissions" yaml:"apiPermissions"`
-	Deployments         []interface{}               `json:"deployments" yaml:"deployments"`
-	SecretSource        string                      `json:"secretSource" yaml:"secretSource"`
-	AppURL              string                      `json:"appUrl" yaml:"appUrl"`
-	Hooks               map[string]*IntegrationHook `json:"hooks" yaml:"hooks"`
-	CompatibleVersion   string                      `json:"compatibleVersion" yaml:"compatibleVersion"`
-	CompatibleVersionNo int                         `json:"compatibleVersionNo" yaml:"compatibleVersionNo"`
+	ID                  string                  `json:"id" yaml:"id" mapstructure:"id"`
+	Name                string                  `json:"name" yaml:"name" mapstructure:"name"`
+	Key                 string                  `json:"key" yaml:"key" mapstructure:"key"`             // Used for fetching tokens
+	License             string                  `json:"license" yaml:"license" mapstructure:"license"` // Used to store level and id
+	Version             string                  `json:"version" yaml:"version" mapstructure:"version"`
+	ConfigPermissions   []IntegrationPermission `json:"configPermissions" yaml:"configPermissions" mapstructure:"configPermissions"`
+	APIPermissions      []IntegrationPermission `json:"apiPermissions" yaml:"apiPermissions" mapstructure:"apiPermissions"`
+	Deployments         []interface{}           `json:"deployments" yaml:"deployments" mapstructure:"deployments"`
+	SecretSource        string                  `json:"secretSource" yaml:"secretSource" mapstructure:"secretSource"`
+	AppURL              string                  `json:"appUrl" yaml:"appUrl" mapstructure:"appUrl"`
+	CompatibleVersion   string                  `json:"compatibleVersion" yaml:"compatibleVersion" mapstructure:"compatibleVersion"`
+	CompatibleVersionNo int                     `json:"compatibleVersionNo" yaml:"compatibleVersionNo" mapstructure:"compatibleVersionNo"`
 }
 
 // IntegrationHook describes the config for a integration hook
 type IntegrationHook struct {
-	ID            string     `json:"id" yaml:"id"`
-	IntegrationID string     `json:"integrationId" yaml:"integrationId"`
-	Kind          string     `json:"kind" yaml:"kind"` // `hook` or `hijack`
-	Resource      []string   `json:"resources" yaml:"resources"`
-	Verbs         []string   `json:"verbs" yaml:"verbs"`
-	URL           string     `json:"url" yaml:"url"`
-	Attributes    Attributes `json:"attributes" yaml:"attributes"`
-	Rule          *Rule      `json:"rule,omitempty" yaml:"rule,omitempty"`
+	ID            string     `json:"id" yaml:"id" mapstructure:"id"`
+	IntegrationID string     `json:"integrationId" yaml:"integrationId" mapstructure:"integrationId"`
+	Kind          string     `json:"kind" yaml:"kind" mapstructure:"kind"` // `hook` or `hijack`
+	Resource      []string   `json:"resources" yaml:"resources" mapstructure:"resources"`
+	Verbs         []string   `json:"verbs" yaml:"verbs" mapstructure:"verbs"`
+	URL           string     `json:"url" yaml:"url" mapstructure:"url"`
+	Attributes    Attributes `json:"attributes" yaml:"attributes" mapstructure:"attributes"`
+	Rule          *Rule      `json:"rule,omitempty" yaml:"rule,omitempty" mapstructure:"rule"`
 }
 
 // IntegrationPermission describes a single permission object
 type IntegrationPermission struct {
-	ID         string     `json:"id" yaml:"id"`
-	Resources  []string   `json:"resources" yaml:"resources"`   // Eg. db-schema, eventing-trigger, db-api
-	Attributes Attributes `json:"attributes" yaml:"attributes"` // Extra attributes like db and col go here
-	Verbs      []string   `json:"verbs" yaml:"verbs"`           // Eg. read, write, hook
+	ID         string     `json:"id" yaml:"id" mapstructure:"id"`
+	Resources  []string   `json:"resources" yaml:"resources" mapstructure:"resources"`    // Eg. db-schema, eventing-trigger, db-api
+	Attributes Attributes `json:"attributes" yaml:"attributes" mapstructure:"attributes"` // Extra attributes like db and col go here
+	Verbs      []string   `json:"verbs" yaml:"verbs" mapstructure:"verbs"`                // Eg. read, write, hook
 }
 
 // Attributes describes the attributes of an integration resource.

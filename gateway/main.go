@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
@@ -48,13 +51,7 @@ var essentialFlags = []cli.Flag{
 		Name:   "cluster",
 		Usage:  "The cluster id to start space-cloud with",
 		EnvVar: "CLUSTER_ID",
-		Value:  ksuid.New().String(),
-	},
-	cli.StringFlag{
-		Name:   "advertise-addr",
-		Usage:  "The address which will be broadcast to other space cloud instances",
-		EnvVar: "ADVERTISE_ADDR",
-		Value:  "localhost:4122",
+		Value:  "",
 	},
 	cli.StringFlag{
 		Name:   "store-type",
@@ -63,9 +60,8 @@ var essentialFlags = []cli.Flag{
 		Value:  "local",
 	},
 	cli.IntFlag{
-		Name:   "port",
-		EnvVar: "PORT",
-		Value:  4122,
+		Name:  "port",
+		Value: 4122,
 	},
 	cli.StringFlag{
 		Name:   "restrict-hosts",
@@ -146,6 +142,11 @@ func main() {
 			Action: actionRun,
 			Flags:  essentialFlags,
 		},
+		{
+			Name:   "health-check",
+			Usage:  "check the health of gateway instance",
+			Action: actionHealthCheck,
+		},
 	}
 
 	err := app.Run(os.Args)
@@ -165,6 +166,7 @@ func actionRun(c *cli.Context) error {
 	if err := helpers.InitLogger(logLevel, logFormat, isDev); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to initialize loggers", err, nil)
 	}
+
 	// Load flag related to the port
 	port := c.Int("port")
 
@@ -183,8 +185,9 @@ func actionRun(c *cli.Context) error {
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
-	advertiseAddr := c.String("advertise-addr")
-
+	if clusterID == "" {
+		return fmt.Errorf("provider cluster id through --cluster flag or using setting enviornment vairable CLUSTER_ID")
+	}
 	// Load ui flag
 	disableUI := c.Bool("disable-ui")
 
@@ -192,6 +195,8 @@ func actionRun(c *cli.Context) error {
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
 	}
+
+	helpers.Logger.LogInfo("start", fmt.Sprintf("Starting node with id - %s", nodeID), nil)
 
 	// Set the ssl config
 	ssl := &config.SSL{}
@@ -210,7 +215,7 @@ func actionRun(c *cli.Context) error {
 		adminSecret = "some-secret"
 	}
 	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, isDev, adminUserInfo, ssl)
+	s, err := server.New(nodeID, clusterID, storeType, runnerAddr, isDev, adminUserInfo, ssl)
 	if err != nil {
 		return err
 	}
@@ -225,6 +230,31 @@ func actionRun(c *cli.Context) error {
 	}
 
 	return s.Start(profiler, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
+}
+
+func actionHealthCheck(c *cli.Context) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// Make a request object
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost:4122/v1/api/health-check", nil)
+	if err != nil {
+		return err
+	}
+	// Create a http client and fire the request
+	client := &http.Client{}
+
+	req = req.WithContext(ctx)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer utils.CloseTheCloser(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("health check return status code (%v)", resp.Status)
+	}
+	return nil
 }
 
 func initMissionContol(version string) (string, error) {

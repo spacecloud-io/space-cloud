@@ -9,7 +9,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
-	"github.com/spaceuptech/space-cloud/runner/utils/driver/docker"
 	"github.com/spaceuptech/space-cloud/runner/utils/driver/istio"
 )
 
@@ -19,7 +18,7 @@ type Config struct {
 	ConfigFilePath string
 	IsInCluster    bool
 	ProxyPort      uint32
-	ArtifactAddr   string
+	PrometheusAddr string
 	ClusterName    string
 }
 
@@ -31,14 +30,19 @@ type Interface interface {
 	GetServices(ctx context.Context, projectID string) ([]*model.Service, error)
 	GetServiceStatus(ctx context.Context, projectID string) ([]*model.ServiceStatus, error)
 	DeleteService(ctx context.Context, projectID, serviceID, version string) error
-	AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error
+	ScaleUp(ctx context.Context, projectID, serviceID, version string) error
 	WaitForService(ctx context.Context, service *model.Service) error
 	Type() model.DriverType
-	GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error)
+	GetLogs(ctx context.Context, projectID string, info *model.LogRequest) (io.ReadCloser, error)
 
 	// Service routes
 	ApplyServiceRoutes(ctx context.Context, projectID, serviceID string, routes model.Routes) error
 	GetServiceRoutes(ctx context.Context, projectID string) (map[string]model.Routes, error)
+
+	// Service role
+	ApplyServiceRole(ctx context.Context, role *model.Role) error
+	GetServiceRole(ctx context.Context, projectID string) ([]*model.Role, error)
+	DeleteServiceRole(ctx context.Context, projectID, serviceID, id string) error
 
 	// Secret methods!
 	CreateSecret(ctx context.Context, projectID string, secretObj *model.Secret) error
@@ -75,12 +79,9 @@ func initDriver(auth *auth.Module, c *Config) (Interface, error) {
 			istioConfig = istio.GenerateOutsideClusterConfig(c.ConfigFilePath)
 		}
 		istioConfig.SetProxyPort(c.ProxyPort)
-		istioConfig.ArtifactAddr = c.ArtifactAddr
+		istioConfig.PrometheusAddr = c.PrometheusAddr
 
 		return istio.NewIstioDriver(auth, istioConfig)
-
-	case model.TypeDocker:
-		return docker.NewDockerDriver(auth, c.ClusterName, c.ArtifactAddr)
 
 	default:
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("invalid driver type (%s) provided", c.DriverType), nil, nil)

@@ -12,6 +12,14 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+var limit int64 = 1000
+
+type queueUpdateEvent struct {
+	project, db, col string
+	req              *model.UpdateRequest
+	err              string
+}
+
 type mockHTTPInterface struct {
 	mock.Mock
 }
@@ -23,6 +31,10 @@ func (m *mockHTTPInterface) Do(req *http.Request) (*http.Response, error) {
 
 type mockCrudInterface struct {
 	mock.Mock
+}
+
+func (m *mockCrudInterface) GetDBType(dbAlias string) (string, error) {
+	panic("implement me")
 }
 
 func (m *mockCrudInterface) InternalCreate(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest, isIgnoreMetrics bool) error {
@@ -50,7 +62,7 @@ type mockSyncmanEventingInterface struct {
 	mock.Mock
 }
 
-func (m *mockSyncmanEventingInterface) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
+func (m *mockSyncmanEventingInterface) GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error) {
 	c := m.Called(ctx, project, token)
 	return c.String(0), c.Error(1)
 }
@@ -83,17 +95,17 @@ func (m *mockSyncmanEventingInterface) MakeHTTPRequest(ctx context.Context, meth
 	return c.Error(0)
 }
 
-type mockAdminEventingInterface struct {
-	mock.Mock
-}
-
-func (m *mockAdminEventingInterface) GetInternalAccessToken() (string, error) {
-	c := m.Called()
-	return c.String(0), c.Error(1)
-}
-
 type mockAuthEventingInterface struct {
 	mock.Mock
+}
+
+func (m *mockAuthEventingInterface) MatchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
+	return nil, nil
+}
+
+func (m *mockAuthEventingInterface) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (string, error) {
+	c := m.Called(ctx, tokenClaims)
+	return c.String(0), c.Error(1)
 }
 
 func (m *mockAuthEventingInterface) IsEventingOpAuthorised(ctx context.Context, project, token string, event *model.QueueEventRequest) (model.RequestParams, error) {
@@ -115,8 +127,14 @@ type mockSchemaEventingInterface struct {
 	mock.Mock
 }
 
+func (m *mockSchemaEventingInterface) GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error) {
+	c := m.Called(ctx, dbAlias, col, format)
+	return c.Get(0).([]interface{}), c.Error(1)
+}
+
 func (m *mockSchemaEventingInterface) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
-	panic("implement me")
+	c := m.Called(ctx, dbAlias, project, col)
+	return c.String(0), c.Error(1)
 }
 
 func (m *mockSchemaEventingInterface) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
@@ -124,8 +142,8 @@ func (m *mockSchemaEventingInterface) CheckIfEventingIsPossible(dbAlias, col str
 	return map[string]interface{}{}, c.Bool(1)
 }
 
-func (m *mockSchemaEventingInterface) Parser(crud config.Crud) (model.Type, error) {
-	c := m.Called(crud)
+func (m *mockSchemaEventingInterface) Parser(dbSchemas config.DatabaseSchemas) (model.Type, error) {
+	c := m.Called(dbSchemas)
 	return nil, c.Error(1)
 }
 
@@ -134,7 +152,7 @@ func (m *mockSchemaEventingInterface) SchemaValidator(ctx context.Context, col s
 	return nil, c.Error(1)
 }
 
-func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
+func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables config.DatabaseSchemas) error {
 	c := m.Called(ctx, dbAlias, logicalDBName, tables)
 	return c.Error(0)
 }

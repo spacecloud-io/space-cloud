@@ -8,6 +8,7 @@ import (
 
 	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
@@ -15,6 +16,15 @@ import (
 func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (string, error) {
 
 	switch typename {
+	case model.TypeUUID:
+		if dbType == string(model.Postgres) {
+			return "uuid", nil
+		}
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "UUID type is only supported by postgres database", nil, nil)
+	case model.TypeTime:
+		return "time", nil
+	case model.TypeDate:
+		return "date", nil
 	case model.TypeID:
 		return fmt.Sprintf("varchar(%d)", maxIDSize), nil
 	case model.TypeString:
@@ -56,26 +66,30 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 
 func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 	if realFieldStruct.IsList && !realFieldStruct.IsLinked { // array without directive relation not allowed
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName), nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName), nil, nil)
 	}
 	if realFieldStruct.Kind == model.TypeObject {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("invalid type for field %s - object type not supported in sql creation", realFieldStruct.FieldName), nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type for field %s - object type not supported in sql creation", realFieldStruct.FieldName), nil, nil)
 	}
 
 	if realFieldStruct.IsPrimary && !realFieldStruct.IsFieldTypeRequired {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("primary key must be required"), nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key must be not null", nil, nil)
 	}
 
-	if realFieldStruct.IsPrimary && realFieldStruct.Kind != model.TypeID {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("primary key should be of type ID"), nil)
+	if realFieldStruct.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key with auto increment is only applicable on type integer", nil, nil)
+	}
+
+	if realFieldStruct.IsPrimary && !(realFieldStruct.Kind == model.TypeID || realFieldStruct.Kind == model.TypeInteger) {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key should be of type ID or Integer", nil, nil)
 	}
 
 	if realFieldStruct.Kind == model.TypeJSON && (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked || realFieldStruct.IsIndex) {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("cannot set index with type json"), nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set index with type json", nil, nil)
 	}
 
 	if (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid schema provided", fmt.Errorf("cannot set default directive with other constraints"), nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set default directive with other constraints", nil, nil)
 	}
 
 	return nil
@@ -296,10 +310,23 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 		if realFieldStruct.IsPrimary {
 			doesPrimaryKeyExists = true
 			if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
-				primaryKeyQuery = realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS PRIMARY KEY NOT NULL, "
+				primaryKeyQuery = realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS PRIMARY KEY NOT NULL , "
 				continue
 			}
-			primaryKeyQuery = realFieldKey + " " + sqlType + " PRIMARY KEY NOT NULL, "
+			var autoIncrement string
+			if realFieldStruct.IsAutoIncrement {
+				switch model.DBType(dbType) {
+				case model.SQLServer:
+					autoIncrement = " IDENTITY(1,1)"
+
+				case model.MySQL:
+					autoIncrement = "AUTO_INCREMENT"
+
+				case model.Postgres:
+					sqlType = "bigserial"
+				}
+			}
+			primaryKeyQuery = fmt.Sprintf("%s %s PRIMARY KEY NOT NULL %s, ", realFieldKey, sqlType, autoIncrement)
 			continue
 		}
 
@@ -528,4 +555,48 @@ func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*index
 		}
 	}
 	return indexMap, nil
+}
+
+func (s *Schema) getSchemaResponse(ctx context.Context, format, dbName, tableName string, ignoreForeignCheck bool, alreadyAddedTables map[string]bool, schemaResponse *[]interface{}) error {
+	_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
+	if ok {
+		return nil
+	}
+
+	resourceID := config.GenerateResourceID(s.clusterID, s.project, config.ResourceDatabaseSchema, dbName, tableName)
+	dbSchema, ok := s.dbSchemas[resourceID]
+	if !ok {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbName, tableName), nil, nil)
+	}
+
+	collectionInfo, _ := s.GetSchema(dbName, tableName)
+	for _, fieldInfo := range collectionInfo {
+		if !ignoreForeignCheck && fieldInfo.IsForeign {
+			_, ok := alreadyAddedTables[getKeyName(dbName, tableName)]
+			if ok {
+				continue
+			}
+			if err := s.getSchemaResponse(ctx, format, dbName, fieldInfo.JointTable.Table, ignoreForeignCheck, alreadyAddedTables, schemaResponse); err != nil {
+				return err
+			}
+		}
+	}
+	alreadyAddedTables[getKeyName(dbName, tableName)] = true
+	if format == "json" {
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, SchemaObj: collectionInfo})
+	} else {
+		*schemaResponse = append(*schemaResponse, dbSchemaResponse{DbAlias: dbName, Col: tableName, Schema: dbSchema.Schema})
+	}
+	return nil
+}
+
+func getKeyName(dbName, key string) string {
+	return fmt.Sprintf("%s-%s", dbName, key)
+}
+
+type dbSchemaResponse struct {
+	DbAlias   string       `json:"dbAlias"`
+	Col       string       `json:"col"`
+	Schema    string       `json:"schema,omitempty"`
+	SchemaObj model.Fields `json:"schemaObj,omitempty"`
 }

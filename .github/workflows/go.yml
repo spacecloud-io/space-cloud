@@ -5,10 +5,10 @@ jobs:
     name: Build and test gateway
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.13
+      - name: Set up Go 1.15
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13
+          go-version: 1.15
         id: go
 
       - name: Check out code into the Go module directory
@@ -36,10 +36,10 @@ jobs:
     name: Build and test Runner
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.13
+      - name: Set up Go 1.15
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13
+          go-version: 1.15
         id: go
 
       - name: Check out code into the Go module directory
@@ -63,44 +63,14 @@ jobs:
           sudo cp ./bin/golangci-lint $GOPATH/bin/
           cd runner && golangci-lint run -E golint --exclude-use-default=false --timeout 180s ./...
 
-  metric:
-    name: Build and test metric proxy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Go 1.13
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.13
-        id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
-      - name: Cache Go Modules
-        uses: actions/cache@v1
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Build
-        run: cd metric-proxy && go build -v .
-      - name: Test
-        run: cd metric-proxy && go test ./...
-      - name: Lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.26.0
-          sudo cp ./bin/golangci-lint $GOPATH/bin/
-          cd metric-proxy && golangci-lint run -E golint --exclude-use-default=false --timeout 180s ./...
-
   cli:
     name: Build and test space cli
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.13
+      - name: Set up Go 1.15
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13
+          go-version: 1.15
         id: go
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1

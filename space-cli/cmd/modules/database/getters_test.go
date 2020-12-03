@@ -38,16 +38,16 @@ func TestGetDbRule(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/collections/rules", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"postgres-event": map[string]interface{}{
-								"isRealtimeEnabled": true,
-								"rules": map[string]interface{}{
-									"id":   "local-admin",
-									"rule": "allow",
-								},
+							"dbAlias":           "postgres",
+							"col":               "event",
+							"isRealtimeEnabled": true,
+							"rules": map[string]interface{}{
+								"id":   "local-admin",
+								"rule": "allow",
 							},
 						},
 						},
@@ -73,7 +73,7 @@ func TestGetDbRule(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/collections/rules", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -101,16 +101,16 @@ func TestGetDbRule(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/collections/rules", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"postgres-event_logs": map[string]interface{}{
-								"isRealtimeEnabled": true,
-								"rules": map[string]interface{}{
-									"id":   "local-admin",
-									"rule": "allow",
-								},
+							"dbAlias":           "postgres",
+							"col":               "event_logs",
+							"isRealtimeEnabled": true,
+							"rules": map[string]interface{}{
+								"id":   "local-admin",
+								"rule": "allow",
 							},
 						},
 						},
@@ -175,15 +175,14 @@ func TestGetDbConfig(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/config", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"postgres": map[string]interface{}{
-								"enabled": true,
-								"conn":    "connected",
-								"type":    "tcp",
-							},
+							"dbAlias": "postgres",
+							"enabled": true,
+							"conn":    "connected",
+							"type":    "tcp",
 						},
 						},
 					}},
@@ -208,15 +207,14 @@ func TestGetDbConfig(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/config", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"postgres": map[string]interface{}{
-								"enabled": true,
-								"conn":    "connected",
-								"type":    "tcp",
-							},
+							"dbAlias": "postgres",
+							"enabled": true,
+							"conn":    "connected",
+							"type":    "tcp",
 						},
 						},
 					}},
@@ -280,14 +278,25 @@ func TestGetDbSchema(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/collections/schema/mutate", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
-						Result: []interface{}{map[string]interface{}{
-							"postgres-event": map[string]interface{}{
-								"schema": "mongodb",
+						Result: []interface{}{
+							map[string]interface{}{
+								"col":     "subscribers",
+								"dbAlias": "db",
+								"schema":  "type subscribers { id: ID! @primary name: String!}",
 							},
-						},
+							map[string]interface{}{
+								"col":     "default",
+								"dbAlias": "db",
+								"schema":  "",
+							},
+							map[string]interface{}{
+								"col":     "genres",
+								"dbAlias": "db",
+								"schema":  "type genres { id: ID! @primary name: String!}",
+							},
 						},
 					}},
 				},
@@ -296,8 +305,14 @@ func TestGetDbSchema(t *testing.T) {
 				{
 					API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate",
 					Type: "db-schema",
-					Meta: map[string]string{"project": "myproject", "col": "event", "dbAlias": "postgres"},
-					Spec: map[string]interface{}{"schema": "mongodb"},
+					Meta: map[string]string{"project": "myproject", "col": "subscribers", "dbAlias": "db"},
+					Spec: map[string]interface{}{"schema": "type subscribers { id: ID! @primary name: String!}"},
+				},
+				{
+					API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate",
+					Type: "db-schema",
+					Meta: map[string]string{"project": "myproject", "col": "genres", "dbAlias": "db"},
+					Spec: map[string]interface{}{"schema": "type genres { id: ID! @primary name: String!}"},
 				},
 			},
 			wantErr: false,
@@ -311,44 +326,15 @@ func TestGetDbSchema(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/collections/schema/mutate", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
-						Result: []interface{}{map[string]interface{}{
-							"postgres-event": map[string]interface{}{
-								"schema": "mongodb",
-							},
-						},
-						},
+						Result: []interface{}{nil},
 					}},
 				},
 			},
 			want:    []*model.SpecObject{},
 			wantErr: true,
-		},
-		{
-			name: "Event_llogs in col",
-			args: args{
-				project:     "myproject",
-				commandName: "db-schema",
-				params:      map[string]string{},
-			},
-			transportMockArgs: []mockArgs{
-				{
-					method: "Get",
-					args:   []interface{}{"GET", "/v1/config/projects/myproject/database/collections/schema/mutate", map[string]string{}, new(model.Response)},
-					paramsReturned: []interface{}{nil, model.Response{
-						Result: []interface{}{map[string]interface{}{
-							"postgres-event_logs": map[string]interface{}{
-								"schema": "mongodb",
-							},
-						},
-						},
-					}},
-				},
-			},
-			want:    []*model.SpecObject{},
-			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -362,15 +348,15 @@ func TestGetDbSchema(t *testing.T) {
 			transport.Client = &mockSchema
 			got, err := GetDbSchema(tt.args.project, tt.args.commandName, tt.args.params)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetDbSchema() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetDbSchema() error = %v,\n wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetDbSchema() len= %v, want %v", len(got), len(tt.want))
+				t.Errorf("GetDbSchema() len= %v,\n want %v", len(got), len(tt.want))
 			}
 			for i, v := range got {
 				if !reflect.DeepEqual(v, tt.want[i]) {
-					t.Errorf("GetDbSchema() v = %v, want %v", v, tt.want[i])
+					t.Errorf("GetDbSchema() v = %v,\n want %v", v, tt.want[i])
 				}
 			}
 		})
@@ -400,7 +386,7 @@ func TestGetDbPreparedQuery(t *testing.T) {
 			args: args{commandName: "db-prepared-query", project: "project", params: map[string]string{"dbAlias": "dbAlias", "id": "prep"}},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/project/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "prep"}, new(model.Response)},
 					paramsReturned: []interface{}{errors.New("unable to unmarshall"), model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -416,14 +402,14 @@ func TestGetDbPreparedQuery(t *testing.T) {
 			args: args{commandName: "db-prepared-query", project: "project", params: map[string]string{"dbAlias": "dbAlias", "id": "prep"}},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/project/database/prepared-queries", map[string]string{"dbAlias": "dbAlias", "id": "prep"}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"id":   "prep",
-							"db":   "dbAlias",
-							"args": []interface{}{"args.id"},
-							"sql":  "select * from users",
+							"id":      "prep",
+							"dbAlias": "dbAlias",
+							"args":    []interface{}{"args.id"},
+							"sql":     "select * from users",
 							"rule": map[string]interface{}{
 								"rule": "allow",
 							},

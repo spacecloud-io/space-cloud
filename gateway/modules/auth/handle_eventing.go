@@ -16,7 +16,7 @@ func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token stri
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, err := m.getEventingRule(ctx, event.Type)
+	rule, err := m.getEventingRule(ctx, project, event.Type)
 	if err != nil {
 		return model.RequestParams{}, err
 	}
@@ -43,14 +43,15 @@ func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token stri
 	return model.RequestParams{Claims: auth, Resource: "eventing-queue", Op: "access", Attributes: attr}, nil
 }
 
-func (m *Module) getEventingRule(ctx context.Context, eventType string) (*config.Rule, error) {
+func (m *Module) getEventingRule(ctx context.Context, projectID string, eventType string) (*config.Rule, error) {
 	if m.eventingRules == nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Security rules not initialized for event type (%s)", eventType), nil, nil)
 	}
-	if rule, p := m.eventingRules[eventType]; p {
+	resourceID := config.GenerateResourceID(m.clusterID, projectID, config.ResourceEventingRule, eventType)
+	if rule, p := m.eventingRules[resourceID]; p {
 		return rule, nil
 	}
-	if rule, p := m.eventingRules["default"]; p {
+	if rule, p := m.eventingRules[config.GenerateResourceID(m.clusterID, projectID, config.ResourceEventingRule, "default")]; p {
 		return rule, nil
 	}
 	return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("No security rule provided for event type (%s)", eventType), nil, nil)

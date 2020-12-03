@@ -40,13 +40,13 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 		result  interface{}
 	}
 	crudPostgres := crud.Init()
-	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
+	_ = crudPostgres.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "postgres"): &config.DatabaseConfig{DbAlias: "postgres", Type: "sql-postgres", Enabled: false}})
 
 	crudMySQL := crud.Init()
-	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
+	_ = crudMySQL.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "mysql"): &config.DatabaseConfig{DbAlias: "mysql", Type: "sql-mysql", Enabled: false}})
 
 	crudSQLServer := crud.Init()
-	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
+	_ = crudSQLServer.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "sqlserver"): &config.DatabaseConfig{DbAlias: "sqlserver", Type: "sql-sqlserver", Enabled: false}})
 	tests := []struct {
 		name         string
 		fields       fields
@@ -83,7 +83,7 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 }
 
 func returntime(s string) time.Time {
-	t, err := time.Parse(time.RFC3339, s)
+	t, err := time.Parse(time.RFC3339Nano, s)
 	if err != nil {
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("invalid string format of datetime (%s)", s), map[string]interface{}{"error": err})
 		return time.Now()
@@ -102,13 +102,13 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 		find    map[string]interface{}
 	}
 	crudPostgres := crud.Init()
-	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
+	_ = crudPostgres.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "postgres"): &config.DatabaseConfig{DbAlias: "postgres", Type: "sql-postgres", Enabled: false}})
 
 	crudMySQL := crud.Init()
-	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
+	_ = crudMySQL.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "mysql"): &config.DatabaseConfig{DbAlias: "mysql", Type: "sql-mysql", Enabled: false}})
 
 	crudSQLServer := crud.Init()
-	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
+	_ = crudSQLServer.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "sqlserver"): &config.DatabaseConfig{DbAlias: "sqlserver", Type: "sql-sqlserver", Enabled: false}})
 	tests := []struct {
 		name    string
 		fields  fields

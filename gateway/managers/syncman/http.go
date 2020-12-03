@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/spaceuptech/helpers"
 	"golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -16,7 +17,6 @@ import (
 func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 	// Marshal json into byte array
 	data, _ := json.Marshal(params)
-
 	// Make a request object
 	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(data))
 	if err != nil {
@@ -46,7 +46,7 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token, scTok
 	defer utils.CloseTheCloser(resp.Body)
 
 	if err := json.NewDecoder(resp.Body).Decode(vPtr); err != nil {
-		return err
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable decode response", err, nil)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {

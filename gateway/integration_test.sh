@@ -20,7 +20,7 @@ cd modules/crud/sql
 
 ## mysql test
 echo "starting mysql container, it will take 30 seconds"
-docker run --name integration-mysql -p 3306:3306  -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:latest
+docker run --name integration-mysql -p 3306:3306  -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:8.0.21 &> /dev/null
 sleep 30
 echo "running integration tests for mysql"
 go test -tags integration -db_type mysql -conn "root:my-secret-pw@tcp(localhost:3306)/"
@@ -70,7 +70,7 @@ rm ../../../config.yaml &
 
 ## sqlserver test
 echo "starting sqlserver container,it will take 30 seconds"
-docker run --name integration-sqlserver -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=yourPassword@#12345' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-CU8-ubuntu
+docker run --name integration-sqlserver -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=yourPassword@#12345' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2019-latest
 sleep 30
 echo "running integration tests for sqlserver"
 go test -tags integration -db_type sqlserver -conn "Data Source=localhost,1433;Initial Catalog=master;User ID=sa;Password=yourPassword@#12345;"
