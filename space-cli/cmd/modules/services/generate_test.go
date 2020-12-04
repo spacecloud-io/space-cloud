@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
@@ -443,8 +444,22 @@ func TestGenerateService(t *testing.T) {
 					"version": "v1",
 				},
 				Spec: &model.Service{
-					Labels: map[string]string{},
-					Scale:  model.ScaleConfig{Replicas: int32(10), MinReplicas: int32(10), MaxReplicas: int32(90), Concurrency: 50, Mode: "parallel"},
+					Labels:                 map[string]string{},
+					StatsInclusionPrefixes: "http.inbound,cluster_manager,listener_manager",
+					AutoScale: &model.AutoScaleConfig{
+						PollingInterval:  int32(15),
+						CoolDownInterval: int32(120),
+						MinReplicas:      int32(10),
+						MaxReplicas:      int32(90),
+						Triggers: []model.AutoScaleTrigger{
+							{
+								Name:             "Request per second",
+								Type:             "requests-per-second",
+								MetaData:         map[string]string{"target": "50"},
+								AuthenticatedRef: nil,
+							},
+						},
+					},
 					Tasks: []model.Task{
 						{
 							ID:        "service",
@@ -483,11 +498,12 @@ func TestGenerateService(t *testing.T) {
 
 			got, err := GenerateService(tt.args.projectID, tt.args.dockerImage)
 			if (err != nil) != tt.wantErr {
+
 				t.Errorf("GenerateService() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GenerateService() = %v, want %v", got, tt.want)
+			if arr := deep.Equal(got, tt.want); len(arr) != 0 {
+				t.Errorf("GenerateService() = %v", arr)
 			}
 
 			mockSurvey.AssertExpectations(t)

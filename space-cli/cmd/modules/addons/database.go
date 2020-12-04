@@ -87,7 +87,7 @@ func addDatabase(chartReleaseName, dbType, setValuesFlag, valuesYamlFile, chartL
 
 		case <-ticker.C:
 			utils.LogInfo("Database has been provisioned on kubernetes cluster")
-			utils.LogInfo("But it is taking to much time to start, check if you have enough resource on the cluster or")
+			utils.LogInfo("But it is taking to much time to start, check if you have enough resource on the cluster")
 			return nil
 		}
 	}

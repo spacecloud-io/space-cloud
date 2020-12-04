@@ -22,9 +22,10 @@ func Update(setValuesFlag, valuesYamlFile, chartLocation string) error {
 		return nil
 	}
 
+	clusterID := charList[0].Name
 	isOk := false
 	prompt := &survey.Confirm{
-		Message: fmt.Sprintf("Space cloud cluster with id (%s) will be upgraded, Do you want to continue", charList[0].Name),
+		Message: fmt.Sprintf("Space cloud cluster with id (%s) will be upgraded, Do you want to continue", clusterID),
 	}
 	if err := survey.AskOne(prompt, &isOk); err != nil {
 		return err
@@ -44,7 +45,14 @@ func Update(setValuesFlag, valuesYamlFile, chartLocation string) error {
 		return fmt.Errorf("you cannot set a new cluster id (%s) while upgrading an existing cluster, revmove the value & try again", value)
 	}
 
-	_, err = utils.HelmUpgrade(charList[0].Name, chartLocation, model.HelmSpaceCloudChartDownloadURL, "", valuesFileObj)
+	// set clusterId of existing cluster
+	charInfo, err := utils.HelmGet(clusterID)
+	if err != nil {
+		return err
+	}
+	valuesFileObj["clusterId"] = charInfo.Config["clusterId"]
+
+	_, err = utils.HelmUpgrade(clusterID, chartLocation, model.HelmSpaceCloudChartDownloadURL, "", valuesFileObj)
 	if err != nil {
 		return err
 	}
