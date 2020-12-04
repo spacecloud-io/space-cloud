@@ -7,6 +7,7 @@ require (
 	github.com/briandowns/spinner v1.9.0
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-test/deep v1.0.7
 	github.com/google/go-cmp v0.4.1
 	github.com/google/uuid v1.1.1
 	github.com/olekukonko/tablewriter v0.0.4
