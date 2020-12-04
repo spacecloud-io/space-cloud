@@ -28,8 +28,10 @@ func (s *Schema) GetSchemaForDB(ctx context.Context, dbAlias, col, format string
 		}
 	} else if dbAlias != "*" {
 		for _, dbSchema := range s.dbSchemas {
-			if err := s.getSchemaResponse(ctx, format, dbAlias, dbSchema.Table, false, alreadyAddedTables, &schemaResponse); err != nil {
-				return nil, err
+			if dbAlias == dbSchema.DbAlias {
+				if err := s.getSchemaResponse(ctx, format, dbAlias, dbSchema.Table, false, alreadyAddedTables, &schemaResponse); err != nil {
+					return nil, err
+				}
 			}
 		}
 	} else {

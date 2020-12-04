@@ -56,6 +56,22 @@ func HelmUninstall(releaseName string) error {
 	return nil
 }
 
+// HelmGet gets chart info
+func HelmGet(releaseName string) (*release.Release, error) {
+	settings := cli.New()
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), log.Printf); err != nil {
+		return nil, err
+	}
+
+	iCli := action.NewGet(actionConfig)
+	info, err := iCli.Run(releaseName)
+	if err != nil {
+		return nil, err
+	}
+	return info, nil
+}
+
 // HelmList uninstall helm chart
 func HelmList(filterRegex string) ([]*release.Release, error) {
 	settings := cli.New()
