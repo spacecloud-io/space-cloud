@@ -460,7 +460,6 @@ func TestGenerateService(t *testing.T) {
 							},
 						},
 					},
-					Scale: &model.ScaleConfig{Replicas: int32(10), MinReplicas: int32(10), MaxReplicas: int32(90), Concurrency: 50, Mode: "parallel"},
 					Tasks: []model.Task{
 						{
 							ID:        "service",
