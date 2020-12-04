@@ -80,13 +80,19 @@ func HelmList(filterRegex string) ([]*release.Release, error) {
 		return nil, err
 	}
 	lCli := action.NewList(actionConfig)
-	lCli.Filter = filterRegex
 	list, err := lCli.Run()
 	if err != nil {
 		return nil, err
 	}
 
-	return list, nil
+	filteredList := make([]*release.Release, 0)
+	for _, item := range list {
+		if strings.Contains(item.Namespace, filterRegex) {
+			filteredList = append(filteredList, item)
+		}
+	}
+
+	return filteredList, nil
 }
 
 // HelmUpgrade upgrade space cloud chart
