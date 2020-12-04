@@ -108,8 +108,23 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 			"version": serviceVersion,
 		},
 		Spec: &model.Service{
+			StatsInclusionPrefixes: "http.inbound,cluster_manager,listener_manager",
+			AutoScale: &model.AutoScaleConfig{
+				PollingInterval:  int32(15),
+				CoolDownInterval: int32(120),
+				MinReplicas:      int32(replicaMin),
+				MaxReplicas:      int32(replicaMax),
+				Triggers: []model.AutoScaleTrigger{
+					{
+						Name:             "Request per second",
+						Type:             "requests-per-second",
+						MetaData:         map[string]string{"target": "50"},
+						AuthenticatedRef: nil,
+					},
+				},
+			},
 			Labels: map[string]string{},
-			Scale:  model.ScaleConfig{Replicas: int32(replicaMin), MinReplicas: int32(replicaMin), MaxReplicas: int32(replicaMax), Concurrency: 50, Mode: "parallel"},
+			Scale:  &model.ScaleConfig{Replicas: int32(replicaMin), MinReplicas: int32(replicaMin), MaxReplicas: int32(replicaMax), Concurrency: 50, Mode: "parallel"},
 			Tasks: []model.Task{
 				{
 					ID:        serviceID,
