@@ -39,17 +39,12 @@ func Update(setValuesFlag, valuesYamlFile, chartLocation string) error {
 		return err
 	}
 
-	// override the clusterId
-	value, ok := valuesFileObj["clusterId"]
-	if ok {
-		return fmt.Errorf("you cannot set a new cluster id (%s) while upgrading an existing cluster, revmove the value & try again", value)
-	}
-
 	// set clusterId of existing cluster
 	charInfo, err := utils.HelmGet(clusterID)
 	if err != nil {
 		return err
 	}
+
 	valuesFileObj["clusterId"] = charInfo.Config["clusterId"]
 
 	_, err = utils.HelmUpgrade(clusterID, chartLocation, model.HelmSpaceCloudChartDownloadURL, "", valuesFileObj)
