@@ -237,7 +237,7 @@ func (s *KubeStore) generateSecretValue(key string, value []byte) *v1.Secret {
 		Data: map[string][]byte{
 			"value":    value,
 			"size":     {byte(len(value))},
-			"modified": []byte(time.Now().String()),
+			"modified": []byte(time.Now().Format(time.RFC3339Nano)),
 		},
 	}
 }
