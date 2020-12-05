@@ -87,7 +87,7 @@ func (s *KubeStore) WatchLicense(cb func(eventType, resourceID string, resourceT
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
 			options.LabelSelector = fmt.Sprintf("clusterId=%s,kind=%s", s.clusterID, config.ResourceLicense)
 		}
-		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 0, informers.WithTweakListOptions(options)).Core().V1().Secrets().Informer()
+		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 15*time.Minute, informers.WithTweakListOptions(options)).Core().V1().Secrets().Informer()
 		stopper := make(chan struct{})
 		defer close(stopper)
 		defer runtime.HandleCrash() // handles a crash & logs an error
@@ -156,7 +156,7 @@ func (s *KubeStore) WatchResources(cb func(eventType, resourceID string, resourc
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
 			options.LabelSelector = fmt.Sprintf("clusterId=%s", s.clusterID)
 		}
-		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 5*time.Minute, informers.WithTweakListOptions(options)).Core().V1().ConfigMaps().Informer()
+		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 15*time.Minute, informers.WithTweakListOptions(options)).Core().V1().ConfigMaps().Informer()
 		stopper := make(chan struct{})
 		defer close(stopper)
 		defer runtime.HandleCrash() // handles a crash & logs an error
@@ -235,7 +235,7 @@ func (s *KubeStore) WatchServices(cb func(string, string, model.ScServices)) err
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
 			options.LabelSelector = fmt.Sprintf("app=%s,clusterId=%s", "gateway", s.clusterID)
 		}
-		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 5*time.Minute, informers.WithTweakListOptions(options)).Core().V1().Pods().Informer()
+		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 15*time.Minute, informers.WithTweakListOptions(options)).Core().V1().Pods().Informer()
 		stopper := make(chan struct{})
 		defer close(stopper)
 		defer runtime.HandleCrash()
