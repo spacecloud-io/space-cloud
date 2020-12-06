@@ -23,7 +23,7 @@ func getSelectedAccount() (*model.Account, error) {
 		return nil, fmt.Errorf("No accounts found, Add an account by created a space cloud cluster")
 	}
 
-	var account *model.Account
+	account := new(model.Account)
 	for _, v := range credential.Accounts {
 		if credential.SelectedAccount == v.ID {
 			account = v
@@ -55,7 +55,7 @@ func StoreCredentials(account *model.Account) error {
 	for _, val := range credential.Accounts {
 		// update account if already exists
 		if val.ID == account.ID {
-			val.ID, val.UserName, val.Key, val.ServerURL = account.ID, account.UserName, account.Key, account.ServerURL
+			val.ID, val.UserName, val.Key, val.ServerURL, val.DefaultProject = account.ID, account.UserName, account.Key, account.ServerURL, account.DefaultProject
 			credential.SelectedAccount = account.ID
 			if err := GenerateAccountsFile(credential); err != nil {
 				logrus.Errorf("error in checking credentials unable to update accounts yaml file - %v", err)

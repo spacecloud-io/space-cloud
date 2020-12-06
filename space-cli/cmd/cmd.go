@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/accounts"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/addons"
@@ -23,7 +24,7 @@ func GetRootCommand() *cobra.Command {
 
 	var rootCmd = &cobra.Command{
 		Use:     "space-cli",
-		Version: version,
+		Version: model.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			utils.SetLogLevel(viper.GetString("log-level"))
 		},
@@ -106,6 +107,7 @@ func GetRootCommand() *cobra.Command {
 
 	rootCmd.AddCommand(modules.FetchGenerateSubCommands())
 	rootCmd.AddCommand(modules.FetchGetSubCommands())
+	rootCmd.AddCommand(modules.FetchDeleteSubCommands())
 	rootCmd.AddCommand(addons.Commands()...)
 	rootCmd.AddCommand(deploy.Commands()...)
 	rootCmd.AddCommand(operations.Commands()...)

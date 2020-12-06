@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	licenseMode = "offline"
+	licenseMode = licenseModeOffline
 	temp, _ := base64.RawStdEncoding.DecodeString(licensePublicKey)
 	licensePublicKey = string(temp)
 }

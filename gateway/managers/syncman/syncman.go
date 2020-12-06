@@ -3,31 +3,41 @@ package syncman
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
+	"time"
 
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils/leader"
+	"github.com/spaceuptech/space-cloud/gateway/utils/pubsub"
 )
+
+const pubSubOperationRenew = "renew"
+const pubSubOperationUpgrade = "upgrade"
 
 // Manager syncs the project config between folders
 type Manager struct {
-	lock sync.RWMutex
+	lock         sync.RWMutex
+	lockServices sync.RWMutex
 
 	// Config related to cluster config
 	projectConfig *config.Config
 
 	// Configuration for cluster information
-	nodeID        string
-	clusterID     string
-	advertiseAddr string
-	runnerAddr    string
-	port          int
+	nodeID     string
+	clusterID  string
+	runnerAddr string
+	port       int
 
+	leader       *leader.Module
+	pubsubClient *pubsub.Module
 	// Configuration for clustering
 	storeType string
 	store     Store
-	services  []*service
+	services  model.ScServices
 
 	// For authentication
 	adminMan       AdminSyncmanInterface
@@ -38,29 +48,20 @@ type Manager struct {
 	globalModules GlobalModulesInterface
 }
 
-type service struct {
-	id   string
-	addr string
-}
-
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan AdminSyncmanInterface, integrationMan integrationInterface, ssl *config.SSL) (*Manager, error) {
+func New(nodeID, clusterID, storeType, runnerAddr string, adminMan AdminSyncmanInterface, integrationMan integrationInterface, ssl *config.SSL) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan, integrationMan: integrationMan}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan, integrationMan: integrationMan}
 
 	// Initialise the consul client if enabled
 	var s Store
 	var err error
 	switch storeType {
 	case "local":
-		s, err = NewLocalStore(nodeID, advertiseAddr, ssl)
+		s, err = NewLocalStore(nodeID, ssl)
 	case "kube":
 		s, err = NewKubeStore(clusterID)
-	case "consul":
-		s, err = NewConsulStore(nodeID, clusterID, advertiseAddr)
-	case "etcd":
-		s, err = NewETCDStore(nodeID, clusterID, advertiseAddr)
 	default:
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot initialize syncaman as invalid store type (%v) provided", storeType), nil, nil)
 	}
@@ -71,102 +72,212 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 	m.store = s
 	m.store.Register()
 
+	pubsubClient, err := pubsub.New("license-manager", os.Getenv("REDIS_CONN"))
+	if err != nil {
+		return nil, helpers.Logger.LogError("syncman-new", "Unable to initialize pub sub client required for sync module, ensure that redis database is running", err, nil)
+	}
+	m.pubsubClient = pubsubClient
+	m.leader = leader.New(nodeID, pubsubClient)
+
+	if err := m.SetPubSubRoutines(nodeID); err != nil {
+		return nil, err
+	}
+
 	return m, nil
 }
 
 // Start begins the sync manager operations
 func (s *Manager) Start(port int) error {
+
+	// Start routine to observe space cloud projects
+	if err := s.store.WatchServices(func(eventType, serviceID string, services model.ScServices) {
+		s.lockServices.Lock()
+		defer s.lockServices.Unlock()
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services, "eventType": eventType, "id": serviceID})
+
+		s.adminMan.SetServices(eventType, services)
+		s.services = services
+	}); err != nil {
+		return err
+	}
+
+	count := 1
+	maxRetryCount := 6
+	incrementBy := 10
+	for len(s.services) == 0 {
+		helpers.Logger.LogDebug("syncman-start", fmt.Sprintf("Waiting for gateway services to register - retry count (%d)", count), nil)
+		time.Sleep(time.Duration(count*incrementBy) * time.Second)
+		if count == maxRetryCount {
+			return helpers.Logger.LogError("syncman-start", "Cannot start gateway, gateway service not registered", nil, nil)
+		}
+		count++
+	}
+
 	// Save the ports
 	s.port = port
 	// NOTE: SSL is not set in config
 	s.projectConfig = &config.Config{}
 
-	// Fetch initial version of admin config. This must be called before watch admin config callback is invoked
-	adminConfig, err := s.store.GetAdminConfig(context.Background())
+	// Set global config
+	globalConfig, err := s.store.GetGlobalConfig()
 	if err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch initial copy of admin config", err, map[string]interface{}{})
-	}
-	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Successfully loaded initial copy of config file", map[string]interface{}{})
-	s.globalModules.SetMetricsConfig(adminConfig.ClusterConfig.EnableTelemetry)
-	if adminConfig.ClusterConfig.LetsEncryptEmail != "" {
-		s.modules.LetsEncrypt().SetLetsEncryptEmail(adminConfig.ClusterConfig.LetsEncryptEmail)
-	}
-	_ = s.adminMan.SetConfig(adminConfig, true)
-	_ = s.integrationMan.SetConfig(adminConfig.Integrations)
-	s.projectConfig.Admin = adminConfig
-
-	// Start routine to observe active space-cloud services
-	if err := s.store.WatchProjects(func(projects []*config.Project) {
-		s.lock.Lock()
-		defer s.lock.Unlock()
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating projects", map[string]interface{}{"projects": projects})
-		for _, p := range s.projectConfig.Projects {
-			doesNotExist := true
-			for _, q := range projects {
-				if p.ID == q.ID {
-					doesNotExist = false
-					break
-				}
-			}
-			if doesNotExist {
-				err := s.store.DeleteProject(context.Background(), p.ID)
-				if err != nil {
-					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to delete project", err, map[string]interface{}{"project": p.ID})
-				}
-				s.modules.Delete(p.ID)
-			}
-		}
-		s.projectConfig.Projects = projects
-
-		if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
-			for _, p := range s.projectConfig.Projects {
-				if err := s.modules.SetProjectConfig(p); err != nil {
-					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set project config", err, nil)
-					break
-				}
-			}
-		}
-	}); err != nil {
 		return err
 	}
 
-	// Start routine to observe space cloud projects
-	if err := s.store.WatchAdminConfig(func(clusters []*config.Admin) {
-		if len(clusters) == 0 {
+	_ = s.adminMan.SetConfig(globalConfig.License)
+	s.adminMan.SetServices(config.ResourceAddEvent, s.services)
+	s.adminMan.SetIntegrationConfig(globalConfig.Integrations)
+	_ = s.integrationMan.SetConfig(globalConfig.Integrations, globalConfig.IntegrationHooks)
+
+	s.leader.AddCallBack("admin-set-service", func() {
+		s.lockServices.RLock()
+		s.adminMan.SetServices(config.ResourceDeleteEvent, s.services)
+		s.lockServices.RUnlock()
+	})
+
+	// Set caching config
+	if err := s.modules.Caching().SetCachingConfig(context.TODO(), globalConfig.CacheConfig); err != nil {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set config of caching module, ensure redis instance is running", err, nil)
+	}
+
+	// Set metric config
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Successfully loaded initial copy of config file", map[string]interface{}{})
+	s.globalModules.SetMetricsConfig(globalConfig.ClusterConfig.EnableTelemetry)
+
+	// Set letsencrypt config
+	if globalConfig.ClusterConfig.LetsEncryptEmail != "" {
+		s.modules.LetsEncrypt().SetLetsEncryptEmail(globalConfig.ClusterConfig.LetsEncryptEmail)
+	}
+
+	s.projectConfig = globalConfig
+
+	// Set initial project config
+	if err := s.modules.SetInitialProjectConfig(context.TODO(), globalConfig.Projects); err != nil {
+		return err
+	}
+
+	// Start routine to observe space cloud project level resources
+	if err := s.store.WatchResources(func(eventType, resourceID string, resourceType config.Resource, resource interface{}) {
+		s.lock.Lock()
+		defer s.lock.Unlock()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+
+		_, projectID, _, err := splitResourceID(ctx, resourceID)
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to split resource id in watch resources", err, nil)
 			return
 		}
-		cluster := clusters[0]
 
-		s.lock.Lock()
-		s.projectConfig.Admin = cluster
-		s.lock.Unlock()
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating resources", map[string]interface{}{"event": eventType, "resourceId": resourceID, "resource": resource, "projectId": projectID, "resourceType": resourceType})
 
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating admin config", nil)
-		if err := s.adminMan.SetConfig(cluster, false); err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
+		if err := validateResource(ctx, eventType, s.projectConfig, resourceID, resourceType, resource); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to update resources", err, nil)
+			return
 		}
 
-		if err := s.integrationMan.SetConfig(cluster.Integrations); err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply integration config", err, nil)
+		switch resourceType {
+		case config.ResourceProject:
+			if eventType == config.ResourceDeleteEvent {
+				s.modules.Delete(projectID)
+				return
+			}
+			_ = s.modules.SetProjectConfig(ctx, s.projectConfig.Projects[projectID].ProjectConfig)
+
+		case config.ResourceAuthProvider:
+			_ = s.modules.SetUsermanConfig(ctx, projectID, s.projectConfig.Projects[projectID].Auths)
+
+		case config.ResourceDatabaseConfig:
+			p := s.projectConfig.Projects[projectID]
+			_ = s.modules.SetDatabaseConfig(ctx, projectID, p.DatabaseConfigs, p.DatabaseSchemas, p.DatabaseRules, p.DatabasePreparedQueries)
+
+		case config.ResourceDatabaseSchema:
+			_ = s.modules.SetDatabaseSchemaConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabaseSchemas)
+
+		case config.ResourceDatabaseRule:
+			_ = s.modules.SetDatabaseRulesConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabaseRules)
+
+		case config.ResourceDatabasePreparedQuery:
+			_ = s.modules.SetDatabasePreparedQueryConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabasePreparedQueries)
+
+		case config.ResourceEventingConfig:
+			p := s.projectConfig.Projects[projectID]
+			_ = s.modules.SetEventingConfig(ctx, projectID, p.EventingConfig, p.EventingRules, p.EventingSchemas, p.EventingTriggers)
+
+		case config.ResourceEventingSchema:
+			_ = s.modules.SetEventingSchemaConfig(ctx, projectID, s.projectConfig.Projects[projectID].EventingSchemas)
+
+		case config.ResourceEventingRule:
+			_ = s.modules.SetEventingRuleConfig(ctx, projectID, s.projectConfig.Projects[projectID].EventingRules)
+
+		case config.ResourceEventingTrigger:
+			_ = s.modules.SetEventingTriggerConfig(ctx, projectID, s.projectConfig.Projects[projectID].EventingTriggers)
+
+		case config.ResourceFileStoreConfig:
+			_ = s.modules.SetFileStoreConfig(ctx, projectID, s.projectConfig.Projects[projectID].FileStoreConfig)
+
+		case config.ResourceFileStoreRule:
+			_ = s.modules.SetFileStoreSecurityRuleConfig(ctx, projectID, s.projectConfig.Projects[projectID].FileStoreRules)
+
+		case config.ResourceProjectLetsEncrypt:
+			_ = s.modules.SetLetsencryptConfig(ctx, projectID, s.projectConfig.Projects[projectID].LetsEncrypt)
+
+		case config.ResourceIngressRoute:
+			_ = s.modules.SetIngressRouteConfig(ctx, projectID, s.projectConfig.Projects[projectID].IngressRoutes)
+
+		case config.ResourceIngressGlobal:
+			_ = s.modules.SetIngressGlobalRouteConfig(ctx, projectID, s.projectConfig.Projects[projectID].IngressGlobal)
+
+		case config.ResourceRemoteService:
+			_ = s.modules.SetRemoteServiceConfig(ctx, projectID, s.projectConfig.Projects[projectID].RemoteService)
+
+		case config.ResourceCluster:
+			s.globalModules.SetMetricsConfig(s.projectConfig.ClusterConfig.EnableTelemetry)
+			s.modules.LetsEncrypt().SetLetsEncryptEmail(s.projectConfig.ClusterConfig.LetsEncryptEmail)
+
+		case config.ResourceIntegration:
+			if err := s.integrationMan.SetIntegrations(s.projectConfig.Integrations); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply integration config", err, nil)
+				return
+			}
+			s.adminMan.SetIntegrationConfig(s.projectConfig.Integrations)
+
+		case config.ResourceIntegrationHook:
+			s.integrationMan.SetIntegrationHooks(s.projectConfig.IntegrationHooks)
+
+		case config.ResourceLicense:
+			if err := s.adminMan.SetConfig(s.projectConfig.License); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
+				return
+			}
+		case config.ResourceCacheConfig:
+			if err := s.modules.Caching().SetCachingConfig(ctx, s.projectConfig.CacheConfig); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
+				return
+			}
+		default:
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unknown resource type provided", err, map[string]interface{}{"resourceType": resourceType})
+			return
 		}
-
-		s.globalModules.SetMetricsConfig(cluster.ClusterConfig.EnableTelemetry)
-		s.modules.LetsEncrypt().SetLetsEncryptEmail(cluster.ClusterConfig.LetsEncryptEmail)
-
 	}); err != nil {
 		return err
 	}
+	s.store.WatchLicense(func(eventType, resourceID string, resourceType config.Resource, resource *config.License) {
 
-	// Start routine to observe space cloud projects
-	if err := s.store.WatchServices(func(services scServices) {
-		s.lock.Lock()
-		defer s.lock.Unlock()
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services})
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating license", map[string]interface{}{"event": eventType, "resourceId": resourceID, "resource": resource, "resourceType": resourceType})
 
-		s.services = services
-	}); err != nil {
-		return err
-	}
+		if resourceType == config.ResourceLicense {
+			if err := s.adminMan.SetConfig(resource); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
+				return
+			}
+			s.lock.Lock()
+			s.projectConfig.License = resource
+			s.lock.Unlock()
+		}
+
+	})
 
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Exiting syncman start", nil)
 	return nil

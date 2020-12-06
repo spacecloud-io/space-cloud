@@ -73,7 +73,7 @@ func (m *Manager) CheckIfAdmin(ctx context.Context, token string) error {
 }
 
 // IsDBConfigValid checks if the database config is valid
-func (m *Manager) IsDBConfigValid(config config.Crud) error {
+func (m *Manager) IsDBConfigValid(config config.DatabaseConfigs) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -92,13 +92,25 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 	return nil
 }
 
+// CheckIfCachingCanBeEnabled checks if the user can configure caching module
+func (m *Manager) CheckIfCachingCanBeEnabled(ctx context.Context) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	if m.quotas.IntegrationLevel < 5 {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "plan needs to be upgraded to use caching module", nil, nil)
+	}
+
+	return nil
+}
+
 // ValidateProjectSyncOperation validates if an operation is permitted based on the mode
-func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config.Project) bool {
+func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config.ProjectConfig) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	// Allow if project is an integration
-	if _, p := m.config.Integrations.Get(project.ID); p {
+	if _, p := m.integrations.Get(project.ID); p {
 		return true
 	}
 
@@ -106,17 +118,17 @@ func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config
 
 	for _, p := range c.Projects {
 		// Return true if the project already exists in
-		if p.ID == project.ID {
+		if p.ProjectConfig.ID == project.ID {
 			return true
 		}
 
 		// Increment count if it isn't an integration
-		if m.config.Integrations == nil {
+		if m.integrations == nil {
 			totalProjects++
 			continue
 		}
 
-		if _, p := m.config.Integrations.Get(p.ID); !p {
+		if _, p := m.integrations.Get(p.ProjectConfig.ID); !p {
 			totalProjects++
 		}
 	}
@@ -162,12 +174,22 @@ func (m *Manager) GetCredentials() map[string]interface{} {
 func (m *Manager) GetClusterID() string {
 	return m.clusterID
 }
-func (m *Manager) GetSessionID() string {
-	return m.sessionID
+func (m *Manager) GetSessionID() (string, error) {
+	if licenseMode == licenseModeOffline {
+		return m.getOfflineLicenseSessionID(), nil
+	}
+	if m.isEnterpriseMode() {
+		licenseObj, err := m.decryptLicense(m.license.License)
+		if err != nil {
+			return "", helpers.Logger.LogError("get-session-id", "Unable to validate license key", err, nil)
+		}
+		return licenseObj.SessionID, nil
+	}
+	return selectRandomSessionID(m.services), nil // first time license renewal
 }
 
 func (m *Manager) GetEnterpriseClusterID() string {
-	return m.config.LicenseKey
+	return m.license.LicenseKey
 }
 
 // GetSecret returns the admin secret

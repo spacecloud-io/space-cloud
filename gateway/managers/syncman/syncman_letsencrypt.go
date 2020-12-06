@@ -11,7 +11,7 @@ import (
 )
 
 // SetProjectLetsEncryptDomains sets a projects whitelisted domains
-func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project string, c config.LetsEncrypt, params model.RequestParams) (int, error) {
+func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project string, c *config.LetsEncrypt, params model.RequestParams) (int, error) {
 	// Check if the request has been hijacked
 	hookResponse := s.integrationMan.InvokeHook(ctx, params)
 	if hookResponse.CheckResponse() {
@@ -34,12 +34,13 @@ func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project stri
 	}
 
 	// Update the projects domains
-	projectConfig.Modules.LetsEncrypt = c
+	projectConfig.LetsEncrypt = c
 	if err := s.modules.LetsEncrypt().SetProjectDomains(project, c); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting letsencrypt project domains", err, nil)
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceProjectLetsEncrypt, "letsencrypt")
+	if err := s.store.SetResource(ctx, resourceID, c); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -68,5 +69,5 @@ func (s *Manager) GetLetsEncryptConfig(ctx context.Context, project string, para
 		return http.StatusBadRequest, nil, err
 	}
 
-	return http.StatusOK, projectConfig.Modules.LetsEncrypt, nil
+	return http.StatusOK, projectConfig.LetsEncrypt, nil
 }

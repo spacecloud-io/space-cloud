@@ -6,20 +6,21 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // LocalStore is an object for storing localstore information
 type LocalStore struct {
 	configPath   string
 	globalConfig *config.Config
-	services     scServices
+	services     model.ScServices
 
 	// Callbacks
 	watchAdminCB func(clusters []*config.Admin)
 }
 
 // NewLocalStore creates a new local store
-func NewLocalStore(nodeID, advertiseAddr string, ssl *config.SSL) (Store, error) {
+func NewLocalStore(nodeID string, ssl *config.SSL) (*LocalStore, error) {
 	configPath := os.Getenv("CONFIG")
 	if configPath == "" {
 		configPath = "config.yaml"
@@ -31,77 +32,64 @@ func NewLocalStore(nodeID, advertiseAddr string, ssl *config.SSL) (Store, error)
 	}
 
 	// For compatibility with v18
-	if conf.Admin.ClusterConfig == nil {
-		conf.Admin.ClusterConfig = &config.ClusterConfig{EnableTelemetry: true}
+	if conf.ClusterConfig == nil {
+		conf.ClusterConfig = &config.ClusterConfig{EnableTelemetry: true}
 	}
 
 	if ssl.Enabled {
 		conf.SSL = ssl
 	}
-	services := scServices{}
-	return &LocalStore{configPath: configPath, globalConfig: conf, services: append(services, &service{id: nodeID, addr: advertiseAddr})}, nil
+	services := model.ScServices{}
+	return &LocalStore{configPath: configPath, globalConfig: conf, services: append(services, &model.Service{ID: "single-node-cluster"})}, nil
 }
 
 // Register registers space cloud to the local store
 func (s *LocalStore) Register() {}
 
-// WatchProjects maintains consistency over all projects
-func (s *LocalStore) WatchProjects(cb func(projects []*config.Project)) error {
-	cb(s.globalConfig.Projects)
+// WatchResources maintains consistency over all projects
+func (s *LocalStore) WatchResources(cb func(eventType, resourceId string, resourceType config.Resource, resource interface{})) error {
 	return nil
 }
 
 // WatchServices maintains consistency over all services
-func (s *LocalStore) WatchServices(cb func(scServices)) error {
-	cb(s.services)
+func (s *LocalStore) WatchServices(cb func(string, string, model.ScServices)) error {
+	cb(config.ResourceAddEvent, s.services[0].ID, s.services)
 	return nil
 }
 
-// WatchAdminConfig sets the admin config when the gateways is started
-func (s *LocalStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
-	cb([]*config.Admin{s.globalConfig.Admin})
-	s.watchAdminCB = cb
-	return nil
+// WatchLicense watches over changes in license secret
+func (s *LocalStore) WatchLicense(cb func(eventType, resourceID string, resourceType config.Resource, resource *config.License)) {
+	cb(config.ResourceAddEvent, config.GenerateResourceID("", "noProject", config.ResourceLicense, "license"), config.ResourceLicense, s.globalConfig.License)
 }
 
-// SetAdminConfig maintains consistency between all instances of sc
-func (s *LocalStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
-	s.globalConfig.Admin = adminConfig
-	if s.watchAdminCB != nil {
-		go s.watchAdminCB([]*config.Admin{s.globalConfig.Admin})
+func (s *LocalStore) SetLicense(ctx context.Context, resourceID string, resource *config.License) error {
+	s.globalConfig.License = resource
+	return config.StoreConfigToFile(s.globalConfig, s.configPath)
+}
+
+// SetResource sets the project of the local globalConfig
+func (s *LocalStore) SetResource(ctx context.Context, resourceID string, resource interface{}) error {
+	if err := validateResource(ctx, config.ResourceAddEvent, s.globalConfig, resourceID, "", resource); err != nil {
+		return err
 	}
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)
 }
 
-// GetAdminConfig returns the admin config present in the store
-func (s *LocalStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
-	return s.globalConfig.Admin, nil
-}
-
-// SetProject sets the project of the local globalConfig
-func (s *LocalStore) SetProject(ctx context.Context, project *config.Project) error {
-	doesExist := false
-	for i, v := range s.globalConfig.Projects {
-		if v.ID == project.ID {
-			doesExist = true
-			s.globalConfig.Projects[i] = project
-		}
+// DeleteResource deletes the project from the local gloablConfig
+func (s *LocalStore) DeleteResource(ctx context.Context, resourceID string) error {
+	if err := validateResource(ctx, config.ResourceDeleteEvent, s.globalConfig, resourceID, "", nil); err != nil {
+		return err
 	}
-	if !doesExist {
-		s.globalConfig.Projects = append(s.globalConfig.Projects, project)
-	}
-
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)
 }
 
-// DeleteProject deletes the project from the local gloablConfig
+// DeleteProject deletes all the config resources which matches label projectId
 func (s *LocalStore) DeleteProject(ctx context.Context, projectID string) error {
-	for index, project := range s.globalConfig.Projects {
-		if project.ID == projectID {
-			s.globalConfig.Projects = append(s.globalConfig.Projects[:index], s.globalConfig.Projects[index+1:]...)
-			break
-		}
-	}
-
+	delete(s.globalConfig.Projects, projectID)
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)
+}
+
+// GetGlobalConfig gets config all projects
+func (s *LocalStore) GetGlobalConfig() (*config.Config, error) {
+	return s.globalConfig, nil
 }

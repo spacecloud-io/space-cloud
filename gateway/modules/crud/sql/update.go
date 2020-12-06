@@ -50,7 +50,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 				if err != nil {
 					return 0, err
 				}
-				helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Update Query", map[string]interface{}{"sqlQuery": sqlQuery, "queryArgs": sqlQuery})
+				helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Update Query", map[string]interface{}{"sqlQuery": sqlQuery, "queryArgs": args})
 				res, err := doExecContext(ctx, sqlQuery, args, executor)
 				if err != nil {
 					return 0, err
@@ -67,7 +67,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 		return count, nil
 
 	case utils.Upsert:
-		count, _, err := s.read(ctx, col, &model.ReadRequest{Find: req.Find, Operation: utils.All}, executor)
+		count, _, _, err := s.read(ctx, col, &model.ReadRequest{Find: req.Find, Operation: utils.All}, executor)
 		if err != nil {
 			return 0, err
 		}

@@ -1,16 +1,20 @@
 package routing
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -64,6 +68,39 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 			return
 		}
 
+		var redisKey string
+		if route.IsRouteCacheable && request.Method == http.MethodGet {
+			cacheOptionsArray := make([]interface{}, 0)
+			for _, key := range route.CacheOptions {
+				value, err := utils.LoadValue(key, map[string]interface{}{"args": map[string]interface{}{"auth": claims, "token": token, "url": request.URL.String()}})
+				if err != nil {
+					_ = helpers.Response.SendErrorResponse(request.Context(), writer, http.StatusBadRequest, err.Error())
+					return
+				}
+				cacheOptionsArray = append(cacheOptionsArray, value)
+			}
+
+			key, isCacheHit, result, err := r.caching.GetIngressRoute(request.Context(), route.ID, cacheOptionsArray)
+			if err != nil {
+				writer.WriteHeader(status)
+				_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+				return
+			}
+			if isCacheHit {
+				for k, v := range result.Headers {
+					writer.Header()[k] = v
+				}
+				writer.WriteHeader(http.StatusOK)
+				n, err := io.Copy(writer, ioutil.NopCloser(bytes.NewBuffer(result.Body)))
+				if err != nil {
+					_ = helpers.Logger.LogError(helpers.GetRequestID(request.Context()), fmt.Sprintf("Failed to copy upstream (%s) response to downstream", request.URL.String()), err, nil)
+				}
+				helpers.Logger.LogDebug(helpers.GetRequestID(request.Context()), fmt.Sprintf("Successfully copied %d bytes from upstream server (%s)", n, request.URL.String()), nil)
+				return
+			}
+			redisKey = key
+		}
+
 		// TODO: Use http2 client if that was the incoming request protocol
 		response, err := httpClient.Do(request)
 		if err != nil {
@@ -78,6 +115,39 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
 			return
+		}
+
+		values := response.Header.Get("cache-control")
+		if values != "" && route.IsRouteCacheable && redisKey != "" && request.Method == http.MethodGet {
+			var cacheTime string
+			for _, value := range strings.Split(values, ",") {
+				if value == "no-cache" {
+					break
+				}
+				value = strings.TrimSpace(value)
+				if strings.HasPrefix(value, "max-age") {
+					cacheTime = strings.Split(value, "=")[1]
+					break
+				}
+				if strings.HasPrefix(value, "s-maxage") {
+					cacheTime = strings.Split(value, "=")[1]
+					break
+				}
+			}
+			if cacheTime != "" {
+				duration, err := strconv.Atoi(cacheTime)
+				if err != nil {
+					_ = helpers.Logger.LogError(helpers.GetRequestID(request.Context()), fmt.Sprintf("Failed to copy upstream (%s) response to downstream", request.URL.String()), err, nil)
+				}
+				data, err := ioutil.ReadAll(response.Body)
+				if err != nil {
+					_ = helpers.Logger.LogError(helpers.GetRequestID(request.Context()), fmt.Sprintf("Failed to copy upstream (%s) response to downstream", request.URL.String()), err, nil)
+				}
+				if err := r.caching.SetIngressRouteKey(request.Context(), redisKey, &config.ReadCacheOptions{TTL: int64(duration)}, &model.CacheIngressRoute{Headers: response.Header, Body: data}); err != nil {
+					_ = helpers.Logger.LogError(helpers.GetRequestID(request.Context()), fmt.Sprintf("Failed to copy upstream (%s) response to downstream", request.URL.String()), err, nil)
+				}
+				response.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+			}
 		}
 
 		// Copy headers and status code

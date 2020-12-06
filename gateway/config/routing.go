@@ -11,8 +11,8 @@ import (
 
 // GlobalRoutesConfig describes the project level config for ingress routing
 type GlobalRoutesConfig struct {
-	RequestHeaders  Headers `json:"headers" yaml:"headers"`
-	ResponseHeaders Headers `json:"resHeaders" yaml:"resHeaders"`
+	RequestHeaders  Headers `json:"headers" yaml:"headers" mapstructure:"headers"`
+	ResponseHeaders Headers `json:"resHeaders" yaml:"resHeaders" mapstructure:"resHeaders"`
 }
 
 // Routes describes the configuration for the routing module
@@ -44,19 +44,21 @@ func (a Routes) Less(i, j int) bool {
 
 // Route describes the parameters of a single route
 type Route struct {
-	ID      string        `json:"id" yaml:"id"`
-	Project string        `json:"project" yaml:"project"`
-	Source  RouteSource   `json:"source" yaml:"source"`
-	Targets []RouteTarget `json:"targets" yaml:"targets"`
-	Rule    *Rule         `json:"rule" yaml:"rule"`
-	Modify  struct {
-		Tmpl            TemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
-		ReqTmpl         string           `json:"requestTemplate" yaml:"requestTemplate"`
-		ResTmpl         string           `json:"responseTemplate" yaml:"responseTemplate"`
-		OpFormat        string           `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
-		RequestHeaders  Headers          `json:"headers" yaml:"headers"`
-		ResponseHeaders Headers          `json:"resHeaders" yaml:"resHeaders"`
-	} `json:"modify" yaml:"modify"`
+	ID               string        `json:"id" yaml:"id" mapstructure:"id"`
+	Project          string        `json:"project" yaml:"project" mapstructure:"project"`
+	Source           RouteSource   `json:"source" yaml:"source" mapstructure:"source"`
+	Targets          []RouteTarget `json:"targets" yaml:"targets" mapstructure:"targets"`
+	Rule             *Rule         `json:"rule" yaml:"rule" mapstructure:"rule"`
+	IsRouteCacheable bool          `json:"isRouteCacheable" yaml:"isRouteCacheable" mapstructure:"isRouteCacheable`
+	CacheOptions     []string      `json:"cacheOptions" yaml:"cacheOptions" mapstructure:"cacheOptions`
+	Modify           struct {
+		Tmpl            TemplatingEngine `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
+		ReqTmpl         string           `json:"requestTemplate" yaml:"requestTemplate" mapstructure:"requestTemplate"`
+		ResTmpl         string           `json:"responseTemplate" yaml:"responseTemplate" mapstructure:"responseTemplate"`
+		OpFormat        string           `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
+		RequestHeaders  Headers          `json:"headers" yaml:"headers" mapstructure:"headers"`
+		ResponseHeaders Headers          `json:"resHeaders" yaml:"resHeaders" mapstructure:"resHeaders"`
+	} `json:"modify" yaml:"modify" mapstructure:"modify"`
 }
 
 // SelectTarget returns a target based on the weights assigned
@@ -83,22 +85,22 @@ func (r *Route) SelectTarget(ctx context.Context, weight int32) (RouteTarget, er
 
 // RouteSource is the source of routing
 type RouteSource struct {
-	Hosts      []string     `json:"hosts" yaml:"hosts"`
-	Methods    []string     `json:"methods" yaml:"methods"`
-	URL        string       `json:"url" yaml:"url"`
-	RewriteURL string       `json:"rewrite" yaml:"rewrite"`
-	Type       RouteURLType `json:"type" yaml:"type"`
-	Port       int32        `json:"port" yaml:"port"`
+	Hosts      []string     `json:"hosts" yaml:"hosts" mapstructure:"hosts"`
+	Methods    []string     `json:"methods" yaml:"methods" mapstructure:"methods"`
+	URL        string       `json:"url" yaml:"url" mapstructure:"url"`
+	RewriteURL string       `json:"rewrite" yaml:"rewrite" mapstructure:"rewrite"`
+	Type       RouteURLType `json:"type" yaml:"type" mapstructure:"type"`
+	Port       int32        `json:"port" yaml:"port" mapstructure:"port"`
 }
 
 // RouteTarget is the destination of routing
 type RouteTarget struct {
-	Host    string          `json:"host" yaml:"host"`
-	Port    int32           `json:"port" yaml:"port"`
-	Scheme  string          `json:"scheme" yaml:"scheme"`
-	Weight  int32           `json:"weight" yaml:"weight"`
-	Version string          `json:"version" yaml:"version"`
-	Type    RouteTargetType `json:"type" yaml:"type"`
+	Host    string          `json:"host" yaml:"host" mapstructure:"host"`
+	Port    int32           `json:"port" yaml:"port" mapstructure:"port"`
+	Scheme  string          `json:"scheme" yaml:"scheme" mapstructure:"scheme"`
+	Weight  int32           `json:"weight" yaml:"weight" mapstructure:"weight"`
+	Version string          `json:"version" yaml:"version" mapstructure:"version"`
+	Type    RouteTargetType `json:"type" yaml:"type" mapstructure:"type"`
 }
 
 // RouteURLType describes how the url should be evaluated / matched

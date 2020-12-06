@@ -22,7 +22,7 @@ func TestManager_SetEventingRule(t *testing.T) {
 		ctx      context.Context
 		project  string
 		ruleName string
-		value    *config.EventingRule
+		value    *config.EventingTrigger
 	}
 	tests := []struct {
 		name            string
@@ -34,18 +34,18 @@ func TestManager_SetEventingRule(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
-			args:    args{ctx: context.Background(), project: "2", ruleName: "rule", value: &config.EventingRule{}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
+			args:    args{ctx: context.Background(), project: "2", ruleName: "rule", value: &config.EventingTrigger{ID: "rule"}},
 			wantErr: true,
 		},
 		{
 			name: "unable to set eventing config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
+			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingTrigger{ID: "rule"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingTriggerConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}},
 					paramsReturned: []interface{}{errors.New("error setting eventing module config")},
 				},
 			},
@@ -53,19 +53,19 @@ func TestManager_SetEventingRule(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
+			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingTrigger{ID: "rule"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingTriggerConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"), &config.EventingTrigger{ID: "rule"}},
 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 				},
 			},
@@ -73,71 +73,38 @@ func TestManager_SetEventingRule(t *testing.T) {
 		},
 		{
 			name: "eventing rules are set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
+			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingTrigger{ID: "rule"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingTriggerConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"), &config.EventingTrigger{ID: "rule"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
-		},
-		{
-			name: "eventing config is not set when config rules are nil",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{errors.New("error setting eventing module config")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "eventing rules are not set when config rules are nil",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("Invalid config file type")},
-				},
-			},
-			wantErr: true,
 		},
 		{
 			name: "eventing rules are set when config rules are nil",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingRule{}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}}}}},
+			args: args{ctx: context.Background(), project: "1", ruleName: "rule", value: &config.EventingTrigger{ID: "rule"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingTriggerConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"), &config.EventingTrigger{ID: "rule"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -191,58 +158,58 @@ func TestManager_SetDeleteEventingRule(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
 			args:    args{ctx: context.Background(), project: "2", ruleName: "rule"},
 			wantErr: true,
 		},
 		{
 			name: "unable to set eventing config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
 			args: args{ctx: context.Background(), project: "1", ruleName: "rule"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingTriggerConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingTriggers{}},
 					paramsReturned: []interface{}{errors.New("error setting eventing module config")},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			name: "unable to delete project",
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
 			args: args{ctx: context.Background(), project: "1", ruleName: "rule"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingTriggerConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingTriggers{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "DeleteResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule")},
 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "eventing rule deleted succesfully",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			name: "eventing rule deleted successfully",
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
 			args: args{ctx: context.Background(), project: "1", ruleName: "rule"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingTriggerConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingTriggers{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "DeleteResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule")},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -297,31 +264,18 @@ func TestManager_SetEventingSchema(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"evType": {ID: "evType", Schema: "type evType {id: String!}"}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType"): &config.EventingSchema{ID: "evType", Schema: "type evType {id: String!}"}}}}}},
 			args:    args{ctx: context.Background(), evType: "evType", project: "2", schema: "type evType {id: String!}"},
 			wantErr: true,
 		},
 		{
-			name: "schemas empty in config and unable to set eventing config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{}}}}}},
-			args: args{ctx: context.Background(), evType: "evType", project: "1", schema: "type evType {id: String!}"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
-					paramsReturned: []interface{}{errors.New("error setting eventing module config")},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "unable to set eventing config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"evType": {ID: "evType", Schema: "type evType {id: String!}"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{}}}}},
 			args: args{ctx: context.Background(), evType: "evType", project: "1", schema: "type evType {id: String!}"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingSchemaConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingSchemas{config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType"): &config.EventingSchema{ID: "evType", Schema: "type evType {id: String!}"}}},
 					paramsReturned: []interface{}{errors.New("error setting eventing module config")},
 				},
 			},
@@ -329,19 +283,19 @@ func TestManager_SetEventingSchema(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"evType": {ID: "evType", Schema: "type evType {id: String!}"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{}}}}},
 			args: args{ctx: context.Background(), evType: "evType", project: "1", schema: "type evType {id: String!}"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingSchemaConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingSchemas{config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType"): &config.EventingSchema{ID: "evType", Schema: "type evType {id: String!}"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType"), &config.EventingSchema{ID: "evType", Schema: "type evType {id: String!}"}},
 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 				},
 			},
@@ -349,19 +303,19 @@ func TestManager_SetEventingSchema(t *testing.T) {
 		},
 		{
 			name: "eventing schema is set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"evType": {ID: "evType", Schema: "type evType {id: String!}"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{}}}}},
 			args: args{ctx: context.Background(), evType: "evType", project: "1", schema: "type evType {id: String!}"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingSchemaConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingSchemas{config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType"): &config.EventingSchema{ID: "evType", Schema: "type evType {id: String!}"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType"), &config.EventingSchema{ID: "evType", Schema: "type evType {id: String!}"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -415,18 +369,18 @@ func TestManager_SetDeleteEventingSchema(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"evType": {ID: "evType", Schema: "type evType {id: String!}"}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType"): &config.EventingSchema{ID: "evType", Schema: "type evType {id: String!}"}}}}}},
 			args:    args{ctx: context.Background(), evType: "evType", project: "2"},
 			wantErr: true,
 		},
 		{
 			name: "unable to set eventing config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"evType": {ID: "evType", Schema: "type evType {id: String!}"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType"): &config.EventingSchema{ID: "evType", Schema: "type evType {id: String!}"}}}}}},
 			args: args{ctx: context.Background(), evType: "evType", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingSchemaConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingSchemas{}},
 					paramsReturned: []interface{}{errors.New("error setting eventing module config")},
 				},
 			},
@@ -434,19 +388,19 @@ func TestManager_SetDeleteEventingSchema(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"evType": {ID: "evType", Schema: "type evType {id: String!}"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType"): &config.EventingSchema{ID: "evType", Schema: "type evType {id: String!}"}}}}}},
 			args: args{ctx: context.Background(), evType: "evType", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingSchemaConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingSchemas{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "DeleteResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType")},
 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 				},
 			},
@@ -454,19 +408,19 @@ func TestManager_SetDeleteEventingSchema(t *testing.T) {
 		},
 		{
 			name: "eventing schema is deleted",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"evType": {ID: "evType", Schema: "type evType {id: String!}"}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType"): &config.EventingSchema{ID: "evType", Schema: "type evType {id: String!}"}}}}}},
 			args: args{ctx: context.Background(), evType: "evType", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingSchemaConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingSchemas{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "DeleteResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "evType")},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -521,38 +475,38 @@ func TestManager_SetEventingSecurityRules(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"evType": {}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingRules: config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{Type: "evType", ID: "evType"}}}}}},
 			args:    args{ctx: context.Background(), evType: "evType", project: "2", rule: &config.Rule{}},
 			wantErr: true,
 		},
 		{
 			name: "unable to set eventing config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"evType": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingRules: config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{Type: "evType", ID: "evType"}}}}}},
 			args: args{ctx: context.Background(), evType: "evType", project: "1", rule: &config.Rule{}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{ID: "evType"}}},
 					paramsReturned: []interface{}{errors.New("error setting eventing module config")},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"evType": {}}}}}}}},
-			args: args{ctx: context.Background(), evType: "evType", project: "1", rule: &config.Rule{}},
+			name: "unable to delete resource",
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingRules: config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{Type: "evType", ID: "evType"}}}}}},
+			args: args{ctx: context.Background(), evType: "evType", project: "1", rule: &config.Rule{ID: "evType"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{ID: "evType"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"), &config.Rule{ID: "evType"}},
 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 				},
 			},
@@ -560,38 +514,38 @@ func TestManager_SetEventingSecurityRules(t *testing.T) {
 		},
 		{
 			name: "security rules empty in config and they are set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{}}}}}},
-			args: args{ctx: context.Background(), evType: "evType", project: "1", rule: &config.Rule{}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}}}}},
+			args: args{ctx: context.Background(), evType: "evType", project: "1", rule: &config.Rule{ID: "evType"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{ID: "evType"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"), &config.Rule{ID: "evType"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 		},
 		{
 			name: "security rules are set",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"evType": {}}}}}}}},
-			args: args{ctx: context.Background(), evType: "evType", project: "1", rule: &config.Rule{}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingRules: config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{Type: "evType", ID: "evType"}}}}}},
+			args: args{ctx: context.Background(), evType: "evType", project: "1", rule: &config.Rule{ID: "evType"}},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{ID: "evType"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"), &config.Rule{ID: "evType"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -645,18 +599,18 @@ func TestManager_SetDeleteEventingSecurityRules(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"evType": {}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingRules: config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{Type: "evType", ID: "evType"}}}}}},
 			args:    args{ctx: context.Background(), evType: "evType", project: "2"},
 			wantErr: true,
 		},
 		{
 			name: "unable to set eventing config",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"evType": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingRules: config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{Type: "evType", ID: "evType"}}}}}},
 			args: args{ctx: context.Background(), evType: "evType", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingRules{}},
 					paramsReturned: []interface{}{errors.New("error setting eventing module config")},
 				},
 			},
@@ -664,19 +618,19 @@ func TestManager_SetDeleteEventingSecurityRules(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"evType": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingRules: config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{Type: "evType", ID: "evType"}}}}}},
 			args: args{ctx: context.Background(), evType: "evType", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "DeleteResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType")},
 					paramsReturned: []interface{}{errors.New("Invalid config file type")},
 				},
 			},
@@ -684,19 +638,19 @@ func TestManager_SetDeleteEventingSecurityRules(t *testing.T) {
 		},
 		{
 			name: "eventing security rules deleted",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"evType": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingRules: config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType"): &config.Rule{Type: "evType", ID: "evType"}}}}}},
 			args: args{ctx: context.Background(), evType: "evType", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetEventingConfig",
-					args:           []interface{}{"1", mock.Anything},
+					method:         "SetEventingRuleConfig",
+					args:           []interface{}{mock.Anything, "1", config.EventingRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{mock.Anything, mock.Anything},
+					method:         "DeleteResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "evType")},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -744,27 +698,27 @@ func TestManager_GetEventingTriggerRules(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
 			args:    args{ctx: context.Background(), id: "rule", project: "2"},
 			wantErr: true,
 		},
 		{
 			name:    "id not present in config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
 			args:    args{ctx: context.Background(), id: "notRule", project: "1"},
 			wantErr: true,
 		},
 		{
 			name: "got trigger rule",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
 			args: args{ctx: context.Background(), id: "rule", project: "1"},
-			want: []interface{}{&config.EventingRule{}},
+			want: []interface{}{&config.EventingTrigger{ID: "rule"}},
 		},
 		{
 			name: "id is empty and got all trigger rules",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]*config.EventingRule{"rule": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingTriggers: config.EventingTriggers{config.GenerateResourceID("chicago", "1", config.ResourceEventingTrigger, "rule"): &config.EventingTrigger{ID: "rule"}}}}}},
 			args: args{ctx: context.Background(), id: "*", project: "1"},
-			want: []interface{}{&config.EventingRule{}},
+			want: []interface{}{&config.EventingTrigger{ID: "rule"}},
 		},
 	}
 	for _, tt := range tests {
@@ -797,27 +751,27 @@ func TestManager_GetEventingSchema(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"id": {}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{"": &config.EventingSchema{ID: "id"}}}}}},
 			args:    args{ctx: context.Background(), id: "id", project: "2"},
 			wantErr: true,
 		},
 		{
 			name:    "id not present in config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"id": {}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{"": &config.EventingSchema{ID: "id"}}}}}},
 			args:    args{ctx: context.Background(), id: "notId", project: "1"},
 			wantErr: true,
 		},
 		{
 			name: "got schema",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"id": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "id"): &config.EventingSchema{ID: "id"}}}}}},
 			args: args{ctx: context.Background(), id: "id", project: "1"},
-			want: []interface{}{config.SchemaObject{}},
+			want: []interface{}{&config.EventingSchema{ID: "id"}},
 		},
 		{
 			name: "id empty and got schemas",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"id": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{config.GenerateResourceID("chicago", "1", config.ResourceEventingSchema, "id"): &config.EventingSchema{ID: "id"}}}}}},
 			args: args{ctx: context.Background(), id: "*", project: "1"},
-			want: []interface{}{config.SchemaObject{}},
+			want: []interface{}{&config.EventingSchema{ID: "id"}},
 		},
 	}
 	for _, tt := range tests {
@@ -850,27 +804,27 @@ func TestManager_GetEventingSecurityRules(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"id": {}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{"": &config.EventingSchema{ID: "id"}}}}}},
 			args:    args{ctx: context.Background(), id: "id", project: "2"},
 			wantErr: true,
 		},
 		{
 			name:    "id not present in config",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"id": {}}}}}}}},
+			s:       &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingSchemas: config.EventingSchemas{"": &config.EventingSchema{ID: "id"}}}}}},
 			args:    args{ctx: context.Background(), id: "notId", project: "1"},
 			wantErr: true,
 		},
 		{
 			name: "got security rule",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"id": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingRules: config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "id"): &config.Rule{ID: "id"}}}}}},
 			args: args{ctx: context.Background(), id: "id", project: "1"},
-			want: []interface{}{&config.Rule{}},
+			want: []interface{}{&config.Rule{ID: "id"}},
 		},
 		{
 			name: "id empty and got security rules",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"id": {}}}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, EventingConfig: &config.EventingConfig{}, EventingRules: config.EventingRules{config.GenerateResourceID("chicago", "1", config.ResourceEventingRule, "id"): &config.Rule{ID: "id"}}}}}},
 			args: args{ctx: context.Background(), id: "*", project: "1"},
-			want: []interface{}{&config.Rule{}},
+			want: []interface{}{&config.Rule{ID: "id"}},
 		},
 	}
 	for _, tt := range tests {

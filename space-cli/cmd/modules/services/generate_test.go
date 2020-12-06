@@ -2,15 +2,18 @@ package services
 
 import (
 	"errors"
+	"net/http"
 	"reflect"
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/input"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
 func TestGenerateService(t *testing.T) {
@@ -30,11 +33,12 @@ func TestGenerateService(t *testing.T) {
 		dockerImage string
 	}
 	tests := []struct {
-		name           string
-		args           args
-		surveyMockArgs []mockArgs
-		want           *model.SpecObject
-		wantErr        bool
+		name              string
+		args              args
+		surveyMockArgs    []mockArgs
+		transportMockArgs []mockArgs
+		want              *model.SpecObject
+		wantErr           bool
 	}{
 		{
 			name: "error surveying project id",
@@ -117,6 +121,27 @@ func TestGenerateService(t *testing.T) {
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service Port", Default: "8080"}, &port, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
+				},
+			},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/config/projects/projectID",
+						mock.Anything,
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						errors.New("bad request"),
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"statusCode": 400,
+								},
+							},
+						},
+					},
 				},
 			},
 			wantErr: true,
@@ -419,8 +444,22 @@ func TestGenerateService(t *testing.T) {
 					"version": "v1",
 				},
 				Spec: &model.Service{
-					Labels: map[string]string{},
-					Scale:  model.ScaleConfig{Replicas: int32(10), MinReplicas: int32(10), MaxReplicas: int32(90), Concurrency: 50, Mode: "parallel"},
+					Labels:                 map[string]string{},
+					StatsInclusionPrefixes: "http.inbound,cluster_manager,listener_manager",
+					AutoScale: &model.AutoScaleConfig{
+						PollingInterval:  int32(15),
+						CoolDownInterval: int32(120),
+						MinReplicas:      int32(10),
+						MaxReplicas:      int32(90),
+						Triggers: []model.AutoScaleTrigger{
+							{
+								Name:             "Request per second",
+								Type:             "requests-per-second",
+								MetaData:         map[string]string{"target": "50"},
+								AuthenticatedRef: nil,
+							},
+						},
+					},
 					Tasks: []model.Task{
 						{
 							ID:        "service",
@@ -444,23 +483,31 @@ func TestGenerateService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			mockSurvey := utils.MockInputInterface{}
+			mockTransport := transport.MocketAuthProviders{}
 
 			for _, m := range tt.surveyMockArgs {
 				mockSurvey.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
 
+			for _, m := range tt.transportMockArgs {
+				mockTransport.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
 			input.Survey = &mockSurvey
+			transport.Client = &mockTransport
 
 			got, err := GenerateService(tt.args.projectID, tt.args.dockerImage)
 			if (err != nil) != tt.wantErr {
+
 				t.Errorf("GenerateService() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GenerateService() = %v, want %v", got, tt.want)
+			if arr := deep.Equal(got, tt.want); len(arr) != 0 {
+				t.Errorf("GenerateService() = %v", arr)
 			}
 
 			mockSurvey.AssertExpectations(t)
+			mockTransport.AssertExpectations(t)
 		})
 	}
 }

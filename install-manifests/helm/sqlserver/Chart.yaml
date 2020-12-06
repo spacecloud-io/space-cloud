@@ -1,0 +1,10 @@
+apiVersion: v3
+name: sqlserver
+version: 0.1.0 # Chart version
+description: SQL Server Helm Chart
+type: application
+keywords:
+- database
+home: https://spaceuptech.com/
+sources:
+  - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo

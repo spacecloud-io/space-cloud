@@ -37,7 +37,7 @@ func (m *Manager) Login(ctx context.Context, user, pass string) (int, string, er
 	}
 
 	if m.user.User == user && m.user.Pass == pass {
-		token, err := m.createToken(map[string]interface{}{"id": user, "role": user})
+		token, err := m.createToken(map[string]interface{}{"id": user, "role": "admin"})
 		if err != nil {
 			return http.StatusInternalServerError, "", err
 		}

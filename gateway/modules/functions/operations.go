@@ -12,11 +12,11 @@ import (
 
 // CallWithContext invokes function on a service. The response from the function is returned back along with
 // any errors if they occurred.
-func (m *Module) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, params interface{}) (int, interface{}, error) {
+func (m *Module) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, req *model.FunctionsRequest) (int, interface{}, error) {
 	reqParams.Payload = map[string]interface{}{
 		"service":  service,
 		"endpoint": function,
-		"params":   params,
+		"params":   req.Params,
 	}
 	hookResponse := m.integrationMan.InvokeHook(ctx, reqParams)
 	if hookResponse.CheckResponse() {
@@ -29,7 +29,8 @@ func (m *Module) CallWithContext(ctx context.Context, service, function, token s
 		return hookResponse.Status(), hookResponse.Result(), nil
 	}
 
-	status, result, err := m.handleCall(ctx, service, function, token, reqParams.Claims, params)
+	// TODO: Add metric hook for cache
+	status, result, err := m.handleCall(ctx, service, function, token, reqParams.Claims, req.Params, req.Cache)
 	if err != nil {
 		return status, result, err
 	}
@@ -38,20 +39,13 @@ func (m *Module) CallWithContext(ctx context.Context, service, function, token s
 	return status, result, nil
 }
 
-// AddInternalRule add an internal rule to internal service
-func (m *Module) AddInternalRule(service string, rule *config.Service) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-
-	m.config.InternalServices[service] = rule
-}
-
 // GetEndpointContextTimeout returns the endpoint timeout of particular remote-service
-func (m *Module) GetEndpointContextTimeout(ctx context.Context, service, function string) (int, error) {
+func (m *Module) GetEndpointContextTimeout(ctx context.Context, projectID, service, function string) (int, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if serviceVal, ok := m.config.Services[service]; ok {
+	resourceID := config.GenerateResourceID(m.clusterID, projectID, config.ResourceRemoteService, service)
+	if serviceVal, ok := m.config[resourceID]; ok {
 		if endpoint, ok := serviceVal.Endpoints[function]; ok {
 			return endpoint.Timeout, nil
 		}

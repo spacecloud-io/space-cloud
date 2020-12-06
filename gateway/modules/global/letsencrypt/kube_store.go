@@ -127,7 +127,7 @@ func (s *KubeStore) Stat(key string) (certmagic.KeyInfo, error) {
 		return certmagic.KeyInfo{}, err
 	}
 
-	modifiedTime, err := time.Parse(time.RFC3339, string(secret.Data["modified"]))
+	modifiedTime, err := time.Parse(time.RFC3339Nano, string(secret.Data["modified"]))
 	if err != nil {
 		return certmagic.KeyInfo{}, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to get stat of key (%s) in kubernetes store of lets encrypt cannot parse string to time", key), err, nil)
 	}
@@ -237,7 +237,7 @@ func (s *KubeStore) generateSecretValue(key string, value []byte) *v1.Secret {
 		Data: map[string][]byte{
 			"value":    value,
 			"size":     {byte(len(value))},
-			"modified": []byte(time.Now().String()),
+			"modified": []byte(time.Now().Format(time.RFC3339Nano)),
 		},
 	}
 }

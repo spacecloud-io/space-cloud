@@ -54,7 +54,7 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-		projectConfig := config.Project{}
+		projectConfig := config.ProjectConfig{}
 		_ = json.NewDecoder(r.Body).Decode(&projectConfig)
 		defer utils.CloseTheCloser(r.Body)
 

@@ -32,7 +32,7 @@ type AuthInterface interface {
 
 // FunctionInterface is an interface consisting of functions of function module used by graphql module
 type FunctionInterface interface {
-	CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, params interface{}) (int, interface{}, error)
+	CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, req *model.FunctionsRequest) (int, interface{}, error)
 }
 
 // SchemaInterface is an interface consisting of functions of schema module used by graphql module

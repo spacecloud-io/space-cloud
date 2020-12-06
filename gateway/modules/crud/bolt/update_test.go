@@ -215,7 +215,7 @@ func TestBolt_Update(t *testing.T) {
 			if tt.args.req.Operation == utils.Upsert {
 				tt.args.req.Operation = utils.All
 			}
-			readCount, readResult, err := b.Read(context.Background(), tt.args.col, &model.ReadRequest{Operation: tt.args.req.Operation, Find: tt.args.req.Find})
+			readCount, readResult, _, err := b.Read(context.Background(), tt.args.col, &model.ReadRequest{Operation: tt.args.req.Operation, Find: tt.args.req.Find})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -223,6 +223,7 @@ func TestBolt_Update(t *testing.T) {
 			if readCount != tt.want {
 				t.Errorf("Read() readCount = %v, want %v", readCount, tt.want)
 			}
+			removeTs(readResult)
 			if !reflect.DeepEqual(readResult, tt.want1) {
 				t.Log(reflect.TypeOf(readResult), reflect.TypeOf(tt.want1))
 				t.Errorf("Read() readResult = %v, want %v", readResult, tt.want1)

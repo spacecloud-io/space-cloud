@@ -12,15 +12,11 @@ type Manager struct {
 
 	adminMan adminManager
 
-	config map[string]*config.IntegrationConfig
+	integrationConfig     config.Integrations
+	integrationHookConfig config.IntegrationHooks
 }
 
 // New creates a new instance of the integration module
 func New(adminMan adminManager) *Manager {
-	return &Manager{adminMan: adminMan, config: map[string]*config.IntegrationConfig{}}
+	return &Manager{adminMan: adminMan, integrationConfig: make(config.Integrations), integrationHookConfig: make(config.IntegrationHooks)}
 }
-
-const (
-	module    string = "integration"
-	checkAuth string = "check-auth"
-)

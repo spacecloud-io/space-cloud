@@ -3,9 +3,8 @@ package userman
 import (
 	"sync"
 
-	"github.com/spaceuptech/space-cloud/gateway/model"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // Module is responsible for user management
@@ -22,14 +21,14 @@ func Init(crud model.CrudUserInterface, auth model.AuthUserInterface) *Module {
 }
 
 // SetConfig sets the config required by the user management module
-func (m *Module) SetConfig(auth config.Auth) {
+func (m *Module) SetConfig(auth config.Auths) {
 	m.Lock()
 	defer m.Unlock()
 
 	m.methods = make(map[string]*config.AuthStub, len(auth))
 
-	for k, v := range auth {
-		m.methods[k] = v
+	for _, v := range auth {
+		m.methods[v.ID] = v
 	}
 }
 

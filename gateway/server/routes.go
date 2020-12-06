@@ -21,7 +21,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	router.Methods(http.MethodPost).Path("/v1/config/upgrade").HandlerFunc(handlers.HandleUpgrade(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/offline-license").HandlerFunc(handlers.HandleSetOfflineLicense(s.managers.Admin(), s.managers.Sync()))
-	router.Methods(http.MethodPost).Path("/v1/config/degrade").HandlerFunc(handlers.HandleDownGrade(s.managers.Admin()))
+	router.Methods(http.MethodPost).Path("/v1/config/degrade").HandlerFunc(handlers.HandleDownGrade(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/renew-license").HandlerFunc(handlers.HandleRenewLicense(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/generate-token").HandlerFunc(handlers.HandleGenerateAdminToken(s.managers.Admin()))
 
@@ -50,6 +50,13 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/user-management/provider").HandlerFunc(handlers.HandleGetUserManagement(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/user-management/provider/{id}").HandlerFunc(handlers.HandleSetUserManagement(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/user-management/provider/{id}").HandlerFunc(handlers.HandleDeleteUserManagement(s.managers.Admin(), s.managers.Sync()))
+
+	router.Methods(http.MethodGet).Path("/v1/config/caching/config").HandlerFunc(handlers.HandleGetCacheConfig(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/caching/config/{id}").HandlerFunc(handlers.HandleSetCacheConfig(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodGet).Path("/v1/external/caching/connection-state").HandlerFunc(handlers.HandleGetCacheConnectionState(s.managers.Admin(), s.modules.Caching()))
+	router.Methods(http.MethodDelete).Path("/v1/external/projects/{project}/caching/purge-cache").HandlerFunc(handlers.HandlePurgeCache(s.managers.Admin(), s.modules.Caching()))
+	router.Methods(http.MethodPost).Path("/v1/external/caching/{project}/instant-invalidate").HandlerFunc(handlers.HandleInstantInvalidate(s.modules))
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/config").HandlerFunc(handlers.HandleGetEventingConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/config/{id}").HandlerFunc(handlers.HandleSetEventingConfig(s.managers.Admin(), s.managers.Sync()))
@@ -76,6 +83,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/config").HandlerFunc(handlers.HandleGetDatabaseConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/collections/schema/mutate").HandlerFunc(handlers.HandleGetSchemas(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules").HandlerFunc(handlers.HandleSetTableRules(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules").HandlerFunc(handlers.HandleDeleteTableRules(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/config/{id}").HandlerFunc(handlers.HandleSetDatabaseConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbAlias}/config/{id}").HandlerFunc(handlers.HandleRemoveDatabaseConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/prepared-queries").HandlerFunc(handlers.HandleGetPreparedQuery(s.managers.Admin(), s.managers.Sync()))
@@ -98,6 +106,9 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleSetProjectRoute(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.managers.Admin(), s.managers.Sync()))
 
+	// Health check
+	router.Methods(http.MethodGet).Path("/v1/api/health-check").HandlerFunc(handlers.HandleHealthCheck(s.managers.Sync()))
+
 	// Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.modules, s.managers.Sync()))
 
@@ -112,12 +123,10 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	// Initialize the routes for realtime service
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/realtime/handle").HandlerFunc(handlers.HandleRealtimeEvent(s.modules))
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/realtime/process").HandlerFunc(handlers.HandleRealtimeProcessRequest(s.modules))
 
 	// Initialize the routes for eventing service
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/queue").HandlerFunc(handlers.HandleQueueEvent(s.modules))
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/process").HandlerFunc(handlers.HandleProcessEvent(s.managers.Admin(), s.modules))
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/process-event-response").HandlerFunc(handlers.HandleEventResponse(s.modules))
+	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/admin-queue").HandlerFunc(handlers.HandleAdminQueueEvent(s.managers.Admin(), s.modules))
 
 	// Initialize the routes for the crud operations
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/crud/{dbAlias}/batch").HandlerFunc(handlers.HandleCrudBatch(s.modules))
@@ -170,6 +179,11 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	// service routes
 	runnerRouter.Methods(http.MethodPost).Path("/{project}/service-routes/{serviceId}").HandlerFunc(s.managers.Sync().HandleRunnerServiceRoutingRequest(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/service-routes").HandlerFunc(s.managers.Sync().HandleRunnerGetServiceRoutingRequest(s.managers.Admin()))
+
+	// service role
+	runnerRouter.Methods(http.MethodPost).Path("/{project}/service-roles/{serviceId}/{roleId}").HandlerFunc(s.managers.Sync().HandleRunnerSetServiceRole(s.managers.Admin()))
+	runnerRouter.Methods(http.MethodGet).Path("/{project}/service-roles").HandlerFunc(s.managers.Sync().HandleRunnerGetServiceRoleRequest(s.managers.Admin()))
+	runnerRouter.Methods(http.MethodDelete).Path("/{project}/service-roles/{serviceId}/{roleId}").HandlerFunc(s.managers.Sync().HandleRunnerDeleteServiceRole(s.managers.Admin()))
 
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/services/logs").HandlerFunc(s.managers.Sync().HandleRunnerGetServiceLogs(s.managers.Admin()))
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/services/status").HandlerFunc(s.managers.Sync().HandleRunnerGetDeploymentStatus(s.managers.Admin()))

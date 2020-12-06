@@ -54,16 +54,15 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 	feedData := make([]*model.FeedData, 0)
 	array, ok := result.([]interface{})
 	if ok {
-		timeStamp := time.Now().Unix()
 		for _, row := range array {
 			// Get the appropriate find object
-			find, _ := m.schema.CheckIfEventingIsPossible(data.DBType, data.Group, row.(map[string]interface{}), false)
+			find := m.prepareFindObject(data.DBType, data.Group, row.(map[string]interface{}))
 
 			// Create the feed data object
 			feedData = append(feedData, &model.FeedData{
 				Group:     data.Group,
 				Type:      utils.RealtimeInitial,
-				TimeStamp: timeStamp,
+				TimeStamp: 1,
 				Find:      find,
 				DBType:    data.DBType,
 				Payload:   row,
@@ -86,39 +85,28 @@ func (m *Module) Unsubscribe(ctx context.Context, data *model.RealtimeRequest, c
 // HandleRealtimeEvent handles an incoming realtime event from the eventing module
 func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.CloudEventPayload) error {
 
-	urls := m.syncMan.GetSpaceCloudNodeURLs(m.project)
+	ids := m.syncMan.GetSpaceCloudNodeIDs(m.project)
 
 	// Create wait group
 	var wg sync.WaitGroup
-	wg.Add(len(urls))
+	wg.Add(len(ids))
 
 	// Create success & error channels
 	successCh := make(chan struct{}, 1)
-	errCh := make(chan error, len(urls))
+	errCh := make(chan error, len(ids))
 
 	ctx, cancel := context.WithTimeout(ctxRoot, 5*time.Second)
 	defer cancel()
 
-	token, err := m.auth.GetInternalAccessToken(ctx)
-	if err != nil {
-		return err
-	}
-
-	scToken, err := m.auth.GetSCAccessToken(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, u := range urls {
-		go func(url string) {
+	for _, i := range ids {
+		go func(id string) {
 			defer wg.Done()
 
-			var res interface{}
-			if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, scToken, eventDoc, &res); err != nil {
+			if err := m.pubsubClient.Send(ctx, getSendTopic(id), eventDoc); err != nil {
 				errCh <- err
 				return
 			}
-		}(u)
+		}(i)
 	}
 
 	go func() {

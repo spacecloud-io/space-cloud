@@ -27,8 +27,8 @@ func (m *Module) ApplyService(ctx context.Context, service *model.Service) error
 }
 
 // GetLogs get logs of specified service
-func (m *Module) GetLogs(ctx context.Context, isFollow bool, projectID, taskID, replica string) (io.ReadCloser, error) {
-	return m.driver.GetLogs(ctx, isFollow, projectID, taskID, replica)
+func (m *Module) GetLogs(ctx context.Context, projectID string, info *model.LogRequest) (io.ReadCloser, error) {
+	return m.driver.GetLogs(ctx, projectID, info)
 }
 
 // GetServices gets services
@@ -46,9 +46,9 @@ func (m *Module) DeleteService(ctx context.Context, projectID, serviceID, versio
 	return m.driver.DeleteService(ctx, projectID, serviceID, version)
 }
 
-// AdjustScale adjust's scale
-func (m *Module) AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error {
-	return m.driver.AdjustScale(ctx, service, activeReqs)
+// ScaleUp scales a service up from 0 replicas
+func (m *Module) ScaleUp(ctx context.Context, projectID, serviceID, version string) error {
+	return m.driver.ScaleUp(ctx, projectID, serviceID, version)
 }
 
 // WaitForService waits for service
@@ -69,6 +69,21 @@ func (m *Module) ApplyServiceRoutes(ctx context.Context, projectID, serviceID st
 // GetServiceRoutes get's service routes
 func (m *Module) GetServiceRoutes(ctx context.Context, projectID string) (map[string]model.Routes, error) {
 	return m.driver.GetServiceRoutes(ctx, projectID)
+}
+
+// ApplyServiceRole applies service role
+func (m *Module) ApplyServiceRole(ctx context.Context, role *model.Role) error {
+	return m.driver.ApplyServiceRole(ctx, role)
+}
+
+// GetServiceRole get's service role
+func (m *Module) GetServiceRole(ctx context.Context, projectID string) ([]*model.Role, error) {
+	return m.driver.GetServiceRole(ctx, projectID)
+}
+
+// DeleteServiceRole delete's service role
+func (m *Module) DeleteServiceRole(ctx context.Context, projectID, serviceID, id string) error {
+	return m.driver.DeleteServiceRole(ctx, projectID, serviceID, id)
 }
 
 // CreateSecret create's secret

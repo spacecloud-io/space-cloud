@@ -2,7 +2,6 @@ package modules
 
 import (
 	"github.com/spaceuptech/space-cloud/gateway/managers"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
@@ -34,7 +33,7 @@ type Module struct {
 	Managers *managers.Managers
 }
 
-func newModule(nodeID string, managers *managers.Managers, globalMods *global.Global) *Module {
+func newModule(projectID, clusterID, nodeID string, managers *managers.Managers, globalMods *global.Global) (*Module, error) {
 	// Get managers
 	adminMan := managers.Admin()
 	syncMan := managers.Sync()
@@ -47,33 +46,36 @@ func newModule(nodeID string, managers *managers.Managers, globalMods *global.Gl
 	c.SetAdminManager(adminMan)
 	c.SetGetSecrets(syncMan.GetSecrets)
 	c.SetIntegrationManager(integrationMan)
+	c.SetCachingModule(globalMods.Caching())
 
-	s := schema.Init(c)
+	s := schema.Init(clusterID, c)
 	c.SetSchema(s)
 
-	a := auth.Init(nodeID, c, adminMan, integrationMan)
+	a := auth.Init(clusterID, nodeID, c, adminMan, integrationMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 	c.SetAuth(a)
 
-	fn := functions.Init(a, syncMan, integrationMan, metrics.AddFunctionOperation)
+	fn := functions.Init(clusterID, a, syncMan, integrationMan, metrics.AddFunctionOperation)
+	fn.SetCachingModule(globalMods.Caching())
 	f := filestore.Init(a, metrics.AddFileOperation)
 	f.SetGetSecrets(syncMan.GetSecrets)
 
-	e := eventing.New(a, c, s, adminMan, syncMan, f, metrics.AddEventingType)
+	e, err := eventing.New(clusterID, projectID, nodeID, a, c, s, syncMan, f, metrics.AddEventingType)
+	if err != nil {
+		return nil, err
+	}
+
 	f.SetEventingModule(e)
 
-	c.SetHooks(&model.CrudHooks{
-		Create: e.HookDBCreateIntent,
-		Update: e.HookDBUpdateIntent,
-		Delete: e.HookDBDeleteIntent,
-		Batch:  e.HookDBBatchIntent,
-		Stage:  e.HookStage,
-	}, metrics.AddDBOperation)
+	c.SetHooks(metrics.AddDBOperation)
 
-	rt, _ := realtime.Init(nodeID, e, a, c, s, metrics, syncMan)
+	rt, err := realtime.Init(projectID, nodeID, e, a, c, s, metrics, syncMan)
+	if err != nil {
+		return nil, err
+	}
 
 	u := userman.Init(c, a)
 	graphqlMan := graphql.New(a, c, fn, s)
 
-	return &Module{auth: a, db: c, user: u, file: f, functions: fn, realtime: rt, eventing: e, graphql: graphqlMan, schema: s, Managers: managers, GlobalMods: globalMods}
+	return &Module{auth: a, db: c, user: u, file: f, functions: fn, realtime: rt, eventing: e, graphql: graphqlMan, schema: s, Managers: managers, GlobalMods: globalMods}, nil
 }

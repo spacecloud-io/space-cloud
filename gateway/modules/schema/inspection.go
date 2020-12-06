@@ -67,23 +67,12 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, f
 		if field.FieldDefault != "" {
 			fieldDetails.IsDefault = true
 			if model.DBType(dbType) == model.SQLServer {
-				// replace (( or )) with nothing e.g -> ((9.8)) -> 9.8
-				field.FieldDefault = strings.Replace(strings.Replace(field.FieldDefault, "(", "", -1), ")", "", -1)
 				if fieldDetails.Kind == model.TypeBoolean {
 					if field.FieldDefault == "1" {
 						field.FieldDefault = "true"
 					} else {
 						field.FieldDefault = "false"
 					}
-				}
-			}
-
-			if model.DBType(dbType) == model.Postgres {
-				// split "'default-value'::text" to "default-value"
-				s := strings.Split(field.FieldDefault, "::")
-				field.FieldDefault = s[0]
-				if fieldDetails.Kind == model.TypeString || fieldDetails.Kind == model.TypeDateTime || fieldDetails.Kind == model.TypeID {
-					field.FieldDefault = strings.Split(field.FieldDefault, "'")[1]
 				}
 			}
 
@@ -97,6 +86,17 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, f
 		// check if list
 		if field.FieldKey == "PRI" {
 			fieldDetails.IsPrimary = true
+		}
+
+		// Set auto increment
+		if field.AutoIncrement == "true" {
+			fieldDetails.IsAutoIncrement = true
+		}
+		if model.DBType(dbType) == model.Postgres && strings.HasPrefix(field.FieldDefault, "nextval") {
+			// override the default value, this is a special case if a postgres column has a auto increment value, the default value that database returns is -> ( nextval(auto_increment_test_auto_increment_test_seq )
+			fieldDetails.Default = ""
+			fieldDetails.IsDefault = false
+			fieldDetails.IsAutoIncrement = true
 		}
 
 		// check foreignKey & identify if relation exists
@@ -147,13 +147,17 @@ func inspectionMySQLCheckFieldType(size int, typeName string, fieldDetails *mode
 	result := strings.Split(typeName, "(")
 
 	switch result[0] {
+	case "date":
+		fieldDetails.Kind = model.TypeDate
+	case "time":
+		fieldDetails.Kind = model.TypeTime
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = model.TypeString
 	case "smallint", "mediumint", "int", "bigint":
 		fieldDetails.Kind = model.TypeInteger
 	case "float", "double":
 		fieldDetails.Kind = model.TypeFloat
-	case "date", "time", "datetime", "timestamp", "datetimeoffset":
+	case "datetime", "timestamp", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
 	case "tinyint", "boolean", "bit":
 		fieldDetails.Kind = model.TypeBoolean
@@ -176,13 +180,19 @@ func inspectionPostgresCheckFieldType(size int, typeName string, fieldDetails *m
 	result = strings.Split(result[0], "(")
 
 	switch result[0] {
+	case "uuid":
+		fieldDetails.Kind = model.TypeUUID
+	case "date":
+		fieldDetails.Kind = model.TypeDate
+	case "time":
+		fieldDetails.Kind = model.TypeTime
 	case "character", "bit", "text":
 		fieldDetails.Kind = model.TypeString
-	case "bigint", "bigserial", "integer", "numeric", "smallint", "smallserial", "serial":
+	case "bigint", "bigserial", "integer", "smallint", "smallserial", "serial":
 		fieldDetails.Kind = model.TypeInteger
-	case "float", "double", "real":
+	case "float", "double", "real", "numeric":
 		fieldDetails.Kind = model.TypeFloat
-	case "date", "time", "datetime", "timestamp", "interval", "datetimeoffset":
+	case "datetime", "timestamp", "interval", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
 	case "boolean":
 		fieldDetails.Kind = model.TypeBoolean
@@ -198,11 +208,9 @@ func inspectionPostgresCheckFieldType(size int, typeName string, fieldDetails *m
 func (s *Schema) GetCollectionSchema(ctx context.Context, project, dbType string) (map[string]*config.TableRule, error) {
 
 	collections := []string{}
-	for dbName, crudValue := range s.config {
-		if dbName == dbType {
-			for colName := range crudValue.Collections {
-				collections = append(collections, colName)
-			}
+	for _, dbSchema := range s.dbSchemas {
+		if dbSchema.DbAlias == dbType {
+			collections = append(collections, dbSchema.Table)
 			break
 		}
 	}

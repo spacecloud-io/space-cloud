@@ -21,39 +21,34 @@ type Module struct {
 	auth           model.AuthFunctionInterface
 	manager        *syncman.Manager
 	integrationMan integrationManagerInterface
+	caching        cachingInterface
 
 	// Variable configuration
 	project    string
 	metricHook model.MetricFunctionHook
-	config     *config.ServicesModule
+	config     config.Services
 
+	clusterID string
 	// Templates for body transformation
 	templates map[string]*template.Template
 }
 
 // Init returns a new instance of the Functions module
-func Init(auth model.AuthFunctionInterface, manager *syncman.Manager, integrationMan integrationManagerInterface, hook model.MetricFunctionHook) *Module {
-	return &Module{auth: auth, manager: manager, integrationMan: integrationMan, metricHook: hook}
+func Init(clusterID string, auth model.AuthFunctionInterface, manager *syncman.Manager, integrationMan integrationManagerInterface, hook model.MetricFunctionHook) *Module {
+	return &Module{clusterID: clusterID, auth: auth, manager: manager, integrationMan: integrationMan, metricHook: hook}
 }
 
 // SetConfig sets the configuration of the functions module
-func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
+func (m *Module) SetConfig(project string, c config.Services) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-
-	if c == nil {
-		helpers.Logger.LogWarn(helpers.GetRequestID(context.TODO()), "Empty config provided for functions module", map[string]interface{}{"project": project})
-		return nil
-	}
 
 	m.project = project
 	m.config = c
 
-	m.config.InternalServices = config.Services{}
-
 	// Set the go templates
 	m.templates = map[string]*template.Template{}
-	for serviceID, service := range m.config.Services {
+	for _, service := range m.config {
 		for endpointID, endpoint := range service.Endpoints {
 			// Set the default endpoint kind
 			if endpoint.Kind == "" {
@@ -77,17 +72,22 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 			switch endpoint.Tmpl {
 			case config.TemplatingEngineGo:
 				if endpoint.ReqTmpl != "" {
-					if err := m.createGoTemplate("request", serviceID, endpointID, endpoint.ReqTmpl); err != nil {
+					if err := m.createGoTemplate("request", service.ID, endpointID, endpoint.ReqTmpl); err != nil {
 						return err
 					}
 				}
 				if endpoint.ResTmpl != "" {
-					if err := m.createGoTemplate("response", serviceID, endpointID, endpoint.ResTmpl); err != nil {
+					if err := m.createGoTemplate("response", service.ID, endpointID, endpoint.ResTmpl); err != nil {
 						return err
 					}
 				}
 				if endpoint.GraphTmpl != "" {
-					if err := m.createGoTemplate("graph", serviceID, endpointID, endpoint.GraphTmpl); err != nil {
+					if err := m.createGoTemplate("graph", service.ID, endpointID, endpoint.GraphTmpl); err != nil {
+						return err
+					}
+				}
+				if endpoint.Claims != "" {
+					if err := m.createGoTemplate("claim", service.ID, endpointID, endpoint.Claims); err != nil {
 						return err
 					}
 				}
@@ -97,4 +97,9 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 		}
 	}
 	return nil
+}
+
+// SetCachingModule sets caching module
+func (m *Module) SetCachingModule(c cachingInterface) {
+	m.caching = c
 }

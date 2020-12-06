@@ -12,13 +12,14 @@ import (
 
 	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/caching"
 	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token string, auth, params interface{}) (int, interface{}, error) {
+func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token string, auth, params interface{}, cacheInfo *config.ReadCacheOptions) (int, interface{}, error) {
 	var url string
 	var method string
 	var ogToken string
@@ -55,6 +56,34 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
 	}
 
+	var redisKey string
+	var cacheResponse *caching.CacheResult
+	if endpoint.Method == http.MethodGet && cacheInfo != nil {
+		// First step is to load all the options
+		cacheOptionsArray := make([]interface{}, len(endpoint.CacheOptions))
+		for index, key := range endpoint.CacheOptions {
+			value, err := utils.LoadValue(key, map[string]interface{}{"args": map[string]interface{}{"auth": auth, "token": ogToken, "url": url}})
+			if err != nil {
+				return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to extract value for cache option key (%s)", key), err, nil)
+			}
+			cacheOptionsArray[index] = value
+		}
+
+		// Check if response is present in the cache
+		cacheResponse, err = m.caching.GetRemoteService(ctx, m.project, serviceID, endpointID, cacheInfo, cacheOptionsArray)
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
+
+		// Return if cache is present in response
+		if cacheResponse.IsCacheHit() {
+			return http.StatusOK, cacheResponse.GetResult(), nil
+		}
+
+		// Store the redis key for future use
+		redisKey = cacheResponse.Key()
+	}
+
 	/***************** Set the request method ***************/
 
 	// Set the default method
@@ -63,16 +92,27 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	}
 	method = endpoint.Method
 
-	// Overwrite the token if provided
-	if endpoint.Token != "" {
-		token = endpoint.Token
-	}
-
 	/***************** Set the request body *****************/
 
 	newParams, err := m.adjustReqBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, params)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
+	}
+
+	/***************** Set the request token ****************/
+
+	// Overwrite the token if provided
+	if endpoint.Token != "" {
+		token = endpoint.Token
+	}
+
+	// Create a new token if claims are provided
+	if endpoint.Claims != "" {
+		newToken, err := m.generateWebhookToken(ctx, serviceID, endpointID, token, endpoint, auth, params)
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
+		token = newToken
 	}
 
 	/******** Fire the request and get the response ********/
@@ -100,6 +140,13 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	/**************** Return the response body ****************/
 
 	res, err = m.adjustResBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, res)
+
+	if cacheInfo != nil && redisKey != "" {
+		// Store the adjusted body in cache for future use
+		if err := m.caching.SetRemoteServiceKey(ctx, redisKey, cacheResponse, cacheInfo, res); err != nil {
+			return 0, nil, err
+		}
+	}
 	return status, res, err
 }
 
@@ -190,6 +237,29 @@ func (m *Module) adjustResBody(ctx context.Context, serviceID, endpointID, token
 	return res, nil
 }
 
+func (m *Module) generateWebhookToken(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (string, error) {
+	var req interface{}
+	var err error
+
+	switch endpoint.Tmpl {
+	case config.TemplatingEngineGo:
+		if tmpl, p := m.templates[getGoTemplateKey("claim", serviceID, endpointID)]; p {
+			req, err = tmpl2.GoTemplate(ctx, tmpl, endpoint.OpFormat, token, auth, params)
+			if err != nil {
+				return "", err
+			}
+		}
+	default:
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"serviceId": serviceID, "endpointId": endpointID})
+		return token, nil
+	}
+
+	if req == nil {
+		return token, nil
+	}
+	return m.auth.CreateToken(ctx, req.(map[string]interface{}))
+}
+
 func adjustPath(ctx context.Context, path string, claims, params interface{}) (string, error) {
 	newPath := path
 	for {
@@ -231,11 +301,13 @@ func (m *Module) loadService(service string) *config.Service {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if s, p := m.config.InternalServices[service]; p {
-		return s
+	for _, s := range m.config {
+		if s.ID == service {
+			return s
+		}
 	}
 
-	return m.config.Services[service]
+	return nil
 }
 
 func (m *Module) getProject() string {

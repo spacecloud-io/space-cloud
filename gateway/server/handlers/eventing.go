@@ -17,61 +17,12 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// HandleEventResponse gets response for event
-func HandleEventResponse(modules *modules.Modules) http.HandlerFunc {
+// HandleAdminQueueEvent creates a queue event endpoint
+func HandleAdminQueueEvent(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	type request struct {
-		BatchID  string      `json:"batchID"`
-		Response interface{} `json:"response"`
+		Events []*model.QueueEventRequest `json:"events"`
 	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		projectID := vars["project"]
 
-		auth, err := modules.Auth(projectID)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		eventing, err := modules.Eventing(projectID)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		req := new(request)
-		_ = json.NewDecoder(r.Body).Decode(req)
-		defer utils.CloseTheCloser(r.Body)
-
-		// Return if the eventing module is not enabled
-		if !eventing.IsEnabled() {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling process event response eventing feature isn't enabled", nil, nil)
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusNotFound, "This feature isn't enabled")
-			return
-		}
-
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-
-		if err := auth.IsTokenInternal(r.Context(), token); err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling process event response token not valid", err, nil)
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err.Error())
-			return
-		}
-
-		// Process the incoming events
-		eventing.SendEventResponse(r.Context(), req.BatchID, req.Response)
-
-		_ = helpers.Response.SendOkayResponse(r.Context(), http.StatusOK, w)
-	}
-}
-
-// HandleProcessEvent processes a transmitted event
-func HandleProcessEvent(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
@@ -84,36 +35,42 @@ func HandleProcessEvent(adminMan *admin.Manager, modules *modules.Modules) http.
 			return
 		}
 
-		eventDocs := []*model.EventDocument{}
-		_ = json.NewDecoder(r.Body).Decode(&eventDocs)
+		// Load the params from the body
+		req := request{}
+		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Return if the eventing module is not enabled
 		if !eventing.IsEnabled() {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling process event request eventing feature isn't enabled", nil, nil)
+			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling queue event request eventing feature isn't enabled", nil, nil)
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusNotFound, "This feature isn't enabled")
 			return
 		}
 
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
-		if _, err := adminMan.IsTokenValid(r.Context(), token, "eventing-process", "process", nil); err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling process event request token not valid", err, nil)
+		// Get the JWT token from header
+		if err := adminMan.CheckIfAdmin(ctx, utils.GetTokenFromHeader(r)); err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err.Error())
 			return
 		}
 
-		// Process the incoming events
-		eventing.ProcessTransmittedEvents(eventDocs)
+		// Queue the event
+		if err := eventing.QueueAdminEvent(ctx, req.Events); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling queue event request", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			return
+		}
 
-		_ = helpers.Response.SendOkayResponse(r.Context(), http.StatusOK, w)
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
 // HandleQueueEvent creates a queue event endpoint
 func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 

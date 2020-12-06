@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -31,15 +30,14 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 		diploma:Boolean
 	}`
 
-	var TestCases = config.Crud{
-		"mongo": &config.CrudStub{
-			Collections: map[string]*config.TableRule{
-				"tweet": {
-					Schema: Query,
-				},
-			},
+	var dbSchemas = config.DatabaseSchemas{
+		config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseSchema{
+			Table:   "tweet",
+			DbAlias: "mongo",
+			Schema:  Query,
 		},
 	}
+
 	type args struct {
 		dbType    string
 		col       string
@@ -586,15 +584,11 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 	}
-	adminMan := admin.New("node", "abc", true, &config.AdminUser{})
-	c := crud.Init()
-	c.SetAdminManager(adminMan)
-	if err := c.SetConfig("", TestCases); err != nil {
-		t.Errorf("error in schmea update test file unable to set config of crud (%s)", err.Error())
-	}
 
-	s := Init(c)
-	if err := s.parseSchema(TestCases); err != nil {
+	c := crud.Init()
+
+	s := Init("chicago", c)
+	if err := s.parseSchema(dbSchemas); err != nil {
 		t.Errorf("error parsing schema :: %v", err)
 	}
 

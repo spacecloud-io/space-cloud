@@ -49,7 +49,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		timeOut, err := functions.GetEndpointContextTimeout(r.Context(), serviceID, function)
+		timeOut, err := functions.GetEndpointContextTimeout(r.Context(), projectID, serviceID, function)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err.Error())
 			return
@@ -67,7 +67,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
-		status, result, err := functions.CallWithContext(ctx, serviceID, function, token, reqParams, req.Params)
+		status, result, err := functions.CallWithContext(ctx, serviceID, function, token, reqParams, &req)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Receieved error from service call (%s:%s)", serviceID, function), err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())

@@ -16,7 +16,6 @@ import (
 
 // SchemaValidator function validates the schema which it gets from module
 func (s *Schema) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
-
 	for schemaKey := range doc {
 		if _, p := collectionFields[schemaKey]; !p {
 			return nil, errors.New("The field " + schemaKey + " is not present in schema of " + col)
@@ -32,6 +31,10 @@ func (s *Schema) SchemaValidator(ctx context.Context, col string, collectionFiel
 			if ok {
 				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("cannot insert value for a linked field %s", fieldKey), nil, nil)
 			}
+			continue
+		}
+
+		if fieldValue.IsAutoIncrement {
 			continue
 		}
 
@@ -69,6 +72,8 @@ func (s *Schema) SchemaValidator(ctx context.Context, col string, collectionFiel
 
 // ValidateCreateOperation validates schema on create operation
 func (s *Schema) ValidateCreateOperation(ctx context.Context, dbAlias, col string, req *model.CreateRequest) error {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 
 	if s.SchemaDoc == nil {
 		return errors.New("schema not initialized")
@@ -128,12 +133,12 @@ func (s *Schema) checkType(ctx context.Context, col string, value interface{}, f
 	case string:
 		switch fieldValue.Kind {
 		case model.TypeDateTime:
-			unitTimeInRFC3339, err := time.Parse(time.RFC3339, v)
+			unitTimeInRFC3339Nano, err := time.Parse(time.RFC3339Nano, v)
 			if err != nil {
 				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col), nil, nil)
 			}
-			return unitTimeInRFC3339, nil
-		case model.TypeID, model.TypeString:
+			return unitTimeInRFC3339Nano, nil
+		case model.TypeID, model.TypeString, model.TypeTime, model.TypeDate:
 			return value, nil
 		default:
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type received for field %s in collection %s - wanted %s got String", fieldValue.FieldName, col, fieldValue.Kind), nil, nil)

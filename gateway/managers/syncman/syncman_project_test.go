@@ -21,7 +21,7 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 	}
 	type args struct {
 		ctx     context.Context
-		project *config.Project
+		project *config.ProjectConfig
 	}
 	tests := []struct {
 		name            string
@@ -34,13 +34,13 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name: "sync operation is not valid",
-			s:    &Manager{projectConfig: config.GenerateEmptyConfig()},
-			args: args{ctx: context.Background(), project: &config.Project{}},
+			name: "Unable to validate project sync operation",
+			s:    &Manager{clusterID: "chicago", projectConfig: config.GenerateEmptyConfig()},
+			args: args{ctx: context.Background(), project: &config.ProjectConfig{}},
 			adminMockArgs: []mockArgs{
 				{
 					method:         "ValidateProjectSyncOperation",
-					args:           []interface{}{config.GenerateEmptyConfig(), &config.Project{}},
+					args:           []interface{}{config.GenerateEmptyConfig(), &config.ProjectConfig{}},
 					paramsReturned: []interface{}{false},
 				},
 			},
@@ -48,13 +48,13 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "could not get internal access token",
-			s:    &Manager{projectConfig: config.GenerateEmptyConfig()},
-			args: args{ctx: context.Background(), project: &config.Project{}},
+			name: "Could not get internal access token",
+			s:    &Manager{clusterID: "chicago", projectConfig: config.GenerateEmptyConfig()},
+			args: args{ctx: context.Background(), project: &config.ProjectConfig{}},
 			adminMockArgs: []mockArgs{
 				{
 					method:         "ValidateProjectSyncOperation",
-					args:           []interface{}{config.GenerateEmptyConfig(), &config.Project{}},
+					args:           []interface{}{config.GenerateEmptyConfig(), &config.ProjectConfig{}},
 					paramsReturned: []interface{}{true},
 				},
 				{
@@ -66,9 +66,9 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "project exists already and store type kube and can not set project",
-			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}}}},
-			args: args{ctx: context.Background(), project: &config.Project{ID: "1"}},
+			name: "project doesn't exist but cannot set resource",
+			s:    &Manager{clusterID: "chicago", storeType: "kube", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}}}}},
+			args: args{ctx: context.Background(), project: &config.ProjectConfig{ID: "2"}},
 			adminMockArgs: []mockArgs{
 				{
 					method:         "ValidateProjectSyncOperation",
@@ -83,14 +83,14 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetProjectConfig",
-					args:           []interface{}{mock.Anything},
+					args:           []interface{}{mock.Anything, &config.ProjectConfig{ID: "2", ContextTimeGraphQL: 10}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{context.Background(), mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{mock.Anything, config.GenerateResourceID("chicago", "2", config.ResourceProject, "2"), &config.ProjectConfig{ID: "2", ContextTimeGraphQL: 10}},
 					paramsReturned: []interface{}{errors.New("error marshalling project config")},
 				},
 			},
@@ -98,9 +98,9 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "project doesn't exist and store type kube and can not set project",
-			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}}}},
-			args: args{ctx: context.Background(), project: &config.Project{ID: "2"}},
+			name: "project exists already so update existing project",
+			s:    &Manager{clusterID: "chicago", storeType: "kube", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}}}}},
+			args: args{ctx: context.Background(), project: &config.ProjectConfig{ID: "1"}},
 			adminMockArgs: []mockArgs{
 				{
 					method:         "ValidateProjectSyncOperation",
@@ -115,55 +115,23 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetProjectConfig",
-					args:           []interface{}{mock.Anything},
+					args:           []interface{}{mock.Anything, &config.ProjectConfig{ID: "1", ContextTimeGraphQL: 10}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{context.Background(), mock.Anything},
-					paramsReturned: []interface{}{errors.New("error marshalling project config")},
-				},
-			},
-			want:    http.StatusInternalServerError,
-			wantErr: true,
-		},
-		{
-			name: "project exists already and store type kube and project is set",
-			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}}}},
-			args: args{ctx: context.Background(), project: &config.Project{ID: "1"}},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "ValidateProjectSyncOperation",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{true},
-				},
-				{
-					method:         "GetInternalAccessToken",
-					paramsReturned: []interface{}{"token", nil},
-				},
-			},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetProjectConfig",
-					args:           []interface{}{mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetProject",
-					args:           []interface{}{context.Background(), mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceProject, "1"), &config.ProjectConfig{ID: "1", ContextTimeGraphQL: 10}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			want: http.StatusOK,
 		},
 		{
-			name: "project doesn't exist and store type kube and project is set",
-			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}}}},
-			args: args{ctx: context.Background(), project: &config.Project{ID: "2"}},
+			name: "project doesn't exist so add a new project",
+			s:    &Manager{clusterID: "chicago", storeType: "kube", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}}}}},
+			args: args{ctx: context.Background(), project: &config.ProjectConfig{ID: "2"}},
 			adminMockArgs: []mockArgs{
 				{
 					method:         "ValidateProjectSyncOperation",
@@ -178,14 +146,14 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetProjectConfig",
-					args:           []interface{}{mock.Anything},
+					args:           []interface{}{mock.Anything, &config.ProjectConfig{ID: "2", ContextTimeGraphQL: 10}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
-					method:         "SetProject",
-					args:           []interface{}{context.Background(), mock.Anything},
+					method:         "SetResource",
+					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "2", config.ResourceProject, "2"), &config.ProjectConfig{ID: "2", ContextTimeGraphQL: 10}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -250,9 +218,9 @@ func TestManager_DeleteProjectConfig(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name: "could not get internal access token",
-			s:    &Manager{storeType: "local"},
-			args: args{ctx: context.Background(), projectID: "project"},
+			name: "Could not get internal access token",
+			s:    &Manager{clusterID: "chicago", storeType: "local"},
+			args: args{ctx: context.Background(), projectID: "myproject"},
 			adminMockArgs: []mockArgs{
 				{
 					method:         "GetInternalAccessToken",
@@ -262,9 +230,21 @@ func TestManager_DeleteProjectConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "store type kube and couldn't delete project",
-			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "notProject"}}}},
-			args: args{ctx: context.Background(), projectID: "project"},
+			name: "Unable to delete existing project store throws error",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject1": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject1"},
+						},
+						"myproject2": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject2"},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), projectID: "myproject1"},
 			adminMockArgs: []mockArgs{
 				{
 					method:         "GetInternalAccessToken",
@@ -274,22 +254,34 @@ func TestManager_DeleteProjectConfig(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method: "Delete",
-					args:   []interface{}{"project"},
+					args:   []interface{}{"myproject1"},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
 					method:         "DeleteProject",
-					args:           []interface{}{mock.Anything, "project"},
+					args:           []interface{}{mock.Anything, "myproject1"},
 					paramsReturned: []interface{}{errors.New("unable to get config map")},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "store type kube and project is deleted",
-			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "notProject"}}}},
-			args: args{ctx: context.Background(), projectID: "project"},
+			name: "Delete an existing project",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject1": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject1"},
+						},
+						"myproject2": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject2"},
+						},
+					},
+				},
+			},
+			args: args{ctx: context.Background(), projectID: "myproject1"},
 			adminMockArgs: []mockArgs{
 				{
 					method:         "GetInternalAccessToken",
@@ -299,16 +291,17 @@ func TestManager_DeleteProjectConfig(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method: "Delete",
-					args:   []interface{}{"project"},
+					args:   []interface{}{"myproject1"},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
 					method:         "DeleteProject",
-					args:           []interface{}{mock.Anything, "project"},
+					args:           []interface{}{mock.Anything, "myproject1"},
 					paramsReturned: []interface{}{nil},
 				},
 			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -356,23 +349,56 @@ func TestManager_GetProjectConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "project not present in state",
-			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}, {ID: "2"}}}},
-			args:    args{projectID: "3"},
+			name: "Get all project configs",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject1": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject1"},
+						},
+					},
+				},
+			},
+			args: args{projectID: "*"},
+			want: []interface{}{&config.ProjectConfig{ID: "myproject1"}},
+		},
+		{
+			name: "Get specific project config",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject1": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject1"},
+						},
+						"myproject2": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject2"},
+						},
+					},
+				},
+			},
+			args: args{projectID: "myproject1"},
+			want: []interface{}{&config.ProjectConfig{ID: "myproject1"}},
+		},
+		{
+			name: "Throw error when you are trying to fetch specific project which doesn't exists",
+			s: &Manager{
+				clusterID: "chicago",
+				projectConfig: &config.Config{
+					Projects: config.Projects{
+						"myproject1": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject1"},
+						},
+						"myproject2": &config.Project{
+							ProjectConfig: &config.ProjectConfig{ID: "myproject2"},
+						},
+					},
+				},
+			},
+			args:    args{projectID: "myproject3"},
 			want:    []interface{}{},
 			wantErr: true,
-		},
-		{
-			name: "projectID is *",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}, {ID: "2"}}}},
-			args: args{projectID: "*"},
-			want: []interface{}{config.Project{ID: "1"}, config.Project{ID: "2"}},
-		},
-		{
-			name: "projectID matches an existing project's id",
-			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}, {ID: "2"}}}},
-			args: args{projectID: "1"},
-			want: []interface{}{config.Project{ID: "1"}},
 		},
 	}
 	for _, tt := range tests {

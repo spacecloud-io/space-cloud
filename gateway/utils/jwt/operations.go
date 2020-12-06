@@ -78,7 +78,7 @@ func (j *JWT) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (s
 	var tokenString string
 	var err error
 	// Add expiry of one week
-	claims["exp"] = time.Now().Add(24 * 7 * time.Hour).Unix()
+	claims["exp"] = time.Now().Add(30 * time.Minute).Unix()
 	for _, s := range j.staticSecrets {
 		if s.IsPrimary {
 			switch s.Alg {

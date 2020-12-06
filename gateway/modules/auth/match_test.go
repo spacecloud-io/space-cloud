@@ -131,12 +131,12 @@ func TestMatch_Rule(t *testing.T) {
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
 	}
-	auth := Init("1", &crud.Module{}, nil, nil)
-	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"default": {Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}}}
+	auth := Init("chicago", "1", &crud.Module{}, nil, nil)
+	dbRules := config.DatabaseRules{config.GenerateResourceID("chicago", "project", config.ResourceDatabaseRule, ""): &config.DatabaseRule{Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	err := auth.SetConfig("default", "", []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	err := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "default", AESKey: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}}, dbRules, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{})
 	if err != nil {
 		t.Errorf("Unable to set auth config %s", err.Error())
 		return
@@ -195,11 +195,15 @@ func TestMatchForce_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "deny"}},
 		},
 	}
-	auth := Init("1", &crud.Module{}, nil, nil)
+	auth := Init("chicago", "1", &crud.Module{}, nil, nil)
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	_ = auth.SetConfig("default", "", []*config.Secret{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	err := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{})
+	if err != nil {
+		t.Errorf("Unable to set auth config %s", err.Error())
+		return
+	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			r, err := m.matchForce(context.Background(), "testID", test.rule, test.args, emptyAuth)
@@ -299,11 +303,15 @@ func TestMatchRemove_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "deny"}},
 		},
 	}
-	auth := Init("1", &crud.Module{}, nil, nil)
+	auth := Init("chicago", "1", &crud.Module{}, nil, nil)
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	_ = auth.SetConfig("default", "", []*config.Secret{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	err := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{})
+	if err != nil {
+		t.Errorf("Unable to set auth config %s", err.Error())
+		return
+	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			r, err := m.matchRemove(context.Background(), "testID", test.rule, test.args, emptyAuth)
@@ -730,11 +738,11 @@ func TestModule_matchFunc(t *testing.T) {
 			args: args{
 				httpParams: params{
 					url:    "http://localhost/validate",
-					claims: map[string]interface{}{"role": "admin"},
-					params: map[string]interface{}{"auth": map[string]interface{}{}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"},
+					claims: map[string]interface{}{"id": "4f42ofgrlg34o", "name": "tony"},
+					params: map[string]interface{}{"auth": map[string]interface{}{"id": "4f42ofgrlg34o"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRmNDJvZmdybGczNG8iLCJuYW1lIjoidG9ueSJ9.8ckk11R62P6KXly3d5Fx2I2NAaSukqTA0Zx-FreebpE"},
 				},
-				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: map[string]interface{}{"role": "admin"}},
-				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"}}},
+				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: "{\"id\": \"{{ .auth.id }}\", \"name\": \"tony\"}"},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"id": "4f42ofgrlg34o"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRmNDJvZmdybGczNG8iLCJuYW1lIjoidG9ueSJ9.8ckk11R62P6KXly3d5Fx2I2NAaSukqTA0Zx-FreebpE"}}},
 			want:    nil,
 			wantErr: false,
 		},
@@ -744,11 +752,11 @@ func TestModule_matchFunc(t *testing.T) {
 			args: args{
 				httpParams: params{
 					url:    "http://localhost/validate",
-					claims: map[string]interface{}{"role": "admin"},
+					claims: map[string]interface{}{"id": "4f42ofgrlg34o", "name": "tony"},
 					params: map[string]interface{}{"service": "http://localhost:9000/"},
 				},
-				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: map[string]interface{}{"role": "admin"}, ReqTmpl: `{"service":"{{.args.auth.serviceAddr}}"}`, Template: config.TemplatingEngineGo},
-				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"serviceAddr": "http://localhost:9000/"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.mcLuntEPgBDN1U_ywGLpC7L0--iD7OwX6eqjEWUo4oo"}}},
+				rule: &config.Rule{Rule: "webhook", URL: "http://localhost/validate", Claims: "{\"id\": \"{{ .args.auth.id }}\", \"name\": \"tony\"}", ReqTmpl: `{"service":"{{.args.auth.serviceAddr}}"}`, Template: config.TemplatingEngineGo},
+				args: map[string]interface{}{"args": map[string]interface{}{"auth": map[string]interface{}{"id": "4f42ofgrlg34o", "serviceAddr": "http://localhost:9000/"}, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRmNDJvZmdybGczNG8ifQ.kUx6dq6qHDYX2HyPthgthi3Rch5UPUrqm5Io1cbKVr0"}}},
 			want:    nil,
 			wantErr: false,
 		},
@@ -781,7 +789,7 @@ func TestModule_matchFunc(t *testing.T) {
 				}
 				return nil
 			}
-			_ = tt.m.SetConfig("", "", []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}, string(tt.m.aesKey), nil, nil, nil, nil)
+			_ = tt.m.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", AESKey: string(tt.m.aesKey), Secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{})
 			if err := tt.m.matchFunc(context.Background(), tt.args.rule, HTTPCall, tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("matchFunc() error = %v, wantErr %v", err, tt.wantErr)
 			}

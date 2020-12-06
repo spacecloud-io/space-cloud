@@ -11,6 +11,56 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+// SetProjectRoutes sets a projects routes
+func (s *Manager) SetProjectRoutes(ctx context.Context, project string, c config.Routes) (int, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	ingressRoutes := make(config.IngressRoutes)
+	for _, route := range c {
+		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceIngressRoute, route.ID)
+		ingressRoutes[resourceID] = route
+	}
+
+	// Update the project's routes
+	projectConfig.IngressRoutes = ingressRoutes
+	if err := s.modules.Routing().SetProjectRoutes(project, ingressRoutes); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	for resourceID, route := range ingressRoutes {
+		if err := s.store.SetResource(ctx, resourceID, route); err != nil {
+			return http.StatusInternalServerError, err
+		}
+	}
+
+	return http.StatusOK, nil
+}
+
+// GetProjectRoutes gets all the routes for specified project config
+func (s *Manager) GetProjectRoutes(ctx context.Context, project string) (int, interface{}, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+
+	ingressRoutes := make(config.Routes, 0)
+	for _, route := range projectConfig.IngressRoutes {
+		ingressRoutes = append(ingressRoutes, route)
+	}
+	return http.StatusOK, ingressRoutes, nil
+}
+
 // SetProjectRoute adds a route in specified project config
 func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *config.Route, params model.RequestParams) (int, error) {
 	// Check if the request has been hijacked
@@ -35,25 +85,18 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *co
 		return http.StatusBadRequest, err
 	}
 
-	doesExist := false
-	for _, route := range projectConfig.Modules.Routes {
-		if id == route.ID {
-			route.Source = c.Source
-			route.Targets = c.Targets
-			route.Rule = c.Rule
-			route.Modify = c.Modify
-			doesExist = true
-		}
-	}
-	if !doesExist {
-		projectConfig.Modules.Routes = append(projectConfig.Modules.Routes, c)
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceIngressRoute, id)
+	if projectConfig.IngressRoutes == nil {
+		projectConfig.IngressRoutes = config.IngressRoutes{resourceID: c}
+	} else {
+		projectConfig.IngressRoutes[resourceID] = c
 	}
 
-	if err := s.modules.Routing().SetProjectRoutes(project, projectConfig.Modules.Routes); err != nil {
+	if err := s.modules.Routing().SetProjectRoutes(project, projectConfig.IngressRoutes); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.SetResource(ctx, resourceID, c); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -83,23 +126,21 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 		return http.StatusBadRequest, err
 	}
 
-	for index, route := range projectConfig.Modules.Routes {
-		if route.ID == routeID {
-			// delete the route at specified index
-			projectConfig.Modules.Routes[index] = projectConfig.Modules.Routes[len(projectConfig.Modules.Routes)-1]
-			projectConfig.Modules.Routes = projectConfig.Modules.Routes[:len(projectConfig.Modules.Routes)-1]
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceIngressRoute, routeID)
+	_, ok := projectConfig.IngressRoutes[resourceID]
+	if ok {
+		delete(projectConfig.IngressRoutes, resourceID)
 
-			// update the config
-			if err := s.modules.Routing().SetProjectRoutes(project, projectConfig.Modules.Routes); err != nil {
-				return http.StatusInternalServerError, err
-			}
-
-			if err := s.setProject(ctx, projectConfig); err != nil {
-				return http.StatusInternalServerError, err
-			}
-
-			return http.StatusOK, nil
+		// update the config
+		if err := s.modules.Routing().SetProjectRoutes(project, projectConfig.IngressRoutes); err != nil {
+			return http.StatusInternalServerError, err
 		}
+
+		if err := s.store.DeleteResource(ctx, resourceID); err != nil {
+			return http.StatusInternalServerError, err
+		}
+
+		return http.StatusOK, nil
 	}
 	return http.StatusNotFound, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Route (%s) not found in config", routeID), nil, map[string]interface{}{})
 }
@@ -128,16 +169,16 @@ func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string
 	}
 
 	if routeID != "*" {
-		for _, value := range projectConfig.Modules.Routes {
-			if routeID == value.ID {
-				return http.StatusOK, []interface{}{value}, nil
-			}
+		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceIngressRoute, routeID)
+		value, ok := projectConfig.IngressRoutes[resourceID]
+		if ok {
+			return http.StatusOK, []interface{}{value}, nil
 		}
 		return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("route with id (%s) does not exists in ingress routing", routeID), nil, nil)
 	}
 
 	routes := []interface{}{}
-	for _, value := range projectConfig.Modules.Routes {
+	for _, value := range projectConfig.IngressRoutes {
 		routes = append(routes, value)
 	}
 	return http.StatusOK, routes, nil
@@ -168,13 +209,14 @@ func (s *Manager) SetGlobalRouteConfig(ctx context.Context, project string, glob
 	}
 
 	// Set config in project config object
-	projectConfig.Modules.GlobalRoutes = globalConfig
+	projectConfig.IngressGlobal = globalConfig
 
 	// Update the routing module
 	s.modules.Routing().SetGlobalConfig(globalConfig)
 
 	// Finally lets store the config
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceIngressGlobal, "global")
+	if err := s.store.SetResource(ctx, resourceID, globalConfig); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -205,5 +247,5 @@ func (s *Manager) GetGlobalRouteConfig(ctx context.Context, project string, para
 		return http.StatusBadRequest, nil, err
 	}
 
-	return http.StatusOK, projectConfig.Modules.GlobalRoutes, nil
+	return http.StatusOK, projectConfig.IngressGlobal, nil
 }
