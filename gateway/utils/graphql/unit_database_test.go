@@ -40,7 +40,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -132,7 +132,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -203,7 +203,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -269,7 +269,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -335,7 +335,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -401,7 +401,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -470,7 +470,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -542,7 +542,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -768,7 +768,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -843,7 +843,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -918,7 +918,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -993,7 +993,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -1068,7 +1068,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -1143,7 +1143,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -1218,7 +1218,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -1293,7 +1293,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -1367,7 +1367,7 @@ var queryTestCases = []tests{
 	// 				GroupBy:   []interface{}{},
 	// 				Operation: utils.All,
 	// 				Options: &model.ReadOptions{
-	// 					Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+	// 					Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 	// 				},
 	// 				IsBatch: true,
 	// 			}},
@@ -1453,7 +1453,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -1538,7 +1538,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -1622,7 +1622,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -1698,7 +1698,7 @@ var queryTestCases = []tests{
 	// 				GroupBy:   []interface{}{},
 	// 				Operation: utils.All,
 	// 				Options: &model.ReadOptions{
-	// 					Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+	// 					Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 	// 				},
 	// 				IsBatch: true,
 	// 			}},
@@ -1778,7 +1778,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1},
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 						Sort:       []string{"name"},
 						HasOptions: true,
 					},
@@ -1847,7 +1847,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1, "caught_on": 1},
+						Select:     map[string]int32{"caught_pokemons.id": 1, "caught_pokemons.name": 1, "caught_pokemons.caught_on": 1},
 						Sort:       []string{"name", "-caught_on"},
 						HasOptions: true,
 					},
@@ -1916,7 +1916,7 @@ var queryTestCases = []tests{
 	// 				GroupBy:   []interface{}{},
 	// 				Operation: utils.All,
 	// 				Options: &model.ReadOptions{
-	// 					Select:     map[string]int32{"id": 1, "name": 1, "caught_on": 1},
+	// 					Select:     map[string]int32{"caught_pokemons.id": 1, "caught_pokemons.name": 1, "caught_pokemons.caught_on": 1},
 	// 					Sort:       []string{"name", "-caught_on"},
 	// 					HasOptions: true,
 	// 				},
@@ -1990,7 +1990,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.Distinct,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"type": 1},
+						Select:     map[string]int32{"pokemons.type": 1},
 						Distinct:   &distinct,
 						HasOptions: true,
 					},
@@ -2058,7 +2058,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1},
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 						Limit:      &number,
 						HasOptions: true,
 					},
@@ -2127,7 +2127,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1},
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 						Skip:       &number,
 						HasOptions: true,
 					},
@@ -2197,7 +2197,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1},
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 						Skip:       &number,
 						Limit:      &number,
 						HasOptions: true,
@@ -2267,7 +2267,7 @@ var queryTestCases = []tests{
 	// 				GroupBy:   []interface{}{},
 	// 				Operation: utils.All,
 	// 				Options: &model.ReadOptions{
-	// 					Select:     map[string]int32{"id": 1, "name": 1},
+	// 					Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 	// 					Skip:       &number,
 	// 					HasOptions: true,
 	// 				},
@@ -2340,7 +2340,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1},
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 						Skip:       &number,
 						Sort:       []string{"name"},
 						HasOptions: true,
@@ -2414,7 +2414,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
@@ -2445,7 +2445,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"type": 1, "name": 1},
+						Select: map[string]int32{"pokemons.type": 1, "pokemons.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -2519,7 +2519,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
@@ -2550,7 +2550,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"type": 1, "name": 1},
+						Select: map[string]int32{"pokemons.type": 1, "pokemons.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -2624,7 +2624,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{PostProcessAction: nil}},
@@ -2656,6 +2656,87 @@ var queryTestCases = []tests{
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", DBType: "db", From: "id", To: "trainer_id"}}}, true},
+			},
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "trainer_id": &model.FieldType{FieldName: "trainer_id", IsFieldTypeRequired: true, Kind: model.TypeID}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								trainers @db {
+									id
+									name
+									pokemons {
+										id
+										name
+									}
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"trainers": []interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}}},
+	},
+	{
+		name: "Query: Same database joins, link converted to optimised join",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "trainers", &model.ReadRequest{
+					Extras:    map[string]interface{}{},
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1, "pokemons.id": 1, "pokemons.name": 1},
+						Join: []*model.JoinOption{
+							{
+								Type:  "LEFT",
+								On:    map[string]interface{}{"trainers.id": "pokemons.trainer_id"},
+								Table: "pokemons",
+							},
+						},
+					},
+					IsBatch:     false,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{PostProcessAction: nil}, "pokemons": &model.PostProcess{PostProcessAction: nil}},
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}}, nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -2724,7 +2805,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": {PostProcessAction: nil}},
@@ -2777,7 +2858,7 @@ var queryTestCases = []tests{
 			{
 				method:         "GetSchema",
 				args:           []interface{}{"db", "pokemons"},
-				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "trainer_id": &model.FieldType{FieldName: "trainer_id", IsFieldTypeRequired: true, Kind: model.TypeID, IsForeign: true, JointTable: &model.TableProperties{Table: "trainers", To: "id"}}}, true},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "trainer_id": &model.FieldType{FieldName: "trainer_id", IsFieldTypeRequired: true, Kind: model.TypeID}}, true},
 			},
 		},
 		authMockArgs: []mockArgs{
@@ -2795,6 +2876,89 @@ var queryTestCases = []tests{
 									id
 									name
 									pokemons(sort: ["name"]) {
+										id
+										name
+									}
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"trainers": []interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}}}},
+	},
+	{
+		name: "Query: Sorting Nested Queries, using optimized join",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "trainers", &model.ReadRequest{
+					Extras:    map[string]interface{}{},
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						HasOptions: true,
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1, "pokemons.id": 1, "pokemons.name": 1},
+						Join: []*model.JoinOption{
+							{
+								Type:  "LEFT",
+								On:    map[string]interface{}{"trainers.id": "pokemons.trainer_id"},
+								Table: "pokemons",
+							},
+						},
+						Sort: []string{"pokemons.name"},
+					},
+					IsBatch:     false,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{PostProcessAction: nil}, "pokemons": &model.PostProcess{PostProcessAction: nil}},
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", DBType: "db", From: "id", To: "trainer_id"}}}, true},
+			},
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "trainer_id": &model.FieldType{FieldName: "trainer_id", IsFieldTypeRequired: true, Kind: model.TypeID, IsForeign: true, JointTable: &model.TableProperties{Table: "trainers", To: "id"}}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								trainers(sort: ["pokemons.name"]) @db {
+									id
+									name
+									pokemons {
 										id
 										name
 									}
@@ -2835,7 +2999,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
@@ -2858,7 +3022,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -2876,7 +3040,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
@@ -2954,7 +3118,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},

@@ -44,7 +44,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 	}
 	req.Options.HasOptions = hasOptions
 
-	req.Aggregate, err = extractAggregate(ctx, field, store)
+	req.Aggregate, err = extractAggregate(ctx, field, store, dbType, col)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -84,12 +84,12 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		return
 	}
 
-	selectionSet, err := graph.extractSelectionSet(field, dbAlias, col, req.Options.Join, len(req.Options.Join) > 0, req.Options.ReturnType)
+	functionMap, selectionSet, err := graph.extractSelectionSet(ctx, field, store, dbAlias, col, &req.Options.Join, req.Options.ReturnType)
 	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
-
+	req.Aggregate = functionMap
 	if len(selectionSet) > 0 {
 		req.Options.Select = selectionSet
 	}
@@ -129,7 +129,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 	}()
 }
 
-func (graph *Module) runAuthForJoins(ctx context.Context, dbType, dbAlias, token string, req *model.ReadRequest, join []model.JoinOption) error {
+func (graph *Module) runAuthForJoins(ctx context.Context, dbType, dbAlias, token string, req *model.ReadRequest, join []*model.JoinOption) error {
 	for _, j := range join {
 		returnWhere := model.ReturnWhereStub{Col: j.Table, PrefixColName: len(req.Options.Join) > 0, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}
 		actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, j.Table, token, req, returnWhere)
@@ -196,11 +196,6 @@ func generateReadRequest(ctx context.Context, field *ast.Field, store utils.M) (
 		return nil, false, err
 	}
 
-	readRequest.Aggregate, err = extractAggregate(ctx, field, store)
-	if err != nil {
-		return nil, false, err
-	}
-
 	var hasOptions bool
 	readRequest.Options, hasOptions, err = generateOptions(ctx, field.Arguments, store)
 	if err != nil {
@@ -239,40 +234,110 @@ func generateArguments(ctx context.Context, field *ast.Field, store utils.M) map
 	}
 	return obj
 }
+func (graph *Module) checkIfLinkCanBeOptimized(fieldStruct *model.FieldType, dbAlias, col string) (*model.JoinOption, bool) {
+	currentTableFieldID := fieldStruct.LinkedTable.From
+	referredTableFieldID := fieldStruct.LinkedTable.To
+	referredTableName := fieldStruct.LinkedTable.Table
+	referredDbAlias := fieldStruct.LinkedTable.DBType
+	if dbAlias != referredDbAlias { // join cannot happen over different databases
+		return nil, false
+	}
+	dbType, err := graph.crud.GetDBType(dbAlias)
+	if err != nil {
+		return nil, false
+	}
+	if model.DBType(dbType) == model.Mongo {
+		return nil, false
+	}
+	referredTableSchema, ok := graph.schema.GetSchema(referredDbAlias, referredTableName)
+	if !ok {
+		return nil, false
+	}
+	referredTableFieldInfo, ok := referredTableSchema[referredTableFieldID]
+	if !ok {
+		return nil, false
+	}
+	if !(referredTableFieldInfo.IsForeign && referredTableFieldInfo.JointTable.Table == col && referredTableFieldInfo.JointTable.To == currentTableFieldID) {
+		return nil, false
+	}
+	return &model.JoinOption{
+		Table: referredTableName,
+		On: map[string]interface{}{
+			fmt.Sprintf("%s.%s", col, currentTableFieldID): fmt.Sprintf("%s.%s", referredTableName, referredTableFieldID),
+		},
+		Type: "LEFT",
+	}, true
+}
 
-func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string, join []model.JoinOption, isJoin bool, returnType string) (map[string]int32, error) {
+func (graph *Module) extractSelectionSet(ctx context.Context, field *ast.Field, store utils.M, dbAlias, col string, join *[]*model.JoinOption, returnType string) (map[string][]string, map[string]int32, error) {
 	selectMap := map[string]int32{}
+	functionMap := make(map[string][]string)
+	aggregateFound := new(bool)
 	schemaFields, _ := graph.schema.GetSchema(dbAlias, col)
 	if field.SelectionSet == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
+
+	dbType, err := graph.crud.GetDBType(dbAlias)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	for _, selection := range field.SelectionSet.Selections {
 		v := selection.(*ast.Field)
 		// skip aggregate field & fields with directives
-		if v.Name.Value == utils.GraphQLAggregate || len(v.Directives) > 0 {
+		if v.Name.Value == utils.GraphQLAggregate || (len(v.Directives) > 0 && v.Directives[0].Name.Value == utils.GraphQLAggregate) {
+			f, err := aggregateSingleField(ctx, v, store, col, model.DBType(dbType), aggregateFound)
+			if err != nil {
+				return nil, nil, err
+			}
+			for key, value := range f {
+				v, ok := functionMap[key]
+				if !ok {
+					functionMap[key] = value
+				} else {
+					functionMap[key] = append(v, value...)
+				}
+			}
+			continue
+		}
+		if len(v.Directives) > 0 {
 			continue
 		}
 
-		joinTable, isJointTable := isJointTable(v.Name.Value, join)
-
+		joinTable, isJointTable := isJointTable(v.Name.Value, *join)
 		if schemaFields != nil {
 			// skip linked fields but allow joint tables
 			fieldStruct, p := schemaFields[v.Name.Value]
 			if p && fieldStruct.IsLinked && !isJointTable {
-				continue
+				// check if the link can be optimised to join
+				joinInfo, isOptimized := graph.checkIfLinkCanBeOptimized(fieldStruct, dbAlias, col)
+				if !isOptimized {
+					continue
+				}
+				*join = append(*join, joinInfo)
+				joinTable = joinInfo
+				isJointTable = true
 			}
 		}
 
 		if isJointTable {
 			if v.SelectionSet == nil {
-				return nil, errors.New("joint tables cannot have an empty selection set")
+				return nil, nil, errors.New("joint tables cannot have an empty selection set")
 			}
 
-			m, err := graph.extractSelectionSet(v, dbAlias, joinTable.Table, joinTable.Join, isJoin, returnType)
+			f, m, err := graph.extractSelectionSet(ctx, v, store, dbAlias, joinTable.Table, &joinTable.Join, returnType)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-
+			for key, value := range f {
+				v, ok := functionMap[key]
+				if !ok {
+					functionMap[key] = value
+				} else {
+					functionMap[key] = append(v, value...)
+				}
+			}
 			for k, v := range m {
 				selectMap[k] = v
 			}
@@ -281,11 +346,11 @@ func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string, 
 
 		// Need to make thing
 		key := v.Name.Value
-		if isJoin {
+		if model.DBType(dbType) != model.Mongo {
 			if returnType == "table" {
 				arr := strings.Split(key, "__")
 				if len(arr) != 2 {
-					return nil, fmt.Errorf("field name must be of the format `table__column`")
+					return nil, nil, fmt.Errorf("field name must be of the format `table__column`")
 				}
 				key = arr[0] + "." + arr[1]
 			} else {
@@ -294,80 +359,102 @@ func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string, 
 		}
 		selectMap[key] = 1
 	}
-	return selectMap, nil
+	return functionMap, selectMap, nil
 }
 
-func extractAggregate(ctx context.Context, v *ast.Field, store utils.M) (map[string][]string, error) {
+func extractAggregate(ctx context.Context, v *ast.Field, store utils.M, dbType, col string) (map[string][]string, error) {
 	functionMap := make(map[string][]string)
-	aggregateFound := false
+	aggregateFound := new(bool)
 	if v.SelectionSet == nil {
 		return nil, nil
 	}
 	for _, selection := range v.SelectionSet.Selections {
-		field := selection.(*ast.Field)
-
-		// Check if aggregate was found in the directive
-		if len(field.Directives) > 0 && field.Directives[0].Name.Value == "aggregate" {
-			// Get the required parameters
-			returnField := field.Name.Value
-			op, fieldName, err := getAggregateArguments(field.Directives[0], store)
-			if err != nil {
-				return nil, err
-			}
-
-			if fieldName == "" {
-				fieldName = returnField
-			}
-
-			colArray, ok := functionMap[op]
+		f, err := aggregateSingleField(ctx, selection.(*ast.Field), store, col, model.DBType(dbType), aggregateFound)
+		if err != nil {
+			return nil, err
+		}
+		for key, value := range f {
+			v, ok := functionMap[key]
 			if !ok {
-				colArray = []string{}
+				functionMap[key] = value
+			} else {
+				functionMap[key] = append(v, value...)
 			}
-
-			columnName := fmt.Sprintf("%s:%s:table", returnField, strings.Join(strings.Split(fieldName, "__"), "."))
-			colArray = append(colArray, columnName)
-			functionMap[op] = colArray
-			continue
-		}
-
-		if field.Name.Value != utils.GraphQLAggregate || field.SelectionSet == nil {
-			continue
-		}
-
-		if aggregateFound {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field", nil, nil)
-		}
-		aggregateFound = true
-		// get function name
-		for _, selection := range field.SelectionSet.Selections {
-			functionField := selection.(*ast.Field)
-			_, ok := functionMap[functionField.Name.Value]
-			if ok {
-				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot repeat the same function (%s) twice. Specify all columns within single function field", functionField.Name.Value), nil, nil)
-			}
-
-			if functionField.Name.Value == "count" && functionField.SelectionSet == nil {
-				functionMap[functionField.Name.Value] = []string{""}
-				continue
-			}
-
-			if functionField.SelectionSet == nil {
-				return nil, nil
-			}
-			colArray := make([]string, 0)
-			// get column name
-			for _, selection := range functionField.SelectionSet.Selections {
-				columnField := selection.(*ast.Field)
-				returnFieldName := columnField.Name.Value
-				columnName := strings.Join(strings.Split(columnField.Name.Value, "__"), ".")
-				colArray = append(colArray, fmt.Sprintf("%s:%s", returnFieldName, columnName))
-			}
-			functionMap[functionField.Name.Value] = colArray
 		}
 	}
 	return functionMap, nil
 }
 
+func aggregateSingleField(ctx context.Context, field *ast.Field, store utils.M, tableName string, dbType model.DBType, aggregateFound *bool) (map[string][]string, error) {
+	functionMap := make(map[string][]string)
+
+	// Check if aggregate was found in the directive
+	if len(field.Directives) > 0 && field.Directives[0].Name.Value == "aggregate" {
+		// Get the required parameters
+		returnField := field.Name.Value
+		op, fieldName, err := getAggregateArguments(field.Directives[0], store)
+		if err != nil {
+			return nil, err
+		}
+
+		if dbType != model.Mongo {
+			if fieldName == "" {
+				fieldName = tableName + "." + returnField
+			}
+			if arr := strings.Split(fieldName, "."); len(arr) <= 1 {
+				fieldName = tableName + "." + fieldName
+			}
+		} else if fieldName == "" {
+			fieldName = returnField
+		}
+
+		colArray, ok := functionMap[op]
+		if !ok {
+			colArray = []string{}
+		}
+
+		columnName := fmt.Sprintf("%s:%s:table", returnField, strings.Join(strings.Split(fieldName, "__"), "."))
+		colArray = append(colArray, columnName)
+		functionMap[op] = colArray
+		return functionMap, nil
+	}
+
+	if field.Name.Value != utils.GraphQLAggregate || field.SelectionSet == nil {
+		return nil, nil
+	}
+
+	if *aggregateFound {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field", nil, nil)
+	}
+	*aggregateFound = true
+	// get function name
+	for _, selection := range field.SelectionSet.Selections {
+		functionField := selection.(*ast.Field)
+		_, ok := functionMap[functionField.Name.Value]
+		if ok {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot repeat the same function (%s) twice. Specify all columns within single function field", functionField.Name.Value), nil, nil)
+		}
+
+		if functionField.Name.Value == "count" && functionField.SelectionSet == nil {
+			functionMap[functionField.Name.Value] = []string{""}
+			continue
+		}
+
+		if functionField.SelectionSet == nil {
+			return nil, nil
+		}
+		colArray := make([]string, 0)
+		// get column name
+		for _, selection := range functionField.SelectionSet.Selections {
+			columnField := selection.(*ast.Field)
+			returnFieldName := columnField.Name.Value
+			columnName := strings.Join(strings.Split(columnField.Name.Value, "__"), ".")
+			colArray = append(colArray, fmt.Sprintf("%s:%s", returnFieldName, columnName))
+		}
+		functionMap[functionField.Name.Value] = colArray
+	}
+	return functionMap, nil
+}
 func getAggregateArguments(field *ast.Directive, store utils.M) (string, string, error) {
 	var operation, fieldName string
 	for _, arg := range field.Arguments {
@@ -459,7 +546,7 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 				return nil, hasOptions, err
 			}
 
-			join := make([]model.JoinOption, 0)
+			join := make([]*model.JoinOption, 0)
 			if err := mapstructure.Decode(temp, &join); err != nil {
 				return nil, hasOptions, err
 			}
@@ -559,12 +646,12 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 	return &options, hasOptions, nil
 }
 
-func isJointTable(table string, join []model.JoinOption) (model.JoinOption, bool) {
+func isJointTable(table string, join []*model.JoinOption) (*model.JoinOption, bool) {
 	for _, j := range join {
 		if j.Table == table {
 			return j, true
 		}
 	}
 
-	return model.JoinOption{}, false
+	return nil, false
 }

@@ -64,7 +64,7 @@ func ExtractRequestParams(r *http.Request, reqParams model.RequestParams, body i
 }
 
 // ExtractJoinInfo extracts join info
-func ExtractJoinInfo(join []model.JoinOption, databaseRow map[string]interface{}, joinKeysMapping map[string]map[string]string) {
+func ExtractJoinInfo(join []*model.JoinOption, databaseRow map[string]interface{}, joinKeysMapping map[string]map[string]string) {
 	for _, j := range join {
 		GenerateJoinKeys(j.Table, j.On, databaseRow, joinKeysMapping)
 		if j.Join != nil {
