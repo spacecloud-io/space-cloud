@@ -25,6 +25,7 @@ type SpecObject struct {
 	Spec interface{}       `json:"spec" yaml:"spec,omitempty"`
 }
 
+// BatchSpecApplyRequest body of batch config apply endpoint
 type BatchSpecApplyRequest struct {
 	Specs []*SpecObject `json:"specs" yaml:"specs"`
 }
