@@ -18,6 +18,10 @@ meta:
 
 # Gateway service configuration
 gateway:
+  healthCheck:
+    initialDelaySeconds: 100 # tells the kubelet that it should wait 100 seconds before performing the first health check.
+    periodSeconds: 10 # field specifies that the kubelet should perform a liveness probe every 10 seconds.
+    timeout: 3 # http request timeout, it should be less than (periodSeconds)
   image:
     name: "spaceuptech/gateway"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always

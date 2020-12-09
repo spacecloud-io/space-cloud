@@ -16,3 +16,15 @@ type RequestParams struct {
 	Path       string                 `json:"path"`
 	Payload    interface{}            `json:"payload"`
 }
+
+// SpecObject describes the basic structure of config specifications
+type SpecObject struct {
+	API  string            `json:"api" yaml:"api"`
+	Type string            `json:"type" yaml:"type"`
+	Meta map[string]string `json:"meta" yaml:"meta"`
+	Spec interface{}       `json:"spec" yaml:"spec,omitempty"`
+}
+
+type BatchSpecApplyRequest struct {
+	Specs []*SpecObject `json:"specs" yaml:"specs"`
+}
