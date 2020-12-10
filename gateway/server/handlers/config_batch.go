@@ -25,8 +25,7 @@ func HandleBatchApplyConfig(adminMan *admin.Manager) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		_, err := adminMan.IsTokenValid(ctx, token, "batch-apply", "modify", map[string]string{})
-		if err != nil {
+		if err := adminMan.CheckIfAdmin(ctx, token); err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
 			return
 		}

@@ -149,7 +149,7 @@ func main() {
 			Flags: []cli.Flag{
 				cli.IntFlag{
 					Name:  "timeout",
-					Value: 3,
+					Value: 5,
 				},
 			},
 		},
