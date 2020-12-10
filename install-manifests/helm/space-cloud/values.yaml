@@ -4,7 +4,7 @@
 
 clusterId: "default"
 devMode: "true" # Turn this to false for production mode
-version: "0.20.0" # This ensures both runner & gateway using the same version
+version: "0.20.1" # This ensures both runner & gateway using the same version
 isKedaEnabled: true # Set this to false to skip installing keda
 
 admin:
