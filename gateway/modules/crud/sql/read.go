@@ -80,7 +80,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 			query = query.Order(orderBys...)
 		}
 
-		q, err := s.processJoins(ctx, query, req.Options.Join, req.Options.Select)
+		q, err := s.processJoins(ctx, query, req.Options.Join, req.Options.Select, len(req.Aggregate) > 0)
 		if err != nil {
 			return "", nil, err
 		}
@@ -136,11 +136,6 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		}
 		query = query.Select(selArray...)
 		if len(req.GroupBy) > 0 {
-			for _, group := range req.GroupBy {
-				if arr := strings.Split(group.(string), "."); len(arr) > 1 && arr[0] != col && req.Options.ReturnType != "table" {
-					return "", nil, fmt.Errorf("use `returnType` `table` to perform group by on joint tables")
-				}
-			}
 			query = query.GroupBy(req.GroupBy...)
 		}
 	}
@@ -280,7 +275,7 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
 		}
 
-		processAggregate(mapping, mapping, isAggregate)
+		processAggregate(mapping, mapping, col, isAggregate)
 		if req.PostProcess != nil {
 			_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], mapping)
 		}
@@ -311,8 +306,10 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			}
 
 			if req.Options == nil || req.Options.ReturnType == "table" || len(req.Options.Join) == 0 {
-				processAggregate(row, row, isAggregate)
-				row["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+				processAggregate(row, row, "*", isAggregate)
+
+				// row["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+
 				array = append(array, row)
 				continue
 			}
@@ -326,12 +323,18 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 		return 0, nil, nil, utils.ErrInvalidParams
 	}
 }
-func processAggregate(row, m map[string]interface{}, isAggregate bool) {
+func processAggregate(row, m map[string]interface{}, tableName string, isAggregate bool) {
 	if isAggregate {
 		funcMap := map[string]interface{}{}
 		for asColumnName, value := range row {
 			format, returnField, functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
 			if isAggregateColumn {
+				// Only process aggregated field if it belongs to the current table
+				if arr := strings.Split(columnName, "__"); len(arr) == 2 {
+					if arr[0] != tableName && tableName != "*" {
+						continue
+					}
+				}
 				delete(row, asColumnName)
 
 				if format == "table" {
@@ -360,8 +363,9 @@ func processAggregate(row, m map[string]interface{}, isAggregate bool) {
 		}
 	}
 }
-
-func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool, row map[string]interface{}, join []model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess, joinMapping map[string]map[string]string) {
+func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool, row map[string]interface{}, join []*model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess, joinMapping map[string]map[string]string) {
+	// row obtained from database contains flattened result of all tables(if join was specified)
+	// m variable will only store result of specific table
 	m := map[string]interface{}{}
 	keyMap := map[string]interface{}{}
 
@@ -370,6 +374,13 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 	// Get keys of this table
 	for k, v := range row {
 		a := strings.Split(k, "__")
+		if a[0] == utils.GraphQLAggregate {
+			_, _, _, columnName, _ := splitAggregateAsColumnName(k)
+			if arr := strings.Split(columnName, "__"); len(arr) == 2 {
+				a[0] = arr[0] // table name
+				a[1] = arr[1] // column name
+			}
+		}
 		if utils.StringExists(table, a[0]) {
 			keyMap[a[1]] = v
 		}
@@ -399,10 +410,9 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 		}
 
 		// Process aggregate field only if its the root table that we are processing
-		if length == 0 {
-			processAggregate(row, m, isAggregate)
-			m["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
-		}
+		processAggregate(row, m, table[length], isAggregate)
+
+		// m["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 	}
 
 	if mapLength == 0 {

@@ -146,6 +146,12 @@ func main() {
 			Name:   "health-check",
 			Usage:  "check the health of gateway instance",
 			Action: actionHealthCheck,
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:  "timeout",
+					Value: 5,
+				},
+			},
 		},
 	}
 
@@ -232,7 +238,7 @@ func actionRun(c *cli.Context) error {
 }
 
 func actionHealthCheck(c *cli.Context) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.Int("timeout"))*time.Second)
 	defer cancel()
 
 	// Make a request object

@@ -285,7 +285,7 @@ func (s *KubeStore) SetResource(ctx context.Context, resourceID string, resource
 	}
 
 	// validate if the resource value is according to the resource type
-	if err := validateResource(ctx, config.ResourceAddEvent, s.projectsConfig, resourceID, resourceType, resource); err != nil {
+	if err := updateResource(ctx, config.ResourceAddEvent, s.projectsConfig, resourceID, resourceType, resource); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to validate resource", err, map[string]interface{}{"project": projectID})
 	}
 
@@ -419,7 +419,7 @@ func (s *KubeStore) GetGlobalConfig() (*config.Config, error) {
 		}
 		for _, configMap := range configMaps.Items {
 			eventType, resourceID, _, resource := onAddOrUpdateResource(config.ResourceAddEvent, &configMap)
-			if err := validateResource(context.TODO(), eventType, globalConfig, resourceID, resourceType, resource); err != nil {
+			if err := updateResource(context.TODO(), eventType, globalConfig, resourceID, resourceType, resource); err != nil {
 				return nil, err
 			}
 		}
@@ -431,7 +431,7 @@ func (s *KubeStore) GetGlobalConfig() (*config.Config, error) {
 	}
 	for _, configMap := range secrets.Items {
 		eventType, resourceID, _, resource := onAddOrUpdateLicenses(config.ResourceAddEvent, &configMap)
-		if err := validateResource(context.TODO(), eventType, globalConfig, resourceID, config.ResourceLicense, resource); err != nil {
+		if err := updateResource(context.TODO(), eventType, globalConfig, resourceID, config.ResourceLicense, resource); err != nil {
 			return nil, err
 		}
 	}

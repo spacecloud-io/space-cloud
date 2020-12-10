@@ -69,7 +69,7 @@ func (s *LocalStore) SetLicense(ctx context.Context, resourceID string, resource
 
 // SetResource sets the project of the local globalConfig
 func (s *LocalStore) SetResource(ctx context.Context, resourceID string, resource interface{}) error {
-	if err := validateResource(ctx, config.ResourceAddEvent, s.globalConfig, resourceID, "", resource); err != nil {
+	if err := updateResource(ctx, config.ResourceAddEvent, s.globalConfig, resourceID, "", resource); err != nil {
 		return err
 	}
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)
@@ -77,7 +77,7 @@ func (s *LocalStore) SetResource(ctx context.Context, resourceID string, resourc
 
 // DeleteResource deletes the project from the local gloablConfig
 func (s *LocalStore) DeleteResource(ctx context.Context, resourceID string) error {
-	if err := validateResource(ctx, config.ResourceDeleteEvent, s.globalConfig, resourceID, "", nil); err != nil {
+	if err := updateResource(ctx, config.ResourceDeleteEvent, s.globalConfig, resourceID, "", nil); err != nil {
 		return err
 	}
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)
