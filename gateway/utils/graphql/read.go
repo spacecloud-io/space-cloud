@@ -249,17 +249,6 @@ func (graph *Module) checkIfLinkCanBeOptimized(fieldStruct *model.FieldType, dbA
 	if model.DBType(dbType) == model.Mongo {
 		return nil, false
 	}
-	referredTableSchema, ok := graph.schema.GetSchema(referredDbAlias, referredTableName)
-	if !ok {
-		return nil, false
-	}
-	referredTableFieldInfo, ok := referredTableSchema[referredTableFieldID]
-	if !ok {
-		return nil, false
-	}
-	if !(referredTableFieldInfo.IsForeign && referredTableFieldInfo.JointTable.Table == col && referredTableFieldInfo.JointTable.To == currentTableFieldID) {
-		return nil, false
-	}
 	return &model.JoinOption{
 		Table: referredTableName,
 		On: map[string]interface{}{
