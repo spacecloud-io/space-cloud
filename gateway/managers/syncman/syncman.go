@@ -101,11 +101,17 @@ func (s *Manager) Start(port int) error {
 
 	// Start routine to observe space cloud project level resources
 	if err := s.store.WatchResources(func(eventType, resourceID string, resourceType config.Resource, resource interface{}) {
-		s.lock.Lock()
-		defer s.lock.Unlock()
-
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancel()
+		isSkip, err := s.validateResource(ctx, eventType, resourceID, resourceType, resource)
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to update resources", err, nil)
+			return
+		}
+		if isSkip {
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "Found duplicate resource, skipping the resource", map[string]interface{}{"event": eventType, "resourceId": resourceID, "resource": resource, "resourceType": resourceType})
+			return
+		}
 
 		_, projectID, _, err := splitResourceID(ctx, resourceID)
 		if err != nil {
@@ -115,7 +121,9 @@ func (s *Manager) Start(port int) error {
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating resources", map[string]interface{}{"event": eventType, "resourceId": resourceID, "resource": resource, "projectId": projectID, "resourceType": resourceType})
 
-		if err := validateResource(ctx, eventType, s.projectConfig, resourceID, resourceType, resource); err != nil {
+		s.lock.Lock()
+		defer s.lock.Unlock()
+		if err := updateResource(ctx, eventType, s.projectConfig, resourceID, resourceType, resource); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to update resources", err, nil)
 			return
 		}

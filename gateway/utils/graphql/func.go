@@ -39,8 +39,12 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 	}
 
 	go func() {
-		ctx2, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
-		defer cancel()
+		var ctx2 = ctx
+		if timeout != 0 {
+			c, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+			defer cancel()
+			ctx2 = c
+		}
 
 		_, result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, reqParams, params)
 		_ = graph.auth.PostProcessMethod(ctx, actions, result)
@@ -94,7 +98,7 @@ func getFuncTimeout(ctx context.Context, field *ast.Field, store utils.M) (int, 
 			}
 		}
 	}
-	return 5, nil
+	return 0, nil
 }
 
 func getFuncParams(ctx context.Context, field *ast.Field, store utils.M) (map[string]interface{}, error) {

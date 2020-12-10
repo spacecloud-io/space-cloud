@@ -192,8 +192,9 @@ spec:
               command:
                 - ./app
                 - health-check
-            initialDelaySeconds: 100
-            periodSeconds: 10
+                - -timeout={{ .Values.gateway.healthCheck.timeout }}
+            initialDelaySeconds: {{ .Values.gateway.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.gateway.healthCheck.periodSeconds }}
           env:
             - name: "NODE_ID"
               valueFrom:
