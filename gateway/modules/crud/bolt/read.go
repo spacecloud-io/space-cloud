@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/spaceuptech/helpers"
 	"go.etcd.io/bbolt"
@@ -41,7 +40,7 @@ func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (in
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to unmarshal while reading from bbolt db", err, nil)
 				}
 				if utils.Validate(req.Find, result) {
-					result["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+					// result["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 
 					results = append(results, result)
 					count++

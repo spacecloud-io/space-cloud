@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
@@ -280,7 +279,7 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], mapping)
 		}
 
-		mapping["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+		// mapping["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 
 		return 1, mapping, make(map[string]map[string]string), nil
 
