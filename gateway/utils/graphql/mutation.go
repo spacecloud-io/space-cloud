@@ -164,7 +164,9 @@ func filterResults(field *ast.Field, results map[string]interface{}) map[string]
 		if !ok {
 			continue
 		}
-
+		if field.SelectionSet == nil {
+			return filteredResults
+		}
 		for _, returnFieldTemp := range field.SelectionSet.Selections {
 			returnField := returnFieldTemp.(*ast.Field)
 			returnFieldName := returnField.Name.Value
