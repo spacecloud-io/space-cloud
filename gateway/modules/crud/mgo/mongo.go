@@ -17,12 +17,13 @@ import (
 
 // Mongo holds the mongo session
 type Mongo struct {
-	queryFetchLimit *int64
-	enabled         bool
-	connection      string
-	dbName          string
-	client          *mongo.Client
-	driverConf      config.DriverConfig
+	queryFetchLimit     *int64
+	enabled             bool
+	connection          string
+	dbName              string
+	client              *mongo.Client
+	driverConf          config.DriverConfig
+	connRetryCloserChan chan struct{}
 }
 
 // Init initialises a new mongo instance
@@ -33,13 +34,39 @@ func Init(enabled bool, connection, dbName string, driverConf config.DriverConfi
 		err = mongoStub.connect()
 	}
 
+	closer := make(chan struct{}, 1)
+	mongoStub.connRetryCloserChan = closer
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		for {
+			select {
+			case <-ticker.C:
+				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+				if !mongoStub.GetConnectionState(ctx) {
+					if err := mongoStub.connect(); err != nil {
+						_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Automatic connection retry failed for mongo db with logical db name (%s)", dbName), err, nil)
+					}
+				}
+				cancel()
+			case <-closer:
+				close(closer)
+				ticker.Stop()
+			}
+		}
+	}()
+
 	return
 }
 
 // Close gracefully the Mongo client
 func (m *Mongo) Close() error {
 	if m.client != nil {
-		return m.client.Disconnect(context.TODO())
+		if err := m.client.Disconnect(context.TODO()); err != nil {
+			return err
+		}
+		m.client = nil
+		m.connRetryCloserChan <- struct{}{}
+		return nil
 	}
 	return nil
 }

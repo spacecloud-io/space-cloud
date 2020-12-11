@@ -21,14 +21,15 @@ import (
 
 // SQL holds the sql db object
 type SQL struct {
-	enabled         bool
-	queryFetchLimit *int64
-	connection      string
-	client          *sqlx.DB
-	dbType          string
-	name            string // logical db name or schema name according to the database type
-	auth            model.AuthCrudInterface
-	driverConf      config.DriverConfig
+	enabled             bool
+	queryFetchLimit     *int64
+	connection          string
+	client              *sqlx.DB
+	dbType              string
+	name                string // logical db name or schema name according to the database type
+	auth                model.AuthCrudInterface
+	driverConf          config.DriverConfig
+	connRetryCloserChan chan struct{}
 }
 
 // Init initialises a new sql instance
@@ -54,6 +55,26 @@ func Init(dbType model.DBType, enabled bool, connection string, dbName string, a
 		err = s.connect()
 	}
 
+	closer := make(chan struct{}, 1)
+	s.connRetryCloserChan = closer
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		for {
+			select {
+			case <-ticker.C:
+				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+				if !s.GetConnectionState(ctx) {
+					if err := s.connect(); err != nil {
+						_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Automatic connection retry failed for (%s) db with logical db name (%s)", dbType, dbName), err, nil)
+					}
+				}
+				cancel()
+			case <-closer:
+				close(closer)
+				ticker.Stop()
+			}
+		}
+	}()
 	return
 }
 
@@ -70,6 +91,7 @@ func (s *SQL) Close() error {
 		}
 
 		s.client = nil
+		s.connRetryCloserChan <- struct{}{}
 	}
 
 	return nil
