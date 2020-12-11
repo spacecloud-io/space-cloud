@@ -200,7 +200,7 @@ func (c *Cache) instantInvalidationDelete(ctx context.Context, projectID, dbAlia
 
 	if readOptions != nil {
 		joinKeysMapping := make(map[string]map[string]string)
-		utils.ExtractJoinInfo(readOptions.Join, map[string]interface{}{}, joinKeysMapping)
+		utils.ExtractJoinInfoForInstantInvalidate(readOptions.Join, joinKeysMapping)
 
 		// delete all the join keys
 		for intermediateJoinKey := range joinKeysMapping {

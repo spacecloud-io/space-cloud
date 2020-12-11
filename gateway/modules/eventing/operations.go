@@ -135,9 +135,9 @@ func (m *Module) SetInternalTriggersFromDbRules(dbRules config.DatabaseRules) {
 	defer m.lock.Unlock()
 
 	// first delete the cache internal rules
-	for _, internalRule := range m.config.InternalRules {
-		if strings.HasPrefix("cache", internalRule.ID) {
-			delete(m.config.InternalRules, internalRule.ID)
+	for key := range m.config.InternalRules {
+		if strings.HasPrefix(key, "cache") {
+			delete(m.config.InternalRules, key)
 		}
 	}
 
