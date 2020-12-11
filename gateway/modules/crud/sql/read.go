@@ -192,7 +192,7 @@ func splitAggregateAsColumnName(asColumnName string) (format, returnField, funct
 
 // Read query document(s) from the database
 func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error) {
-	return s.read(ctx, col, req, s.client)
+	return s.read(ctx, col, req, s.getClient())
 }
 
 func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, map[string]map[string]string, error) {

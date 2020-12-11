@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/spaceuptech/helpers"
@@ -17,6 +18,7 @@ import (
 
 // Mongo holds the mongo session
 type Mongo struct {
+	lock                sync.RWMutex
 	queryFetchLimit     *int64
 	enabled             bool
 	connection          string
@@ -60,13 +62,10 @@ func Init(enabled bool, connection, dbName string, driverConf config.DriverConfi
 
 // Close gracefully the Mongo client
 func (m *Mongo) Close() error {
-	if m.client != nil {
-		if err := m.client.Disconnect(context.TODO()); err != nil {
-			return err
-		}
-		m.client = nil
+	if m.getClient() != nil {
 		m.connRetryCloserChan <- struct{}{}
-		return nil
+		m.setClient(nil)
+		return m.getClient().Disconnect(context.TODO())
 	}
 	return nil
 }
@@ -82,7 +81,7 @@ func (m *Mongo) IsClientSafe(context.Context) error {
 		return utils.ErrDatabaseDisabled
 	}
 
-	if m.client == nil {
+	if m.getClient() == nil {
 		if err := m.connect(); err != nil {
 			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Error connecting to mongo %v", err.Error()), nil)
 			return utils.ErrDatabaseConnection
@@ -133,7 +132,7 @@ func (m *Mongo) connect() error {
 		return err
 	}
 
-	m.client = client
+	m.setClient(client)
 	return nil
 }
 
@@ -145,4 +144,17 @@ func (m *Mongo) GetDBType() model.DBType {
 // SetQueryFetchLimit sets data fetch limit
 func (m *Mongo) SetQueryFetchLimit(limit int64) {
 	m.queryFetchLimit = &limit
+}
+
+func (m *Mongo) setClient(c *mongo.Client) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.client = c
+}
+
+func (m *Mongo) getClient() *mongo.Client {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	client := m.client
+	return client
 }

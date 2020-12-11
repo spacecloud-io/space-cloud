@@ -12,7 +12,7 @@ import (
 
 // Delete removes the document(s) from the database which match the condition
 func (m *Mongo) Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error) {
-	collection := m.client.Database(m.dbName).Collection(col)
+	collection := m.getClient().Database(m.dbName).Collection(col)
 
 	switch req.Operation {
 	case utils.One:
@@ -38,5 +38,5 @@ func (m *Mongo) Delete(ctx context.Context, col string, req *model.DeleteRequest
 
 // DeleteCollection removes a collection from database`
 func (m Mongo) DeleteCollection(ctx context.Context, col string) error {
-	return m.client.Database(m.dbName).Collection(col, &options.CollectionOptions{}).Drop(ctx)
+	return m.getClient().Database(m.dbName).Collection(col, &options.CollectionOptions{}).Drop(ctx)
 }

@@ -22,7 +22,7 @@ import (
 
 // Update updates the document(s) which match the condition provided.
 func (s *SQL) Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error) {
-	tx, err := s.client.BeginTxx(ctx, nil) // TODO - Write *sqlx.TxOption instead of nil
+	tx, err := s.getClient().BeginTxx(ctx, nil) // TODO - Write *sqlx.TxOption instead of nil
 	if err != nil {
 		return 0, err
 	}
