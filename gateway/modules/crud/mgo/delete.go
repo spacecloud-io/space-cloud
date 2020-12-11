@@ -37,6 +37,6 @@ func (m *Mongo) Delete(ctx context.Context, col string, req *model.DeleteRequest
 }
 
 // DeleteCollection removes a collection from database`
-func (m Mongo) DeleteCollection(ctx context.Context, col string) error {
+func (m *Mongo) DeleteCollection(ctx context.Context, col string) error {
 	return m.getClient().Database(m.dbName).Collection(col, &options.CollectionOptions{}).Drop(ctx)
 }
