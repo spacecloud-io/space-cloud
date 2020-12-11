@@ -53,6 +53,7 @@ func Init(enabled bool, connection, dbName string, driverConf config.DriverConfi
 			case <-closer:
 				close(closer)
 				ticker.Stop()
+				return
 			}
 		}
 	}()
@@ -65,7 +66,7 @@ func (m *Mongo) Close() error {
 	if m.getClient() != nil {
 		m.connRetryCloserChan <- struct{}{}
 		if err := m.getClient().Disconnect(context.TODO()); err != nil {
-			return err
+			_ = helpers.Logger.LogError("close", fmt.Sprintf("Unable to close mongo db (%s) connection", m.dbName), err, nil)
 		}
 		m.setClient(nil)
 	}

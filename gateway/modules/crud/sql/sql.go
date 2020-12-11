@@ -74,6 +74,7 @@ func Init(dbType model.DBType, enabled bool, connection string, dbName string, a
 			case <-closer:
 				close(closer)
 				ticker.Stop()
+				return
 			}
 		}
 	}()
@@ -90,7 +91,7 @@ func (s *SQL) Close() error {
 	if s.getClient() != nil {
 		s.connRetryCloserChan <- struct{}{}
 		if err := s.getClient().Close(); err != nil {
-			return err
+			_ = helpers.Logger.LogError("close", fmt.Sprintf("Unable to close (%s) db (%s) connection", s.dbType, s.name), err, nil)
 		}
 		s.setClient(nil)
 	}
