@@ -88,9 +88,11 @@ func (s *SQL) IsSame(conn, dbName string, driverConf config.DriverConfig) bool {
 // Close gracefully the SQL client
 func (s *SQL) Close() error {
 	if s.getClient() != nil {
-		s.setClient(nil)
+		if err := s.getClient().Close(); err != nil {
+			return err
+		}
 		s.connRetryCloserChan <- struct{}{}
-		return s.getClient().Close()
+		s.setClient(nil)
 	}
 
 	return nil
@@ -188,6 +190,5 @@ func (s *SQL) setClient(c *sqlx.DB) {
 func (s *SQL) getClient() *sqlx.DB {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	client := s.client
-	return client
+	return s.client
 }

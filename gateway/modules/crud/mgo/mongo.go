@@ -63,9 +63,11 @@ func Init(enabled bool, connection, dbName string, driverConf config.DriverConfi
 // Close gracefully the Mongo client
 func (m *Mongo) Close() error {
 	if m.getClient() != nil {
+		if err := m.getClient().Disconnect(context.TODO()); err != nil {
+			return err
+		}
 		m.connRetryCloserChan <- struct{}{}
 		m.setClient(nil)
-		return m.getClient().Disconnect(context.TODO())
 	}
 	return nil
 }
@@ -155,6 +157,5 @@ func (m *Mongo) setClient(c *mongo.Client) {
 func (m *Mongo) getClient() *mongo.Client {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	client := m.client
-	return client
+	return m.client
 }
