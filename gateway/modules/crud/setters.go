@@ -60,7 +60,7 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 
 			block.SetQueryFetchLimit(v.Limit)
 
-			// Skip if the connection string is the same
+			// Skip if the connection string, dbName & driver config is same
 			if block.IsSame(connectionString, v.DBName, v.DriverConf) {
 				continue
 			}

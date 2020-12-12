@@ -37,6 +37,11 @@ type ReadOptions struct {
 
 // JoinOption describes the way a join needs to be performed
 type JoinOption struct {
+	// Op can be either All or One
+	// This field decides the way the result of join is returned
+	// If op is all, the result is returned as an array
+	// If op is one, the result is returned as an object
+	Op    string                 `json:"Op" mapstructure:"Op"`
 	Type  string                 `json:"type" mapstructure:"type"`
 	Table string                 `json:"table" mapstructure:"table"`
 	On    map[string]interface{} `json:"on" mapstructure:"on"`
