@@ -237,6 +237,9 @@ func generateArguments(ctx context.Context, field *ast.Field, store utils.M) map
 func (graph *Module) checkIfLinkCanBeOptimized(fieldStruct *model.FieldType, dbAlias, col string) (*model.JoinOption, bool) {
 	currentTableFieldID := fieldStruct.LinkedTable.From
 	referredTableFieldID := fieldStruct.LinkedTable.To
+	if fieldStruct.LinkedTable.Field != "" {
+		return nil, false
+	}
 	referredTableName := fieldStruct.LinkedTable.Table
 	referredDbAlias := fieldStruct.LinkedTable.DBType
 	if dbAlias != referredDbAlias { // join cannot happen over different databases
