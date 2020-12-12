@@ -80,10 +80,6 @@ func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key with auto increment is only applicable on type integer", nil, nil)
 	}
 
-	if realFieldStruct.IsPrimary && !(realFieldStruct.Kind == model.TypeID || realFieldStruct.Kind == model.TypeInteger) {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key should be of type ID or Integer", nil, nil)
-	}
-
 	if realFieldStruct.Kind == model.TypeJSON && (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked || realFieldStruct.IsIndex) {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set index with type json", nil, nil)
 	}

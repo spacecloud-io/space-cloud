@@ -33,7 +33,6 @@ func (b *Bolt) GetConnectionState(ctx context.Context) bool {
 	err := b.client.Info()
 	if err != nil {
 		_ = b.client.Close()
-		b.client = nil
 		return false
 	}
 

@@ -11,7 +11,7 @@ import (
 // Batch performs the provided operations in a single Batch
 func (m *Mongo) Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error) {
 	counts := make([]int64, len(req.Requests))
-	err := m.client.UseSession(ctx, func(session mongo.SessionContext) error {
+	err := m.getClient().UseSession(ctx, func(session mongo.SessionContext) error {
 		err := session.StartTransaction()
 		if err != nil {
 			return err
