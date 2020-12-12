@@ -431,7 +431,7 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 			if len(arr) > 0 {
 				m[j.Table] = arr[0]
 			} else {
-				m[j.Table] = nil
+				m[j.Table] = map[string]interface{}{}
 			}
 		}
 	}
