@@ -246,10 +246,15 @@ func (graph *Module) checkIfLinkCanBeOptimized(fieldStruct *model.FieldType, dbA
 	if err != nil {
 		return nil, false
 	}
+	linkedOp := utils.All
+	if !fieldStruct.IsList {
+		linkedOp = utils.One
+	}
 	if model.DBType(dbType) == model.Mongo {
 		return nil, false
 	}
 	return &model.JoinOption{
+		Op:    linkedOp,
 		Table: referredTableName,
 		On: map[string]interface{}{
 			fmt.Sprintf("%s.%s", col, currentTableFieldID): fmt.Sprintf("%s.%s", referredTableName, referredTableFieldID),

@@ -27,19 +27,9 @@ func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, tok
 	if err != nil {
 		return model.RequestParams{}, nil, nil, err
 	}
-	reqs, returningDocs, err := graph.processNestedFields(ctx, docs, dbAlias, col)
+	reqParams, reqs, returningDocs, err := graph.processNestedFields(ctx, docs, dbAlias, col, token)
 	if err != nil {
 		return model.RequestParams{}, nil, nil, err
-	}
-
-	// Check if the requests are authorised
-	var reqParams model.RequestParams
-	for _, req := range reqs {
-		r := &model.CreateRequest{Document: req.Document, Operation: req.Operation}
-		reqParams, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, req.DBAlias, req.Col, token, r)
-		if err != nil {
-			return model.RequestParams{}, nil, nil, err
-		}
 	}
 
 	return reqParams, reqs, returningDocs, nil
@@ -96,15 +86,16 @@ func copyDoc(doc map[string]interface{}) map[string]interface{} {
 	return newDoc
 }
 
-func (graph *Module) processNestedFields(ctx context.Context, docs []interface{}, dbAlias, col string) ([]*model.AllRequest, []interface{}, error) {
+func (graph *Module) processNestedFields(ctx context.Context, docs []interface{}, dbAlias, col, token string) (model.RequestParams, []*model.AllRequest, []interface{}, error) {
 	createRequests := make([]*model.AllRequest, 0)
 	afterRequests := make([]*model.AllRequest, 0)
-
+	var err error
+	var reqParams model.RequestParams
 	// Check if we can the schema for this collection
 	schemaFields, p := graph.schema.GetSchema(dbAlias, col)
 	if !p {
 		// Return the docs as is if no schema is available
-		return []*model.AllRequest{{Type: string(model.Create), Col: col, Operation: utils.All, Document: docs, DBAlias: dbAlias}}, docs, nil
+		return model.RequestParams{}, []*model.AllRequest{{Type: string(model.Create), Col: col, Operation: utils.All, Document: docs, DBAlias: dbAlias}}, docs, nil
 	}
 
 	returningDocs := make([]interface{}, len(docs))
@@ -150,14 +141,14 @@ func (graph *Module) processNestedFields(ctx context.Context, docs []interface{}
 			if !fieldSchema.IsList {
 				temp, ok := fieldValue.(map[string]interface{})
 				if !ok {
-					return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid format provided for linked field %s - wanted object got array", fieldName), nil, nil)
+					return model.RequestParams{}, nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid format provided for linked field %s - wanted object got array", fieldName), nil, nil)
 				}
 
 				linkedDocs = []interface{}{temp}
 			} else {
 				temp, ok := fieldValue.([]interface{})
 				if !ok {
-					return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid format provided for linked field %s - wanted array got object", fieldName), nil, nil)
+					return model.RequestParams{}, nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid format provided for linked field %s - wanted array got object", fieldName), nil, nil)
 				}
 				linkedDocs = temp
 			}
@@ -169,7 +160,7 @@ func (graph *Module) processNestedFields(ctx context.Context, docs []interface{}
 
 				linkedSchemaFields, p := graph.schema.GetSchema(fieldSchema.LinkedTable.DBType, fieldSchema.LinkedTable.Table)
 				if !p {
-					return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("schema not provided for table (%s). Check the link directive for field (%s) in table (%s)", fieldSchema.LinkedTable.Table, fieldSchema.FieldName, col), nil, nil)
+					return model.RequestParams{}, nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("schema not provided for table (%s). Check the link directive for field (%s) in table (%s)", fieldSchema.LinkedTable.Table, fieldSchema.FieldName, col), nil, nil)
 				}
 
 				graph.prepareDocs(linkedDoc, linkedSchemaFields)
@@ -185,9 +176,9 @@ func (graph *Module) processNestedFields(ctx context.Context, docs []interface{}
 				}
 			}
 
-			linkedCreateRequests, returningLinkedDocs, err := graph.processNestedFields(ctx, linkedDocs, fieldSchema.LinkedTable.DBType, fieldSchema.LinkedTable.Table)
+			_, linkedCreateRequests, returningLinkedDocs, err := graph.processNestedFields(ctx, linkedDocs, fieldSchema.LinkedTable.DBType, fieldSchema.LinkedTable.Table, token)
 			if err != nil {
-				return nil, nil, err
+				return model.RequestParams{}, nil, nil, err
 			}
 
 			if fromFieldSchema.IsPrimary {
@@ -203,10 +194,20 @@ func (graph *Module) processNestedFields(ctx context.Context, docs []interface{}
 
 			newDoc[fieldName] = returningLinkedDocs
 		}
+		r := &model.CreateRequest{Document: []interface{}{doc}, Operation: utils.All}
+		reqParams, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, dbAlias, col, token, r)
+		if err != nil {
+			return model.RequestParams{}, nil, nil, err
+		}
+		// Store the mutated doc because of security rules in returning docs
+		for key, value := range doc {
+			newDoc[key] = value
+		}
+
 		returningDocs[i] = newDoc
 	}
 	createRequests = append(createRequests, &model.AllRequest{Type: string(model.Create), Col: col, Operation: utils.All, Document: docs, DBAlias: dbAlias})
-	return append(createRequests, afterRequests...), returningDocs, nil
+	return reqParams, append(createRequests, afterRequests...), returningDocs, nil
 }
 
 func extractDocs(ctx context.Context, args []*ast.Argument, store utils.M) ([]interface{}, error) {
