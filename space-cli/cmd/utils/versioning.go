@@ -51,7 +51,8 @@ func GetLatestVersion(version string) (string, error) {
 	return newVersion, nil
 }
 
-func GetChartDownloadURL(url, version string) string {
+// GetHelmChartDownloadURL adjusts the url prefixes according to the version
+func GetHelmChartDownloadURL(url, version string) string {
 	arr := strings.Split(url, "/")
 	chartName := fmt.Sprintf("%s-%s.tgz", arr[len(arr)-1], version)
 	arr = append(arr, chartName)

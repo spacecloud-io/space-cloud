@@ -27,8 +27,8 @@ func TestGetChartDownloadURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetChartDownloadURL(tt.args.url, tt.args.version); got != tt.want {
-				t.Errorf("GetChartDownloadURL() = %v, want %v", got, tt.want)
+			if got := GetHelmChartDownloadURL(tt.args.url, tt.args.version); got != tt.want {
+				t.Errorf("GetHelmChartDownloadURL() = %v, want %v", got, tt.want)
 			}
 		})
 	}

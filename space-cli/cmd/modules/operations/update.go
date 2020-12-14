@@ -47,7 +47,7 @@ func Update(setValuesFlag, valuesYamlFile, chartLocation, version string) error 
 
 	valuesFileObj["clusterId"] = charInfo.Config["clusterId"]
 
-	_, err = utils.HelmUpgrade(clusterID, chartLocation, utils.GetChartDownloadURL(model.HelmSpaceCloudChartDownloadURL, version), "", valuesFileObj)
+	_, err = utils.HelmUpgrade(clusterID, chartLocation, utils.GetHelmChartDownloadURL(model.HelmSpaceCloudChartDownloadURL, version), "", valuesFileObj)
 	if err != nil {
 		return err
 	}
