@@ -20,7 +20,7 @@ import (
 
 // HelmInstall install helm chart
 func HelmInstall(chartReleaseName, chartLocation, downloadURL, namespace string, valuesFileObj map[string]interface{}) (*chart.Chart, error) {
-	actionConfig, helmChart, err := createChart(chartLocation, downloadURL)
+	actionConfig, helmChart, err := CreateChart(chartLocation, downloadURL)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +54,21 @@ func HelmUninstall(releaseName string) error {
 
 	LogInfo(fmt.Sprintf("Successfully removed chart: (%s)", rel.Release.Name))
 	return nil
+}
+
+// HelmShow executes the helm show command
+func HelmShow(chartLocation, downloadURL, releaseArg string) (string, error) {
+	_, _, err := CreateChart(chartLocation, downloadURL)
+	if err != nil {
+		return "", err
+	}
+
+	sCli := action.NewShow(action.ShowValues)
+	info, err := sCli.Run("")
+	if err != nil {
+		return "", err
+	}
+	return info, nil
 }
 
 // HelmGet gets chart info
@@ -97,7 +112,7 @@ func HelmList(filterRegex string) ([]*release.Release, error) {
 
 // HelmUpgrade upgrade space cloud chart
 func HelmUpgrade(releaseName, chartLocation, downloadURL, namespace string, valuesFileObj map[string]interface{}) (*chart.Chart, error) {
-	actionConfig, helmChart, err := createChart(chartLocation, downloadURL)
+	actionConfig, helmChart, err := CreateChart(chartLocation, downloadURL)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +128,8 @@ func HelmUpgrade(releaseName, chartLocation, downloadURL, namespace string, valu
 	return rel.Chart, nil
 }
 
-func createChart(chartLocation, downloadURL string) (*action.Configuration, *chart.Chart, error) {
+// CreateChart returns chart object, which describe the provide chart
+func CreateChart(chartLocation, downloadURL string) (*action.Configuration, *chart.Chart, error) {
 	settings := cli.New()
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), log.Printf); err != nil {

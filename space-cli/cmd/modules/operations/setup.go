@@ -2,17 +2,33 @@ package operations
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 
 	"github.com/google/uuid"
+	"helm.sh/helm/v3/pkg/chartutil"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Setup initializes development environment
-func Setup(setValuesFlag, valuesYamlFile, chartLocation string) error {
+func Setup(setValuesFlag, valuesYamlFile, chartLocation string, isGetDefaults bool) error {
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
+
+	if isGetDefaults {
+		_, helmChart, err := utils.CreateChart(chartLocation, model.HelmSpaceCloudChartDownloadURL)
+		if err != nil {
+			return err
+		}
+
+		for _, f := range helmChart.Raw {
+			if f.Name == chartutil.ValuesfileName {
+				_, _ = fmt.Fprintln(os.Stdout, string(f.Data))
+			}
+		}
+		return nil
+	}
 
 	valuesFileObj, err := utils.ExtractValuesObj(setValuesFlag, valuesYamlFile)
 	if err != nil {
