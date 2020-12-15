@@ -34,6 +34,9 @@ func Init(enabled bool, connection, dbName string, driverConf config.DriverConfi
 
 	if mongoStub.enabled {
 		err = mongoStub.connect()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	closer := make(chan struct{}, 1)
