@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -21,14 +22,16 @@ import (
 
 // SQL holds the sql db object
 type SQL struct {
-	enabled         bool
-	queryFetchLimit *int64
-	connection      string
-	client          *sqlx.DB
-	dbType          string
-	name            string // logical db name or schema name according to the database type
-	auth            model.AuthCrudInterface
-	driverConf      config.DriverConfig
+	lock                sync.RWMutex
+	enabled             bool
+	queryFetchLimit     *int64
+	connection          string
+	client              *sqlx.DB
+	dbType              string
+	name                string // logical db name or schema name according to the database type
+	auth                model.AuthCrudInterface
+	driverConf          config.DriverConfig
+	connRetryCloserChan chan struct{}
 }
 
 // Init initialises a new sql instance
@@ -54,6 +57,27 @@ func Init(dbType model.DBType, enabled bool, connection string, dbName string, a
 		err = s.connect()
 	}
 
+	closer := make(chan struct{}, 1)
+	s.connRetryCloserChan = closer
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		for {
+			select {
+			case <-ticker.C:
+				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+				if !s.GetConnectionState(ctx) {
+					if err := s.connect(); err != nil {
+						_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Automatic connection retry failed for (%s) db with logical db name (%s)", dbType, dbName), err, nil)
+					}
+				}
+				cancel()
+			case <-closer:
+				close(closer)
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 	return
 }
 
@@ -64,12 +88,12 @@ func (s *SQL) IsSame(conn, dbName string, driverConf config.DriverConfig) bool {
 
 // Close gracefully the SQL client
 func (s *SQL) Close() error {
-	if s.client != nil {
-		if err := s.client.Close(); err != nil {
-			return err
+	if s.getClient() != nil {
+		s.connRetryCloserChan <- struct{}{}
+		if err := s.getClient().Close(); err != nil {
+			_ = helpers.Logger.LogError("close", fmt.Sprintf("Unable to close (%s) db (%s) connection", s.dbType, s.name), err, nil)
 		}
-
-		s.client = nil
+		s.setClient(nil)
 	}
 
 	return nil
@@ -94,7 +118,7 @@ func (s *SQL) IsClientSafe(ctx context.Context) error {
 	if !s.enabled {
 		return utils.ErrDatabaseDisabled
 	}
-	if s.client == nil {
+	if s.getClient() == nil {
 		if err := s.connect(); err != nil {
 			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error connecting to "+s.dbType+" : "+err.Error()), nil)
 			return utils.ErrDatabaseConnection
@@ -115,7 +139,7 @@ func (s *SQL) connect() error {
 		return err
 	}
 
-	s.client = sql
+	s.setClient(sql)
 
 	maxConn := s.driverConf.MaxConn
 	if maxConn == 0 {
@@ -132,10 +156,10 @@ func (s *SQL) connect() error {
 		maxIdleTimeout = 60 * 5 * 1000
 	}
 
-	s.client.SetMaxOpenConns(maxConn)
-	s.client.SetMaxIdleConns(maxIdleConn)
+	s.getClient().SetMaxOpenConns(maxConn)
+	s.getClient().SetMaxIdleConns(maxIdleConn)
 	duration := time.Duration(maxIdleTimeout) * time.Millisecond
-	s.client.SetConnMaxIdleTime(duration)
+	s.getClient().SetConnMaxIdleTime(duration)
 	return sql.PingContext(ctx)
 }
 
@@ -156,4 +180,16 @@ func doExecContext(ctx context.Context, query string, args []interface{}, execut
 // SetQueryFetchLimit sets data fetch limit
 func (s *SQL) SetQueryFetchLimit(limit int64) {
 	s.queryFetchLimit = &limit
+}
+
+func (s *SQL) setClient(c *sqlx.DB) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.client = c
+}
+
+func (s *SQL) getClient() *sqlx.DB {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return s.client
 }

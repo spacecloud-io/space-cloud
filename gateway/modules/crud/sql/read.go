@@ -192,7 +192,7 @@ func splitAggregateAsColumnName(asColumnName string) (format, returnField, funct
 
 // Read query document(s) from the database
 func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error) {
-	return s.read(ctx, col, req, s.client)
+	return s.read(ctx, col, req, s.getClient())
 }
 
 func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, map[string]map[string]string, error) {
@@ -413,13 +413,26 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 		utils.GenerateJoinKeys(j.Table, j.On, row, joinMapping)
 		// Check if table name is already present in parent row. If not, create a new array
 		if arrTemp, p := m[j.Table]; p {
-			arr = arrTemp.([]interface{})
+			switch t := arrTemp.(type) {
+			case []interface{}:
+				arr = t
+			case map[string]interface{}:
+				arr = []interface{}{t}
+			}
 		} else {
 			arr = []interface{}{}
 		}
 
 		// Recursively call the same function again
 		s.processRows(ctx, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess, joinMapping)
-		m[j.Table] = arr
+		if j.Op == utils.All || j.Op == "" {
+			m[j.Table] = arr
+		} else {
+			if len(arr) > 0 {
+				m[j.Table] = arr[0]
+			} else {
+				m[j.Table] = map[string]interface{}{}
+			}
+		}
 	}
 }
