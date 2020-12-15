@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
@@ -54,12 +55,21 @@ func Commands() []*cobra.Command {
 			if err := viper.BindPFlag("set", cmd.Flags().Lookup("set")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('set')", nil)
 			}
+			if err := viper.BindPFlag("version", cmd.Flags().Lookup("version")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('version')", nil)
+			}
 		},
 		RunE: actionSetup,
 	}
 
+	setup.Flags().StringP("version", "v", "", "Space cloud version to use for setup, default to space cli version")
+	err := viper.BindEnv("version", "VERSION")
+	if err != nil {
+		_ = utils.LogError("Unable to bind flag ('version') to environment variables", nil)
+	}
+
 	setup.Flags().StringP("local-chart-dir", "c", "", "Path to the space cloud helm chart directory")
-	err := viper.BindEnv("local-chart-dir", "LOCAL_CHART_DIR")
+	err = viper.BindEnv("local-chart-dir", "LOCAL_CHART_DIR")
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('local-chart-dir') to environment variables", nil)
 	}
@@ -90,6 +100,9 @@ func Commands() []*cobra.Command {
 			if err := viper.BindPFlag("set", cmd.Flags().Lookup("set")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('set')", nil)
 			}
+			if err := viper.BindPFlag("version", cmd.Flags().Lookup("version")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('version')", nil)
+			}
 		},
 		RunE: actionUpdate,
 	}
@@ -98,6 +111,12 @@ func Commands() []*cobra.Command {
 	err = viper.BindEnv("local-chart-dir", "LOCAL_CHART_DIR")
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('local-chart-dir') to environment variables", nil)
+	}
+
+	update.Flags().StringP("version", "v", "", "Space cloud version to use for setup, default to space cli version")
+	err = viper.BindEnv("version", "VERSION")
+	if err != nil {
+		_ = utils.LogError("Unable to bind flag ('version') to environment variables", nil)
 	}
 
 	update.Flags().StringP("file", "f", "", "Path to the config yaml file")
@@ -194,16 +213,23 @@ func actionUpdate(cmd *cobra.Command, args []string) error {
 	chartDir := viper.GetString("local-chart-dir")
 	valuesYamlFile := viper.GetString("file")
 	setValue := viper.GetString("set")
-
-	return Update(setValue, valuesYamlFile, chartDir)
+	version := viper.GetString("version")
+	if version == "" {
+		version = model.Version
+	}
+	return Update(setValue, valuesYamlFile, chartDir, version)
 }
 
 func actionSetup(cmd *cobra.Command, args []string) error {
 	chartDir := viper.GetString("local-chart-dir")
 	valuesYamlFile := viper.GetString("file")
 	setValue := viper.GetString("set")
+	version := viper.GetString("version")
+	if version == "" {
+		version = model.Version
+	}
 
-	return Setup(setValue, valuesYamlFile, chartDir)
+	return Setup(setValue, valuesYamlFile, chartDir, version)
 }
 
 func actionInspect(cmd *cobra.Command, args []string) error {

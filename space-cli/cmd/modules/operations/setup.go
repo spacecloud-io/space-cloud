@@ -11,7 +11,7 @@ import (
 )
 
 // Setup initializes development environment
-func Setup(setValuesFlag, valuesYamlFile, chartLocation string) error {
+func Setup(setValuesFlag, valuesYamlFile, chartLocation, version string) error {
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
 
 	valuesFileObj, err := utils.ExtractValuesObj(setValuesFlag, valuesYamlFile)
@@ -40,7 +40,7 @@ func Setup(setValuesFlag, valuesYamlFile, chartLocation string) error {
 		valuesFileObj["version"] = model.Version
 	}
 
-	helmChart, err := utils.HelmInstall(newClusterID, chartLocation, model.HelmSpaceCloudChartDownloadURL, model.HelmSpaceCloudNamespace, valuesFileObj)
+	helmChart, err := utils.HelmInstall(newClusterID, chartLocation, utils.GetHelmChartDownloadURL(model.HelmSpaceCloudChartDownloadURL, version), model.HelmSpaceCloudNamespace, valuesFileObj)
 	if err != nil {
 		return err
 	}
