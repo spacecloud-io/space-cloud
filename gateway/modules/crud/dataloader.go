@@ -13,8 +13,13 @@ import (
 
 type resultsHolder struct {
 	sync.Mutex
-	results      []*dataloader.Result
-	whereClauses []interface{}
+	results []*dataloader.Result
+	metas   []meta
+}
+
+type meta struct {
+	whereClause map[string]interface{}
+	op          string
 }
 
 func (holder *resultsHolder) getResults() []*dataloader.Result {
@@ -34,10 +39,14 @@ func (holder *resultsHolder) getWhereClauses() []interface{} {
 	holder.Lock()
 	defer holder.Unlock()
 
-	return holder.whereClauses
+	arr := make([]interface{}, 0)
+	for _, v := range holder.metas {
+		arr = append(arr, v.whereClause)
+	}
+	return arr
 }
 
-func (holder *resultsHolder) addWhereClause(whereClause map[string]interface{}, matchClause []map[string]interface{}) {
+func (holder *resultsHolder) addMeta(op string, whereClause map[string]interface{}, matchClause []map[string]interface{}) {
 	holder.Lock()
 	for i, where := range matchClause {
 		for k, v := range where {
@@ -47,7 +56,7 @@ func (holder *resultsHolder) addWhereClause(whereClause map[string]interface{}, 
 			whereClause[k] = v
 		}
 	}
-	holder.whereClauses = append(holder.whereClauses, whereClause)
+	holder.metas = append(holder.metas, meta{whereClause: whereClause, op: op})
 	holder.Unlock()
 }
 
@@ -67,20 +76,33 @@ func (holder *resultsHolder) fillResults(res []interface{}) {
 		}
 
 		// Get the where clause
-		whereClause := holder.whereClauses[index]
-
+		meta := holder.metas[index]
+		isOperationTypeOne := meta.op == utils.One
+		var result interface{}
 		docs := make([]interface{}, 0)
 		for _, doc := range res {
-			if utils.Validate(whereClause.(map[string]interface{}), doc) {
+			if utils.Validate(meta.whereClause, doc) {
 				docs = append(docs, doc)
+			}
+			if isOperationTypeOne {
+				break
 			}
 		}
 
 		// Increment the where clause index
 		index++
 
+		if isOperationTypeOne {
+			if len(docs) >= 1 {
+				result = docs[0]
+			} else {
+				result = map[string]interface{}{}
+			}
+		} else {
+			result = docs
+		}
 		// Store the matched docs in result
-		holder.results[i] = &dataloader.Result{Data: docs}
+		holder.results[i] = &dataloader.Result{Data: result}
 	}
 }
 
@@ -126,8 +148,8 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 	}
 
 	holder := resultsHolder{
-		results:      make([]*dataloader.Result, len(keys)),
-		whereClauses: []interface{}{},
+		results: make([]*dataloader.Result, len(keys)),
+		metas:   make([]meta, 0),
 	}
 
 	for index, key := range keys {
@@ -166,7 +188,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 		}
 
 		// Append the where clause to the list
-		holder.addWhereClause(req.Req.Find, req.Req.MatchWhere)
+		holder.addMeta(req.Req.Operation, req.Req.Find, req.Req.MatchWhere)
 	}
 
 	// Wait for all results to be done
