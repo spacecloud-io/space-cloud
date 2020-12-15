@@ -9,7 +9,9 @@ import (
 )
 
 const (
+	// DefaultRequestRetries specifies the default values of service request retries
 	DefaultRequestRetries int32 = 3
+	// DefaultRequestTimeout specifies the default values of service request timeouts
 	DefaultRequestTimeout int64 = 180 // Time in seconds
 )
 
