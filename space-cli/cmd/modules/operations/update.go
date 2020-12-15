@@ -10,7 +10,7 @@ import (
 )
 
 // Update upgrades existing space cloud cluster
-func Update(setValuesFlag, valuesYamlFile, chartLocation string) error {
+func Update(setValuesFlag, valuesYamlFile, chartLocation, version string) error {
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
 
 	charList, err := utils.HelmList(model.HelmSpaceCloudNamespace)
@@ -47,7 +47,7 @@ func Update(setValuesFlag, valuesYamlFile, chartLocation string) error {
 
 	valuesFileObj["clusterId"] = charInfo.Config["clusterId"]
 
-	_, err = utils.HelmUpgrade(clusterID, chartLocation, model.HelmSpaceCloudChartDownloadURL, "", valuesFileObj)
+	_, err = utils.HelmUpgrade(clusterID, chartLocation, utils.GetHelmChartDownloadURL(model.HelmSpaceCloudChartDownloadURL, version), "", valuesFileObj)
 	if err != nil {
 		return err
 	}
