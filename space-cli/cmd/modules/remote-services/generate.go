@@ -22,7 +22,7 @@ func generateService() (*model.SpecObject, error) {
 	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &url); err != nil {
 		return nil, err
 	}
-	endpoints := []interface{}{}
+	endpoints := make(map[string]interface{})
 	want := "y"
 	for {
 		endpointName := ""
@@ -38,7 +38,10 @@ func generateService() (*model.SpecObject, error) {
 		if err := input.Survey.AskOne(&survey.Input{Message: "Enter URL Path:", Default: "/"}, &path); err != nil {
 			return nil, err
 		}
-		endpoints = append(endpoints, map[string]interface{}{endpointName: map[string]interface{}{"method": methods, "path": path}})
+		endpoints[endpointName] = map[string]interface{}{
+			"method": methods,
+			"path":   path,
+		}
 		if err := input.Survey.AskOne(&survey.Input{Message: "Add another host?(Y/n)", Default: "n"}, &want); err != nil {
 			return nil, err
 		}
