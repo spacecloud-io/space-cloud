@@ -55,6 +55,9 @@ func Init(dbType model.DBType, enabled bool, connection string, dbName string, a
 
 	if s.enabled {
 		err = s.connect()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	closer := make(chan struct{}, 1)
