@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/spaceuptech/helpers"
 	"go.etcd.io/bbolt"
@@ -13,7 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error) {
+func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, map[string]interface{}, error) {
 	if req.Options == nil {
 		req.Options = &model.ReadOptions{}
 	}
@@ -40,6 +41,10 @@ func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (in
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to unmarshal while reading from bbolt db", err, nil)
 				}
 				if utils.Validate(req.Find, result) {
+					if req.Options.Debug {
+						result["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+					}
+
 					results = append(results, result)
 					count++
 					if req.Operation == utils.One {
@@ -49,18 +54,18 @@ func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (in
 			}
 			return nil
 		}); err != nil {
-			return 0, nil, nil, err
+			return 0, nil, nil, nil, err
 		}
 		if req.Operation == utils.One {
 			if count == 0 {
-				return 0, nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "No match found for specified find clause", nil, nil)
+				return 0, nil, nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "No match found for specified find clause", nil, nil)
 			}
 			if count == 1 {
-				return count, results[0], nil, nil
+				return count, results[0], nil, nil, nil
 			}
 		}
 
-		return count, results, nil, nil
+		return count, results, nil, nil, nil
 	case utils.Count:
 		var count int64
 		err := b.client.View(func(tx *bbolt.Tx) error {
@@ -76,9 +81,9 @@ func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (in
 
 			return nil
 		})
-		return count, nil, nil, err
+		return count, nil, nil, nil, err
 
 	default:
-		return 0, nil, nil, utils.ErrInvalidParams
+		return 0, nil, nil, nil, utils.ErrInvalidParams
 	}
 }

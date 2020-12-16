@@ -55,7 +55,16 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}
-		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
+		result, metaData, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
+		if err != nil {
+			cb("", "", nil, err)
+			return
+		}
+
+		if req.Options.Debug {
+			val := store["_query"]
+			val.(*utils.Array).Append(metaData)
+		}
 
 		// Post process only if joins were not enabled
 		if isPostProcessingEnabled(req.PostProcess) && len(req.Options.Join) == 0 {
@@ -118,7 +127,16 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		//  batch operation cannot be performed with aggregation or joins or when post processing is applied
 		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0)
 		req.Options.HasOptions = hasOptions
-		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
+		result, metaData, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
+		if err != nil {
+			cb("", "", nil, err)
+			return
+		}
+
+		if req.Options.Debug {
+			val := store["_query"]
+			val.(*utils.Array).Append(metaData)
+		}
 
 		// Post process only if joins were not enabled
 		if isPostProcessingEnabled(req.PostProcess) && len(req.Options.Join) == 0 {
@@ -165,7 +183,14 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 		cb("", "", nil, err)
 		return
 	}
-	req := model.PreparedQueryRequest{Params: params}
+
+	isDebug, err := getDebugParam(ctx, field.Arguments, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	req := model.PreparedQueryRequest{Params: params, Debug: isDebug}
 	// Check if PreparedQuery op is authorised
 	actions, reqParams, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
 	if err != nil {
@@ -174,7 +199,16 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 	}
 
 	go func() {
-		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
+		result, metaData, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
+		if err != nil {
+			cb("", "", nil, err)
+			return
+		}
+
+		if req.Debug {
+			val := store["_query"]
+			val.(*utils.Array).Append(metaData)
+		}
 		_ = graph.auth.PostProcessMethod(ctx, actions, result)
 		cb(dbAlias, id, result, err)
 	}()
@@ -274,6 +308,12 @@ func (graph *Module) extractSelectionSet(ctx context.Context, field *ast.Field, 
 
 	for _, selection := range field.SelectionSet.Selections {
 		v := selection.(*ast.Field)
+
+		// Skip dbFetchTs fields
+		if v.Name.Value == "_dbFetchTs" {
+			continue
+		}
+
 		// skip aggregate field & fields with directives
 		if v.Name.Value == utils.GraphQLAggregate || (len(v.Directives) > 0 && v.Directives[0].Name.Value == utils.GraphQLAggregate) {
 			f, err := aggregateSingleField(ctx, v, store, col, model.DBType(dbType), aggregateFound)
@@ -630,9 +670,36 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 			}
 
 			options.Distinct = &tempString
+		case "debug":
+			hasOptions = true // Set the flag to true
+
+			isDebug, err := getDebugParam(ctx, []*ast.Argument{v}, store)
+			if err != nil {
+				return nil, false, err
+			}
+
+			options.Debug = isDebug
 		}
 	}
 	return &options, hasOptions, nil
+}
+
+func getDebugParam(ctx context.Context, args []*ast.Argument, store utils.M) (bool, error) {
+	for _, v := range args {
+		if v.Name.Value == "debug" {
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
+			if err != nil {
+				return false, err
+			}
+
+			tempBool, ok := temp.(bool)
+			if !ok {
+				return false, fmt.Errorf("invalid type (%s) for debug", reflect.TypeOf(temp))
+			}
+			return tempBool, nil
+		}
+	}
+	return false, nil
 }
 
 func isJointTable(table string, join []*model.JoinOption) (*model.JoinOption, bool) {

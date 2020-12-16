@@ -8,8 +8,8 @@ import (
 )
 
 // RawQuery query document(s) from the database
-func (b *Bolt) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
-	return 0, "", errors.New("error raw querry cannot be performed over embedded database")
+func (b *Bolt) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, map[string]interface{}, error) {
+	return 0, "", nil, errors.New("error raw query cannot be performed over embedded database")
 }
 
 // CreateDatabaseIfNotExist creates a project if none exist

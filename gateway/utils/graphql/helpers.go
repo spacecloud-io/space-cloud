@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/spaceuptech/helpers"
@@ -334,6 +335,60 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 		}
 		wg.Wait()
 		cb(obj.GetAll(), nil)
+		return
+
+	default:
+		cb(result, nil)
+		return
+	}
+}
+
+func (graph *Module) processQueryMetaData(ctx context.Context, field *ast.Field, result interface{}, cb model.GraphQLCallback) {
+
+	switch val := result.(type) {
+	case []interface{}:
+		array := utils.NewArray(len(val))
+
+		// Create a wait group
+		var wgArray sync.WaitGroup
+		wgArray.Add(len(val))
+
+		for loopIndex, loopValue := range val {
+			go func(i int, v interface{}) {
+				defer wgArray.Done()
+				if field.SelectionSet == nil {
+					array.Set(i, v)
+					return
+				}
+
+				obj := utils.NewObject()
+
+				// Create a wait group
+				var wg sync.WaitGroup
+				wg.Add(len(field.SelectionSet.Selections))
+
+				for _, sel := range field.SelectionSet.Selections {
+					fieldName := sel.(*ast.Field).Name.Value
+					value, ok := v.(map[string]interface{})[fieldName]
+					if !ok {
+						wg.Done()
+						continue
+					}
+					if fieldName == "postProcessingTime" {
+						tt := value.(time.Time)
+						value = time.Since(tt).String()
+					}
+					obj.Set(fieldName, value)
+					wg.Done()
+				}
+
+				wg.Wait()
+				array.Set(i, obj.GetAll())
+			}(loopIndex, loopValue)
+		}
+
+		wgArray.Wait()
+		cb(array.GetAll(), nil)
 		return
 
 	default:

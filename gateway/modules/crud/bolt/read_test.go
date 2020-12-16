@@ -119,7 +119,7 @@ func TestBolt_Read(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, _, err := b.Read(context.Background(), tt.args.col, tt.args.req)
+			got, got1, _, _, err := b.Read(context.Background(), tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 				return

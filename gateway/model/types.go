@@ -18,7 +18,7 @@ type SchemaCrudInterface interface {
 
 // CrudAuthInterface is an interface consisting of functions of crud module used by auth module
 type CrudAuthInterface interface {
-	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, map[string]interface{}, error)
 }
 
 // SchemaEventingInterface is an interface consisting of functions of schema module used by eventing module
@@ -36,7 +36,7 @@ type SchemaEventingInterface interface {
 type CrudEventingInterface interface {
 	InternalCreate(ctx context.Context, dbAlias, project, col string, req *CreateRequest, isIgnoreMetrics bool) error
 	InternalUpdate(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
-	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, map[string]interface{}, error)
 	GetDBType(dbAlias string) (string, error)
 }
 
@@ -92,7 +92,7 @@ type AuthRealtimeInterface interface {
 
 // CrudRealtimeInterface is an interface consisting of functions of crud module used by RealTime module
 type CrudRealtimeInterface interface {
-	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, param RequestParams) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, param RequestParams) (interface{}, map[string]interface{}, error)
 }
 
 // CrudSchemaInterface is an interface consisting of functions of crud module used by Schema module
@@ -106,7 +106,7 @@ type CrudSchemaInterface interface {
 // CrudUserInterface is an interface consisting of functions of crud module used by User module
 type CrudUserInterface interface {
 	GetDBType(dbAlias string) (string, error)
-	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, map[string]interface{}, error)
 	Create(ctx context.Context, dbAlias, col string, req *CreateRequest, params RequestParams) error
 	Update(ctx context.Context, dbAlias, col string, req *UpdateRequest, params RequestParams) error
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
@@ -87,6 +88,10 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		// Check if the select clause exists
 		if req.Options.Select != nil {
 			for key := range req.Options.Select {
+				if key == "_dbFetchTs" {
+					continue
+				}
+
 				if !isJoin {
 					selArray = append(selArray, key)
 					continue
@@ -191,14 +196,14 @@ func splitAggregateAsColumnName(asColumnName string) (format, returnField, funct
 }
 
 // Read query document(s) from the database
-func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error) {
+func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, map[string]interface{}, error) {
 	return s.read(ctx, col, req, s.client)
 }
 
-func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, map[string]map[string]string, error) {
+func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, map[string]map[string]string, map[string]interface{}, error) {
 	sqlString, args, err := s.generateReadQuery(ctx, col, req)
 	if err != nil {
-		return 0, nil, nil, err
+		return 0, nil, nil, nil, err
 	}
 
 	if col != utils.TableInvocationLogs && col != utils.TableEventingLogs {
@@ -208,21 +213,29 @@ func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, exec
 	return s.readExec(ctx, col, sqlString, args, executor, req)
 }
 
-func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error) {
+func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, map[string]interface{}, error) {
 	operation := req.Operation
 	isAggregate := len(req.Aggregate) > 0
-
+	metaData := make(map[string]interface{})
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
-		return 0, nil, nil, err
+		return 0, nil, nil, nil, err
 	}
 	defer func() { _ = stmt.Close() }()
 
+	pre := ctx.Value("preProcessingTime").(time.Time)
+	metaData["preProcessingTime"] = time.Since(pre).String()
+	start := time.Now()
 	rows, err := stmt.QueryxContext(ctx, args...)
 	if err != nil {
-		return 0, nil, nil, err
+		return 0, nil, nil, nil, err
 	}
 	defer func() { _ = rows.Close() }()
+	metaData["queryTime"] = time.Since(start).String()
+	metaData["sql"] = sqlString
+	metaData["args"] = args
+	metaData["col"] = col
+	metaData["postProcessingTime"] = time.Now()
 
 	var rowTypes []*sql.ColumnType
 
@@ -235,12 +248,12 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 	case utils.Count:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {
-			return 0, nil, nil, errors.New("SQL: No response from db")
+			return 0, nil, nil, nil, errors.New("SQL: No response from db")
 		}
 
 		err := rows.MapScan(mapping)
 		if err != nil {
-			return 0, nil, nil, err
+			return 0, nil, nil, nil, err
 		}
 
 		switch s.GetDBType() {
@@ -249,20 +262,20 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 		}
 
 		for _, v := range mapping {
-			return v.(int64), v, make(map[string]map[string]string), nil
+			return v.(int64), v, make(map[string]map[string]string), metaData, nil
 		}
 
-		return 0, nil, nil, errors.New("unknown error occurred")
+		return 0, nil, nil, nil, errors.New("unknown error occurred")
 
 	case utils.One:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {
-			return 0, nil, nil, errors.New("SQL: No response from db")
+			return 0, nil, nil, nil, errors.New("SQL: No response from db")
 		}
 
 		err := rows.MapScan(mapping)
 		if err != nil {
-			return 0, nil, nil, err
+			return 0, nil, nil, nil, err
 		}
 
 		switch s.GetDBType() {
@@ -275,7 +288,11 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], mapping)
 		}
 
-		return 1, mapping, make(map[string]map[string]string), nil
+		if req.Options.Debug {
+			mapping["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+		}
+
+		return 1, mapping, make(map[string]map[string]string), metaData, nil
 
 	case utils.All, utils.Distinct:
 		array := make([]interface{}, 0)
@@ -290,7 +307,7 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			row := make(map[string]interface{})
 			err := rows.MapScan(row)
 			if err != nil {
-				return 0, nil, nil, err
+				return 0, nil, nil, nil, err
 			}
 
 			switch s.GetDBType() {
@@ -300,17 +317,22 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 
 			if req.Options == nil || req.Options.ReturnType == "table" || len(req.Options.Join) == 0 {
 				processAggregate(row, row, "*", isAggregate)
+
+				if req.Options.Debug {
+					row["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+				}
+
 				array = append(array, row)
 				continue
 			}
 
-			s.processRows(ctx, []string{col}, isAggregate, row, req.Options.Join, mapping, &array, req.PostProcess, jointMapping)
+			s.processRows(ctx, req.Options.Debug, []string{col}, isAggregate, row, req.Options.Join, mapping, &array, req.PostProcess, jointMapping)
 		}
 
-		return count, array, jointMapping, nil
+		return count, array, jointMapping, metaData, nil
 
 	default:
-		return 0, nil, nil, utils.ErrInvalidParams
+		return 0, nil, nil, nil, utils.ErrInvalidParams
 	}
 }
 func processAggregate(row, m map[string]interface{}, tableName string, isAggregate bool) {
@@ -353,7 +375,7 @@ func processAggregate(row, m map[string]interface{}, tableName string, isAggrega
 		}
 	}
 }
-func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool, row map[string]interface{}, join []*model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess, joinMapping map[string]map[string]string) {
+func (s *SQL) processRows(ctx context.Context, isDebug bool, table []string, isAggregate bool, row map[string]interface{}, join []*model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess, joinMapping map[string]map[string]string) {
 	// row obtained from database contains flattened result of all tables(if join was specified)
 	// m variable will only store result of specific table
 	m := map[string]interface{}{}
@@ -401,6 +423,9 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 
 		// Process aggregate field only if its the root table that we are processing
 		processAggregate(row, m, table[length], isAggregate)
+		if isDebug {
+			m["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+		}
 	}
 
 	if mapLength == 0 {
@@ -419,7 +444,7 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 		}
 
 		// Recursively call the same function again
-		s.processRows(ctx, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess, joinMapping)
+		s.processRows(ctx, isDebug, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess, joinMapping)
 		m[j.Table] = arr
 	}
 }

@@ -35,6 +35,9 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(projectConfig.ContextTimeGraphQL)*time.Second)
 		defer cancel()
 
+		type temp string // Just to solve linting error
+		ctx2 := context.WithValue(ctx, temp("preProcessingTime"), time.Now())
+
 		graphql := modules.GraphQL()
 
 		// Load the request from the body
@@ -47,23 +50,23 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 
 		ch := make(chan struct{}, 1)
 
-		graphql.ExecGraphQLQuery(ctx, &req, token, func(op interface{}, err error) {
+		graphql.ExecGraphQLQuery(ctx2, &req, token, func(op interface{}, err error) {
 			defer func() { ch <- struct{}{} }()
 			if err != nil {
 				errMes := map[string]interface{}{"message": err.Error()}
-				_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{"errors": []interface{}{errMes}})
+				_ = helpers.Response.SendResponse(ctx2, w, http.StatusOK, map[string]interface{}{"errors": []interface{}{errMes}})
 				return
 			}
-			_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{"data": op})
+			_ = helpers.Response.SendResponse(ctx2, w, http.StatusOK, map[string]interface{}{"data": op})
 		})
 
 		select {
 		case <-ch:
 			return
 		case <-time.After(time.Duration(projectConfig.ContextTimeGraphQL) * time.Second):
-			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), "GraphQL Handler: Request timed out", nil)
+			helpers.Logger.LogInfo(helpers.GetRequestID(ctx2), "GraphQL Handler: Request timed out", nil)
 			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
-			_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{"errors": []interface{}{errMes}})
+			_ = helpers.Response.SendResponse(ctx2, w, http.StatusOK, map[string]interface{}{"errors": []interface{}{errMes}})
 			return
 		}
 	}

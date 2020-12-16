@@ -50,13 +50,13 @@ type loader struct {
 // Crud abstracts the implementation crud operations of databases
 type Crud interface {
 	Create(ctx context.Context, col string, req *model.CreateRequest) (int64, error)
-	Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error)
+	Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, map[string]interface{}, error)
 	Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error)
 	Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error)
 	Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error)
 	DescribeTable(ctc context.Context, col string) ([]model.InspectorFieldType, []model.ForeignKeysType, []model.IndexType, error)
-	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error)
+	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, map[string]interface{}, error)
 	GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, col string) error
 	CreateDatabaseIfNotExist(ctx context.Context, name string) error

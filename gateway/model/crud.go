@@ -22,6 +22,9 @@ type ReadRequest struct {
 
 // ReadOptions is the options required for a read request
 type ReadOptions struct {
+	// Debug field is used internally to show
+	// _query meta data in the graphql
+	Debug      bool             `json:"debug"`
 	Select     map[string]int32 `json:"select"`
 	Sort       []string         `json:"sort"`
 	Skip       *int64           `json:"skip"`
@@ -56,6 +59,9 @@ type DeleteRequest struct {
 // PreparedQueryRequest is the http body received for a PreparedQuery request
 type PreparedQueryRequest struct {
 	Params map[string]interface{} `json:"params"`
+	// This field is used internally to show
+	// _query meta data in the graphql
+	Debug bool
 }
 
 // AggregateRequest is the http body received for an aggregate request
