@@ -78,7 +78,6 @@ func (holder *resultsHolder) fillResults(res []interface{}) {
 		// Get the where clause
 		meta := holder.metas[index]
 		isOperationTypeOne := meta.op == utils.One
-		var result interface{}
 		docs := make([]interface{}, 0)
 		for _, doc := range res {
 			if utils.Validate(meta.whereClause, doc) {
@@ -92,11 +91,12 @@ func (holder *resultsHolder) fillResults(res []interface{}) {
 		// Increment the where clause index
 		index++
 
+		var result interface{}
 		if isOperationTypeOne {
-			if len(docs) >= 1 {
+			if len(docs) > 0 {
 				result = docs[0]
 			} else {
-				result = map[string]interface{}{}
+				result = nil
 			}
 		} else {
 			result = docs
