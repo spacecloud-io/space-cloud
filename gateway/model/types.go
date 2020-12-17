@@ -9,7 +9,7 @@ import (
 
 // SchemaCrudInterface is an interface consisting of functions of schema module used by auth module
 type SchemaCrudInterface interface {
-	SetConfig(dbSchemas config.DatabaseSchemas, project string) error
+	SetDatabaseSchema(dbSchemas config.DatabaseSchemas, project string) error
 	ValidateCreateOperation(ctx context.Context, dbType, col string, req *CreateRequest) error
 	ValidateUpdateOperation(ctx context.Context, dbType, col, op string, updateDoc, find map[string]interface{}) error
 	CrudPostProcess(ctx context.Context, dbAlias, col string, result interface{}) error

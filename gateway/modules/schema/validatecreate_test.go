@@ -636,10 +636,11 @@ func TestSchema_CheckType(t *testing.T) {
 		}
 		s := Init("chicago", mockCrud)
 
-		err := s.SetConfig(Parsedata, "myproject")
+		err := s.SetDatabaseSchema(Parsedata, "myproject")
 		if err != nil {
 			t.Errorf("Error while parsing schema:%v", err)
 		}
+		s.SetDatabaseConfig(config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseConfig{DbAlias: "mongo", Type: "mongo"}})
 
 		r := s.SchemaDoc["mongo"]["tweet"]
 		t.Run(testCase.name, func(t *testing.T) {

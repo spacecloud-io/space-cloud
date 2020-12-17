@@ -162,7 +162,7 @@ func (c *creationModule) removeColumn(dbType string) []string {
 }
 
 // func (c *creationModule) addPrimaryKey() string {
-// 	dbAlias, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+// 	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
 // 	if err != nil {
 // 		return ""
 // 	}

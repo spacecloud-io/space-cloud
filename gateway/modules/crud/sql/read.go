@@ -413,6 +413,9 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 		utils.GenerateJoinKeys(j.Table, j.On, row, joinMapping)
 		// Check if table name is already present in parent row. If not, create a new array
 		tableName := j.Table
+		if j.As != "" {
+			tableName = j.As
+		}
 		if arrTemp, p := m[tableName]; p {
 			switch t := arrTemp.(type) {
 			case []interface{}:
@@ -426,9 +429,6 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 
 		// Recursively call the same function again
 		s.processRows(ctx, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess, joinMapping)
-		if j.As != "" {
-			tableName = j.As
-		}
 		if j.Op == utils.All || j.Op == "" {
 			m[tableName] = arr
 		} else {

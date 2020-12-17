@@ -31,28 +31,30 @@ type Schema struct {
 
 // Init creates a new instance of the schema object
 func Init(clusterID string, crud model.CrudSchemaInterface) *Schema {
-	return &Schema{clusterID: clusterID, SchemaDoc: model.Type{}, crud: crud}
+	return &Schema{clusterID: clusterID, SchemaDoc: model.Type{}, crud: crud, dbAliasDBTypeMapping: make(map[string]string)}
 }
 
-// SetConfig modifies the tables according to the schema on save
-func (s *Schema) SetConfig(c config.DatabaseSchemas, project string) error {
+// SetDatabaseSchema modifies the tables according to the schema on save
+func (s *Schema) SetDatabaseSchema(c config.DatabaseSchemas, project string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.dbSchemas = c
 	s.project = project
 	s.dbAliasDBTypeMapping = make(map[string]string)
-	for _, databaseSchema := range c {
-		dbType, err := s.crud.GetDBType(databaseSchema.DbAlias)
-		if err != nil {
-			return err
-		}
-		s.dbAliasDBTypeMapping[databaseSchema.DbAlias] = dbType
-	}
 	if err := s.parseSchema(c); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// SetDatabaseConfig sets database config
+func (s *Schema) SetDatabaseConfig(c config.DatabaseConfigs) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	for _, databaseConfig := range c {
+		s.dbAliasDBTypeMapping[databaseConfig.DbAlias] = databaseConfig.Type
+	}
 }
 
 // GetSchema function gets schema

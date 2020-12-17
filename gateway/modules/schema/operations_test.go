@@ -682,7 +682,7 @@ func TestManager_GetSchemas(t *testing.T) {
 
 			schemaMod.crud = &mockCrud
 
-			if err := schemaMod.SetConfig(tt.crud, "myproject"); err != nil {
+			if err := schemaMod.SetDatabaseSchema(tt.crud, "myproject"); err != nil {
 				t.Errorf("Manager.GetSchemas() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}

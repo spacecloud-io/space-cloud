@@ -45,7 +45,7 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 		docs = []interface{}{v}
 	}
 
-	// dbAlias, _ := s.crud.GetDBType(dbAlias)
+	// dbType, _ := s.crud.GetDBType(dbAlias)
 	var fieldsToProcess []fieldsToPostProcess
 	for columnName, columnValue := range tableInfo {
 		if columnValue.Kind == model.TypeDateTime {

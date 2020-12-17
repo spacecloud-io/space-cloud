@@ -877,10 +877,11 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 		}
 		s := Init("chicago", mockCrud)
 
-		err := s.SetConfig(dbSchemas, "myproject")
+		err := s.SetDatabaseSchema(dbSchemas, "myproject")
 		if err != nil {
 			t.Errorf("Error while parsing schema:%v", err)
 		}
+		s.SetDatabaseConfig(config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "mongo", "tweet"): &config.DatabaseConfig{DbAlias: "mongo", Type: "mongo"}})
 
 		t.Run(testcase.name, func(t *testing.T) {
 			err := s.ValidateUpdateOperation(context.Background(), testcase.args.dbAlias, testcase.args.col, utils.All, testcase.args.updateDoc, nil)
