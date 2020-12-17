@@ -196,11 +196,11 @@ func splitAggregateAsColumnName(asColumnName string) (format, returnField, funct
 }
 
 // Read query document(s) from the database
-func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, map[string]interface{}, error) {
+func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	return s.read(ctx, col, req, s.client)
 }
 
-func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, map[string]map[string]string, map[string]interface{}, error) {
+func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	sqlString, args, err := s.generateReadQuery(ctx, col, req)
 	if err != nil {
 		return 0, nil, nil, nil, err
@@ -213,29 +213,26 @@ func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, exec
 	return s.readExec(ctx, col, sqlString, args, executor, req)
 }
 
-func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, map[string]interface{}, error) {
+func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	operation := req.Operation
 	isAggregate := len(req.Aggregate) > 0
-	metaData := make(map[string]interface{})
+	metaData := new(model.SQLMetaData)
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
 		return 0, nil, nil, nil, err
 	}
 	defer func() { _ = stmt.Close() }()
 
-	pre := ctx.Value("preProcessingTime").(time.Time)
-	metaData["preProcessingTime"] = time.Since(pre).String()
 	start := time.Now()
 	rows, err := stmt.QueryxContext(ctx, args...)
 	if err != nil {
 		return 0, nil, nil, nil, err
 	}
 	defer func() { _ = rows.Close() }()
-	metaData["queryTime"] = time.Since(start).String()
-	metaData["sql"] = sqlString
-	metaData["args"] = args
-	metaData["col"] = col
-	metaData["postProcessingTime"] = time.Now()
+	metaData.QueryTime = time.Since(start).String()
+	metaData.SQL = sqlString
+	metaData.Col = col
+	metaData.Args = args
 
 	var rowTypes []*sql.ColumnType
 

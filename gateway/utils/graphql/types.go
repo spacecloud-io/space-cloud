@@ -9,13 +9,13 @@ import (
 // CrudInterface is an interface consisting of functions of crud module used by graphql module
 type CrudInterface interface {
 	Create(ctx context.Context, dbAlias, collection string, request *model.CreateRequest, params model.RequestParams) error
-	Read(ctx context.Context, dbAlias, collection string, request *model.ReadRequest, params model.RequestParams) (interface{}, map[string]interface{}, error)
+	Read(ctx context.Context, dbAlias, collection string, request *model.ReadRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error)
 	Update(ctx context.Context, dbAlias, collection string, request *model.UpdateRequest, params model.RequestParams) error
 	Delete(ctx context.Context, dbAlias, collection string, request *model.DeleteRequest, params model.RequestParams) error
 	Batch(ctx context.Context, dbAlias string, req *model.BatchRequest, params model.RequestParams) error
 	GetDBType(dbAlias string) (string, error)
 	IsPreparedQueryPresent(directive, fieldName string) bool
-	ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, map[string]interface{}, error)
+	ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error)
 }
 
 // AuthInterface is an interface consisting of functions of auth module used by graphql module

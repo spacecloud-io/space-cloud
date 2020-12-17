@@ -19,7 +19,7 @@ type resultsHolder struct {
 
 type queryResult struct {
 	doc      interface{}
-	metaData map[string]interface{}
+	metaData *model.SQLMetaData
 }
 
 func (holder *resultsHolder) getResults() []*dataloader.Result {
@@ -56,7 +56,7 @@ func (holder *resultsHolder) addWhereClause(whereClause map[string]interface{}, 
 	holder.Unlock()
 }
 
-func (holder *resultsHolder) fillResults(metData map[string]interface{}, res []interface{}) {
+func (holder *resultsHolder) fillResults(metData *model.SQLMetaData, res []interface{}) {
 	holder.Lock()
 	defer holder.Unlock()
 

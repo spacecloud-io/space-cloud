@@ -5,10 +5,12 @@ import (
 	"errors"
 
 	"github.com/spaceuptech/helpers"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // RawQuery query document(s) from the database
-func (b *Bolt) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, map[string]interface{}, error) {
+func (b *Bolt) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, *model.SQLMetaData, error) {
 	return 0, "", nil, errors.New("error raw query cannot be performed over embedded database")
 }
 

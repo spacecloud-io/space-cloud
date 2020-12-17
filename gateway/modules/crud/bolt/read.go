@@ -14,7 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, map[string]interface{}, error) {
+func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	if req.Options == nil {
 		req.Options = &model.ReadOptions{}
 	}

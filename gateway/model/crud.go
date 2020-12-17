@@ -82,6 +82,14 @@ type AllRequest struct {
 	Extras    map[string]interface{} `json:"extras"`
 }
 
+type SQLMetaData struct {
+	Col       string        `json:"col" structs:"col"`
+	SQL       string        `json:"sql" structs:"sql"`
+	DbAlias   string        `json:"db" structs:"db"`
+	Args      []interface{} `json:"args" structs:"args"`
+	QueryTime string        `json:"queryTime" structs:"queryTime"`
+}
+
 // BatchRequest is the http body for a batch request
 type BatchRequest struct {
 	Requests []*AllRequest `json:"reqs"`

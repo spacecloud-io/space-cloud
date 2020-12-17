@@ -240,7 +240,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		if field.Name.Value == "_query" {
 			val := store["_query"]
-			graph.processQueryMetaData(ctx, field, val.(*utils.Array).GetAll(), cb)
+			graph.processQueryResult(ctx, field, token, store, val.(*utils.Array).GetAll(), nil, cb)
 			return
 		}
 

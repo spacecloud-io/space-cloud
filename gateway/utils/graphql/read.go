@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/fatih/structs"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spaceuptech/helpers"
@@ -63,7 +64,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 
 		if req.Options.Debug {
 			val := store["_query"]
-			val.(*utils.Array).Append(metaData)
+			val.(*utils.Array).Append(structs.Map(metaData))
 		}
 
 		// Post process only if joins were not enabled
@@ -135,7 +136,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 
 		if req.Options.Debug {
 			val := store["_query"]
-			val.(*utils.Array).Append(metaData)
+			val.(*utils.Array).Append(structs.Map(metaData))
 		}
 
 		// Post process only if joins were not enabled
@@ -207,7 +208,7 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 
 		if req.Debug {
 			val := store["_query"]
-			val.(*utils.Array).Append(metaData)
+			val.(*utils.Array).Append(structs.Map(metaData))
 		}
 		_ = graph.auth.PostProcessMethod(ctx, actions, result)
 		cb(dbAlias, id, result, err)

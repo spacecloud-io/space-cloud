@@ -18,7 +18,7 @@ import (
 )
 
 // Read queries document(s) from the database
-func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, map[string]interface{}, error) {
+func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	if req.Options != nil && len(req.Options.Join) > 0 {
 		return 0, nil, nil, nil, errors.New("cannot perform joins in mongo db")
 	}

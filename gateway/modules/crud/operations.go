@@ -46,7 +46,7 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 }
 
 // Read returns the documents(s) which match a query from the database based on dbType
-func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, map[string]interface{}, error) {
+func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -72,7 +72,9 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		}
 		data, err := dataLoader.Load(ctx, key)()
 		res := data.(queryResult)
-		res.metaData["db"] = dbAlias
+		if res.metaData != nil {
+			res.metaData.DbAlias = dbAlias
+		}
 		return res.doc, res.metaData, err
 	}
 
@@ -88,7 +90,9 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		m.metricHook(m.project, dbAlias, col, n, model.Read)
 	}
 
-	metaData["db"] = dbAlias
+	if metaData != nil {
+		metaData.DbAlias = dbAlias
+	}
 	return result, metaData, err
 }
 
@@ -157,7 +161,7 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 }
 
 // ExecPreparedQuery executes PreparedQueries request
-func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, map[string]interface{}, error) {
+func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -188,6 +192,9 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 
 	// Fire the query and return the result
 	_, b, metaData, err := crud.RawQuery(ctx, preparedQuery.SQL, args)
+	if metaData != nil {
+		metaData.DbAlias = dbAlias
+	}
 	return b, metaData, err
 }
 
