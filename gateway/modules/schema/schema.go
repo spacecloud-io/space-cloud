@@ -20,12 +20,13 @@ import (
 
 // Schema data stucture for schema package
 type Schema struct {
-	lock      sync.RWMutex
-	SchemaDoc model.Type
-	crud      model.CrudSchemaInterface
-	project   string
-	dbSchemas config.DatabaseSchemas
-	clusterID string
+	lock                 sync.RWMutex
+	SchemaDoc            model.Type
+	crud                 model.CrudSchemaInterface
+	project              string
+	dbSchemas            config.DatabaseSchemas
+	clusterID            string
+	dbAliasDBTypeMapping map[string]string
 }
 
 // Init creates a new instance of the schema object
@@ -39,7 +40,14 @@ func (s *Schema) SetConfig(c config.DatabaseSchemas, project string) error {
 	defer s.lock.Unlock()
 	s.dbSchemas = c
 	s.project = project
-
+	s.dbAliasDBTypeMapping = make(map[string]string)
+	for _, databaseSchema := range c {
+		dbType, err := s.crud.GetDBType(databaseSchema.DbAlias)
+		if err != nil {
+			return err
+		}
+		s.dbAliasDBTypeMapping[databaseSchema.DbAlias] = dbType
+	}
 	if err := s.parseSchema(c); err != nil {
 		return err
 	}

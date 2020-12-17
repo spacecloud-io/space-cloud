@@ -18,13 +18,19 @@ func TestManager_GetSchemas(t *testing.T) {
 		col     string
 		format  string
 	}
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
 	tests := []struct {
-		name    string
-		crud    config.DatabaseSchemas
-		args    args
-		want1   []interface{}
-		want2   []interface{}
-		wantErr bool
+		name         string
+		crud         config.DatabaseSchemas
+		args         args
+		crudMockArgs []mockArgs
+		want1        []interface{}
+		want2        []interface{}
+		wantErr      bool
 	}{
 		{
 			name: "Invalid dbAlias provided while fetching specific table from specific database",
@@ -35,6 +41,18 @@ func TestManager_GetSchemas(t *testing.T) {
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "authors"):     &config.DatabaseSchema{DbAlias: "db2", Table: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "subscribers"): &config.DatabaseSchema{DbAlias: "db2", Table: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "genres"):      &config.DatabaseSchema{DbAlias: "db2", Table: "genres", Schema: `type genres {id: ID! name: String }`},
+			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"db1"},
+					paramsReturned: []interface{}{"postgres"},
+				},
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"db2"},
+					paramsReturned: []interface{}{"postgres"},
+				},
 			},
 			args:    args{ctx: context.Background(), col: "genres", dbAlias: "db3"},
 			wantErr: true,
@@ -48,6 +66,18 @@ func TestManager_GetSchemas(t *testing.T) {
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "authors"):     &config.DatabaseSchema{DbAlias: "db2", Table: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "subscribers"): &config.DatabaseSchema{DbAlias: "db2", Table: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "genres"):      &config.DatabaseSchema{DbAlias: "db2", Table: "genres", Schema: `type genres {id: ID! name: String }`},
+			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"db1"},
+					paramsReturned: []interface{}{"postgres"},
+				},
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"db2"},
+					paramsReturned: []interface{}{"postgres"},
+				},
 			},
 			args: args{ctx: context.Background(), col: "authors", dbAlias: "db1", format: "json"},
 			want1: []interface{}{
@@ -94,6 +124,18 @@ func TestManager_GetSchemas(t *testing.T) {
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "authors"):     &config.DatabaseSchema{DbAlias: "db2", Table: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "subscribers"): &config.DatabaseSchema{DbAlias: "db2", Table: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "genres"):      &config.DatabaseSchema{DbAlias: "db2", Table: "genres", Schema: `type genres {id: ID! name: String }`},
+			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"db1"},
+					paramsReturned: []interface{}{"postgres"},
+				},
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"db2"},
+					paramsReturned: []interface{}{"postgres"},
+				},
 			},
 			args: args{ctx: context.Background(), col: "*", dbAlias: "db1", format: "json"},
 			want1: []interface{}{
@@ -551,6 +593,18 @@ func TestManager_GetSchemas(t *testing.T) {
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "subscribers"): &config.DatabaseSchema{DbAlias: "db2", Table: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "genres"):      &config.DatabaseSchema{DbAlias: "db2", Table: "genres", Schema: `type genres {id: ID! name: String }`},
 			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"db1"},
+					paramsReturned: []interface{}{"postgres"},
+				},
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"db2"},
+					paramsReturned: []interface{}{"postgres"},
+				},
+			},
 			args: args{ctx: context.Background(), col: "authors", dbAlias: "db1", format: ""},
 			want1: []interface{}{
 				dbSchemaResponse{DbAlias: "db1", Col: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
@@ -565,6 +619,18 @@ func TestManager_GetSchemas(t *testing.T) {
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "authors"):     &config.DatabaseSchema{DbAlias: "db2", Table: "authors", Schema: `type authors {id: ID! name: String genre_id: ID! @foreign(table: "genres",to: "id")}`},
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "subscribers"): &config.DatabaseSchema{DbAlias: "db2", Table: "subscribers", Schema: `type subscribers {id: ID! name: String author_id: ID! @foreign(table: "authors",to: "id")}`},
 				config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseSchema, "db2", "genres"):      &config.DatabaseSchema{DbAlias: "db2", Table: "genres", Schema: `type genres {id: ID! name: String }`},
+			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"db1"},
+					paramsReturned: []interface{}{"postgres"},
+				},
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"db2"},
+					paramsReturned: []interface{}{"postgres"},
+				},
 			},
 			args: args{ctx: context.Background(), col: "*", dbAlias: "db1", format: ""},
 			want1: []interface{}{
@@ -608,6 +674,14 @@ func TestManager_GetSchemas(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			mockCrud := mockCrudSchemaInterface{}
+
+			for _, m := range tt.crudMockArgs {
+				mockCrud.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			schemaMod.crud = &mockCrud
+
 			if err := schemaMod.SetConfig(tt.crud, "myproject"); err != nil {
 				t.Errorf("Manager.GetSchemas() error = %v, wantErr %v", err, tt.wantErr)
 				return

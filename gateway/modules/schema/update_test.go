@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -39,21 +38,34 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 	}
 
 	type args struct {
-		dbType    string
+		dbAlias   string
 		col       string
 		updateDoc map[string]interface{}
+	}
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
 	}
 	tests := []struct {
 		name          string
 		args          args
+		crudMockArgs  []mockArgs
 		IsErrExpected bool
 	}{
 		{
-			name:          "Successful Test case",
+			name: "Successful Test case",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: false,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"id":        "1234",
@@ -86,11 +98,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case got integer wanted object for json type",
+			name: "Invalid Test case got integer wanted object for json type",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"spec": 123,
@@ -99,11 +118,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-IsErrExpecteded ID got integer",
+			name: "Invalid Test case-IsErrExpecteded ID got integer",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"id": 123,
@@ -112,20 +138,34 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Test case-Nothing to Update",
+			name: "Test case-Nothing to Update",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: false,
 			args: args{
-				dbType:    "mongo",
+				dbAlias:   "mongo",
 				col:       "tweet",
 				updateDoc: nil,
 			},
 		},
 		{
-			name:          "Invalid Test case-$createdAt update operator unsupported",
+			name: "Invalid Test case-$createdAt update operator unsupported",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$createdAt": map[string]interface{}{
 						"age": 45,
@@ -134,11 +174,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-expected ID",
+			name: "Invalid Test case-expected ID",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$inc": map[string]interface{}{
 						"id": "123",
@@ -147,11 +194,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Valid Test case-increment operation",
+			name: "Valid Test case-increment operation",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: false,
 			args: args{
-				dbType: "mongo",
-				col:    "suyash",
+				dbAlias: "mongo",
+				col:     "suyash",
 				updateDoc: map[string]interface{}{
 					"$inc": map[string]interface{}{
 						"age": 1234567890,
@@ -160,11 +214,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Valid Test case- increment float but kind is integer type",
+			name: "Valid Test case- increment float but kind is integer type",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: false,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$inc": map[string]interface{}{
 						"age": 6.34,
@@ -173,22 +234,36 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-document not of type object",
+			name: "Invalid Test case-document not of type object",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$push": "suyash",
 				},
 			},
 		},
 		{
-			name:          "Valid Test case-createdAt",
+			name: "Valid Test case-createdAt",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: false,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$currentDate": map[string]interface{}{
 
@@ -198,11 +273,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-IsErrExpecteded ID(currentDate)",
+			name: "Invalid Test case-IsErrExpecteded ID(currentDate)",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$currentDate": map[string]interface{}{
 						"id": 123,
@@ -211,11 +293,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-field not defined in schema",
+			name: "Invalid Test case-field not defined in schema",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$push": map[string]interface{}{
 						"location": []interface{}{"hello", "go", "java"},
@@ -225,11 +314,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-IsErrExpecteded string got integer",
+			name: "Invalid Test case-IsErrExpecteded string got integer",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$push": map[string]interface{}{
 						"owner": []interface{}{123, 45.64, "java"},
@@ -239,11 +335,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-invalid type for field owner",
+			name: "Invalid Test case-invalid type for field owner",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$push": map[string]interface{}{
 						"owner": 123,
@@ -252,11 +355,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Test Case-Float value",
+			name: "Test Case-Float value",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: false,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"age": 12.33,
@@ -265,11 +375,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-IsErrExpecteded ID got integer",
+			name: "Invalid Test case-IsErrExpecteded ID got integer",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$inc": map[string]interface{}{
 						"id": 721,
@@ -278,11 +395,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-invalid datetime format",
+			name: "Invalid Test case-invalid datetime format",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"createdAt": "2015-11-22T13:57:31.123ZI",
@@ -291,11 +415,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-IsErrExpecteded Integer got String",
+			name: "Invalid Test case-IsErrExpecteded Integer got String",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"age": "12",
@@ -304,11 +435,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Float value for field createdAt",
+			name: "Float value for field createdAt",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: false,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"createdAt": 12.13,
@@ -317,11 +455,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-IsErrExpecteded String got Float",
+			name: "Invalid Test case-IsErrExpecteded String got Float",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"text": 12.13,
@@ -330,11 +475,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-IsErrExpecteded float got boolean",
+			name: "Invalid Test case-IsErrExpecteded float got boolean",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"cpi": true,
@@ -343,11 +495,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Valid Test Case-Boolean",
+			name: "Valid Test Case-Boolean",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: false,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"diplomastudent": false,
@@ -356,11 +515,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-invalid map string interface",
+			name: "Invalid Test case-invalid map string interface",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"cpi": map[string]interface{}{"1": 7.2, "2": 8.5, "3": 9.3},
@@ -369,11 +535,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-invalid array interface",
+			name: "Invalid Test case-invalid array interface",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"cpi": []interface{}{7.2, "8", 9},
@@ -382,11 +555,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "set array type for field friends",
+			name: "set array type for field friends",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: false,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"friends": []interface{}{"7.2", "8", "9"},
@@ -395,11 +575,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-field not defined in schema",
+			name: "Invalid Test case-field not defined in schema",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"friend": []interface{}{"7.2", "8", "9"},
@@ -408,11 +595,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-Wanted Object got integer",
+			name: "Invalid Test case-Wanted Object got integer",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"mentor": []interface{}{1, 2},
@@ -421,11 +615,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-no matching type found",
+			name: "Invalid Test case-no matching type found",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"age": int32(2),
@@ -434,11 +635,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Valid Test Case-set operation",
+			name: "Valid Test Case-set operation",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: false,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"age": 2,
@@ -447,11 +655,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-field not present in schema",
+			name: "Invalid Test case-field not present in schema",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"friend": []map[string]interface{}{{"7.2": "8"}, {"1": 2}},
@@ -460,11 +675,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-invalid boolean field",
+			name: "Invalid Test case-invalid boolean field",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$push": map[string]interface{}{
 						"diplomastudent": []interface{}{1, 2, 3},
@@ -473,11 +695,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-unsupported operator",
+			name: "Invalid Test case-unsupported operator",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$push1": map[string]interface{}{
 						"friends": 4,
@@ -486,11 +715,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-field not present in schema(math)",
+			name: "Invalid Test case-field not present in schema(math)",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$inc": map[string]interface{}{
 						"friends1": 4,
@@ -499,11 +735,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-field not present in schema(date)",
+			name: "Invalid Test case-field not present in schema(date)",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$currentDate": map[string]interface{}{
 						"friends1": "4/12/2019",
@@ -512,55 +755,90 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-document not of type object(math)",
+			name: "Invalid Test case-document not of type object(math)",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$inc": "age",
 				},
 			},
 		},
 		{
-			name:          "Invalid Test case-document not of type object(set)",
+			name: "Invalid Test case-document not of type object(set)",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": "age",
 				},
 			},
 		},
 		{
-			name:          "Invalid Test case-document not of type object(Date)",
+			name: "Invalid Test case-document not of type object(Date)",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$currentDate": "15/10/2019",
 				},
 			},
 		},
 		{
-			name:          "Valid Test case-updatedAt directive involved",
+			name: "Valid Test case-updatedAt directive involved",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{"update": "15/10/2019"},
 				},
 			},
 		},
 		{
-			name:          "Invalid Test case-invalid field type in push operation",
+			name: "Invalid Test case-invalid field type in push operation",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mongo",
-				col:    "tweet",
+				dbAlias: "mongo",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$push": map[string]interface{}{
 						"friends": nil,
@@ -569,11 +847,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test Case-DB name not present in schema",
+			name: "Invalid Test Case-DB name not present in schema",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			IsErrExpected: true,
 			args: args{
-				dbType: "mysql",
-				col:    "tweet",
+				dbAlias: "mysql",
+				col:     "tweet",
 				updateDoc: map[string]interface{}{
 					"$set": map[string]interface{}{
 						"id":        123,
@@ -585,16 +870,20 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 		},
 	}
 
-	c := crud.Init()
-
-	s := Init("chicago", c)
-	if err := s.parseSchema(dbSchemas); err != nil {
-		t.Errorf("error parsing schema :: %v", err)
-	}
-
 	for _, testcase := range tests {
+		mockCrud := &mockCrudSchemaInterface{}
+		for _, m := range testcase.crudMockArgs {
+			mockCrud.On(m.method, m.args...).Return(m.paramsReturned...)
+		}
+		s := Init("chicago", mockCrud)
+
+		err := s.SetConfig(dbSchemas, "myproject")
+		if err != nil {
+			t.Errorf("Error while parsing schema:%v", err)
+		}
+
 		t.Run(testcase.name, func(t *testing.T) {
-			err := s.ValidateUpdateOperation(context.Background(), testcase.args.dbType, testcase.args.col, utils.All, testcase.args.updateDoc, nil)
+			err := s.ValidateUpdateOperation(context.Background(), testcase.args.dbAlias, testcase.args.col, utils.All, testcase.args.updateDoc, nil)
 			if (err != nil) != testcase.IsErrExpected {
 				t.Errorf("\n ValidateUpdateOperation() error = expected error-%v, got-%v)", testcase.IsErrExpected, err)
 			}

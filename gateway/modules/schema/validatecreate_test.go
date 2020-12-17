@@ -240,24 +240,45 @@ func TestSchema_SchemaValidate(t *testing.T) {
 }
 
 func TestSchema_CheckType(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
 	testCases := []struct {
 		dbAlias, coll, name string
 		Document            map[string]interface{}
 		result              interface{}
 		IsErrExpected       bool
 		IsSkipable          bool
-	}{{
-		coll:          "tweet",
-		name:          "integer value for float field",
-		IsErrExpected: false,
-		IsSkipable:    false,
-		result:        float64(12),
-		Document: map[string]interface{}{
-			"age": 12,
-		},
-	},
+		crudMockArgs        []mockArgs
+	}{
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
+			name:          "integer value for float field",
+			IsErrExpected: false,
+			IsSkipable:    false,
+			result:        float64(12),
+			Document: map[string]interface{}{
+				"age": 12,
+			},
+		},
+		{
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "integer value for string field",
 			IsErrExpected: true,
@@ -267,7 +288,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "integer value for datetime field",
 			IsErrExpected: false,
@@ -278,7 +306,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "string value for datetime field",
 			IsErrExpected: true,
@@ -288,7 +323,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "valid datetime field",
 			IsErrExpected: false,
@@ -298,7 +340,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "valid integer value",
 			IsErrExpected: false,
@@ -309,7 +358,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "valid string value",
 			IsErrExpected: false,
@@ -320,7 +376,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "valid float value",
 			IsErrExpected: false,
@@ -331,7 +394,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "string value for integer field",
 			IsErrExpected: true,
@@ -340,7 +410,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "float value for string field",
 			IsErrExpected: true,
@@ -349,7 +426,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "valid boolean value",
 			IsErrExpected: false,
@@ -360,7 +444,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "invalid boolean value",
 			IsErrExpected: true,
@@ -369,7 +460,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "float value for datetime field",
 			IsErrExpected: false,
@@ -379,7 +477,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "invalid map string interface",
 			IsErrExpected: true,
@@ -388,7 +493,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "valid map string interface",
 			IsErrExpected: false,
@@ -398,7 +510,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "float value for integer field",
 			IsErrExpected: false,
@@ -408,7 +527,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "valid interface value",
 			IsErrExpected: true,
@@ -417,7 +543,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "valid interface value for matching field (event)",
 			IsErrExpected: false,
@@ -428,7 +561,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "invalid interface value",
 			IsErrExpected: true,
@@ -437,7 +577,14 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "no matching type",
 			IsErrExpected: true,
@@ -446,17 +593,31 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "valid JSON TYPE",
 			IsErrExpected: false,
-			result:        "{\"name\":\"goku\",\"sage\":\"cell\"}",
+			result:        map[string]interface{}{"name": "goku", "sage": "cell"},
 			Document: map[string]interface{}{
 				"spec": map[string]interface{}{"name": "goku", "sage": "cell"},
 			},
 		},
 		{
-			coll:          "tweet",
+			coll: "tweet",
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mongo"},
+					paramsReturned: []interface{}{"mongo"},
+				},
+			},
 			dbAlias:       "mongo",
 			name:          "in valid JSON TYPE",
 			IsErrExpected: true,
@@ -467,14 +628,20 @@ func TestSchema_CheckType(t *testing.T) {
 			},
 		},
 	}
-	s := Init("chicago", &crud.Module{})
-	err := s.parseSchema(Parsedata)
-	if err != nil {
-		t.Errorf("Error while parsing schema:%v", err)
-	}
 
-	r := s.SchemaDoc["mongo"]["tweet"]
 	for _, testCase := range testCases {
+		mockCrud := &mockCrudSchemaInterface{}
+		for _, m := range testCase.crudMockArgs {
+			mockCrud.On(m.method, m.args...).Return(m.paramsReturned...)
+		}
+		s := Init("chicago", mockCrud)
+
+		err := s.SetConfig(Parsedata, "myproject")
+		if err != nil {
+			t.Errorf("Error while parsing schema:%v", err)
+		}
+
+		r := s.SchemaDoc["mongo"]["tweet"]
 		t.Run(testCase.name, func(t *testing.T) {
 			for key, value := range testCase.Document {
 				retval, err := s.checkType(context.Background(), testCase.dbAlias, testCase.coll, value, r[key])

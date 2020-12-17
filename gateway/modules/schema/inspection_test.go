@@ -203,7 +203,7 @@ func Test_generateInspection(t *testing.T) {
 		// {
 		// 	name: "MySQL field col1 which is not null with type DateTime having directive @createdAt",
 		// 	args: args{
-		// 		dbType:      "mysql",
+		// 		dbAlias:      "mysql",
 		// 		col:         "table1",
 		// 		fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
 		// 		foreignKeys: []utils.ForeignKeysType{},
@@ -214,7 +214,7 @@ func Test_generateInspection(t *testing.T) {
 		// {
 		// 	name: "MySQL field col1 which is not null with type DateTime having directive @updatedAt",
 		// 	args: args{
-		// 		dbType:      "mysql",
+		// 		dbAlias:      "mysql",
 		// 		col:         "table1",
 		// 		fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
 		// 		foreignKeys: []utils.ForeignKeysType{},

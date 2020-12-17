@@ -168,7 +168,11 @@ func (s *Schema) checkType(ctx context.Context, dbAlias, col string, value inter
 
 	case map[string]interface{}:
 		if fieldValue.Kind == model.TypeJSON {
-			if dbType, _ := s.crud.GetDBType(dbAlias); model.DBType(dbType) == model.Mongo {
+			dbType, ok := s.dbAliasDBTypeMapping[dbAlias]
+			if !ok {
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown db alias provided (%s)", dbAlias), nil, nil)
+			}
+			if model.DBType(dbType) == model.Mongo {
 				return value, nil
 			}
 			data, err := json.Marshal(value)
