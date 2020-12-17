@@ -45,12 +45,12 @@ func (m *mockCrudInterface) InternalCreate(ctx context.Context, dbAlias, project
 	return nil
 }
 
-func (m *mockCrudInterface) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, map[string]interface{}, error) {
+func (m *mockCrudInterface) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	c := m.Called(ctx, dbAlias, col, req)
 	if len(c) > 1 {
-		return c.Get(0).(interface{}), c.Get(1).(map[string]interface{}), c.Error(2)
+		return c.Get(0).(interface{}), c.Get(1).(*model.SQLMetaData), c.Error(2)
 	}
-	return c.Get(0).(interface{}), c.Get(1).(map[string]interface{}), nil
+	return c.Get(0).(interface{}), c.Get(1).(*model.SQLMetaData), nil
 }
 
 func (m *mockCrudInterface) InternalUpdate(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {

@@ -25,7 +25,7 @@ var prepareQueryTestCases = []tests{
 			{
 				method:         "ExecPreparedQuery",
 				args:           []interface{}{mock.Anything, "custom_sql", "insert1", &model.PreparedQueryRequest{Params: map[string]interface{}{"id": "1", "name": "ash"}}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{}, map[string]interface{}{}, nil},
+				paramsReturned: []interface{}{[]interface{}{}, new(model.SQLMetaData), nil},
 			},
 		},
 		authMockArgs: []mockArgs{
@@ -75,7 +75,7 @@ var prepareQueryTestCases = []tests{
 			{
 				method:         "ExecPreparedQuery",
 				args:           []interface{}{mock.Anything, "custom_sql", "insert1", &model.PreparedQueryRequest{Params: map[string]interface{}{"id": "1", "name": "ash"}}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{}, map[string]interface{}{}, nil},
+				paramsReturned: []interface{}{[]interface{}{}, new(model.SQLMetaData), nil},
 			},
 		},
 		authMockArgs: []mockArgs{
@@ -125,7 +125,7 @@ var prepareQueryTestCases = []tests{
 			{
 				method:         "ExecPreparedQuery",
 				args:           []interface{}{mock.Anything, "custom_sql", "insert1", &model.PreparedQueryRequest{Params: map[string]interface{}{"id": "1", "name": "ash"}}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{}, map[string]interface{}{}, nil},
+				paramsReturned: []interface{}{[]interface{}{}, new(model.SQLMetaData), nil},
 			},
 		},
 		authMockArgs: []mockArgs{

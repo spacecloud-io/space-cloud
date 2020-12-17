@@ -49,7 +49,7 @@ func TestModule_processStagedEvents(t *testing.T) {
 				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Sort: []string{"ts"}, Limit: &limit}, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339Nano)}}, map[string]interface{}{}, errors.New("some error")},
+					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339Nano)}}, new(model.SQLMetaData), errors.New("some error")},
 				},
 			},
 		},
@@ -67,7 +67,7 @@ func TestModule_processStagedEvents(t *testing.T) {
 				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Sort: []string{"ts"}, Limit: &limit}, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{"payload", nil}, map[string]interface{}{}, nil},
+					paramsReturned: []interface{}{[]interface{}{"payload", nil}, new(model.SQLMetaData), nil},
 				},
 			},
 		},
@@ -85,7 +85,7 @@ func TestModule_processStagedEvents(t *testing.T) {
 				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Sort: []string{"ts"}, Limit: &limit}, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339Nano)}}, map[string]interface{}{}, nil},
+					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339Nano)}}, new(model.SQLMetaData), nil},
 				},
 			},
 		},
