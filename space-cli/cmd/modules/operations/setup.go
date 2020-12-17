@@ -52,10 +52,6 @@ func Setup(setValuesFlag, valuesYamlFile, chartLocation, version string) error {
 		ServerURL: "http://localhost:4122",
 	}
 
-	if err := utils.StoreCredentials(&selectedAccount); err != nil {
-		return utils.LogError("Unable to store credentials", err)
-	}
-
 	fmt.Println()
 	utils.LogInfo(fmt.Sprintf("Space Cloud (cluster id: \"%s\") has been successfully setup! 👍", selectedAccount.ID))
 	utils.LogInfo(fmt.Sprintf("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerURL))

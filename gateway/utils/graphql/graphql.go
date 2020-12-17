@@ -220,25 +220,27 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			cb(nil, errors.New("incorrect query type"))
 			return
 		}
-
-		currentValue, err := utils.LoadValue(fmt.Sprintf("%s.%s", store["coreParentKey"], field.Name.Value), store)
+		// For a linked field use the linked table name to process the query result
+		name := field.Name.Value
+		if fieldStruct := checkFieldIsLink(schema, name); fieldStruct != nil {
+			name = fieldStruct.LinkedTable.Table
+		}
+		currentValue, err := utils.LoadValue(fmt.Sprintf("%s.%s", store["coreParentKey"], name), store)
 		if err != nil {
 			// This part of code won't be executed until called by post process result
 			// If the selection set of query has a field which is of typed linked, we will trigger another read request
-			if schema != nil {
-				fieldStruct, p := schema[field.Name.Value]
-				if p && fieldStruct.IsLinked {
-					linkedInfo := fieldStruct.LinkedTable
-					loadKey := fmt.Sprintf("%s.%s", store["coreParentKey"], linkedInfo.From)
-					val, err := utils.LoadValue(loadKey, store)
-					if err != nil {
-						cb(nil, nil)
-						return
-					}
-					req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}, PostProcess: map[string]*model.PostProcess{}}
-					graph.processLinkedResult(ctx, field, *fieldStruct, token, req, store, cb)
+			if fieldStruct := checkFieldIsLink(schema, field.Name.Value); fieldStruct != nil {
+				fmt.Println("Schema found & is linked")
+				linkedInfo := fieldStruct.LinkedTable
+				loadKey := fmt.Sprintf("%s.%s", store["coreParentKey"], linkedInfo.From)
+				val, err := utils.LoadValue(loadKey, store)
+				if err != nil {
+					cb(nil, nil)
 					return
 				}
+				req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}, PostProcess: map[string]*model.PostProcess{}}
+				graph.processLinkedResult(ctx, field, *fieldStruct, token, req, store, cb)
+				return
 			}
 
 			// if the field isn't found in the store means that field did not exist in the result. so return nil as error
@@ -268,4 +270,14 @@ func (graph *Module) getQueryKind(directive, fieldName string) string {
 		return "read"
 	}
 	return "func"
+}
+
+func checkFieldIsLink(schema model.Fields, fieldName string) *model.FieldType {
+	if schema != nil {
+		fieldStruct, p := schema[fieldName]
+		if p && fieldStruct.IsLinked {
+			return fieldStruct
+		}
+	}
+	return nil
 }
