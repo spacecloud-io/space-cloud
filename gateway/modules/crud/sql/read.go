@@ -425,13 +425,17 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 
 		// Recursively call the same function again
 		s.processRows(ctx, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess, joinMapping)
+		tableName := j.Table
+		if j.As != "" {
+			tableName = j.As
+		}
 		if j.Op == utils.All || j.Op == "" {
-			m[j.Table] = arr
+			m[tableName] = arr
 		} else {
 			if len(arr) > 0 {
-				m[j.Table] = arr[0]
+				m[tableName] = arr[0]
 			} else {
-				m[j.Table] = map[string]interface{}{}
+				m[tableName] = map[string]interface{}{}
 			}
 		}
 	}

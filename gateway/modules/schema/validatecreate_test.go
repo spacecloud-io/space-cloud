@@ -158,12 +158,13 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 }
 func TestSchema_SchemaValidate(t *testing.T) {
 	testCases := []struct {
-		coll, name    string
-		Document      map[string]interface{}
-		IsErrExpected bool
-		IsSkipable    bool
+		dbAlias, coll, name string
+		Document            map[string]interface{}
+		IsErrExpected       bool
+		IsSkipable          bool
 	}{{
 		coll:          "test",
+		dbAlias:       "mongo",
 		name:          "inserting value for linked field",
 		IsErrExpected: true,
 		IsSkipable:    true,
@@ -173,6 +174,7 @@ func TestSchema_SchemaValidate(t *testing.T) {
 	},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "required field not present",
 			IsErrExpected: true,
 			IsSkipable:    true,
@@ -182,6 +184,7 @@ func TestSchema_SchemaValidate(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "field having directive createdAt",
 			IsErrExpected: false,
 			IsSkipable:    true,
@@ -193,6 +196,7 @@ func TestSchema_SchemaValidate(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "valid field",
 			IsErrExpected: false,
 			IsSkipable:    true,
@@ -203,6 +207,7 @@ func TestSchema_SchemaValidate(t *testing.T) {
 		},
 		{
 			coll:          "location",
+			dbAlias:       "mongo",
 			name:          "valid field with mutated doc",
 			IsErrExpected: false,
 			IsSkipable:    false,
@@ -221,7 +226,7 @@ func TestSchema_SchemaValidate(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			result, err := s.SchemaValidator(context.Background(), testCase.coll, s.SchemaDoc["mongo"][testCase.coll], testCase.Document)
+			result, err := s.SchemaValidator(context.Background(), testCase.dbAlias, testCase.coll, s.SchemaDoc["mongo"][testCase.coll], testCase.Document)
 			if (err != nil) != testCase.IsErrExpected {
 				t.Errorf("\n SchemaValidateOperation() error : expected error-%v, got-%v)", testCase.IsErrExpected, err)
 			}
@@ -236,11 +241,11 @@ func TestSchema_SchemaValidate(t *testing.T) {
 
 func TestSchema_CheckType(t *testing.T) {
 	testCases := []struct {
-		coll, name    string
-		Document      map[string]interface{}
-		result        interface{}
-		IsErrExpected bool
-		IsSkipable    bool
+		dbAlias, coll, name string
+		Document            map[string]interface{}
+		result              interface{}
+		IsErrExpected       bool
+		IsSkipable          bool
 	}{{
 		coll:          "tweet",
 		name:          "integer value for float field",
@@ -253,6 +258,7 @@ func TestSchema_CheckType(t *testing.T) {
 	},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "integer value for string field",
 			IsErrExpected: true,
 			IsSkipable:    true,
@@ -262,6 +268,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "integer value for datetime field",
 			IsErrExpected: false,
 			IsSkipable:    false,
@@ -272,6 +279,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "string value for datetime field",
 			IsErrExpected: true,
 			IsSkipable:    true,
@@ -281,6 +289,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "valid datetime field",
 			IsErrExpected: false,
 			IsSkipable:    true,
@@ -290,6 +299,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "valid integer value",
 			IsErrExpected: false,
 			IsSkipable:    false,
@@ -300,6 +310,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "valid string value",
 			IsErrExpected: false,
 			IsSkipable:    false,
@@ -310,6 +321,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "valid float value",
 			IsErrExpected: false,
 			IsSkipable:    false,
@@ -320,6 +332,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "string value for integer field",
 			IsErrExpected: true,
 			Document: map[string]interface{}{
@@ -328,6 +341,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "float value for string field",
 			IsErrExpected: true,
 			Document: map[string]interface{}{
@@ -336,6 +350,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "valid boolean value",
 			IsErrExpected: false,
 			IsSkipable:    false,
@@ -346,6 +361,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "invalid boolean value",
 			IsErrExpected: true,
 			Document: map[string]interface{}{
@@ -354,6 +370,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "float value for datetime field",
 			IsErrExpected: false,
 			IsSkipable:    true,
@@ -363,6 +380,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "invalid map string interface",
 			IsErrExpected: true,
 			Document: map[string]interface{}{
@@ -371,6 +389,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "valid map string interface",
 			IsErrExpected: false,
 			IsSkipable:    true,
@@ -380,6 +399,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "float value for integer field",
 			IsErrExpected: false,
 			IsSkipable:    true,
@@ -389,6 +409,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "valid interface value",
 			IsErrExpected: true,
 			Document: map[string]interface{}{
@@ -397,6 +418,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "valid interface value for matching field (event)",
 			IsErrExpected: false,
 			IsSkipable:    false,
@@ -407,6 +429,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "invalid interface value",
 			IsErrExpected: true,
 			Document: map[string]interface{}{
@@ -415,6 +438,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "no matching type",
 			IsErrExpected: true,
 			Document: map[string]interface{}{
@@ -423,6 +447,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "valid JSON TYPE",
 			IsErrExpected: false,
 			result:        "{\"name\":\"goku\",\"sage\":\"cell\"}",
@@ -432,6 +457,7 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
+			dbAlias:       "mongo",
 			name:          "in valid JSON TYPE",
 			IsErrExpected: true,
 			IsSkipable:    true,
@@ -451,7 +477,7 @@ func TestSchema_CheckType(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			for key, value := range testCase.Document {
-				retval, err := s.checkType(context.Background(), testCase.coll, value, r[key])
+				retval, err := s.checkType(context.Background(), testCase.dbAlias, testCase.coll, value, r[key])
 				if (err != nil) != testCase.IsErrExpected {
 					t.Errorf("\n CheckType() error = Expected error-%v, got-%v)", testCase.IsErrExpected, err)
 				}
