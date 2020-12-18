@@ -74,6 +74,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		res := data.(queryResult)
 		if res.metaData != nil {
 			res.metaData.DbAlias = dbAlias
+			res.metaData.Col = col
 		}
 		return res.doc, res.metaData, err
 	}
