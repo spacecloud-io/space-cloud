@@ -36,6 +36,8 @@ case when data_type = 'varchar' then concat(DATA_TYPE,'(',CHARACTER_MAXIMUM_LENG
 CASE 
 	WHEN column_default = '1' THEN 'true'
 	WHEN column_default = '0' THEN 'false'
+    WHEN column_default = "b\'1\'" THEN 'true'
+    WHEN column_default = "b\'0\'" THEN 'false'
 	ELSE coalesce(column_default,'')
 END AS 'Default',
 CASE
