@@ -259,6 +259,7 @@ func (graph *Module) checkIfLinkCanBeOptimized(fieldStruct *model.FieldType, dbA
 	return &model.JoinOption{
 		Op:    linkedOp,
 		Table: referredTableName,
+		As:    fieldStruct.FieldName,
 		On: map[string]interface{}{
 			fmt.Sprintf("%s.%s", col, currentTableFieldID): fmt.Sprintf("%s.%s", referredTableName, referredTableFieldID),
 		},
