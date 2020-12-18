@@ -23,9 +23,10 @@ func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.P
 		}
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of schema module", nil)
-		if err := m.schema.SetConfig(project.DatabaseSchemas, projectID); err != nil {
+		if err := m.schema.SetDatabaseSchema(project.DatabaseSchemas, projectID); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set schema module config", err, nil)
 		}
+		m.schema.SetDatabaseConfig(project.DatabaseConfigs)
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of auth module", nil)
 		if err := m.auth.SetConfig(ctx, project.FileStoreConfig.StoreType, project.ProjectConfig, project.DatabaseRules, project.DatabasePreparedQueries, project.FileStoreRules, project.RemoteService, project.EventingRules); err != nil {
@@ -96,6 +97,7 @@ func (m *Modules) SetDatabaseConfig(ctx context.Context, projectID string, datab
 
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of realtime module", nil)
 	m.realtime.SetDatabaseConfig(databaseConfigs)
+	m.schema.SetDatabaseConfig(databaseConfigs)
 
 	// Set the schema config as well
 	if err := m.SetDatabaseSchemaConfig(ctx, projectID, schemaConfigs); err != nil {
@@ -122,7 +124,7 @@ func (m *Modules) SetDatabaseSchemaConfig(ctx context.Context, projectID string,
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set db schema in db module", err, nil)
 	}
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of schema module", nil)
-	if err := m.schema.SetConfig(schemaConfigs, projectID); err != nil {
+	if err := m.schema.SetDatabaseSchema(schemaConfigs, projectID); err != nil {
 		return err
 	}
 	m.realtime.SetDatabaseSchemas(schemaConfigs)

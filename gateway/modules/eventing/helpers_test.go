@@ -78,7 +78,7 @@ func (new a) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]inter
 func (new a) Parser(dbSchemas config.DatabaseSchemas) (model.Type, error) {
 	return nil, nil
 }
-func (new a) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+func (new a) SchemaValidator(ctx context.Context, dbAlias, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 	return nil, nil
 }
 func (new a) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, dbSchemas config.DatabaseSchemas) error {
