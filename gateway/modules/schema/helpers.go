@@ -168,30 +168,30 @@ func (c *creationModule) removeColumn(dbType string) []string {
 // 	}
 //
 // 	c.currentColumnInfo.IsPrimary = true // Mark the field as processed
-// 	switch utils.DBType(dbType) {
+// 	switch utils.DBType(dbAlias) {
 // 	case utils.MySQL:
-// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD PRIMARY KEY (" + c.ColumnName + ")"
+// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbAlias, c.logicalDBName, c.TableName) + " ADD PRIMARY KEY (" + c.ColumnName + ")"
 // 	case utils.Postgres:
-// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " PRIMARY KEY (" + c.ColumnName + ")"
+// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbAlias, c.logicalDBName, c.TableName) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " PRIMARY KEY (" + c.ColumnName + ")"
 // 	case utils.SQLServer:
-// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " PRIMARY KEY CLUSTERED (" + c.ColumnName + ")"
+// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbAlias, c.logicalDBName, c.TableName) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " PRIMARY KEY CLUSTERED (" + c.ColumnName + ")"
 // 	}
 // 	return ""
 // }
 
 // func (c *creationModule) removePrimaryKey() string {
-// 	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+// 	dbAlias, err := c.schemaModule.crud.GetDBType(c.dbAlias)
 // 	if err != nil {
 // 		return ""
 // 	}
 //
-// 	switch utils.DBType(dbType) {
+// 	switch utils.DBType(dbAlias) {
 // 	case utils.MySQL:
-// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " DROP PRIMARY KEY"
+// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbAlias, c.logicalDBName, c.TableName) + " DROP PRIMARY KEY"
 // 	case utils.Postgres:
-// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " DROP CONSTRAINT c_" + c.TableName + "_" + c.ColumnName
+// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbAlias, c.logicalDBName, c.TableName) + " DROP CONSTRAINT c_" + c.TableName + "_" + c.ColumnName
 // 	case utils.SQLServer:
-// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " DROP CONSTRAINT c_" + c.TableName + "_" + c.ColumnName
+// 		return "ALTER TABLE " + c.schemaModule.getTableName(dbAlias, c.logicalDBName, c.TableName) + " DROP CONSTRAINT c_" + c.TableName + "_" + c.ColumnName
 // 	}
 // 	return ""
 //

@@ -44,6 +44,7 @@ type JoinOption struct {
 	Op    string                 `json:"Op" mapstructure:"Op"`
 	Type  string                 `json:"type" mapstructure:"type"`
 	Table string                 `json:"table" mapstructure:"table"`
+	As    string                 `json:"as" mapstructure:"as"`
 	On    map[string]interface{} `json:"on" mapstructure:"on"`
 	Join  []*JoinOption          `json:"join" mapstructure:"join"`
 }
