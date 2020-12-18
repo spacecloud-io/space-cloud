@@ -178,6 +178,13 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 			return nil, errors.New("port cannot be zero")
 		}
 
+		if route.RequestTimeout == 0 {
+			route.RequestTimeout = model.DefaultRequestTimeout
+		}
+		if route.RequestRetries == 0 {
+			route.RequestRetries = model.DefaultRequestRetries
+		}
+
 		// Check if at least one target is provided
 		if len(route.Targets) == 0 {
 			return nil, errors.New("at least one target needs to be provided")
@@ -242,7 +249,7 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 		httpRoutes = append(httpRoutes, &networkingv1alpha3.HTTPRoute{
 			Name:    fmt.Sprintf("http-%d", route.Source.Port),
 			Match:   []*networkingv1alpha3.HTTPMatchRequest{{Port: uint32(route.Source.Port), Gateways: []string{"mesh"}}},
-			Retries: &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 180}},
+			Retries: &networkingv1alpha3.HTTPRetry{Attempts: route.RequestRetries, PerTryTimeout: &types.Duration{Seconds: route.RequestTimeout}},
 			Route:   destinations,
 		})
 	}
@@ -311,7 +318,7 @@ func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32
 				httpRoutes = append(httpRoutes, &networkingv1alpha3.HTTPRoute{
 					Name:    fmt.Sprintf("http-%d%d-%d", j, i, port.Port),
 					Match:   []*networkingv1alpha3.HTTPMatchRequest{{Port: uint32(port.Port), Gateways: []string{"mesh"}}},
-					Retries: &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 180}},
+					Retries: &networkingv1alpha3.HTTPRetry{Attempts: model.DefaultRequestRetries, PerTryTimeout: &types.Duration{Seconds: model.DefaultRequestTimeout}},
 					Route: []*networkingv1alpha3.HTTPRouteDestination{
 						{
 							// We will always set the headers since it helps us with the routing rules

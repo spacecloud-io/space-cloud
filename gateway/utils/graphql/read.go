@@ -218,8 +218,13 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 func generateReadRequest(ctx context.Context, field *ast.Field, store utils.M) (*model.ReadRequest, bool, error) {
 	var err error
 
+	op, err := extractQueryOp(ctx, field.Arguments, store)
+	if err != nil {
+		return nil, false, err
+	}
+
 	// Create a read request object
-	readRequest := model.ReadRequest{Operation: utils.All, Options: new(model.ReadOptions), PostProcess: map[string]*model.PostProcess{}}
+	readRequest := model.ReadRequest{Operation: op, Options: new(model.ReadOptions), PostProcess: map[string]*model.PostProcess{}}
 
 	readRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
@@ -521,6 +526,25 @@ func getAggregateArguments(field *ast.Directive, store utils.M) (string, string,
 	}
 
 	return operation, fieldName, nil
+}
+
+func extractQueryOp(ctx context.Context, args []*ast.Argument, store utils.M) (string, error) {
+	for _, v := range args {
+		switch v.Name.Value {
+		case "op":
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
+			if err != nil {
+				return "", err
+			}
+			switch temp.(string) {
+			case utils.All, utils.One:
+				return temp.(string), nil
+			default:
+				return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (op)", nil, nil)
+			}
+		}
+	}
+	return utils.All, nil
 }
 
 func extractGroupByClause(ctx context.Context, args []*ast.Argument, store utils.M) ([]interface{}, error) {
