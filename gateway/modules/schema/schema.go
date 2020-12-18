@@ -40,7 +40,6 @@ func (s *Schema) SetDatabaseSchema(c config.DatabaseSchemas, project string) err
 	defer s.lock.Unlock()
 	s.dbSchemas = c
 	s.project = project
-	s.dbAliasDBTypeMapping = make(map[string]string)
 	if err := s.parseSchema(c); err != nil {
 		return err
 	}
@@ -52,6 +51,7 @@ func (s *Schema) SetDatabaseSchema(c config.DatabaseSchemas, project string) err
 func (s *Schema) SetDatabaseConfig(c config.DatabaseConfigs) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	s.dbAliasDBTypeMapping = make(map[string]string)
 	for _, databaseConfig := range c {
 		s.dbAliasDBTypeMapping[databaseConfig.DbAlias] = databaseConfig.Type
 	}
