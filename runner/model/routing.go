@@ -8,14 +8,23 @@ import (
 	"github.com/spaceuptech/helpers"
 )
 
+const (
+	// DefaultRequestRetries specifies the default values of service request retries
+	DefaultRequestRetries int32 = 3
+	// DefaultRequestTimeout specifies the default values of service request timeouts
+	DefaultRequestTimeout int64 = 180 // Time in seconds
+)
+
 // Routes describes the configuration for the routing module
 type Routes []*Route
 
 // Route describes the parameters of a single route
 type Route struct {
-	ID      string        `json:"id" yaml:"id"`
-	Source  RouteSource   `json:"source" yaml:"source"`
-	Targets []RouteTarget `json:"targets" yaml:"targets"`
+	ID             string        `json:"id" yaml:"id"`
+	RequestRetries int32         `json:"requestRetries" yaml:"requestRetries"`
+	RequestTimeout int64         `json:"requestTimeout" yaml:"requestTimeout"`
+	Source         RouteSource   `json:"source" yaml:"source"`
+	Targets        []RouteTarget `json:"targets" yaml:"targets"`
 }
 
 // SelectTarget returns a target based on the weights assigned
