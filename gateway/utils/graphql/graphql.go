@@ -53,7 +53,7 @@ func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLReq
 		return
 	}
 
-	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": "", "directive": ""}, nil, createCallback(cb))
+	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": "", "_query": utils.NewArray(0), "directive": ""}, nil, createCallback(cb))
 }
 
 type dbCallback func(dbAlias, col string, op interface{}, err error)
@@ -127,10 +127,13 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			var wg sync.WaitGroup
 			wg.Add(len(op.SelectionSet.Selections))
 
+			var _queryField *ast.Field
 			for _, v := range op.SelectionSet.Selections {
 
 				field := v.(*ast.Field)
-
+				if field.Name.Value == "_query" {
+					_queryField = field
+				}
 				graph.execGraphQLDocument(ctx, field, token, store, nil, createCallback(func(result interface{}, err error) {
 					defer wg.Done()
 					if err != nil {
@@ -145,6 +148,20 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 			// Wait then return the result
 			wg.Wait()
+
+			// process _query graphql query to show meta data
+			if _queryField != nil {
+				graph.execGraphQLDocument(ctx, _queryField, token, store, nil, createCallback(func(result interface{}, err error) {
+					if err != nil {
+						cb(nil, err)
+						return
+					}
+
+					// Set the result in the field
+					obj.Set(getFieldName(_queryField), result)
+				}))
+			}
+
 			cb(obj.GetAll(), nil)
 			return
 		case ast.OperationTypeMutation:
@@ -218,6 +235,12 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			}
 
 			cb(nil, errors.New("incorrect query type"))
+			return
+		}
+
+		if field.Name.Value == "_query" {
+			val := store["_query"]
+			graph.processQueryResult(ctx, field, token, store, val.(*utils.Array).GetAll(), nil, cb)
 			return
 		}
 

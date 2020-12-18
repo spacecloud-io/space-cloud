@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/spaceuptech/helpers"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // RawBatch performs a batch operation for schema creation
@@ -15,8 +17,8 @@ func (m *Mongo) RawBatch(ctx context.Context, queries []string) error {
 }
 
 // RawQuery query document(s) from the database
-func (m *Mongo) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
-	return 0, "", errors.New("error raw querry operation cannot be performed on mongo")
+func (m *Mongo) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, *model.SQLMetaData, error) {
+	return 0, "", nil, errors.New("error raw query operation cannot be performed on mongo")
 }
 
 // GetConnectionState : function to check connection state

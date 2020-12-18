@@ -22,6 +22,11 @@ type meta struct {
 	op          string
 }
 
+type queryResult struct {
+	doc      interface{}
+	metaData *model.SQLMetaData
+}
+
 func (holder *resultsHolder) getResults() []*dataloader.Result {
 	holder.Lock()
 	defer holder.Unlock()
@@ -60,7 +65,7 @@ func (holder *resultsHolder) addMeta(op string, whereClause map[string]interface
 	holder.Unlock()
 }
 
-func (holder *resultsHolder) fillResults(res []interface{}) {
+func (holder *resultsHolder) fillResults(metData *model.SQLMetaData, res []interface{}) {
 	holder.Lock()
 	defer holder.Unlock()
 
@@ -102,7 +107,7 @@ func (holder *resultsHolder) fillResults(res []interface{}) {
 			result = docs
 		}
 		// Store the matched docs in result
-		holder.results[i] = &dataloader.Result{Data: result}
+		holder.results[i] = &dataloader.Result{Data: queryResult{doc: result, metaData: metData}}
 	}
 }
 
@@ -170,7 +175,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 				req.Req.IsBatch = false      // NOTE: DO NOT REMOVE THIS
 				req.Req.Options.Select = nil // Need to make this nil so that we load all the fields data
 				// Execute the query
-				res, err := m.Read(ctx, dbAlias, req.Col, &req.Req, req.ReqParams)
+				res, metaData, err := m.Read(ctx, dbAlias, req.Col, &req.Req, req.ReqParams)
 				if err != nil {
 
 					// Cancel the context and add the error response to the result
@@ -180,7 +185,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 				}
 
 				// Add the response to the result
-				holder.addResult(i, &dataloader.Result{Data: res})
+				holder.addResult(i, &dataloader.Result{Data: queryResult{doc: res, metaData: metaData}})
 			}(index)
 
 			// Continue to the next key
@@ -201,11 +206,11 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 		// Prepare a merged request
 		req := model.ReadRequest{Find: map[string]interface{}{"$or": clauses}, Operation: utils.All, Options: &model.ReadOptions{}}
 		// Fire the merged request
-		res, err := m.Read(ctx, dbAlias, col, &req, model.RequestParams{Resource: "db-read", Op: "access", Attributes: map[string]string{"project": m.project, "db": dbAlias, "col": col}})
+		res, metaData, err := m.Read(ctx, dbAlias, col, &req, model.RequestParams{Resource: "db-read", Op: "access", Attributes: map[string]string{"project": m.project, "db": dbAlias, "col": col}})
 		if err != nil {
 			holder.fillErrorMessage(err)
 		} else {
-			holder.fillResults(res.([]interface{}))
+			holder.fillResults(metaData, res.([]interface{}))
 		}
 	}
 

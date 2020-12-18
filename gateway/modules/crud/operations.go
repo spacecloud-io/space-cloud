@@ -46,22 +46,22 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 }
 
 // Read returns the documents(s) which match a query from the database based on dbType
-func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, error) {
+func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err := crud.IsClientSafe(ctx); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Adjust where clause
 	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if req.IsBatch {
@@ -70,14 +70,20 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		if !ok {
 			dataLoader = m.createLoader(fmt.Sprintf("%s-%s-%s", m.project, dbAlias, col))
 		}
-		return dataLoader.Load(ctx, key)()
+		data, err := dataLoader.Load(ctx, key)()
+		res := data.(queryResult)
+		if res.metaData != nil {
+			res.metaData.DbAlias = dbAlias
+			res.metaData.Col = col
+		}
+		return res.doc, res.metaData, err
 	}
 
-	n, result, _, err := crud.Read(ctx, col, req)
+	n, result, _, metaData, err := crud.Read(ctx, col, req)
 
 	// Process the response
 	if err := m.schema.CrudPostProcess(ctx, dbAlias, col, result); err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col), err, nil)
+		return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col), err, nil)
 	}
 
 	// Invoke the metric hook if the operation was successful
@@ -85,7 +91,11 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		m.metricHook(m.project, dbAlias, col, n, model.Read)
 	}
 
-	return result, err
+	if metaData != nil {
+		metaData.DbAlias = dbAlias
+		metaData.Col = col
+	}
+	return result, metaData, err
 }
 
 // Update updates the documents(s) which match a query from the database based on dbType
@@ -153,23 +163,23 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 }
 
 // ExecPreparedQuery executes PreparedQueries request
-func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, error) {
+func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err := crud.IsClientSafe(ctx); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Check if prepared query exists
 	preparedQuery, p := m.queries[getPreparedQueryKey(dbAlias, id)]
 	if !p {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Prepared Query for given id (%s) does not exist", id), nil, nil)
+		return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Prepared Query for given id (%s) does not exist", id), nil, nil)
 	}
 
 	// Load the arguments
@@ -177,14 +187,18 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 	for i := 0; i < len(preparedQuery.Arguments); i++ {
 		arg, err := utils.LoadValue(preparedQuery.Arguments[i], map[string]interface{}{"args": req.Params, "auth": params})
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		args = append(args, arg)
 	}
 
 	// Fire the query and return the result
-	_, b, err := crud.RawQuery(ctx, preparedQuery.SQL, args)
-	return b, err
+	_, b, metaData, err := crud.RawQuery(ctx, preparedQuery.SQL, args)
+	if metaData != nil {
+		metaData.DbAlias = dbAlias
+		metaData.Col = id
+	}
+	return b, metaData, err
 }
 
 // Aggregate performs an aggregation defined via the pipeline

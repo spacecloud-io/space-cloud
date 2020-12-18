@@ -51,7 +51,7 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
 		// Perform the PreparedQuery operation
-		result, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
+		result, _, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
 			return
@@ -141,7 +141,7 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
-		result, err := crud.Read(ctx, meta.dbType, meta.col, &req, reqParams)
+		result, _, err := crud.Read(ctx, meta.dbType, meta.col, &req, reqParams)
 		// Perform the read operation
 
 		if err != nil {
