@@ -298,7 +298,9 @@ func (m *Module) validate(ctx context.Context, project, token string, event *mod
 		return nil
 	}
 
-	_, err := m.schema.SchemaValidator(ctx, event.Type, schema, event.Payload.(map[string]interface{}))
+	// NOTE: dbAlias is not required for schema validation
+	// It is required, if we want to use the mutated doc return by schema validator, the result depends upon db alias
+	_, err := m.schema.SchemaValidator(ctx, "", event.Type, schema, event.Payload.(map[string]interface{}))
 	return err
 }
 

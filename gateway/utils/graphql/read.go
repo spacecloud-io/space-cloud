@@ -259,6 +259,7 @@ func (graph *Module) checkIfLinkCanBeOptimized(fieldStruct *model.FieldType, dbA
 	return &model.JoinOption{
 		Op:    linkedOp,
 		Table: referredTableName,
+		As:    fieldStruct.FieldName,
 		On: map[string]interface{}{
 			fmt.Sprintf("%s.%s", col, currentTableFieldID): fmt.Sprintf("%s.%s", referredTableName, referredTableFieldID),
 		},
@@ -307,6 +308,9 @@ func (graph *Module) extractSelectionSet(ctx context.Context, field *ast.Field, 
 			// skip linked fields but allow joint tables
 			fieldStruct, p := schemaFields[v.Name.Value]
 			if p && fieldStruct.IsLinked && !isJointTable {
+				if v.SelectionSet == nil {
+					continue
+				}
 				// check if the link can be optimised to join
 				joinInfo, isOptimized := graph.checkIfLinkCanBeOptimized(fieldStruct, dbAlias, col)
 				if !isOptimized {
