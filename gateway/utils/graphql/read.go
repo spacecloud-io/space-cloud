@@ -62,7 +62,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 			return
 		}
 
-		if req.Options.Debug {
+		if req.Options.Debug && metaData != nil {
 			val := store["_query"]
 			val.(*utils.Array).Append(structs.Map(metaData))
 		}
@@ -134,7 +134,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 			return
 		}
 
-		if req.Options.Debug {
+		if req.Options.Debug && metaData != nil {
 			val := store["_query"]
 			val.(*utils.Array).Append(structs.Map(metaData))
 		}
@@ -206,7 +206,7 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 			return
 		}
 
-		if req.Debug {
+		if req.Debug && metaData != nil {
 			val := store["_query"]
 			val.(*utils.Array).Append(structs.Map(metaData))
 		}

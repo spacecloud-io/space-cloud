@@ -82,7 +82,7 @@ type AllRequest struct {
 	Extras    map[string]interface{} `json:"extras"`
 }
 
-// SQLMetaData store sql query information
+// SQLMetaData stores sql query information
 type SQLMetaData struct {
 	Col       string        `json:"col" structs:"col"`
 	SQL       string        `json:"sql" structs:"sql"`

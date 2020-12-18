@@ -92,6 +92,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 
 	if metaData != nil {
 		metaData.DbAlias = dbAlias
+		metaData.Col = col
 	}
 	return result, metaData, err
 }
@@ -194,6 +195,7 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 	_, b, metaData, err := crud.RawQuery(ctx, preparedQuery.SQL, args)
 	if metaData != nil {
 		metaData.DbAlias = dbAlias
+		metaData.Col = id
 	}
 	return b, metaData, err
 }

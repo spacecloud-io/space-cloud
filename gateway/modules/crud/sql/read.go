@@ -420,7 +420,7 @@ func (s *SQL) processRows(ctx context.Context, isDebug bool, table []string, isA
 
 		// Process aggregate field only if its the root table that we are processing
 		processAggregate(row, m, table[length], isAggregate)
-		if isDebug {
+		if isDebug && length == 0 {
 			m["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 		}
 	}
