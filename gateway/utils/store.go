@@ -150,6 +150,8 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 				return int64(len(v)), nil
 			case map[string]interface{}:
 				return int64(len(v)), nil
+			case string:
+				return int64(len(v)), nil
 			default:
 				return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Invalid type provided for space cloud internal function length", fmt.Errorf("got type (%s) want object or array", reflect.TypeOf(value)), nil)
 			}
