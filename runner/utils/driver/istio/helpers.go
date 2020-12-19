@@ -173,6 +173,9 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 	var httpRoutes []*networkingv1alpha3.HTTPRoute
 
 	for _, route := range routes {
+		if route.Protocol != "" && route.Protocol != model.HTTP {
+			continue
+		}
 		// Check if the port provided is correct
 		if route.Source.Port == 0 {
 			return nil, errors.New("port cannot be zero")
