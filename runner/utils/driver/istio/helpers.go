@@ -257,6 +257,76 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 	return httpRoutes, nil
 }
 
+func prepareVirtualServiceTCPRoutes(ctx context.Context, projectID, serviceID string, services map[string]model.AutoScaleConfig, routes model.Routes, proxyPort uint32) ([]*networkingv1alpha3.TCPRoute, error) {
+	var tcpRoutes []*networkingv1alpha3.TCPRoute
+
+	for _, route := range routes {
+		if route.Protocol != model.TCP {
+			continue
+		}
+		// Check if the port provided is correct
+		if route.Source.Port == 0 {
+			return nil, errors.New("port cannot be zero")
+		}
+
+		// Check if at least one target is provided
+		if len(route.Targets) == 0 {
+			return nil, errors.New("at least one target needs to be provided")
+		}
+
+		// Prepare an array of targets / destinations
+		var destinations []*networkingv1alpha3.RouteDestination
+		for _, target := range route.Targets {
+			switch target.Type {
+			case model.RouteTargetVersion:
+				// Check if config for version exists
+				versionScaleConfig, p := services[target.Version]
+				if !p {
+					return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("version (%s) not found for service (%s)", target.Version, serviceID), nil, nil)
+				}
+
+				// Prepare variables
+				destHost := getInternalServiceDomain(projectID, serviceID, target.Version)
+				destPort := uint32(target.Port)
+
+				// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service to service incoming requests.
+				if versionScaleConfig.MinReplicas == 0 {
+					destHost = "runner.space-cloud.svc.cluster.local"
+					destPort = proxyPort
+				}
+
+				destinations = append(destinations, &networkingv1alpha3.RouteDestination{
+					Destination: &networkingv1alpha3.Destination{
+						Host: destHost,
+						Port: &networkingv1alpha3.PortSelector{Number: destPort},
+					},
+					Weight: target.Weight,
+				})
+
+			case model.RouteTargetExternal:
+				destinations = append(destinations, &networkingv1alpha3.RouteDestination{
+					Destination: &networkingv1alpha3.Destination{
+						Host: target.Host,
+						Port: &networkingv1alpha3.PortSelector{Number: uint32(target.Port)},
+					},
+					Weight: target.Weight,
+				})
+
+			default:
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid target type (%s) provided", target.Type), nil, nil)
+			}
+		}
+
+		// Add the http route
+		tcpRoutes = append(tcpRoutes, &networkingv1alpha3.TCPRoute{
+			Match: []*networkingv1alpha3.L4MatchAttributes{{Port: uint32(route.Source.Port)}},
+			Route: destinations,
+		})
+	}
+
+	return tcpRoutes, nil
+}
+
 func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32, prevVirtualService *v1alpha3.VirtualService) ([]*networkingv1alpha3.HTTPRoute, []*networkingv1alpha3.TCPRoute) {
 	// Update the existing destinations of this version if virtual service already exist. We only need to do this for http services.
 	if prevVirtualService != nil {
@@ -828,9 +898,17 @@ func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, project
 		return nil, err
 	}
 
+	tcpRoutes, err := prepareVirtualServiceTCPRoutes(ctx, projectID, serviceID, scaleConfig, routes, i.config.ProxyPort)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create a prevVirtualService if its nil to prevent panic
 	if prevVirtualService == nil {
 		prevVirtualService = new(v1alpha3.VirtualService)
+	}
+	if len(tcpRoutes) == 0 {
+		tcpRoutes = prevVirtualService.Spec.Tcp
 	}
 
 	return &v1alpha3.VirtualService{
@@ -846,7 +924,7 @@ func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, project
 		Spec: networkingv1alpha3.VirtualService{
 			Hosts: []string{getServiceDomainName(projectID, serviceID)},
 			Http:  httpRoutes,
-			Tcp:   prevVirtualService.Spec.Tcp,
+			Tcp:   tcpRoutes,
 		},
 	}, nil
 }

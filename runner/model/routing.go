@@ -23,6 +23,7 @@ type Route struct {
 	ID             string        `json:"id" yaml:"id"`
 	RequestRetries int32         `json:"requestRetries" yaml:"requestRetries"`
 	RequestTimeout int64         `json:"requestTimeout" yaml:"requestTimeout"`
+	Protocol       Protocol      `json:"protocol" yaml:"protocol"`
 	Source         RouteSource   `json:"source" yaml:"source"`
 	Targets        []RouteTarget `json:"targets" yaml:"targets"`
 }
@@ -63,7 +64,6 @@ type RouteSource struct {
 type RouteTarget struct {
 	Host    string          `json:"host,omitempty" yaml:"host,omitempty"`
 	Port    int32           `json:"port,omitempty" yaml:"port,omitempty"`
-	Scheme  string          `json:"scheme,omitempty" yaml:"scheme,omitempty"`
 	Weight  int32           `json:"weight,omitempty" yaml:"weight,omitempty"`
 	Version string          `json:"version,omitempty" yaml:"version,omitempty"`
 	Type    RouteTargetType `json:"type,omitempty" yaml:"type,omitempty"`
