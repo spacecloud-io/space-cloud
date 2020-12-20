@@ -23,7 +23,6 @@ type Route struct {
 	ID             string        `json:"id" yaml:"id"`
 	RequestRetries int32         `json:"requestRetries" yaml:"requestRetries"`
 	RequestTimeout int64         `json:"requestTimeout" yaml:"requestTimeout"`
-	Protocol       Protocol      `json:"protocol" yaml:"protocol"`
 	Source         RouteSource   `json:"source" yaml:"source"`
 	Targets        []RouteTarget `json:"targets" yaml:"targets"`
 }
@@ -52,6 +51,7 @@ func (r *Route) SelectTarget(ctx context.Context, weight int32) (RouteTarget, er
 
 // RouteSource is the source of routing
 type RouteSource struct {
+	Protocol   Protocol     `json:"protocol" yaml:"protocol"`
 	Hosts      []string     `json:"hosts,omitempty" yaml:"hosts,omitempty"`
 	Methods    []string     `json:"methods,omitempty" yaml:"methods,omitempty"`
 	URL        string       `json:"url,omitempty" yaml:"url,omitempty"`

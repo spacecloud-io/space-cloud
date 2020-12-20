@@ -173,9 +173,13 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 	var httpRoutes []*networkingv1alpha3.HTTPRoute
 
 	for _, route := range routes {
-		if route.Protocol != "" && route.Protocol != model.HTTP {
+		// Before v0.21.0 space-cloud only supported HTTP routes, because of that we never specified protocol while creating service routes
+		// From v0.21.0, we support both TCP & HTTP routes, the protocol to be used is specified in the protocol field.
+		// If the protocol field is empty we assume it to be an HTTP route to be backward compatible.
+		if route.Source.Protocol != "" && route.Source.Protocol != model.HTTP {
 			continue
 		}
+
 		// Check if the port provided is correct
 		if route.Source.Port == 0 {
 			return nil, errors.New("port cannot be zero")
@@ -260,13 +264,16 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 	return httpRoutes, nil
 }
 
-func prepareVirtualServiceTCPRoutes(ctx context.Context, projectID, serviceID string, services map[string]model.AutoScaleConfig, routes model.Routes, proxyPort uint32) ([]*networkingv1alpha3.TCPRoute, error) {
+func prepareVirtualServiceTCPRoutes(ctx context.Context, projectID, serviceID string, services map[string]model.AutoScaleConfig, routes model.Routes) ([]*networkingv1alpha3.TCPRoute, error) {
 	var tcpRoutes []*networkingv1alpha3.TCPRoute
 
 	for _, route := range routes {
-		if route.Protocol != model.TCP {
+		// Route protocol can be either TCP or HTTP
+		// this function is intended to create TCP routes only, so we are skipping routes whose protocol is not TCP
+		if route.Source.Protocol != model.TCP {
 			continue
 		}
+
 		// Check if the port provided is correct
 		if route.Source.Port == 0 {
 			return nil, errors.New("port cannot be zero")
@@ -283,7 +290,7 @@ func prepareVirtualServiceTCPRoutes(ctx context.Context, projectID, serviceID st
 			switch target.Type {
 			case model.RouteTargetVersion:
 				// Check if config for version exists
-				versionScaleConfig, p := services[target.Version]
+				_, p := services[target.Version]
 				if !p {
 					return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("version (%s) not found for service (%s)", target.Version, serviceID), nil, nil)
 				}
@@ -291,12 +298,6 @@ func prepareVirtualServiceTCPRoutes(ctx context.Context, projectID, serviceID st
 				// Prepare variables
 				destHost := getInternalServiceDomain(projectID, serviceID, target.Version)
 				destPort := uint32(target.Port)
-
-				// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service to service incoming requests.
-				if versionScaleConfig.MinReplicas == 0 {
-					destHost = "runner.space-cloud.svc.cluster.local"
-					destPort = proxyPort
-				}
 
 				destinations = append(destinations, &networkingv1alpha3.RouteDestination{
 					Destination: &networkingv1alpha3.Destination{
@@ -894,24 +895,16 @@ func (i *Istio) updateVirtualService(service *model.Service, prevVirtualService 
 		},
 	}
 }
-func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, projectID, serviceID string, scaleConfig map[string]model.AutoScaleConfig, routes model.Routes, prevVirtualService *v1alpha3.VirtualService) (*v1alpha3.VirtualService, error) {
+func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, projectID, serviceID string, scaleConfig map[string]model.AutoScaleConfig, routes model.Routes) (*v1alpha3.VirtualService, error) {
 	// Generate the httpRoutes based on the routes provided
 	httpRoutes, err := prepareVirtualServiceHTTPRoutes(ctx, projectID, serviceID, scaleConfig, routes, i.config.ProxyPort)
 	if err != nil {
 		return nil, err
 	}
 
-	tcpRoutes, err := prepareVirtualServiceTCPRoutes(ctx, projectID, serviceID, scaleConfig, routes, i.config.ProxyPort)
+	tcpRoutes, err := prepareVirtualServiceTCPRoutes(ctx, projectID, serviceID, scaleConfig, routes)
 	if err != nil {
 		return nil, err
-	}
-
-	// Create a prevVirtualService if its nil to prevent panic
-	if prevVirtualService == nil {
-		prevVirtualService = new(v1alpha3.VirtualService)
-	}
-	if len(tcpRoutes) == 0 {
-		tcpRoutes = prevVirtualService.Spec.Tcp
 	}
 
 	return &v1alpha3.VirtualService{

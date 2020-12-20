@@ -48,10 +48,10 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID:       "414a27e4-e3d2-4003-9567-0ad949e25c8e",
-						Protocol: model.TCP,
+						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
 						Source: model.RouteSource{
-							Port: 8080,
+							Protocol: model.TCP,
+							Port:     8080,
 						},
 						Targets: []model.RouteTarget{
 							{
@@ -69,10 +69,10 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 						},
 					},
 					{
-						ID:       "414a27e4-e3d2-4003-9567-0ad949e25c8e",
-						Protocol: model.TCP,
+						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
 						Source: model.RouteSource{
-							Port: 9090,
+							Protocol: model.TCP,
+							Port:     9090,
 						},
 						Targets: []model.RouteTarget{
 							{
@@ -135,75 +135,6 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "If minimum replicas is 0, use runner host & port",
-			args: args{
-				ctx:       context.Background(),
-				projectID: "myProject",
-				serviceID: "greeter",
-				services: map[string]model.AutoScaleConfig{
-					"v2": {
-						PollingInterval:  15,
-						CoolDownInterval: 120,
-						MinReplicas:      0,
-						MaxReplicas:      100,
-					},
-					"v3": {
-						PollingInterval:  15,
-						CoolDownInterval: 120,
-						MinReplicas:      0,
-						MaxReplicas:      100,
-					},
-				},
-				routes: []*model.Route{
-					{
-						ID:       "414a27e4-e3d2-4003-9567-0ad949e25c8e",
-						Protocol: model.TCP,
-						Source: model.RouteSource{
-							Port: 8080,
-						},
-						Targets: []model.RouteTarget{
-							{
-								Port:    8080,
-								Weight:  50,
-								Version: "v2",
-								Type:    model.RouteTargetVersion,
-							},
-							{
-								Port:    8080,
-								Weight:  50,
-								Version: "v3",
-								Type:    model.RouteTargetVersion,
-							},
-						},
-					},
-				},
-				proxyPort: 4050,
-			},
-			want: []*networkingv1alpha3.TCPRoute{
-				{
-					Match: []*networkingv1alpha3.L4MatchAttributes{{Port: uint32(8080)}},
-					Route: []*networkingv1alpha3.RouteDestination{
-						{
-							Destination: &networkingv1alpha3.Destination{
-								Host: "runner.space-cloud.svc.cluster.local",
-								Port: &networkingv1alpha3.PortSelector{Number: uint32(4050)},
-							},
-							Weight: 50,
-						},
-						{
-							Destination: &networkingv1alpha3.Destination{
-								Host: "runner.space-cloud.svc.cluster.local",
-								Port: &networkingv1alpha3.PortSelector{Number: uint32(4050)},
-							},
-							Weight: 50,
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-
-		{
 			name: "Don't create TCP routes when protocol is HTTP",
 			args: args{
 				ctx:       context.Background(),
@@ -225,10 +156,10 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID:       "414a27e4-e3d2-4003-9567-0ad949e25c8e",
-						Protocol: model.HTTP,
+						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
 						Source: model.RouteSource{
-							Port: 8080,
+							Protocol: model.HTTP,
+							Port:     8080,
 						},
 						Targets: []model.RouteTarget{
 							{
@@ -274,10 +205,10 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID:       "414a27e4-e3d2-4003-9567-0ad949e25c8e",
-						Protocol: model.TCP,
+						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
 						Source: model.RouteSource{
-							Port: 0,
+							Protocol: model.TCP,
+							Port:     0,
 						},
 						Targets: []model.RouteTarget{
 							{
@@ -322,10 +253,10 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID:       "414a27e4-e3d2-4003-9567-0ad949e25c8e",
-						Protocol: model.TCP,
+						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
 						Source: model.RouteSource{
-							Port: 0,
+							Protocol: model.TCP,
+							Port:     0,
 						},
 						Targets: nil,
 					},
@@ -357,10 +288,10 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID:       "414a27e4-e3d2-4003-9567-0ad949e25c8e",
-						Protocol: model.TCP,
+						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
 						Source: model.RouteSource{
-							Port: 0,
+							Protocol: model.TCP,
+							Port:     0,
 						},
 						Targets: []model.RouteTarget{
 							{
@@ -405,10 +336,10 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID:       "414a27e4-e3d2-4003-9567-0ad949e25c8e",
-						Protocol: model.TCP,
+						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
 						Source: model.RouteSource{
-							Port: 0,
+							Protocol: model.TCP,
+							Port:     0,
 						},
 						Targets: []model.RouteTarget{
 							{
@@ -434,7 +365,7 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := prepareVirtualServiceTCPRoutes(tt.args.ctx, tt.args.projectID, tt.args.serviceID, tt.args.services, tt.args.routes, tt.args.proxyPort)
+			got, err := prepareVirtualServiceTCPRoutes(tt.args.ctx, tt.args.projectID, tt.args.serviceID, tt.args.services, tt.args.routes)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("prepareVirtualServiceTCPRoutes() error = %v, wantErr %v", err, tt.wantErr)
 				return
