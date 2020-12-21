@@ -18,18 +18,18 @@ const (
 	ApplyWithNoDelay = time.Duration(0)
 
 	// HelmSpaceCloudChartDownloadURL url of space cloud helm chart
-	HelmSpaceCloudChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/space-cloud.tgz"
+	HelmSpaceCloudChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/space-cloud"
 	// HelmPostgresChartDownloadURL url of postgres helm chart
-	HelmPostgresChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/postgres.tgz"
+	HelmPostgresChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/postgres-latest.tgz"
 	// HelmMysqlChartDownloadURL url of mysql helm chart
-	HelmMysqlChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/mysql.tgz"
+	HelmMysqlChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/mysql-latest.tgz"
 	// HelmSQLServerCloudChartDownloadURL url of sql server helm chart
-	HelmSQLServerCloudChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/sqlserver.tgz"
+	HelmSQLServerCloudChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/sqlserver-latest.tgz"
 	// HelmMongoChartDownloadURL url of mongo helm chart
-	HelmMongoChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/mongo.tgz"
+	HelmMongoChartDownloadURL = "https://storage.googleapis.com/space-cloud/helm/mongo-latest.tgz"
 	// HelmSpaceCloudNamespace space cloud namespace for helm
 	HelmSpaceCloudNamespace = "space-cloud"
 )
 
 // Version version of space cli
-const Version string = "0.20.0"
+const Version string = "0.20.1"

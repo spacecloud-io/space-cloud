@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/spaceuptech/helpers"
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,7 +21,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 	if req.Options != nil && len(req.Options.Join) > 0 {
 		return 0, nil, nil, errors.New("cannot perform joins in mongo db")
 	}
-	collection := m.client.Database(m.dbName).Collection(col)
+	collection := m.getClient().Database(m.dbName).Collection(col)
 
 	if req.Options == nil {
 		req.Options = &model.ReadOptions{}
@@ -154,7 +153,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 				return 0, nil, nil, err
 			}
 
-			doc["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+			// doc["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 
 			if len(req.Aggregate) > 0 {
 				getNestedObject(doc)
@@ -192,7 +191,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			return 0, nil, nil, err
 		}
 
-		res["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+		// res["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 
 		return 1, res, nil, nil
 

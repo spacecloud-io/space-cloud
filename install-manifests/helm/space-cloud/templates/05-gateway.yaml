@@ -185,15 +185,16 @@ spec:
       containers:
         - name: gateway
           command: [ "./app", "run" ]
-          image: "{{ .Values.gateway.image.name }}:{{ .Values.version }}"
+          image: "{{ .Values.gateway.image.name }}:{{ .Chart.Version }}"
           imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
           livenessProbe:
             exec:
               command:
                 - ./app
                 - health-check
-            initialDelaySeconds: 100
-            periodSeconds: 10
+                - -timeout={{ .Values.gateway.healthCheck.timeout }}
+            initialDelaySeconds: {{ .Values.gateway.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.gateway.healthCheck.periodSeconds }}
           env:
             - name: "NODE_ID"
               valueFrom:

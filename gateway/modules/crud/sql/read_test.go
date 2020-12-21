@@ -215,7 +215,7 @@ func TestSQL_generateReadQuery(t *testing.T) {
 				req: &model.ReadRequest{
 					Find: map[string]interface{}{"t1.col1": map[string]interface{}{"$eq": 1}},
 					Options: &model.ReadOptions{
-						Join: []model.JoinOption{
+						Join: []*model.JoinOption{
 							{Table: "t2", Type: "LEFT", On: map[string]interface{}{"t1.col1": "t2.col2"}},
 						}},
 					Operation: "all"}},
@@ -233,8 +233,8 @@ func TestSQL_generateReadQuery(t *testing.T) {
 		// 			Find: map[string]interface{}{"t1.col1": map[string]interface{}{"$eq": 1}},
 		// 			Options: &model.ReadOptions{
 		// 				Select: map[string]int32{"t1.col1": 1},
-		// 				Join: []model.JoinOption{
-		// 					{Table: "t2", Type: "LEFT", On: map[string]interface{}{"t1.col1": "t2.col2"}, Join: []model.JoinOption{
+		// 				Join: []*model.JoinOption{
+		// 					{Table: "t2", Type: "LEFT", On: map[string]interface{}{"t1.col1": "t2.col2"}, Join: []*model.JoinOption{
 		// 						{Table: "t3", Type: "LEFT", On: map[string]interface{}{"t2.col3": map[string]interface{}{"$eq": "t3.col4"}}},
 		// 					}},
 		// 				},
@@ -610,7 +610,7 @@ func Test_processRows(t *testing.T) {
 	type args struct {
 		rows        []interface{}
 		table       string
-		join        []model.JoinOption
+		join        []*model.JoinOption
 		isAggregate bool
 	}
 	tests := []struct {
@@ -628,7 +628,7 @@ func Test_processRows(t *testing.T) {
 					map[string]interface{}{"t1__c1": "c1", "t1__c2": "c2", "t2__c3": "d1"},
 					map[string]interface{}{"t1__c1": "c1", "t1__c2": "c2", "t2__c3": "d2"},
 				},
-				join: []model.JoinOption{{Table: "t2"}},
+				join: []*model.JoinOption{{Table: "t2"}},
 			},
 			result: []interface{}{
 				map[string]interface{}{"c1": "a1", "c2": "a2", "t2": []interface{}{
@@ -655,7 +655,7 @@ func Test_processRows(t *testing.T) {
 					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b21", "t3__tc4": "c11"},
 					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b21", "t3__tc4": "c21"},
 				},
-				join: []model.JoinOption{{Table: "t2", Join: []model.JoinOption{{Table: "t3"}}}},
+				join: []*model.JoinOption{{Table: "t2", Join: []*model.JoinOption{{Table: "t3"}}}},
 			},
 			result: []interface{}{
 				map[string]interface{}{"tc1": "a11", "tc2": "a12", "t2": []interface{}{
@@ -697,7 +697,7 @@ func Test_processRows(t *testing.T) {
 					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b21", "t3__tc4": "c11"},
 					map[string]interface{}{"t1__tc1": "a21", "t1__tc2": "a22", "t2__tc3": "b21", "t3__tc4": "c21"},
 				},
-				join: []model.JoinOption{{Table: "t2", Join: []model.JoinOption{{Table: "t3"}}}, {Table: "t4"}},
+				join: []*model.JoinOption{{Table: "t2", Join: []*model.JoinOption{{Table: "t3"}}}, {Table: "t4"}},
 			},
 			result: []interface{}{
 				map[string]interface{}{"tc1": "a11", "tc2": "a12", "t2": []interface{}{

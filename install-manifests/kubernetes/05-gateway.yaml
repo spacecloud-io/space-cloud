@@ -185,13 +185,14 @@ spec:
       containers:
         - name: gateway
           command: [ "./app", "run" ]
-          image: spaceuptech/gateway:0.20.0
+          image: spaceuptech/gateway:0.20.1
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           livenessProbe:
             exec:
               command:
                 - ./app
                 - health-check
+                - -timeout=5
             initialDelaySeconds: 100
             periodSeconds: 10
           env:
