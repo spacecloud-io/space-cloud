@@ -28,6 +28,14 @@ func getInternalServiceName(serviceID, version string) string {
 	return fmt.Sprintf("%s-%s-internal", serviceID, version)
 }
 
+func splitInternalServiceName(n string) (serviceID, version string) {
+	arr := strings.Split(n, "-")
+	if len(arr) < 3 || arr[len(arr)-1] != "internal" {
+		return "", ""
+	}
+	return strings.Join(arr[:len(arr)-2], "-"), arr[len(arr)-2]
+}
+
 func getInternalServiceDomain(projectID, serviceID, version string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", getInternalServiceName(serviceID, version), projectID)
 }
@@ -35,7 +43,8 @@ func getInternalServiceDomain(projectID, serviceID, version string) string {
 func checkIfInternalServiceDomain(projectID, serviceID, internalServiceDomain string) bool {
 	arr := strings.Split(internalServiceDomain, ".")
 	if strings.HasSuffix(internalServiceDomain, "svc.cluster.local") {
-		if len(arr) == 5 && arr[1] == projectID && strings.HasPrefix(arr[0], serviceID) {
+		serID, _ := splitInternalServiceName(arr[0])
+		if len(arr) == 5 && arr[1] == projectID && serID == serviceID {
 			return true
 		}
 	}

@@ -307,7 +307,7 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 			}
 
 			// Set the route
-			routes[i] = &model.Route{ID: serviceID, Source: model.RouteSource{Port: int32(route.Match[0].Port), Protocol: model.HTTP}, Targets: targets}
+			routes[i] = &model.Route{ID: serviceID, RequestTimeout: route.Retries.PerTryTimeout.Seconds, RequestRetries: route.Retries.Attempts, Source: model.RouteSource{Port: int32(route.Match[0].Port), Protocol: model.HTTP}, Targets: targets}
 		}
 
 		for i, route := range service.Spec.Tcp {

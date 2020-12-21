@@ -3708,7 +3708,7 @@
     },
     {
       "id": "03da5b38-e050-44cc-b00a-cef12e3a7812",
-      "key": "deployed_service_idl",
+      "key": "deployed_service_id",
       "value": "greeter"
     },
     {
