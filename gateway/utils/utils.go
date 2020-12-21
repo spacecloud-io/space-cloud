@@ -63,22 +63,13 @@ func ExtractRequestParams(r *http.Request, reqParams model.RequestParams, body i
 	return reqParams
 }
 
-// ExtractJoinInfo extracts join info
-func ExtractJoinInfo(join []model.JoinOption, databaseRow map[string]interface{}, joinKeysMapping map[string]map[string]string) {
-	for _, j := range join {
-		GenerateJoinKeys(j.Table, j.On, databaseRow, joinKeysMapping)
-		if j.Join != nil {
-			ExtractJoinInfo(j.Join, databaseRow, joinKeysMapping)
-		}
-	}
-}
-
 // GenerateJoinKeys generates join keys
 func GenerateJoinKeys(joinTable string, joinOn map[string]interface{}, databaseRow map[string]interface{}, joinKeysMapping map[string]map[string]string) {
 	isValidJoin, columnName := IsValidJoin(joinOn, joinTable)
-	if isValidJoin {
+	dbRow, ok := databaseRow[joinTable+"__"+columnName]
+	if isValidJoin && ok {
 		outerKey := fmt.Sprintf("%s::%s::%s", joinTable, "join", columnName)
-		rowValue := fmt.Sprintf("%v", databaseRow[joinTable+"__"+columnName])
+		rowValue := fmt.Sprintf("%v", dbRow)
 		_, ok := joinKeysMapping[outerKey]
 		if !ok {
 			joinKeysMapping[outerKey] = map[string]string{rowValue: ""}

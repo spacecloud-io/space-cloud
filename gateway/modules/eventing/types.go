@@ -147,8 +147,8 @@ func (m *mockSchemaEventingInterface) Parser(dbSchemas config.DatabaseSchemas) (
 	return nil, c.Error(1)
 }
 
-func (m *mockSchemaEventingInterface) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
-	c := m.Called(col, collectionFields, doc)
+func (m *mockSchemaEventingInterface) SchemaValidator(ctx context.Context, dbAlias, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+	c := m.Called(ctx, dbAlias, col, collectionFields, doc)
 	return nil, c.Error(1)
 }
 

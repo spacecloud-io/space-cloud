@@ -11,7 +11,7 @@ import (
 
 // Update updates the document(s) which match the condition provided.
 func (m *Mongo) Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error) {
-	collection := m.client.Database(m.dbName).Collection(col)
+	collection := m.getClient().Database(m.dbName).Collection(col)
 
 	switch req.Operation {
 	case utils.One:

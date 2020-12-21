@@ -15,7 +15,7 @@ import (
 )
 
 // SchemaValidator function validates the schema which it gets from module
-func (s *Schema) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+func (s *Schema) SchemaValidator(ctx context.Context, dbAlias, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 	for schemaKey := range doc {
 		if _, p := collectionFields[schemaKey]; !p {
 			return nil, errors.New("The field " + schemaKey + " is not present in schema of " + col)
@@ -60,7 +60,7 @@ func (s *Schema) SchemaValidator(ctx context.Context, col string, collectionFiel
 		}
 
 		// check type
-		val, err := s.checkType(ctx, col, value, fieldValue)
+		val, err := s.checkType(ctx, dbAlias, col, value, fieldValue)
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +102,7 @@ func (s *Schema) ValidateCreateOperation(ctx context.Context, dbAlias, col strin
 		if !ok {
 			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("document provided for collection (%s:%s)", dbAlias, col), nil, nil)
 		}
-		newDoc, err := s.SchemaValidator(ctx, col, collectionFields, doc)
+		newDoc, err := s.SchemaValidator(ctx, dbAlias, col, collectionFields, doc)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func (s *Schema) ValidateCreateOperation(ctx context.Context, dbAlias, col strin
 
 	return nil
 }
-func (s *Schema) checkType(ctx context.Context, col string, value interface{}, fieldValue *model.FieldType) (interface{}, error) {
+func (s *Schema) checkType(ctx context.Context, dbAlias, col string, value interface{}, fieldValue *model.FieldType) (interface{}, error) {
 	switch v := value.(type) {
 	case int:
 		// TODO: int64
@@ -138,7 +138,7 @@ func (s *Schema) checkType(ctx context.Context, col string, value interface{}, f
 				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col), nil, nil)
 			}
 			return unitTimeInRFC3339Nano, nil
-		case model.TypeID, model.TypeString, model.TypeTime, model.TypeDate:
+		case model.TypeID, model.TypeString, model.TypeTime, model.TypeDate, model.TypeUUID:
 			return value, nil
 		default:
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type received for field %s in collection %s - wanted %s got String", fieldValue.FieldName, col, fieldValue.Kind), nil, nil)
@@ -168,6 +168,13 @@ func (s *Schema) checkType(ctx context.Context, col string, value interface{}, f
 
 	case map[string]interface{}:
 		if fieldValue.Kind == model.TypeJSON {
+			dbType, ok := s.dbAliasDBTypeMapping[dbAlias]
+			if !ok {
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Schema validation failed, unknown db alias provided (%s)", dbAlias), nil, nil)
+			}
+			if model.DBType(dbType) == model.Mongo {
+				return value, nil
+			}
 			data, err := json.Marshal(value)
 			if err != nil {
 				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error checking type in schema module unable to marshal data for field having type json", err, nil)
@@ -178,7 +185,7 @@ func (s *Schema) checkType(ctx context.Context, col string, value interface{}, f
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type received for field %s in collection %s", fieldValue.FieldName, col), nil, nil)
 		}
 
-		return s.SchemaValidator(ctx, col, fieldValue.NestedObject, v)
+		return s.SchemaValidator(ctx, dbAlias, col, fieldValue.NestedObject, v)
 
 	case []interface{}:
 		if !fieldValue.IsList {
@@ -187,7 +194,7 @@ func (s *Schema) checkType(ctx context.Context, col string, value interface{}, f
 
 		arr := make([]interface{}, len(v))
 		for index, value := range v {
-			val, err := s.checkType(ctx, col, value, fieldValue)
+			val, err := s.checkType(ctx, dbAlias, col, value, fieldValue)
 			if err != nil {
 				return nil, err
 			}

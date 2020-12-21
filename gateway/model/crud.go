@@ -27,17 +27,23 @@ type ReadOptions struct {
 	Skip       *int64           `json:"skip"`
 	Limit      *int64           `json:"limit"`
 	Distinct   *string          `json:"distinct"`
-	Join       []JoinOption     `json:"join"`
+	Join       []*JoinOption    `json:"join"`
 	ReturnType string           `json:"returnType"`
 	HasOptions bool             `json:"hasOptions"` // used internally
 }
 
 // JoinOption describes the way a join needs to be performed
 type JoinOption struct {
+	// Op can be either All or One
+	// This field decides the way the result of join is returned
+	// If op is all, the result is returned as an array
+	// If op is one, the result is returned as an object
+	Op    string                 `json:"Op" mapstructure:"Op"`
 	Type  string                 `json:"type" mapstructure:"type"`
 	Table string                 `json:"table" mapstructure:"table"`
+	As    string                 `json:"as" mapstructure:"as"`
 	On    map[string]interface{} `json:"on" mapstructure:"on"`
-	Join  []JoinOption           `json:"join" mapstructure:"join"`
+	Join  []*JoinOption          `json:"join" mapstructure:"join"`
 }
 
 // UpdateRequest is the http body received for an update request

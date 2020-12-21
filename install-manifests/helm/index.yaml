@@ -1,0 +1,95 @@
+apiVersion: v1
+entries:
+  mongo:
+    - apiVersion: v3
+      created: "2020-12-14T18:39:40.361015222+05:30"
+      description: NoSQL document-oriented database that stores JSON-like documents
+        with dynamic schemas, simplifying the integration of data in content-driven
+        applications.
+      digest: e15ed5db988277acbad6fc4ff7582216ea1a387bfebb8e389e584d385b3f586d
+      home: https://spaceuptech.com/
+      keywords:
+        - mongodb
+        - database
+        - nosql
+        - cluster
+        - replicaset
+        - replication
+      name: mongo
+      sources:
+        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
+      type: application
+      urls:
+        - https://storage.googleapis.com/space-cloud/helm/mongo/mongo-0.1.0.tgz
+      version: 0.1.0
+  mysql:
+    - apiVersion: v3
+      created: "2020-12-14T18:39:40.361304558+05:30"
+      description: Fast, reliable, scalable, and easy to use open-source relational
+        database system.
+      digest: 80c39e7de9ce58005ac4746372593abc44e74b4686f39c37447e264182021ec4
+      home: https://spaceuptech.com/
+      keywords:
+        - mysql
+        - database
+        - sql
+      name: mysql
+      sources:
+        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
+      type: application
+      urls:
+        - https://storage.googleapis.com/space-cloud/helm/mysql/mysql-0.1.0.tgz
+      version: 0.1.0
+  postgres:
+    - apiVersion: v3
+      created: "2020-12-14T18:39:40.361936795+05:30"
+      description: Chart for PostgreSQL, an object-relational database management system
+        (ORDBMS) with an emphasis on extensibility and on standards-compliance.
+      digest: ff0fe8d857364de39c53a1fef0a4bd7bc0e84fc916590726ab6e343dd1a6b932
+      home: https://spaceuptech.com/
+      keywords:
+        - postgresql
+        - postgres
+        - database
+        - sql
+        - replication
+        - cluster
+      name: postgres
+      sources:
+        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
+      type: application
+      urls:
+        - https://storage.googleapis.com/space-cloud/helm/postgres/postgres-0.1.0.tgz
+      version: 0.1.0
+  space-cloud:
+    - apiVersion: v3
+      appVersion: 0.20.1
+      created: "2020-12-14T18:39:40.36524145+05:30"
+      description: Helm Chart to install Space Cloud
+      digest: 14b40d52c0b09ac4cd19a432a9c9b703abd040470947d009c183c3d6bf4ccfc8
+      home: https://spaceuptech.com/
+      keywords:
+        - baaS
+      name: space-cloud
+      sources:
+        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
+      type: application
+      urls:
+        - https://storage.googleapis.com/space-cloud/helm/space-cloud/space-cloud-0.20.1.tgz
+      version: 0.20.1
+  sqlserver:
+    - apiVersion: v3
+      created: "2020-12-14T18:39:40.36552612+05:30"
+      description: SQL Server Helm Chart
+      digest: 4f0e707e5220f892843d916c62864bd1dfbf3e6ffea342596fede0f89fce4e55
+      home: https://spaceuptech.com/
+      keywords:
+        - database
+      name: sqlserver
+      sources:
+        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
+      type: application
+      urls:
+        - https://storage.googleapis.com/space-cloud/helm/sqlserver/sqlserver-0.1.0.tgz
+      version: 0.1.0
+generated: "2020-12-14T18:39:40.360571189+05:30"

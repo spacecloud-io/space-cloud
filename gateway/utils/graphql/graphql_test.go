@@ -2,6 +2,7 @@ package graphql_test
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sync"
 	"testing"
@@ -41,6 +42,7 @@ func TestModule_ExecGraphQLQuery(t *testing.T) {
 	tests = append(tests, prepareQueryTestCases...)
 
 	for _, tt := range tests {
+		fmt.Println("Test case name:", tt.name)
 		t.Run(tt.name, func(t *testing.T) {
 			mockCrud := mockGraphQLCrudInterface{}
 			for _, m := range tt.crudMockArgs {

@@ -161,6 +161,15 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 			}
 		case []byte:
 			switch typeName {
+			case "BIT":
+				if len(v) > 0 {
+					if v[0] == byte(1) {
+						mapping[colType.Name()] = true
+					} else {
+						mapping[colType.Name()] = false
+					}
+				}
+
 			case "JSON", "JSONB":
 				var val interface{}
 				if err := json.Unmarshal(v, &val); err == nil {
@@ -222,7 +231,7 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 	}
 }
 
-func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join []model.JoinOption, sel map[string]int32) (*goqu.SelectDataset, error) {
+func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join []*model.JoinOption, sel map[string]int32, isAggregate bool) (*goqu.SelectDataset, error) {
 	for _, j := range join {
 		on, _ := s.generator(ctx, j.On, true)
 		switch j.Type {
@@ -238,13 +247,17 @@ func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join 
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid join type (%s) provided", j.Type), nil, nil)
 		}
 
-		isValidJoin, columnName := utils.IsValidJoin(j.On, j.Table)
-		if isValidJoin {
-			sel[j.Table+"."+columnName] = 1
+		// Don't put any fields in select clause if it's an aggregation request
+		if !isAggregate {
+			isValidJoin, columnName := utils.IsValidJoin(j.On, j.Table)
+			if isValidJoin {
+				// forcing a join field in select clause, required for caching
+				sel[j.Table+"."+columnName] = 1
+			}
 		}
 
 		if j.Join != nil {
-			q, err := s.processJoins(ctx, query, j.Join, sel)
+			q, err := s.processJoins(ctx, query, j.Join, sel, isAggregate)
 			if err != nil {
 				return nil, err
 			}
