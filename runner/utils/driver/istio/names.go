@@ -2,6 +2,7 @@ package istio
 
 import (
 	"fmt"
+	"strings"
 )
 
 func getServiceUniqueID(projectID, serviceID, version string) string {
@@ -29,6 +30,29 @@ func getInternalServiceName(serviceID, version string) string {
 
 func getInternalServiceDomain(projectID, serviceID, version string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", getInternalServiceName(serviceID, version), projectID)
+}
+
+func checkIfInternalServiceDomain(projectID, serviceID, internalServiceDomain string) bool {
+	arr := strings.Split(internalServiceDomain, ".")
+	if strings.HasSuffix(internalServiceDomain, "svc.cluster.local") {
+		if len(arr) == 5 && arr[1] == projectID && strings.HasPrefix(arr[0], serviceID) {
+			return true
+		}
+	}
+	return false
+}
+
+func splitInternalServiceDomain(s string) (projectID, serviceID, version string) {
+	arr := strings.Split(s, ".")
+	if len(arr) < 5 {
+		return "", "", ""
+	}
+	t := strings.Split(arr[0], "-")
+	if len(t) < 2 {
+		return "", "", ""
+	}
+
+	return arr[1], strings.Join(t[:len(t)-3], ""), t[len(t)-2]
 }
 
 func getVirtualServiceName(serviceID string) string {

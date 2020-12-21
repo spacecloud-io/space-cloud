@@ -269,7 +269,7 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 
 	for _, service := range services.Items {
 		serviceID := service.Labels["app"]
-		routes := make(model.Routes, len(service.Spec.Http))
+		routes := make(model.Routes, len(service.Spec.Http)+len(service.Spec.Tcp))
 
 		for i, route := range service.Spec.Http {
 
@@ -307,7 +307,44 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 			}
 
 			// Set the route
-			routes[i] = &model.Route{ID: serviceID, Source: model.RouteSource{Port: int32(route.Match[0].Port)}, Targets: targets}
+			routes[i] = &model.Route{ID: serviceID, Source: model.RouteSource{Port: int32(route.Match[0].Port), Protocol: model.HTTP}, Targets: targets}
+		}
+
+		for i, route := range service.Spec.Tcp {
+
+			// Generate the targets
+			targets := make([]model.RouteTarget, len(route.Route))
+			for j, destination := range route.Route {
+				target := model.RouteTarget{Weight: destination.Weight}
+
+				// Figure out the route type
+				target.Type = model.RouteTargetExternal
+				if checkIfInternalServiceDomain(projectID, serviceID, destination.Destination.Host) {
+					target.Type = model.RouteTargetVersion
+				}
+
+				switch target.Type {
+				case model.RouteTargetVersion:
+					// Set the version field if target type was version
+					_, _, version := splitInternalServiceDomain(destination.Destination.Host)
+					target.Version = version
+
+					// Set the port
+					target.Port = int32(destination.Destination.Port.Number)
+
+				case model.RouteTargetExternal:
+					// Set the host field if target type was external
+					target.Host = destination.Destination.Host
+
+					// Set the port
+					target.Port = int32(destination.Destination.Port.Number)
+				}
+
+				targets[j] = target
+			}
+
+			// Set the route
+			routes[i] = &model.Route{ID: serviceID, Source: model.RouteSource{Port: int32(route.Match[0].Port), Protocol: model.TCP}, Targets: targets}
 		}
 
 		// Set the routes of a service

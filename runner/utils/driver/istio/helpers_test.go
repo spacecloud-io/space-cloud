@@ -48,7 +48,7 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
+						ID: "greeter",
 						Source: model.RouteSource{
 							Protocol: model.TCP,
 							Port:     8080,
@@ -56,34 +56,25 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 						Targets: []model.RouteTarget{
 							{
 								Port:    8080,
-								Weight:  50,
+								Weight:  25,
 								Version: "v2",
 								Type:    model.RouteTargetVersion,
 							},
 							{
 								Port:    8080,
-								Weight:  50,
+								Weight:  25,
 								Version: "v3",
 								Type:    model.RouteTargetVersion,
 							},
-						},
-					},
-					{
-						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
-						Source: model.RouteSource{
-							Protocol: model.TCP,
-							Port:     9090,
-						},
-						Targets: []model.RouteTarget{
 							{
 								Port:   8080,
-								Weight: 50,
+								Weight: 25,
 								Type:   model.RouteTargetExternal,
 								Host:   "httpbin.test.svc.cluster.local",
 							},
 							{
 								Port:   8080,
-								Weight: 50,
+								Weight: 25,
 								Type:   model.RouteTargetExternal,
 								Host:   "httpbin.test.svc.cluster.local",
 							},
@@ -101,33 +92,28 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 								Host: getInternalServiceDomain("myProject", "greeter", "v2"),
 								Port: &networkingv1alpha3.PortSelector{Number: uint32(8080)},
 							},
-							Weight: 50,
+							Weight: 25,
 						},
 						{
 							Destination: &networkingv1alpha3.Destination{
 								Host: getInternalServiceDomain("myProject", "greeter", "v3"),
 								Port: &networkingv1alpha3.PortSelector{Number: uint32(8080)},
 							},
-							Weight: 50,
-						},
-					},
-				},
-				{
-					Match: []*networkingv1alpha3.L4MatchAttributes{{Port: uint32(9090)}},
-					Route: []*networkingv1alpha3.RouteDestination{
-						{
-							Destination: &networkingv1alpha3.Destination{
-								Host: "httpbin.test.svc.cluster.local",
-								Port: &networkingv1alpha3.PortSelector{Number: uint32(8080)},
-							},
-							Weight: 50,
+							Weight: 25,
 						},
 						{
 							Destination: &networkingv1alpha3.Destination{
 								Host: "httpbin.test.svc.cluster.local",
 								Port: &networkingv1alpha3.PortSelector{Number: uint32(8080)},
 							},
-							Weight: 50,
+							Weight: 25,
+						},
+						{
+							Destination: &networkingv1alpha3.Destination{
+								Host: "httpbin.test.svc.cluster.local",
+								Port: &networkingv1alpha3.PortSelector{Number: uint32(8080)},
+							},
+							Weight: 25,
 						},
 					},
 				},
@@ -156,7 +142,7 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
+						ID: "greeter",
 						Source: model.RouteSource{
 							Protocol: model.HTTP,
 							Port:     8080,
@@ -205,7 +191,7 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
+						ID: "greeter",
 						Source: model.RouteSource{
 							Protocol: model.TCP,
 							Port:     0,
@@ -253,7 +239,7 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
+						ID: "greeter",
 						Source: model.RouteSource{
 							Protocol: model.TCP,
 							Port:     0,
@@ -288,7 +274,7 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
+						ID: "greeter",
 						Source: model.RouteSource{
 							Protocol: model.TCP,
 							Port:     0,
@@ -336,7 +322,7 @@ func Test_prepareVirtualServiceTCPRoutes(t *testing.T) {
 				},
 				routes: []*model.Route{
 					{
-						ID: "414a27e4-e3d2-4003-9567-0ad949e25c8e",
+						ID: "greeter",
 						Source: model.RouteSource{
 							Protocol: model.TCP,
 							Port:     0,
