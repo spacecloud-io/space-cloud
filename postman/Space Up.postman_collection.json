@@ -1902,7 +1902,7 @@
                         ],
                         "body": {
                           "mode": "raw",
-                          "raw": "{\n    \"id\": \"4c418477a9b64cc9b2d98da45d06a71c\",\n    \"project\": \"{{project_id}}\",\n    \"source\": {\n        \"hosts\": [\n            \"*\"\n        ],\n        \"methods\": [\n            \"*\"\n        ],\n        \"url\": \"/v1\",\n        \"type\": \"prefix\"\n    },\n    \"targets\": [\n        {\n            \"scheme\": \"http\",\n            \"host\": \"host\",\n            \"port\": 8090,\n            \"weight\": 100\n        }\n    ],\n    \"rule\": {\n        \"rule\": \"allow\"\n    },\n    \"modify\": {\n        \"template\": \"\",\n        \"requestTemplate\": \"\",\n        \"responseTemplate\": \"\",\n        \"outputFormat\": \"\",\n        \"headers\": [],\n        \"resHeaders\": []\n    }\n}",
+                          "raw": "{\n    \"routes\": [\n        {\n            \"protocol\":\"tcp\",\n            \"source\": {\n                \"port\": 8080\n            },\n            \"targets\": [\n                {\n                    \"port\": 8080,\n                    \"weight\": 50,\n                    \"version\": \"v1\",\n                    \"type\": \"version\"\n                },\n                {\n                    \"port\": 8080,\n                    \"weight\": 50,\n                    \"version\": \"v2\",\n                    \"type\": \"version\"\n                }\n            ]\n        }\n    ]\n}/v1\",\n        \"type\": \"prefix\"\n    },\n    \"targets\": [\n        {\n            \"scheme\": \"http\",\n            \"host\": \"host\",\n            \"port\": 8090,\n            \"weight\": 100\n        }\n    ],\n    \"rule\": {\n        \"rule\": \"allow\"\n    },\n    \"modify\": {\n        \"template\": \"\",\n        \"requestTemplate\": \"\",\n        \"responseTemplate\": \"\",\n        \"outputFormat\": \"\",\n        \"headers\": [],\n        \"resHeaders\": []\n    }\n}",
                           "options": {
                             "raw": {
                               "language": "json"
@@ -1910,7 +1910,7 @@
                           }
                         },
                         "url": {
-                          "raw": "{{gateway_base_url}}/v1/config/projects/{{project_id}}/routing/ingress/route-id",
+                          "raw": "{{gateway_base_url}}/v1/config/projects/{{project_id}}/routing/ingress/{{deployed_service_id}}",
                           "host": [
                             "{{gateway_base_url}}"
                           ],
@@ -3705,6 +3705,11 @@
       "id": "03da5b38-e050-44cc-b00a-cef12e3a7811",
       "key": "gateway_base_url",
       "value": "http://localhost:4122"
+    },
+    {
+      "id": "03da5b38-e050-44cc-b00a-cef12e3a7812",
+      "key": "deployed_service_idl",
+      "value": "greeter"
     },
     {
       "id": "516b2fa5-2288-44e8-9ebc-ba17c698da89",
