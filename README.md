@@ -1,5 +1,3 @@
-[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/spaceuptech/space-cloud)
-
 <p align="center"><a href="https://www.spaceuptech.com"><img src="https://spaceuptech.com/icons/space-cloud-block-diagram1.png" alt="Space Cloud"></a></p>
 
 <h3 align="center">
@@ -61,6 +59,7 @@ Supported databases :heart::
 - [How it works](#how-it-works)
 - [Support & Troubleshooting](#support--troubleshooting)
 - [Contributing](#contributing)
+- [Deploy](#deploy)
 - [License](#license)
 
 ## Quick start
@@ -116,6 +115,10 @@ Space Cloud is a young project. We'd love to have you onboard if you wish to con
 - Deciding the road map of the project
 - Creating issues for any bugs you find
 - And of course, with code for bug fixes and new enhancements
+
+## Deploy
+
+[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/spaceuptech/space-cloud)
 
 ## License
 
