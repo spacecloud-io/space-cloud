@@ -1,3 +1,5 @@
+[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/spaceuptech/space-cloud)
+
 <p align="center"><a href="https://www.spaceuptech.com"><img src="https://spaceuptech.com/icons/space-cloud-block-diagram1.png" alt="Space Cloud"></a></p>
 
 <h3 align="center">
