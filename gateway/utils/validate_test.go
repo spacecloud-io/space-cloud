@@ -333,10 +333,34 @@ func TestValidate(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "valid $in",
+			name: "valid $in(string)",
 			args: args{
 				where: map[string]interface{}{"op": map[string]interface{}{"$in": []interface{}{"abc", "xyz"}}},
 				obj:   map[string]interface{}{"op": "abc"},
+			},
+			want: true,
+		},
+		{
+			name: "valid $in(int)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$in": []interface{}{1, 2}}},
+				obj:   map[string]interface{}{"op": 1},
+			},
+			want: true,
+		},
+		{
+			name: "valid $in(float)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$in": []interface{}{2.5, 5.5}}},
+				obj:   map[string]interface{}{"op": 2.5},
+			},
+			want: true,
+		},
+		{
+			name: "valid $in(bool)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$in": []interface{}{true}}},
+				obj:   map[string]interface{}{"op": true},
 			},
 			want: true,
 		},
@@ -349,6 +373,30 @@ func TestValidate(t *testing.T) {
 			want: false,
 		},
 		{
+			name: "invalid $in(int)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$in": []interface{}{1, 2}}},
+				obj:   map[string]interface{}{"op": 3},
+			},
+			want: false,
+		},
+		{
+			name: "invalid $in(float)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$in": []interface{}{2.5, 5.5}}},
+				obj:   map[string]interface{}{"op": 2.7},
+			},
+			want: false,
+		},
+		{
+			name: "invalid $in(bool)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$in": []interface{}{true}}},
+				obj:   map[string]interface{}{"op": false},
+			},
+			want: false,
+		},
+		{
 			name: "invalid $nin",
 			args: args{
 				where: map[string]interface{}{"op": map[string]interface{}{"$nin": []interface{}{"abc", "xyz"}}},
@@ -357,10 +405,58 @@ func TestValidate(t *testing.T) {
 			want: false,
 		},
 		{
+			name: "invalid $nin(int)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$nin": []interface{}{1, 2}}},
+				obj:   map[string]interface{}{"op": 1},
+			},
+			want: false,
+		},
+		{
+			name: "invalid $nin(float)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$nin": []interface{}{2.5, 5.5}}},
+				obj:   map[string]interface{}{"op": 2.5},
+			},
+			want: false,
+		},
+		{
+			name: "invalid $nin(bool)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$nin": []interface{}{true}}},
+				obj:   map[string]interface{}{"op": true},
+			},
+			want: false,
+		},
+		{
 			name: "valid $nin",
 			args: args{
 				where: map[string]interface{}{"op": map[string]interface{}{"$nin": []interface{}{"abc", "xyz"}}},
 				obj:   map[string]interface{}{"op": "abcd"},
+			},
+			want: true,
+		},
+		{
+			name: "valid $nin(int)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$nin": []interface{}{1, 2}}},
+				obj:   map[string]interface{}{"op": 3},
+			},
+			want: true,
+		},
+		{
+			name: "valid $nin(float)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$nin": []interface{}{2.5, 5.5}}},
+				obj:   map[string]interface{}{"op": 2.7},
+			},
+			want: true,
+		},
+		{
+			name: "valid $nin(bool)",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$nin": []interface{}{true}}},
+				obj:   map[string]interface{}{"op": false},
 			},
 			want: true,
 		},

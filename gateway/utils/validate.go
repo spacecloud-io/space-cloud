@@ -13,27 +13,52 @@ import (
 )
 
 func attemptConvertBoolToInt64(val interface{}) interface{} {
-	if tempBool, ok := val.(bool); ok {
+	switch t := val.(type) {
+	case bool:
 		val = int64(0)
-		if tempBool {
+		if t {
 			val = int64(1)
 		}
+		return val
+	case []interface{}:
+		m := make([]interface{}, 0)
+		for _, v := range t {
+			v = attemptConvertBoolToInt64(v)
+			m = append(m, v)
+		}
+		return m
 	}
 	return val
 }
 
 func attemptConvertIntToInt64(val interface{}) interface{} {
-	if tempInt, ok := val.(int); ok {
-		val = int64(tempInt)
-	} else if tempInt, ok := val.(int32); ok {
-		val = int64(tempInt)
+	switch t := val.(type) {
+	case int:
+		return int64(t)
+	case int32:
+		return int64(t)
+	case []interface{}:
+		m := make([]interface{}, 0)
+		for _, v := range t {
+			v = attemptConvertIntToInt64(v)
+			m = append(m, v)
+		}
+		return m
 	}
 	return val
 }
 
 func attemptConvertInt64ToFloat(val interface{}) interface{} {
-	if tempInt, ok := val.(int64); ok {
-		val = float64(tempInt)
+	switch t := val.(type) {
+	case int64:
+		return float64(t)
+	case []interface{}:
+		m := make([]interface{}, 0)
+		for _, v := range t {
+			v = attemptConvertInt64ToFloat(v)
+			m = append(m, v)
+		}
+		return m
 	}
 	return val
 }

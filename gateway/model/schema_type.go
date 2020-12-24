@@ -15,6 +15,12 @@ type (
 		IsFieldTypeRequired bool   `json:"isFieldTypeRequired"`
 		IsList              bool   `json:"isList"`
 		Kind                string `json:"kind"`
+		// Precision is used to hold precision information for data types Float
+		// It represent number the digits to be stored
+		Precision int `json:"precision"`
+		// Scale is used to hold scale information for data types Float,Time,DateTime
+		// It represent number the digits to be stored after decimal
+		Scale int `json:"scale"`
 		// Directive           string
 		NestedObject Fields `json:"nestedObject"`
 		IsPrimary    bool   `json:"isPrimary"`
@@ -88,7 +94,8 @@ const (
 	DirectiveLink string = "link"
 	// DirectiveDefault is used to add default key
 	DirectiveDefault string = "default"
-
+	// DirectiveArgs is used in schema module to specify the created location
+	DirectiveArgs string = "args"
 	// DirectiveVarcharSize denotes the maximum allowable character for field type ID
 	DirectiveVarcharSize string = "size"
 
@@ -96,6 +103,11 @@ const (
 	DefaultIndexSort string = "asc"
 	// DefaultIndexOrder specifies default order of order
 	DefaultIndexOrder int = 1
+
+	// DefaultScale specifies the default scale to be used for sql column types float,date,datetime if not provided
+	DefaultScale int = 3
+	// DefaultPrecision specifies the default precision to be used for sql column types float if not provided
+	DefaultPrecision int = 10
 )
 
 // InspectorFieldType is the type for storing sql inspection information

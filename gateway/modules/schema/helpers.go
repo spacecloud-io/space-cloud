@@ -13,20 +13,20 @@ import (
 )
 
 // GetSQLType return sql type
-func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (string, error) {
+func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldType) (string, error) {
 
-	switch typename {
+	switch realColumnInfo.Kind {
 	case model.TypeUUID:
 		if dbType == string(model.Postgres) {
 			return "uuid", nil
 		}
 		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "UUID type is only supported by postgres database", nil, nil)
 	case model.TypeTime:
-		return "time", nil
+		return fmt.Sprintf("time(%d)", realColumnInfo.Scale), nil
 	case model.TypeDate:
 		return "date", nil
 	case model.TypeID:
-		return fmt.Sprintf("varchar(%d)", maxIDSize), nil
+		return fmt.Sprintf("varchar(%d)", realColumnInfo.TypeIDSize), nil
 	case model.TypeString:
 		if dbType == string(model.SQLServer) {
 			return "varchar(max)", nil
@@ -35,7 +35,7 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 	case model.TypeDateTime:
 		switch dbType {
 		case string(model.MySQL):
-			return "datetime", nil
+			return fmt.Sprintf("datetime(%d)", realColumnInfo.Scale), nil
 		case string(model.SQLServer):
 			return "datetimeoffset", nil
 		default:
@@ -47,6 +47,9 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 		}
 		return "boolean", nil
 	case model.TypeFloat:
+		if dbType == string(model.MySQL) {
+			return fmt.Sprintf("decimal(%d,%d)", realColumnInfo.Precision, realColumnInfo.Scale), nil
+		}
 		return "float", nil
 	case model.TypeInteger:
 		return "bigint", nil
@@ -60,7 +63,7 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 			return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("json not supported for database %s", dbType), nil, nil)
 		}
 	default:
-		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid schema type (%s) provided", typename), fmt.Errorf("%s type not allowed", typename), nil)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid schema type (%s) provided", realColumnInfo.Kind), fmt.Errorf("%s type not allowed", realColumnInfo.Kind), nil)
 	}
 }
 
@@ -302,7 +305,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 		if err := checkErrors(ctx, realFieldStruct); err != nil {
 			return "", err
 		}
-		sqlType, err := getSQLType(ctx, realFieldStruct.TypeIDSize, dbType, realFieldStruct.Kind)
+		sqlType, err := getSQLType(ctx, dbType, realFieldStruct)
 		if err != nil {
 			return "", nil
 		}

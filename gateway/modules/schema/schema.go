@@ -154,6 +154,25 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								}
 							}
 						}
+					case model.DirectiveArgs:
+						for _, arg := range directive.Arguments {
+							switch arg.Name.Value {
+							case "precision":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								size, ok := val.(int)
+								if !ok {
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+								}
+								fieldTypeStuct.Precision = size
+							case "scale":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								size, ok := val.(int)
+								if !ok {
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+								}
+								fieldTypeStuct.Scale = size
+							}
+						}
 					case model.DirectiveCreatedAt:
 						fieldTypeStuct.IsCreatedAt = true
 					case model.DirectiveUpdatedAt:
@@ -289,6 +308,20 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 				return nil, err
 			}
 			fieldTypeStuct.Kind = kind
+			switch kind {
+			case model.TypeTime, model.TypeDateTime:
+				if fieldTypeStuct.Scale == 0 {
+					fieldTypeStuct.Scale = model.DefaultScale
+				}
+			case model.TypeFloat:
+				if fieldTypeStuct.Scale == 0 {
+					fieldTypeStuct.Scale = model.DefaultScale
+				}
+				if fieldTypeStuct.Precision == 0 {
+					fieldTypeStuct.Precision = model.DefaultPrecision
+				}
+			}
+
 			fieldMap[field.Name.Value] = &fieldTypeStuct
 		}
 	}
