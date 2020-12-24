@@ -445,6 +445,16 @@ func (s *Manager) HandleRunnerDeleteServiceRole(admin *admin.Manager) http.Handl
 // HandleRunnerGetServiceLogs handles requests of the runner
 func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if s.GetRunnerAddr() == "" {
+			helpers.Logger.LogWarn(helpers.GetRequestID(r.Context()), "Cannot forward request to runner, as runner address not provided to gateway during setup", nil)
+			if r.Method == http.MethodGet {
+				_ = helpers.Response.SendResponse(r.Context(), w, http.StatusOK, model.Response{Result: []interface{}{}})
+				return
+			}
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, "Space cloud cannot process this request, as you haven't started space cloud in kubernetes")
+			return
+		}
+
 		userToken := utils.GetTokenFromHeader(r)
 
 		vars := mux.Vars(r)
@@ -548,6 +558,15 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 }
 
 func (s *Manager) forwardRequestToRunner(ctx context.Context, w http.ResponseWriter, r *http.Request, admin *admin.Manager, params model.RequestParams) {
+	if s.GetRunnerAddr() == "" {
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), "Cannot forward request to runner, as runner address not provided to gateway during setup", nil)
+		if r.Method == http.MethodGet {
+			_ = helpers.Response.SendResponse(r.Context(), w, http.StatusOK, model.Response{Result: []interface{}{}})
+			return
+		}
+		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, "Space cloud cannot process this request, as you haven't started space cloud in kubernetes")
+		return
+	}
 
 	// http: Request.RequestURI can't be set in client requests.
 	// http://golang.org/src/pkg/net/http/client.go

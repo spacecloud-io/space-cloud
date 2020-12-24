@@ -23,15 +23,14 @@ func (m *Mongo) RawQuery(ctx context.Context, query string, args []interface{}) 
 
 // GetConnectionState : function to check connection state
 func (m *Mongo) GetConnectionState(ctx context.Context) bool {
-	if !m.enabled || m.client == nil {
+	if !m.enabled || m.getClient() == nil {
 		return false
 	}
 
 	// Ping to check if connection is established
-	err := m.client.Ping(ctx, nil)
+	err := m.getClient().Ping(ctx, nil)
 	if err != nil {
-		_ = m.client.Disconnect(context.Background())
-		m.client = nil
+		_ = m.getClient().Disconnect(context.Background())
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to ping mongo database - %s", m.dbName), err, nil)
 		return false
 	}
