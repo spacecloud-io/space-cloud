@@ -20,7 +20,7 @@ func (s *SQL) Delete(ctx context.Context, col string, req *model.DeleteRequest) 
 	if err != nil {
 		return 0, err
 	}
-	res, err := doExecContext(ctx, sqlString, args, s.client)
+	res, err := doExecContext(ctx, sqlString, args, s.getClient())
 	if err != nil {
 		return 0, err
 	}
@@ -61,6 +61,6 @@ func (s *SQL) generateDeleteQuery(ctx context.Context, req *model.DeleteRequest,
 // DeleteCollection drops a table
 func (s *SQL) DeleteCollection(ctx context.Context, col string) error {
 	query := "DROP TABLE " + s.getColName(col)
-	_, err := s.client.ExecContext(ctx, query, []interface{}{}...)
+	_, err := s.getClient().ExecContext(ctx, query, []interface{}{}...)
 	return err
 }

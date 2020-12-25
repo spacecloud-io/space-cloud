@@ -277,6 +277,9 @@ func generateArguments(ctx context.Context, field *ast.Field, store utils.M) map
 func (graph *Module) checkIfLinkCanBeOptimized(fieldStruct *model.FieldType, dbAlias, col string) (*model.JoinOption, bool) {
 	currentTableFieldID := fieldStruct.LinkedTable.From
 	referredTableFieldID := fieldStruct.LinkedTable.To
+	if fieldStruct.LinkedTable.Field != "" {
+		return nil, false
+	}
 	referredTableName := fieldStruct.LinkedTable.Table
 	referredDbAlias := fieldStruct.LinkedTable.DBType
 	if dbAlias != referredDbAlias { // join cannot happen over different databases
@@ -286,11 +289,17 @@ func (graph *Module) checkIfLinkCanBeOptimized(fieldStruct *model.FieldType, dbA
 	if err != nil {
 		return nil, false
 	}
+	linkedOp := utils.All
+	if !fieldStruct.IsList {
+		linkedOp = utils.One
+	}
 	if model.DBType(dbType) == model.Mongo {
 		return nil, false
 	}
 	return &model.JoinOption{
+		Op:    linkedOp,
 		Table: referredTableName,
+		As:    fieldStruct.FieldName,
 		On: map[string]interface{}{
 			fmt.Sprintf("%s.%s", col, currentTableFieldID): fmt.Sprintf("%s.%s", referredTableName, referredTableFieldID),
 		},
@@ -345,6 +354,9 @@ func (graph *Module) extractSelectionSet(ctx context.Context, field *ast.Field, 
 			// skip linked fields but allow joint tables
 			fieldStruct, p := schemaFields[v.Name.Value]
 			if p && fieldStruct.IsLinked && !isJointTable {
+				if v.SelectionSet == nil {
+					continue
+				}
 				// check if the link can be optimised to join
 				joinInfo, isOptimized := graph.checkIfLinkCanBeOptimized(fieldStruct, dbAlias, col)
 				if !isOptimized {

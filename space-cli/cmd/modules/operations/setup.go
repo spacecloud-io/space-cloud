@@ -13,7 +13,7 @@ import (
 )
 
 // Setup initializes development environment
-func Setup(setValuesFlag, valuesYamlFile, chartLocation string, isGetDefaults bool) error {
+func Setup(setValuesFlag, valuesYamlFile, chartLocation, version string, isGetDefaults bool) error {
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
 
 	if isGetDefaults {
@@ -56,7 +56,7 @@ func Setup(setValuesFlag, valuesYamlFile, chartLocation string, isGetDefaults bo
 		valuesFileObj["version"] = model.Version
 	}
 
-	helmChart, err := utils.HelmInstall(newClusterID, chartLocation, model.HelmSpaceCloudChartDownloadURL, model.HelmSpaceCloudNamespace, valuesFileObj)
+	helmChart, err := utils.HelmInstall(newClusterID, chartLocation, utils.GetHelmChartDownloadURL(model.HelmSpaceCloudChartDownloadURL, version), model.HelmSpaceCloudNamespace, valuesFileObj)
 	if err != nil {
 		return err
 	}
@@ -66,10 +66,6 @@ func Setup(setValuesFlag, valuesYamlFile, chartLocation string, isGetDefaults bo
 		UserName:  helmChart.Values["admin"].(map[string]interface{})["username"].(string),
 		Key:       helmChart.Values["admin"].(map[string]interface{})["password"].(string),
 		ServerURL: "http://localhost:4122",
-	}
-
-	if err := utils.StoreCredentials(&selectedAccount); err != nil {
-		return utils.LogError("Unable to store credentials", err)
 	}
 
 	fmt.Println()

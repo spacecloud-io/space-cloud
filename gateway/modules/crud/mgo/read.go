@@ -22,7 +22,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 	if req.Options != nil && len(req.Options.Join) > 0 {
 		return 0, nil, nil, nil, errors.New("cannot perform joins in mongo db")
 	}
-	collection := m.client.Database(m.dbName).Collection(col)
+	collection := m.getClient().Database(m.dbName).Collection(col)
 
 	if req.Options == nil {
 		req.Options = &model.ReadOptions{}

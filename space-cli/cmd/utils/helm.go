@@ -14,6 +14,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // Need this for gke clusters
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 )

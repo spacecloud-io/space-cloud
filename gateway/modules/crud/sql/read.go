@@ -197,7 +197,7 @@ func splitAggregateAsColumnName(asColumnName string) (format, returnField, funct
 
 // Read query document(s) from the database
 func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
-	return s.read(ctx, col, req, s.client)
+	return s.read(ctx, col, req, s.getClient())
 }
 
 func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
@@ -434,14 +434,31 @@ func (s *SQL) processRows(ctx context.Context, isDebug bool, table []string, isA
 		var arr []interface{}
 		utils.GenerateJoinKeys(j.Table, j.On, row, joinMapping)
 		// Check if table name is already present in parent row. If not, create a new array
-		if arrTemp, p := m[j.Table]; p {
-			arr = arrTemp.([]interface{})
+		tableName := j.Table
+		if j.As != "" {
+			tableName = j.As
+		}
+		if arrTemp, p := m[tableName]; p {
+			switch t := arrTemp.(type) {
+			case []interface{}:
+				arr = t
+			case map[string]interface{}:
+				arr = []interface{}{t}
+			}
 		} else {
 			arr = []interface{}{}
 		}
 
 		// Recursively call the same function again
 		s.processRows(ctx, isDebug, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess, joinMapping)
-		m[j.Table] = arr
+		if j.Op == utils.All || j.Op == "" {
+			m[tableName] = arr
+		} else {
+			if len(arr) > 0 {
+				m[tableName] = arr[0]
+			} else {
+				m[tableName] = map[string]interface{}{}
+			}
+		}
 	}
 }
