@@ -36,13 +36,13 @@ func (s *Schema) ValidateUpdateOperation(ctx context.Context, dbAlias, col, op s
 		case "$unset":
 			return s.validateUnsetOperation(ctx, dbAlias, col, doc, SchemaDoc)
 		case "$set":
-			newDoc, err := s.validateSetOperation(ctx, col, doc, SchemaDoc)
+			newDoc, err := s.validateSetOperation(ctx, dbAlias, col, doc, SchemaDoc)
 			if err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error validating set operation in schema module unable to validate (%s) data", key), err, nil)
 			}
 			updateDoc[key] = newDoc
 		case "$push":
-			err := s.validateArrayOperations(ctx, col, doc, SchemaDoc)
+			err := s.validateArrayOperations(ctx, dbAlias, col, doc, SchemaDoc)
 			if err != nil {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error validating array operation in schema module unable to validate (%s) data", key), err, nil)
 			}
@@ -84,7 +84,7 @@ func isFieldPresentInUpdate(field string, updateDoc map[string]interface{}) bool
 	return false
 }
 
-func (s *Schema) validateArrayOperations(ctx context.Context, col string, doc interface{}, SchemaDoc model.Fields) error {
+func (s *Schema) validateArrayOperations(ctx context.Context, dbAlias, col string, doc interface{}, SchemaDoc model.Fields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -104,13 +104,13 @@ func (s *Schema) validateArrayOperations(ctx context.Context, col string, doc in
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type provided for field %s in collection %s", fieldKey, col), nil, nil)
 			}
 			for _, value := range t {
-				if _, err := s.checkType(ctx, col, value, schemaDocValue); err != nil {
+				if _, err := s.checkType(ctx, dbAlias, col, value, schemaDocValue); err != nil {
 					return err
 				}
 			}
 			return nil
 		case interface{}:
-			if _, err := s.checkType(ctx, col, t, schemaDocValue); err != nil {
+			if _, err := s.checkType(ctx, dbAlias, col, t, schemaDocValue); err != nil {
 				return err
 			}
 		default:
@@ -217,7 +217,7 @@ func (s *Schema) validateUnsetOperation(ctx context.Context, dbAlias, col string
 	return nil
 }
 
-func (s *Schema) validateSetOperation(ctx context.Context, col string, doc interface{}, SchemaDoc model.Fields) (interface{}, error) {
+func (s *Schema) validateSetOperation(ctx context.Context, dbAlias, col string, doc interface{}, SchemaDoc model.Fields) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Document not of type object in collection (%s)", col), nil, nil)
@@ -232,7 +232,7 @@ func (s *Schema) validateSetOperation(ctx context.Context, col string, doc inter
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Field (%s) from collection (%s) is not defined in the schema", key, col), nil, nil)
 		}
 		// check type
-		newDoc, err := s.checkType(ctx, col, value, SchemaDocValue)
+		newDoc, err := s.checkType(ctx, dbAlias, col, value, SchemaDocValue)
 		if err != nil {
 			return nil, err
 		}

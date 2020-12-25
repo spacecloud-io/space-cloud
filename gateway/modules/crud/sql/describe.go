@@ -36,6 +36,8 @@ case when data_type = 'varchar' then concat(DATA_TYPE,'(',CHARACTER_MAXIMUM_LENG
 CASE 
 	WHEN column_default = '1' THEN 'true'
 	WHEN column_default = '0' THEN 'false'
+    WHEN column_default = "b\'1\'" THEN 'true'
+    WHEN column_default = "b\'0\'" THEN 'false'
 	ELSE coalesce(column_default,'')
 END AS 'Default',
 CASE
@@ -90,7 +92,7 @@ WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
 
 		args = append(args, col, project)
 	}
-	rows, err := s.client.QueryxContext(ctx, queryString, args...)
+	rows, err := s.getClient().QueryxContext(ctx, queryString, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +159,7 @@ FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE CCU
 WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2 AND KCU.TABLE_NAME= @p3`
 		args = append(args, project, col, col)
 	}
-	rows, err := s.client.QueryxContext(ctx, queryString, args...)
+	rows, err := s.getClient().QueryxContext(ctx, queryString, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +231,7 @@ func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]model
 			WHERE 
      			ind.is_primary_key = 0  and s.name = @p1 and t.name = @p2 `
 	}
-	rows, err := s.client.QueryxContext(ctx, queryString, []interface{}{project, col}...)
+	rows, err := s.getClient().QueryxContext(ctx, queryString, []interface{}{project, col}...)
 	if err != nil {
 		return nil, err
 	}

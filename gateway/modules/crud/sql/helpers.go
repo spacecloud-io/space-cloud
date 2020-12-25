@@ -161,6 +161,15 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 			}
 		case []byte:
 			switch typeName {
+			case "BIT":
+				if len(v) > 0 {
+					if v[0] == byte(1) {
+						mapping[colType.Name()] = true
+					} else {
+						mapping[colType.Name()] = false
+					}
+				}
+
 			case "JSON", "JSONB":
 				var val interface{}
 				if err := json.Unmarshal(v, &val); err == nil {
