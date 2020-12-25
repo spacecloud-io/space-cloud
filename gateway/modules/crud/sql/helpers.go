@@ -46,7 +46,7 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 				switch k2 {
 				case "$regex":
 					switch s.dbType {
-					case "postgres":
+					case "postgres", "sqlserver":
 						regxarr = append(regxarr, fmt.Sprintf("%s = $", k))
 					case "mysql":
 						regxarr = append(regxarr, fmt.Sprintf("%s = ?", k))
@@ -306,8 +306,11 @@ func replaceSQLOperationWithPlaceHolder(replace, sqlString string, replaceWith f
 	return dollarValue, strings.TrimSpace(sqlString)
 }
 
-func mutateSQLServerLimitAndOffsetOperation(sqlString string, req *model.ReadRequest) string {
+func mutateSQLServerLimitAndOffsetOperation(sqlString string, req *model.ReadRequest) (string, error) {
 	if req.Options.Skip != nil && req.Options.Limit != nil {
+		if len(req.Options.Sort) == 0 {
+			return "", fmt.Errorf("sql server cannot process skip operation, sort option is mandatory with skip")
+		}
 		offsetValue, sqlString := replaceSQLOperationWithPlaceHolder("OFFSET", sqlString, func(value string) string {
 			return ""
 		})
@@ -315,7 +318,7 @@ func mutateSQLServerLimitAndOffsetOperation(sqlString string, req *model.ReadReq
 		_, sqlString = replaceSQLOperationWithPlaceHolder("LIMIT", sqlString, func(value string) string {
 			return fmt.Sprintf("OFFSET %s ROWS FETCH NEXT %s ROWS ONLY", offsetValue, value)
 		})
-		return sqlString
+		return sqlString, nil
 	}
 	if req.Options.Limit != nil {
 		_, sqlString = replaceSQLOperationWithPlaceHolder("LIMIT", sqlString, func(value string) string {
@@ -327,7 +330,7 @@ func mutateSQLServerLimitAndOffsetOperation(sqlString string, req *model.ReadReq
 		} else {
 			sqlString = strings.Replace(sqlString, "SELECT", fmt.Sprintf("SELECT TOP %d", uint(*req.Options.Limit)), 1)
 		}
-		return sqlString
+		return sqlString, nil
 	}
-	return sqlString
+	return sqlString, nil
 }

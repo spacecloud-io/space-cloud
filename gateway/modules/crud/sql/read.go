@@ -149,7 +149,10 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 
 	if model.DBType(s.dbType) == model.SQLServer {
-		sqlString = mutateSQLServerLimitAndOffsetOperation(sqlString, req)
+		sqlString, err = mutateSQLServerLimitAndOffsetOperation(sqlString, req)
+		if err != nil {
+			return "", nil, err
+		}
 	}
 
 	for _, v := range regexArr {
@@ -159,6 +162,9 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
 		case "postgres":
 			vReplaced := strings.Replace(v, "=", "~", -1)
+			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
+		case "sqlserver":
+			vReplaced := strings.Replace(v, "=", "like", -1)
 			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
 		}
 
