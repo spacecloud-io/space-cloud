@@ -173,6 +173,13 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 	var httpRoutes []*networkingv1alpha3.HTTPRoute
 
 	for _, route := range routes {
+		// Before v0.21.0 space-cloud only supported HTTP routes, because of that we never specified protocol while creating service routes
+		// From v0.21.0, we support both TCP & HTTP routes, the protocol to be used is specified in the protocol field.
+		// If the protocol field is empty we assume it to be an HTTP route to be backward compatible.
+		if route.Source.Protocol != "" && route.Source.Protocol != model.HTTP {
+			continue
+		}
+
 		// Check if the port provided is correct
 		if route.Source.Port == 0 {
 			return nil, errors.New("port cannot be zero")
@@ -255,6 +262,73 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 	}
 
 	return httpRoutes, nil
+}
+
+func prepareVirtualServiceTCPRoutes(ctx context.Context, projectID, serviceID string, services map[string]model.AutoScaleConfig, routes model.Routes) ([]*networkingv1alpha3.TCPRoute, error) {
+	var tcpRoutes []*networkingv1alpha3.TCPRoute
+
+	for _, route := range routes {
+		// Route protocol can be either TCP or HTTP
+		// this function is intended to create TCP routes only, so we are skipping routes whose protocol is not TCP
+		if route.Source.Protocol != model.TCP {
+			continue
+		}
+
+		// Check if the port provided is correct
+		if route.Source.Port == 0 {
+			return nil, errors.New("port cannot be zero")
+		}
+
+		// Check if at least one target is provided
+		if len(route.Targets) == 0 {
+			return nil, errors.New("at least one target needs to be provided")
+		}
+
+		// Prepare an array of targets / destinations
+		var destinations []*networkingv1alpha3.RouteDestination
+		for _, target := range route.Targets {
+			switch target.Type {
+			case model.RouteTargetVersion:
+				// Check if config for version exists
+				_, p := services[target.Version]
+				if !p {
+					return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("version (%s) not found for service (%s)", target.Version, serviceID), nil, nil)
+				}
+
+				// Prepare variables
+				destHost := getInternalServiceDomain(projectID, serviceID, target.Version)
+				destPort := uint32(target.Port)
+
+				destinations = append(destinations, &networkingv1alpha3.RouteDestination{
+					Destination: &networkingv1alpha3.Destination{
+						Host: destHost,
+						Port: &networkingv1alpha3.PortSelector{Number: destPort},
+					},
+					Weight: target.Weight,
+				})
+
+			case model.RouteTargetExternal:
+				destinations = append(destinations, &networkingv1alpha3.RouteDestination{
+					Destination: &networkingv1alpha3.Destination{
+						Host: target.Host,
+						Port: &networkingv1alpha3.PortSelector{Number: uint32(target.Port)},
+					},
+					Weight: target.Weight,
+				})
+
+			default:
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid target type (%s) provided", target.Type), nil, nil)
+			}
+		}
+
+		// Add the http route
+		tcpRoutes = append(tcpRoutes, &networkingv1alpha3.TCPRoute{
+			Match: []*networkingv1alpha3.L4MatchAttributes{{Port: uint32(route.Source.Port)}},
+			Route: destinations,
+		})
+	}
+
+	return tcpRoutes, nil
 }
 
 func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32, prevVirtualService *v1alpha3.VirtualService) ([]*networkingv1alpha3.HTTPRoute, []*networkingv1alpha3.TCPRoute) {
@@ -821,16 +895,16 @@ func (i *Istio) updateVirtualService(service *model.Service, prevVirtualService 
 		},
 	}
 }
-func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, projectID, serviceID string, scaleConfig map[string]model.AutoScaleConfig, routes model.Routes, prevVirtualService *v1alpha3.VirtualService) (*v1alpha3.VirtualService, error) {
+func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, projectID, serviceID string, scaleConfig map[string]model.AutoScaleConfig, routes model.Routes) (*v1alpha3.VirtualService, error) {
 	// Generate the httpRoutes based on the routes provided
 	httpRoutes, err := prepareVirtualServiceHTTPRoutes(ctx, projectID, serviceID, scaleConfig, routes, i.config.ProxyPort)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create a prevVirtualService if its nil to prevent panic
-	if prevVirtualService == nil {
-		prevVirtualService = new(v1alpha3.VirtualService)
+	tcpRoutes, err := prepareVirtualServiceTCPRoutes(ctx, projectID, serviceID, scaleConfig, routes)
+	if err != nil {
+		return nil, err
 	}
 
 	return &v1alpha3.VirtualService{
@@ -846,7 +920,7 @@ func (i *Istio) generateVirtualServiceBasedOnRoutes(ctx context.Context, project
 		Spec: networkingv1alpha3.VirtualService{
 			Hosts: []string{getServiceDomainName(projectID, serviceID)},
 			Http:  httpRoutes,
-			Tcp:   prevVirtualService.Spec.Tcp,
+			Tcp:   tcpRoutes,
 		},
 	}, nil
 }
