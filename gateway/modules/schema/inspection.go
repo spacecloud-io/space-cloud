@@ -53,12 +53,17 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, f
 		}
 
 		// field type
-		if model.DBType(dbType) == model.Postgres {
+		switch model.DBType(dbType) {
+		case model.Postgres:
 			if err := inspectionPostgresCheckFieldType(field.VarcharSize, field.FieldType, &fieldDetails); err != nil {
 				return nil, err
 			}
-		} else {
+		case model.MySQL:
 			if err := inspectionMySQLCheckFieldType(field.VarcharSize, field.FieldType, &fieldDetails); err != nil {
+				return nil, err
+			}
+		case model.SQLServer:
+			if err := inspectionSQLServerCheckFieldType(field.VarcharSize, field.FieldType, &fieldDetails); err != nil {
 				return nil, err
 			}
 		}
@@ -162,6 +167,46 @@ func inspectionMySQLCheckFieldType(size int, typeName string, fieldDetails *mode
 	case "tinyint", "boolean", "bit":
 		fieldDetails.Kind = model.TypeBoolean
 	case "json":
+		fieldDetails.Kind = model.TypeJSON
+	default:
+		return errors.New("Inspection type check : no match found got " + result[0])
+	}
+	return nil
+}
+
+func inspectionSQLServerCheckFieldType(size int, typeName string, fieldDetails *model.FieldType) error {
+	if typeName == "varchar(-1)" || typeName == "varchar(max)" {
+		fieldDetails.Kind = model.TypeString
+		return nil
+	}
+	if typeName == "nvarchar(-1)" || typeName == "nvarchar(max)" {
+		fieldDetails.Kind = model.TypeString
+		return nil
+	}
+	if strings.HasPrefix(typeName, "varchar(") {
+		fieldDetails.Kind = model.TypeID
+		fieldDetails.TypeIDSize = size
+		return nil
+	}
+
+	result := strings.Split(typeName, "(")
+
+	switch result[0] {
+	case "date":
+		fieldDetails.Kind = model.TypeDate
+	case "time":
+		fieldDetails.Kind = model.TypeTime
+	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
+		fieldDetails.Kind = model.TypeString
+	case "smallint", "mediumint", "int", "bigint":
+		fieldDetails.Kind = model.TypeInteger
+	case "float", "double":
+		fieldDetails.Kind = model.TypeFloat
+	case "datetime", "timestamp", "datetimeoffset":
+		fieldDetails.Kind = model.TypeDateTime
+	case "tinyint", "boolean", "bit":
+		fieldDetails.Kind = model.TypeBoolean
+	case "nvarchar":
 		fieldDetails.Kind = model.TypeJSON
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])

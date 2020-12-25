@@ -71,6 +71,9 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 			dataLoader = m.createLoader(fmt.Sprintf("%s-%s-%s", m.project, dbAlias, col))
 		}
 		data, err := dataLoader.Load(ctx, key)()
+		if err != nil {
+			return nil, nil, err
+		}
 		res := data.(queryResult)
 		if res.metaData != nil {
 			res.metaData.DbAlias = dbAlias

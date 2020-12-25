@@ -159,6 +159,14 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 					mapping[colType.Name()] = val
 				}
 			}
+			if dbType == model.SQLServer {
+				if typeName == "NVARCHAR" {
+					var val interface{}
+					if err := json.Unmarshal([]byte(v), &val); err == nil {
+						mapping[colType.Name()] = val
+					}
+				}
+			}
 		case []byte:
 			switch typeName {
 			case "BIT":
@@ -314,7 +322,11 @@ func mutateSQLServerLimitAndOffsetOperation(sqlString string, req *model.ReadReq
 			return ""
 		})
 
-		sqlString = strings.Replace(sqlString, "SELECT", fmt.Sprintf("SELECT TOP %d", uint(*req.Options.Limit)), 1)
+		if strings.HasPrefix(sqlString, "SELECT DISTINCT") {
+			sqlString = strings.Replace(sqlString, "SELECT DISTINCT", fmt.Sprintf("SELECT DISTINCT TOP %d", uint(*req.Options.Limit)), 1)
+		} else {
+			sqlString = strings.Replace(sqlString, "SELECT", fmt.Sprintf("SELECT TOP %d", uint(*req.Options.Limit)), 1)
+		}
 		return sqlString
 	}
 	return sqlString

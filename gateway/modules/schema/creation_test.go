@@ -1529,8 +1529,8 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{},
-			wantErr: true,
+			want:    []string{"CREATE TABLE test.table1 (id varchar(50) collate Latin1_General_CS_AS PRIMARY KEY NOT NULL , col1 nvarchar(max) NOT NULL);"},
+			wantErr: false,
 		},
 		{
 			name: "adding a table and column of type integer with default key",

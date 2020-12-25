@@ -56,6 +56,8 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 			return "jsonb", nil
 		case string(model.MySQL):
 			return "json", nil
+		case string(model.SQLServer):
+			return "nvarchar(max)", nil
 		default:
 			return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("json not supported for database %s", dbType), nil, nil)
 		}
