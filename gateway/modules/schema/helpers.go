@@ -22,7 +22,7 @@ func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldT
 		}
 		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "UUID type is only supported by postgres database", nil, nil)
 	case model.TypeTime:
-		return fmt.Sprintf("time(%d)", realColumnInfo.Scale), nil
+		return fmt.Sprintf("time(%d)", realColumnInfo.Args.Scale), nil
 	case model.TypeDate:
 		return "date", nil
 	case model.TypeID:
@@ -35,7 +35,7 @@ func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldT
 	case model.TypeDateTime:
 		switch dbType {
 		case string(model.MySQL):
-			return fmt.Sprintf("datetime(%d)", realColumnInfo.Scale), nil
+			return fmt.Sprintf("datetime(%d)", realColumnInfo.Args.Scale), nil
 		case string(model.SQLServer):
 			return "datetimeoffset", nil
 		default:
@@ -48,7 +48,7 @@ func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldT
 		return "boolean", nil
 	case model.TypeFloat:
 		if dbType == string(model.MySQL) {
-			return fmt.Sprintf("decimal(%d,%d)", realColumnInfo.Precision, realColumnInfo.Scale), nil
+			return fmt.Sprintf("decimal(%d,%d)", realColumnInfo.Args.Precision, realColumnInfo.Args.Scale), nil
 		}
 		return "float", nil
 	case model.TypeInteger:

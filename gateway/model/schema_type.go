@@ -11,16 +11,11 @@ type (
 
 	// FieldType stores information about a particular column in table
 	FieldType struct {
-		FieldName           string `json:"fieldName"`
-		IsFieldTypeRequired bool   `json:"isFieldTypeRequired"`
-		IsList              bool   `json:"isList"`
-		Kind                string `json:"kind"`
-		// Precision is used to hold precision information for data types Float
-		// It represent number the digits to be stored
-		Precision int `json:"precision"`
-		// Scale is used to hold scale information for data types Float,Time,DateTime
-		// It represent number the digits to be stored after decimal
-		Scale int `json:"scale"`
+		FieldName           string      `json:"fieldName"`
+		IsFieldTypeRequired bool        `json:"isFieldTypeRequired"`
+		IsList              bool        `json:"isList"`
+		Kind                string      `json:"kind"`
+		Args                *ColumnArgs `json:"args"`
 		// Directive           string
 		NestedObject Fields `json:"nestedObject"`
 		IsPrimary    bool   `json:"isPrimary"`
@@ -38,6 +33,16 @@ type (
 		JointTable      *TableProperties `json:"jointTable"`
 		Default         interface{}      `json:"default"`
 		TypeIDSize      int              `json:"size"`
+	}
+
+	// ColumnArgs are properties of the column
+	ColumnArgs struct {
+		// Precision is used to hold precision information for data types Float
+		// It represent number the digits to be stored
+		Precision int `json:"precision"`
+		// Scale is used to hold scale information for data types Float,Time,DateTime
+		// It represent number the digits to be stored after decimal
+		Scale int `json:"scale"`
 	}
 
 	// TableProperties are properties of the table

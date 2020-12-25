@@ -165,6 +165,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 							}
 						}
 					case model.DirectiveArgs:
+						fieldTypeStuct.Args = new(model.ColumnArgs)
 						for _, arg := range directive.Arguments {
 							switch arg.Name.Value {
 							case "precision":
@@ -173,14 +174,14 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								if !ok {
 									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
-								fieldTypeStuct.Precision = size
+								fieldTypeStuct.Args.Precision = size
 							case "scale":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								size, ok := val.(int)
 								if !ok {
 									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
-								fieldTypeStuct.Scale = size
+								fieldTypeStuct.Args.Scale = size
 							}
 						}
 					case model.DirectiveCreatedAt:
@@ -320,15 +321,21 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 			fieldTypeStuct.Kind = kind
 			switch kind {
 			case model.TypeTime, model.TypeDateTime:
-				if fieldTypeStuct.Scale == 0 {
-					fieldTypeStuct.Scale = model.DefaultScale
+				if fieldTypeStuct.Args == nil {
+					fieldTypeStuct.Args = new(model.ColumnArgs)
+				}
+				if fieldTypeStuct.Args.Scale == 0 {
+					fieldTypeStuct.Args.Scale = model.DefaultScale
 				}
 			case model.TypeFloat:
-				if fieldTypeStuct.Scale == 0 {
-					fieldTypeStuct.Scale = model.DefaultScale
+				if fieldTypeStuct.Args == nil {
+					fieldTypeStuct.Args = new(model.ColumnArgs)
 				}
-				if fieldTypeStuct.Precision == 0 {
-					fieldTypeStuct.Precision = model.DefaultPrecision
+				if fieldTypeStuct.Args.Scale == 0 {
+					fieldTypeStuct.Args.Scale = model.DefaultScale
+				}
+				if fieldTypeStuct.Args.Precision == 0 {
+					fieldTypeStuct.Args.Precision = model.DefaultPrecision
 				}
 			}
 

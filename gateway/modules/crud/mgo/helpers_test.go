@@ -23,11 +23,12 @@ func Test_sanitizeWhereClause(t *testing.T) {
 				ctx: context.Background(),
 				col: "users",
 				find: map[string]interface{}{
-					"users.id":         1,
-					"posts.id":         1,
-					"users.name":       "same",
-					"users.height":     5.5,
-					"users.isUnderAge": true,
+					"users.id":             1,
+					"users.address.street": "washington DC",
+					"posts.id":             1,
+					"users.name":           "same",
+					"users.height":         5.5,
+					"users.isUnderAge":     true,
 					"users.posts": map[string]interface{}{
 						"users.postId": 11,
 						"users.views": map[string]interface{}{
@@ -49,11 +50,12 @@ func Test_sanitizeWhereClause(t *testing.T) {
 				},
 			},
 			want: map[string]interface{}{
-				"id":         1,
-				"posts.id":   1,
-				"name":       "same",
-				"height":     5.5,
-				"isUnderAge": true,
+				"id":             1,
+				"address.street": "washington DC",
+				"posts.id":       1,
+				"name":           "same",
+				"height":         5.5,
+				"isUnderAge":     true,
 				"posts": map[string]interface{}{
 					"postId": 11,
 					"views": map[string]interface{}{
