@@ -181,6 +181,10 @@ func TestParseSchema(t *testing.T) {
 							IsAutoIncrement: false,
 							TypeIDSize:      model.SQLTypeIDSize,
 							Kind:            model.TypeFloat,
+							Args: &model.FieldArgs{
+								Precision: model.DefaultPrecision,
+								Scale:     model.DefaultScale,
+							},
 						},
 						"spec": &model.FieldType{
 							FieldName:       "spec",
@@ -236,6 +240,10 @@ func TestParseSchema(t *testing.T) {
 							IsAutoIncrement: false,
 							Kind:            model.TypeFloat,
 							TypeIDSize:      model.SQLTypeIDSize,
+							Args: &model.FieldArgs{
+								Precision: model.DefaultPrecision,
+								Scale:     model.DefaultScale,
+							},
 						},
 						"role": &model.FieldType{
 							FieldName:           "role",
@@ -258,6 +266,9 @@ func TestParseSchema(t *testing.T) {
 							Kind:            model.TypeDateTime,
 							TypeIDSize:      model.SQLTypeIDSize,
 							IsCreatedAt:     true,
+							Args: &model.FieldArgs{
+								Scale: model.DefaultScale,
+							},
 						},
 						"updatedAt": &model.FieldType{
 							FieldName:       "updatedAt",
@@ -265,6 +276,9 @@ func TestParseSchema(t *testing.T) {
 							Kind:            model.TypeDateTime,
 							TypeIDSize:      model.SQLTypeIDSize,
 							IsUpdatedAt:     true,
+							Args: &model.FieldArgs{
+								Scale: model.DefaultScale,
+							},
 						},
 						"first_name": &model.FieldType{
 							FieldName:           "first_name",
@@ -314,6 +328,9 @@ func TestParseSchema(t *testing.T) {
 							Kind:            model.TypeDateTime,
 							TypeIDSize:      model.SQLTypeIDSize,
 							IsLinked:        true,
+							Args: &model.FieldArgs{
+								Scale: model.DefaultScale,
+							},
 							LinkedTable: &model.TableProperties{
 								Table:  "order",
 								From:   "id",

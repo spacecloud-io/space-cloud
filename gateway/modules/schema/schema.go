@@ -164,6 +164,26 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								}
 							}
 						}
+					case model.DirectiveArgs:
+						fieldTypeStuct.Args = new(model.FieldArgs)
+						for _, arg := range directive.Arguments {
+							switch arg.Name.Value {
+							case "precision":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								size, ok := val.(int)
+								if !ok {
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+								}
+								fieldTypeStuct.Args.Precision = size
+							case "scale":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								size, ok := val.(int)
+								if !ok {
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+								}
+								fieldTypeStuct.Args.Scale = size
+							}
+						}
 					case model.DirectiveCreatedAt:
 						fieldTypeStuct.IsCreatedAt = true
 					case model.DirectiveUpdatedAt:
@@ -299,6 +319,26 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 				return nil, err
 			}
 			fieldTypeStuct.Kind = kind
+			switch kind {
+			case model.TypeTime, model.TypeDateTime:
+				if fieldTypeStuct.Args == nil {
+					fieldTypeStuct.Args = new(model.FieldArgs)
+				}
+				if fieldTypeStuct.Args.Scale == 0 {
+					fieldTypeStuct.Args.Scale = model.DefaultScale
+				}
+			case model.TypeFloat:
+				if fieldTypeStuct.Args == nil {
+					fieldTypeStuct.Args = new(model.FieldArgs)
+				}
+				if fieldTypeStuct.Args.Scale == 0 {
+					fieldTypeStuct.Args.Scale = model.DefaultScale
+				}
+				if fieldTypeStuct.Args.Precision == 0 {
+					fieldTypeStuct.Args.Precision = model.DefaultPrecision
+				}
+			}
+
 			fieldMap[field.Name.Value] = &fieldTypeStuct
 		}
 	}

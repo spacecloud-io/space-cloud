@@ -24,6 +24,8 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 	}
 	collection := m.getClient().Database(m.dbName).Collection(col)
 
+	req.Find = sanitizeWhereClause(ctx, col, req.Find)
+
 	if req.Options == nil {
 		req.Options = &model.ReadOptions{}
 	}
