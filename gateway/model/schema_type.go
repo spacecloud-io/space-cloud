@@ -11,11 +11,11 @@ type (
 
 	// FieldType stores information about a particular column in table
 	FieldType struct {
-		FieldName           string      `json:"fieldName"`
-		IsFieldTypeRequired bool        `json:"isFieldTypeRequired"`
-		IsList              bool        `json:"isList"`
-		Kind                string      `json:"kind"`
-		Args                *ColumnArgs `json:"args"`
+		FieldName           string     `json:"fieldName"`
+		IsFieldTypeRequired bool       `json:"isFieldTypeRequired"`
+		IsList              bool       `json:"isList"`
+		Kind                string     `json:"kind"`
+		Args                *FieldArgs `json:"args"`
 		// Directive           string
 		NestedObject Fields `json:"nestedObject"`
 		IsPrimary    bool   `json:"isPrimary"`
@@ -35,8 +35,8 @@ type (
 		TypeIDSize      int              `json:"size"`
 	}
 
-	// ColumnArgs are properties of the column
-	ColumnArgs struct {
+	// FieldArgs are properties of the column
+	FieldArgs struct {
 		// Precision is used to hold precision information for data types Float
 		// It represent number the digits to be stored
 		Precision int `json:"precision"`

@@ -165,7 +165,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 							}
 						}
 					case model.DirectiveArgs:
-						fieldTypeStuct.Args = new(model.ColumnArgs)
+						fieldTypeStuct.Args = new(model.FieldArgs)
 						for _, arg := range directive.Arguments {
 							switch arg.Name.Value {
 							case "precision":
@@ -322,14 +322,14 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 			switch kind {
 			case model.TypeTime, model.TypeDateTime:
 				if fieldTypeStuct.Args == nil {
-					fieldTypeStuct.Args = new(model.ColumnArgs)
+					fieldTypeStuct.Args = new(model.FieldArgs)
 				}
 				if fieldTypeStuct.Args.Scale == 0 {
 					fieldTypeStuct.Args.Scale = model.DefaultScale
 				}
 			case model.TypeFloat:
 				if fieldTypeStuct.Args == nil {
-					fieldTypeStuct.Args = new(model.ColumnArgs)
+					fieldTypeStuct.Args = new(model.FieldArgs)
 				}
 				if fieldTypeStuct.Args.Scale == 0 {
 					fieldTypeStuct.Args.Scale = model.DefaultScale

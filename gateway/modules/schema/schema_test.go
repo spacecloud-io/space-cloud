@@ -181,8 +181,10 @@ func TestParseSchema(t *testing.T) {
 							IsAutoIncrement: false,
 							TypeIDSize:      model.SQLTypeIDSize,
 							Kind:            model.TypeFloat,
-							Precision:       model.DefaultPrecision,
-							Scale:           model.DefaultScale,
+							Args: &model.FieldArgs{
+								Precision: model.DefaultPrecision,
+								Scale:     model.DefaultScale,
+							},
 						},
 						"spec": &model.FieldType{
 							FieldName:       "spec",
@@ -238,8 +240,10 @@ func TestParseSchema(t *testing.T) {
 							IsAutoIncrement: false,
 							Kind:            model.TypeFloat,
 							TypeIDSize:      model.SQLTypeIDSize,
-							Precision:       model.DefaultPrecision,
-							Scale:           model.DefaultScale,
+							Args: &model.FieldArgs{
+								Precision: model.DefaultPrecision,
+								Scale:     model.DefaultScale,
+							},
 						},
 						"role": &model.FieldType{
 							FieldName:           "role",
@@ -262,7 +266,9 @@ func TestParseSchema(t *testing.T) {
 							Kind:            model.TypeDateTime,
 							TypeIDSize:      model.SQLTypeIDSize,
 							IsCreatedAt:     true,
-							Scale:           model.DefaultScale,
+							Args: &model.FieldArgs{
+								Scale: model.DefaultScale,
+							},
 						},
 						"updatedAt": &model.FieldType{
 							FieldName:       "updatedAt",
@@ -270,7 +276,9 @@ func TestParseSchema(t *testing.T) {
 							Kind:            model.TypeDateTime,
 							TypeIDSize:      model.SQLTypeIDSize,
 							IsUpdatedAt:     true,
-							Scale:           model.DefaultScale,
+							Args: &model.FieldArgs{
+								Scale: model.DefaultScale,
+							},
 						},
 						"first_name": &model.FieldType{
 							FieldName:           "first_name",
@@ -320,7 +328,9 @@ func TestParseSchema(t *testing.T) {
 							Kind:            model.TypeDateTime,
 							TypeIDSize:      model.SQLTypeIDSize,
 							IsLinked:        true,
-							Scale:           model.DefaultScale,
+							Args: &model.FieldArgs{
+								Scale: model.DefaultScale,
+							},
 							LinkedTable: &model.TableProperties{
 								Table:  "order",
 								From:   "id",
