@@ -41,8 +41,8 @@ func getInternalServiceDomain(projectID, serviceID, version string) string {
 }
 
 func checkIfInternalServiceDomain(projectID, serviceID, internalServiceDomain string) bool {
-	arr := strings.Split(internalServiceDomain, ".")
 	if strings.HasSuffix(internalServiceDomain, "svc.cluster.local") {
+		arr := strings.Split(internalServiceDomain, ".")
 		serID, _ := splitInternalServiceName(arr[0])
 		if len(arr) == 5 && arr[1] == projectID && serID == serviceID {
 			return true
@@ -56,12 +56,12 @@ func splitInternalServiceDomain(s string) (projectID, serviceID, version string)
 	if len(arr) < 5 {
 		return "", "", ""
 	}
-	t := strings.Split(arr[0], "-")
-	if len(t) < 2 {
-		return "", "", ""
+	projectID = arr[1]
+	serviceID, version = splitInternalServiceName(arr[0])
+	if serviceID == "" || version == "" {
+		projectID = ""
 	}
-
-	return arr[1], strings.Join(t[:len(t)-3], ""), t[len(t)-2]
+	return projectID, serviceID, version
 }
 
 func getVirtualServiceName(serviceID string) string {

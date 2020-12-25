@@ -96,3 +96,58 @@ func Test_checkIfInternalServiceDomain(t *testing.T) {
 		})
 	}
 }
+
+func Test_splitInternalServiceDomain(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name          string
+		args          args
+		wantProjectID string
+		wantServiceID string
+		wantVersion   string
+	}{
+		{
+			name: "Proper internal service domain",
+			args: args{
+				s: getInternalServiceDomain("myProject", "greeter", "v2"),
+			},
+			wantProjectID: "myProject",
+			wantServiceID: "greeter",
+			wantVersion:   "v2",
+		},
+		{
+			name: "Improper internal service domain",
+			args: args{
+				s: "greeter.myProject.svc.cluster.local",
+			},
+			wantProjectID: "",
+			wantServiceID: "",
+			wantVersion:   "",
+		},
+		{
+			name: "Improper internal service domain",
+			args: args{
+				s: "http-bin.a.b.c",
+			},
+			wantProjectID: "",
+			wantServiceID: "",
+			wantVersion:   "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotProjectID, gotServiceID, gotVersion := splitInternalServiceDomain(tt.args.s)
+			if gotProjectID != tt.wantProjectID {
+				t.Errorf("splitInternalServiceDomain() gotProjectID = %v, want %v", gotProjectID, tt.wantProjectID)
+			}
+			if gotServiceID != tt.wantServiceID {
+				t.Errorf("splitInternalServiceDomain() gotServiceID = %v, want %v", gotServiceID, tt.wantServiceID)
+			}
+			if gotVersion != tt.wantVersion {
+				t.Errorf("splitInternalServiceDomain() gotVersion = %v, want %v", gotVersion, tt.wantVersion)
+			}
+		})
+	}
+}
