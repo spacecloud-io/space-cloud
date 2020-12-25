@@ -2627,6 +2627,7 @@ var queryTestCases = []tests{
 						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1, "pokemons.id": 1, "pokemons.name": 1},
 						Join: []*model.JoinOption{
 							{
+								Op:    utils.All,
 								Type:  "LEFT",
 								On:    map[string]interface{}{"trainers.id": "pokemons.trainer_id"},
 								Table: "pokemons",
@@ -2709,6 +2710,7 @@ var queryTestCases = []tests{
 						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1, "pokemons.id": 1, "pokemons.name": 1},
 						Join: []*model.JoinOption{
 							{
+								Op:    utils.All,
 								Type:  "LEFT",
 								On:    map[string]interface{}{"trainers.id": "pokemons.trainer_id"},
 								Table: "pokemons",

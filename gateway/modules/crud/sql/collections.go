@@ -24,7 +24,7 @@ func (s *SQL) GetCollections(ctx context.Context) ([]utils.DatabaseCollections, 
 	}
 
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
-	rows, err := s.client.QueryxContext(ctx, sqlString, args...)
+	rows, err := s.getClient().QueryxContext(ctx, sqlString, args...)
 	if err != nil {
 		return nil, err
 	}

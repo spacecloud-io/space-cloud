@@ -20,31 +20,41 @@ import (
 
 // Schema data stucture for schema package
 type Schema struct {
-	lock      sync.RWMutex
-	SchemaDoc model.Type
-	crud      model.CrudSchemaInterface
-	project   string
-	dbSchemas config.DatabaseSchemas
-	clusterID string
+	lock                 sync.RWMutex
+	SchemaDoc            model.Type
+	crud                 model.CrudSchemaInterface
+	project              string
+	dbSchemas            config.DatabaseSchemas
+	clusterID            string
+	dbAliasDBTypeMapping map[string]string
 }
 
 // Init creates a new instance of the schema object
 func Init(clusterID string, crud model.CrudSchemaInterface) *Schema {
-	return &Schema{clusterID: clusterID, SchemaDoc: model.Type{}, crud: crud}
+	return &Schema{clusterID: clusterID, SchemaDoc: model.Type{}, crud: crud, dbAliasDBTypeMapping: make(map[string]string)}
 }
 
-// SetConfig modifies the tables according to the schema on save
-func (s *Schema) SetConfig(c config.DatabaseSchemas, project string) error {
+// SetDatabaseSchema modifies the tables according to the schema on save
+func (s *Schema) SetDatabaseSchema(c config.DatabaseSchemas, project string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.dbSchemas = c
 	s.project = project
-
 	if err := s.parseSchema(c); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// SetDatabaseConfig sets database config
+func (s *Schema) SetDatabaseConfig(c config.DatabaseConfigs) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.dbAliasDBTypeMapping = make(map[string]string)
+	for _, databaseConfig := range c {
+		s.dbAliasDBTypeMapping[databaseConfig.DbAlias] = databaseConfig.Type
+	}
 }
 
 // GetSchema function gets schema
