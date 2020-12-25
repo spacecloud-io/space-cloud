@@ -51,6 +51,7 @@ func (r *Route) SelectTarget(ctx context.Context, weight int32) (RouteTarget, er
 
 // RouteSource is the source of routing
 type RouteSource struct {
+	Protocol   Protocol     `json:"protocol" yaml:"protocol"`
 	Hosts      []string     `json:"hosts,omitempty" yaml:"hosts,omitempty"`
 	Methods    []string     `json:"methods,omitempty" yaml:"methods,omitempty"`
 	URL        string       `json:"url,omitempty" yaml:"url,omitempty"`
@@ -63,7 +64,6 @@ type RouteSource struct {
 type RouteTarget struct {
 	Host    string          `json:"host,omitempty" yaml:"host,omitempty"`
 	Port    int32           `json:"port,omitempty" yaml:"port,omitempty"`
-	Scheme  string          `json:"scheme,omitempty" yaml:"scheme,omitempty"`
 	Weight  int32           `json:"weight,omitempty" yaml:"weight,omitempty"`
 	Version string          `json:"version,omitempty" yaml:"version,omitempty"`
 	Type    RouteTargetType `json:"type,omitempty" yaml:"type,omitempty"`
