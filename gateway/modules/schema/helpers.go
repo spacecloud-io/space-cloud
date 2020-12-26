@@ -79,7 +79,7 @@ func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key must be not null", nil, nil)
 	}
 
-	if realFieldStruct.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
+	if realFieldStruct.IsPrimary && realFieldStruct.PrimaryKeyInfo.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key with auto increment is only applicable on type integer", nil, nil)
 	}
 
@@ -292,6 +292,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 
 	var query, primaryKeyQuery string
 	doesPrimaryKeyExists := false
+	compositePrimaryKeys := make([]*model.FieldType, 0)
 	for realFieldKey, realFieldStruct := range realColValue {
 
 		// Ignore linked fields since these are virtual fields
@@ -307,13 +308,14 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 		}
 
 		if realFieldStruct.IsPrimary {
+			compositePrimaryKeys = append(compositePrimaryKeys, realFieldStruct)
 			doesPrimaryKeyExists = true
 			if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
-				primaryKeyQuery = realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS PRIMARY KEY NOT NULL , "
+				primaryKeyQuery += realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS NOT NULL , "
 				continue
 			}
 			var autoIncrement string
-			if realFieldStruct.IsAutoIncrement {
+			if realFieldStruct.PrimaryKeyInfo.IsAutoIncrement {
 				switch model.DBType(dbType) {
 				case model.SQLServer:
 					autoIncrement = " IDENTITY(1,1)"
@@ -325,7 +327,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 					sqlType = "bigserial"
 				}
 			}
-			primaryKeyQuery = fmt.Sprintf("%s %s PRIMARY KEY NOT NULL %s, ", realFieldKey, sqlType, autoIncrement)
+			primaryKeyQuery += fmt.Sprintf("%s %s NOT NULL %s, ", realFieldKey, sqlType, autoIncrement)
 			continue
 		}
 
@@ -344,6 +346,28 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 	if !doesPrimaryKeyExists {
 		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key not found, make sure there is a primary key on a field with type (ID)", nil, nil)
 	}
+
+	finalPrimaryKeyQuery := "PRIMARY KEY ("
+	if len(compositePrimaryKeys) > 1 {
+		var v primaryKeyStore = compositePrimaryKeys
+		sort.Stable(v)
+		compositePrimaryKeys = v
+		for i, column := range compositePrimaryKeys {
+			if i+1 != column.PrimaryKeyInfo.Order {
+				return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid order sequence proveded for composite primary key (%s)", column.FieldName), nil, nil)
+			}
+			if len(compositePrimaryKeys)-1 == i {
+				finalPrimaryKeyQuery += column.FieldName
+			} else {
+				finalPrimaryKeyQuery += column.FieldName + ", "
+			}
+		}
+	} else if len(compositePrimaryKeys) == 1 {
+		finalPrimaryKeyQuery += compositePrimaryKeys[0].FieldName
+	}
+	finalPrimaryKeyQuery += ")"
+	query += finalPrimaryKeyQuery
+
 	if model.DBType(dbType) == model.MySQL {
 		return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `) COLLATE Latin1_General_CS;`, nil
 	}
