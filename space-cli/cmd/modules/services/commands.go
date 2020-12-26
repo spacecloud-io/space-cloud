@@ -38,64 +38,15 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getServicesRoutes = &cobra.Command{
-		Use:  "service-routes",
-		RunE: actionGetServicesRoutes,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			obj, err := GetServicesRoutes(project, "service-route", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var ids []string
-			for _, v := range obj {
-				ids = append(ids, v.Meta["id"])
-			}
-			return ids, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "service-routes",
+		RunE:              actionGetServicesRoutes,
+		ValidArgsFunction: serviceRoutesAutoCompleteFun,
 	}
 
 	var getServicesRole = &cobra.Command{
-		Use:  "service-role",
-		RunE: actionGetServicesRole,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			switch len(args) {
-			case 0:
-				project, check := utils.GetProjectID()
-				if !check {
-					utils.LogDebug("Project not specified in flag", nil)
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				objs, err := GetServicesRole(project, "service-role", map[string]string{})
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				var serviceIds []string
-				for _, v := range objs {
-					serviceIds = append(serviceIds, v.Meta["serviceId"])
-				}
-				return serviceIds, cobra.ShellCompDirectiveDefault
-			case 1:
-				project, check := utils.GetProjectID()
-				if !check {
-					utils.LogDebug("Project not specified in flag", nil)
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				objs, err := GetServicesRole(project, "service-role", map[string]string{})
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				var roleID []string
-				for _, v := range objs {
-					roleID = append(roleID, v.Meta["roleId"])
-				}
-				return roleID, cobra.ShellCompDirectiveDefault
-			}
-			return nil, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "service-role",
+		RunE:              actionGetServicesRole,
+		ValidArgsFunction: serviceRoleAutoCompleteFun,
 	}
 
 	var getServicesSecrets = &cobra.Command{
@@ -105,43 +56,9 @@ func GetSubCommands() []*cobra.Command {
 	}
 
 	var getServices = &cobra.Command{
-		Use:  "services",
-		RunE: actionGetServices,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			switch len(args) {
-			case 0:
-				project, check := utils.GetProjectID()
-				if !check {
-					utils.LogDebug("Project not specified in flag", nil)
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				objs, err := GetServices(project, "service", map[string]string{})
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				var serviceIds []string
-				for _, v := range objs {
-					serviceIds = append(serviceIds, v.Meta["serviceId"])
-				}
-				return serviceIds, cobra.ShellCompDirectiveDefault
-			case 1:
-				project, check := utils.GetProjectID()
-				if !check {
-					utils.LogDebug("Project not specified in flag", nil)
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				objs, err := GetServices(project, "service", map[string]string{})
-				if err != nil {
-					return nil, cobra.ShellCompDirectiveDefault
-				}
-				var versions []string
-				for _, v := range objs {
-					versions = append(versions, v.Meta["version"])
-				}
-				return versions, cobra.ShellCompDirectiveDefault
-			}
-			return nil, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "services",
+		RunE:              actionGetServices,
+		ValidArgsFunction: servicesAutoCompleteFun,
 	}
 
 	return []*cobra.Command{getServicesRoutes, getServicesSecrets, getServices, getServicesRole}
@@ -308,7 +225,31 @@ func DeleteSubCommands() []*cobra.Command {
 		Example:           "space-cli delete secrets secretID --project myproject",
 	}
 
-	return []*cobra.Command{deleteServicesSecrets}
+	var deleteService = &cobra.Command{
+		Use:               "service",
+		Aliases:           []string{"services"},
+		RunE:              actionDeleteService,
+		ValidArgsFunction: servicesAutoCompleteFun,
+		Example:           "space-cli delete service serviceId version --project myproject",
+	}
+
+	// var deleteServiceRoute = &cobra.Command{
+	// 	Use:               "service-route",
+	// 	Aliases:           []string{"service-route"},
+	// 	RunE:              actionDeleteServiceRoute,
+	// 	ValidArgsFunction: serviceRoutesAutoCompleteFun,
+	// 	Example:           "space-cli delete service-route serviceId --project myproject",
+	// }
+
+	var deleteServiceRole = &cobra.Command{
+		Use:               "service-role",
+		Aliases:           []string{"service-roles"},
+		RunE:              actionDeleteServiceRole,
+		ValidArgsFunction: serviceRoleAutoCompleteFun,
+		Example:           "space-cli delete service-role serviceId roleId --project myproject",
+	}
+
+	return []*cobra.Command{deleteServicesSecrets, deleteService, deleteServiceRole}
 }
 
 func actionDeleteServicesSecrets(cmd *cobra.Command, args []string) error {
@@ -324,4 +265,57 @@ func actionDeleteServicesSecrets(cmd *cobra.Command, args []string) error {
 	}
 
 	return deleteSecret(project, prefix)
+}
+
+func actionDeleteService(cmd *cobra.Command, args []string) error {
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	prefix := map[string]string{}
+	switch len(args) {
+	case 1:
+		prefix["serviceId"] = args[0]
+	case 2:
+		prefix["serviceId"] = args[0]
+		prefix["version"] = args[1]
+	}
+
+	return deleteService(project, prefix)
+}
+
+// func actionDeleteServiceRoute(cmd *cobra.Command, args []string) error {
+// 	// Get the project
+// 	project, check := utils.GetProjectID()
+// 	if !check {
+// 		return utils.LogError("Project not specified in flag", nil)
+// 	}
+
+// 	prefix := ""
+// 	if len(args) != 0 {
+// 		prefix = args[0]
+// 	}
+
+// 	return deleteServiceRoute(project, prefix)
+// }
+
+func actionDeleteServiceRole(cmd *cobra.Command, args []string) error {
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	prefix := map[string]string{}
+	switch len(args) {
+	case 1:
+		prefix["serviceID"] = args[0]
+	case 2:
+		prefix["serviceID"] = args[0]
+		prefix["roleID"] = args[1]
+	}
+
+	return deleteServiceRole(project, prefix)
 }
