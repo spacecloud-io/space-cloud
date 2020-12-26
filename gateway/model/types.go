@@ -100,7 +100,7 @@ type CrudSchemaInterface interface {
 	GetDBType(dbAlias string) (string, error)
 	// CreateProjectIfNotExists(ctx context.Context, project, dbAlias string) error
 	RawBatch(ctx context.Context, dbAlias string, batchedQueries []string) error
-	DescribeTable(ctx context.Context, dbAlias, col string) ([]InspectorFieldType, []ForeignKeysType, []IndexType, error)
+	DescribeTable(ctx context.Context, dbAlias, col string) ([]InspectorFieldType, []IndexType, error)
 }
 
 // CrudUserInterface is an interface consisting of functions of crud module used by User module

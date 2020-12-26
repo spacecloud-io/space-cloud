@@ -117,31 +117,45 @@ const (
 
 // InspectorFieldType is the type for storing sql inspection information
 type InspectorFieldType struct {
-	FieldName     string `db:"Field"`
-	FieldType     string `db:"Type"`
-	FieldNull     string `db:"Null"`
-	FieldKey      string `db:"Key"`
-	FieldDefault  string `db:"Default"`
-	AutoIncrement string `db:"AutoIncrement"`
-	VarcharSize   int    `db:"VarcharSize"`
-}
+	// TableSchema is the schema name for postgres & sqlserver.
+	// it is the database name for mysql
+	TableSchema string `db:"TABLE_SCHEMA"`
+	TableName   string `db:"TABLE_NAME"`
 
-// ForeignKeysType is the type for storing  foreignkeys information of sql inspection
-type ForeignKeysType struct {
-	TableName      string `db:"TABLE_NAME"`
-	ColumnName     string `db:"COLUMN_NAME"`
+	ColumnName string `db:"COLUMN_NAME"`
+	// FieldType is the data type of column
+	FieldType string `db:"DATA_TYPE"`
+	// FieldNull specifies whether the given column can be null or not
+	// It can be either (NO) or (YES)
+	FieldNull       string `db:"IS_NULLABLE"`
+	OrdinalPosition string `db:"ORDINAL_POSITION"`
+	// FieldDefault specifies the default value of columns
+	FieldDefault string `db:"DEFAULT"`
+	// AutoIncrement specifies whether the column has auto increment constraint
+	// It can be either (true) or (false)
+	AutoIncrement    string `db:"AUTO_INCREMENT"`
+	VarcharSize      int    `db:"CHARACTER_MAXIMUM_LENGTH"`
+	NumericScale     int    `db:"NUMERIC_SCALE"`
+	NumericPrecision int    `db:"NUMERIC_PRECISION"`
+
 	ConstraintName string `db:"CONSTRAINT_NAME"`
 	DeleteRule     string `db:"DELETE_RULE"`
+	RefTableSchema string `db:"REFERENCED_TABLE_SCHEMA"`
 	RefTableName   string `db:"REFERENCED_TABLE_NAME"`
 	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
 }
 
 // IndexType is the type use to indexkey information of sql inspection
 type IndexType struct {
-	TableName  string `db:"TABLE_NAME"`
-	ColumnName string `db:"COLUMN_NAME"`
-	IndexName  string `db:"INDEX_NAME"`
-	Order      int    `db:"SEQ_IN_INDEX"`
-	Sort       string `db:"SORT"`
-	IsUnique   string `db:"IS_UNIQUE"`
+	TableSchema string `db:"TABLE_SCHEMA"`
+	TableName   string `db:"TABLE_NAME"`
+	ColumnName  string `db:"COLUMN_NAME"`
+	IndexName   string `db:"INDEX_NAME"`
+	Order       int    `db:"SEQ_IN_INDEX"`
+	// Sort can be either (asc) or (desc)
+	Sort string `db:"SORT"`
+	// IsUnique specifies whether the column has a unique index
+	IsUnique bool `db:"IS_UNIQUE"`
+	// IsPrimary specifies whether the column has a index
+	IsPrimary bool `db:"IS_PRIMARY"`
 }
