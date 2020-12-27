@@ -211,7 +211,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				find:    map[string]interface{}{"col2": map[string]interface{}{"time": time.Now().Round(time.Second)}},
 			},
 			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
-			want:    map[string]interface{}{"col2": map[string]interface{}{"time": time.Now().Round(time.Second)}},
+			want:    map[string]interface{}{"col2": map[string]interface{}{"time": primitive.NewDateTimeFromTime(time.Now().Round(time.Second))}},
 			wantErr: false,
 		},
 		{
