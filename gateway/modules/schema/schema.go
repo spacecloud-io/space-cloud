@@ -153,15 +153,28 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 					switch directive.Name.Value {
 					case model.DirectivePrimary:
 						fieldTypeStuct.IsPrimary = true
+						fieldTypeStuct.PrimaryKeyInfo = &model.TableProperties{}
 						for _, argument := range directive.Arguments {
 							if argument.Name.Value == "autoIncrement" {
 								val, _ := utils.ParseGraphqlValue(argument.Value, nil)
 								switch t := val.(type) {
 								case bool:
-									fieldTypeStuct.IsAutoIncrement = t
+									fieldTypeStuct.PrimaryKeyInfo.IsAutoIncrement = t
 								default:
 									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, argument.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": argument.Name.Value})
 								}
+
+							}
+							if argument.Name.Value == "order" {
+								val, _ := utils.ParseGraphqlValue(argument.Value, nil)
+								t, ok := val.(int)
+								if !ok {
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, argument.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": argument.Name.Value})
+								}
+								if t == 0 {
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Order cannot be zero for field (%s) directinve @(%s)", fieldTypeStuct.FieldName, directive.Name.Value), nil, map[string]interface{}{"arg": argument.Name.Value})
+								}
+								fieldTypeStuct.PrimaryKeyInfo.Order = t
 							}
 						}
 					case model.DirectiveArgs:

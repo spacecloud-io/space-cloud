@@ -20,19 +20,19 @@ type (
 		NestedObject Fields `json:"nestedObject"`
 		IsPrimary    bool   `json:"isPrimary"`
 		// For directives
-		IsAutoIncrement bool             `json:"isAutoIncrement"`
-		IsIndex         bool             `json:"isIndex"`
-		IsUnique        bool             `json:"isUnique"`
-		IsCreatedAt     bool             `json:"isCreatedAt"`
-		IsUpdatedAt     bool             `json:"isUpdatedAt"`
-		IsLinked        bool             `json:"isLinked"`
-		IsForeign       bool             `json:"isForeign"`
-		IsDefault       bool             `json:"isDefault"`
-		IndexInfo       *TableProperties `json:"indexInfo"`
-		LinkedTable     *TableProperties `json:"linkedTable"`
-		JointTable      *TableProperties `json:"jointTable"`
-		Default         interface{}      `json:"default"`
-		TypeIDSize      int              `json:"size"`
+		IsIndex        bool             `json:"isIndex"`
+		IsUnique       bool             `json:"isUnique"`
+		IsCreatedAt    bool             `json:"isCreatedAt"`
+		IsUpdatedAt    bool             `json:"isUpdatedAt"`
+		IsLinked       bool             `json:"isLinked"`
+		IsForeign      bool             `json:"isForeign"`
+		IsDefault      bool             `json:"isDefault"`
+		PrimaryKeyInfo *TableProperties `json:"primaryKeyInfo"`
+		IndexInfo      *TableProperties `json:"indexInfo"`
+		LinkedTable    *TableProperties `json:"linkedTable"`
+		JointTable     *TableProperties `json:"jointTable"`
+		Default        interface{}      `json:"default"`
+		TypeIDSize     int              `json:"size"`
 	}
 
 	// FieldArgs are properties of the column
@@ -47,6 +47,7 @@ type (
 
 	// TableProperties are properties of the table
 	TableProperties struct {
+		IsAutoIncrement        bool
 		From, To               string
 		Table, Field, OnDelete string
 		DBType                 string
