@@ -311,10 +311,10 @@ func actionDeleteServiceRole(cmd *cobra.Command, args []string) error {
 	prefix := map[string]string{}
 	switch len(args) {
 	case 1:
-		prefix["serviceID"] = args[0]
+		prefix["serviceId"] = args[0]
 	case 2:
-		prefix["serviceID"] = args[0]
-		prefix["roleID"] = args[1]
+		prefix["serviceId"] = args[0]
+		prefix["roleId"] = args[1]
 	}
 
 	return deleteServiceRole(project, prefix)

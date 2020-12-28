@@ -63,6 +63,9 @@ func GetServicesRole(project, commandName string, params map[string]string) ([]*
 
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
+		if item == nil {
+			continue
+		}
 		spec := item.(map[string]interface{})
 		id, ok := spec["id"]
 		if !ok {

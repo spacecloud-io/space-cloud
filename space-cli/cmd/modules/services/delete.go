@@ -49,6 +49,9 @@ func deleteService(project string, prefix map[string]string) error {
 	doesPartialExists := false
 	serviceIDs := []string{}
 	for _, spec := range objs {
+		if prefix["version"] != "" && !strings.HasPrefix(strings.ToLower(spec.Meta["version"]), strings.ToLower(prefix["version"])) {
+			continue
+		}
 		serviceIDs = append(serviceIDs, fmt.Sprintf("%s-%s", spec.Meta["serviceId"], spec.Meta["version"]))
 		if strings.ToLower(spec.Meta["serviceId"]) == strings.ToLower(prefix["serviceId"]) && strings.ToLower(spec.Meta["version"]) == strings.ToLower(prefix["version"]) {
 			serviceID = spec.Meta["serviceId"]
@@ -61,7 +64,6 @@ func deleteService(project string, prefix map[string]string) error {
 	}
 
 	if !doesExists {
-
 		pre := prefix["serviceId"]
 		if doesPartialExists {
 			pre = fmt.Sprintf("%s-%s", prefix["serviceId"], prefix["version"])
@@ -97,29 +99,44 @@ func deleteServiceRole(project string, prefix map[string]string) error {
 	if err != nil {
 		return err
 	}
-
+	serviceID := ""
+	roleID := ""
+	doesExists := false
+	doesPartialExists := false
 	serviceIDs := []string{}
 	for _, spec := range objs {
-		serviceIDs = append(serviceIDs, spec.Meta["serviceId"])
+		if prefix["roleId"] != "" && !strings.HasPrefix(strings.ToLower(spec.Meta["roleId"]), strings.ToLower(prefix["roleId"])) {
+			continue
+		}
+		serviceIDs = append(serviceIDs, fmt.Sprintf("%s-%s", spec.Meta["serviceId"], spec.Meta["roleId"]))
+		if strings.ToLower(spec.Meta["serviceId"]) == strings.ToLower(prefix["serviceId"]) && strings.ToLower(spec.Meta["roleId"]) == strings.ToLower(prefix["roleId"]) {
+			serviceID = spec.Meta["serviceId"]
+			roleID = spec.Meta["roleId"]
+			doesExists = true
+		}
+		if strings.ToLower(spec.Meta["serviceId"]) == strings.ToLower(prefix["serviceId"]) {
+			doesPartialExists = true
+		}
 	}
 
-	resourceID, err := filter.DeleteOptions(prefix["serviceID"], serviceIDs)
-	if err != nil {
-		return err
-	}
+	if !doesExists {
+		pre := prefix["serviceId"]
+		if doesPartialExists {
+			pre = fmt.Sprintf("%s-%s", prefix["serviceId"], prefix["roleId"])
+		}
 
-	roleIDs := []string{}
-	for _, spec := range objs {
-		roleIDs = append(roleIDs, spec.Meta["roleId"])
-	}
+		resourceID, err := filter.DeleteOptions(pre, serviceIDs)
+		if err != nil {
+			return err
+		}
 
-	roleID, err := filter.DeleteOptions(prefix["roleID"], roleIDs)
-	if err != nil {
-		return err
+		resourceIDs := strings.Split(resourceID, "-")
+		serviceID = resourceIDs[0]
+		roleID = resourceIDs[1]
 	}
 
 	// Delete the remote service from the server
-	url := fmt.Sprintf("/v1/runner/%s/service-roles/%s/%s", project, resourceID, roleID)
+	url := fmt.Sprintf("/v1/runner/%s/service-roles/%s/%s", project, serviceID, roleID)
 
 	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, new(model.Response)); err != nil {
 		return err
