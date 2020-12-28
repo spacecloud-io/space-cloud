@@ -58,7 +58,7 @@ func deleteService(project string, prefix map[string]string) error {
 			version = spec.Meta["version"]
 			doesExists = true
 		}
-		if strings.ToLower(spec.Meta["serviceId"]) == strings.ToLower(prefix["serviceId"]) {
+		if strings.EqualFold(strings.ToLower(spec.Meta["serviceId"]), strings.ToLower(prefix["serviceId"])) {
 			doesPartialExists = true
 		}
 	}
@@ -114,7 +114,7 @@ func deleteServiceRole(project string, prefix map[string]string) error {
 			roleID = spec.Meta["roleId"]
 			doesExists = true
 		}
-		if strings.ToLower(spec.Meta["serviceId"]) == strings.ToLower(prefix["serviceId"]) {
+		if strings.EqualFold(strings.ToLower(spec.Meta["serviceId"]), strings.ToLower(prefix["serviceId"])) {
 			doesPartialExists = true
 		}
 	}
