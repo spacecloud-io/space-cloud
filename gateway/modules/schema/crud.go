@@ -156,8 +156,13 @@ func (s *Schema) AdjustWhereClause(ctx context.Context, dbAlias string, dbType m
 				for operator, paramInterface := range param {
 
 					// Don't do anything if value is already time.Time
-					if _, ok := paramInterface.(time.Time); ok {
-						break
+					if t, ok := paramInterface.(time.Time); ok {
+						param[operator] = primitive.NewDateTimeFromTime(t)
+						continue
+					}
+
+					if _, ok := paramInterface.(primitive.DateTime); ok {
+						continue
 					}
 
 					// Check if the value is string
