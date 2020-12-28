@@ -163,9 +163,6 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		case "postgres":
 			vReplaced := strings.Replace(v, "=", "~", -1)
 			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
-		case "sqlserver":
-			vReplaced := strings.Replace(v, "=", "like", -1)
-			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
 		}
 
 	}

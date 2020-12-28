@@ -156,7 +156,11 @@ func (c *creationModule) addNewColumn() string {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS"
 		}
 
-		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType
+		sqlDataType := c.columnType
+		if c.columnType == "nvarchar(max)" && c.realColumnInfo.Kind == model.TypeJSON {
+			sqlDataType = fmt.Sprintf("%s constraint json_check_%s_%s CHECK (ISJSON(%s)=1)", c.columnType, c.TableName, c.ColumnName, c.ColumnName)
+		}
+		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + sqlDataType
 	}
 	return ""
 }
@@ -337,6 +341,9 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 
 		if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
 			query += " collate Latin1_General_CS_AS"
+		}
+		if model.DBType(dbType) == model.SQLServer && realFieldStruct.Kind == model.TypeJSON && sqlType == "nvarchar(max)" {
+			query += fmt.Sprintf("constraint json_check_%s_%s CHECK (ISJSON(%s)=1)", realColName, realFieldStruct.FieldName, realFieldStruct.FieldName)
 		}
 
 		if realFieldStruct.IsFieldTypeRequired {

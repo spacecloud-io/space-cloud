@@ -196,7 +196,7 @@ func inspectionSQLServerCheckFieldType(size int, typeName string, fieldDetails *
 		fieldDetails.Kind = model.TypeDate
 	case "time":
 		fieldDetails.Kind = model.TypeTime
-	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
+	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal", "nvarchar":
 		fieldDetails.Kind = model.TypeString
 	case "smallint", "mediumint", "int", "bigint":
 		fieldDetails.Kind = model.TypeInteger
@@ -206,7 +206,7 @@ func inspectionSQLServerCheckFieldType(size int, typeName string, fieldDetails *
 		fieldDetails.Kind = model.TypeDateTime
 	case "tinyint", "boolean", "bit":
 		fieldDetails.Kind = model.TypeBoolean
-	case "nvarchar":
+	case "json":
 		fieldDetails.Kind = model.TypeJSON
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])

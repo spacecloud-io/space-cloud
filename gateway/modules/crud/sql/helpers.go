@@ -46,7 +46,7 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 				switch k2 {
 				case "$regex":
 					switch s.dbType {
-					case "postgres", "sqlserver":
+					case "postgres":
 						regxarr = append(regxarr, fmt.Sprintf("%s = $", k))
 					case "mysql":
 						regxarr = append(regxarr, fmt.Sprintf("%s = ?", k))
