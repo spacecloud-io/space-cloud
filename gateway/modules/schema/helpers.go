@@ -292,7 +292,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 
 	var query, primaryKeyQuery string
 	doesPrimaryKeyExists := false
-	compositePrimaryKeys := make([]*model.FieldType, 0)
+	compositePrimaryKeys := make(primaryKeyStore, 0)
 	for realFieldKey, realFieldStruct := range realColValue {
 
 		// Ignore linked fields since these are virtual fields
@@ -346,12 +346,30 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 	if !doesPrimaryKeyExists {
 		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key not found, make sure there is a primary key on a field with type (ID)", nil, nil)
 	}
+	compositePrimaryKeyQuery, err := getCompositePrimaryKeyQuery(ctx, compositePrimaryKeys)
+	if err != nil {
+		return "", err
+	}
+	query += compositePrimaryKeyQuery
 
+	if model.DBType(dbType) == model.MySQL {
+		return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `) COLLATE Latin1_General_CS;`, nil
+	}
+	return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `);`, nil
+}
+
+func (s *Schema) getTableName(dbType, logicalDBName, table string) string {
+	switch model.DBType(dbType) {
+	case model.Postgres, model.SQLServer:
+		return fmt.Sprintf("%s.%s", logicalDBName, table)
+	}
+	return table
+}
+
+func getCompositePrimaryKeyQuery(ctx context.Context, compositePrimaryKeys primaryKeyStore) (string, error) {
 	finalPrimaryKeyQuery := "PRIMARY KEY ("
 	if len(compositePrimaryKeys) > 1 {
-		var v primaryKeyStore = compositePrimaryKeys
-		sort.Stable(v)
-		compositePrimaryKeys = v
+		sort.Stable(compositePrimaryKeys)
 		for i, column := range compositePrimaryKeys {
 			if i+1 != column.PrimaryKeyInfo.Order {
 				return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid order sequence proveded for composite primary key (%s)", column.FieldName), nil, nil)
@@ -366,20 +384,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 		finalPrimaryKeyQuery += compositePrimaryKeys[0].FieldName
 	}
 	finalPrimaryKeyQuery += ")"
-	query += finalPrimaryKeyQuery
-
-	if model.DBType(dbType) == model.MySQL {
-		return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `) COLLATE Latin1_General_CS;`, nil
-	}
-	return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `);`, nil
-}
-
-func (s *Schema) getTableName(dbType, logicalDBName, table string) string {
-	switch model.DBType(dbType) {
-	case model.Postgres, model.SQLServer:
-		return fmt.Sprintf("%s.%s", logicalDBName, table)
-	}
-	return table
+	return finalPrimaryKeyQuery, nil
 }
 
 func (c *creationModule) addColumn(dbType string) []string {
