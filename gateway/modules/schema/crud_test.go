@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/spaceuptech/helpers"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -82,13 +83,13 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 	}
 }
 
-func returntime(s string) time.Time {
+func returntime(s string) primitive.DateTime {
 	t, err := time.Parse(time.RFC3339Nano, s)
 	if err != nil {
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("invalid string format of datetime (%s)", s), map[string]interface{}{"error": err})
-		return time.Now()
+		return primitive.NewDateTimeFromTime(time.Now())
 	}
-	return t
+	return primitive.NewDateTimeFromTime(t)
 }
 func TestSchema_AdjustWhereClause(t *testing.T) {
 
@@ -209,7 +210,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				find:    map[string]interface{}{"col2": map[string]interface{}{"time": time.Now().Round(time.Second)}},
 			},
 			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
-			want:    map[string]interface{}{"col2": map[string]interface{}{"time": time.Now().Round(time.Second)}},
+			want:    map[string]interface{}{"col2": map[string]interface{}{"time": primitive.NewDateTimeFromTime(time.Now().Round(time.Second))}},
 			wantErr: false,
 		},
 		{

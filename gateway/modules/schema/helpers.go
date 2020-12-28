@@ -13,20 +13,20 @@ import (
 )
 
 // GetSQLType return sql type
-func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (string, error) {
+func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldType) (string, error) {
 
-	switch typename {
+	switch realColumnInfo.Kind {
 	case model.TypeUUID:
 		if dbType == string(model.Postgres) {
 			return "uuid", nil
 		}
 		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "UUID type is only supported by postgres database", nil, nil)
 	case model.TypeTime:
-		return "time", nil
+		return fmt.Sprintf("time(%d)", realColumnInfo.Args.Scale), nil
 	case model.TypeDate:
 		return "date", nil
 	case model.TypeID:
-		return fmt.Sprintf("varchar(%d)", maxIDSize), nil
+		return fmt.Sprintf("varchar(%d)", realColumnInfo.TypeIDSize), nil
 	case model.TypeString:
 		if dbType == string(model.SQLServer) {
 			return "varchar(max)", nil
@@ -35,7 +35,7 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 	case model.TypeDateTime:
 		switch dbType {
 		case string(model.MySQL):
-			return "datetime", nil
+			return fmt.Sprintf("datetime(%d)", realColumnInfo.Args.Scale), nil
 		case string(model.SQLServer):
 			return "datetimeoffset", nil
 		default:
@@ -47,6 +47,9 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 		}
 		return "boolean", nil
 	case model.TypeFloat:
+		if dbType == string(model.MySQL) {
+			return fmt.Sprintf("decimal(%d,%d)", realColumnInfo.Args.Precision, realColumnInfo.Args.Scale), nil
+		}
 		return "float", nil
 	case model.TypeInteger:
 		return "bigint", nil
@@ -62,7 +65,7 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 			return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("json not supported for database %s", dbType), nil, nil)
 		}
 	default:
-		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid schema type (%s) provided", typename), fmt.Errorf("%s type not allowed", typename), nil)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid schema type (%s) provided", realColumnInfo.Kind), fmt.Errorf("%s type not allowed", realColumnInfo.Kind), nil)
 	}
 }
 
@@ -78,7 +81,7 @@ func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key must be not null", nil, nil)
 	}
 
-	if realFieldStruct.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
+	if realFieldStruct.IsPrimary && realFieldStruct.PrimaryKeyInfo.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key with auto increment is only applicable on type integer", nil, nil)
 	}
 
@@ -291,6 +294,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 
 	var query, primaryKeyQuery string
 	doesPrimaryKeyExists := false
+	compositePrimaryKeys := make(primaryKeyStore, 0)
 	for realFieldKey, realFieldStruct := range realColValue {
 
 		// Ignore linked fields since these are virtual fields
@@ -300,19 +304,20 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 		if err := checkErrors(ctx, realFieldStruct); err != nil {
 			return "", err
 		}
-		sqlType, err := getSQLType(ctx, realFieldStruct.TypeIDSize, dbType, realFieldStruct.Kind)
+		sqlType, err := getSQLType(ctx, dbType, realFieldStruct)
 		if err != nil {
 			return "", nil
 		}
 
 		if realFieldStruct.IsPrimary {
+			compositePrimaryKeys = append(compositePrimaryKeys, realFieldStruct)
 			doesPrimaryKeyExists = true
 			if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
-				primaryKeyQuery = realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS PRIMARY KEY NOT NULL , "
+				primaryKeyQuery += realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS NOT NULL , "
 				continue
 			}
 			var autoIncrement string
-			if realFieldStruct.IsAutoIncrement {
+			if realFieldStruct.PrimaryKeyInfo.IsAutoIncrement {
 				switch model.DBType(dbType) {
 				case model.SQLServer:
 					autoIncrement = " IDENTITY(1,1)"
@@ -324,7 +329,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 					sqlType = "bigserial"
 				}
 			}
-			primaryKeyQuery = fmt.Sprintf("%s %s PRIMARY KEY NOT NULL %s, ", realFieldKey, sqlType, autoIncrement)
+			primaryKeyQuery += fmt.Sprintf("%s %s NOT NULL %s, ", realFieldKey, sqlType, autoIncrement)
 			continue
 		}
 
@@ -343,6 +348,12 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 	if !doesPrimaryKeyExists {
 		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key not found, make sure there is a primary key on a field with type (ID)", nil, nil)
 	}
+	compositePrimaryKeyQuery, err := getCompositePrimaryKeyQuery(ctx, compositePrimaryKeys)
+	if err != nil {
+		return "", err
+	}
+	query += compositePrimaryKeyQuery
+
 	if model.DBType(dbType) == model.MySQL {
 		return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `) COLLATE Latin1_General_CS;`, nil
 	}
@@ -355,6 +366,27 @@ func (s *Schema) getTableName(dbType, logicalDBName, table string) string {
 		return fmt.Sprintf("%s.%s", logicalDBName, table)
 	}
 	return table
+}
+
+func getCompositePrimaryKeyQuery(ctx context.Context, compositePrimaryKeys primaryKeyStore) (string, error) {
+	finalPrimaryKeyQuery := "PRIMARY KEY ("
+	if len(compositePrimaryKeys) > 1 {
+		sort.Stable(compositePrimaryKeys)
+		for i, column := range compositePrimaryKeys {
+			if i+1 != column.PrimaryKeyInfo.Order {
+				return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid order sequence proveded for composite primary key (%s)", column.FieldName), nil, nil)
+			}
+			if len(compositePrimaryKeys)-1 == i {
+				finalPrimaryKeyQuery += column.FieldName
+			} else {
+				finalPrimaryKeyQuery += column.FieldName + ", "
+			}
+		}
+	} else if len(compositePrimaryKeys) == 1 {
+		finalPrimaryKeyQuery += compositePrimaryKeys[0].FieldName
+	}
+	finalPrimaryKeyQuery += ")"
+	return finalPrimaryKeyQuery, nil
 }
 
 func (c *creationModule) addColumn(dbType string) []string {

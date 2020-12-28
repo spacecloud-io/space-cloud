@@ -29,6 +29,13 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 
 	colInfo, ok := s.SchemaDoc[dbAlias]
 	if !ok {
+		dbType, ok := s.dbAliasDBTypeMapping[dbAlias]
+		if !ok {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Schema validation failed, unknown db alias provided (%s)", dbAlias), nil, nil)
+		}
+		if model.DBType(dbType) == model.Mongo {
+			return nil
+		}
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unkown db alias (%s) provided to schema module", dbAlias), nil, nil)
 	}
 	tableInfo, ok := colInfo[col]
@@ -166,14 +173,19 @@ func (s *Schema) AdjustWhereClause(ctx context.Context, dbAlias string, dbType m
 					if err != nil {
 						return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid string format of datetime (%s) provided for field (%s)", param, k), err, nil)
 					}
-					find[k] = t
+					find[k] = primitive.NewDateTimeFromTime(t)
 
 				case map[string]interface{}:
 					for operator, paramInterface := range param {
 
 						// Don't do anything if value is already time.Time
-						if _, ok := paramInterface.(time.Time); ok {
-							break
+						if t, ok := paramInterface.(time.Time); ok {
+							param[operator] = primitive.NewDateTimeFromTime(t)
+							continue
+						}
+
+						if _, ok := paramInterface.(primitive.DateTime); ok {
+							continue
 						}
 
 						// Check if the value is string
@@ -189,7 +201,7 @@ func (s *Schema) AdjustWhereClause(ctx context.Context, dbAlias string, dbType m
 						}
 
 						// Store the value
-						param[operator] = t
+						param[operator] = primitive.NewDateTimeFromTime(t)
 					}
 				case time.Time:
 					break

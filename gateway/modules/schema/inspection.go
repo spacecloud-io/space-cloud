@@ -91,17 +91,17 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, f
 		// check if list
 		if field.FieldKey == "PRI" {
 			fieldDetails.IsPrimary = true
-		}
-
-		// Set auto increment
-		if field.AutoIncrement == "true" {
-			fieldDetails.IsAutoIncrement = true
-		}
-		if model.DBType(dbType) == model.Postgres && strings.HasPrefix(field.FieldDefault, "nextval") {
-			// override the default value, this is a special case if a postgres column has a auto increment value, the default value that database returns is -> ( nextval(auto_increment_test_auto_increment_test_seq )
-			fieldDetails.Default = ""
-			fieldDetails.IsDefault = false
-			fieldDetails.IsAutoIncrement = true
+			fieldDetails.PrimaryKeyInfo = &model.TableProperties{}
+			// Set auto increment
+			if field.AutoIncrement == "true" {
+				fieldDetails.PrimaryKeyInfo.IsAutoIncrement = true
+			}
+			if model.DBType(dbType) == model.Postgres && strings.HasPrefix(field.FieldDefault, "nextval") {
+				// override the default value, this is a special case if a postgres column has a auto increment value, the default value that database returns is -> ( nextval(auto_increment_test_auto_increment_test_seq )
+				fieldDetails.Default = ""
+				fieldDetails.IsDefault = false
+				fieldDetails.PrimaryKeyInfo.IsAutoIncrement = true
+			}
 		}
 
 		// check foreignKey & identify if relation exists

@@ -34,7 +34,7 @@ func (s *Schema) SchemaValidator(ctx context.Context, dbAlias, col string, colle
 			continue
 		}
 
-		if fieldValue.IsAutoIncrement {
+		if fieldValue.IsPrimary && fieldValue.PrimaryKeyInfo.IsAutoIncrement {
 			continue
 		}
 

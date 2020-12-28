@@ -226,7 +226,7 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 			switch typeName {
 			// For postgres & SQL server
 			case "TIME":
-				mapping[colType.Name()] = v.Format("15:04:05")
+				mapping[colType.Name()] = v.Format("15:04:05.999999999")
 				continue
 			case "DATE":
 				mapping[colType.Name()] = v.Format("2006-01-02")
