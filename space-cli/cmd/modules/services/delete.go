@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/filter"
@@ -42,28 +43,42 @@ func deleteService(project string, prefix map[string]string) error {
 		return err
 	}
 
+	serviceID := ""
+	version := ""
+	doesExists := false
+	doesPartialExists := false
 	serviceIDs := []string{}
 	for _, spec := range objs {
-		serviceIDs = append(serviceIDs, spec.Meta["serviceId"])
+		serviceIDs = append(serviceIDs, fmt.Sprintf("%s-%s", spec.Meta["serviceId"], spec.Meta["version"]))
+		if strings.ToLower(spec.Meta["serviceId"]) == strings.ToLower(prefix["serviceId"]) && strings.ToLower(spec.Meta["version"]) == strings.ToLower(prefix["version"]) {
+			serviceID = spec.Meta["serviceId"]
+			version = spec.Meta["version"]
+			doesExists = true
+		}
+		if strings.ToLower(spec.Meta["serviceId"]) == strings.ToLower(prefix["serviceId"]) {
+			doesPartialExists = true
+		}
 	}
 
-	resourceID, err := filter.DeleteOptions(prefix["serviceId"], serviceIDs)
-	if err != nil {
-		return err
-	}
+	if !doesExists {
 
-	versions := []string{}
-	for _, spec := range objs {
-		versions = append(versions, spec.Meta["version"])
-	}
+		pre := prefix["serviceId"]
+		if doesPartialExists {
+			pre = fmt.Sprintf("%s-%s", prefix["serviceId"], prefix["version"])
+		}
 
-	version, err := filter.DeleteOptions(prefix["version"], versions)
-	if err != nil {
-		return err
+		resourceID, err := filter.DeleteOptions(pre, serviceIDs)
+		if err != nil {
+			return err
+		}
+
+		resourceIDs := strings.Split(resourceID, "-")
+		serviceID = resourceIDs[0]
+		version = resourceIDs[1]
 	}
 
 	// Delete the remote service from the server
-	url := fmt.Sprintf("/v1/runner/%s/secrets/%s/%s", project, resourceID, version)
+	url := fmt.Sprintf("/v1/runner/%s/services/%s/%s", project, serviceID, version)
 
 	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, new(model.Response)); err != nil {
 		return err
@@ -104,7 +119,7 @@ func deleteServiceRole(project string, prefix map[string]string) error {
 	}
 
 	// Delete the remote service from the server
-	url := fmt.Sprintf("/v1/runner/%s/secrets/%s/%s", project, resourceID, roleID)
+	url := fmt.Sprintf("/v1/runner/%s/service-roles/%s/%s", project, resourceID, roleID)
 
 	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, new(model.Response)); err != nil {
 		return err

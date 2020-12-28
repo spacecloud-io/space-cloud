@@ -104,7 +104,7 @@ func actionGetServicesRole(cmd *cobra.Command, args []string) error {
 		params["roleID"] = args[1]
 	}
 
-	objs, err := GetServicesRoutes(project, commandName, params)
+	objs, err := GetServicesRole(project, commandName, params)
 	if err != nil {
 		return err
 	}
