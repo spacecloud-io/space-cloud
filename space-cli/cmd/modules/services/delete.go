@@ -53,7 +53,7 @@ func deleteService(project string, prefix map[string]string) error {
 			continue
 		}
 		serviceIDs = append(serviceIDs, fmt.Sprintf("%s-%s", spec.Meta["serviceId"], spec.Meta["version"]))
-		if strings.ToLower(spec.Meta["serviceId"]) == strings.ToLower(prefix["serviceId"]) && strings.ToLower(spec.Meta["version"]) == strings.ToLower(prefix["version"]) {
+		if strings.EqualFold(strings.ToLower(spec.Meta["serviceId"]), strings.ToLower(prefix["serviceId"])) && strings.EqualFold(strings.ToLower(spec.Meta["version"]), strings.ToLower(prefix["version"])) {
 			serviceID = spec.Meta["serviceId"]
 			version = spec.Meta["version"]
 			doesExists = true
@@ -109,7 +109,7 @@ func deleteServiceRole(project string, prefix map[string]string) error {
 			continue
 		}
 		serviceIDs = append(serviceIDs, fmt.Sprintf("%s-%s", spec.Meta["serviceId"], spec.Meta["roleId"]))
-		if strings.ToLower(spec.Meta["serviceId"]) == strings.ToLower(prefix["serviceId"]) && strings.ToLower(spec.Meta["roleId"]) == strings.ToLower(prefix["roleId"]) {
+		if strings.EqualFold(strings.ToLower(spec.Meta["serviceId"]), strings.ToLower(prefix["serviceId"])) && strings.EqualFold(strings.ToLower(spec.Meta["roleId"]), strings.ToLower(prefix["roleId"])) {
 			serviceID = spec.Meta["serviceId"]
 			roleID = spec.Meta["roleId"]
 			doesExists = true
