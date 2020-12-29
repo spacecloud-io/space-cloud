@@ -119,11 +119,6 @@ func (s *Schema) AdjustWhereClause(ctx context.Context, dbAlias string, dbType m
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	// Currently this is only required for mongo. Return if its any other database
-	if dbType != model.Mongo {
-		return nil
-	}
-
 	colInfo, ok := s.SchemaDoc[dbAlias]
 	if !ok {
 		// Gracefully return if the schema isn't provided
@@ -143,47 +138,76 @@ func (s *Schema) AdjustWhereClause(ctx context.Context, dbAlias string, dbType m
 		}
 
 		switch field.Kind {
+		case model.TypeBoolean:
+			if dbType == model.SQLServer {
+				switch param := v.(type) {
+				case bool:
+					if param {
+						find[k] = 1
+					} else {
+						find[k] = 0
+					}
+				case map[string]interface{}:
+					for operator, paramInterface := range param {
+						// Check if the value is boolean
+						paramBool, ok := paramInterface.(bool)
+						if !ok {
+							return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type (%s) for boolean (%v) provided for field (%s)", reflect.TypeOf(paramInterface), paramInterface, k), nil, nil)
+						}
+
+						if paramBool {
+							param[operator] = 1
+						} else {
+							param[operator] = 0
+						}
+					}
+				default:
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type (%s) for boolean (%v) provided for field (%s)", reflect.TypeOf(param), param, k), nil, nil)
+				}
+			}
 		case model.TypeDateTime:
-			switch param := v.(type) {
-			case string:
-				t, err := time.Parse(time.RFC3339Nano, param)
-				if err != nil {
-					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid string format of datetime (%s) provided for field (%s)", param, k), err, nil)
-				}
-				find[k] = primitive.NewDateTimeFromTime(t)
-
-			case map[string]interface{}:
-				for operator, paramInterface := range param {
-
-					// Don't do anything if value is already time.Time
-					if t, ok := paramInterface.(time.Time); ok {
-						param[operator] = primitive.NewDateTimeFromTime(t)
-						continue
-					}
-
-					if _, ok := paramInterface.(primitive.DateTime); ok {
-						continue
-					}
-
-					// Check if the value is string
-					paramString, ok := paramInterface.(string)
-					if !ok {
-						return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid format (%s) of datetime (%v) provided for field (%s)", reflect.TypeOf(paramInterface), paramInterface, k), nil, nil)
-					}
-
-					// Try parsing it to time.Time
-					t, err := time.Parse(time.RFC3339Nano, paramString)
+			if dbType == model.Mongo {
+				switch param := v.(type) {
+				case string:
+					t, err := time.Parse(time.RFC3339Nano, param)
 					if err != nil {
-						return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid string format of datetime (%s) provided for field (%s)", param, k), nil, nil)
+						return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid string format of datetime (%s) provided for field (%s)", param, k), err, nil)
 					}
+					find[k] = primitive.NewDateTimeFromTime(t)
 
-					// Store the value
-					param[operator] = primitive.NewDateTimeFromTime(t)
+				case map[string]interface{}:
+					for operator, paramInterface := range param {
+
+						// Don't do anything if value is already time.Time
+						if t, ok := paramInterface.(time.Time); ok {
+							param[operator] = primitive.NewDateTimeFromTime(t)
+							continue
+						}
+
+						if _, ok := paramInterface.(primitive.DateTime); ok {
+							continue
+						}
+
+						// Check if the value is string
+						paramString, ok := paramInterface.(string)
+						if !ok {
+							return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid format (%s) of datetime (%v) provided for field (%s)", reflect.TypeOf(paramInterface), paramInterface, k), nil, nil)
+						}
+
+						// Try parsing it to time.Time
+						t, err := time.Parse(time.RFC3339Nano, paramString)
+						if err != nil {
+							return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid string format of datetime (%s) provided for field (%s)", param, k), nil, nil)
+						}
+
+						// Store the value
+						param[operator] = primitive.NewDateTimeFromTime(t)
+					}
+				case time.Time:
+					break
+				default:
+					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid format (%s) of datetime (%v) provided for field (%s)", reflect.TypeOf(param), param, k), nil, nil)
 				}
-			case time.Time:
-				break
-			default:
-				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid format (%s) of datetime (%v) provided for field (%s)", reflect.TypeOf(param), param, k), nil, nil)
 			}
 		}
 	}

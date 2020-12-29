@@ -1529,8 +1529,8 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{},
-			wantErr: true,
+			want:    []string{"CREATE TABLE test.table1 (id varchar(50) collate Latin1_General_CS_AS NOT NULL , col1 nvarchar(max) constraint json_check_table1_col1 CHECK (ISJSON(col1)=1) NOT NULL ,PRIMARY KEY (id));"},
+			wantErr: false,
 		},
 		{
 			name: "adding a table and column of type integer with default key",

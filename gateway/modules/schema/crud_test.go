@@ -117,7 +117,6 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 		want    map[string]interface{}
 		wantErr bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "db is not mongo",
 			args: args{
@@ -248,6 +247,42 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 			},
 			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
 			want:    map[string]interface{}{"col2": 10},
+			wantErr: true,
+		},
+		{
+			name: "SQL server Using param as string",
+			args: args{
+				dbAlias: "mysql",
+				dbType:  model.SQLServer,
+				col:     "table1",
+				find:    map[string]interface{}{"col2": true},
+			},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}}},
+			want:    map[string]interface{}{"col2": 1},
+			wantErr: false,
+		},
+		{
+			name: "SQL server param as map[string]interface{}",
+			args: args{
+				dbAlias: "mysql",
+				dbType:  model.SQLServer,
+				col:     "table1",
+				find:    map[string]interface{}{"col2": map[string]interface{}{"time": false}},
+			},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}}},
+			want:    map[string]interface{}{"col2": map[string]interface{}{"time": 0}},
+			wantErr: false,
+		},
+		{
+			name: "SQL server Error format provided as value to map[string]interface{} ",
+			args: args{
+				dbAlias: "mysql",
+				dbType:  model.SQLServer,
+				col:     "table1",
+				find:    map[string]interface{}{"col2": map[string]interface{}{"time": "string"}},
+			},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}}},
+			want:    map[string]interface{}{"col2": map[string]interface{}{"time": "string"}},
 			wantErr: true,
 		},
 	}
