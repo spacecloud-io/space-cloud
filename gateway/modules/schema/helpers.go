@@ -343,7 +343,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 			query += " collate Latin1_General_CS_AS"
 		}
 		if model.DBType(dbType) == model.SQLServer && realFieldStruct.Kind == model.TypeJSON && sqlType == "nvarchar(max)" {
-			query += fmt.Sprintf("constraint json_check_%s_%s CHECK (ISJSON(%s)=1)", realColName, realFieldStruct.FieldName, realFieldStruct.FieldName)
+			query += fmt.Sprintf(" constraint json_check_%s_%s CHECK (ISJSON(%s)=1)", realColName, realFieldStruct.FieldName, realFieldStruct.FieldName)
 		}
 
 		if realFieldStruct.IsFieldTypeRequired {

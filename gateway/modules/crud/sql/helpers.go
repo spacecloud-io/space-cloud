@@ -52,6 +52,8 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 						regxarr = append(regxarr, fmt.Sprintf("%s = ?", k))
 					}
 					array = append(array, goqu.I(k).Eq(v2))
+				case "$like":
+					array = append(array, goqu.I(k).Like(v2))
 				case "$eq":
 					array = append(array, goqu.I(k).Eq(v2))
 				case "$ne":

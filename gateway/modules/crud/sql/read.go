@@ -163,6 +163,8 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		case "postgres":
 			vReplaced := strings.Replace(v, "=", "~", -1)
 			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
+		case "sqlserver":
+			return "", nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "SQL server doesn't support regex operation", nil, nil)
 		}
 
 	}
