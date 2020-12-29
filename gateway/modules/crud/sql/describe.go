@@ -106,25 +106,52 @@ order by c.ordinal_position;`
 		args = append(args, col, project)
 	case model.SQLServer:
 
-		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' ,
-                case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')') else C.DATA_TYPE end as 'Type',
-                REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') as 'Default',
-                CASE
-                    WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
-                    WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'
-                    WHEN TC.CONSTRAINT_TYPE = 'FOREIGN KEY' THEN 'MUL'
-                    ELSE isnull(TC.CONSTRAINT_TYPE,'')
-                    END AS 'Key',
-                coalesce(c.CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize',
-                CASE WHEN I.NAME IS NOT NULL THEN 'true' ELSE 'false' END AS 'AutoIncrement'
-FROM INFORMATION_SCHEMA.COLUMNS AS C
-         LEFT JOIN SYS.IDENTITY_COLUMNS I ON C.table_name = OBJECT_NAME(I.OBJECT_ID) AND C.COLUMN_NAME = I.NAME
-         FULL JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS CC
-                   ON C.COLUMN_NAME = CC.COLUMN_NAME
-         FULL JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS TC
-                   ON CC.CONSTRAINT_NAME = TC.CONSTRAINT_NAME
-WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
+		queryString = `
+select c.table_schema AS 'TABLE_SCHEMA',
+       c.table_name  AS 'TABLE_NAME',
 
+       c.column_name AS 'COLUMN_NAME',
+       c.data_type AS 'DATA_TYPE',
+       c.is_nullable AS 'IS_NULLABLE',
+       c.ordinal_position AS 'ORDINAL_POSITION',
+       REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') AS 'DEFAULT',
+       case
+           when COLUMNPROPERTY(object_id(c.TABLE_SCHEMA +'.'+ c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1
+               then 'Y'
+           else 'N'
+       end AS 'AUTO_INCREMENT',
+       coalesce(c.character_maximum_length,0) AS 'CHARACTER_MAXIMUM_LENGTH',
+       coalesce(c.numeric_precision,0) AS 'NUMERIC_PRECISION',
+       coalesce(c.numeric_scale,0) AS 'NUMERIC_SCALE',
+
+       coalesce(fk.constraint_name,'') AS 'CONSTRAINT_NAME',
+       coalesce(fk.delete_rule,'') AS 'DELETE_RULE',
+       coalesce(fk.foreign_table_schema,'') AS 'REFERENCED_TABLE_SCHEMA',
+       coalesce(fk.foreign_table_name,'') AS 'REFERENCED_TABLE_NAME',
+       coalesce(fk.foreign_column_name,'') AS 'REFERENCED_COLUMN_NAME'
+from information_schema.columns c
+         left join (SELECT tc.table_schema, tc.constraint_name, tc.table_name, kcu.column_name,
+                           rc.foreign_schema_name as foreign_table_schema, rc.foreign_table_name AS foreign_table_name,
+                           ccu.column_name AS foreign_column_name, rc.delete_rule as delete_rule
+                    FROM information_schema.table_constraints AS tc
+                             INNER JOIN information_schema.key_column_usage AS kcu
+                                        ON tc.constraint_name = kcu.constraint_name
+                                            AND tc.table_schema = kcu.table_schema
+                                            and tc.TABLE_CATALOG = kcu.TABLE_CATALOG
+                             INNER JOIN information_schema.constraint_column_usage AS ccu
+                                        ON ccu.constraint_name = tc.constraint_name
+                                            AND ccu.table_schema = tc.table_schema
+                                            and ccu.CONSTRAINT_CATALOG = tc.TABLE_CATALOG
+                             INNER JOIN  (select m.*, n.TABLE_NAME foreign_table_name , n.TABLE_SCHEMA foreign_schema_name from information_schema.referential_constraints m
+                                                                                                                                    left join information_schema.table_constraints n on m.UNIQUE_CONSTRAINT_NAME=n.CONSTRAINT_NAME
+                        and m.UNIQUE_CONSTRAINT_CATALOG = n.CONSTRAINT_CATALOG and m.UNIQUE_CONSTRAINT_SCHEMA=n.CONSTRAINT_SCHEMA) rc
+                                         on rc.constraint_name = tc.constraint_name and rc.constraint_schema = tc.table_schema
+                                             and rc.CONSTRAINT_CATALOG=tc.TABLE_CATALOG
+                    WHERE tc.constraint_type = 'FOREIGN KEY' ) fk
+                   on fk.table_name = c.table_name and fk.column_name = c.column_name and fk.table_schema = c.table_schema
+where c.table_name = @p1 and c.table_schema = @p2
+order by c.ordinal_position;
+`
 		args = append(args, col, project)
 	}
 	rows, err := s.getClient().QueryxContext(ctx, queryString, args...)
@@ -185,25 +212,31 @@ from pg_class a
          left join pg_attribute b on b.attrelid = t.oid and b.attnum = ANY(i.indkey)
 where n.nspname= $1 and t.relname= $2;`
 	case model.SQLServer:
-		queryString = `SELECT 
-    	TABLE_NAME = t.name,
-    	COLUMN_NAME = col.name,
-    	INDEX_NAME = ind.name,
-    	SEQ_IN_INDEX = ic.index_column_id,
-    	case when ind.is_unique = 0 then 'no' else 'yes' end as IS_UNIQUE,
-    	case when ic.is_descending_key = 0 then 'asc' else 'desc' end as SORT 
-			FROM 
-     			sys.indexes ind 
-				INNER JOIN 
-     			sys.index_columns ic ON  ind.object_id = ic.object_id and ind.index_id = ic.index_id 
-				INNER JOIN 
-     			sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id 
-				INNER JOIN 
-     			sys.tables t ON ind.object_id = t.object_id 
-				INNER JOIN 
-        	sys.schemas s ON t.schema_id = s.schema_id
-			WHERE 
-     			ind.is_primary_key = 0  and s.name = @p1 and t.name = @p2 `
+		queryString = `
+select
+    schema_name(t.schema_id) AS 'TABLE_SCHEMA',
+    t.[name] AS 'TABLE_NAME',
+    d.column_name AS 'COLUMN_NAME',
+    i.[name] AS 'INDEX_NAME',
+    d.index_key AS 'SEQ_IN_INDEX',
+    lower(d.index_sort_order) AS 'SORT',
+    case when i.is_unique = 1 then 'true' else 'false' end AS 'IS_UNIQUE',
+    case when i.is_primary_key = 1 then 'true' else 'false' end AS 'IS_PRIMARY'
+from sys.objects t
+         inner join sys.indexes i
+                    on t.object_id = i.object_id
+         inner join (select ic.object_id, ic.index_id, ic.key_ordinal index_key,col.[name] column_name,
+                            case when ic.is_descending_key = 0 then 'ASC' else 'DESC' end index_sort_order
+                     from sys.index_columns ic
+                              inner join sys.columns col
+                                         on ic.object_id = col.object_id
+                                             and ic.column_id = col.column_id) d on
+            d.object_id = t.object_id and d.index_id = i.index_id
+where t.is_ms_shipped <> 1
+  and i.index_id > 0
+  and schema_name(t.schema_id) = @p1
+  and t.[name] = @p2
+order by i.index_id;`
 	}
 	rows, err := s.getClient().QueryxContext(ctx, queryString, []interface{}{project, col}...)
 	if err != nil {
