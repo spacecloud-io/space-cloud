@@ -37,7 +37,7 @@ func deleteSecret(project, prefix string) error {
 	return nil
 }
 
-func deleteService(project string, prefix map[string]string) error {
+func deleteService(project string, args map[string]string) error {
 	objs, err := GetServices(project, "service", map[string]string{})
 	if err != nil {
 		return err
@@ -45,41 +45,38 @@ func deleteService(project string, prefix map[string]string) error {
 
 	serviceID := ""
 	version := ""
-	doesExists := false
-	doesPartialExists := false
+	isExactMatch := false
 	serviceIDs := []string{}
 	for _, spec := range objs {
-		if prefix["version"] != "" && !strings.HasPrefix(strings.ToLower(spec.Meta["version"]), strings.ToLower(prefix["version"])) {
+		// allow only those services that match version prefix provided by the user
+		if args["version"] != "" && !strings.HasPrefix(spec.Meta["version"], args["version"]) {
 			continue
 		}
-		serviceIDs = append(serviceIDs, fmt.Sprintf("%s-%s", spec.Meta["serviceId"], spec.Meta["version"]))
-		if strings.EqualFold(strings.ToLower(spec.Meta["serviceId"]), strings.ToLower(prefix["serviceId"])) && strings.EqualFold(strings.ToLower(spec.Meta["version"]), strings.ToLower(prefix["version"])) {
+		serviceIDs = append(serviceIDs, fmt.Sprintf("%s::%s", spec.Meta["serviceId"], spec.Meta["version"]))
+		if strings.EqualFold(spec.Meta["serviceId"], args["serviceId"]) && strings.EqualFold(spec.Meta["version"], args["version"]) {
 			serviceID = spec.Meta["serviceId"]
 			version = spec.Meta["version"]
-			doesExists = true
-		}
-		if strings.EqualFold(strings.ToLower(spec.Meta["serviceId"]), strings.ToLower(prefix["serviceId"])) {
-			doesPartialExists = true
+			isExactMatch = true
+			break
 		}
 	}
 
-	if !doesExists {
-		pre := prefix["serviceId"]
-		if doesPartialExists {
-			pre = fmt.Sprintf("%s-%s", prefix["serviceId"], prefix["version"])
-		}
-
-		resourceID, err := filter.DeleteOptions(pre, serviceIDs)
+	if !isExactMatch {
+		resourceID, err := filter.DeleteOptions(args["serviceId"], serviceIDs)
 		if err != nil {
 			return err
 		}
 
-		resourceIDs := strings.Split(resourceID, "-")
+		if resourceID == "" {
+			return nil
+		}
+
+		resourceIDs := strings.Split(resourceID, "::")
 		serviceID = resourceIDs[0]
 		version = resourceIDs[1]
 	}
 
-	// Delete the remote service from the server
+	// Remove the deployed service from the space cloud
 	url := fmt.Sprintf("/v1/runner/%s/services/%s/%s", project, serviceID, version)
 
 	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, new(model.Response)); err != nil {
@@ -89,11 +86,7 @@ func deleteService(project string, prefix map[string]string) error {
 	return nil
 }
 
-// func deleteServiceRoute(project, prefix string) error {
-
-// }
-
-func deleteServiceRole(project string, prefix map[string]string) error {
+func deleteServiceRole(project string, args map[string]string) error {
 
 	objs, err := GetServicesRole(project, "service-role", map[string]string{})
 	if err != nil {
@@ -101,41 +94,38 @@ func deleteServiceRole(project string, prefix map[string]string) error {
 	}
 	serviceID := ""
 	roleID := ""
-	doesExists := false
-	doesPartialExists := false
+	isExactMatch := false
 	serviceIDs := []string{}
 	for _, spec := range objs {
-		if prefix["roleId"] != "" && !strings.HasPrefix(strings.ToLower(spec.Meta["roleId"]), strings.ToLower(prefix["roleId"])) {
+		// allow only those services that match version prefix provided by the user
+		if args["roleId"] != "" && !strings.HasPrefix(spec.Meta["roleId"], args["roleId"]) {
 			continue
 		}
-		serviceIDs = append(serviceIDs, fmt.Sprintf("%s-%s", spec.Meta["serviceId"], spec.Meta["roleId"]))
-		if strings.EqualFold(strings.ToLower(spec.Meta["serviceId"]), strings.ToLower(prefix["serviceId"])) && strings.EqualFold(strings.ToLower(spec.Meta["roleId"]), strings.ToLower(prefix["roleId"])) {
+		serviceIDs = append(serviceIDs, fmt.Sprintf("%s::%s", spec.Meta["serviceId"], spec.Meta["roleId"]))
+		if strings.EqualFold(spec.Meta["serviceId"], args["serviceId"]) && strings.EqualFold(spec.Meta["roleId"], args["roleId"]) {
 			serviceID = spec.Meta["serviceId"]
 			roleID = spec.Meta["roleId"]
-			doesExists = true
-		}
-		if strings.EqualFold(strings.ToLower(spec.Meta["serviceId"]), strings.ToLower(prefix["serviceId"])) {
-			doesPartialExists = true
+			isExactMatch = true
+			break
 		}
 	}
 
-	if !doesExists {
-		pre := prefix["serviceId"]
-		if doesPartialExists {
-			pre = fmt.Sprintf("%s-%s", prefix["serviceId"], prefix["roleId"])
-		}
-
-		resourceID, err := filter.DeleteOptions(pre, serviceIDs)
+	if !isExactMatch {
+		resourceID, err := filter.DeleteOptions(args["serviceId"], serviceIDs)
 		if err != nil {
 			return err
 		}
 
-		resourceIDs := strings.Split(resourceID, "-")
+		if resourceID == "" {
+			return nil
+		}
+
+		resourceIDs := strings.Split(resourceID, "::")
 		serviceID = resourceIDs[0]
 		roleID = resourceIDs[1]
 	}
 
-	// Delete the remote service from the server
+	// Remove the deployed service-role	 from the space cloud
 	url := fmt.Sprintf("/v1/runner/%s/service-roles/%s/%s", project, serviceID, roleID)
 
 	if err := transport.Client.MakeHTTPRequest(http.MethodDelete, url, map[string]string{}, new(model.Response)); err != nil {

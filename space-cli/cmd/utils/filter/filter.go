@@ -24,6 +24,10 @@ func DeleteOptions(prefix string, resources []string) (string, error) {
 			return "", err
 		}
 	} else {
+		if len(resources) == 0 {
+			utils.LogInfo("Warning! No resource found for prefix provided")
+			return "", nil
+		}
 		if len(resources) == 1 {
 			prefix = resources[0]
 		} else {

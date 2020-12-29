@@ -1083,7 +1083,7 @@ func Test_deleteServiceRole(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 		{
-			name: "Unable to get remote services",
+			name: "Unable to get remote service-roles",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "local-admin", "version": "v1"}},
 			transportMockArgs: []mockArgs{
 				{
@@ -1103,7 +1103,7 @@ func Test_deleteServiceRole(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Prefix matches one service but unable to delete service",
+			name: "Prefix matches one service-roles but unable to delete service-roles",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "l"}},
 			transportMockArgs: []mockArgs{
 				{
@@ -1163,7 +1163,7 @@ func Test_deleteServiceRole(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Prefix matches one service and service deleted successfully",
+			name: "Prefix matches one service-role and service-roles deleted successfully",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "l"}},
 			transportMockArgs: []mockArgs{
 				{
@@ -1267,7 +1267,7 @@ func Test_deleteServiceRole(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Prefix matches multiple service-roles but unable to delete service",
+			name: "Prefix matches multiple service-roles but unable to delete service-roles",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "l"}},
 			transportMockArgs: []mockArgs{
 				{
@@ -1331,7 +1331,7 @@ func Test_deleteServiceRole(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Prefix matches multiple service-roles and service successfully deleted",
+			name: "Prefix matches multiple service-roles and service-role successfully deleted",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "l"}},
 			transportMockArgs: []mockArgs{
 				{
@@ -1439,7 +1439,7 @@ func Test_deleteServiceRole(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Prefix does not match any service-roles but unable to delete service",
+			name: "Prefix does not match any service-roles but unable to delete service-roles",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "b"}},
 			transportMockArgs: []mockArgs{
 				{
@@ -1503,7 +1503,7 @@ func Test_deleteServiceRole(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Prefix does not match any service-roles and service successfully deleted",
+			name: "Prefix does not match any service-roles and service-role successfully deleted",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "b"}},
 			transportMockArgs: []mockArgs{
 				{

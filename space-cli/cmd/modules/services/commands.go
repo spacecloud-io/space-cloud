@@ -233,14 +233,6 @@ func DeleteSubCommands() []*cobra.Command {
 		Example:           "space-cli delete service serviceId version --project myproject",
 	}
 
-	// var deleteServiceRoute = &cobra.Command{
-	// 	Use:               "service-route",
-	// 	Aliases:           []string{"service-route"},
-	// 	RunE:              actionDeleteServiceRoute,
-	// 	ValidArgsFunction: serviceRoutesAutoCompleteFun,
-	// 	Example:           "space-cli delete service-route serviceId --project myproject",
-	// }
-
 	var deleteServiceRole = &cobra.Command{
 		Use:               "service-role",
 		Aliases:           []string{"service-roles"},
@@ -285,21 +277,6 @@ func actionDeleteService(cmd *cobra.Command, args []string) error {
 
 	return deleteService(project, prefix)
 }
-
-// func actionDeleteServiceRoute(cmd *cobra.Command, args []string) error {
-// 	// Get the project
-// 	project, check := utils.GetProjectID()
-// 	if !check {
-// 		return utils.LogError("Project not specified in flag", nil)
-// 	}
-
-// 	prefix := ""
-// 	if len(args) != 0 {
-// 		prefix = args[0]
-// 	}
-
-// 	return deleteServiceRoute(project, prefix)
-// }
 
 func actionDeleteServiceRole(cmd *cobra.Command, args []string) error {
 	// Get the project
