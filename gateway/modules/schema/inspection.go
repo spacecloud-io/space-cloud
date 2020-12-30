@@ -53,12 +53,17 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, i
 		}
 
 		// field type
-		if model.DBType(dbType) == model.Postgres {
+		switch model.DBType(dbType) {
+		case model.Postgres:
 			if err := inspectionPostgresCheckFieldType(field, &fieldDetails); err != nil {
 				return nil, err
 			}
-		} else {
+		case model.MySQL:
 			if err := inspectionMySQLCheckFieldType(field, &fieldDetails); err != nil {
+				return nil, err
+			}
+		case model.SQLServer:
+			if err := inspectionSQLServerCheckFieldType(field.VarcharSize, field.FieldType, &fieldDetails); err != nil {
 				return nil, err
 			}
 		}
@@ -83,17 +88,6 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, i
 			fieldDetails.Default = field.FieldDefault
 		}
 
-		// Set auto increment
-		if field.AutoIncrement == "true" {
-			fieldDetails.IsAutoIncrement = true
-		}
-		if model.DBType(dbType) == model.Postgres && strings.HasPrefix(field.FieldDefault, "nextval") {
-			// override the default value, this is a special case if a postgres column has a auto increment value, the default value that database returns is -> ( nextval(auto_increment_test_auto_increment_test_seq )
-			fieldDetails.Default = ""
-			fieldDetails.IsDefault = false
-			fieldDetails.IsAutoIncrement = true
-		}
-
 		// check foreignKey & identify if relation exists
 		if field.RefTableName != "" && field.RefColumnName != "" {
 			fieldDetails.IsForeign = true
@@ -102,22 +96,36 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, i
 
 		for _, indexValue := range indexes {
 			if indexValue.ColumnName == field.ColumnName {
-				if indexValue.IsUnique {
-					fieldDetails.IsUnique = true
-				} else if indexValue.IsPrimary {
-					fieldDetails.IsUnique = false
+				temp := &model.TableProperties{Order: indexValue.Order, Sort: indexValue.Sort, ConstraintName: indexValue.IndexName}
+				if indexValue.IsPrimary {
 					fieldDetails.IsPrimary = true
+					fieldDetails.PrimaryKeyInfo = &model.TableProperties{
+						Order:           indexValue.Order,
+						IsAutoIncrement: field.AutoIncrement == "true",
+					}
+					if model.DBType(dbType) == model.Postgres && strings.HasPrefix(field.FieldDefault, "nextval") {
+						// override the default value, this is a special case if a postgres column has a auto increment value, the default value that database returns is -> ( nextval(auto_increment_test_auto_increment_test_seq )
+						fieldDetails.Default = ""
+						fieldDetails.IsDefault = false
+						fieldDetails.PrimaryKeyInfo.IsAutoIncrement = true
+					}
 					continue
+				} else if indexValue.IsUnique {
+					temp.IsUnique = true
 				} else {
-					fieldDetails.IsIndex = true
+					temp.IsIndex = true
 				}
 
-				fieldDetails.IndexInfo = &model.TableProperties{Order: indexValue.Order, Sort: indexValue.Sort, ConstraintName: indexValue.IndexName}
+				if fieldDetails.IndexInfo == nil {
+					fieldDetails.IndexInfo = make([]*model.TableProperties, 0)
+				}
 				if strings.HasPrefix(indexValue.IndexName, "index__") {
-					// index is created through gateway, as it follows our naming convention
 					indexValue.IndexName = getGroupNameFromIndexName(indexValue.IndexName)
 				}
-				fieldDetails.IndexInfo.Group = indexValue.IndexName
+				temp.Group = indexValue.IndexName
+				temp.Field = indexValue.ColumnName
+				// index is created through gateway, as it follows our naming convention
+				fieldDetails.IndexInfo = append(fieldDetails.IndexInfo, temp)
 			}
 		}
 		// field name
@@ -173,6 +181,46 @@ func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails 
 				Scale: field.NumericScale,
 			}
 		}
+	case "tinyint", "boolean", "bit":
+		fieldDetails.Kind = model.TypeBoolean
+	case "json":
+		fieldDetails.Kind = model.TypeJSON
+	default:
+		return errors.New("Inspection type check : no match found got " + result[0])
+	}
+	return nil
+}
+
+func inspectionSQLServerCheckFieldType(size int, typeName string, fieldDetails *model.FieldType) error {
+	if typeName == "varchar(-1)" || typeName == "varchar(max)" {
+		fieldDetails.Kind = model.TypeString
+		return nil
+	}
+	if typeName == "nvarchar(-1)" || typeName == "nvarchar(max)" {
+		fieldDetails.Kind = model.TypeString
+		return nil
+	}
+	if strings.HasPrefix(typeName, "varchar(") {
+		fieldDetails.Kind = model.TypeID
+		fieldDetails.TypeIDSize = size
+		return nil
+	}
+
+	result := strings.Split(typeName, "(")
+
+	switch result[0] {
+	case "date":
+		fieldDetails.Kind = model.TypeDate
+	case "time":
+		fieldDetails.Kind = model.TypeTime
+	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal", "nvarchar":
+		fieldDetails.Kind = model.TypeString
+	case "smallint", "mediumint", "int", "bigint":
+		fieldDetails.Kind = model.TypeInteger
+	case "float", "double":
+		fieldDetails.Kind = model.TypeFloat
+	case "datetime", "timestamp", "datetimeoffset":
+		fieldDetails.Kind = model.TypeDateTime
 	case "tinyint", "boolean", "bit":
 		fieldDetails.Kind = model.TypeBoolean
 	case "json":

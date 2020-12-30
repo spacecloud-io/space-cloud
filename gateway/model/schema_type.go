@@ -20,19 +20,17 @@ type (
 		NestedObject Fields `json:"nestedObject"`
 		IsPrimary    bool   `json:"isPrimary"`
 		// For directives
-		IsAutoIncrement bool             `json:"isAutoIncrement"`
-		IsIndex         bool             `json:"isIndex"`
-		IsUnique        bool             `json:"isUnique"`
-		IsCreatedAt     bool             `json:"isCreatedAt"`
-		IsUpdatedAt     bool             `json:"isUpdatedAt"`
-		IsLinked        bool             `json:"isLinked"`
-		IsForeign       bool             `json:"isForeign"`
-		IsDefault       bool             `json:"isDefault"`
-		IndexInfo       *TableProperties `json:"indexInfo"`
-		LinkedTable     *TableProperties `json:"linkedTable"`
-		JointTable      *TableProperties `json:"jointTable"`
-		Default         interface{}      `json:"default"`
-		TypeIDSize      int              `json:"size"`
+		IsCreatedAt    bool               `json:"isCreatedAt"`
+		IsUpdatedAt    bool               `json:"isUpdatedAt"`
+		IsLinked       bool               `json:"isLinked"`
+		IsForeign      bool               `json:"isForeign"`
+		IsDefault      bool               `json:"isDefault"`
+		PrimaryKeyInfo *TableProperties   `json:"primaryKeyInfo"`
+		IndexInfo      []*TableProperties `json:"indexInfo"`
+		LinkedTable    *TableProperties   `json:"linkedTable"`
+		JointTable     *TableProperties   `json:"jointTable"`
+		Default        interface{}        `json:"default"`
+		TypeIDSize     int                `json:"size"`
 	}
 
 	// FieldArgs are properties of the column
@@ -47,12 +45,22 @@ type (
 
 	// TableProperties are properties of the table
 	TableProperties struct {
-		From, To               string
-		Table, Field, OnDelete string
-		DBType                 string
-		Group, Sort            string
-		Order                  int
-		ConstraintName         string
+		// IsIndex tells us if this is an indexed column
+		IsIndex bool `json:"isIndex"`
+		// IsUnique tells us if this is an unique indexed column
+		IsUnique bool `json:"isUnique"`
+		// IsAutoIncrement if true then the primary key supports autoincrement
+		IsAutoIncrement bool
+		From            string
+		To              string
+		Table           string
+		Field           string
+		OnDelete        string
+		DBType          string
+		Group           string
+		Sort            string
+		Order           int
+		ConstraintName  string
 	}
 )
 

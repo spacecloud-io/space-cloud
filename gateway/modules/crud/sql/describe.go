@@ -111,7 +111,11 @@ select c.table_schema AS 'TABLE_SCHEMA',
        c.table_name  AS 'TABLE_NAME',
 
        c.column_name AS 'COLUMN_NAME',
-       c.data_type AS 'DATA_TYPE',
+       case 
+		   when C.DATA_TYPE = 'varchar' 
+       			then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')') 
+		   else C.DATA_TYPE 
+	   end as 'DATA_TYPE',
        c.is_nullable AS 'IS_NULLABLE',
        c.ordinal_position AS 'ORDINAL_POSITION',
        REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') AS 'DEFAULT',

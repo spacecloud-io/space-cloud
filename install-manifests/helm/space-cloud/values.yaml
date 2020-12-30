@@ -96,7 +96,7 @@ dbEvents:
   enabled: true # NOTE: don't put the boolean value in double quotes
   image:
     name: "spaceuptech/dbevents"
-    version: "0.1.0"
+    version: "0.2.0"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always
   resources:
     requests:

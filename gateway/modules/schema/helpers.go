@@ -79,16 +79,33 @@ func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key must be not null", nil, nil)
 	}
 
-	if realFieldStruct.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
+	if realFieldStruct.IsPrimary && realFieldStruct.PrimaryKeyInfo.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key with auto increment is only applicable on type integer", nil, nil)
 	}
 
-	if realFieldStruct.Kind == model.TypeJSON && (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked || realFieldStruct.IsIndex) {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set index with type json", nil, nil)
+	if realFieldStruct.Kind == model.TypeJSON {
+		if realFieldStruct.IsPrimary {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("cannot set primary key on field (%s) having type json", realFieldStruct.FieldName), nil, nil)
+		} else if realFieldStruct.IsLinked {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("cannot set link directive on field (%s) having type json", realFieldStruct.FieldName), nil, nil)
+		}
 	}
 
-	if (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
+	if (realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set default directive with other constraints", nil, nil)
+	}
+
+	for _, indexInfo := range realFieldStruct.IndexInfo {
+		if realFieldStruct.Kind == model.TypeJSON {
+			if indexInfo.IsIndex || indexInfo.IsUnique {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("cannot set index on field (%s) having type json", realFieldStruct.FieldName), nil, nil)
+			}
+		}
+		if realFieldStruct.IsDefault {
+			if indexInfo.IsIndex || indexInfo.IsUnique {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set default directive with other constraints", nil, nil)
+			}
+		}
 	}
 
 	return nil
@@ -313,7 +330,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 				continue
 			}
 			var autoIncrement string
-			if realFieldStruct.IsAutoIncrement {
+			if realFieldStruct.PrimaryKeyInfo.IsAutoIncrement {
 				switch model.DBType(dbType) {
 				case model.SQLServer:
 					autoIncrement = " IDENTITY(1,1)"
@@ -453,10 +470,12 @@ func (c *creationModule) removeDirectives(dbType string) []string {
 	// 	c.currentColumnInfo.IsPrimary = false
 	// }
 
-	if c.currentColumnInfo.IsIndex {
-		if _, p := c.currentIndexMap[c.currentColumnInfo.IndexInfo.Group]; p {
-			queries = append(queries, c.schemaModule.removeIndex(dbType, c.dbAlias, c.logicalDBName, c.TableName, c.currentColumnInfo.IndexInfo.ConstraintName))
-			delete(c.currentIndexMap, c.currentColumnInfo.IndexInfo.Group)
+	for _, indexInfo := range c.currentColumnInfo.IndexInfo {
+		if indexInfo.IsIndex || indexInfo.IsUnique {
+			if _, p := c.currentIndexMap[indexInfo.Group]; p {
+				queries = append(queries, c.schemaModule.removeIndex(dbType, c.dbAlias, c.logicalDBName, c.TableName, indexInfo.ConstraintName))
+				delete(c.currentIndexMap, indexInfo.Group)
+			}
 		}
 	}
 
@@ -476,10 +495,10 @@ func (c *creationModule) modifyColumnType(dbType string) []string {
 	return queries
 }
 
-func (s *Schema) addIndex(dbType, dbAlias, logicalDBName, tableName, indexName string, isIndexUnique bool, mapArray []*model.FieldType) string {
+func (s *Schema) addIndex(dbType, dbAlias, logicalDBName, tableName, indexName string, isIndexUnique bool, mapArray []*model.TableProperties) string {
 	a := " ("
 	for _, schemaFieldType := range mapArray {
-		a += schemaFieldType.FieldName + " " + schemaFieldType.IndexInfo.Sort + ", "
+		a += schemaFieldType.Field + " " + schemaFieldType.Sort + ", "
 	}
 	a = strings.TrimSuffix(a, ", ")
 	p := ""
@@ -514,9 +533,9 @@ func getConstraintName(tableName, columnName string) string {
 }
 
 type indexStruct struct {
-	IsIndexUnique bool
-	IndexMap      []*model.FieldType
-	IndexName     string
+	IsIndexUnique        bool
+	IndexTableProperties []*model.TableProperties
+	IndexName            string
 }
 
 func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*indexStruct, error) {
@@ -525,30 +544,33 @@ func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*index
 	// Iterate over each column of table
 	for _, columnInfo := range tableInfo {
 
-		// We are only interested in the columns which have an index on them
-		if columnInfo.IsIndex {
+		for _, indexInfo := range columnInfo.IndexInfo {
+			// We are only interested in the columns which have an index on them
+			if indexInfo.IsIndex || indexInfo.IsUnique {
+				// Append the column to te index map. Make sure we create an empty array if no index by the provided name exists
+				value, ok := indexMap[indexInfo.Group]
+				if !ok {
+					value = &indexStruct{IndexName: indexInfo.ConstraintName, IndexTableProperties: []*model.TableProperties{}}
+					indexMap[indexInfo.Group] = value
+				}
+				// value.IndexMap = append(value.IndexMap, columnInfo)
+				value.IndexTableProperties = append(value.IndexTableProperties, indexInfo)
 
-			// Append the column to te index map. Make sure we create an empty array if no index by the provided name exists
-			value, ok := indexMap[columnInfo.IndexInfo.Group]
-			if !ok {
-				value = &indexStruct{IndexMap: []*model.FieldType{}, IndexName: columnInfo.IndexInfo.ConstraintName}
-				indexMap[columnInfo.IndexInfo.Group] = value
-			}
-			value.IndexMap = append(value.IndexMap, columnInfo)
-
-			// Mark the index group as unique if even on column had the unique tag
-			if columnInfo.IsUnique {
-				indexMap[columnInfo.IndexInfo.Group].IsIndexUnique = true
+				// Mark the index group as unique if even on column had the unique tag
+				if indexInfo.IsUnique {
+					indexMap[indexInfo.Group].IsIndexUnique = true
+				}
 			}
 		}
 	}
 
 	for indexName, indexValue := range indexMap {
-		var v indexStore = indexValue.IndexMap
+		var v indexStore = indexValue.IndexTableProperties
 		sort.Stable(v)
-		indexValue.IndexMap = v
-		for i, column := range indexValue.IndexMap {
-			if i+1 != column.IndexInfo.Order {
+		indexValue.IndexTableProperties = v
+		for i, column := range indexValue.IndexTableProperties {
+			fmt.Println("Name", indexName, "Order", i+1, column.Order)
+			if i+1 != column.Order {
 				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid order sequence proveded for index (%s)", indexName), nil, nil)
 			}
 		}
