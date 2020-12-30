@@ -64,7 +64,7 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		// @unique or @index directive
 		"{{range $k,$v := $fieldValue.IndexInfo }}" +
 		"{{if $v.IsUnique}}" +
-		"@unique(group: \"{{$v.Group}}\",sort: \"{{$v.Sort}}\" order: {{$v.Order}}) " +
+		"@unique(group: \"{{$v.Group}}\", order: {{$v.Order}}) " +
 		"{{else}}" +
 		"{{if $v.IsIndex}}" +
 		"@index(group: \"{{$v.Group}}\", sort: \"{{$v.Sort}}\", order: {{$v.Order}}) " +

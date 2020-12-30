@@ -283,6 +283,7 @@ func TestParseSchema(t *testing.T) {
 									Group:   "user_name",
 									Order:   1,
 									Sort:    "asc",
+									Field:   "first_name",
 								},
 							},
 						},
@@ -293,11 +294,11 @@ func TestParseSchema(t *testing.T) {
 							TypeIDSize:          model.SQLTypeIDSize,
 							IndexInfo: []*model.TableProperties{
 								{
-									IsIndex:  true,
 									IsUnique: true,
 									Group:    "user_name",
 									Order:    1,
 									Sort:     "asc",
+									Field:    "name",
 								},
 							},
 						},
