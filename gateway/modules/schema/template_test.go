@@ -86,25 +86,25 @@ func Test_generateSDL(t *testing.T) {
 						IsFieldTypeRequired: true,
 						Kind:                model.TypeID,
 						TypeIDSize:          model.SQLTypeIDSize,
-						IsIndex:             true,
-						IndexInfo: &model.TableProperties{
-							Group: "user_name",
-							Order: 1,
-							Sort:  "asc",
-						},
+						IndexInfo: []*model.TableProperties{{
+							IsIndex: true,
+							Group:   "user_name",
+							Order:   1,
+							Sort:    "asc",
+						}},
 					},
 					"name": &model.FieldType{
 						FieldName:           "name",
 						IsFieldTypeRequired: true,
 						Kind:                model.TypeID,
 						TypeIDSize:          model.SQLTypeIDSize,
-						IsIndex:             true,
-						IsUnique:            true,
-						IndexInfo: &model.TableProperties{
-							Group: "user_name",
-							Order: 1,
-							Sort:  "asc",
-						},
+						IndexInfo: []*model.TableProperties{{
+							IsIndex:  true,
+							IsUnique: true,
+							Group:    "user_name",
+							Order:    1,
+							Sort:     "asc",
+						}},
 					},
 					"customer_id": &model.FieldType{
 						FieldName:           "customer_id",

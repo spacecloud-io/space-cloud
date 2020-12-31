@@ -227,21 +227,22 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 							return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Default directive must be accompanied with value field", nil, nil)
 						}
 					case model.DirectiveIndex, model.DirectiveUnique:
-						fieldTypeStuct.IsIndex = true
-						fieldTypeStuct.IsUnique = directive.Name.Value == model.DirectiveUnique
-						fieldTypeStuct.IndexInfo = &model.TableProperties{Group: fieldTypeStuct.FieldName, Order: model.DefaultIndexOrder, Sort: model.DefaultIndexSort}
+						if fieldTypeStuct.IndexInfo == nil {
+							fieldTypeStuct.IndexInfo = make([]*model.TableProperties, 0)
+						}
+						indexInfo := &model.TableProperties{Order: model.DefaultIndexOrder, Sort: model.DefaultIndexSort, IsIndex: directive.Name.Value == model.DirectiveIndex, IsUnique: directive.Name.Value == model.DirectiveUnique}
+						var ok bool
 						for _, arg := range directive.Arguments {
-							var ok bool
 							switch arg.Name.Value {
 							case "name", "group":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
-								fieldTypeStuct.IndexInfo.Group, ok = val.(string)
+								indexInfo.Group, ok = val.(string)
 								if !ok {
 									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 							case "order":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
-								fieldTypeStuct.IndexInfo.Order, ok = val.(int)
+								indexInfo.Order, ok = val.(int)
 								if !ok {
 									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected int", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
@@ -254,9 +255,14 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 									}
 									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unknow value provided for field (%s) directinve @(%s) argument (%s) got (%v) expected either (asc) or (desc)", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
-								fieldTypeStuct.IndexInfo.Sort = sort
+								indexInfo.Sort = sort
 							}
 						}
+						if ok {
+							indexInfo.Field = field.Name.Value
+							fieldTypeStuct.IndexInfo = append(fieldTypeStuct.IndexInfo, indexInfo)
+						}
+
 					case model.DirectiveLink:
 						fieldTypeStuct.IsLinked = true
 						fieldTypeStuct.LinkedTable = &model.TableProperties{DBType: dbName}

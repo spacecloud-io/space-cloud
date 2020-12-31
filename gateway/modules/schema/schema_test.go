@@ -277,11 +277,14 @@ func TestParseSchema(t *testing.T) {
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
-							IsIndex:             true,
-							IndexInfo: &model.TableProperties{
-								Group: "user_name",
-								Order: 1,
-								Sort:  "asc",
+							IndexInfo: []*model.TableProperties{
+								{
+									IsIndex: true,
+									Group:   "user_name",
+									Order:   1,
+									Sort:    "asc",
+									Field:   "first_name",
+								},
 							},
 						},
 						"name": &model.FieldType{
@@ -289,12 +292,14 @@ func TestParseSchema(t *testing.T) {
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
-							IsIndex:             true,
-							IsUnique:            true,
-							IndexInfo: &model.TableProperties{
-								Group: "user_name",
-								Order: 1,
-								Sort:  "asc",
+							IndexInfo: []*model.TableProperties{
+								{
+									IsUnique: true,
+									Group:    "user_name",
+									Order:    1,
+									Sort:     "asc",
+									Field:    "name",
+								},
 							},
 						},
 						"customer_id": &model.FieldType{

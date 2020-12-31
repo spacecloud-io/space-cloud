@@ -9,87 +9,166 @@ import (
 
 // DescribeTable return a description of sql table & foreign keys in table
 // NOTE: not to be exposed externally
-func (s *SQL) DescribeTable(ctx context.Context, col string) ([]model.InspectorFieldType, []model.ForeignKeysType, []model.IndexType, error) {
+func (s *SQL) DescribeTable(ctx context.Context, col string) ([]model.InspectorFieldType, []model.IndexType, error) {
 	fields, err := s.getDescribeDetails(ctx, s.name, col)
 	if err != nil {
-		return nil, nil, nil, err
-	}
-	foreignKeys, err := s.getForeignKeyDetails(ctx, s.name, col)
-	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	index, err := s.getIndexDetails(ctx, s.name, col)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
-	return fields, foreignKeys, index, nil
+	return fields, index, nil
 }
 
 func (s *SQL) getDescribeDetails(ctx context.Context, project, col string) ([]model.InspectorFieldType, error) {
 	queryString := ""
-	args := []interface{}{}
+	args := make([]interface{}, 0)
 	switch model.DBType(s.dbType) {
 	case model.MySQL:
-		queryString = `select column_name as 'Field',is_nullable as 'Null',column_key as 'Key',
-case when data_type = 'varchar' then concat(DATA_TYPE,'(',CHARACTER_MAXIMUM_LENGTH,')') else DATA_TYPE end as 'Type',
-CASE 
-	WHEN column_default = '1' THEN 'true'
-	WHEN column_default = '0' THEN 'false'
-    WHEN column_default = "b\'1\'" THEN 'true'
-    WHEN column_default = "b\'0\'" THEN 'false'
-	ELSE coalesce(column_default,'')
-END AS 'Default',
-CASE
-	WHEN extra = 'auto_increment' THEN 'true'
-	ELSE 'false'
-END AS 'AutoIncrement',
-coalesce(CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize'
-from information_schema.columns
-where (table_name,table_schema) = (?,?);`
+		queryString = `
+select a.table_schema  AS 'TABLE_SCHEMA',
+       a.table_name AS 'TABLE_NAME',
+
+       a.column_name AS 'COLUMN_NAME',
+       a.data_type 'DATA_TYPE',
+       a.is_nullable AS 'IS_NULLABLE',
+       a.ordinal_position AS 'ORDINAL_POSITION',
+       CASE
+           WHEN a.column_default = '1' THEN 'true'
+           WHEN a.column_default = '0' THEN 'false'
+           WHEN a.column_default = "b\'1\'" THEN 'true'
+           WHEN a.column_default = "b\'0\'" THEN 'false'
+           ELSE coalesce(a.column_default,'')
+       END AS 'DEFAULT',
+       IF(upper(a.extra) = 'AUTO_INCREMENT', 'true', 'false') AS 'AUTO_INCREMENT',
+       coalesce(a.character_maximum_length,0) AS 'CHARACTER_MAXIMUM_LENGTH',
+       coalesce(a.numeric_precision,0) AS 'NUMERIC_PRECISION',
+       coalesce(a.numeric_scale,0) AS 'NUMERIC_SCALE',
+        
+       coalesce(d.constraint_name,'') AS 'CONSTRAINT_NAME',
+       coalesce(d.delete_rule,'') AS 'DELETE_RULE',
+       coalesce(d.referenced_table_schema,'') AS 'REFERENCED_TABLE_SCHEMA',
+       coalesce(d.referenced_table_name,'') AS 'REFERENCED_TABLE_NAME',
+       coalesce(d.referenced_column_name,'') AS 'REFERENCED_COLUMN_NAME'
+from information_schema.columns a
+         left join (select x.constraint_schema , x.table_name, x.constraint_name, y.delete_rule,
+                           z.referenced_table_schema, z.referenced_table_name, z.referenced_column_name, z.column_name
+                    from INFORMATION_SCHEMA.TABLE_CONSTRAINTS x
+                             left join INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS y on x.constraint_schema=y.constraint_schema and
+                                                                                       x.constraint_name=y.constraint_name and x.table_name=y.table_name
+                             left join  INFORMATION_SCHEMA.KEY_COLUMN_USAGE z on x.constraint_schema=z.constraint_schema and
+                                                                                 x.constraint_name=z.constraint_name and x.table_name=z.table_name
+                    where x.CONSTRAINT_TYPE in ('FOREIGN KEY')) d on a.table_schema = d.constraint_schema
+    and a.table_name=d.table_name and a.column_name=d.column_name
+where a.table_name= ? and a.table_schema= ? ;
+`
 		args = append(args, col, project)
 
 	case model.Postgres:
-		queryString = `SELECT isc.column_name AS "Field", SPLIT_PART(REPLACE(coalesce(column_default,''),'''',''), '::', 1) AS "Default" ,isc.data_type AS "Type",isc.is_nullable AS "Null",
-CASE
-    WHEN t.constraint_type = 'PRIMARY KEY' THEN 'PRI'
-    WHEN t.constraint_type = 'UNIQUE' THEN 'UNI'
-    ELSE ''
-END AS "Key",
-'false' AS "AutoIncrement", --The value of auto increment is decided from the default value, if has prefix (nextval) we can safely consider it's an auto increment
--- Set the null values to 50
-coalesce(isc.character_maximum_length,50) AS "VarcharSize"
-FROM information_schema.columns isc
-    left join (select cu.table_schema, cu.table_name, cu.column_name, istc.constraint_type 
-    	from information_schema.constraint_column_usage cu 
-    	left join information_schema.table_constraints istc on (istc.table_schema,istc.table_name, istc.constraint_name) = (cu.table_schema,cu.table_name, cu.constraint_name) 
-    	where istc.constraint_type != 'CHECK') t
-    on (t.table_schema, t.table_name, t.column_name) = (isc.table_schema, isc.table_name, isc.column_name)
-WHERE (isc.table_schema, isc.table_name) = ($2, $1)
-ORDER BY isc.ordinal_position;`
+		queryString = `select c.table_schema  AS "TABLE_SCHEMA",
+       c.table_name AS "TABLE_NAME",
+
+       c.column_name AS "COLUMN_NAME",
+       c.data_type "DATA_TYPE",
+       c.is_nullable AS "IS_NULLABLE",
+       c.ordinal_position AS "ORDINAL_POSITION",
+       SPLIT_PART(REPLACE(coalesce(c.column_default,''),'''',''), '::', 1) AS "DEFAULT",
+       case when upper(c.column_default) like 'NEXTVAL%' then 'true' else 'false' end AS "AUTO_INCREMENT",
+       coalesce(c.character_maximum_length,0) AS "CHARACTER_MAXIMUM_LENGTH",
+       coalesce(c.numeric_precision,0) AS "NUMERIC_PRECISION",
+       coalesce(c.numeric_scale,0) AS "NUMERIC_SCALE",
+
+       coalesce(fk.constraint_name,'') AS "CONSTRAINT_NAME",
+       coalesce(fk.delete_rule,'') AS "DELETE_RULE",
+       coalesce(fk.foreign_table_schema,'') AS "REFERENCED_TABLE_SCHEMA",
+       coalesce(fk.foreign_table_name,'') AS "REFERENCED_TABLE_NAME",
+       coalesce(fk.foreign_column_name,'') AS "REFERENCED_COLUMN_NAME"
+from information_schema.columns c
+         left join (SELECT tc.table_schema, tc.constraint_name, tc.table_name, kcu.column_name,
+                           ccu.table_schema AS foreign_table_schema, ccu.table_name AS foreign_table_name,
+                           ccu.column_name AS foreign_column_name, rc.delete_rule as delete_rule
+                    FROM information_schema.table_constraints AS tc
+                             INNER JOIN information_schema.key_column_usage AS kcu
+                                        ON tc.constraint_name = kcu.constraint_name
+                                            AND tc.table_schema = kcu.table_schema
+                             INNER JOIN information_schema.constraint_column_usage AS ccu
+                                        ON ccu.constraint_name = tc.constraint_name
+                                            AND ccu.table_schema = tc.table_schema
+                             INNER JOIN  information_schema.referential_constraints rc
+                                         on rc.constraint_name = tc.constraint_name and rc.constraint_schema = tc.table_schema
+                    WHERE tc.constraint_type = 'FOREIGN KEY' ) fk
+                   on fk.table_name = c.table_name and fk.column_name = c.column_name and fk.table_schema = c.table_schema
+where c.table_name = $1 and c.table_schema = $2
+order by c.ordinal_position;`
 
 		args = append(args, col, project)
 	case model.SQLServer:
 
-		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' ,
-                case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')') else C.DATA_TYPE end as 'Type',
-                REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') as 'Default',
-                CASE
-                    WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
-                    WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'
-                    WHEN TC.CONSTRAINT_TYPE = 'FOREIGN KEY' THEN 'MUL'
-                    ELSE isnull(TC.CONSTRAINT_TYPE,'')
-                    END AS 'Key',
-                coalesce(c.CHARACTER_MAXIMUM_LENGTH,50) AS 'VarcharSize',
-                CASE WHEN I.NAME IS NOT NULL THEN 'true' ELSE 'false' END AS 'AutoIncrement'
-FROM INFORMATION_SCHEMA.COLUMNS AS C
-         LEFT JOIN SYS.IDENTITY_COLUMNS I ON C.table_name = OBJECT_NAME(I.OBJECT_ID) AND C.COLUMN_NAME = I.NAME
-         FULL JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS CC
-                   ON C.COLUMN_NAME = CC.COLUMN_NAME
-         FULL JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS TC
-                   ON CC.CONSTRAINT_NAME = TC.CONSTRAINT_NAME
-WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
+		queryString = `
+select c.table_schema AS 'TABLE_SCHEMA',
+       c.table_name  AS 'TABLE_NAME',
 
+       c.column_name AS 'COLUMN_NAME',
+       case 
+		   when C.DATA_TYPE = 'varchar' 
+       			then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')')
+		   when upper(ckc.check_clause) like '%ISJSON%'
+				then 'json'
+		   else C.DATA_TYPE 
+	   end as 'DATA_TYPE',
+       c.is_nullable AS 'IS_NULLABLE',
+       c.ordinal_position AS 'ORDINAL_POSITION',
+       REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') AS 'DEFAULT',
+       case
+           when COLUMNPROPERTY(object_id(c.TABLE_SCHEMA +'.'+ c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1
+               then 'Y'
+           else 'N'
+       end AS 'AUTO_INCREMENT',
+       coalesce(c.character_maximum_length,0) AS 'CHARACTER_MAXIMUM_LENGTH',
+       coalesce(c.numeric_precision,0) AS 'NUMERIC_PRECISION',
+       coalesce(c.numeric_scale,0) AS 'NUMERIC_SCALE',
+
+       coalesce(fk.constraint_name,'') AS 'CONSTRAINT_NAME',
+       coalesce(fk.delete_rule,'') AS 'DELETE_RULE',
+       coalesce(fk.foreign_table_schema,'') AS 'REFERENCED_TABLE_SCHEMA',
+       coalesce(fk.foreign_table_name,'') AS 'REFERENCED_TABLE_NAME',
+       coalesce(fk.foreign_column_name,'') AS 'REFERENCED_COLUMN_NAME'
+from information_schema.columns c
+         left join (SELECT tc.table_schema, tc.constraint_name, tc.table_name, kcu.column_name,
+                           rc.foreign_schema_name as foreign_table_schema, rc.foreign_table_name AS foreign_table_name,
+                           ccu.column_name AS foreign_column_name, rc.delete_rule as delete_rule
+                    FROM information_schema.table_constraints AS tc
+                             INNER JOIN information_schema.key_column_usage AS kcu
+                                        ON tc.constraint_name = kcu.constraint_name
+                                            AND tc.table_schema = kcu.table_schema
+                                            and tc.TABLE_CATALOG = kcu.TABLE_CATALOG
+                             INNER JOIN information_schema.constraint_column_usage AS ccu
+                                        ON ccu.constraint_name = tc.constraint_name
+                                            AND ccu.table_schema = tc.table_schema
+                                            and ccu.CONSTRAINT_CATALOG = tc.TABLE_CATALOG
+                             INNER JOIN  (select m.*, n.TABLE_NAME foreign_table_name , n.TABLE_SCHEMA foreign_schema_name from information_schema.referential_constraints m
+                                                                                                                                    left join information_schema.table_constraints n on m.UNIQUE_CONSTRAINT_NAME=n.CONSTRAINT_NAME
+                        and m.UNIQUE_CONSTRAINT_CATALOG = n.CONSTRAINT_CATALOG and m.UNIQUE_CONSTRAINT_SCHEMA=n.CONSTRAINT_SCHEMA) rc
+                                         on rc.constraint_name = tc.constraint_name and rc.constraint_schema = tc.table_schema
+                                             and rc.CONSTRAINT_CATALOG=tc.TABLE_CATALOG
+                    WHERE tc.constraint_type = 'FOREIGN KEY' ) fk
+                   on fk.table_name = c.table_name and fk.column_name = c.column_name and fk.table_schema = c.table_schema
+         left join (SELECT tc.table_schema, tc.constraint_name, tc.table_name, ccu.column_name, cc.check_clause
+                    FROM information_schema.table_constraints AS tc
+                             INNER JOIN information_schema.constraint_column_usage AS ccu
+                                        ON ccu.constraint_name = tc.constraint_name
+                                            AND ccu.table_schema = tc.table_schema
+                                            and ccu.CONSTRAINT_CATALOG = tc.TABLE_CATALOG
+                             INNER JOIN information_schema.CHECK_CONSTRAINTS AS cc
+                                        ON tc.constraint_name = cc.constraint_name
+                                            AND tc.table_schema = cc.CONSTRAINT_SCHEMA
+                                            and tc.TABLE_CATALOG = cc.CONSTRAINT_CATALOG
+                    WHERE tc.constraint_type = 'CHECK') ckc on ckc.table_name = c.table_name and ckc.column_name = c.column_name
+where c.table_name = @p1 and c.table_schema = @p2
+order by c.ordinal_position;
+`
 		args = append(args, col, project)
 	}
 	rows, err := s.getClient().QueryxContext(ctx, queryString, args...)
@@ -98,7 +177,7 @@ WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
 	}
 	defer func() { _ = rows.Close() }()
 
-	result := []model.InspectorFieldType{}
+	result := make([]model.InspectorFieldType, 0)
 	count := 0
 	for rows.Next() {
 		count++
@@ -116,120 +195,65 @@ WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
 	return result, nil
 }
 
-func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]model.ForeignKeysType, error) {
-	queryString := ""
-	args := []interface{}{}
-	switch model.DBType(s.dbType) {
-
-	case model.MySQL:
-		queryString = "select KCU.TABLE_NAME, KCU.COLUMN_NAME, KCU.CONSTRAINT_NAME, RC.DELETE_RULE, KCU.REFERENCED_TABLE_NAME, KCU.REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC ON RC.CONSTRAINT_NAME=KCU.CONSTRAINT_NAME WHERE KCU.REFERENCED_TABLE_SCHEMA = ? and KCU.TABLE_NAME = ?"
-		args = append(args, project, col)
-	case model.Postgres:
-		queryString = `SELECT
-		tc.table_name AS "TABLE_NAME", 
-		kcu.column_name AS "COLUMN_NAME", 
-		tc.constraint_name AS "CONSTRAINT_NAME", 
-		rc.delete_rule AS "DELETE_RULE",
-		ccu.table_name AS "REFERENCED_TABLE_NAME",
-		ccu.column_name AS "REFERENCED_COLUMN_NAME"
-	FROM 
-		information_schema.table_constraints AS tc 
-		JOIN information_schema.key_column_usage AS kcu
-		  ON tc.constraint_name = kcu.constraint_name
-		  AND tc.table_schema = kcu.table_schema
-		JOIN information_schema.constraint_column_usage AS ccu
-		  ON ccu.constraint_name = tc.constraint_name
-		  AND ccu.table_schema = tc.table_schema
-		JOIN information_schema.referential_constraints AS rc
-		  ON tc.constraint_name = rc.constraint_name
-	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
-	`
-		args = append(args, project, col)
-	case model.SQLServer:
-		queryString = `SELECT
-    CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME, RC.DELETE_RULE,
-    isnull(KCU2.TABLE_NAME,'') AS 'REFERENCED_TABLE_NAME', isnull(KCU2.COLUMN_NAME,'') AS 'REFERENCED_COLUMN_NAME'
-FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE CCU
-         FUll JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS RC
-                   ON RC.CONSTRAINT_NAME = CCU.CONSTRAINT_NAME
-         FUll JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU
-                   ON RC.CONSTRAINT_NAME = KCU.CONSTRAINT_NAME
-         FUll JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU2
-                   ON RC.UNIQUE_CONSTRAINT_NAME = KCU2.CONSTRAINT_NAME
-WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2 AND KCU.TABLE_NAME= @p3`
-		args = append(args, project, col, col)
-	}
-	rows, err := s.getClient().QueryxContext(ctx, queryString, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-
-	result := []model.ForeignKeysType{}
-	for rows.Next() {
-		foreignKey := new(model.ForeignKeysType)
-
-		if err := rows.StructScan(foreignKey); err != nil {
-			return nil, err
-		}
-
-		result = append(result, *foreignKey)
-	}
-	return result, nil
-}
-
 func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]model.IndexType, error) {
 	queryString := ""
 	switch model.DBType(s.dbType) {
 
 	case model.MySQL:
-		queryString = `SELECT 
-		TABLE_NAME, COLUMN_NAME, INDEX_NAME, SEQ_IN_INDEX, 
-		(case when NON_UNIQUE = 0 then "yes" else "no" end) as IS_UNIQUE,
-		(case when COLLATION = "A" then "asc" else "desc" end) as SORT 
-		from INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME REGEXP '^index_'`
+		queryString = `
+select b.table_schema AS 'TABLE_SCHEMA',
+       b.table_name AS 'TABLE_NAME',
+       b.column_name AS 'COLUMN_NAME',
+       b.index_name AS 'INDEX_NAME',
+       b.seq_in_index AS 'SEQ_IN_INDEX',
+	   case when b.collation = "A" then "asc" else "desc" end as SORT,
+       case when b.non_unique=0 then true else false end 'IS_UNIQUE',
+       case when upper(b.index_name)='PRIMARY' then 1 else 0 end 'IS_PRIMARY'
+from INFORMATION_SCHEMA.STATISTICS  b
+where b.table_schema= ? and b.table_name= ?;`
+
 	case model.Postgres:
 		queryString = `select
-    	t.relname as "TABLE_NAME",
-    	a.attname as "COLUMN_NAME",
-    	i.relname as "INDEX_NAME",
-    	1 + array_position(ix.indkey, a.attnum) as "SEQ_IN_INDEX",
-    	(case when ix.indisunique = false then 'no' else 'yes' end) "IS_UNIQUE",
-    	(case when ix.indoption[array_position(ix.indkey, a.attnum)] = 0 then 'asc'
-         when ix.indoption[array_position(ix.indkey, a.attnum)] = 3 then 'desc'
-         else '' end) as "SORT"        
-			from
-     		pg_catalog.pg_class t
-				join pg_catalog.pg_attribute a on t.oid    =      a.attrelid 
-				join pg_catalog.pg_index ix    on t.oid    =     ix.indrelid
-				join pg_catalog.pg_class i     on a.attnum = any(ix.indkey)
-																			and i.oid    =     ix.indexrelid
-				join pg_catalog.pg_namespace n on n.oid    =      t.relnamespace
-				where n.nspname = $1 and t.relname = $2 and i.relname ~ '^index' and t.relkind = 'r' 
-			order by
-    		t.relname,
-    		i.relname,
-    		array_position(ix.indkey, a.attnum)`
+    n.nspname AS "TABLE_SCHEMA",
+    t.relname AS "TABLE_NAME" ,
+    b.attname AS "COLUMN_NAME",
+    a.relname AS "INDEX_NAME",
+    array_position(i.indkey, b.attnum)+1 "SEQ_IN_INDEX",
+	case when i.indoption[array_position(i.indkey, b.attnum)] = 0 then 'asc' else 'desc' END AS "SORT",
+    i.indisunique AS "IS_UNIQUE",
+    i.indisprimary "IS_PRIMARY"
+from pg_class a
+         left join pg_namespace n on n.oid = a.relnamespace
+         left join pg_index i on a.oid = i.indexrelid and a.relkind='i' and i.indisvalid = true
+         left join pg_class t on t.oid = i.indrelid
+         left join pg_attribute b on b.attrelid = t.oid and b.attnum = ANY(i.indkey)
+where n.nspname= $1 and t.relname= $2;`
 	case model.SQLServer:
-		queryString = `SELECT 
-    	TABLE_NAME = t.name,
-    	COLUMN_NAME = col.name,
-    	INDEX_NAME = ind.name,
-    	SEQ_IN_INDEX = ic.index_column_id,
-    	case when ind.is_unique = 0 then 'no' else 'yes' end as IS_UNIQUE,
-    	case when ic.is_descending_key = 0 then 'asc' else 'desc' end as SORT 
-			FROM 
-     			sys.indexes ind 
-				INNER JOIN 
-     			sys.index_columns ic ON  ind.object_id = ic.object_id and ind.index_id = ic.index_id 
-				INNER JOIN 
-     			sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id 
-				INNER JOIN 
-     			sys.tables t ON ind.object_id = t.object_id 
-				INNER JOIN 
-        	sys.schemas s ON t.schema_id = s.schema_id
-			WHERE 
-     			ind.is_primary_key = 0  and s.name = @p1 and t.name = @p2 `
+		queryString = `
+select
+    schema_name(t.schema_id) AS 'TABLE_SCHEMA',
+    t.[name] AS 'TABLE_NAME',
+    d.column_name AS 'COLUMN_NAME',
+    i.[name] AS 'INDEX_NAME',
+    d.index_key AS 'SEQ_IN_INDEX',
+    lower(d.index_sort_order) AS 'SORT',
+    case when i.is_unique = 1 then 'true' else 'false' end AS 'IS_UNIQUE',
+    case when i.is_primary_key = 1 then 'true' else 'false' end AS 'IS_PRIMARY'
+from sys.objects t
+         inner join sys.indexes i
+                    on t.object_id = i.object_id
+         inner join (select ic.object_id, ic.index_id, ic.key_ordinal index_key,col.[name] column_name,
+                            case when ic.is_descending_key = 0 then 'ASC' else 'DESC' end index_sort_order
+                     from sys.index_columns ic
+                              inner join sys.columns col
+                                         on ic.object_id = col.object_id
+                                             and ic.column_id = col.column_id) d on
+            d.object_id = t.object_id and d.index_id = i.index_id
+where t.is_ms_shipped <> 1
+  and i.index_id > 0
+  and schema_name(t.schema_id) = @p1
+  and t.[name] = @p2
+order by i.index_id;`
 	}
 	rows, err := s.getClient().QueryxContext(ctx, queryString, []interface{}{project, col}...)
 	if err != nil {
@@ -237,7 +261,7 @@ func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]model
 	}
 	defer func() { _ = rows.Close() }()
 
-	result := []model.IndexType{}
+	result := make([]model.IndexType, 0)
 	for rows.Next() {
 		indexKey := new(model.IndexType)
 
