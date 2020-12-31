@@ -532,8 +532,6 @@ func Test_deleteSecret(t *testing.T) {
 func Test_deleteService(t *testing.T) {
 	// surveyMatchReturnValue stores the values returned from the survey when prefix is matched
 	surveyMatchReturnValue := "l"
-	// surveyNoMatchReturnValue stores the values returned from the survey when prefix is not matched
-	surveyNoMatchReturnValue := "b"
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -550,7 +548,6 @@ func Test_deleteService(t *testing.T) {
 		surveyMockArgs    []mockArgs
 		wantErr           bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "Unable to get remote services",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "local-admin", "version": "v1"}},
@@ -863,7 +860,7 @@ func Test_deleteService(t *testing.T) {
 			},
 		},
 		{
-			name: "Prefix does not match any services and unable to survey service ID",
+			name: "Prefix does not match any services",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "b"}},
 			transportMockArgs: []mockArgs{
 				{
@@ -891,89 +888,11 @@ func Test_deleteService(t *testing.T) {
 					},
 				},
 			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"localAdmin::v1", "local::v1"},
-							Default: []string{"localAdmin::v1", "local::v1"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "localAdmin::v1"},
-				},
-			},
 			wantErr: true,
 		},
 		{
-			name: "Prefix does not match any services but unable to delete service",
-			args: args{project: "myproject", prefix: map[string]string{"serviceId": "b"}},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/runner/myproject/services",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":      "localAdmin",
-									"version": "v1",
-								},
-								map[string]interface{}{
-									"id":      "local",
-									"version": "v1",
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/runner/myproject/services/localAdmin/v1",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						errors.New("bad request"),
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 400,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"localAdmin::v1", "local::v1"},
-							Default: []string{"localAdmin::v1", "local::v1"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "localAdmin::v1"},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "Prefix does not match any services and service successfully deleted",
-			args: args{project: "myproject", prefix: map[string]string{"serviceId": "b"}},
+			name: "Prefix exactly matches one service and service is successfully deleted",
+			args: args{project: "myproject", prefix: map[string]string{"serviceId": "localAdmin", "version": "v1"}},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -1019,16 +938,65 @@ func Test_deleteService(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name: "Prefix for serviceId and version provided and service successfully deleted",
+			args: args{project: "myproject", prefix: map[string]string{"serviceId": "l", "version": "v"}},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/runner/myproject/services",
+						map[string]string{},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"id":      "localAdmin",
+									"version": "v1",
+								},
+								map[string]interface{}{
+									"id":      "local",
+									"version": "c1",
+								},
+							},
+						},
+					},
+				},
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/runner/myproject/services/localAdmin/v1",
+						map[string]string{},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"statusCode": 200,
+								},
+							},
+						},
+					},
+				},
+			},
 			surveyMockArgs: []mockArgs{
 				{
 					method: "AskOne",
 					args: []interface{}{
 						&survey.Select{
 							Message: "Choose the resource ID: ",
-							Options: []string{"localAdmin::v1", "local::v1"},
-							Default: []string{"localAdmin::v1", "local::v1"}[0],
+							Options: []string{"localAdmin::v1"},
+							Default: []string{"localAdmin::v1"}[0],
 						},
-						&surveyNoMatchReturnValue,
+						&surveyMatchReturnValue,
 					},
 					paramsReturned: []interface{}{nil, "localAdmin::v1"},
 				},
@@ -1063,8 +1031,6 @@ func Test_deleteService(t *testing.T) {
 func Test_deleteServiceRole(t *testing.T) {
 	// surveyMatchReturnValue stores the values returned from the survey when prefix is matched
 	surveyMatchReturnValue := "l"
-	// surveyNoMatchReturnValue stores the values returned from the survey when prefix is not matched
-	surveyNoMatchReturnValue := "b"
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -1081,7 +1047,6 @@ func Test_deleteServiceRole(t *testing.T) {
 		surveyMockArgs    []mockArgs
 		wantErr           bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "Unable to get remote service-roles",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "local-admin", "version": "v1"}},
@@ -1394,7 +1359,7 @@ func Test_deleteServiceRole(t *testing.T) {
 			},
 		},
 		{
-			name: "Prefix does not match any service-roles and unable to survey service ID",
+			name: "Prefix does not match any service-roles",
 			args: args{project: "myproject", prefix: map[string]string{"serviceId": "b"}},
 			transportMockArgs: []mockArgs{
 				{
@@ -1422,89 +1387,11 @@ func Test_deleteServiceRole(t *testing.T) {
 					},
 				},
 			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"localAdmin::role1", "local::role2"},
-							Default: []string{"localAdmin::role1", "local::role2"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "localAdmin::role1"},
-				},
-			},
 			wantErr: true,
 		},
 		{
-			name: "Prefix does not match any service-roles but unable to delete service-roles",
-			args: args{project: "myproject", prefix: map[string]string{"serviceId": "b"}},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/runner/myproject/service-roles",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"service": "localAdmin",
-									"id":      "role1",
-								},
-								map[string]interface{}{
-									"service": "local",
-									"id":      "role2",
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/runner/myproject/service-roles/localAdmin/role1",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						errors.New("bad request"),
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 400,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"localAdmin::role1", "local::role2"},
-							Default: []string{"localAdmin::role1", "local::role2"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "localAdmin::role1"},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "Prefix does not match any service-roles and service-role successfully deleted",
-			args: args{project: "myproject", prefix: map[string]string{"serviceId": "b"}},
+			name: "Prefix exactly matches one service-role and service-role is successfully deleted",
+			args: args{project: "myproject", prefix: map[string]string{"serviceId": "localAdmin", "roleId": "role1"}},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -1550,16 +1437,65 @@ func Test_deleteServiceRole(t *testing.T) {
 					},
 				},
 			},
+		},
+		{
+			name: "Prefix for serviceId and version provided and service-role successfully deleted",
+			args: args{project: "myproject", prefix: map[string]string{"serviceId": "l", "roleId": "r"}},
+			transportMockArgs: []mockArgs{
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodGet,
+						"/v1/runner/myproject/service-roles",
+						map[string]string{},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"service": "localAdmin",
+									"id":      "role1",
+								},
+								map[string]interface{}{
+									"service": "localAdmin",
+									"id":      "srole1",
+								},
+							},
+						},
+					},
+				},
+				{
+					method: "MakeHTTPRequest",
+					args: []interface{}{
+						http.MethodDelete,
+						"/v1/runner/myproject/service-roles/localAdmin/role1",
+						map[string]string{},
+						new(model.Response),
+					},
+					paramsReturned: []interface{}{
+						nil,
+						model.Response{
+							Result: []interface{}{
+								map[string]interface{}{
+									"statusCode": 200,
+								},
+							},
+						},
+					},
+				},
+			},
 			surveyMockArgs: []mockArgs{
 				{
 					method: "AskOne",
 					args: []interface{}{
 						&survey.Select{
 							Message: "Choose the resource ID: ",
-							Options: []string{"localAdmin::role1", "local::role2"},
-							Default: []string{"localAdmin::role1", "local::role2"}[0],
+							Options: []string{"localAdmin::role1"},
+							Default: []string{"localAdmin::role1"}[0],
 						},
-						&surveyNoMatchReturnValue,
+						&surveyMatchReturnValue,
 					},
 					paramsReturned: []interface{}{nil, "localAdmin::role1"},
 				},

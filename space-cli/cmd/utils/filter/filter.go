@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -24,20 +25,13 @@ func DeleteOptions(prefix string, resources []string) (string, error) {
 			return "", err
 		}
 	} else {
-		if len(resources) == 0 {
-			utils.LogInfo("Warning! No resource found for prefix provided")
-			return "", nil
+		if prefix != "" {
+			return "", utils.LogError(fmt.Sprintf("Warning! No resource found for prefix-(%s)", prefix), nil)
 		}
-		if len(resources) == 1 {
-			prefix = resources[0]
-		} else {
-			if prefix != "" {
-				utils.LogInfo("Warning! No resource found for prefix provided, showing all")
-			}
-			if err := input.Survey.AskOne(&survey.Select{Message: "Choose the resource ID: ", Options: resources, Default: resources[0]}, &prefix); err != nil {
-				return "", err
-			}
+		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the resource ID: ", Options: resources, Default: resources[0]}, &prefix); err != nil {
+			return "", err
 		}
+
 	}
 
 	return prefix, nil
