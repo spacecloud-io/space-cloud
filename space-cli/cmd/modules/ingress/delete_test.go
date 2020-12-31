@@ -84,8 +84,6 @@ func Test_deleteIngressGlobalConfig(t *testing.T) {
 func Test_deleteIngressRoute(t *testing.T) {
 	// surveyMatchReturnValue stores the values returned from the survey when prefix is matched
 	surveyMatchReturnValue := "l"
-	// surveyNoMatchReturnValue stores the values returned from the survey when prefix is not matched
-	surveyNoMatchReturnValue := "b"
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -486,69 +484,6 @@ func Test_deleteIngressRoute(t *testing.T) {
 			},
 		},
 		{
-			name: "Prefix does not match any routes and unable to survey route ID",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/routing/ingress",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id": "local-admin",
-									"source": map[string]interface{}{
-										"url":   "/v1/config/projects/myproject/routing/ingress",
-										"hosts": []string{"www.google.com", "www.facebook.com"},
-									},
-									"targets": []interface{}{
-										map[string]interface{}{
-											"version": "v0.18.0",
-											"host":    "greeting.myproject.svc.cluster.local",
-										},
-									},
-								},
-								map[string]interface{}{
-									"id": "local",
-									"source": map[string]interface{}{
-										"url":   "/v1/config/projects/myproject/routing/ingress",
-										"hosts": []string{"www.google.com", "www.facebook.com"},
-									},
-									"targets": []interface{}{
-										map[string]interface{}{
-											"version": "v0.18.0",
-											"host":    "greeting.myproject.svc.cluster.local",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local-admin"},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "Prefix does not match any routes but unable to delete route",
 			args: args{project: "myproject", prefix: "b"},
 			transportMockArgs: []mockArgs{
@@ -594,122 +529,8 @@ func Test_deleteIngressRoute(t *testing.T) {
 						},
 					},
 				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/routing/ingress/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						errors.New("bad request"),
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 400,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "Prefix does not match any routes and route successfully deleted",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/routing/ingress",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id": "local-admin",
-									"source": map[string]interface{}{
-										"url":   "/v1/config/projects/myproject/routing/ingress",
-										"hosts": []string{"www.google.com", "www.facebook.com"},
-									},
-									"targets": []interface{}{
-										map[string]interface{}{
-											"version": "v0.18.0",
-											"host":    "greeting.myproject.svc.cluster.local",
-										},
-									},
-								},
-								map[string]interface{}{
-									"id": "local",
-									"source": map[string]interface{}{
-										"url":   "/v1/config/projects/myproject/routing/ingress",
-										"hosts": []string{"www.google.com", "www.facebook.com"},
-									},
-									"targets": []interface{}{
-										map[string]interface{}{
-											"version": "v0.18.0",
-											"host":    "greeting.myproject.svc.cluster.local",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/routing/ingress/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 200,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {
