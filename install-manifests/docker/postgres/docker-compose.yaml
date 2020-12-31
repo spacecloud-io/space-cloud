@@ -1,0 +1,54 @@
+version: '3.9'
+services:
+  gateway:
+    image: "spaceuptech/gateway:0.20.1"
+    pull_policy: "if_not_present"         # other values never, if_not_present
+    restart: "always"                     # other values no, on-failure
+    environment:
+      - DEV=true                         # Turn this to false for production mode
+      - CLUSTER_ID=prod-cluster
+      - CONFIG=/config/config.yaml
+      - ADMIN_USER=admin                 # Log in username
+      - ADMIN_PASS=1234                  # Log in password
+      - ADMIN_SECRET=some-secret         # Space cloud uses this secret for parsing jwt tokens for config APIs
+      - LOG_LEVEL=debug                  # other values info, warn
+      - LOG_FORMAT=json                  # other values text
+      - DISABLE_UI=false
+      - LETSENCRYPT_STORE=local
+      - REDIS_CONN=redis:6379
+      - SSL_ENABLE=false
+      - SSL_CERT=""
+      - SSL_KEY=""
+    volumes:
+      - ./sc-config:/config
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - "4122:4122"
+
+  redis:
+    image: "redis:6.0"
+
+  debezium:
+    image: "spaceuptech/dbevents:0.1.0"
+    environment:
+      - "SC_ADMIN_SECRET=some-secret"
+      - "GATEWAY_URL=gateway:4122"
+    depends_on:
+      - gateway
+      - postgres
+
+  postgres:
+    image: "postgres:latest"
+    pull_policy: "if_not_present"         # other values never, if_not_present
+    restart: "always"                     # other values no, on-failure
+    environment:
+      - "POSTGRES_PASSWORD=mysecretpassword"       # Log in password
+    volumes:
+      - sc-postgres-data:/var/lib/postgresql/data
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+    command: [ "-c","config_file=/etc/postgresql/postgresql.conf" ]
+
+volumes:
+  sc-postgres-data:
