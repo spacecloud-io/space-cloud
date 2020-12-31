@@ -166,7 +166,9 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 					var val interface{}
 					if err := json.Unmarshal([]byte(v), &val); err == nil {
 						mapping[colType.Name()] = val
+						continue
 					}
+					mapping[colType.Name()] = v
 				}
 			}
 		case []byte:

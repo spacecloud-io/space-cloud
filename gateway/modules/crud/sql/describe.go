@@ -113,7 +113,9 @@ select c.table_schema AS 'TABLE_SCHEMA',
        c.column_name AS 'COLUMN_NAME',
        case 
 		   when C.DATA_TYPE = 'varchar' 
-       			then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')') 
+       			then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')')
+		   when upper(ckc.check_clause) like '%ISJSON%'
+				then 'json'
 		   else C.DATA_TYPE 
 	   end as 'DATA_TYPE',
        c.is_nullable AS 'IS_NULLABLE',
@@ -153,6 +155,17 @@ from information_schema.columns c
                                              and rc.CONSTRAINT_CATALOG=tc.TABLE_CATALOG
                     WHERE tc.constraint_type = 'FOREIGN KEY' ) fk
                    on fk.table_name = c.table_name and fk.column_name = c.column_name and fk.table_schema = c.table_schema
+         left join (SELECT tc.table_schema, tc.constraint_name, tc.table_name, ccu.column_name, cc.check_clause
+                    FROM information_schema.table_constraints AS tc
+                             INNER JOIN information_schema.constraint_column_usage AS ccu
+                                        ON ccu.constraint_name = tc.constraint_name
+                                            AND ccu.table_schema = tc.table_schema
+                                            and ccu.CONSTRAINT_CATALOG = tc.TABLE_CATALOG
+                             INNER JOIN information_schema.CHECK_CONSTRAINTS AS cc
+                                        ON tc.constraint_name = cc.constraint_name
+                                            AND tc.table_schema = cc.CONSTRAINT_SCHEMA
+                                            and tc.TABLE_CATALOG = cc.CONSTRAINT_CATALOG
+                    WHERE tc.constraint_type = 'CHECK') ckc on ckc.table_name = c.table_name and ckc.column_name = c.column_name
 where c.table_name = @p1 and c.table_schema = @p2
 order by c.ordinal_position;
 `
