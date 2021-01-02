@@ -39,7 +39,7 @@ func (m *Module) helperSendFeed(ctx context.Context, data *model.FeedData) {
 				m.metrics.AddDBOperation(m.project, data.DBType, data.Group, 1, model.Read)
 
 			case utils.RealtimeInsert, utils.RealtimeUpdate:
-				if utils.Validate(query.whereObj, data.Payload) {
+				if utils.Validate(model.DefaultValidate, query.whereObj, data.Payload) {
 					_ = m.auth.PostProcessMethod(ctx, query.actions, dataPoint.Payload)
 					query.sendFeed(dataPoint)
 					m.metrics.AddDBOperation(m.project, data.DBType, data.Group, 1, model.Read)

@@ -40,7 +40,7 @@ func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (in
 				if err := json.Unmarshal(v, &result); err != nil {
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to unmarshal while reading from bbolt db", err, nil)
 				}
-				if utils.Validate(req.Find, result) {
+				if utils.Validate(string(model.EmbeddedDB), req.Find, result) {
 					if req.Options.Debug {
 						result["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 					}

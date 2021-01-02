@@ -20,6 +20,7 @@ type resultsHolder struct {
 type meta struct {
 	whereClause map[string]interface{}
 	op          string
+	dbType      string
 }
 
 type queryResult struct {
@@ -51,7 +52,7 @@ func (holder *resultsHolder) getWhereClauses() []interface{} {
 	return arr
 }
 
-func (holder *resultsHolder) addMeta(op string, whereClause map[string]interface{}, matchClause []map[string]interface{}) {
+func (holder *resultsHolder) addMeta(op, dbType string, whereClause map[string]interface{}, matchClause []map[string]interface{}) {
 	holder.Lock()
 	for i, where := range matchClause {
 		for k, v := range where {
@@ -61,7 +62,7 @@ func (holder *resultsHolder) addMeta(op string, whereClause map[string]interface
 			whereClause[k] = v
 		}
 	}
-	holder.metas = append(holder.metas, meta{whereClause: whereClause, op: op})
+	holder.metas = append(holder.metas, meta{whereClause: whereClause, op: op, dbType: dbType})
 	holder.Unlock()
 }
 
@@ -85,7 +86,7 @@ func (holder *resultsHolder) fillResults(metData *model.SQLMetaData, res []inter
 		isOperationTypeOne := meta.op == utils.One
 		docs := make([]interface{}, 0)
 		for _, doc := range res {
-			if utils.Validate(meta.whereClause, doc) {
+			if utils.Validate(meta.dbType, meta.whereClause, doc) {
 				docs = append(docs, doc)
 			}
 			if isOperationTypeOne {
@@ -160,7 +161,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 	for index, key := range keys {
 		req := key.(model.ReadRequestKey)
 
-		dbAlias = req.DBType
+		dbAlias = req.DBAlias
 		col = req.Col
 
 		// Execute query immediately if it has options
@@ -193,7 +194,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 		}
 
 		// Append the where clause to the list
-		holder.addMeta(req.Req.Operation, req.Req.Find, req.Req.MatchWhere)
+		holder.addMeta(req.Req.Operation, req.DBType, req.Req.Find, req.Req.MatchWhere)
 	}
 
 	// Wait for all results to be done

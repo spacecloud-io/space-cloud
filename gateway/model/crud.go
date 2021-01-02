@@ -121,6 +121,9 @@ const (
 	// SQLServer is the type used for MsSQL
 	SQLServer DBType = "sqlserver"
 
+	// DefaultValidate is used for default validation operation
+	DefaultValidate = "default"
+
 	// DefaultFetchLimit is the default value to be used as a limit to fetch rows/collection in each read query
 	DefaultFetchLimit = 1000
 )

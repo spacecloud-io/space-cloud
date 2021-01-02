@@ -209,7 +209,6 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			continue
 		}
 		if arr := deep.Equal(fields.IndexTableProperties, cleanIndexMap(currentIndexMap[indexName].IndexTableProperties)); len(arr) > 0 {
-			fmt.Println("Array", arr)
 			batchedQueries = append(batchedQueries, s.removeIndex(dbType, dbAlias, logicalDBName, tableName, currentIndexMap[indexName].IndexName))
 			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexTableProperties))
 		}
