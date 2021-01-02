@@ -19,7 +19,7 @@ func GenerateSubCommands() []*cobra.Command {
 	var generateServiceRoute = &cobra.Command{
 		Use:     "service-route [path to config file]",
 		RunE:    actionGenerateServiceRoute,
-		Aliases: []string{"service-route"},
+		Aliases: []string{"service-routes"},
 		Example: "space-cli generate service-route config.yaml --project myproject --log-level info",
 	}
 
@@ -38,25 +38,29 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getServicesRoutes = &cobra.Command{
-		Use:               "service-routes",
+		Use:               "service-route",
+		Aliases:           []string{"service-routes"},
 		RunE:              actionGetServicesRoutes,
 		ValidArgsFunction: serviceRoutesAutoCompleteFun,
 	}
 
 	var getServicesRole = &cobra.Command{
 		Use:               "service-role",
+		Aliases:           []string{"service-roles"},
 		RunE:              actionGetServicesRole,
 		ValidArgsFunction: serviceRoleAutoCompleteFun,
 	}
 
 	var getServicesSecrets = &cobra.Command{
-		Use:               "secrets",
+		Use:               "secret",
+		Aliases:           []string{"secrets"},
 		RunE:              actionGetServicesSecrets,
 		ValidArgsFunction: secretsAutoCompleteFun,
 	}
 
 	var getServices = &cobra.Command{
-		Use:               "services",
+		Use:               "service",
+		Aliases:           []string{"services"},
 		RunE:              actionGetServices,
 		ValidArgsFunction: servicesAutoCompleteFun,
 	}
