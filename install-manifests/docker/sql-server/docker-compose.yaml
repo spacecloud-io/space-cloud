@@ -30,15 +30,6 @@ services:
   redis:
     image: "redis:6.0"
 
-  debezium:
-    image: "spaceuptech/dbevents:0.1.0"
-    environment:
-      - "SC_ADMIN_SECRET=some-secret"
-      - "GATEWAY_URL=gateway:4122"
-    depends_on:
-      - gateway
-      - sql-server
-
   sql-server:
     image: "mcr.microsoft.com/mssql/server:latest"
     pull_policy: "if_not_present"         # other values never, if_not_present
