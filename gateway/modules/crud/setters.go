@@ -49,7 +49,7 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 			var err error
 			connectionString, err = m.getSecrets(project, secretName, "CONN")
 			if err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch secret from runner", err, map[string]interface{}{"project": project})
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch connection string secret from runner", err, map[string]interface{}{"project": project})
 			}
 		}
 
@@ -121,7 +121,7 @@ func (m *Module) SetSchemaConfig(ctx context.Context, schemas config.DatabaseSch
 
 	m.closeBatchOperation()
 	if err := m.initBatchOperation(m.project, schemas); err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to initialized database batch operation", err, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to initialize database batch operation", err, nil)
 	}
 	return nil
 }

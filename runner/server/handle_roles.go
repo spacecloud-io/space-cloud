@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils"
 )
@@ -25,7 +26,7 @@ func (s *Server) HandleSetServiceRole() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to set service roles", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -39,7 +40,7 @@ func (s *Server) HandleSetServiceRole() http.HandlerFunc {
 
 		err = s.driver.ApplyServiceRole(ctx, req)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -61,7 +62,7 @@ func (s *Server) HandleGetServiceRoleRequest() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to get service role", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -72,7 +73,7 @@ func (s *Server) HandleGetServiceRoleRequest() http.HandlerFunc {
 
 		serviceRole, err := s.driver.GetServiceRole(ctx, projectID)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -114,7 +115,7 @@ func (s *Server) HandleDeleteServiceRole() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to delete service role", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -124,7 +125,7 @@ func (s *Server) HandleDeleteServiceRole() http.HandlerFunc {
 		id := vars["roleId"]
 
 		if err := s.driver.DeleteServiceRole(ctx, projectID, serviceID, id); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 

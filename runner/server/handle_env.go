@@ -18,7 +18,7 @@ func (s *Server) handleGetClusterType() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -35,7 +35,7 @@ func (s *Server) handleGetMetrics() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err)
 			return
 		}
 

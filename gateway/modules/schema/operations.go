@@ -21,7 +21,7 @@ func (s *Schema) GetSchemaForDB(ctx context.Context, dbAlias, col, format string
 		resourceID := config.GenerateResourceID(s.clusterID, s.project, config.ResourceDatabaseSchema, dbAlias, col)
 		_, ok := s.dbSchemas[resourceID]
 		if !ok {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col), nil, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Specified collection/table (%s) not present in config of dbAlias (%s)", col, dbAlias), nil, nil)
 		}
 		if err := s.getSchemaResponse(ctx, format, dbAlias, col, true, alreadyAddedTables, &schemaResponse); err != nil {
 			return nil, err

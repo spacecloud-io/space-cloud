@@ -38,7 +38,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		timeOut, err := functions.GetEndpointContextTimeout(r.Context(), projectID, serviceID, function)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return
 		}
 
@@ -48,7 +48,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		actions, reqParams, err := auth.IsFuncCallAuthorised(ctx, projectID, serviceID, function, token, req.Params)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
 			return
 		}
 
@@ -57,7 +57,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		status, result, err := functions.CallWithContext(ctx, serviceID, function, token, reqParams, req.Params)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Receieved error from service call (%s:%s)", serviceID, function), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
