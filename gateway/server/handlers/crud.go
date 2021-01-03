@@ -44,7 +44,7 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		// Check if the user is authenticated
 		actions, reqParams, err := auth.IsPreparedQueryAuthorised(ctx, project, dbAlias, id, token, &req)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
 			return
 		}
 
@@ -53,7 +53,7 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		// Perform the PreparedQuery operation
 		result, _, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -86,7 +86,7 @@ func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 		// Check if the user is authenticated
 		reqParams, err := auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
 			return
 		}
 
@@ -97,7 +97,7 @@ func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 		if err != nil {
 
 			// Send http response
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -135,7 +135,7 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 
 		actions, reqParams, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req, model.ReturnWhereStub{})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
 			return
 		}
 
@@ -145,7 +145,7 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 		// Perform the read operation
 
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -177,7 +177,7 @@ func HandleCrudUpdate(modules *modules.Modules) http.HandlerFunc {
 
 		reqParams, err := auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
 			return
 		}
 
@@ -188,7 +188,7 @@ func HandleCrudUpdate(modules *modules.Modules) http.HandlerFunc {
 		if err != nil {
 
 			// Send http response
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -217,7 +217,7 @@ func HandleCrudDelete(modules *modules.Modules) http.HandlerFunc {
 
 		reqParams, err := auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
 			return
 		}
 
@@ -227,7 +227,7 @@ func HandleCrudDelete(modules *modules.Modules) http.HandlerFunc {
 		err = crud.Delete(ctx, meta.dbType, meta.col, &req, reqParams)
 		if err != nil {
 			// Send http response
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -256,7 +256,7 @@ func HandleCrudAggregate(modules *modules.Modules) http.HandlerFunc {
 
 		reqParams, err := auth.IsAggregateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
 			return
 		}
 
@@ -265,7 +265,7 @@ func HandleCrudAggregate(modules *modules.Modules) http.HandlerFunc {
 		// Perform the aggregate operation
 		result, err := crud.Aggregate(ctx, meta.dbType, meta.col, &req, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -333,7 +333,7 @@ func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 			// Send error response
 			if err != nil {
 				// Send http response
-				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
 				return
 			}
 		}
@@ -343,7 +343,7 @@ func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 
 		err := crud.Batch(ctx, meta.dbType, &txRequest, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 

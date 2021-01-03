@@ -37,7 +37,7 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "auth-provider", "modify", map[string]string{"project": projectID, "id": provider})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -45,7 +45,7 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		reqParams = utils.ExtractRequestParams(r, reqParams, value)
 		status, err := syncMan.SetUserManagement(ctx, projectID, provider, value, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -74,7 +74,7 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "auth-provider", "read", map[string]string{"project": projectID, "id": providerID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -82,7 +82,7 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		status, providers, err := syncMan.GetUserManagement(ctx, projectID, providerID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: providers})
@@ -105,7 +105,7 @@ func HandleDeleteUserManagement(adminMan *admin.Manager, syncMan *syncman.Manage
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "auth-provider", "delete", map[string]string{"project": projectID, "id": providerID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -113,7 +113,7 @@ func HandleDeleteUserManagement(adminMan *admin.Manager, syncMan *syncman.Manage
 
 		status, err := syncMan.DeleteUserManagement(ctx, projectID, providerID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 		_ = helpers.Response.SendOkayResponse(ctx, status, w)

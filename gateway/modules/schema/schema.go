@@ -139,7 +139,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 		for _, field := range v.(*ast.ObjectDefinition).Fields {
 
 			if field.Type == nil {
-				return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Type not provided for collection/table schema (%s) with field (%s)", collectionName, field.Name.Value), nil, nil)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Type not provided in graphql SDL for collection/table schema (%s) with field (%s)", collectionName, field.Name.Value), nil, nil)
 			}
 
 			fieldTypeStuct := model.FieldType{
