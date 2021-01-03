@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/spaceuptech/helpers"
@@ -11,7 +12,7 @@ import (
 // HandleSetCacheConfig is an endpoint handler which sets cache config
 func HandleSetCacheConfig() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, "Caching module is disabled")
+		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, errors.New("Caching module is disabled"))
 	}
 }
 

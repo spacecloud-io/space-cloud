@@ -25,7 +25,7 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -38,14 +38,14 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 		reqBody := new(request)
 		if err := json.NewDecoder(r.Body).Decode(reqBody); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to set file secret root patt", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err)
 			return
 		}
 
 		// set file secret root path
 		if err := s.driver.SetFileSecretRootPath(ctx, projectID, secretName, reqBody.RootPath); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create secret", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -65,7 +65,7 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -78,7 +78,7 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 		secretObj := new(model.Secret)
 		if err := json.NewDecoder(r.Body).Decode(secretObj); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create secret", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err)
 			return
 		}
 
@@ -87,7 +87,7 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 		// create/update secret
 		if err := s.driver.CreateSecret(ctx, projectID, secretObj); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to create secret", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -106,7 +106,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -118,7 +118,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		secrets, err := s.driver.ListSecrets(ctx, projectID)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to list secret", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -155,7 +155,7 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -167,7 +167,7 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 		// list all secrets
 		if err := s.driver.DeleteSecret(ctx, projectID, name); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to delete secret", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -186,7 +186,7 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -200,14 +200,14 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 		secretVal := new(model.SecretValue)
 		if err := json.NewDecoder(r.Body).Decode(secretVal); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to set secret ket", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err)
 			return
 		}
 
 		// setSecretKey
 		if err := s.driver.SetKey(ctx, projectID, name, key, secretVal); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to list secret", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -226,7 +226,7 @@ func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to apply servict", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -238,7 +238,7 @@ func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 
 		if err := s.driver.DeleteKey(ctx, projectID, name, key); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to list secret", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 

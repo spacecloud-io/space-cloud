@@ -23,7 +23,7 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 
 		projectConfig, err := syncMan.GetConfig(projectID)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return
 		}
 
