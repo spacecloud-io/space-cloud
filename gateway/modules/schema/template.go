@@ -10,7 +10,7 @@ import (
 func generateSDL(schemaCol model.Collection) (string, error) {
 	schema := "type {{range $k,$v := .}} {{$k}} {\n {{range $fieldName, $fieldValue := $v}}" +
 		// column name
-		"\t{{$fieldName}}:" +
+		"\t{{$fieldName}}: " +
 
 		// column type
 		"{{if eq $fieldValue.Kind \"Object\"}}" +
@@ -23,6 +23,18 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		"{{if $fieldValue.IsFieldTypeRequired}}" +
 		"!" +
 		"{{end}} " +
+
+		// @args directive
+		"{{if $fieldValue.Args}}" +
+		"@args(" +
+		"{{if $fieldValue.Args.Precision}}" +
+		"precision: {{$fieldValue.Args.Precision}}," +
+		"{{end}} " +
+		"{{if $fieldValue.Args.Scale}}" +
+		" scale: {{$fieldValue.Args.Scale}}" +
+		"{{end}}" +
+		")" +
+		"{{end}}" +
 
 		// @primary directive
 		"{{if $fieldValue.IsPrimary}}" +
@@ -49,12 +61,14 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		"@updatedAt " +
 		"{{end}}" +
 
-		// @unique directive
-		"{{if $fieldValue.IsUnique}}" +
-		"@unique(group: \"{{$fieldValue.IndexInfo.Group}}\", order: {{$fieldValue.IndexInfo.Order}}) " +
+		// @unique or @index directive
+		"{{range $k,$v := $fieldValue.IndexInfo }}" +
+		"{{if $v.IsUnique}}" +
+		"@unique(group: \"{{$v.Group}}\", order: {{$v.Order}}) " +
 		"{{else}}" +
-		"{{if $fieldValue.IsIndex}}" +
-		"@index(group: \"{{$fieldValue.IndexInfo.Group}}\", sort: \"{{$fieldValue.IndexInfo.Sort}}\", order: {{$fieldValue.IndexInfo.Order}}) " +
+		"{{if $v.IsIndex}}" +
+		"@index(group: \"{{$v.Group}}\", sort: \"{{$v.Sort}}\", order: {{$v.Order}}) " +
+		"{{end}}" +
 		"{{end}}" +
 		"{{end}}" +
 

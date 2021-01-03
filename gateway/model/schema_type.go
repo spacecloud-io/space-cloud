@@ -20,19 +20,17 @@ type (
 		NestedObject Fields `json:"nestedObject"`
 		IsPrimary    bool   `json:"isPrimary"`
 		// For directives
-		IsIndex        bool             `json:"isIndex"`
-		IsUnique       bool             `json:"isUnique"`
-		IsCreatedAt    bool             `json:"isCreatedAt"`
-		IsUpdatedAt    bool             `json:"isUpdatedAt"`
-		IsLinked       bool             `json:"isLinked"`
-		IsForeign      bool             `json:"isForeign"`
-		IsDefault      bool             `json:"isDefault"`
-		PrimaryKeyInfo *TableProperties `json:"primaryKeyInfo"`
-		IndexInfo      *TableProperties `json:"indexInfo"`
-		LinkedTable    *TableProperties `json:"linkedTable"`
-		JointTable     *TableProperties `json:"jointTable"`
-		Default        interface{}      `json:"default"`
-		TypeIDSize     int              `json:"size"`
+		IsCreatedAt    bool               `json:"isCreatedAt"`
+		IsUpdatedAt    bool               `json:"isUpdatedAt"`
+		IsLinked       bool               `json:"isLinked"`
+		IsForeign      bool               `json:"isForeign"`
+		IsDefault      bool               `json:"isDefault"`
+		PrimaryKeyInfo *TableProperties   `json:"primaryKeyInfo"`
+		IndexInfo      []*TableProperties `json:"indexInfo"`
+		LinkedTable    *TableProperties   `json:"linkedTable"`
+		JointTable     *TableProperties   `json:"jointTable"`
+		Default        interface{}        `json:"default"`
+		TypeIDSize     int                `json:"size"`
 	}
 
 	// FieldArgs are properties of the column
@@ -47,13 +45,22 @@ type (
 
 	// TableProperties are properties of the table
 	TableProperties struct {
-		IsAutoIncrement        bool
-		From, To               string
-		Table, Field, OnDelete string
-		DBType                 string
-		Group, Sort            string
-		Order                  int
-		ConstraintName         string
+		// IsIndex tells us if this is an indexed column
+		IsIndex bool `json:"isIndex"`
+		// IsUnique tells us if this is an unique indexed column
+		IsUnique bool `json:"isUnique"`
+		// IsAutoIncrement if true then the primary key supports autoincrement
+		IsAutoIncrement bool
+		From            string
+		To              string
+		Table           string
+		Field           string
+		OnDelete        string
+		DBType          string
+		Group           string
+		Sort            string
+		Order           int
+		ConstraintName  string
 	}
 )
 
@@ -118,31 +125,45 @@ const (
 
 // InspectorFieldType is the type for storing sql inspection information
 type InspectorFieldType struct {
-	FieldName     string `db:"Field"`
-	FieldType     string `db:"Type"`
-	FieldNull     string `db:"Null"`
-	FieldKey      string `db:"Key"`
-	FieldDefault  string `db:"Default"`
-	AutoIncrement string `db:"AutoIncrement"`
-	VarcharSize   int    `db:"VarcharSize"`
-}
+	// TableSchema is the schema name for postgres & sqlserver.
+	// it is the database name for mysql
+	TableSchema string `db:"TABLE_SCHEMA"`
+	TableName   string `db:"TABLE_NAME"`
 
-// ForeignKeysType is the type for storing  foreignkeys information of sql inspection
-type ForeignKeysType struct {
-	TableName      string `db:"TABLE_NAME"`
-	ColumnName     string `db:"COLUMN_NAME"`
+	ColumnName string `db:"COLUMN_NAME"`
+	// FieldType is the data type of column
+	FieldType string `db:"DATA_TYPE"`
+	// FieldNull specifies whether the given column can be null or not
+	// It can be either (NO) or (YES)
+	FieldNull       string `db:"IS_NULLABLE"`
+	OrdinalPosition string `db:"ORDINAL_POSITION"`
+	// FieldDefault specifies the default value of columns
+	FieldDefault string `db:"DEFAULT"`
+	// AutoIncrement specifies whether the column has auto increment constraint
+	// It can be either (true) or (false)
+	AutoIncrement    string `db:"AUTO_INCREMENT"`
+	VarcharSize      int    `db:"CHARACTER_MAXIMUM_LENGTH"`
+	NumericScale     int    `db:"NUMERIC_SCALE"`
+	NumericPrecision int    `db:"NUMERIC_PRECISION"`
+
 	ConstraintName string `db:"CONSTRAINT_NAME"`
 	DeleteRule     string `db:"DELETE_RULE"`
+	RefTableSchema string `db:"REFERENCED_TABLE_SCHEMA"`
 	RefTableName   string `db:"REFERENCED_TABLE_NAME"`
 	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
 }
 
 // IndexType is the type use to indexkey information of sql inspection
 type IndexType struct {
-	TableName  string `db:"TABLE_NAME"`
-	ColumnName string `db:"COLUMN_NAME"`
-	IndexName  string `db:"INDEX_NAME"`
-	Order      int    `db:"SEQ_IN_INDEX"`
-	Sort       string `db:"SORT"`
-	IsUnique   string `db:"IS_UNIQUE"`
+	TableSchema string `db:"TABLE_SCHEMA"`
+	TableName   string `db:"TABLE_NAME"`
+	ColumnName  string `db:"COLUMN_NAME"`
+	IndexName   string `db:"INDEX_NAME"`
+	Order       int    `db:"SEQ_IN_INDEX"`
+	// Sort can be either (asc) or (desc)
+	Sort string `db:"SORT"`
+	// IsUnique specifies whether the column has a unique index
+	IsUnique bool `db:"IS_UNIQUE"`
+	// IsPrimary specifies whether the column has a index
+	IsPrimary bool `db:"IS_PRIMARY"`
 }
