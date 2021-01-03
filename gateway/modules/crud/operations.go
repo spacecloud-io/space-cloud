@@ -65,7 +65,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 	}
 
 	if req.IsBatch {
-		dbType, err := m.GetDBType(dbAlias)
+		dbType, err := m.getDBType(dbAlias)
 		if err != nil {
 			return nil, nil, err
 		}
