@@ -3,7 +3,6 @@ package crud
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -100,11 +99,10 @@ func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName
 
 // GetDBType returns the type of the db for the alias provided
 func (m *Module) GetDBType(dbAlias string) (string, error) {
-	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
-	if dbAlias != m.alias {
-		return "", fmt.Errorf("cannot get db type as invalid db alias (%s) provided", dbAlias)
-	}
-	return m.dbType, nil
+	m.RLock()
+	defer m.RUnlock()
+
+	return m.getDBType(dbAlias)
 }
 
 // CloseConfig close the rules and secret key required by the crud block

@@ -29,7 +29,7 @@ func TestModule_SetConfig(t *testing.T) {
 			schemaMockArgs: []mockArgs{},
 		},
 		{
-			name:    "DBType not mentioned",
+			name:    "DBAlias not mentioned",
 			m:       &Module{config: &config.Eventing{Enabled: true}},
 			args:    args{eventing: &config.EventingConfig{Enabled: true, DBAlias: ""}},
 			wantErr: true,

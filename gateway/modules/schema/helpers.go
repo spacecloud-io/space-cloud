@@ -126,9 +126,6 @@ func (c *creationModule) addNotNull() string {
 	case model.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " SET NOT NULL"
 	case model.SQLServer:
-		if strings.HasPrefix(c.columnType, "varchar") {
-			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS NOT NULL"
-		}
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " NOT NULL"
 	}
 	return ""
@@ -146,9 +143,6 @@ func (c *creationModule) removeNotNull() string {
 	case model.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " DROP NOT NULL"
 	case model.SQLServer:
-		if strings.HasPrefix(c.columnType, "varchar") {
-			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS NULL"
-		}
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " NULL" // adding NULL solves a bug that DateTime type is always not nullable even if (!) is not provided
 	}
 	return ""
@@ -168,9 +162,6 @@ func (c *creationModule) addNewColumn() string {
 	case model.SQLServer:
 		if c.columnType == "timestamp" && !c.realColumnInfo.IsFieldTypeRequired {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType + " NULL"
-		}
-		if strings.HasPrefix(c.columnType, "varchar") {
-			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS"
 		}
 
 		sqlDataType := c.columnType
@@ -194,7 +185,7 @@ func (c *creationModule) removeColumn(dbType string) []string {
 // 	}
 //
 // 	c.currentColumnInfo.IsPrimary = true // Mark the field as processed
-// 	switch utils.DBType(dbAlias) {
+// 	switch utils.DBAlias(dbAlias) {
 // 	case utils.MySQL:
 // 		return "ALTER TABLE " + c.schemaModule.getTableName(dbAlias, c.logicalDBName, c.TableName) + " ADD PRIMARY KEY (" + c.ColumnName + ")"
 // 	case utils.Postgres:
@@ -211,7 +202,7 @@ func (c *creationModule) removeColumn(dbType string) []string {
 // 		return ""
 // 	}
 //
-// 	switch utils.DBType(dbAlias) {
+// 	switch utils.DBAlias(dbAlias) {
 // 	case utils.MySQL:
 // 		return "ALTER TABLE " + c.schemaModule.getTableName(dbAlias, c.logicalDBName, c.TableName) + " DROP PRIMARY KEY"
 // 	case utils.Postgres:
@@ -334,7 +325,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 			compositePrimaryKeys = append(compositePrimaryKeys, realFieldStruct)
 			doesPrimaryKeyExists = true
 			if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
-				primaryKeyQuery += realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS NOT NULL , "
+				primaryKeyQuery += realFieldKey + " " + sqlType + " NOT NULL , "
 				continue
 			}
 			var autoIncrement string
@@ -356,9 +347,6 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 
 		query += realFieldKey + " " + sqlType
 
-		if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
-			query += " collate Latin1_General_CS_AS"
-		}
 		if model.DBType(dbType) == model.SQLServer && realFieldStruct.Kind == model.TypeJSON && sqlType == "nvarchar(max)" {
 			query += fmt.Sprintf(" constraint json_check_%s_%s CHECK (ISJSON(%s)=1)", realColName, realFieldStruct.FieldName, realFieldStruct.FieldName)
 		}
@@ -377,9 +365,6 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 	}
 	query += compositePrimaryKeyQuery
 
-	if model.DBType(dbType) == model.MySQL {
-		return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `) COLLATE Latin1_General_CS;`, nil
-	}
 	return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `);`, nil
 }
 
@@ -606,7 +591,6 @@ func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*index
 		sort.Stable(v)
 		indexValue.IndexTableProperties = v
 		for i, column := range indexValue.IndexTableProperties {
-			fmt.Println("Name", indexName, "Order", i+1, column.Order)
 			if i+1 != column.Order {
 				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid order sequence proveded for index (%s)", indexName), nil, nil)
 			}
