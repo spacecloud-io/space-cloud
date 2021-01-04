@@ -64,7 +64,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		return nil, err
 	}
 
-	if req.IsBatch {
+	if req.IsBatch && m.getIsDataloader(dbAlias) {
 		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req, ReqParams: params}
 		dataLoader, ok := m.getLoader(fmt.Sprintf("%s-%s-%s", m.project, dbAlias, col))
 		if !ok {

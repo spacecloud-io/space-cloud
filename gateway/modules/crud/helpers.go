@@ -68,3 +68,7 @@ func splitConnectionString(connection string) (string, bool) {
 	}
 	return "", false
 }
+
+func (m *Module) getIsDataloader(dbAlias string) bool {
+	return m.config.IsDataloader
+}

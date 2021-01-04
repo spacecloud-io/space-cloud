@@ -180,6 +180,12 @@ type Response struct {
 	Result []interface{} `json:"result,omitempty"`
 }
 
+// Resp is the object returned by every handler to client
+type Resp struct {
+	Error  string      `json:"error,omitempty"`
+	Result interface{} `json:"result,omitempty"`
+}
+
 // Role describes the configuration for the service role
 type Role struct {
 	ID      string `json:"id" yaml:"id"`

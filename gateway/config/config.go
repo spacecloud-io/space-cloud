@@ -103,6 +103,7 @@ type DatabaseConfig struct {
 	DBName       string       `json:"name,omitempty" yaml:"name" mapstructure:"name"` // name of the logical database or schema name according to the database type
 	Conn         string       `json:"conn,omitempty" yaml:"conn" mapstructure:"conn"`
 	IsPrimary    bool         `json:"isPrimary" yaml:"isPrimary" mapstructure:"isPrimary"`
+	IsDataloader bool         `json:"isDataloader" yaml:"isDataloader" mapstructure:"isDataloader"`
 	Enabled      bool         `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
 	BatchTime    int          `json:"batchTime,omitempty" yaml:"batchTime" mapstructure:"batchTime"`          // time in milli seconds
 	BatchRecords int          `json:"batchRecords,omitempty" yaml:"batchRecords" mapstructure:"batchRecords"` // indicates number of records per batch
