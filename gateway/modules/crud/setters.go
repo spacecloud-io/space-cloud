@@ -11,7 +11,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	schemaHelpers "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -112,7 +111,7 @@ func (m *Module) SetPreparedQueryConfig(ctx context.Context, prepQueries config.
 }
 
 // SetSchemaConfig set schema config of crud module
-func (m *Module) SetSchemaConfig(ctx context.Context, schemas config.DatabaseSchemas) error {
+func (m *Module) SetSchemaConfig(ctx context.Context, schemaDoc model.Type, schemas config.DatabaseSchemas) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -121,10 +120,6 @@ func (m *Module) SetSchemaConfig(ctx context.Context, schemas config.DatabaseSch
 		return nil
 	}
 
-	schemaDoc, err := schemaHelpers.Parser(schemas)
-	if err != nil {
-		return err
-	}
 	m.schemaDoc = schemaDoc
 
 	m.closeBatchOperation()

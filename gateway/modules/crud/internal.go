@@ -13,13 +13,17 @@ func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col strin
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbAlias)
+	// Validate the create operation
+	dbType, err := m.getDBType(dbAlias)
 	if err != nil {
 		return err
 	}
+	if err := helpers.ValidateCreateOperation(ctx, dbAlias, dbType, col, m.schemaDoc, req); err != nil {
+		return err
+	}
 
-	// Validate the create operation
-	if err := helpers.ValidateCreateOperation(ctx, dbAlias, string(crud.GetDBType()), col, m.schemaDoc, req); err != nil {
+	crud, err := m.getCrudBlock(dbAlias)
+	if err != nil {
 		return err
 	}
 
@@ -49,13 +53,17 @@ func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col strin
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbAlias)
+	// validate the update operation
+	dbType, err := m.getDBType(dbAlias)
 	if err != nil {
 		return err
 	}
+	if err := helpers.ValidateUpdateOperation(ctx, dbAlias, dbType, col, req.Operation, req.Update, req.Find, m.schemaDoc); err != nil {
+		return err
+	}
 
-	// validate the update operation
-	if err := helpers.ValidateUpdateOperation(ctx, dbAlias, string(crud.GetDBType()), col, req.Operation, req.Update, req.Find, m.schemaDoc); err != nil {
+	crud, err := m.getCrudBlock(dbAlias)
+	if err != nil {
 		return err
 	}
 
@@ -64,7 +72,7 @@ func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col strin
 	}
 
 	// Adjust where clause
-	if err := helpers.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, m.schemaDoc, req.Find); err != nil {
+	if err := helpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
 		return err
 	}
 
@@ -95,7 +103,11 @@ func (m *Module) InternalDelete(ctx context.Context, dbAlias, project, col strin
 	}
 
 	// Adjust where clause
-	if err := helpers.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, m.schemaDoc, req.Find); err != nil {
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return err
+	}
+	if err := helpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
 		return err
 	}
 

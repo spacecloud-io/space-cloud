@@ -16,12 +16,16 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbAlias)
+	dbType, err := m.getDBType(dbAlias)
 	if err != nil {
 		return err
 	}
+	if err := schemaHelpers.ValidateCreateOperation(ctx, dbAlias, dbType, col, m.schemaDoc, req); err != nil {
+		return err
+	}
 
-	if err := schemaHelpers.ValidateCreateOperation(ctx, dbAlias, string(crud.GetDBType()), col, m.schemaDoc, req); err != nil {
+	crud, err := m.getCrudBlock(dbAlias)
+	if err != nil {
 		return err
 	}
 
@@ -51,17 +55,21 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 	m.RLock()
 	defer m.RUnlock()
 
+	// Adjust where clause
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
+		return nil, nil, err
+	}
+
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if err := crud.IsClientSafe(ctx); err != nil {
-		return nil, nil, err
-	}
-
-	// Adjust where clause
-	if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, m.schemaDoc, req.Find); err != nil {
 		return nil, nil, err
 	}
 
@@ -90,14 +98,12 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 	n, result, _, metaData, err := crud.Read(ctx, col, req)
 
 	// Process the response
-	if err := schemaHelpers.CrudPostProcess(ctx, dbAlias, string(crud.GetDBType()), col, m.schemaDoc, result); err != nil {
+	if err := schemaHelpers.CrudPostProcess(ctx, dbAlias, dbType, col, m.schemaDoc, result); err != nil {
 		return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col), err, nil)
 	}
 
-	// Invoke the metric hook if the operation was successful
-	if err == nil {
-		m.metricHook(m.project, dbAlias, col, n, model.Read)
-	}
+	// Invoke the metric hook
+	m.metricHook(m.project, dbAlias, col, n, model.Read)
 
 	if metaData != nil {
 		metaData.DbAlias = dbAlias
@@ -111,12 +117,16 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbAlias)
+	dbType, err := m.getDBType(dbAlias)
 	if err != nil {
 		return err
 	}
+	if err := schemaHelpers.ValidateUpdateOperation(ctx, dbAlias, dbType, col, req.Operation, req.Update, req.Find, m.schemaDoc); err != nil {
+		return err
+	}
 
-	if err := schemaHelpers.ValidateUpdateOperation(ctx, dbAlias, string(crud.GetDBType()), col, req.Operation, req.Update, req.Find, m.schemaDoc); err != nil {
+	crud, err := m.getCrudBlock(dbAlias)
+	if err != nil {
 		return err
 	}
 
@@ -125,7 +135,7 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 	}
 
 	// Adjust where clause
-	if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, m.schemaDoc, req.Find); err != nil {
+	if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
 		return err
 	}
 
@@ -155,7 +165,11 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 	}
 
 	// Adjust where clause
-	if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, m.schemaDoc, req.Find); err != nil {
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return err
+	}
+	if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
 		return err
 	}
 
@@ -236,17 +250,21 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 		return err
 	}
 
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return err
+	}
 	for _, r := range req.Requests {
 		switch r.Type {
 		case string(model.Create):
 			v := &model.CreateRequest{Document: r.Document, Operation: r.Operation}
-			if err := schemaHelpers.ValidateCreateOperation(ctx, dbAlias, string(crud.GetDBType()), r.Col, m.schemaDoc, v); err != nil {
+			if err := schemaHelpers.ValidateCreateOperation(ctx, dbAlias, dbType, r.Col, m.schemaDoc, v); err != nil {
 				return err
 			}
 			r.Document = v.Document
 			r.Operation = v.Operation
 		case string(model.Update):
-			if err := schemaHelpers.ValidateUpdateOperation(ctx, dbAlias, string(crud.GetDBType()), r.Col, r.Operation, r.Update, r.Find, m.schemaDoc); err != nil {
+			if err := schemaHelpers.ValidateUpdateOperation(ctx, dbAlias, dbType, r.Col, r.Operation, r.Update, r.Find, m.schemaDoc); err != nil {
 				return err
 			}
 		}
