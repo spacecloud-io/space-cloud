@@ -721,6 +721,16 @@ func TestLoadValue(t *testing.T) {
 			want: "2",
 		},
 		{
+			name: "bson array inside map, for mongo",
+			args: args{
+				key: "a.b.2",
+				state: map[string]interface{}{
+					"a": map[string]interface{}{"b": primitive.A{"0", "1", "2"}},
+				},
+			},
+			want: "2",
+		},
+		{
 			name: "map inside array inside map",
 			args: args{
 				key: "a.b.0.c",
@@ -836,7 +846,7 @@ func TestLoadValue(t *testing.T) {
 					"a": 3,
 				},
 			},
-			//want:    5,
+			// want:    5,
 			wantErr: true,
 		},
 		{
@@ -897,7 +907,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    false,
+			// want:    false,
 			wantErr: true,
 		},
 		{
@@ -927,7 +937,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -942,7 +952,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -972,7 +982,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1008,7 +1018,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1026,7 +1036,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1044,7 +1054,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1062,7 +1072,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1080,7 +1090,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1353,7 +1363,7 @@ func Test_convertOrCreate(t *testing.T) {
 					"op1": 4,
 				},
 			},
-			//want:    map[string]interface{}{},
+			// want:    map[string]interface{}{},
 			wantErr: true,
 		},
 	}

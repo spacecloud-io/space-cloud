@@ -111,7 +111,11 @@ func Validate(dbType string, where map[string]interface{}, obj interface{}) bool
 
 			val, p := res[k]
 			if !p {
-				return false
+				tempObj, err := LoadValue(k, res)
+				if err != nil {
+					return false
+				}
+				val = tempObj
 			}
 
 			// And clause
