@@ -50,17 +50,15 @@ func New(projectID, clusterID, nodeID string, managers *managers.Managers, globa
 	c := crud.Init()
 	c.SetGetSecrets(syncMan.GetSecrets)
 	s := schema.Init(clusterID, c)
-	c.SetSchema(s)
 
 	a := auth.Init(clusterID, nodeID, c, adminMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
-	c.SetAuth(a)
 
 	fn := functions.Init(clusterID, a, syncMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
 	f.SetGetSecrets(syncMan.GetSecrets)
 
-	e, err := eventing.New(projectID, nodeID, a, c, s, syncMan, f, metrics.AddEventingType)
+	e, err := eventing.New(projectID, nodeID, a, c, syncMan, f, metrics.AddEventingType)
 	if err != nil {
 		return nil, err
 	}

@@ -13,6 +13,7 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -69,7 +70,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 
 		// Post process only if joins were not enabled
 		if isPostProcessingEnabled(req.PostProcess) && len(req.Options.Join) == 0 {
-			_ = graph.auth.PostProcessMethod(ctx, req.PostProcess[col], result)
+			_ = authHelpers.PostProcessMethod(ctx, graph.aesKey, req.PostProcess[col], result)
 		}
 
 		cb(dbAlias, col, result, err)
@@ -141,7 +142,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 
 		// Post process only if joins were not enabled
 		if isPostProcessingEnabled(req.PostProcess) && len(req.Options.Join) == 0 {
-			_ = graph.auth.PostProcessMethod(ctx, req.PostProcess[col], result)
+			_ = authHelpers.PostProcessMethod(ctx, graph.aesKey, req.PostProcess[col], result)
 		}
 
 		cb(dbAlias, col, result, err)
@@ -210,7 +211,7 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 			val := store["_query"]
 			val.(*utils.Array).Append(structs.Map(metaData))
 		}
-		_ = graph.auth.PostProcessMethod(ctx, actions, result)
+		_ = authHelpers.PostProcessMethod(ctx, graph.aesKey, actions, result)
 		cb(dbAlias, id, result, err)
 	}()
 }

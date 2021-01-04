@@ -19,7 +19,6 @@ func Test_generateSDL(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "Successful test",
 			args: args{

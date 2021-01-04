@@ -12,6 +12,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -61,7 +62,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		_ = auth.PostProcessMethod(ctx, actions, result)
+		_ = authHelpers.PostProcessMethod(ctx, auth.GetAESKey(), actions, result)
 
 		_ = helpers.Response.SendResponse(ctx, w, status, result)
 	}

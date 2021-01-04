@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	schemaHelpers "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -229,7 +230,7 @@ func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName str
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	parsedSchema, err := s.Parser(dbSchemas)
+	parsedSchema, err := schemaHelpers.Parser(dbSchemas)
 	if err != nil {
 		return err
 	}

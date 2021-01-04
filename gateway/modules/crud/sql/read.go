@@ -18,6 +18,7 @@ import (
 	_ "github.com/lib/pq"                               // Import for postgres
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -287,7 +288,7 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 
 		processAggregate(mapping, mapping, col, isAggregate)
 		if req.PostProcess != nil {
-			_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], mapping)
+			_ = authHelpers.PostProcessMethod(ctx, s.aesKey, req.PostProcess[col], mapping)
 		}
 
 		if req.Options.Debug {
@@ -420,7 +421,7 @@ func (s *SQL) processRows(ctx context.Context, isDebug bool, table []string, isA
 
 		// Perform post processing
 		if postProcess != nil {
-			_ = s.auth.PostProcessMethod(ctx, postProcess[table[length]], m)
+			_ = authHelpers.PostProcessMethod(ctx, s.aesKey, postProcess[table[length]], m)
 		}
 
 		// Process aggregate field only if its the root table that we are processing

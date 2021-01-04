@@ -152,6 +152,10 @@ func (m *Mongo) SetQueryFetchLimit(limit int64) {
 	m.queryFetchLimit = &limit
 }
 
+// SetProjectAESKey sets aes key
+func (m *Mongo) SetProjectAESKey(aesKey []byte) {
+}
+
 func (m *Mongo) setClient(c *mongo.Client) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

@@ -42,7 +42,7 @@ func (m *Module) prepareFindObject(req *model.QueueEventRequest) error {
 
 	// Find the primary keys for the table
 	primaryKeys := make([]string, 0)
-	fields, p := m.schema.GetSchema(dbRequest.DBType, dbRequest.Col)
+	fields, p := m.crud.GetSchema(dbRequest.DBType, dbRequest.Col)
 	if p {
 		for fieldName, value := range fields {
 			if value.IsPrimary {

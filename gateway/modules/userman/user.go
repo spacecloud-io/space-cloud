@@ -1,6 +1,7 @@
 package userman
 
 import (
+	"encoding/base64"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -13,6 +14,9 @@ type Module struct {
 	methods map[string]*config.AuthStub
 	crud    model.CrudUserInterface
 	auth    model.AuthUserInterface
+
+	// auth module
+	aesKey []byte
 }
 
 // Init creates a new instance of the user management object
@@ -47,4 +51,17 @@ func (m *Module) IsEnabled() bool {
 	defer m.RUnlock()
 
 	return len(m.methods) > 0
+}
+
+// SetProjectAESKey set aes key
+func (m *Module) SetProjectAESKey(aesKey string) error {
+	m.Lock()
+	defer m.Unlock()
+
+	decodedAESKey, err := base64.StdEncoding.DecodeString(aesKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
+	return nil
 }
