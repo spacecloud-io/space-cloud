@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"sync"
@@ -22,6 +23,9 @@ type Module struct {
 	crud      CrudInterface
 	functions FunctionInterface
 	schema    SchemaInterface
+
+	// 	Auth module
+	aesKey []byte
 }
 
 // New creates a new GraphQL module
@@ -32,6 +36,16 @@ func New(a AuthInterface, c CrudInterface, f FunctionInterface, s SchemaInterfac
 // SetConfig sets the project configuration
 func (graph *Module) SetConfig(project string) {
 	graph.project = project
+}
+
+// SetProjectAESKey sets aes key
+func (graph *Module) SetProjectAESKey(aesKey string) error {
+	decodedAESKey, err := base64.StdEncoding.DecodeString(aesKey)
+	if err != nil {
+		return err
+	}
+	graph.aesKey = decodedAESKey
+	return nil
 }
 
 // GetProjectID sets the project configuration

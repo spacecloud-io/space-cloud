@@ -34,11 +34,6 @@ var prepareQueryTestCases = []tests{
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
 			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
-			},
 		},
 		args: args{
 			req: &model.GraphQLRequest{

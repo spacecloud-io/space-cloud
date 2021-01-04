@@ -125,6 +125,7 @@ func TestSchema_CheckIfEventingIsPossible(t *testing.T) {
 			s := &Schema{
 				SchemaDoc: tt.fields.SchemaDoc,
 			}
+
 			gotFindForUpdate, gotPresent := s.CheckIfEventingIsPossible(tt.args.dbAlias, tt.args.col, tt.args.obj, tt.args.isFind)
 			if !reflect.DeepEqual(len(gotFindForUpdate), len(tt.wantFindForUpdate)) {
 				t.Errorf("Schema.CheckIfEventingIsPossible() gotFindForUpdate = %v, want %v", gotFindForUpdate, tt.wantFindForUpdate)

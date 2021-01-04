@@ -12,6 +12,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -49,7 +50,7 @@ func (m *Module) Profile(ctx context.Context, token, dbAlias, project, id string
 		return http.StatusInternalServerError, nil, err
 	}
 
-	_ = m.auth.PostProcessMethod(ctx, actions, res)
+	_ = authHelpers.PostProcessMethod(ctx, m.aesKey, actions, res)
 
 	// Delete password from user object
 	delete(res.(map[string]interface{}), "pass")
@@ -79,7 +80,7 @@ func (m *Module) Profiles(ctx context.Context, token, dbAlias, project string) (
 		return http.StatusInternalServerError, nil, err
 	}
 
-	_ = m.auth.PostProcessMethod(ctx, actions, res)
+	_ = authHelpers.PostProcessMethod(ctx, m.aesKey, actions, res)
 
 	// Delete password from user object
 	if usersArray, ok := res.([]interface{}); ok {

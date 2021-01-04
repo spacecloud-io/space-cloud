@@ -2,6 +2,7 @@ package crud
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	schemaHelpers "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -119,6 +121,12 @@ func (m *Module) SetSchemaConfig(ctx context.Context, schemas config.DatabaseSch
 		return nil
 	}
 
+	schemaDoc, err := schemaHelpers.Parser(schemas)
+	if err != nil {
+		return err
+	}
+	m.schemaDoc = schemaDoc
+
 	m.closeBatchOperation()
 	if err := m.initBatchOperation(m.project, schemas); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to initialize database batch operation", err, nil)
@@ -134,17 +142,24 @@ func (m *Module) SetGetSecrets(function utils.GetSecrets) {
 	m.getSecrets = function
 }
 
-// SetSchema sets the schema module
-func (m *Module) SetSchema(s model.SchemaCrudInterface) {
-	m.schema = s
-}
-
-// SetAuth sets the auth module
-func (m *Module) SetAuth(a model.AuthCrudInterface) {
-	m.auth = a
-}
-
 // SetHooks sets the internal hooks
 func (m *Module) SetHooks(metricHook model.MetricCrudHook) {
 	m.metricHook = metricHook
+}
+
+// SetProjectAESKey set aes config for sql databases
+func (m *Module) SetProjectAESKey(aesKey string) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(m.config.DbAlias)
+	if err != nil {
+		return err
+	}
+	decodedAESKey, err := base64.StdEncoding.DecodeString(aesKey)
+	if err != nil {
+		return err
+	}
+	crud.SetProjectAESKey(decodedAESKey)
+	return nil
 }

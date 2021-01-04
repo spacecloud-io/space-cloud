@@ -31,18 +31,13 @@ var functionTestCases = []tests{
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
 			},
-			{
-				method:         "PostProcessMethod",
-				args:           []interface{}{mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{nil},
-			},
 		},
 		args: args{
 			req: &model.GraphQLRequest{
 				OperationName: "query",
 				Query: `query {
 								adder(
-									num1 : 10,
+									num1 : 10,	
 									num2 : 20,
 								) @arithmetic(timeout:10,func : "adder") {
 									sum

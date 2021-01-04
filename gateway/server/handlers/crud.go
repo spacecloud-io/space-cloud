@@ -12,6 +12,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -58,7 +59,7 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// function to do postProcessing on result
-		_ = auth.PostProcessMethod(ctx, actions, result)
+		_ = authHelpers.PostProcessMethod(ctx, auth.GetAESKey(), actions, result)
 
 		// Give positive acknowledgement
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{"result": result})
@@ -150,7 +151,7 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// function to do postProcessing on result
-		_ = auth.PostProcessMethod(ctx, actions, result)
+		_ = authHelpers.PostProcessMethod(ctx, auth.GetAESKey(), actions, result)
 
 		// Give positive acknowledgement
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{"result": result})

@@ -15,6 +15,10 @@ func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.P
 		if err := m.db.SetConfig(projectID, project.DatabaseConfigs); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set db module config", err, nil)
 		}
+		if err := m.db.SetProjectAESKey(project.ProjectConfig.AESKey); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set aes key for db module config", err, nil)
+		}
+
 		if err := m.db.SetSchemaConfig(ctx, project.DatabaseSchemas); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set schema db module config", err, nil)
 		}
@@ -26,7 +30,6 @@ func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.P
 		if err := m.schema.SetDatabaseSchema(project.DatabaseSchemas, projectID); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set schema module config", err, nil)
 		}
-		m.schema.SetDatabaseConfig(project.DatabaseConfigs)
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of auth module", nil)
 		if err := m.auth.SetConfig(ctx, project.FileStoreConfig.StoreType, project.ProjectConfig, project.DatabaseRules, project.DatabasePreparedQueries, project.FileStoreRules, project.RemoteService, project.EventingRules); err != nil {
@@ -40,6 +43,9 @@ func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.P
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of user management module", nil)
 		m.user.SetConfig(project.Auths)
+		if err := m.user.SetProjectAESKey(project.ProjectConfig.AESKey); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set aes key for user module config", err, nil)
+		}
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of file storage module", nil)
 		if err := m.file.SetConfig(projectID, project.FileStoreConfig); err != nil {
@@ -60,9 +66,15 @@ func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.P
 		if err := m.realtime.SetConfig(project.DatabaseConfigs, project.DatabaseRules, project.DatabaseSchemas); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set realtime module config", err, nil)
 		}
+		if err := m.realtime.SetProjectAESKey(project.ProjectConfig.AESKey); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set aes key for realtime module config", err, nil)
+		}
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of graphql module", nil)
 		m.graphql.SetConfig(projectID)
+		if err := m.graphql.SetProjectAESKey(project.ProjectConfig.AESKey); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set aes key for graphql module config", err, nil)
+		}
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of lets encrypt module", nil)
 		if err := m.GlobalMods.LetsEncrypt().SetProjectDomains(projectID, project.LetsEncrypt); err != nil {
@@ -84,6 +96,10 @@ func (m *Modules) SetProjectConfig(ctx context.Context, p *config.ProjectConfig)
 	if err := m.auth.SetProjectConfig(p); err != nil {
 		return err
 	}
+	_ = m.db.SetProjectAESKey(p.AESKey)
+	_ = m.realtime.SetProjectAESKey(p.AESKey)
+	_ = m.user.SetProjectAESKey(p.AESKey)
+	_ = m.graphql.SetProjectAESKey(p.AESKey)
 	m.graphql.SetConfig(p.ID)
 	return nil
 }
@@ -97,7 +113,6 @@ func (m *Modules) SetDatabaseConfig(ctx context.Context, projectID string, datab
 
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of realtime module", nil)
 	m.realtime.SetDatabaseConfig(databaseConfigs)
-	m.schema.SetDatabaseConfig(databaseConfigs)
 
 	// Set the schema config as well
 	if err := m.SetDatabaseSchemaConfig(ctx, projectID, schemaConfigs); err != nil {

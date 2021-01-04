@@ -10,6 +10,7 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -43,7 +44,7 @@ func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFee
 		return nil, err
 	}
 
-	_ = m.auth.PostProcessMethod(ctx, actions, result)
+	_ = authHelpers.PostProcessMethod(ctx, m.aesKey, actions, result)
 
 	feedData := make([]*model.FeedData, 0)
 	array, ok := result.([]interface{})

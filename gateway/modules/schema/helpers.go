@@ -550,10 +550,6 @@ func getIndexName(tableName, indexName string) string {
 	return fmt.Sprintf("index__%s__%s", tableName, indexName)
 }
 
-func getConstraintName(tableName, columnName string) string {
-	return fmt.Sprintf("c_%s_%s", tableName, columnName)
-}
-
 type indexStruct struct {
 	IsIndexUnique        bool
 	IndexTableProperties []*model.TableProperties

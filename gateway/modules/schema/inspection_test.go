@@ -6,6 +6,7 @@ import (
 	"github.com/go-test/deep"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	. "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 )
 
 func Test_generateInspection(t *testing.T) {
@@ -291,9 +292,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: GetConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeID, IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION"}}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeID, IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2", ConstraintName: GetConstraintName("table1", firstColumn), OnDelete: "NO_ACTION"}}}},
 			wantErr: false,
 		},
 		{
@@ -301,9 +302,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "text", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "text", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: GetConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeString, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeString, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: GetConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
 		},
 		{
@@ -311,9 +312,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "bigint", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "bigint", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: GetConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeInteger, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeInteger, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: GetConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
 		},
 		{
@@ -321,9 +322,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5, TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5, TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: GetConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: GetConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
 		},
 		{
@@ -331,9 +332,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "datetime", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "datetime", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: GetConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: GetConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
 		},
 		{
@@ -341,9 +342,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "json", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: getConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
+				fields: []model.InspectorFieldType{{ColumnName: firstColumn, FieldType: "json", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: GetConstraintName("table1", firstColumn), DeleteRule: "NO_ACTION"}},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeJSON, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: getConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeJSON, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: GetConstraintName("table1", firstColumn), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
 		},
 		{

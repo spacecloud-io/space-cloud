@@ -23,9 +23,6 @@ type CrudAuthInterface interface {
 
 // SchemaEventingInterface is an interface consisting of functions of schema module used by eventing module
 type SchemaEventingInterface interface {
-	CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool)
-	Parser(dbSchemas config.DatabaseSchemas) (Type, error)
-	SchemaValidator(ctx context.Context, dbAlias, col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
 	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, dbSchemas config.DatabaseSchemas) error
 	SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error)
 	GetSchema(dbAlias, col string) (Fields, bool)
@@ -38,6 +35,7 @@ type CrudEventingInterface interface {
 	InternalUpdate(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
 	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, *SQLMetaData, error)
 	GetDBType(dbAlias string) (string, error)
+	GetSchema(dbAlias, col string) (Fields, bool)
 }
 
 // AuthEventingInterface is an interface consisting of functions of auth module used by Eventing module
@@ -85,7 +83,6 @@ type EventingRealtimeInterface interface {
 // AuthRealtimeInterface is an interface consisting of functions of auth module used by RealTime module
 type AuthRealtimeInterface interface {
 	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest, stub ReturnWhereStub) (*PostProcess, RequestParams, error)
-	PostProcessMethod(ctx context.Context, postProcess *PostProcess, result interface{}) error
 	GetInternalAccessToken(ctx context.Context) (string, error)
 	GetSCAccessToken(ctx context.Context) (string, error)
 }
@@ -114,7 +111,6 @@ type CrudUserInterface interface {
 // AuthUserInterface is an interface consisting of functions of auth module used by User module
 type AuthUserInterface interface {
 	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest, stub ReturnWhereStub) (*PostProcess, RequestParams, error)
-	PostProcessMethod(ctx context.Context, postProcess *PostProcess, result interface{}) error
 	CreateToken(ctx context.Context, tokenClaims TokenClaims) (string, error)
 	IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *UpdateRequest) (RequestParams, error)
 }

@@ -25,8 +25,6 @@ type Module struct {
 	dbType  string
 	alias   string
 	project string
-	schema  model.SchemaCrudInterface
-	auth    model.AuthCrudInterface
 	queries config.DatabasePreparedQueries
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
@@ -39,6 +37,9 @@ type Module struct {
 
 	// function to get secrets from runner
 	getSecrets utils.GetSecrets
+
+	// Schema module
+	schemaDoc model.Type
 }
 
 type loader struct {
@@ -66,6 +67,7 @@ type Crud interface {
 	Close() error
 	GetConnectionState(ctx context.Context) bool
 	SetQueryFetchLimit(limit int64)
+	SetProjectAESKey(aesKey []byte)
 }
 
 // Init create a new instance of the Module object
@@ -80,7 +82,7 @@ func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName
 	case model.EmbeddedDB:
 		return bolt.Init(enabled, connection, dbName)
 	case model.MySQL, model.Postgres, model.SQLServer:
-		c, err := sql.Init(dbType, enabled, connection, dbName, m.auth, driverConf)
+		c, err := sql.Init(dbType, enabled, connection, dbName, driverConf)
 		if err == nil && enabled {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -89,7 +91,7 @@ func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName
 			}
 		}
 		if dbType == model.MySQL {
-			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, dbName), dbName, m.auth, driverConf)
+			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, dbName), dbName, driverConf)
 		}
 		return c, err
 	default:
