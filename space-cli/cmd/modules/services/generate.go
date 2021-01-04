@@ -47,7 +47,7 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 		registry, present := p[0].Spec.(map[string]interface{})["dockerRegistry"]
 		if registry == "" || !present {
 			reg := ""
-			if err := input.Survey.AskOne(&survey.Input{Message: "No default registry configured, provide registry"}, &reg); err != nil {
+			if err := input.Survey.AskOne(&survey.Input{Message: "No default registry configured, provide registry", Help: "eg: gcr.io/spaceuptech"}, &reg); err != nil {
 				return nil, err
 			}
 			registry = reg
