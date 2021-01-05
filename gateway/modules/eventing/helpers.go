@@ -16,6 +16,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	schemaHelpers "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 )
@@ -298,9 +299,9 @@ func (m *Module) validate(ctx context.Context, project, token string, event *mod
 		return nil
 	}
 
-	// NOTE: dbAlias is not required for schema validation
+	// NOTE: dbAlias & dbType is not required for schema validation
 	// It is required, if we want to use the mutated doc return by schema validator, the result depends upon db alias
-	_, err := m.schema.SchemaValidator(ctx, "", event.Type, schema, event.Payload.(map[string]interface{}))
+	_, err := schemaHelpers.SchemaValidator(ctx, "", "", event.Type, schema, event.Payload.(map[string]interface{}))
 	return err
 }
 

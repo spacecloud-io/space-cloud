@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 
+	"github.com/go-test/deep"
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	schemaHelpers "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -149,7 +150,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		}
 
 		currentColumnInfo, ok := currentTableInfo[realColumnName]
-		columnType, err := getSQLType(ctx, realColumnInfo.TypeIDSize, dbType, realColumnInfo.Kind)
+		columnType, err := getSQLType(ctx, dbType, realColumnInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -205,21 +206,21 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 
 	for indexName, fields := range realIndexMap {
 		if _, ok := currentIndexMap[indexName]; !ok {
-			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexMap))
+			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexTableProperties))
 			continue
 		}
-		if !reflect.DeepEqual(fields.IndexMap, cleanIndexMap(currentIndexMap[indexName].IndexMap)) {
+		if arr := deep.Equal(fields.IndexTableProperties, cleanIndexMap(currentIndexMap[indexName].IndexTableProperties)); len(arr) > 0 {
 			batchedQueries = append(batchedQueries, s.removeIndex(dbType, dbAlias, logicalDBName, tableName, currentIndexMap[indexName].IndexName))
-			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexMap))
+			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexTableProperties))
 		}
 	}
 
 	return batchedQueries, nil
 }
 
-func cleanIndexMap(v []*model.FieldType) []*model.FieldType {
-	for _, fieldType := range v {
-		fieldType.IndexInfo.ConstraintName = ""
+func cleanIndexMap(v []*model.TableProperties) []*model.TableProperties {
+	for _, indexInfo := range v {
+		indexInfo.ConstraintName = ""
 	}
 	return v
 }
@@ -229,7 +230,7 @@ func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName str
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	parsedSchema, err := s.Parser(dbSchemas)
+	parsedSchema, err := schemaHelpers.Parser(dbSchemas)
 	if err != nil {
 		return err
 	}

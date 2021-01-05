@@ -64,7 +64,7 @@ func TestSQL_CreateDatabaseIfNotExist(t *testing.T) {
 						v[colType.Name()] = string(value)
 					}
 				}
-				// mysqlTypeCheck(utils.DBType(*dbType), rowTypes, v)
+				// mysqlTypeCheck(utils.DBAlias(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if !reflect.DeepEqual(tt.want, readResult) {

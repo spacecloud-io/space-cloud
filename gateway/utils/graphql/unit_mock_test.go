@@ -16,9 +16,9 @@ func (m *mockGraphQLCrudInterface) Create(ctx context.Context, dbAlias, collecti
 	args := m.Called(ctx, dbAlias, collection, request, params)
 	return args.Error(0)
 }
-func (m *mockGraphQLCrudInterface) Read(ctx context.Context, dbAlias, collection string, request *model.ReadRequest, params model.RequestParams) (interface{}, error) {
+func (m *mockGraphQLCrudInterface) Read(ctx context.Context, dbAlias, collection string, request *model.ReadRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	args := m.Called(ctx, dbAlias, collection, request, params)
-	return args.Get(0), args.Error(1)
+	return args.Get(0), args.Get(1).(*model.SQLMetaData), args.Error(2)
 }
 func (m *mockGraphQLCrudInterface) Update(ctx context.Context, dbAlias, collection string, request *model.UpdateRequest, params model.RequestParams) error {
 	args := m.Called(ctx, dbAlias, collection, request, params)
@@ -40,9 +40,9 @@ func (m *mockGraphQLCrudInterface) IsPreparedQueryPresent(directive, fieldName s
 	args := m.Called(directive, fieldName)
 	return args.Bool(0)
 }
-func (m *mockGraphQLCrudInterface) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, error) {
+func (m *mockGraphQLCrudInterface) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	args := m.Called(ctx, dbAlias, id, req, params)
-	return args.Get(0).(interface{}), args.Error(1)
+	return args.Get(0), args.Get(1).(*model.SQLMetaData), args.Error(2)
 }
 
 type mockGraphQLAuthInterface struct {

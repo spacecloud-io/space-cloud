@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -32,7 +33,7 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "project", "read", map[string]string{"project": projectID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -40,7 +41,7 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 
 		status, project, err := syncMan.GetProjectConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -69,7 +70,7 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "project", "modify", map[string]string{"project": projectID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -77,7 +78,7 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 
 		statusCode, err := syncman.ApplyProjectConfig(ctx, &projectConfig, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, statusCode, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, statusCode, err)
 			return
 		}
 
@@ -98,7 +99,7 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(r.Context(), token, "project", "modify", map[string]string{"project": projectID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -110,7 +111,7 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 		reqParams.Headers = r.Header
 		status, err := syncMan.DeleteProjectConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -131,7 +132,7 @@ func HandleGetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "cluster", "read", map[string]string{})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -139,7 +140,7 @@ func HandleGetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 
 		status, clusterConfig, err := syncMan.GetClusterConfig(ctx, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -161,7 +162,7 @@ func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 
 		// Throw error if request was of incorrect type
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, "Admin Config was of invalid type - "+err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, fmt.Errorf("Admin Config was of invalid type - %v", err.Error()))
 			return
 		}
 
@@ -171,7 +172,7 @@ func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "cluster", "modify", map[string]string{})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -180,7 +181,7 @@ func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		// Sync the Adminconfig
 		status, err := syncMan.SetClusterConfig(ctx, req, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 

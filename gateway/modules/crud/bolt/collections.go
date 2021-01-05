@@ -3,6 +3,7 @@ package bolt
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/spaceuptech/helpers"
@@ -29,7 +30,7 @@ func (b *Bolt) GetCollections(ctx context.Context) ([]utils.DatabaseCollections,
 		return nil
 	})
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "could not get all collections for given project and database", err, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to query database to get tables in database (%s)", b.bucketName), err, nil)
 	}
 	dbCols := make([]utils.DatabaseCollections, 0)
 	for col := range keys {

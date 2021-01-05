@@ -558,6 +558,7 @@ github.com/go-sql-driver/mysql v1.5.0 h1:ozyZYNQW3x3HtqT1jira07DN2PArx2v7/mN66gG
 github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/go-test/deep v1.0.2-0.20181118220953-042da051cf31/go.mod h1:wGDj63lr65AM2AQyKZd/NYHGb0R+1RLqB8NKt3aSFNA=
+github.com/go-test/deep v1.0.4 h1:u2CU3YKy9I2pmu9pX0eq50wCgjfGIt539SqR7FbHiho=
 github.com/go-test/deep v1.0.4/go.mod h1:wGDj63lr65AM2AQyKZd/NYHGb0R+1RLqB8NKt3aSFNA=
 github.com/go-toolsmith/astcast v1.0.0/go.mod h1:mt2OdQTeAQcY4DQgPSArJjHCcOwlX+Wl/kwN+LbLGQ4=
 github.com/go-toolsmith/astcopy v1.0.0/go.mod h1:vrgyG+5Bxrnz4MZWPF+pI4R8h3qKRjjyvV/DSez4WVQ=
@@ -1271,8 +1272,8 @@ github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4k
 github.com/sony/gobreaker v0.4.1/go.mod h1:ZKptC7FHNvhBz7dN2LGjPVBz2sZJmc0/PkyDJOjmxWY=
 github.com/sourcegraph/go-diff v0.5.1/go.mod h1:j2dHj3m8aZgQO8lMTcTnBcXkRRRqi34cd2MNlA9u1mE=
 github.com/sourcegraph/go-diff v0.5.3/go.mod h1:v9JDtjCE4HHHCZGId75rg8gkKKa98RVjBcBGsVmMmak=
-github.com/spaceuptech/helpers v0.1.2 h1:8YgpJjhO/vaKnkI2Tr4ol68O1dERl/YVnEawLGxJGas=
-github.com/spaceuptech/helpers v0.1.2/go.mod h1:FqA/yKG4VdoIv1fb5xufwA/yOqYFPPDixQPHsYDVyvM=
+github.com/spaceuptech/helpers v0.2.0 h1:1Ku60oljrE30FVDR21QiU9qLEBnqOR2BC6CV1jxKjmU=
+github.com/spaceuptech/helpers v0.2.0/go.mod h1:FqA/yKG4VdoIv1fb5xufwA/yOqYFPPDixQPHsYDVyvM=
 github.com/spaceuptech/space-api-go v0.17.3 h1:Syjiifm1vgPHPZiKAptF37chcJUrxTebi2VtNu6DxCg=
 github.com/spaceuptech/space-api-go v0.17.3/go.mod h1:+7VTNWQICAbh9Lm2uTTeKXgRPnxF/l7wsrc6XX4LSSg=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=

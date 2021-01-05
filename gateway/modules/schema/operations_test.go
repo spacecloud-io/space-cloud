@@ -9,6 +9,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	. "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 )
 
 func TestManager_GetSchemas(t *testing.T) {
@@ -87,20 +88,17 @@ func TestManager_GetSchemas(t *testing.T) {
 					SchemaObj: model.Fields{
 						"id": &model.FieldType{
 							FieldName:           "id",
-							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
 						},
 						"name": &model.FieldType{
-							FieldName:       "name",
-							IsAutoIncrement: false,
-							Kind:            model.TypeString,
-							TypeIDSize:      model.SQLTypeIDSize,
+							FieldName:  "name",
+							Kind:       model.TypeString,
+							TypeIDSize: model.SQLTypeIDSize,
 						},
 						"genre_id": &model.FieldType{
 							FieldName:           "genre_id",
-							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							IsForeign:           true,
@@ -109,7 +107,7 @@ func TestManager_GetSchemas(t *testing.T) {
 								Table:          "genres",
 								To:             "id",
 								OnDelete:       "NO ACTION",
-								ConstraintName: getConstraintName("authors", "genre_id"),
+								ConstraintName: GetConstraintName("authors", "genre_id"),
 							},
 						},
 					}},
@@ -145,16 +143,14 @@ func TestManager_GetSchemas(t *testing.T) {
 					SchemaObj: model.Fields{
 						"id": &model.FieldType{
 							FieldName:           "id",
-							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
 						},
 						"name": &model.FieldType{
-							FieldName:       "name",
-							IsAutoIncrement: false,
-							Kind:            model.TypeString,
-							TypeIDSize:      model.SQLTypeIDSize,
+							FieldName:  "name",
+							Kind:       model.TypeString,
+							TypeIDSize: model.SQLTypeIDSize,
 						},
 					},
 				},
@@ -164,20 +160,17 @@ func TestManager_GetSchemas(t *testing.T) {
 					SchemaObj: model.Fields{
 						"id": &model.FieldType{
 							FieldName:           "id",
-							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
 						},
 						"name": &model.FieldType{
-							FieldName:       "name",
-							IsAutoIncrement: false,
-							Kind:            model.TypeString,
-							TypeIDSize:      model.SQLTypeIDSize,
+							FieldName:  "name",
+							Kind:       model.TypeString,
+							TypeIDSize: model.SQLTypeIDSize,
 						},
 						"genre_id": &model.FieldType{
 							FieldName:           "genre_id",
-							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							IsForeign:           true,
@@ -186,7 +179,7 @@ func TestManager_GetSchemas(t *testing.T) {
 								Table:          "genres",
 								To:             "id",
 								OnDelete:       "NO ACTION",
-								ConstraintName: getConstraintName("authors", "genre_id"),
+								ConstraintName: GetConstraintName("authors", "genre_id"),
 							},
 						},
 					},
@@ -197,20 +190,17 @@ func TestManager_GetSchemas(t *testing.T) {
 					SchemaObj: model.Fields{
 						"id": &model.FieldType{
 							FieldName:           "id",
-							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							TypeIDSize:          model.SQLTypeIDSize,
 						},
 						"name": &model.FieldType{
-							FieldName:       "name",
-							IsAutoIncrement: false,
-							Kind:            model.TypeString,
-							TypeIDSize:      model.SQLTypeIDSize,
+							FieldName:  "name",
+							Kind:       model.TypeString,
+							TypeIDSize: model.SQLTypeIDSize,
 						},
 						"author_id": &model.FieldType{
 							FieldName:           "author_id",
-							IsAutoIncrement:     false,
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							IsForeign:           true,
@@ -219,7 +209,7 @@ func TestManager_GetSchemas(t *testing.T) {
 								Table:          "authors",
 								To:             "id",
 								OnDelete:       "NO ACTION",
-								ConstraintName: getConstraintName("subscribers", "author_id"),
+								ConstraintName: GetConstraintName("subscribers", "author_id"),
 							},
 						},
 					},
@@ -245,7 +235,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 			SchemaObj: model.Fields{
 		// 				"id": &model.FieldType{
 		// 					FieldName:           "id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					TypeIDSize:          model.SQLTypeIDSize,
@@ -264,7 +253,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 			SchemaObj: model.Fields{
 		// 				"id": &model.FieldType{
 		// 					FieldName:           "id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					TypeIDSize:          model.SQLTypeIDSize,
@@ -277,7 +265,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 				},
 		// 				"genre_id": &model.FieldType{
 		// 					FieldName:           "genre_id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					IsForeign:           true,
@@ -286,7 +273,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 						Table:          "genres",
 		// 						To:             "id",
 		// 						OnDelete:       "NO ACTION",
-		// 						ConstraintName: getConstraintName("authors", "genre_id"),
+		// 						ConstraintName: GetConstraintName("authors", "genre_id"),
 		// 					},
 		// 				},
 		// 			},
@@ -304,7 +291,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 				},
 		// 				"name": &model.FieldType{
 		// 					FieldName:  "name",
-		// IsAutoIncrement: false,
 		// 					Kind:       model.TypeString,
 		// 					TypeIDSize: model.SQLTypeIDSize,
 		// 				},
@@ -319,7 +305,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 						Table:          "authors",
 		// 						To:             "id",
 		// 						OnDelete:       "NO ACTION",
-		// 						ConstraintName: getConstraintName("subscribers", "author_id"),
+		// 						ConstraintName: GetConstraintName("subscribers", "author_id"),
 		// 					},
 		// 				},
 		// 			},
@@ -330,7 +316,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 			SchemaObj: model.Fields{
 		// 				"id": &model.FieldType{
 		// 					FieldName:           "id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					TypeIDSize:          model.SQLTypeIDSize,
@@ -349,7 +334,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 			SchemaObj: model.Fields{
 		// 				"id": &model.FieldType{
 		// 					FieldName:           "id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					TypeIDSize:          model.SQLTypeIDSize,
@@ -362,7 +346,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 				},
 		// 				"genre_id": &model.FieldType{
 		// 					FieldName:           "genre_id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					IsForeign:           true,
@@ -371,7 +354,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 						Table:          "genres",
 		// 						To:             "id",
 		// 						OnDelete:       "NO ACTION",
-		// 						ConstraintName: getConstraintName("authors", "genre_id"),
+		// 						ConstraintName: GetConstraintName("authors", "genre_id"),
 		// 					},
 		// 				},
 		// 			},
@@ -389,7 +372,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 				},
 		// 				"name": &model.FieldType{
 		// 					FieldName:  "name",
-		// IsAutoIncrement: false,
 		// 					Kind:       model.TypeString,
 		// 					TypeIDSize: model.SQLTypeIDSize,
 		// 				},
@@ -404,7 +386,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 						Table:          "authors",
 		// 						To:             "id",
 		// 						OnDelete:       "NO ACTION",
-		// 						ConstraintName: getConstraintName("subscribers", "author_id"),
+		// 						ConstraintName: GetConstraintName("subscribers", "author_id"),
 		// 					},
 		// 				},
 		// 			},
@@ -417,7 +399,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 			SchemaObj: model.Fields{
 		// 				"id": &model.FieldType{
 		// 					FieldName:           "id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					TypeIDSize:          model.SQLTypeIDSize,
@@ -436,7 +417,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 			SchemaObj: model.Fields{
 		// 				"id": &model.FieldType{
 		// 					FieldName:           "id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					TypeIDSize:          model.SQLTypeIDSize,
@@ -449,7 +429,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 				},
 		// 				"genre_id": &model.FieldType{
 		// 					FieldName:           "genre_id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					IsForeign:           true,
@@ -458,7 +437,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 						Table:          "genres",
 		// 						To:             "id",
 		// 						OnDelete:       "NO ACTION",
-		// 						ConstraintName: getConstraintName("authors", "genre_id"),
+		// 						ConstraintName: GetConstraintName("authors", "genre_id"),
 		// 					},
 		// 				},
 		// 			},
@@ -476,7 +455,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 				},
 		// 				"name": &model.FieldType{
 		// 					FieldName:  "name",
-		// IsAutoIncrement: false,
 		// 					Kind:       model.TypeString,
 		// 					TypeIDSize: model.SQLTypeIDSize,
 		// 				},
@@ -491,7 +469,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 						Table:          "authors",
 		// 						To:             "id",
 		// 						OnDelete:       "NO ACTION",
-		// 						ConstraintName: getConstraintName("subscribers", "author_id"),
+		// 						ConstraintName: GetConstraintName("subscribers", "author_id"),
 		// 					},
 		// 				},
 		// 			},
@@ -502,7 +480,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 			SchemaObj: model.Fields{
 		// 				"id": &model.FieldType{
 		// 					FieldName:           "id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					TypeIDSize:          model.SQLTypeIDSize,
@@ -521,7 +498,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 			SchemaObj: model.Fields{
 		// 				"id": &model.FieldType{
 		// 					FieldName:           "id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					TypeIDSize:          model.SQLTypeIDSize,
@@ -534,7 +510,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 				},
 		// 				"genre_id": &model.FieldType{
 		// 					FieldName:           "genre_id",
-		// IsAutoIncrement: false,
 		// 					IsFieldTypeRequired: true,
 		// 					Kind:                model.TypeID,
 		// 					IsForeign:           true,
@@ -543,7 +518,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 						Table:          "genres",
 		// 						To:             "id",
 		// 						OnDelete:       "NO ACTION",
-		// 						ConstraintName: getConstraintName("authors", "genre_id"),
+		// 						ConstraintName: GetConstraintName("authors", "genre_id"),
 		// 					},
 		// 				},
 		// 			},
@@ -561,7 +536,6 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 				},
 		// 				"name": &model.FieldType{
 		// 					FieldName:  "name",
-		// IsAutoIncrement: false,
 		// 					Kind:       model.TypeString,
 		// 					TypeIDSize: model.SQLTypeIDSize,
 		// 				},
@@ -576,7 +550,7 @@ func TestManager_GetSchemas(t *testing.T) {
 		// 						Table:          "authors",
 		// 						To:             "id",
 		// 						OnDelete:       "NO ACTION",
-		// 						ConstraintName: getConstraintName("subscribers", "author_id"),
+		// 						ConstraintName: GetConstraintName("subscribers", "author_id"),
 		// 					},
 		// 				},
 		// 			},

@@ -1,4 +1,4 @@
-package auth
+package helpers
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 )
 
 // PostProcessMethod to do processing on result
-func (m *Module) PostProcessMethod(ctx context.Context, postProcess *model.PostProcess, result interface{}) error {
+func PostProcessMethod(ctx context.Context, aesKey []byte, postProcess *model.PostProcess, result interface{}) error {
 	// Gracefully exits if the result is nil
 	if result == nil || postProcess == nil {
 		return nil
@@ -56,7 +56,7 @@ func (m *Module) PostProcessMethod(ctx context.Context, postProcess *model.PostP
 				if !ok {
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid data type found", fmt.Errorf("value should be of type string got (%T)", loadedValue), nil)
 				}
-				encryptedValue, err := utils.Encrypt(m.aesKey, stringValue)
+				encryptedValue, err := utils.Encrypt(aesKey, stringValue)
 				if err != nil {
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to encrypt string in post process", err, map[string]interface{}{"valueToEncrypt": stringValue})
 				}
@@ -79,7 +79,7 @@ func (m *Module) PostProcessMethod(ctx context.Context, postProcess *model.PostP
 					return err
 				}
 				decrypted := make([]byte, len(decodedValue))
-				err1 := decryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
+				err1 := DecryptAESCFB(decrypted, decodedValue, aesKey, aesKey[:aes.BlockSize])
 				if err1 != nil {
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to decrypt string in post process", err1, map[string]interface{}{"valueToDecrypt": decodedValue})
 				}

@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	schemaHelpers "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -15,7 +16,11 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 	m.RLock()
 	defer m.RUnlock()
 
-	if err := m.schema.ValidateCreateOperation(ctx, dbAlias, col, req); err != nil {
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return err
+	}
+	if err := schemaHelpers.ValidateCreateOperation(ctx, dbAlias, dbType, col, m.schemaDoc, req); err != nil {
 		return err
 	}
 
@@ -58,22 +63,26 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 }
 
 // Read returns the documents(s) which match a query from the database based on dbType
-func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, error) {
+func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	m.RLock()
 	defer m.RUnlock()
 
+	// Adjust where clause
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
+		return nil, nil, err
+	}
+
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err := crud.IsClientSafe(ctx); err != nil {
-		return nil, err
-	}
-
-	// Adjust where clause
-	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	params.Payload = req
@@ -81,56 +90,78 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 	if hookResponse.CheckResponse() {
 		// Check if an error occurred
 		if err := hookResponse.Error(); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// Gracefully return
-		return hookResponse.Result(), nil
+		return hookResponse.Result(), nil, nil
 	}
 
 	if req.IsBatch {
-		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req, ReqParams: params}
+		dbType, err := m.getDBType(dbAlias)
+		if err != nil {
+			return nil, nil, err
+		}
+		key := model.ReadRequestKey{DBType: dbType, DBAlias: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req, ReqParams: params}
 		dataLoader, ok := m.getLoader(fmt.Sprintf("%s-%s-%s", m.project, dbAlias, col))
 		if !ok {
 			dataLoader = m.createLoader(fmt.Sprintf("%s-%s-%s", m.project, dbAlias, col))
 		}
-		return dataLoader.Load(ctx, key)()
+		data, err := dataLoader.Load(ctx, key)()
+		if err != nil {
+			return nil, nil, err
+		}
+		res := data.(queryResult)
+		if res.metaData != nil {
+			res.metaData.DbAlias = dbAlias
+			res.metaData.Col = col
+		}
+		return res.doc, res.metaData, err
 	}
 
 	dbCacheOptions, err := m.caching.GetDatabaseKey(ctx, m.project, dbAlias, col, req)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// TODO: Add metric hook for cache
 
 	// See if result is present in cache
+	var metaData *model.SQLMetaData
 	var result interface{}
 	if !dbCacheOptions.IsCacheHit() {
 		// Perform the read operation
 		var n int64
 		var cacheJoinInfo map[string]map[string]string
-		n, result, cacheJoinInfo, err = crud.Read(ctx, col, req)
+		n, result, cacheJoinInfo, metaData, err = crud.Read(ctx, col, req)
 
 		// Set result in cache & invoke the metric hook if the operation was successful
 		if err == nil {
 			if err := m.caching.SetDatabaseKey(ctx, m.project, dbAlias, col, &model.CacheDatabaseResult{MetricCount: n, Result: result}, dbCacheOptions, req.Cache, cacheJoinInfo); err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			m.metricHook(m.project, dbAlias, col, n, model.Read)
 		}
 	} else {
+		// Make a metadata object for cached results
+		metaData = &model.SQLMetaData{QueryTime: "0s", SQL: "fetched from cache"}
+
 		cacheResult := dbCacheOptions.GetDatabaseResult()
 		result = cacheResult.Result
 		m.metricHook(m.project, dbAlias, col, cacheResult.MetricCount, model.Read)
 	}
 
 	// Process the response
-	if err := m.schema.CrudPostProcess(ctx, dbAlias, col, result); err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col), err, nil)
+	if err := schemaHelpers.CrudPostProcess(ctx, dbAlias, dbType, col, m.schemaDoc, result); err != nil {
+		return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col), err, nil)
 	}
 
-	return result, err
+	if metaData != nil {
+		metaData.DbAlias = dbAlias
+		metaData.Col = col
+	}
+
+	return result, metaData, err
 }
 
 // Update updates the documents(s) which match a query from the database based on dbType
@@ -138,7 +169,11 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 	m.RLock()
 	defer m.RUnlock()
 
-	if err := m.schema.ValidateUpdateOperation(ctx, dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return err
+	}
+	if err := schemaHelpers.ValidateUpdateOperation(ctx, dbAlias, dbType, col, req.Operation, req.Update, req.Find, m.schemaDoc); err != nil {
 		return err
 	}
 
@@ -164,7 +199,7 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 	}
 
 	// Adjust where clause
-	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+	if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
 		return err
 	}
 
@@ -194,7 +229,11 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 	}
 
 	// Adjust where clause
-	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return err
+	}
+	if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
 		return err
 	}
 
@@ -222,7 +261,7 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 }
 
 // ExecPreparedQuery executes PreparedQueries request
-func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, error) {
+func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -231,26 +270,26 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 	if hookResponse.CheckResponse() {
 		// Check if an error occurred
 		if err := hookResponse.Error(); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// Gracefully return
-		return hookResponse.Result(), nil
+		return hookResponse.Result(), nil, nil
 	}
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err := crud.IsClientSafe(ctx); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Check if prepared query exists
 	preparedQuery, p := m.queries[getPreparedQueryKey(dbAlias, id)]
 	if !p {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Prepared Query for given id (%s) does not exist", id), nil, nil)
+		return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Prepared Query for given id (%s) does not exist", id), nil, nil)
 	}
 
 	// Load the arguments
@@ -258,14 +297,18 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 	for i := 0; i < len(preparedQuery.Arguments); i++ {
 		arg, err := utils.LoadValue(preparedQuery.Arguments[i], map[string]interface{}{"args": req.Params, "auth": params})
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		args = append(args, arg)
 	}
 
 	// Fire the query and return the result
-	_, b, err := crud.RawQuery(ctx, preparedQuery.SQL, args)
-	return b, err
+	_, b, metaData, err := crud.RawQuery(ctx, preparedQuery.SQL, args)
+	if metaData != nil {
+		metaData.DbAlias = dbAlias
+		metaData.Col = id
+	}
+	return b, metaData, err
 }
 
 // Aggregate performs an aggregation defined via the pipeline
@@ -302,17 +345,26 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 	m.RLock()
 	defer m.RUnlock()
 
+	crud, err := m.getCrudBlock(dbAlias)
+	if err != nil {
+		return err
+	}
+
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return err
+	}
 	for _, r := range req.Requests {
 		switch r.Type {
 		case string(model.Create):
 			v := &model.CreateRequest{Document: r.Document, Operation: r.Operation}
-			if err := m.schema.ValidateCreateOperation(ctx, dbAlias, r.Col, v); err != nil {
+			if err := schemaHelpers.ValidateCreateOperation(ctx, dbAlias, dbType, r.Col, m.schemaDoc, v); err != nil {
 				return err
 			}
 			r.Document = v.Document
 			r.Operation = v.Operation
 		case string(model.Update):
-			if err := m.schema.ValidateUpdateOperation(ctx, dbAlias, r.Col, r.Operation, r.Update, r.Find); err != nil {
+			if err := schemaHelpers.ValidateUpdateOperation(ctx, dbAlias, dbType, r.Col, r.Operation, r.Update, r.Find, m.schemaDoc); err != nil {
 				return err
 			}
 		}
@@ -328,11 +380,6 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 
 		// Gracefully return
 		return nil
-	}
-
-	crud, err := m.getCrudBlock(dbAlias)
-	if err != nil {
-		return err
 	}
 
 	if err := crud.IsClientSafe(ctx); err != nil {
@@ -353,17 +400,17 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 }
 
 // DescribeTable performs a db operation for describing a table
-func (m *Module) DescribeTable(ctx context.Context, dbAlias, col string) ([]model.InspectorFieldType, []model.ForeignKeysType, []model.IndexType, error) {
+func (m *Module) DescribeTable(ctx context.Context, dbAlias, col string) ([]model.InspectorFieldType, []model.IndexType, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	if err := crud.IsClientSafe(ctx); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	return crud.DescribeTable(ctx, col)
@@ -443,4 +490,27 @@ func (m *Module) IsPreparedQueryPresent(dbAlias, id string) bool {
 	defer m.RUnlock()
 	_, p := m.queries[getPreparedQueryKey(dbAlias, id)]
 	return p
+}
+
+// GetSchema function gets schema
+func (m *Module) GetSchema(dbAlias, col string) (model.Fields, bool) {
+	m.RLock()
+	defer m.RUnlock()
+
+	dbSchema, p := m.schemaDoc[dbAlias]
+	if !p {
+		return nil, false
+	}
+
+	colSchema, p := dbSchema[col]
+	if !p {
+		return nil, false
+	}
+
+	fields := make(model.Fields, len(colSchema))
+	for k, v := range colSchema {
+		fields[k] = v
+	}
+
+	return fields, true
 }

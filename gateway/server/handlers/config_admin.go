@@ -26,7 +26,7 @@ func HandleGetCredentials(adminMan *admin.Manager) http.HandlerFunc {
 		// Check if the request is authorised
 		if _, err := adminMan.IsTokenValid(ctx, utils.GetTokenFromHeader(r), "creds", "read", nil); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to validate token for set eventing schem", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, model.Response{Result: adminMan.GetCredentials()})
@@ -43,13 +43,13 @@ func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 
 		clusterType, err := syncMan.GetClusterType(ctx, adminMan)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
 		isProd, plan, quotas, loginURL, clusterName, licenseRenewal, licenseKey, licenseValue, sessionID, licenseMode, err := adminMan.LoadEnv()
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{
@@ -90,7 +90,7 @@ func HandleAdminLogin(adminMan *admin.Manager) http.HandlerFunc {
 		// Check if the request is authorised
 		status, token, err := adminMan.Login(ctx, req.User, req.Key)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -111,7 +111,7 @@ func HandleRefreshToken(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		newToken, err := adminMan.RefreshToken(ctx, token)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error while refreshing token handleRefreshToken", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -132,7 +132,7 @@ func HandleGetPermissions(adminMan *admin.Manager) http.HandlerFunc {
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "config-permission", "read", nil)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error while refreshing token handleRefreshToken", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -140,7 +140,7 @@ func HandleGetPermissions(adminMan *admin.Manager) http.HandlerFunc {
 
 		status, permissions, err := adminMan.GetPermissions(ctx, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -164,13 +164,13 @@ func HandleGenerateTokenForMissionControl(adminMan *admin.Manager, syncMan *sync
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "internal-token", "access", map[string]string{"project": projectID})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error while refreshing token handleRefreshToken", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
 		status, newToken, err := syncMan.GetTokenForMissionControl(ctx, projectID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -195,7 +195,7 @@ func HandleGenerateAdminToken(adminMan *admin.Manager) http.HandlerFunc {
 
 		newToken, err := adminMan.GenerateToken(r.Context(), token, req.Claims)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
 			return
 		}
 

@@ -43,12 +43,12 @@ func HandleRealtimeEvent(modules *modules.Modules) http.HandlerFunc {
 
 		// Check if the token is valid
 		if err := auth.IsTokenInternal(r.Context(), token); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
 			return
 		}
 
 		if err := realtime.HandleRealtimeEvent(r.Context(), &eventDoc); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
 			return
 		}
 

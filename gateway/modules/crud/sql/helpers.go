@@ -52,6 +52,8 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 						regxarr = append(regxarr, fmt.Sprintf("%s = ?", k))
 					}
 					array = append(array, goqu.I(k).Eq(v2))
+				case "$like":
+					array = append(array, goqu.I(k).Like(v2))
 				case "$eq":
 					array = append(array, goqu.I(k).Eq(v2))
 				case "$ne":
@@ -159,6 +161,16 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 					mapping[colType.Name()] = val
 				}
 			}
+			if dbType == model.SQLServer {
+				if typeName == "NVARCHAR" {
+					var val interface{}
+					if err := json.Unmarshal([]byte(v), &val); err == nil {
+						mapping[colType.Name()] = val
+						continue
+					}
+					mapping[colType.Name()] = v
+				}
+			}
 		case []byte:
 			switch typeName {
 			case "BIT":
@@ -218,7 +230,7 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 			switch typeName {
 			// For postgres & SQL server
 			case "TIME":
-				mapping[colType.Name()] = v.Format("15:04:05")
+				mapping[colType.Name()] = v.Format("15:04:05.999999999")
 				continue
 			case "DATE":
 				mapping[colType.Name()] = v.Format("2006-01-02")
@@ -298,8 +310,11 @@ func replaceSQLOperationWithPlaceHolder(replace, sqlString string, replaceWith f
 	return dollarValue, strings.TrimSpace(sqlString)
 }
 
-func mutateSQLServerLimitAndOffsetOperation(sqlString string, req *model.ReadRequest) string {
+func mutateSQLServerLimitAndOffsetOperation(sqlString string, req *model.ReadRequest) (string, error) {
 	if req.Options.Skip != nil && req.Options.Limit != nil {
+		if len(req.Options.Sort) == 0 {
+			return "", fmt.Errorf("sql server cannot process skip operation, sort option is mandatory with skip")
+		}
 		offsetValue, sqlString := replaceSQLOperationWithPlaceHolder("OFFSET", sqlString, func(value string) string {
 			return ""
 		})
@@ -307,15 +322,19 @@ func mutateSQLServerLimitAndOffsetOperation(sqlString string, req *model.ReadReq
 		_, sqlString = replaceSQLOperationWithPlaceHolder("LIMIT", sqlString, func(value string) string {
 			return fmt.Sprintf("OFFSET %s ROWS FETCH NEXT %s ROWS ONLY", offsetValue, value)
 		})
-		return sqlString
+		return sqlString, nil
 	}
 	if req.Options.Limit != nil {
 		_, sqlString = replaceSQLOperationWithPlaceHolder("LIMIT", sqlString, func(value string) string {
 			return ""
 		})
 
-		sqlString = strings.Replace(sqlString, "SELECT", fmt.Sprintf("SELECT TOP %d", uint(*req.Options.Limit)), 1)
-		return sqlString
+		if strings.HasPrefix(sqlString, "SELECT DISTINCT") {
+			sqlString = strings.Replace(sqlString, "SELECT DISTINCT", fmt.Sprintf("SELECT DISTINCT TOP %d", uint(*req.Options.Limit)), 1)
+		} else {
+			sqlString = strings.Replace(sqlString, "SELECT", fmt.Sprintf("SELECT TOP %d", uint(*req.Options.Limit)), 1)
+		}
+		return sqlString, nil
 	}
-	return sqlString
+	return sqlString, nil
 }

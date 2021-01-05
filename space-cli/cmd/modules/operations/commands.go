@@ -2,6 +2,7 @@ package operations
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -58,6 +59,9 @@ func Commands() []*cobra.Command {
 			if err := viper.BindPFlag("version", cmd.Flags().Lookup("version")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('version')", nil)
 			}
+			if err := viper.BindPFlag("get-defaults", cmd.Flags().Lookup("get-defaults")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('get-defaults')", nil)
+			}
 		},
 		RunE: actionSetup,
 	}
@@ -68,13 +72,19 @@ func Commands() []*cobra.Command {
 		_ = utils.LogError("Unable to bind flag ('version') to environment variables", nil)
 	}
 
+	setup.Flags().BoolP("get-defaults", "", false, "Prints the default values of cluster config yaml file")
+	err = viper.BindEnv("get-defaults", "GET_DEFAULT")
+	if err != nil {
+		_ = utils.LogError("Unable to bind flag ('get-defaults') to environment variables", nil)
+	}
+
 	setup.Flags().StringP("local-chart-dir", "c", "", "Path to the space cloud helm chart directory")
 	err = viper.BindEnv("local-chart-dir", "LOCAL_CHART_DIR")
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('local-chart-dir') to environment variables", nil)
 	}
 
-	setup.Flags().StringP("file", "f", "", "Path to the config yaml file")
+	setup.Flags().StringP("file", "f", "", "Path to the cluster config yaml file")
 	err = viper.BindEnv("file", "FILE")
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('file' to environment variables", nil)
@@ -164,9 +174,17 @@ func Commands() []*cobra.Command {
 			if err := viper.BindPFlag("delay", cmd.Flags().Lookup("delay")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('delay')", err)
 			}
+			if err := viper.BindPFlag("file", cmd.Flags().Lookup("file")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('file')", err)
+			}
 		},
 	}
 	apply.Flags().DurationP("delay", "", time.Duration(0), "Adds a delay between 2 subsequent request made by space cli to space cloud")
+	apply.Flags().StringP("file", "f", "", "Path to the resource yaml file or directory")
+	err = viper.BindEnv("file", "FILE")
+	if err != nil {
+		_ = utils.LogError("Unable to bind flag ('file') to environment variables", nil)
+	}
 
 	var start = &cobra.Command{
 		Use:   "start",
@@ -228,8 +246,9 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 	if version == "" {
 		version = model.Version
 	}
+	isGetDefaults := viper.GetBool("get-defaults")
 
-	return Setup(setValue, valuesYamlFile, chartDir, version)
+	return Setup(setValue, valuesYamlFile, chartDir, version, isGetDefaults)
 }
 
 func actionInspect(cmd *cobra.Command, args []string) error {
@@ -249,11 +268,19 @@ func actionDestroy(cmd *cobra.Command, args []string) error {
 }
 
 func actionApply(cmd *cobra.Command, args []string) error {
-	if len(args) != 1 {
-		return utils.LogError("error while applying service incorrect number of arguments provided", nil)
-	}
 	delay := viper.GetDuration("delay")
-	dirName := args[0]
+	var dirName string
+	file := viper.GetString("file")
+	if file == "" {
+		if len(args) > 0 {
+			dirName = args[0]
+		}
+		if dirName == "" {
+			return fmt.Errorf("provide the path for spec file or directory using -f flag")
+		}
+	} else {
+		dirName = file
+	}
 	return Apply(dirName, delay)
 }
 

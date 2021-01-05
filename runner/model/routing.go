@@ -8,14 +8,23 @@ import (
 	"github.com/spaceuptech/helpers"
 )
 
+const (
+	// DefaultRequestRetries specifies the default values of service request retries
+	DefaultRequestRetries int32 = 3
+	// DefaultRequestTimeout specifies the default values of service request timeouts
+	DefaultRequestTimeout int64 = 180 // Time in seconds
+)
+
 // Routes describes the configuration for the routing module
 type Routes []*Route
 
 // Route describes the parameters of a single route
 type Route struct {
-	ID      string        `json:"id" yaml:"id"`
-	Source  RouteSource   `json:"source" yaml:"source"`
-	Targets []RouteTarget `json:"targets" yaml:"targets"`
+	ID             string        `json:"id" yaml:"id"`
+	RequestRetries int32         `json:"requestRetries" yaml:"requestRetries"`
+	RequestTimeout int64         `json:"requestTimeout" yaml:"requestTimeout"`
+	Source         RouteSource   `json:"source" yaml:"source"`
+	Targets        []RouteTarget `json:"targets" yaml:"targets"`
 }
 
 // SelectTarget returns a target based on the weights assigned
@@ -42,6 +51,7 @@ func (r *Route) SelectTarget(ctx context.Context, weight int32) (RouteTarget, er
 
 // RouteSource is the source of routing
 type RouteSource struct {
+	Protocol   Protocol     `json:"protocol" yaml:"protocol"`
 	Hosts      []string     `json:"hosts,omitempty" yaml:"hosts,omitempty"`
 	Methods    []string     `json:"methods,omitempty" yaml:"methods,omitempty"`
 	URL        string       `json:"url,omitempty" yaml:"url,omitempty"`
@@ -54,7 +64,6 @@ type RouteSource struct {
 type RouteTarget struct {
 	Host    string          `json:"host,omitempty" yaml:"host,omitempty"`
 	Port    int32           `json:"port,omitempty" yaml:"port,omitempty"`
-	Scheme  string          `json:"scheme,omitempty" yaml:"scheme,omitempty"`
 	Weight  int32           `json:"weight,omitempty" yaml:"weight,omitempty"`
 	Version string          `json:"version,omitempty" yaml:"version,omitempty"`
 	Type    RouteTargetType `json:"type,omitempty" yaml:"type,omitempty"`

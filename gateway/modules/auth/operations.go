@@ -19,3 +19,10 @@ func (m *Module) Encrypt(value string) (string, error) {
 func (m *Module) ParseToken(ctx context.Context, token string) (map[string]interface{}, error) {
 	return m.jwt.ParseToken(ctx, token)
 }
+
+// GetAESKey gets aes key
+func (m *Module) GetAESKey() []byte {
+	m.RLock()
+	defer m.RUnlock()
+	return m.aesKey
+}

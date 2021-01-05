@@ -12,6 +12,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -44,12 +45,12 @@ func (m *Module) Profile(ctx context.Context, token, dbAlias, project, id string
 	}
 
 	// Perform database read operation
-	res, err := m.crud.Read(ctx, dbAlias, "users", req, reqParams)
+	res, _, err := m.crud.Read(ctx, dbAlias, "users", req, reqParams)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
 
-	_ = m.auth.PostProcessMethod(ctx, actions, res)
+	_ = authHelpers.PostProcessMethod(ctx, m.aesKey, actions, res)
 
 	// Delete password from user object
 	delete(res.(map[string]interface{}), "pass")
@@ -74,12 +75,12 @@ func (m *Module) Profiles(ctx context.Context, token, dbAlias, project string) (
 		return http.StatusForbidden, nil, err
 	}
 
-	res, err := m.crud.Read(ctx, dbAlias, "users", req, reqParams)
+	res, _, err := m.crud.Read(ctx, dbAlias, "users", req, reqParams)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
 
-	_ = m.auth.PostProcessMethod(ctx, actions, res)
+	_ = authHelpers.PostProcessMethod(ctx, m.aesKey, actions, res)
 
 	// Delete password from user object
 	if usersArray, ok := res.([]interface{}); ok {
@@ -104,7 +105,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbAlias, project, email, passw
 	reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
 
-	user, err := m.crud.Read(ctx, dbAlias, "users", readReq, reqParams)
+	user, _, err := m.crud.Read(ctx, dbAlias, "users", readReq, reqParams)
 	if err != nil {
 		return http.StatusNotFound, nil, errors.New("User not found")
 	}
@@ -160,7 +161,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 	attr := map[string]string{"project": project, "db": dbAlias, "col": "users"}
 	reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
-	_, err = m.crud.Read(ctx, dbAlias, "users", readReq, reqParams)
+	_, _, err = m.crud.Read(ctx, dbAlias, "users", readReq, reqParams)
 	if err == nil {
 		return http.StatusConflict, nil, errors.New("User with provided email already exists")
 	}
@@ -260,7 +261,7 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbAlias, project, 
 
 	reqParams.Resource = "db-read"
 	readReq := &model.ReadRequest{Find: map[string]interface{}{idString: id}, Operation: utils.One}
-	user, err1 := m.crud.Read(ctx, dbAlias, "users", readReq, reqParams)
+	user, _, err1 := m.crud.Read(ctx, dbAlias, "users", readReq, reqParams)
 	if err1 != nil {
 		return http.StatusNotFound, nil, errors.New("User not found")
 	}

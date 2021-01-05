@@ -14,11 +14,6 @@ import (
 	jwtUtils "github.com/spaceuptech/space-cloud/gateway/utils/jwt"
 )
 
-var (
-	// ErrInvalidSigningMethod denotes a jwt signing method type not used by Space Cloud.
-	ErrInvalidSigningMethod = errors.New("invalid signing method type")
-)
-
 // Module is responsible for authentication and authorisation
 type Module struct {
 	sync.RWMutex

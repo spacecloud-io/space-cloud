@@ -57,7 +57,7 @@ func (m *Module) getDBInfo(dbAlias string) (*config.DatabaseConfig, error) {
 func (m *Module) getCrudBlock(dbAlias string) (Crud, error) {
 	block, p := m.blocks[dbAlias]
 	if !p {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to get database connection", fmt.Errorf("crud module not initialized yet for %q", dbAlias), nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to get database connection. Ensure you have added a database", fmt.Errorf("crud module not initialized for database (%s)", dbAlias), nil)
 	}
 	return block, nil
 }
@@ -69,4 +69,14 @@ func splitConnectionString(connection string) (string, bool) {
 		return s[1], true
 	}
 	return "", false
+}
+
+func (m *Module) getDBType(dbAlias string) (string, error) {
+	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
+	block, p := m.blocks[dbAlias]
+	if !p {
+		return "", fmt.Errorf("cannot get db type as invalid db alias (%s) provided", dbAlias)
+	}
+
+	return string(block.GetDBType()), nil
 }

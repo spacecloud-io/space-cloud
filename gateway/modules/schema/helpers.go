@@ -13,20 +13,20 @@ import (
 )
 
 // GetSQLType return sql type
-func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (string, error) {
+func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldType) (string, error) {
 
-	switch typename {
+	switch realColumnInfo.Kind {
 	case model.TypeUUID:
 		if dbType == string(model.Postgres) {
 			return "uuid", nil
 		}
 		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "UUID type is only supported by postgres database", nil, nil)
 	case model.TypeTime:
-		return "time", nil
+		return fmt.Sprintf("time(%d)", realColumnInfo.Args.Scale), nil
 	case model.TypeDate:
 		return "date", nil
 	case model.TypeID:
-		return fmt.Sprintf("varchar(%d)", maxIDSize), nil
+		return fmt.Sprintf("varchar(%d)", realColumnInfo.TypeIDSize), nil
 	case model.TypeString:
 		if dbType == string(model.SQLServer) {
 			return "varchar(max)", nil
@@ -35,7 +35,7 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 	case model.TypeDateTime:
 		switch dbType {
 		case string(model.MySQL):
-			return "datetime", nil
+			return fmt.Sprintf("datetime(%d)", realColumnInfo.Args.Scale), nil
 		case string(model.SQLServer):
 			return "datetimeoffset", nil
 		default:
@@ -47,6 +47,9 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 		}
 		return "boolean", nil
 	case model.TypeFloat:
+		if dbType == string(model.MySQL) {
+			return fmt.Sprintf("decimal(%d,%d)", realColumnInfo.Args.Precision, realColumnInfo.Args.Scale), nil
+		}
 		return "float", nil
 	case model.TypeInteger:
 		return "bigint", nil
@@ -56,11 +59,13 @@ func getSQLType(ctx context.Context, maxIDSize int, dbType, typename string) (st
 			return "jsonb", nil
 		case string(model.MySQL):
 			return "json", nil
+		case string(model.SQLServer):
+			return "nvarchar(max)", nil
 		default:
 			return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("json not supported for database %s", dbType), nil, nil)
 		}
 	default:
-		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid schema type (%s) provided", typename), fmt.Errorf("%s type not allowed", typename), nil)
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid schema type (%s) provided", realColumnInfo.Kind), fmt.Errorf("%s type not allowed", realColumnInfo.Kind), nil)
 	}
 }
 
@@ -76,16 +81,33 @@ func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key must be not null", nil, nil)
 	}
 
-	if realFieldStruct.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
+	if realFieldStruct.IsPrimary && realFieldStruct.PrimaryKeyInfo.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key with auto increment is only applicable on type integer", nil, nil)
 	}
 
-	if realFieldStruct.Kind == model.TypeJSON && (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked || realFieldStruct.IsIndex) {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set index with type json", nil, nil)
+	if realFieldStruct.Kind == model.TypeJSON {
+		if realFieldStruct.IsPrimary {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("cannot set primary key on field (%s) having type json", realFieldStruct.FieldName), nil, nil)
+		} else if realFieldStruct.IsLinked {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("cannot set link directive on field (%s) having type json", realFieldStruct.FieldName), nil, nil)
+		}
 	}
 
-	if (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
+	if (realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set default directive with other constraints", nil, nil)
+	}
+
+	for _, indexInfo := range realFieldStruct.IndexInfo {
+		if realFieldStruct.Kind == model.TypeJSON {
+			if indexInfo.IsIndex || indexInfo.IsUnique {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("cannot set index on field (%s) having type json", realFieldStruct.FieldName), nil, nil)
+			}
+		}
+		if realFieldStruct.IsDefault {
+			if indexInfo.IsIndex || indexInfo.IsUnique {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set default directive with other constraints", nil, nil)
+			}
+		}
 	}
 
 	return nil
@@ -104,9 +126,6 @@ func (c *creationModule) addNotNull() string {
 	case model.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " SET NOT NULL"
 	case model.SQLServer:
-		if strings.HasPrefix(c.columnType, "varchar") {
-			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS NOT NULL"
-		}
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " NOT NULL"
 	}
 	return ""
@@ -124,9 +143,6 @@ func (c *creationModule) removeNotNull() string {
 	case model.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " DROP NOT NULL"
 	case model.SQLServer:
-		if strings.HasPrefix(c.columnType, "varchar") {
-			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS NULL"
-		}
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " NULL" // adding NULL solves a bug that DateTime type is always not nullable even if (!) is not provided
 	}
 	return ""
@@ -147,11 +163,12 @@ func (c *creationModule) addNewColumn() string {
 		if c.columnType == "timestamp" && !c.realColumnInfo.IsFieldTypeRequired {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType + " NULL"
 		}
-		if strings.HasPrefix(c.columnType, "varchar") {
-			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS"
-		}
 
-		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType
+		sqlDataType := c.columnType
+		if c.columnType == "nvarchar(max)" && c.realColumnInfo.Kind == model.TypeJSON {
+			sqlDataType = fmt.Sprintf("%s constraint json_check_%s_%s CHECK (ISJSON(%s)=1)", c.columnType, c.TableName, c.ColumnName, c.ColumnName)
+		}
+		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + sqlDataType
 	}
 	return ""
 }
@@ -168,7 +185,7 @@ func (c *creationModule) removeColumn(dbType string) []string {
 // 	}
 //
 // 	c.currentColumnInfo.IsPrimary = true // Mark the field as processed
-// 	switch utils.DBType(dbAlias) {
+// 	switch utils.DBAlias(dbAlias) {
 // 	case utils.MySQL:
 // 		return "ALTER TABLE " + c.schemaModule.getTableName(dbAlias, c.logicalDBName, c.TableName) + " ADD PRIMARY KEY (" + c.ColumnName + ")"
 // 	case utils.Postgres:
@@ -185,7 +202,7 @@ func (c *creationModule) removeColumn(dbType string) []string {
 // 		return ""
 // 	}
 //
-// 	switch utils.DBType(dbAlias) {
+// 	switch utils.DBAlias(dbAlias) {
 // 	case utils.MySQL:
 // 		return "ALTER TABLE " + c.schemaModule.getTableName(dbAlias, c.logicalDBName, c.TableName) + " DROP PRIMARY KEY"
 // 	case utils.Postgres:
@@ -289,6 +306,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 
 	var query, primaryKeyQuery string
 	doesPrimaryKeyExists := false
+	compositePrimaryKeys := make(primaryKeyStore, 0)
 	for realFieldKey, realFieldStruct := range realColValue {
 
 		// Ignore linked fields since these are virtual fields
@@ -298,19 +316,20 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 		if err := checkErrors(ctx, realFieldStruct); err != nil {
 			return "", err
 		}
-		sqlType, err := getSQLType(ctx, realFieldStruct.TypeIDSize, dbType, realFieldStruct.Kind)
+		sqlType, err := getSQLType(ctx, dbType, realFieldStruct)
 		if err != nil {
 			return "", nil
 		}
 
 		if realFieldStruct.IsPrimary {
+			compositePrimaryKeys = append(compositePrimaryKeys, realFieldStruct)
 			doesPrimaryKeyExists = true
 			if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
-				primaryKeyQuery = realFieldKey + " " + sqlType + " collate Latin1_General_CS_AS PRIMARY KEY NOT NULL , "
+				primaryKeyQuery += realFieldKey + " " + sqlType + " NOT NULL , "
 				continue
 			}
 			var autoIncrement string
-			if realFieldStruct.IsAutoIncrement {
+			if realFieldStruct.PrimaryKeyInfo.IsAutoIncrement {
 				switch model.DBType(dbType) {
 				case model.SQLServer:
 					autoIncrement = " IDENTITY(1,1)"
@@ -322,16 +341,15 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 					sqlType = "bigserial"
 				}
 			}
-			primaryKeyQuery = fmt.Sprintf("%s %s PRIMARY KEY NOT NULL %s, ", realFieldKey, sqlType, autoIncrement)
+			primaryKeyQuery += fmt.Sprintf("%s %s NOT NULL %s, ", realFieldKey, sqlType, autoIncrement)
 			continue
 		}
 
 		query += realFieldKey + " " + sqlType
 
-		if (model.DBType(dbType) == model.SQLServer) && (strings.HasPrefix(sqlType, "varchar")) {
-			query += " collate Latin1_General_CS_AS"
+		if model.DBType(dbType) == model.SQLServer && realFieldStruct.Kind == model.TypeJSON && sqlType == "nvarchar(max)" {
+			query += fmt.Sprintf(" constraint json_check_%s_%s CHECK (ISJSON(%s)=1)", realColName, realFieldStruct.FieldName, realFieldStruct.FieldName)
 		}
-
 		if realFieldStruct.IsFieldTypeRequired {
 			query += " NOT NULL"
 		}
@@ -341,10 +359,34 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 	if !doesPrimaryKeyExists {
 		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key not found, make sure there is a primary key on a field with type (ID)", nil, nil)
 	}
-	if model.DBType(dbType) == model.MySQL {
-		return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `) COLLATE Latin1_General_CS;`, nil
+	compositePrimaryKeyQuery, err := getCompositePrimaryKeyQuery(ctx, compositePrimaryKeys)
+	if err != nil {
+		return "", err
 	}
+	query += compositePrimaryKeyQuery
+
 	return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `);`, nil
+}
+
+func getCompositePrimaryKeyQuery(ctx context.Context, compositePrimaryKeys primaryKeyStore) (string, error) {
+	finalPrimaryKeyQuery := "PRIMARY KEY ("
+	if len(compositePrimaryKeys) > 1 {
+		sort.Stable(compositePrimaryKeys)
+		for i, column := range compositePrimaryKeys {
+			if i+1 != column.PrimaryKeyInfo.Order {
+				return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid order sequence proveded for composite primary key (%s)", column.FieldName), nil, nil)
+			}
+			if len(compositePrimaryKeys)-1 == i {
+				finalPrimaryKeyQuery += column.FieldName
+			} else {
+				finalPrimaryKeyQuery += column.FieldName + ", "
+			}
+		}
+	} else if len(compositePrimaryKeys) == 1 {
+		finalPrimaryKeyQuery += compositePrimaryKeys[0].FieldName
+	}
+	finalPrimaryKeyQuery += ")"
+	return finalPrimaryKeyQuery, nil
 }
 
 func (s *Schema) getTableName(dbType, logicalDBName, table string) string {
@@ -450,10 +492,12 @@ func (c *creationModule) removeDirectives(dbType string) []string {
 	// 	c.currentColumnInfo.IsPrimary = false
 	// }
 
-	if c.currentColumnInfo.IsIndex {
-		if _, p := c.currentIndexMap[c.currentColumnInfo.IndexInfo.Group]; p {
-			queries = append(queries, c.schemaModule.removeIndex(dbType, c.dbAlias, c.logicalDBName, c.TableName, c.currentColumnInfo.IndexInfo.ConstraintName))
-			delete(c.currentIndexMap, c.currentColumnInfo.IndexInfo.Group)
+	for _, indexInfo := range c.currentColumnInfo.IndexInfo {
+		if indexInfo.IsIndex || indexInfo.IsUnique {
+			if _, p := c.currentIndexMap[indexInfo.Group]; p {
+				queries = append(queries, c.schemaModule.removeIndex(dbType, c.dbAlias, c.logicalDBName, c.TableName, indexInfo.ConstraintName))
+				delete(c.currentIndexMap, indexInfo.Group)
+			}
 		}
 	}
 
@@ -473,10 +517,10 @@ func (c *creationModule) modifyColumnType(dbType string) []string {
 	return queries
 }
 
-func (s *Schema) addIndex(dbType, dbAlias, logicalDBName, tableName, indexName string, isIndexUnique bool, mapArray []*model.FieldType) string {
+func (s *Schema) addIndex(dbType, dbAlias, logicalDBName, tableName, indexName string, isIndexUnique bool, mapArray []*model.TableProperties) string {
 	a := " ("
 	for _, schemaFieldType := range mapArray {
-		a += schemaFieldType.FieldName + " " + schemaFieldType.IndexInfo.Sort + ", "
+		a += schemaFieldType.Field + " " + schemaFieldType.Sort + ", "
 	}
 	a = strings.TrimSuffix(a, ", ")
 	p := ""
@@ -506,14 +550,10 @@ func getIndexName(tableName, indexName string) string {
 	return fmt.Sprintf("index__%s__%s", tableName, indexName)
 }
 
-func getConstraintName(tableName, columnName string) string {
-	return fmt.Sprintf("c_%s_%s", tableName, columnName)
-}
-
 type indexStruct struct {
-	IsIndexUnique bool
-	IndexMap      []*model.FieldType
-	IndexName     string
+	IsIndexUnique        bool
+	IndexTableProperties []*model.TableProperties
+	IndexName            string
 }
 
 func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*indexStruct, error) {
@@ -522,30 +562,32 @@ func getIndexMap(ctx context.Context, tableInfo model.Fields) (map[string]*index
 	// Iterate over each column of table
 	for _, columnInfo := range tableInfo {
 
-		// We are only interested in the columns which have an index on them
-		if columnInfo.IsIndex {
+		for _, indexInfo := range columnInfo.IndexInfo {
+			// We are only interested in the columns which have an index on them
+			if indexInfo.IsIndex || indexInfo.IsUnique {
+				// Append the column to te index map. Make sure we create an empty array if no index by the provided name exists
+				value, ok := indexMap[indexInfo.Group]
+				if !ok {
+					value = &indexStruct{IndexName: indexInfo.ConstraintName, IndexTableProperties: []*model.TableProperties{}}
+					indexMap[indexInfo.Group] = value
+				}
+				// value.IndexMap = append(value.IndexMap, columnInfo)
+				value.IndexTableProperties = append(value.IndexTableProperties, indexInfo)
 
-			// Append the column to te index map. Make sure we create an empty array if no index by the provided name exists
-			value, ok := indexMap[columnInfo.IndexInfo.Group]
-			if !ok {
-				value = &indexStruct{IndexMap: []*model.FieldType{}, IndexName: columnInfo.IndexInfo.ConstraintName}
-				indexMap[columnInfo.IndexInfo.Group] = value
-			}
-			value.IndexMap = append(value.IndexMap, columnInfo)
-
-			// Mark the index group as unique if even on column had the unique tag
-			if columnInfo.IsUnique {
-				indexMap[columnInfo.IndexInfo.Group].IsIndexUnique = true
+				// Mark the index group as unique if even on column had the unique tag
+				if indexInfo.IsUnique {
+					indexMap[indexInfo.Group].IsIndexUnique = true
+				}
 			}
 		}
 	}
 
 	for indexName, indexValue := range indexMap {
-		var v indexStore = indexValue.IndexMap
+		var v indexStore = indexValue.IndexTableProperties
 		sort.Stable(v)
-		indexValue.IndexMap = v
-		for i, column := range indexValue.IndexMap {
-			if i+1 != column.IndexInfo.Order {
+		indexValue.IndexTableProperties = v
+		for i, column := range indexValue.IndexTableProperties {
+			if i+1 != column.Order {
 				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid order sequence proveded for index (%s)", indexName), nil, nil)
 			}
 		}

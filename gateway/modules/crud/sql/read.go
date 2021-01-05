@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
@@ -17,6 +18,7 @@ import (
 	_ "github.com/lib/pq"                               // Import for postgres
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -148,7 +150,10 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 
 	if model.DBType(s.dbType) == model.SQLServer {
-		sqlString = mutateSQLServerLimitAndOffsetOperation(sqlString, req)
+		sqlString, err = mutateSQLServerLimitAndOffsetOperation(sqlString, req)
+		if err != nil {
+			return "", nil, err
+		}
 	}
 
 	for _, v := range regexArr {
@@ -159,6 +164,8 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		case "postgres":
 			vReplaced := strings.Replace(v, "=", "~", -1)
 			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
+		case "sqlserver":
+			return "", nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "SQL server doesn't support regex operation", nil, nil)
 		}
 
 	}
@@ -195,14 +202,14 @@ func splitAggregateAsColumnName(asColumnName string) (format, returnField, funct
 }
 
 // Read query document(s) from the database
-func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error) {
+func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	return s.read(ctx, col, req, s.getClient())
 }
 
-func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, map[string]map[string]string, error) {
+func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	sqlString, args, err := s.generateReadQuery(ctx, col, req)
 	if err != nil {
-		return 0, nil, nil, err
+		return 0, nil, nil, nil, err
 	}
 
 	if col != utils.TableInvocationLogs && col != utils.TableEventingLogs {
@@ -212,21 +219,26 @@ func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, exec
 	return s.readExec(ctx, col, sqlString, args, executor, req)
 }
 
-func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error) {
+func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	operation := req.Operation
 	isAggregate := len(req.Aggregate) > 0
-
+	metaData := new(model.SQLMetaData)
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
-		return 0, nil, nil, err
+		return 0, nil, nil, nil, err
 	}
 	defer func() { _ = stmt.Close() }()
 
+	start := time.Now()
 	rows, err := stmt.QueryxContext(ctx, args...)
 	if err != nil {
-		return 0, nil, nil, err
+		return 0, nil, nil, nil, err
 	}
 	defer func() { _ = rows.Close() }()
+	metaData.QueryTime = time.Since(start).String()
+	metaData.SQL = sqlString
+	metaData.Col = col
+	metaData.Args = args
 
 	var rowTypes []*sql.ColumnType
 
@@ -239,12 +251,12 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 	case utils.Count:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {
-			return 0, nil, nil, errors.New("SQL: No response from db")
+			return 0, nil, nil, nil, errors.New("SQL: No response from db")
 		}
 
 		err := rows.MapScan(mapping)
 		if err != nil {
-			return 0, nil, nil, err
+			return 0, nil, nil, nil, err
 		}
 
 		switch s.GetDBType() {
@@ -253,20 +265,20 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 		}
 
 		for _, v := range mapping {
-			return v.(int64), v, make(map[string]map[string]string), nil
+			return v.(int64), v, make(map[string]map[string]string), metaData, nil
 		}
 
-		return 0, nil, nil, errors.New("unknown error occurred")
+		return 0, nil, nil, nil, errors.New("unknown error occurred")
 
 	case utils.One:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {
-			return 0, nil, nil, errors.New("SQL: No response from db")
+			return 0, nil, nil, nil, errors.New("SQL: No response from db")
 		}
 
 		err := rows.MapScan(mapping)
 		if err != nil {
-			return 0, nil, nil, err
+			return 0, nil, nil, nil, err
 		}
 
 		switch s.GetDBType() {
@@ -276,12 +288,14 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 
 		processAggregate(mapping, mapping, col, isAggregate)
 		if req.PostProcess != nil {
-			_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], mapping)
+			_ = authHelpers.PostProcessMethod(ctx, s.aesKey, req.PostProcess[col], mapping)
 		}
 
-		// mapping["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+		if req.Options.Debug {
+			mapping["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+		}
 
-		return 1, mapping, make(map[string]map[string]string), nil
+		return 1, mapping, make(map[string]map[string]string), metaData, nil
 
 	case utils.All, utils.Distinct:
 		array := make([]interface{}, 0)
@@ -296,7 +310,7 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			row := make(map[string]interface{})
 			err := rows.MapScan(row)
 			if err != nil {
-				return 0, nil, nil, err
+				return 0, nil, nil, nil, err
 			}
 
 			switch s.GetDBType() {
@@ -307,19 +321,21 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			if req.Options == nil || req.Options.ReturnType == "table" || len(req.Options.Join) == 0 {
 				processAggregate(row, row, "*", isAggregate)
 
-				// row["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+				if req.Options.Debug {
+					row["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+				}
 
 				array = append(array, row)
 				continue
 			}
 
-			s.processRows(ctx, []string{col}, isAggregate, row, req.Options.Join, mapping, &array, req.PostProcess, jointMapping)
+			s.processRows(ctx, req.Options.Debug, []string{col}, isAggregate, row, req.Options.Join, mapping, &array, req.PostProcess, jointMapping)
 		}
 
-		return count, array, jointMapping, nil
+		return count, array, jointMapping, metaData, nil
 
 	default:
-		return 0, nil, nil, utils.ErrInvalidParams
+		return 0, nil, nil, nil, utils.ErrInvalidParams
 	}
 }
 func processAggregate(row, m map[string]interface{}, tableName string, isAggregate bool) {
@@ -362,7 +378,7 @@ func processAggregate(row, m map[string]interface{}, tableName string, isAggrega
 		}
 	}
 }
-func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool, row map[string]interface{}, join []*model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess, joinMapping map[string]map[string]string) {
+func (s *SQL) processRows(ctx context.Context, isDebug bool, table []string, isAggregate bool, row map[string]interface{}, join []*model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess, joinMapping map[string]map[string]string) {
 	// row obtained from database contains flattened result of all tables(if join was specified)
 	// m variable will only store result of specific table
 	m := map[string]interface{}{}
@@ -405,13 +421,14 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 
 		// Perform post processing
 		if postProcess != nil {
-			_ = s.auth.PostProcessMethod(ctx, postProcess[table[length]], m)
+			_ = authHelpers.PostProcessMethod(ctx, s.aesKey, postProcess[table[length]], m)
 		}
 
 		// Process aggregate field only if its the root table that we are processing
 		processAggregate(row, m, table[length], isAggregate)
-
-		// m["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+		if isDebug && length == 0 {
+			m["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+		}
 	}
 
 	if mapLength == 0 {
@@ -438,7 +455,7 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 		}
 
 		// Recursively call the same function again
-		s.processRows(ctx, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess, joinMapping)
+		s.processRows(ctx, isDebug, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess, joinMapping)
 		if j.Op == utils.All || j.Op == "" {
 			m[tableName] = arr
 		} else {

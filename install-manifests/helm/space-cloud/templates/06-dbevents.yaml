@@ -1,3 +1,4 @@
+{{ if .Values.dbEvents.enabled }}
 #############################################################################################
 ############################### Service Account and Roles  ##################################
 #############################################################################################
@@ -71,3 +72,4 @@ spec:
              cpu: "{{ .Values.dbEvents.resources.requests.cpu }}"
              memory: "{{ .Values.dbEvents.resources.requests.memory }}"
      terminationGracePeriodSeconds: 300
+{{ end }}

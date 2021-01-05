@@ -39,14 +39,14 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-config", "modify", map[string]string{"project": projectID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, value)
 		status, err := syncMan.SetFileStore(ctx, projectID, value, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -70,7 +70,7 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-config", "read", map[string]string{"project": projectID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -79,7 +79,7 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		status, fileConfig, err := syncMan.GetFileStoreConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -105,7 +105,7 @@ func HandleGetFileState(adminMan *admin.Manager, modules *modules.Modules) http.
 		// Check if the request is authorised
 		_, err := adminMan.IsTokenValid(ctx, token, "filestore-config", "read", map[string]string{"project": projectID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -147,14 +147,14 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, value)
 		status, err := syncMan.SetFileRule(ctx, projectID, ruleName, value, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -184,7 +184,7 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-rule", "read", map[string]string{"project": projectID, "id": ruleID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -193,7 +193,7 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		status, fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -218,7 +218,7 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -226,7 +226,7 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 
 		if status, err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName, reqParams); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 

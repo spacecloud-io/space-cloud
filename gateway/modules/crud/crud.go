@@ -3,7 +3,6 @@ package crud
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -25,8 +24,6 @@ type Module struct {
 	sync.RWMutex
 
 	project string
-	schema  model.SchemaCrudInterface
-	auth    model.AuthCrudInterface
 	queries config.DatabasePreparedQueries
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
@@ -44,6 +41,9 @@ type Module struct {
 	caching        cachingInterface
 	// function to get secrets from runner
 	getSecrets utils.GetSecrets
+
+	// Schema module
+	schemaDoc model.Type
 }
 
 type loader struct {
@@ -54,13 +54,13 @@ type loader struct {
 // Crud abstracts the implementation crud operations of databases
 type Crud interface {
 	Create(ctx context.Context, col string, req *model.CreateRequest) (int64, error)
-	Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error)
+	Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error)
 	Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error)
 	Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error)
 	Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error)
-	DescribeTable(ctc context.Context, col string) ([]model.InspectorFieldType, []model.ForeignKeysType, []model.IndexType, error)
-	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error)
+	DescribeTable(ctc context.Context, col string) ([]model.InspectorFieldType, []model.IndexType, error)
+	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, *model.SQLMetaData, error)
 	GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, col string) error
 	CreateDatabaseIfNotExist(ctx context.Context, name string) error
@@ -71,6 +71,7 @@ type Crud interface {
 	Close() error
 	GetConnectionState(ctx context.Context) bool
 	SetQueryFetchLimit(limit int64)
+	SetProjectAESKey(aesKey []byte)
 }
 
 // Init create a new instance of the Module object
@@ -85,7 +86,7 @@ func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName
 	case model.EmbeddedDB:
 		return bolt.Init(enabled, connection, dbName)
 	case model.MySQL, model.Postgres, model.SQLServer:
-		c, err := sql.Init(dbType, enabled, connection, dbName, m.auth, driverConf)
+		c, err := sql.Init(dbType, enabled, connection, dbName, driverConf)
 		if err == nil && enabled {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -94,7 +95,7 @@ func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName
 			}
 		}
 		if dbType == model.MySQL {
-			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, dbName), dbName, m.auth, driverConf)
+			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, dbName), dbName, driverConf)
 		}
 		return c, err
 	default:
@@ -104,13 +105,10 @@ func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName
 
 // GetDBType returns the type of the db for the alias provided
 func (m *Module) GetDBType(dbAlias string) (string, error) {
-	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
-	block, p := m.blocks[dbAlias]
-	if !p {
-		return "", fmt.Errorf("cannot get db type as invalid db alias (%s) provided", dbAlias)
-	}
+	m.RLock()
+	defer m.RUnlock()
 
-	return string(block.GetDBType()), nil
+	return m.getDBType(dbAlias)
 }
 
 // CloseConfig close the rules and secret key required by the crud block

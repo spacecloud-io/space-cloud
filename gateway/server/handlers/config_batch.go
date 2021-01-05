@@ -26,13 +26,13 @@ func HandleBatchApplyConfig(adminMan *admin.Manager) http.HandlerFunc {
 		defer cancel()
 
 		if err := adminMan.CheckIfAdmin(ctx, token); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
 		for _, specObject := range req.Specs {
 			if err := utils.ApplySpec(ctx, token, "http://localhost:4122", specObject); err != nil {
-				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err)
 				return
 			}
 		}

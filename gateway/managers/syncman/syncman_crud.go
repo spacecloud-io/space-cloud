@@ -226,14 +226,14 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 
 	if dbAlias != "*" {
 		if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
-			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get prepared query provided db alias (%s) does not exists", dbAlias), nil, nil)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to get prepared query as provided db alias (%s) does not exists", dbAlias), nil, nil)
 		}
 
 		if id != "*" {
 			resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabasePreparedQuery, dbAlias, id)
 			preparedQuery, ok := projectConfig.DatabasePreparedQueries[resourceID]
 			if !ok {
-				return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Prepared Queries with id (%s) not present in config", id), nil, nil)
+				return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Prepared query with id (%s) not present in config", id), nil, nil)
 			}
 			return http.StatusOK, []interface{}{preparedQuery}, nil
 		}
@@ -278,7 +278,7 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 	}
 
 	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
-		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to set prepared query provided db alias (%s) does not exists", dbAlias), nil, nil)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to set prepared query as provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
 	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabasePreparedQuery, dbAlias, id)
@@ -289,7 +289,7 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 	}
 
 	if err := s.modules.SetDatabasePreparedQueryConfig(ctx, project, projectConfig.DatabasePreparedQueries); err != nil {
-		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set database prepared query config", err, nil)
 	}
 
 	if err := s.store.SetResource(ctx, resourceID, v); err != nil {
@@ -323,7 +323,7 @@ func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, i
 	}
 
 	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
-		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to remove prepared query provided db alias (%s) does not exists", dbAlias), nil, nil)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to remove prepared query as provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
 	// update database reparedQueries
@@ -331,7 +331,7 @@ func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, i
 	delete(projectConfig.DatabasePreparedQueries, resourceID)
 
 	if err := s.modules.SetDatabasePreparedQueryConfig(ctx, project, projectConfig.DatabasePreparedQueries); err != nil {
-		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set database prepared query config", err, nil)
 	}
 
 	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
@@ -425,7 +425,7 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col 
 func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.Project, project, dbAlias, col string, v *config.DatabaseRule) (int, error) {
 	// update collection rules & is realtime in config
 	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
-		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to set collection rules provided db alias (%s) does not exists", dbAlias), nil, nil)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to set collection/table rules as provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
 	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
@@ -438,7 +438,7 @@ func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.
 	}
 
 	if err := s.modules.SetDatabaseRulesConfig(ctx, project, projectConfig.DatabaseRules); err != nil {
-		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
+		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set database rule config", err, nil)
 	}
 
 	if err := s.store.SetResource(ctx, resourceID, v); err != nil {
@@ -472,13 +472,13 @@ func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, c
 	}
 
 	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
-		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection rules provided db alias (%s) does not exists", dbAlias), nil, nil)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection/table rules as provided db alias (%s) does not exists", dbAlias), nil, nil)
 	}
 
 	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
 	_, ok := projectConfig.DatabaseRules[resourceID]
 	if !ok {
-		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection rules, provided table or collection (%s) does not exists", col), nil, nil)
+		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to delete collection rules as provided table or collection (%s) does not exists", col), nil, nil)
 	}
 
 	delete(projectConfig.DatabaseRules, resourceID)
@@ -783,7 +783,7 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
 		collectionInfo, ok := projectConfig.DatabaseRules[resourceID]
 		if !ok {
-			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("specified collection (%s) not present in config for dbAlias (%s) )", col, dbAlias), nil, nil)
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Specified collection/table (%s) not present in config of dbAlias (%s)", col, dbAlias), nil, nil)
 		}
 		return http.StatusOK, []interface{}{collectionInfo}, nil
 	} else if dbAlias != "*" {

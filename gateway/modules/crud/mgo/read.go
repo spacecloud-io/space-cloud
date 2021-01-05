@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spaceuptech/helpers"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,11 +18,13 @@ import (
 )
 
 // Read queries document(s) from the database
-func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, error) {
+func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	if req.Options != nil && len(req.Options.Join) > 0 {
-		return 0, nil, nil, errors.New("cannot perform joins in mongo db")
+		return 0, nil, nil, nil, errors.New("cannot perform joins in mongo db")
 	}
 	collection := m.getClient().Database(m.dbName).Collection(col)
+
+	req.Find = sanitizeWhereClause(ctx, col, req.Find)
 
 	if req.Options == nil {
 		req.Options = &model.ReadOptions{}
@@ -37,20 +40,20 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 
 		count, err := collection.CountDocuments(ctx, req.Find, countOptions)
 		if err != nil {
-			return 0, nil, nil, err
+			return 0, nil, nil, nil, err
 		}
 
-		return count, count, nil, nil
+		return count, count, nil, nil, nil
 
 	case utils.Distinct:
 		distinct := req.Options.Distinct
 		if distinct == nil {
-			return 0, nil, nil, utils.ErrInvalidParams
+			return 0, nil, nil, nil, utils.ErrInvalidParams
 		}
 
 		result, err := collection.Distinct(ctx, *distinct, req.Find)
 		if err != nil {
-			return 0, nil, nil, err
+			return 0, nil, nil, nil, err
 		}
 
 		// convert result []string to []map[string]interface
@@ -61,7 +64,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			finalResult = append(finalResult, doc)
 		}
 
-		return int64(len(result)), finalResult, nil, nil
+		return int64(len(result)), finalResult, nil, nil, nil
 
 	case utils.All:
 		findOptions := options.Find()
@@ -106,7 +109,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 					case "count":
 						getGroupByStageFunctionsMap(functionsMap, asColumnName, function, "*")
 					default:
-						return 0, nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Unknown aggregate funcion %s`, function), nil, map[string]interface{}{})
+						return 0, nil, nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Unknown aggregate funcion %s`, function), nil, map[string]interface{}{})
 					}
 					for _, field := range req.Options.Sort {
 						if sortValue := generateSortFields(field, column, asColumnName); sortValue != "" {
@@ -135,7 +138,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			cur, err = collection.Find(ctx, req.Find, findOptions)
 		}
 		if err != nil {
-			return 0, nil, nil, err
+			return 0, nil, nil, nil, err
 		}
 		defer func() { _ = cur.Close(ctx) }()
 
@@ -150,7 +153,11 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			var doc map[string]interface{}
 			err := cur.Decode(&doc)
 			if err != nil {
-				return 0, nil, nil, err
+				return 0, nil, nil, nil, err
+			}
+
+			if req.Options.Debug {
+				doc["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 			}
 
 			// doc["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
@@ -163,10 +170,10 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 		}
 
 		if err := cur.Err(); err != nil {
-			return 0, nil, nil, err
+			return 0, nil, nil, nil, err
 		}
 
-		return count, results, nil, nil
+		return count, results, nil, nil, nil
 
 	case utils.One:
 		findOneOptions := options.FindOne()
@@ -188,15 +195,17 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 		var res map[string]interface{}
 		err := collection.FindOne(ctx, req.Find, findOneOptions).Decode(&res)
 		if err != nil {
-			return 0, nil, nil, err
+			return 0, nil, nil, nil, err
 		}
 
-		// res["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+		if req.Options.Debug {
+			res["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+		}
 
-		return 1, res, nil, nil
+		return 1, res, nil, nil, nil
 
 	default:
-		return 0, nil, nil, utils.ErrInvalidParams
+		return 0, nil, nil, nil, utils.ErrInvalidParams
 	}
 }
 

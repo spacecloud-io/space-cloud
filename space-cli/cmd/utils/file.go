@@ -44,10 +44,23 @@ func AppendConfigToDisk(specObj *model.SpecObject, filename string) error {
 func ReadSpecObjectsFromFile(fileName string) ([]*model.SpecObject, error) {
 	var specs []*model.SpecObject
 
-	// Read the file first
-	data, err := file.File.ReadFile(fileName)
-	if err != nil {
-		return nil, err
+	var data []byte
+	var err error
+	if strings.HasPrefix(fileName, "http") {
+		valuesFileObj, err := ExtractValuesObj("", fileName)
+		if err != nil {
+			return nil, err
+		}
+		data, err = yaml.Marshal(valuesFileObj)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// Read the file first
+		data, err = file.File.ReadFile(fileName)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if len(data) == 0 {

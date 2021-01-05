@@ -10,39 +10,68 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/spaceuptech/helpers"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func attemptConvertBoolToInt64(val interface{}) interface{} {
-	if tempBool, ok := val.(bool); ok {
+	switch t := val.(type) {
+	case bool:
 		val = int64(0)
-		if tempBool {
+		if t {
 			val = int64(1)
 		}
+		return val
+	case []interface{}:
+		m := make([]interface{}, 0)
+		for _, v := range t {
+			v = attemptConvertBoolToInt64(v)
+			m = append(m, v)
+		}
+		return m
 	}
 	return val
 }
 
 func attemptConvertIntToInt64(val interface{}) interface{} {
-	if tempInt, ok := val.(int); ok {
-		val = int64(tempInt)
-	} else if tempInt, ok := val.(int32); ok {
-		val = int64(tempInt)
+	switch t := val.(type) {
+	case int:
+		return int64(t)
+	case int32:
+		return int64(t)
+	case []interface{}:
+		m := make([]interface{}, 0)
+		for _, v := range t {
+			v = attemptConvertIntToInt64(v)
+			m = append(m, v)
+		}
+		return m
 	}
 	return val
 }
 
 func attemptConvertInt64ToFloat(val interface{}) interface{} {
-	if tempInt, ok := val.(int64); ok {
-		val = float64(tempInt)
+	switch t := val.(type) {
+	case int64:
+		return float64(t)
+	case []interface{}:
+		m := make([]interface{}, 0)
+		for _, v := range t {
+			v = attemptConvertInt64ToFloat(v)
+			m = append(m, v)
+		}
+		return m
 	}
 	return val
 }
 
-func compare(v1, v2 interface{}) bool {
-	if reflect.TypeOf(v1).String() == reflect.Int64.String() {
+func compare(dbType string, v1, v2 interface{}) bool {
+	if reflect.TypeOf(v1).String() == reflect.String.String() && reflect.TypeOf(v2).String() == reflect.String.String() {
+		if dbType == string(model.MySQL) || dbType == string(model.SQLServer) {
+			return strings.EqualFold(fmt.Sprintf("%v", v1), fmt.Sprintf("%v", v2))
+		}
 		return fmt.Sprintf("%v", v1) == fmt.Sprintf("%v", v2)
 	}
-
 	return cmp.Equal(v1, v2)
 }
 
@@ -59,7 +88,7 @@ func adjustValTypes(v1, v2 interface{}) (interface{}, interface{}) {
 }
 
 // Validate checks if the provided document matches with the where clause
-func Validate(where map[string]interface{}, obj interface{}) bool {
+func Validate(dbType string, where map[string]interface{}, obj interface{}) bool {
 	if res, ok := obj.(map[string]interface{}); ok {
 		for k, temp := range where {
 			if strings.HasPrefix(k, "'") && strings.HasSuffix(k, "'") {
@@ -73,7 +102,7 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 				}
 				for _, val := range array {
 					value := val.(map[string]interface{})
-					if Validate(value, res) {
+					if Validate(dbType, value, res) {
 						return true
 					}
 				}
@@ -82,14 +111,18 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 
 			val, p := res[k]
 			if !p {
-				return false
+				tempObj, err := LoadValue(k, res)
+				if err != nil {
+					return false
+				}
+				val = tempObj
 			}
 
 			// And clause
 			cond, ok := temp.(map[string]interface{})
 			if !ok {
 				temp, val = adjustValTypes(temp, val)
-				if !compare(temp, val) {
+				if !compare(dbType, temp, val) {
 					return false
 				}
 				continue
@@ -106,11 +139,11 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 				}
 				switch k2 {
 				case "$eq":
-					if !compare(val, v2) {
+					if !compare(dbType, val, v2) {
 						return false
 					}
 				case "$ne":
-					if compare(val, v2) {
+					if compare(dbType, val, v2) {
 						return false
 					}
 				case "$gt":
@@ -246,7 +279,7 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 			if !ok {
 				return false
 			}
-			if !Validate(where, tempObj) {
+			if !Validate(dbType, where, tempObj) {
 				return false
 			}
 		}
@@ -271,7 +304,7 @@ func checkIfObjContainsWhereObj(obj interface{}, where interface{}, isIterate bo
 				for _, value := range singleRowObj {
 					_, ok := value.(map[string]interface{})
 					if ok {
-						// comparision can performed only be performed when both are map
+						// comparison can performed only be performed when both are map
 						if checkIfObjContainsWhereObj(value, whereObj, false) {
 							whereMatchCount++
 						}
@@ -281,8 +314,8 @@ func checkIfObjContainsWhereObj(obj interface{}, where interface{}, isIterate bo
 			}
 		}
 
-		// main comparision operation
-		// comparision can only be performed if both where & obj are [] maps
+		// main comparison operation
+		// comparison can only be performed if both where & obj are [] maps
 		singleRowObj, ok := obj.(map[string]interface{})
 		if ok {
 			whereMatchCount := 0
@@ -328,7 +361,7 @@ func checkIfObjContainsWhereObj(obj interface{}, where interface{}, isIterate bo
 		}
 
 		// main operation
-		// comparision can only be performed if both where & obj are [] slice
+		// comparison can only be performed if both where & obj are [] slice
 		singleRowObj, ok := obj.([]interface{})
 		if ok {
 			whereMatchCount := 0

@@ -71,7 +71,7 @@ func TestSchema_CheckIfEventingIsPossible(t *testing.T) {
 				obj:     map[string]interface{}{"col2": "xyz"},
 				isFind:  false,
 			},
-			fields:            fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "abcd"}}}}}},
+			fields:            fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON, IndexInfo: []*model.TableProperties{{IsIndex: true, IsUnique: true, Group: "abcd"}}}}}}},
 			wantFindForUpdate: map[string]interface{}{"col2": "xyz"},
 			wantPresent:       true,
 		},
@@ -83,7 +83,7 @@ func TestSchema_CheckIfEventingIsPossible(t *testing.T) {
 				obj:     map[string]interface{}{"col2": map[string]interface{}{"$eq": "xyz"}},
 				isFind:  true,
 			},
-			fields:            fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "abcd"}}}}}},
+			fields:            fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON, IndexInfo: []*model.TableProperties{{IsIndex: true, IsUnique: true, Group: "abcd"}}}}}}},
 			wantFindForUpdate: map[string]interface{}{"col2": "xyz"},
 			wantPresent:       true,
 		},
@@ -95,7 +95,7 @@ func TestSchema_CheckIfEventingIsPossible(t *testing.T) {
 				obj:     map[string]interface{}{"col2": map[string]interface{}{"$eq": 10}},
 				isFind:  false,
 			},
-			fields:            fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "abcd"}}}}}},
+			fields:            fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON, IndexInfo: []*model.TableProperties{{IsIndex: true, IsUnique: true, Group: "abcd"}}}}}}},
 			wantFindForUpdate: map[string]interface{}{"col2": map[string]interface{}{"$eq": 10}},
 			wantPresent:       true,
 		},
@@ -107,7 +107,7 @@ func TestSchema_CheckIfEventingIsPossible(t *testing.T) {
 				obj:     map[string]interface{}{},
 				isFind:  false,
 			},
-			fields:            fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "abcd"}}}}}},
+			fields:            fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON, IndexInfo: []*model.TableProperties{{IsIndex: true, IsUnique: true, Group: "abcd"}}}}}}},
 			wantFindForUpdate: map[string]interface{}{},
 			wantPresent:       false,
 		},
@@ -129,6 +129,7 @@ func TestSchema_CheckIfEventingIsPossible(t *testing.T) {
 			s := &Schema{
 				SchemaDoc: tt.fields.SchemaDoc,
 			}
+
 			gotFindForUpdate, gotPresent := s.CheckIfEventingIsPossible(tt.args.dbAlias, tt.args.col, tt.args.obj, tt.args.isFind)
 			if !reflect.DeepEqual(len(gotFindForUpdate), len(tt.wantFindForUpdate)) {
 				t.Errorf("Schema.CheckIfEventingIsPossible() gotFindForUpdate = %v, want %v", gotFindForUpdate, tt.wantFindForUpdate)

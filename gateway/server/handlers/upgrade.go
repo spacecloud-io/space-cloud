@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -24,7 +25,7 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 
 		token := utils.GetTokenFromHeader(r)
 		if err := admin.CheckIfAdmin(r.Context(), token); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -34,7 +35,7 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 
 		err := manager.ConvertToEnterprise(ctx, req)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -50,7 +51,7 @@ func HandleDownGrade(admin *admin.Manager, syncMan *syncman.Manager) http.Handle
 
 		token := utils.GetTokenFromHeader(r)
 		if err := admin.CheckIfAdmin(r.Context(), token); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -59,12 +60,12 @@ func HandleDownGrade(admin *admin.Manager, syncMan *syncman.Manager) http.Handle
 		defer cancel()
 
 		if !admin.IsRegistered() {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, "Cannot remove license already running in open source mode")
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, errors.New("Cannot remove license already running in open source mode"))
 			return
 		}
 
 		if err := syncMan.SetLicense(ctx, &config.License{}); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err)
 			return
 		}
 
@@ -81,7 +82,7 @@ func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		token := utils.GetTokenFromHeader(r)
 		if err := adminMan.CheckIfAdmin(r.Context(), token); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -90,7 +91,7 @@ func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		defer cancel()
 
 		if err := syncMan.RenewLicense(ctx); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -110,7 +111,7 @@ func HandleSetOfflineLicense(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		token := utils.GetTokenFromHeader(r)
 		if err := adminMan.CheckIfAdmin(r.Context(), token); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -119,7 +120,7 @@ func HandleSetOfflineLicense(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		defer cancel()
 
 		if err := syncMan.SetOfflineLicense(ctx, req.License); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 

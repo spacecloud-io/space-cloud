@@ -7,6 +7,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-redis/redis/v8 v8.3.3
+	github.com/go-test/deep v1.0.4
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.3
 	github.com/gorilla/mux v1.7.4
@@ -16,7 +17,7 @@ require (
 	github.com/prometheus/common v0.14.0
 	github.com/rs/cors v1.7.0
 	github.com/segmentio/ksuid v1.0.2
-	github.com/spaceuptech/helpers v0.1.2
+	github.com/spaceuptech/helpers v0.2.0
 	github.com/spaceuptech/space-api-go v0.17.3
 	github.com/urfave/cli v1.22.2
 	google.golang.org/grpc v1.31.1
