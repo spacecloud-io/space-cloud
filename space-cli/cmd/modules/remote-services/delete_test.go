@@ -15,8 +15,6 @@ import (
 func Test_deleteRemoteService(t *testing.T) {
 	// surveyMatchReturnValue stores the values returned from the survey when prefix is matched
 	surveyMatchReturnValue := "l"
-	// surveyNoMatchReturnValue stores the values returned from the survey when prefix is not matched
-	surveyNoMatchReturnValue := "b"
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -369,57 +367,6 @@ func Test_deleteRemoteService(t *testing.T) {
 			},
 		},
 		{
-			name: "Prefix does not match any services and unable to survey service ID",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/remote-service/service",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":  "local-admin",
-									"url": "/v1/config/projects/myproject/remote-service/service",
-									"endpoints": map[string]interface{}{
-										"path": "/v1/config/projects/{project}/remote-service/service/{id}",
-									},
-								},
-								map[string]interface{}{
-									"id":  "local",
-									"url": "/v1/config/projects/myproject/remote-service/service",
-									"endpoints": map[string]interface{}{
-										"path": "/v1/config/projects/{project}/remote-service/service/{id}",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local-admin"},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "Prefix does not match any services but unable to delete service",
 			args: args{project: "myproject", prefix: "b"},
 			transportMockArgs: []mockArgs{
@@ -453,110 +400,8 @@ func Test_deleteRemoteService(t *testing.T) {
 						},
 					},
 				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/remote-service/service/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						errors.New("bad request"),
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 400,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "Prefix does not match any services and service successfully deleted",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/remote-service/service",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":  "local-admin",
-									"url": "/v1/config/projects/myproject/remote-service/service",
-									"endpoints": map[string]interface{}{
-										"path": "/v1/config/projects/{project}/remote-service/service/{id}",
-									},
-								},
-								map[string]interface{}{
-									"id":  "local",
-									"url": "/v1/config/projects/myproject/remote-service/service",
-									"endpoints": map[string]interface{}{
-										"path": "/v1/config/projects/{project}/remote-service/service/{id}",
-									},
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/remote-service/service/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 200,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {
