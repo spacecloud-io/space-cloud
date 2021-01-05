@@ -35,7 +35,7 @@ entries:
         - sql
       name: mysql
       sources:
-        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
+        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mysql
       type: application
       urls:
         - https://storage.googleapis.com/space-cloud/helm/mysql/mysql-0.1.0.tgz
@@ -56,15 +56,15 @@ entries:
         - cluster
       name: postgres
       sources:
-        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
+        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/postgres
       type: application
       urls:
         - https://storage.googleapis.com/space-cloud/helm/postgres/postgres-0.1.0.tgz
       version: 0.1.0
   space-cloud:
     - apiVersion: v3
-      appVersion: 0.20.1
-      created: "2020-12-14T18:39:40.36524145+05:30"
+      appVersion: 0.21.0
+      created: "2021-01-05T18:39:40.36524145+05:30"
       description: Helm Chart to install Space Cloud
       digest: 14b40d52c0b09ac4cd19a432a9c9b703abd040470947d009c183c3d6bf4ccfc8
       home: https://spaceuptech.com/
@@ -72,11 +72,26 @@ entries:
         - baaS
       name: space-cloud
       sources:
-        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
+        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/space-cloud
       type: application
       urls:
-        - https://storage.googleapis.com/space-cloud/helm/space-cloud/space-cloud-0.20.1.tgz
-      version: 0.20.1
+        - https://storage.googleapis.com/space-cloud/helm/space-cloud/space-cloud-0.21.0.tgz
+      version: 0.21.0
+    - apiVersion: v3
+        appVersion: 0.20.1
+        created: "2020-12-14T18:39:40.36524145+05:30"
+        description: Helm Chart to install Space Cloud
+        digest: 14b40d52c0b09ac4cd19a432a9c9b703abd040470947d009c183c3d6bf4ccfc8
+        home: https://spaceuptech.com/
+        keywords:
+          - baaS
+        name: space-cloud
+        sources:
+          - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/space-cloud
+        type: application
+        urls:
+          - https://storage.googleapis.com/space-cloud/helm/space-cloud/space-cloud-0.20.1.tgz
+        version: 0.20.1
   sqlserver:
     - apiVersion: v3
       created: "2020-12-14T18:39:40.36552612+05:30"
@@ -87,7 +102,7 @@ entries:
         - database
       name: sqlserver
       sources:
-        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
+        - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/sqlserver
       type: application
       urls:
         - https://storage.googleapis.com/space-cloud/helm/sqlserver/sqlserver-0.1.0.tgz
