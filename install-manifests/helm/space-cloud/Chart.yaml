@@ -8,4 +8,4 @@ keywords:
 - baaS
 home: https://spaceuptech.com/
 sources:
-  - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/mongo
+  - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/space-cloud
