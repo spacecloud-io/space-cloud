@@ -13,8 +13,14 @@ import (
 func GetClusterConfig() ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/cluster")
 
+	// Resp is the object returned by every handler to client
+	type Resp struct {
+		Error  string      `json:"error,omitempty"`
+		Result interface{} `json:"result,omitempty"`
+	}
+
 	// Get the spec from the server
-	payload := new(model.Resp)
+	payload := new(Resp)
 	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, map[string]string{}, payload); err != nil {
 		return nil, err
 	}
@@ -44,5 +50,18 @@ func GetIntegration() ([]*model.SpecObject, error) {
 	}
 
 	var objs []*model.SpecObject
+
+	for _, item := range payload.Result {
+		spec := item.(map[string]interface{})
+		meta := map[string]string{}
+		spec = map[string]interface{}{"integration": spec}
+		// Printing the object on the screen
+		s, err := utils.CreateSpecObject("/v1/config/integrations", "integrations", meta, spec)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, s)
+	}
+
 	return objs, nil
 }
