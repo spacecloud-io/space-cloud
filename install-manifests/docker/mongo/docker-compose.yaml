@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   gateway:
-    image: "spaceuptech/gateway:0.20.1"
+    image: "spaceuptech/gateway:0.21.0"
     pull_policy: "if_not_present"         # other values never, if_not_present
     restart: "always"                     # other values no, on-failure
     environment:
@@ -31,7 +31,7 @@ services:
     image: "redis:6.0"
 
   debezium:
-    image: "spaceuptech/dbevents:0.1.0"
+    image: "spaceuptech/dbevents:0.2.0"
     environment:
       - "SC_ADMIN_SECRET=some-secret"
       - "GATEWAY_URL=gateway:4122"
