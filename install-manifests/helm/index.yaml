@@ -90,7 +90,7 @@ entries:
     - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/space-cloud
     type: application
     urls:
-    - https://storage.googleapis.com/space-cloud/helm/space-cloud/space-cloud/space-cloud-0.20.1.tgz
+    - https://storage.googleapis.com/space-cloud/helm/space-cloud/space-cloud-0.20.1.tgz
     version: 0.20.1
   sqlserver:
   - apiVersion: v3
