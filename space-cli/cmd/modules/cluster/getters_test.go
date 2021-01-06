@@ -15,14 +15,8 @@ func TestGetClusterConfig(t *testing.T) {
 		args           []interface{}
 		paramsReturned []interface{}
 	}
-	type args struct {
-		project     string
-		commandName string
-		params      map[string]string
-	}
 	tests := []struct {
 		name              string
-		args              args
 		transportMockArgs []mockArgs
 		want              []*model.SpecObject
 		wantErr           bool
@@ -30,7 +24,6 @@ func TestGetClusterConfig(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "Successful test",
-			args: args{},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -55,7 +48,6 @@ func TestGetClusterConfig(t *testing.T) {
 		},
 		{
 			name: "Get function return Error",
-			args: args{},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -104,14 +96,8 @@ func TestGetIntegration(t *testing.T) {
 		args           []interface{}
 		paramsReturned []interface{}
 	}
-	type args struct {
-		project     string
-		commandName string
-		params      map[string]string
-	}
 	tests := []struct {
 		name              string
-		args              args
 		transportMockArgs []mockArgs
 		want              []*model.SpecObject
 		wantErr           bool
@@ -119,7 +105,6 @@ func TestGetIntegration(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "Successful test",
-			args: args{},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
@@ -141,7 +126,6 @@ func TestGetIntegration(t *testing.T) {
 		},
 		{
 			name: "Get function return Error",
-			args: args{},
 			transportMockArgs: []mockArgs{
 				{
 					method: "MakeHTTPRequest",
