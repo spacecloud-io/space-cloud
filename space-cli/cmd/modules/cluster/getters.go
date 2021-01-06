@@ -9,18 +9,17 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
+type resp struct {
+	Error  string      `json:"error,omitempty"`
+	Result interface{} `json:"result,omitempty"`
+}
+
 // GetClusterConfig gets clusters config
 func GetClusterConfig() ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/cluster")
 
-	// Resp is the object returned by every handler to client
-	type Resp struct {
-		Error  string      `json:"error,omitempty"`
-		Result interface{} `json:"result,omitempty"`
-	}
-
 	// Get the spec from the server
-	payload := new(Resp)
+	payload := new(resp)
 	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, map[string]string{}, payload); err != nil {
 		return nil, err
 	}
