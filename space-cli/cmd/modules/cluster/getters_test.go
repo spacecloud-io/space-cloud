@@ -21,7 +21,6 @@ func TestGetClusterConfig(t *testing.T) {
 		want              []*model.SpecObject
 		wantErr           bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "Successful test",
 			transportMockArgs: []mockArgs{
@@ -30,7 +29,7 @@ func TestGetClusterConfig(t *testing.T) {
 					args:   []interface{}{"GET", "/v1/config/cluster", map[string]string{}, new(resp)},
 					paramsReturned: []interface{}{nil, resp{
 						Result: map[string]interface{}{
-							"letsEncryptEmail": "",
+							"letsEncryptEmail": "info@gmail.com",
 							"enableTelemetry":  false,
 						},
 					}},
@@ -41,7 +40,7 @@ func TestGetClusterConfig(t *testing.T) {
 					API:  "/v1/config/cluster",
 					Type: "cluster-config",
 					Meta: map[string]string{},
-					Spec: map[string]interface{}{"clusterConfig": map[string]interface{}{"letsEncryptEmail": "", "enableTelemetry": false}},
+					Spec: map[string]interface{}{"clusterConfig": map[string]interface{}{"letsEncryptEmail": "info@gmail.com", "enableTelemetry": false}},
 				},
 			},
 			wantErr: false,
@@ -102,7 +101,6 @@ func TestGetIntegration(t *testing.T) {
 		want              []*model.SpecObject
 		wantErr           bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "Successful test",
 			transportMockArgs: []mockArgs{
@@ -110,7 +108,11 @@ func TestGetIntegration(t *testing.T) {
 					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/integrations", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
-						Result: []interface{}{map[string]interface{}{}},
+						Result: []interface{}{map[string]interface{}{
+							"id":      "integration1",
+							"name":    "name1",
+							"version": "v1",
+						}},
 					}},
 				},
 			},
@@ -119,7 +121,7 @@ func TestGetIntegration(t *testing.T) {
 					API:  "/v1/config/integrations",
 					Type: "integrations",
 					Meta: map[string]string{},
-					Spec: map[string]interface{}{"integration": map[string]interface{}{}},
+					Spec: map[string]interface{}{"integration": map[string]interface{}{"id": "integration1", "name": "name1", "version": "v1"}},
 				},
 			},
 			wantErr: false,
