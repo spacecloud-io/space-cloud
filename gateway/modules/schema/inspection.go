@@ -63,7 +63,7 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, i
 				return nil, err
 			}
 		case model.SQLServer:
-			if err := inspectionSQLServerCheckFieldType(field.VarcharSize, field.FieldType, &fieldDetails); err != nil {
+			if err := inspectionSQLServerCheckFieldType(field, &fieldDetails); err != nil {
 				return nil, err
 			}
 		}
@@ -159,9 +159,9 @@ func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails 
 		fieldDetails.Kind = model.TypeDate
 	case "time":
 		fieldDetails.Kind = model.TypeTime
-		if field.NumericScale > 0 {
+		if field.NumericPrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
-				Scale: field.NumericScale,
+				Scale: field.NumericPrecision,
 			}
 		}
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob":
@@ -176,9 +176,9 @@ func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails 
 		}
 	case "datetime", "timestamp", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
-		if field.NumericScale > 0 {
+		if field.NumericPrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
-				Scale: field.NumericScale,
+				Scale: field.NumericPrecision,
 			}
 		}
 	case "tinyint", "boolean", "bit":
@@ -191,28 +191,29 @@ func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails 
 	return nil
 }
 
-func inspectionSQLServerCheckFieldType(size int, typeName string, fieldDetails *model.FieldType) error {
-	if typeName == "varchar(-1)" || typeName == "varchar(max)" {
+func inspectionSQLServerCheckFieldType(field model.InspectorFieldType, fieldDetails *model.FieldType) error {
+	if field.FieldType == "varchar(-1)" || field.FieldType == "varchar(max)" {
 		fieldDetails.Kind = model.TypeString
 		return nil
 	}
-	if typeName == "nvarchar(-1)" || typeName == "nvarchar(max)" {
-		fieldDetails.Kind = model.TypeString
-		return nil
-	}
-	if strings.HasPrefix(typeName, "varchar(") {
+	if strings.HasPrefix(field.FieldType, "varchar(") {
 		fieldDetails.Kind = model.TypeID
-		fieldDetails.TypeIDSize = size
+		fieldDetails.TypeIDSize = field.VarcharSize
 		return nil
 	}
 
-	result := strings.Split(typeName, "(")
+	result := strings.Split(field.FieldType, "(")
 
 	switch result[0] {
 	case "date":
 		fieldDetails.Kind = model.TypeDate
 	case "time":
 		fieldDetails.Kind = model.TypeTime
+		if field.NumericPrecision > 0 {
+			fieldDetails.Args = &model.FieldArgs{
+				Scale: field.NumericPrecision,
+			}
+		}
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal", "nvarchar":
 		fieldDetails.Kind = model.TypeString
 	case "smallint", "mediumint", "int", "bigint":
@@ -244,9 +245,9 @@ func inspectionPostgresCheckFieldType(field model.InspectorFieldType, fieldDetai
 		fieldDetails.Kind = model.TypeDate
 	case "time", "time without time zone":
 		fieldDetails.Kind = model.TypeTime
-		if field.NumericScale > 0 {
+		if field.NumericPrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
-				Scale: field.NumericScale,
+				Scale: field.NumericPrecision,
 			}
 		}
 	case "character", "bit", "text":

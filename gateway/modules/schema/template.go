@@ -27,11 +27,12 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		// @args directive
 		"{{if $fieldValue.Args}}" +
 		"@args(" +
-		"{{if $fieldValue.Args.Precision}}" +
-		"precision: {{$fieldValue.Args.Precision}}," +
-		"{{end}} " +
-		"{{if $fieldValue.Args.Scale}}" +
-		" scale: {{$fieldValue.Args.Scale}}" +
+		"{{if and $fieldValue.Args.Precision $fieldValue.Args.Scale}}" +
+		"precision: {{$fieldValue.Args.Precision}},  scale: {{$fieldValue.Args.Scale}}" +
+		"{{else if $fieldValue.Args.Precision}}" +
+		"precision: {{$fieldValue.Args.Precision}}" +
+		"{{else if $fieldValue.Args.Scale}}" +
+		"scale: {{$fieldValue.Args.Scale}}" +
 		"{{end}}" +
 		")" +
 		"{{end}}" +
@@ -42,7 +43,7 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		"{{end}}" +
 		"{{if $fieldValue.PrimaryKeyInfo}}" +
 		"{{if and $fieldValue.PrimaryKeyInfo.IsAutoIncrement $fieldValue.PrimaryKeyInfo.Order}}" +
-		"(autoIncrement: {{$fieldValue.PrimaryKeyInfo.IsAutoIncrement}},order: {{$fieldValue.PrimaryKeyInfo.Order}} ) " +
+		"(autoIncrement: {{$fieldValue.PrimaryKeyInfo.IsAutoIncrement}}, order: {{$fieldValue.PrimaryKeyInfo.Order}}) " +
 		"{{else if $fieldValue.PrimaryKeyInfo.IsAutoIncrement}}" +
 		"(autoIncrement: {{$fieldValue.PrimaryKeyInfo.IsAutoIncrement}}) " +
 		"{{else if $fieldValue.PrimaryKeyInfo.Order}}" +

@@ -123,8 +123,8 @@ select c.table_schema AS 'TABLE_SCHEMA',
        REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') AS 'DEFAULT',
        case
            when COLUMNPROPERTY(object_id(c.TABLE_SCHEMA +'.'+ c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1
-               then 'Y'
-           else 'N'
+               then 'true'
+           else 'false'
        end AS 'AUTO_INCREMENT',
        coalesce(c.character_maximum_length,0) AS 'CHARACTER_MAXIMUM_LENGTH',
        coalesce(c.numeric_precision,0) AS 'NUMERIC_PRECISION',
