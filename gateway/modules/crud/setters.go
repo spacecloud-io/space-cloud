@@ -150,6 +150,9 @@ func (m *Module) SetProjectAESKey(aesKey string) error {
 	m.RLock()
 	defer m.RUnlock()
 
+	if m.config == nil {
+		return nil
+	}
 	crud, err := m.getCrudBlock(m.config.DbAlias)
 	if err != nil {
 		return err

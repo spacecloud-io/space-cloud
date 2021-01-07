@@ -159,9 +159,9 @@ func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails 
 		fieldDetails.Kind = model.TypeDate
 	case "time":
 		fieldDetails.Kind = model.TypeTime
-		if field.NumericPrecision > 0 {
+		if field.DateTimePrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
-				Scale: field.NumericPrecision,
+				Precision: field.DateTimePrecision,
 			}
 		}
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob":
@@ -176,9 +176,9 @@ func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails 
 		}
 	case "datetime", "timestamp", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
-		if field.NumericPrecision > 0 {
+		if field.DateTimePrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
-				Scale: field.NumericPrecision,
+				Precision: field.DateTimePrecision,
 			}
 		}
 	case "tinyint", "boolean", "bit":
@@ -209,9 +209,9 @@ func inspectionSQLServerCheckFieldType(field model.InspectorFieldType, fieldDeta
 		fieldDetails.Kind = model.TypeDate
 	case "time":
 		fieldDetails.Kind = model.TypeTime
-		if field.NumericPrecision > 0 {
+		if field.DateTimePrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
-				Scale: field.NumericPrecision,
+				Precision: field.DateTimePrecision,
 			}
 		}
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal", "nvarchar":
@@ -245,9 +245,9 @@ func inspectionPostgresCheckFieldType(field model.InspectorFieldType, fieldDetai
 		fieldDetails.Kind = model.TypeDate
 	case "time", "time without time zone":
 		fieldDetails.Kind = model.TypeTime
-		if field.NumericPrecision > 0 {
+		if field.DateTimePrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
-				Scale: field.NumericPrecision,
+				Precision: field.DateTimePrecision,
 			}
 		}
 	case "character", "bit", "text":
