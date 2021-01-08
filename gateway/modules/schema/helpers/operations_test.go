@@ -513,7 +513,7 @@ func TestParseSchema(t *testing.T) {
 							TypeIDSize:  model.SQLTypeIDSize,
 							IsCreatedAt: true,
 							Args: &model.FieldArgs{
-								Scale: model.DefaultScale,
+								Precision: model.DefaultDateTimePrecision,
 							},
 						},
 						"updatedAt": &model.FieldType{
@@ -522,7 +522,7 @@ func TestParseSchema(t *testing.T) {
 							TypeIDSize:  model.SQLTypeIDSize,
 							IsUpdatedAt: true,
 							Args: &model.FieldArgs{
-								Scale: model.DefaultScale,
+								Precision: model.DefaultDateTimePrecision,
 							},
 						},
 						"first_name": &model.FieldType{
@@ -575,7 +575,7 @@ func TestParseSchema(t *testing.T) {
 							TypeIDSize: model.SQLTypeIDSize,
 							IsLinked:   true,
 							Args: &model.FieldArgs{
-								Scale: model.DefaultScale,
+								Precision: model.DefaultDateTimePrecision,
 							},
 							LinkedTable: &model.TableProperties{
 								Table:  "order",

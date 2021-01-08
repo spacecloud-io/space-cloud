@@ -60,6 +60,8 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 		if block, p := m.blocks[blockKey]; p {
 
 			block.SetQueryFetchLimit(v.Limit)
+			m.databaseConfigs[blockKey].BatchTime = v.BatchTime
+			m.databaseConfigs[blockKey].BatchRecords = v.BatchRecords
 
 			// Skip if the connection string, dbName & driver config is same
 			if block.IsSame(connectionString, v.DBName, v.DriverConf) {

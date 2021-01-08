@@ -496,8 +496,8 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 				if fieldTypeStuct.Args == nil {
 					fieldTypeStuct.Args = new(model.FieldArgs)
 				}
-				if fieldTypeStuct.Args.Scale == 0 {
-					fieldTypeStuct.Args.Scale = model.DefaultScale
+				if fieldTypeStuct.Args.Precision == 0 {
+					fieldTypeStuct.Args.Precision = model.DefaultDateTimePrecision
 				}
 			case model.TypeFloat:
 				if fieldTypeStuct.Args == nil {

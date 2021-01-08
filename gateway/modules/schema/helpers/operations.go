@@ -302,15 +302,16 @@ func AdjustWhereClause(ctx context.Context, dbAlias string, dbType model.DBType,
 				case map[string]interface{}:
 					for operator, paramInterface := range param {
 						// Check if the value is boolean
-						paramBool, ok := paramInterface.(bool)
-						if !ok {
+						switch t := paramInterface.(type) {
+						case []interface{}:
+						case bool:
+							if t {
+								param[operator] = 1
+							} else {
+								param[operator] = 0
+							}
+						default:
 							return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type (%s) for boolean (%v) provided for field (%s)", reflect.TypeOf(paramInterface), paramInterface, k), nil, nil)
-						}
-
-						if paramBool {
-							param[operator] = 1
-						} else {
-							param[operator] = 0
 						}
 					}
 				default:

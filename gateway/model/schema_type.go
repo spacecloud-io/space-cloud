@@ -121,6 +121,8 @@ const (
 	DefaultScale int = 3
 	// DefaultPrecision specifies the default precision to be used for sql column types float if not provided
 	DefaultPrecision int = 10
+	// DefaultDateTimePrecision specifies the default precision to be used for sql column types float if not provided
+	DefaultDateTimePrecision int = 3
 )
 
 // InspectorFieldType is the type for storing sql inspection information
@@ -141,10 +143,11 @@ type InspectorFieldType struct {
 	FieldDefault string `db:"DEFAULT"`
 	// AutoIncrement specifies whether the column has auto increment constraint
 	// It can be either (true) or (false)
-	AutoIncrement    string `db:"AUTO_INCREMENT"`
-	VarcharSize      int    `db:"CHARACTER_MAXIMUM_LENGTH"`
-	NumericScale     int    `db:"NUMERIC_SCALE"`
-	NumericPrecision int    `db:"NUMERIC_PRECISION"`
+	AutoIncrement     string `db:"AUTO_INCREMENT"`
+	VarcharSize       int    `db:"CHARACTER_MAXIMUM_LENGTH"`
+	NumericScale      int    `db:"NUMERIC_SCALE"`
+	NumericPrecision  int    `db:"NUMERIC_PRECISION"`
+	DateTimePrecision int    `db:"DATETIME_PRECISION"`
 
 	ConstraintName string `db:"CONSTRAINT_NAME"`
 	DeleteRule     string `db:"DELETE_RULE"`
