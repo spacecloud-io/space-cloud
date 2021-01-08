@@ -121,6 +121,8 @@ const (
 	DefaultScale int = 3
 	// DefaultPrecision specifies the default precision to be used for sql column types float if not provided
 	DefaultPrecision int = 10
+	// DefaultDateTimePrecision specifies the default precision to be used for sql column types float if not provided
+	DefaultDateTimePrecision int = 3
 )
 
 // InspectorFieldType is the type for storing sql inspection information
