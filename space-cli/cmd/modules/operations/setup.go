@@ -17,7 +17,7 @@ func Setup(setValuesFlag, valuesYamlFile, chartLocation, version string, isGetDe
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
 
 	if isGetDefaults {
-		_, helmChart, err := utils.CreateChart(chartLocation, model.HelmSpaceCloudChartDownloadURL)
+		_, helmChart, err := utils.CreateChart(chartLocation, utils.GetHelmChartDownloadURL(model.HelmSpaceCloudChartDownloadURL, version))
 		if err != nil {
 			return err
 		}

@@ -46,6 +46,7 @@ select a.table_schema  AS 'TABLE_SCHEMA',
        coalesce(a.character_maximum_length,0) AS 'CHARACTER_MAXIMUM_LENGTH',
        coalesce(a.numeric_precision,0) AS 'NUMERIC_PRECISION',
        coalesce(a.numeric_scale,0) AS 'NUMERIC_SCALE',
+       coalesce(a.DATETIME_PRECISION,0) AS 'DATETIME_PRECISION',
         
        coalesce(d.constraint_name,'') AS 'CONSTRAINT_NAME',
        coalesce(d.delete_rule,'') AS 'DELETE_RULE',
@@ -79,6 +80,7 @@ where a.table_name= ? and a.table_schema= ? ;
        coalesce(c.character_maximum_length,0) AS "CHARACTER_MAXIMUM_LENGTH",
        coalesce(c.numeric_precision,0) AS "NUMERIC_PRECISION",
        coalesce(c.numeric_scale,0) AS "NUMERIC_SCALE",
+       coalesce(c.datetime_precision,0) AS "DATETIME_PRECISION",
 
        coalesce(fk.constraint_name,'') AS "CONSTRAINT_NAME",
        coalesce(fk.delete_rule,'') AS "DELETE_RULE",
@@ -123,12 +125,13 @@ select c.table_schema AS 'TABLE_SCHEMA',
        REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') AS 'DEFAULT',
        case
            when COLUMNPROPERTY(object_id(c.TABLE_SCHEMA +'.'+ c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1
-               then 'Y'
-           else 'N'
+               then 'true'
+           else 'false'
        end AS 'AUTO_INCREMENT',
        coalesce(c.character_maximum_length,0) AS 'CHARACTER_MAXIMUM_LENGTH',
        coalesce(c.numeric_precision,0) AS 'NUMERIC_PRECISION',
        coalesce(c.numeric_scale,0) AS 'NUMERIC_SCALE',
+       coalesce(c.DATETIME_PRECISION,0) AS 'DATETIME_PRECISION',
 
        coalesce(fk.constraint_name,'') AS 'CONSTRAINT_NAME',
        coalesce(fk.delete_rule,'') AS 'DELETE_RULE',
