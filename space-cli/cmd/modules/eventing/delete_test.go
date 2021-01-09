@@ -94,8 +94,6 @@ func Test_deleteEventingConfig(t *testing.T) {
 func Test_deleteEventingTriggers(t *testing.T) {
 	// surveyMatchReturnValue stores the values returned from the survey when prefix is matched
 	surveyMatchReturnValue := "l"
-	// surveyNoMatchReturnValue stores the values returned from the survey when prefix is not matched
-	surveyNoMatchReturnValue := "b"
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -448,57 +446,6 @@ func Test_deleteEventingTriggers(t *testing.T) {
 			},
 		},
 		{
-			name: "Prefix does not match any triggers and unable to survey trigger ID",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/eventing/triggers",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"type":    "mongodb",
-									"retries": 2,
-									"timeout": 10,
-									"id":      "local-admin",
-									"url":     "/v1/config/projects/myproject/eventing/triggers",
-								},
-								map[string]interface{}{
-									"type":    "mongodb",
-									"retries": 2,
-									"timeout": 10,
-									"id":      "local",
-									"url":     "/v1/config/projects/myproject/eventing/triggers",
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local-admin"},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "Prefix does not match any triggers but unable to delete trigger",
 			args: args{project: "myproject", prefix: "b"},
 			transportMockArgs: []mockArgs{
@@ -532,110 +479,8 @@ func Test_deleteEventingTriggers(t *testing.T) {
 						},
 					},
 				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/eventing/triggers/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						errors.New("bad request"),
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 400,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "Prefix does not match any triggers and trigger successfully deleted",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/eventing/triggers",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"type":    "mongodb",
-									"retries": 2,
-									"timeout": 10,
-									"id":      "local-admin",
-									"url":     "/v1/config/projects/myproject/eventing/triggers",
-								},
-								map[string]interface{}{
-									"type":    "mongodb",
-									"retries": 2,
-									"timeout": 10,
-									"id":      "local",
-									"url":     "/v1/config/projects/myproject/eventing/triggers",
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/eventing/triggers/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 200,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {
@@ -667,8 +512,6 @@ func Test_deleteEventingTriggers(t *testing.T) {
 func Test_deleteEventingSchemas(t *testing.T) {
 	// surveyMatchReturnValue stores the values returned from the survey when prefix is matched
 	surveyMatchReturnValue := "l"
-	// surveyNoMatchReturnValue stores the values returned from the survey when prefix is not matched
-	surveyNoMatchReturnValue := "b"
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -997,51 +840,6 @@ func Test_deleteEventingSchemas(t *testing.T) {
 			},
 		},
 		{
-			name: "Prefix does not match any schemas and unable to survey schema ID",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/eventing/schema",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":     "local-admin",
-									"schema": "type subscribers { id: ID! @primary name: String!}",
-								},
-								map[string]interface{}{
-									"id":     "local",
-									"schema": "type subscribers { id: ID! @primary name: String!}",
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local-admin"},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "Prefix does not match any schemas but unable to delete schema",
 			args: args{project: "myproject", prefix: "b"},
 			transportMockArgs: []mockArgs{
@@ -1069,104 +867,8 @@ func Test_deleteEventingSchemas(t *testing.T) {
 						},
 					},
 				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/eventing/schema/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						errors.New("bad request"),
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 400,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "Prefix does not match any schemas and schema successfully deleted",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/eventing/schema",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":     "local-admin",
-									"schema": "type subscribers { id: ID! @primary name: String!}",
-								},
-								map[string]interface{}{
-									"id":     "local",
-									"schema": "type subscribers { id: ID! @primary name: String!}",
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/eventing/schema/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 200,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {
@@ -1198,8 +900,6 @@ func Test_deleteEventingSchemas(t *testing.T) {
 func Test_deleteEventingRules(t *testing.T) {
 	// surveyMatchReturnValue stores the values returned from the survey when prefix is matched
 	surveyMatchReturnValue := "l"
-	// surveyNoMatchReturnValue stores the values returned from the survey when prefix is not matched
-	surveyNoMatchReturnValue := "b"
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -1536,53 +1236,6 @@ func Test_deleteEventingRules(t *testing.T) {
 			},
 		},
 		{
-			name: "Prefix does not match any rules and unable to survey rule ID",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/eventing/rules",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":   "local-admin",
-									"rule": "date",
-									"eval": "==",
-								},
-								map[string]interface{}{
-									"id":   "local",
-									"rule": "date",
-									"eval": "==",
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local-admin"},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "Prefix does not match any rules but unable to delete rule",
 			args: args{project: "myproject", prefix: "b"},
 			transportMockArgs: []mockArgs{
@@ -1612,106 +1265,8 @@ func Test_deleteEventingRules(t *testing.T) {
 						},
 					},
 				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/eventing/rules/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						errors.New("bad request"),
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 400,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "Prefix does not match any rules and rule successfully deleted",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/eventing/rules",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":   "local-admin",
-									"rule": "date",
-									"eval": "==",
-								},
-								map[string]interface{}{
-									"id":   "local",
-									"rule": "date",
-									"eval": "==",
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/eventing/rules/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 200,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {

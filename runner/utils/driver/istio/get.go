@@ -330,7 +330,7 @@ func (i *Istio) GetServiceRole(ctx context.Context, projectID string) ([]*model.
 	if err != nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list cluster roles in project (%s)", projectID), err, nil)
 	}
-	serviceRole := make([]*model.Role, len(rolelist.Items)+len(clusterRoleList.Items))
+	serviceRole := make([]*model.Role, 0)
 
 	for _, role := range rolelist.Items {
 		serviceID := role.Labels["app"]
