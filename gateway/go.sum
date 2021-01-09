@@ -435,6 +435,8 @@ github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1
 github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=
 github.com/spaceuptech/helpers v0.2.0 h1:1Ku60oljrE30FVDR21QiU9qLEBnqOR2BC6CV1jxKjmU=
 github.com/spaceuptech/helpers v0.2.0/go.mod h1:FqA/yKG4VdoIv1fb5xufwA/yOqYFPPDixQPHsYDVyvM=
+github.com/spaceuptech/helpers v0.2.1 h1:5ImxgXTJVl99CLjKlRPNzcgymXG6c47fDQg0ONhg6zo=
+github.com/spaceuptech/helpers v0.2.1/go.mod h1:FqA/yKG4VdoIv1fb5xufwA/yOqYFPPDixQPHsYDVyvM=
 github.com/spaceuptech/space-api-go v0.17.3 h1:Syjiifm1vgPHPZiKAptF37chcJUrxTebi2VtNu6DxCg=
 github.com/spaceuptech/space-api-go v0.17.3/go.mod h1:+7VTNWQICAbh9Lm2uTTeKXgRPnxF/l7wsrc6XX4LSSg=
 github.com/spaceuptech/space-api-go v0.18.1 h1:c/wCBrxjiCEYBkRIeRWNdVWdQkbEnWoFT+MKMHjqBTc=
