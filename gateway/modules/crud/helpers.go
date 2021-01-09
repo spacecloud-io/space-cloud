@@ -68,10 +68,3 @@ func splitConnectionString(connection string) (string, bool) {
 	}
 	return "", false
 }
-
-func (m *Module) isRequestBatchable(isBatch bool, dbAlias string) bool {
-	if dbAlias == m.config.DbAlias {
-		return isBatch && m.config.IsDataloaderEnabled
-	}
-	return false
-}

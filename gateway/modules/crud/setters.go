@@ -55,7 +55,6 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 
 		if m.block != nil {
 			m.block.SetQueryFetchLimit(v.Limit)
-			m.config.IsDataloaderEnabled = v.IsDataloaderEnabled
 			// Skip if the connection string, dbName & driver config is same
 			if m.block.IsSame(connectionString, v.DBName, v.DriverConf) {
 				continue

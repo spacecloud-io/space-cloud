@@ -98,17 +98,16 @@ type DriverConfig struct {
 
 // DatabaseConfig stores information of database config
 type DatabaseConfig struct {
-	DbAlias             string       `json:"dbAlias,omitempty" yaml:"dbAlias" mapstructure:"dbAlias"`
-	Type                string       `json:"type,omitempty" yaml:"type" mapstructure:"type"` // database type
-	DBName              string       `json:"name,omitempty" yaml:"name" mapstructure:"name"` // name of the logical database or schema name according to the database type
-	Conn                string       `json:"conn,omitempty" yaml:"conn" mapstructure:"conn"`
-	IsPrimary           bool         `json:"isPrimary" yaml:"isPrimary" mapstructure:"isPrimary"`
-	IsDataloaderEnabled bool         `json:"isDataloaderEnabled" yaml:"isDataloaderEnabled" mapstructure:"isDataloaderEnabled"`
-	Enabled             bool         `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
-	BatchTime           int          `json:"batchTime,omitempty" yaml:"batchTime" mapstructure:"batchTime"`          // time in milli seconds
-	BatchRecords        int          `json:"batchRecords,omitempty" yaml:"batchRecords" mapstructure:"batchRecords"` // indicates number of records per batch
-	Limit               int64        `json:"limit,omitempty" yaml:"limit" mapstructure:"limit"`                      // indicates number of records to send per request
-	DriverConf          DriverConfig `json:"driverConf,omitempty" yaml:"driverConf" mapstructure:"driverConf"`
+	DbAlias      string       `json:"dbAlias,omitempty" yaml:"dbAlias" mapstructure:"dbAlias"`
+	Type         string       `json:"type,omitempty" yaml:"type" mapstructure:"type"` // database type
+	DBName       string       `json:"name,omitempty" yaml:"name" mapstructure:"name"` // name of the logical database or schema name according to the database type
+	Conn         string       `json:"conn,omitempty" yaml:"conn" mapstructure:"conn"`
+	IsPrimary    bool         `json:"isPrimary" yaml:"isPrimary" mapstructure:"isPrimary"`
+	Enabled      bool         `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+	BatchTime    int          `json:"batchTime,omitempty" yaml:"batchTime" mapstructure:"batchTime"`          // time in milli seconds
+	BatchRecords int          `json:"batchRecords,omitempty" yaml:"batchRecords" mapstructure:"batchRecords"` // indicates number of records per batch
+	Limit        int64        `json:"limit,omitempty" yaml:"limit" mapstructure:"limit"`                      // indicates number of records to send per request
+	DriverConf   DriverConfig `json:"driverConf,omitempty" yaml:"driverConf" mapstructure:"driverConf"`
 }
 
 // DatabaseSchema stores information of db schemas
