@@ -60,7 +60,7 @@ type Crud interface {
 	Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error)
 	DescribeTable(ctc context.Context, col string) ([]model.InspectorFieldType, []model.IndexType, error)
-	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, *model.SQLMetaData, error)
+	RawQuery(ctx context.Context, query string, isDebug bool, args []interface{}) (int64, interface{}, *model.SQLMetaData, error)
 	GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, col string) error
 	CreateDatabaseIfNotExist(ctx context.Context, name string) error

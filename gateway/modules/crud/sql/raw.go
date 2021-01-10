@@ -41,8 +41,8 @@ func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
 }
 
 // RawQuery query document(s) from the database
-func (s *SQL) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, *model.SQLMetaData, error) {
-	count, result, _, metaData, err := s.readExec(ctx, "", query, args, s.getClient(), &model.ReadRequest{Operation: utils.All})
+func (s *SQL) RawQuery(ctx context.Context, query string, isDebug bool, args []interface{}) (int64, interface{}, *model.SQLMetaData, error) {
+	count, result, _, metaData, err := s.readExec(ctx, "", query, args, s.getClient(), &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Debug: isDebug}})
 	return count, result, metaData, err
 }
 
