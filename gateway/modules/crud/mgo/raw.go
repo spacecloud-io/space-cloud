@@ -17,7 +17,7 @@ func (m *Mongo) RawBatch(ctx context.Context, queries []string) error {
 }
 
 // RawQuery query document(s) from the database
-func (m *Mongo) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, *model.SQLMetaData, error) {
+func (m *Mongo) RawQuery(ctx context.Context, query string, isDebug bool, args []interface{}) (int64, interface{}, *model.SQLMetaData, error) {
 	return 0, "", nil, errors.New("error raw query operation cannot be performed on mongo")
 }
 

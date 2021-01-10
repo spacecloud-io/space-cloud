@@ -88,6 +88,12 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, i
 			fieldDetails.Default = field.FieldDefault
 		}
 
+		if strings.HasPrefix(field.FieldDefault, "nextval") {
+			// override the default value, this is a special case if a postgres column has a auto increment value, the default value that database returns is -> ( nextval(auto_increment_test_auto_increment_test_seq )
+			fieldDetails.Default = ""
+			fieldDetails.IsDefault = false
+		}
+
 		// check foreignKey & identify if relation exists
 		if field.RefTableName != "" && field.RefColumnName != "" {
 			fieldDetails.IsForeign = true
@@ -168,11 +174,15 @@ func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails 
 		fieldDetails.Kind = model.TypeString
 	case "smallint", "mediumint", "int", "bigint":
 		fieldDetails.Kind = model.TypeInteger
-	case "float", "double", "decimal":
+	case "float", "double":
 		fieldDetails.Kind = model.TypeFloat
-		fieldDetails.Args = &model.FieldArgs{
-			Precision: field.NumericPrecision,
-			Scale:     field.NumericScale,
+	case "numeric", "decimal":
+		fieldDetails.Kind = model.TypeFloat
+		if field.NumericPrecision > 0 || field.NumericScale > 0 {
+			fieldDetails.Args = &model.FieldArgs{
+				Precision: field.NumericPrecision,
+				Scale:     field.NumericScale,
+			}
 		}
 	case "datetime", "timestamp", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
@@ -214,10 +224,18 @@ func inspectionSQLServerCheckFieldType(field model.InspectorFieldType, fieldDeta
 				Precision: field.DateTimePrecision,
 			}
 		}
-	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal", "nvarchar":
+	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "nvarchar":
 		fieldDetails.Kind = model.TypeString
 	case "smallint", "mediumint", "int", "bigint":
 		fieldDetails.Kind = model.TypeInteger
+	case "numeric", "decimal":
+		fieldDetails.Kind = model.TypeFloat
+		if field.NumericPrecision > 0 || field.NumericScale > 0 {
+			fieldDetails.Args = &model.FieldArgs{
+				Precision: field.NumericPrecision,
+				Scale:     field.NumericScale,
+			}
+		}
 	case "float", "double":
 		fieldDetails.Kind = model.TypeFloat
 	case "datetime", "timestamp", "datetimeoffset":
@@ -254,7 +272,15 @@ func inspectionPostgresCheckFieldType(field model.InspectorFieldType, fieldDetai
 		fieldDetails.Kind = model.TypeString
 	case "bigint", "bigserial", "integer", "smallint", "smallserial", "serial":
 		fieldDetails.Kind = model.TypeInteger
-	case "float", "double", "real", "numeric", "double precision":
+	case "numeric", "decimal":
+		fieldDetails.Kind = model.TypeFloat
+		if field.NumericPrecision > 0 || field.NumericScale > 0 {
+			fieldDetails.Args = &model.FieldArgs{
+				Precision: field.NumericPrecision,
+				Scale:     field.NumericScale,
+			}
+		}
+	case "float", "double", "real", "double precision":
 		fieldDetails.Kind = model.TypeFloat
 	case "datetime", "timestamp", "interval", "datetimeoffset", "timestamp without time zone":
 		fieldDetails.Kind = model.TypeDateTime
