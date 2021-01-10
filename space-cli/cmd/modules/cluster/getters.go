@@ -26,7 +26,7 @@ func GetClusterConfig() ([]*model.SpecObject, error) {
 
 	var objs []*model.SpecObject
 
-	spec := map[string]interface{}{"clusterConfig": payload.Result.(map[string]interface{})}
+	spec := payload.Result.(map[string]interface{})
 
 	// Printing the object on the screen
 	s, err := utils.CreateSpecObject("/v1/config/cluster", "cluster-config", map[string]string{}, spec)
@@ -53,7 +53,6 @@ func GetIntegration() ([]*model.SpecObject, error) {
 	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
 		meta := map[string]string{}
-		spec = map[string]interface{}{"integration": spec}
 		// Printing the object on the screen
 		s, err := utils.CreateSpecObject("/v1/config/integrations", "integrations", meta, spec)
 		if err != nil {

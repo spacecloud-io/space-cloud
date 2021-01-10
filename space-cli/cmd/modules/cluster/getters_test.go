@@ -30,7 +30,7 @@ func TestGetClusterConfig(t *testing.T) {
 					paramsReturned: []interface{}{nil, resp{
 						Result: map[string]interface{}{
 							"letsEncryptEmail": "info@gmail.com",
-							"enableTelemetry":  false,
+							"enableTelemetry":  true,
 						},
 					}},
 				},
@@ -40,7 +40,7 @@ func TestGetClusterConfig(t *testing.T) {
 					API:  "/v1/config/cluster",
 					Type: "cluster-config",
 					Meta: map[string]string{},
-					Spec: map[string]interface{}{"clusterConfig": map[string]interface{}{"letsEncryptEmail": "info@gmail.com", "enableTelemetry": false}},
+					Spec: map[string]interface{}{"letsEncryptEmail": "info@gmail.com", "enableTelemetry": true},
 				},
 			},
 			wantErr: false,
@@ -121,7 +121,7 @@ func TestGetIntegration(t *testing.T) {
 					API:  "/v1/config/integrations",
 					Type: "integrations",
 					Meta: map[string]string{},
-					Spec: map[string]interface{}{"integration": map[string]interface{}{"id": "integration1", "name": "name1", "version": "v1"}},
+					Spec: map[string]interface{}{"id": "integration1", "name": "name1", "version": "v1"},
 				},
 			},
 			wantErr: false,
