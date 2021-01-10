@@ -10,7 +10,7 @@ import (
 )
 
 // RawQuery query document(s) from the database
-func (b *Bolt) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, *model.SQLMetaData, error) {
+func (b *Bolt) RawQuery(ctx context.Context, query string, isDebug bool, args []interface{}) (int64, interface{}, *model.SQLMetaData, error) {
 	return 0, "", nil, errors.New("error raw query cannot be performed over embedded database")
 }
 

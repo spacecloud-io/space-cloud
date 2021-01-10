@@ -47,10 +47,7 @@ func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldT
 		}
 		return "boolean", nil
 	case model.TypeFloat:
-		if dbType == string(model.MySQL) {
-			return fmt.Sprintf("decimal(%d,%d)", realColumnInfo.Args.Precision, realColumnInfo.Args.Scale), nil
-		}
-		return "float", nil
+		return fmt.Sprintf("decimal(%d,%d)", realColumnInfo.Args.Precision, realColumnInfo.Args.Scale), nil
 	case model.TypeInteger:
 		return "bigint", nil
 	case model.TypeJSON:
@@ -356,14 +353,14 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 
 		query += " ,"
 	}
-	if !doesPrimaryKeyExists {
-		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key not found, make sure there is a primary key on a field with type (ID)", nil, nil)
+
+	if doesPrimaryKeyExists {
+		compositePrimaryKeyQuery, err := getCompositePrimaryKeyQuery(ctx, compositePrimaryKeys)
+		if err != nil {
+			return "", err
+		}
+		query += compositePrimaryKeyQuery
 	}
-	compositePrimaryKeyQuery, err := getCompositePrimaryKeyQuery(ctx, compositePrimaryKeys)
-	if err != nil {
-		return "", err
-	}
-	query += compositePrimaryKeyQuery
 
 	return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `);`, nil
 }

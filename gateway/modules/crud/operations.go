@@ -215,7 +215,7 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 	}
 
 	// Fire the query and return the result
-	_, b, metaData, err := crud.RawQuery(ctx, preparedQuery.SQL, args)
+	_, b, metaData, err := crud.RawQuery(ctx, preparedQuery.SQL, req.Debug, args)
 	if metaData != nil {
 		metaData.DbAlias = dbAlias
 		metaData.Col = id
