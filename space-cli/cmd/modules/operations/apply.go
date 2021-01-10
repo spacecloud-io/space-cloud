@@ -92,7 +92,6 @@ func ApplySpec(token string, account *model.Account, specObj *model.SpecObject) 
 	if err != nil {
 		return err
 	}
-
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return err

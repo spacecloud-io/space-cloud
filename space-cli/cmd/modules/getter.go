@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/auth"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/cluster"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/database"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/eventing"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/filestore"
@@ -38,6 +39,7 @@ func FetchGetSubCommands() *cobra.Command {
 	getCmd.AddCommand(project.GetSubCommands()...)
 	getCmd.AddCommand(remoteservices.GetSubCommands()...)
 	getCmd.AddCommand(services.GetSubCommands()...)
+	getCmd.AddCommand(cluster.GetSubCommands()...)
 	getCmd.AddCommand(getSubCommands()...)
 
 	return getCmd
