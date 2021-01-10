@@ -15,7 +15,7 @@ func GetSubCommands() []*cobra.Command {
 
 	var getIntegration = &cobra.Command{
 		Use:     "integration",
-		Aliases: []string{"integrationss"},
+		Aliases: []string{"integrations"},
 		RunE:    actionGetIntegration,
 	}
 
