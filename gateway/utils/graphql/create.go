@@ -44,7 +44,8 @@ func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields model.
 	fieldDefaults := make(map[string]interface{})
 
 	for fieldName, fieldSchema := range schemaFields {
-		if fieldSchema.Kind == model.TypeID {
+		// Only process ID fields which are required
+		if fieldSchema.Kind == model.TypeID && fieldSchema.IsFieldTypeRequired {
 			fieldIDs = append(fieldIDs, fieldName)
 		}
 
