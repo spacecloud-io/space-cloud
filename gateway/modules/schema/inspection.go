@@ -268,7 +268,7 @@ func inspectionPostgresCheckFieldType(field model.InspectorFieldType, fieldDetai
 				Precision: field.DateTimePrecision,
 			}
 		}
-	case "character", "bit", "text":
+	case "character", "bit", "text", "name":
 		fieldDetails.Kind = model.TypeString
 	case "bigint", "bigserial", "integer", "smallint", "smallserial", "serial":
 		fieldDetails.Kind = model.TypeInteger
