@@ -187,7 +187,8 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 				if err := json.Unmarshal(v, &val); err == nil {
 					mapping[colType.Name()] = val
 				}
-			case "VARCHAR", "TEXT":
+			case "VARCHAR", "TEXT", "NAME":
+				// NOTE: The NAME data type is only valid for Postgres database, as it exists for Postgres only (Name is a 63 byte (varchar) type used for storing system identifiers.)
 				val, ok := mapping[colType.Name()].([]byte)
 				if ok {
 					mapping[colType.Name()] = string(val)
