@@ -52,6 +52,8 @@ func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
+
+		leaderID, _ := syncMan.GetLeaderGatewayID(ctx)
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{
 			"isProd":       isProd,
 			"plan":         plan,
@@ -65,6 +67,7 @@ func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 			"loginURL":     loginURL,
 			"sessionId":    sessionID,
 			"licenseMode":  licenseMode,
+			"leaderId":     leaderID,
 		})
 	}
 }

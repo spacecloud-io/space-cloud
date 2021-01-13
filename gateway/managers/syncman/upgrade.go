@@ -52,6 +52,11 @@ func (s *Manager) RenewLicense(ctx context.Context) error {
 	return s.SetLicense(ctx, s.adminMan.GetConfig())
 }
 
+// GetLeaderGatewayID gets the current leader gateway node id
+func (s *Manager) GetLeaderGatewayID(ctx context.Context) (string, error) {
+	return s.leader.GetLeaderNodeID(ctx)
+}
+
 func (s *Manager) ConvertToEnterprise(ctx context.Context, req *model.LicenseUpgradeRequest) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), `Upgrading gateway to enterprise...`, map[string]interface{}{"data": req})
 	if s.adminMan.IsRegistered() {
