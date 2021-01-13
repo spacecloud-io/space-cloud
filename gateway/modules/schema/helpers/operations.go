@@ -48,18 +48,15 @@ func SchemaValidator(ctx context.Context, dbAlias, dbType, col string, collectio
 			ok = true
 		}
 
-		if fieldValue.Kind == model.TypeID && !ok {
-			value = ksuid.New().String()
-			ok = true
-		}
-
 		if fieldValue.IsCreatedAt || fieldValue.IsUpdatedAt {
 			mutatedDoc[fieldKey] = time.Now().UTC()
 			continue
 		}
 
 		if fieldValue.IsFieldTypeRequired {
-			if !ok {
+			if fieldValue.Kind == model.TypeID && !ok {
+				value = ksuid.New().String()
+			} else if !ok {
 				return nil, errors.New("required field " + fieldKey + " from " + col + " not present in request")
 			}
 		}
