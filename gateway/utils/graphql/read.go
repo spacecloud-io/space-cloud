@@ -290,6 +290,10 @@ func (graph *Module) checkIfLinkCanBeOptimized(fieldStruct *model.FieldType, dbA
 	if err != nil {
 		return nil, false
 	}
+	// SQL self join not supported by space cloud
+	if referredTableName == col {
+		return nil, false
+	}
 	linkedOp := utils.All
 	if !fieldStruct.IsList {
 		linkedOp = utils.One
