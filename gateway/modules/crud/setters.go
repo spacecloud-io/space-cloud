@@ -25,6 +25,22 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 
 	m.project = project
 
+	for dbAlias, v := range m.blocks {
+		doesExist := false
+		for _, databaseConfig := range crud {
+			// Trim away the sql prefix for backward compatibility
+			blockKey := strings.TrimPrefix(databaseConfig.DbAlias, "sql-")
+			if dbAlias == blockKey {
+				doesExist = true
+			}
+		}
+		if !doesExist {
+			// Database that has been removed, close the db connections to free connection pool
+			_ = v.Close()
+			delete(m.blocks, dbAlias)
+		}
+	}
+
 	// clear previous data loader1
 	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
 
