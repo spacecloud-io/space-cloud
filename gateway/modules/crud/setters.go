@@ -24,7 +24,12 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 	}
 
 	m.project = project
-
+	if len(crud) == 0 && m.block != nil {
+		// Close all previous connection
+		_ = m.block.Close()
+		m.block = nil
+		return nil
+	}
 	// clear previous data loader1
 	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
 

@@ -131,10 +131,12 @@ func (m *Mongo) connect() error {
 	}
 
 	if err := client.Connect(ctx); err != nil {
+		_ = client.Disconnect(ctx)
 		return err
 	}
 
 	if err := client.Ping(ctx, nil); err != nil {
+		_ = client.Disconnect(ctx)
 		return err
 	}
 
