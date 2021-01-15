@@ -272,7 +272,11 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 						cb(nil, nil)
 						return
 					}
-					req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}, PostProcess: map[string]*model.PostProcess{}}
+					req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}, PostProcess: map[string]*model.PostProcess{}, Options: &model.ReadOptions{}}
+					options, hasOptions, _ := generateOptions(ctx, field.Arguments, store)
+					if hasOptions {
+						req.Options.Debug = options.Debug
+					}
 					graph.processLinkedResult(ctx, field, *fieldStruct, token, req, store, cb)
 					return
 				}
@@ -285,6 +289,14 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 		if field.SelectionSet == nil {
 			cb(currentValue, nil)
 			return
+		}
+
+		if schema != nil {
+			fieldStruct, p := schema[field.Name.Value]
+			if p && fieldStruct.IsLinked {
+				linkedInfo := fieldStruct.LinkedTable
+				schema, _ = graph.schema.GetSchema(linkedInfo.DBType, linkedInfo.Table)
+			}
 		}
 
 		graph.processQueryResult(ctx, field, token, store, currentValue, schema, cb)
