@@ -126,9 +126,15 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		return
 	}
 
+	isDataloaderDisabled, err := isDataLoaderDisabled(ctx, field, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
 	go func() {
 		//  batch operation cannot be performed with aggregation or joins or when post processing is applied or when cache is not nil
-		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0 || req.Cache != nil)
+		req.IsBatch = !(isDataloaderDisabled || len(req.Aggregate) > 0 || len(req.Options.Join) > 0 || req.Cache != nil)
 		req.Options.HasOptions = hasOptions
 		result, metaData, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
 		if err != nil {
@@ -148,6 +154,25 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 
 		cb(dbAlias, col, result, err)
 	}()
+}
+
+func isDataLoaderDisabled(ctx context.Context, field *ast.Field, store utils.M) (bool, error) {
+	for _, arg := range field.Arguments {
+		switch arg.Name.Value {
+		case "disableDataloader": // create
+			val, err := utils.ParseGraphqlValue(arg.Value, store)
+			if err != nil {
+				helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to extract argument from graphql query (%s)", arg.Name.Value), map[string]interface{}{"argValue": arg.Value.GetValue()})
+				continue
+			}
+			tempBool, ok := val.(bool)
+			if !ok {
+				return false, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Field (disableDataloader) should be of type boolean", nil, nil)
+			}
+			return tempBool, nil
+		}
+	}
+	return false, nil
 }
 
 func (graph *Module) runAuthForJoins(ctx context.Context, dbType, dbAlias, token string, req *model.ReadRequest, join []*model.JoinOption) error {
