@@ -50,6 +50,8 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}
 
 	eventDocs := results.([]interface{})
+	fmt.Println("Length of event docs", len(eventDocs))
+	count := 0
 	for _, temp := range eventDocs {
 		eventDoc := new(model.EventDocument)
 		if err := mapstructure.Decode(temp, eventDoc); err != nil {
@@ -66,7 +68,9 @@ func (m *Module) processStagedEvents(t *time.Time) {
 		timestamp = timestamp.Add(15 * time.Second)
 
 		if t.After(timestamp) || t.Equal(timestamp) {
-			go m.processStagedEvent(eventDoc)
+			count++
+			fmt.Println("Staging event count", count)
+			m.stageBufferedEvent(eventDoc)
 		}
 	}
 }
@@ -74,14 +78,6 @@ func (m *Module) processStagedEvents(t *time.Time) {
 func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-
-	// Return if the event is already being processed
-	if _, loaded := m.processingEvents.LoadOrStore(eventDoc.ID, true); loaded {
-		return
-	}
-
-	// Delete the event from the processing list without fail
-	defer m.processingEvents.Delete(eventDoc.ID)
 
 	eventType, triggerName := eventDoc.Type, eventDoc.RuleName
 
@@ -126,7 +122,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "eventing module couldn't log the invocation ", err, nil)
 			return
 		}
-		m.updateEventC <- &queueUpdateEvent{
+		m.updateFailedEventInDBChannel <- &queueUpdateEvent{
 			project: m.project,
 			db:      m.config.DBAlias,
 			col:     utils.TableEventingLogs,
@@ -179,7 +175,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Couldn't create DLQ event for event id %v", eventDoc.ID), err, nil)
 	}
 
-	m.updateEventC <- &queueUpdateEvent{
+	m.updateFailedEventInDBChannel <- &queueUpdateEvent{
 		project: m.project,
 		db:      m.config.DBAlias,
 		col:     utils.TableEventingLogs,
@@ -233,7 +229,7 @@ func (m *Module) invokeWebhook(ctx context.Context, token string, client model.H
 		}
 	}
 
-	m.updateEventC <- &queueUpdateEvent{
+	m.updateProcessedEventInDBChannel <- &queueUpdateEvent{
 		project: m.project,
 		db:      m.config.DBAlias,
 		col:     utils.TableEventingLogs,

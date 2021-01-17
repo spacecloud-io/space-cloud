@@ -2,6 +2,7 @@ package eventing
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -66,7 +67,7 @@ func (m *Module) prepareFindObject(req *model.QueueEventRequest) error {
 func (m *Module) queueUpdateEvent(ev *queueUpdateEvent) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
+	fmt.Println("Request", ev.req.Find)
 	if err := m.crud.InternalUpdate(ctx, ev.db, ev.project, ev.col, ev.req); err != nil {
 		_ = helpers.Logger.LogError("eventing-update", ev.err, err, nil)
 	}

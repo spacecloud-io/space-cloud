@@ -19,6 +19,8 @@ func (m *Module) ProcessTransmittedEvents(eventDocs []*model.EventDocument) {
 	// Get current timestamp
 	currentTimestamp := time.Now()
 
+	count := 0
+	fmt.Println("Length of process transmitted events", len(eventDocs))
 	for _, eventDoc := range eventDocs {
 		if eventDoc.Token >= start && eventDoc.Token <= end {
 			timestamp, err := time.Parse(time.RFC3339Nano, eventDoc.Timestamp)
@@ -28,7 +30,9 @@ func (m *Module) ProcessTransmittedEvents(eventDocs []*model.EventDocument) {
 			}
 
 			if currentTimestamp.After(timestamp) || currentTimestamp.Equal(timestamp) {
-				go m.processStagedEvent(eventDoc)
+				count++
+				fmt.Println("Staging event count", count)
+				m.stageBufferedEvent(eventDoc)
 			}
 		}
 	}

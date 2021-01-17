@@ -15,6 +15,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/pubsub"
 )
 
@@ -28,7 +29,9 @@ type Module struct {
 	config  *config.Eventing
 
 	// Atomic maps to handle events being processed
-	processingEvents sync.Map
+	processingEvents                     sync.Map
+	bufferedEventProcessingChannel       chan *model.EventDocument
+	bufferedEventProcessingRoutineCloser chan struct{}
 
 	// Variables defined during initialisation
 	auth   model.AuthEventingInterface
@@ -51,8 +54,16 @@ type Module struct {
 	// Pub sub network
 	pubsubClient *pubsub.Module
 
-	// Channel for queuing eventing updates
-	updateEventC chan *queueUpdateEvent
+	// Channels for queuing eventing updates
+	updateEventC                    chan *queueUpdateEvent
+	updateFailedEventInDBChannel    chan *queueUpdateEvent
+	updateProcessedEventInDBChannel chan *queueUpdateEvent
+
+	// Channel for removing the event ids from the processingEvents sync map
+	deleteEventFromProcessingEventsMapChannel chan []string
+
+	// Channel for closing all the go routines
+	globalCloserChannel chan struct{}
 }
 
 // synchronous event response
@@ -70,18 +81,23 @@ func New(projectID, nodeID string, auth model.AuthEventingInterface, crud model.
 	}
 
 	m := &Module{
-		project:      projectID,
-		nodeID:       nodeID,
-		auth:         auth,
-		crud:         crud,
-		schema:       schemaModule,
-		syncMan:      syncMan,
-		schemas:      map[string]model.Fields{},
-		fileStore:    file,
-		metricHook:   hook,
-		config:       &config.Eventing{Enabled: false, InternalRules: make(config.EventingTriggers)},
-		templates:    map[string]*template.Template{},
-		pubsubClient: pubsubClient,
+		project:                              projectID,
+		nodeID:                               nodeID,
+		auth:                                 auth,
+		crud:                                 crud,
+		schema:                               schemaModule,
+		syncMan:                              syncMan,
+		schemas:                              map[string]model.Fields{},
+		fileStore:                            file,
+		metricHook:                           hook,
+		config:                               &config.Eventing{Enabled: false, InternalRules: make(config.EventingTriggers)},
+		templates:                            map[string]*template.Template{},
+		pubsubClient:                         pubsubClient,
+		bufferedEventProcessingRoutineCloser: make(chan struct{}),
+		updateFailedEventInDBChannel:         make(chan *queueUpdateEvent, 100),
+		updateProcessedEventInDBChannel:      make(chan *queueUpdateEvent, 100),
+		deleteEventFromProcessingEventsMapChannel: make(chan []string, 100),
+		globalCloserChannel:                       make(chan struct{}),
 	}
 
 	// Start the internal processes
@@ -89,6 +105,10 @@ func New(projectID, nodeID string, auth model.AuthEventingInterface, crud model.
 	go m.routineProcessStaged()
 	go m.routineHandleMessages()
 	go m.routineHandleEventResponseMessages()
+	go m.routineProcessEventsWithBuffering(0)
+	go m.routineUpdateEventsStatusInDB(m.updateFailedEventInDBChannel)
+	go m.routineUpdateEventsStatusInDB(m.updateProcessedEventInDBChannel)
+	go m.routineDeleteEventsFromSyncMap()
 	m.createProcessUpdateEventsRoutine()
 
 	return m, nil
@@ -108,15 +128,29 @@ func (m *Module) SetConfig(projectID string, eventing *config.EventingConfig) er
 		return errors.New("invalid eventing config provided")
 	}
 
+	fmt.Println("Current p config vs new p config", m.config.ProcessingConfig, eventing.ProcessingConfig)
+	if eventing.ProcessingConfig == 0 {
+		fmt.Println("Provided processing config is 0, default to", utils.DefaultEventProcessingConfig)
+		eventing.ProcessingConfig = utils.DefaultEventProcessingConfig
+	}
+	if m.config.ProcessingConfig != eventing.ProcessingConfig {
+		_ = fmt.Sprintf("Processing config has been changed from (%d) to (%d)", m.config.ProcessingConfig, eventing.ProcessingConfig)
+		m.bufferedEventProcessingRoutineCloser <- struct{}{}
+		m.bufferedEventProcessingChannel = make(chan *model.EventDocument, eventing.ProcessingConfig*3)
+		fmt.Println("Making a new channel with capacity of", eventing.ProcessingConfig*3)
+		go m.routineProcessEventsWithBuffering(eventing.ProcessingConfig)
+	}
+
 	m.project = projectID
 	m.config.Enabled = eventing.Enabled
 	m.config.DBAlias = eventing.DBAlias
+	m.config.ProcessingConfig = eventing.ProcessingConfig
 
 	// `m.config.InternalRules` cannot be set by the eventing module. Its used by other modules only.
 	if m.config.InternalRules == nil {
 		m.config.InternalRules = make(config.EventingTriggers)
 	}
-
+	fmt.Println("Check complete of eventing 2")
 	return nil
 }
 
@@ -209,6 +243,8 @@ func (m *Module) CloseConfig() error {
 	// Close the pub sub client
 	m.pubsubClient.Close()
 
+	// Closing the global close will stop all the goroutines
+	close(m.globalCloserChannel)
 	// erase map
 	m.processingEvents.Range(func(key interface{}, value interface{}) bool {
 		m.processingEvents.Delete(key)

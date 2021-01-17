@@ -149,7 +149,7 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		_ = json.NewDecoder(r.Body).Decode(c)
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, c)
-		status, err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled, reqParams)
+		status, err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.ProcessingConfig, c.Enabled, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
 			return

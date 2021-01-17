@@ -170,19 +170,8 @@ const (
 	EventStatusCancelled string = "cancel"
 )
 
-// RequestKind specifies the kind of the request
-type RequestKind string
-
-const (
-	// RequestKindDirect is used when an http request is to be made directly
-	RequestKindDirect RequestKind = "direct"
-
-	// RequestKindConsulConnect is used when an http request is to be made via consul connect
-	RequestKindConsulConnect RequestKind = "consul-connect"
-)
-
-// SpaceCloudServiceName is the service name space cloud will register itself with in service discovery mechanisms
-const SpaceCloudServiceName string = "space-cloud"
+// DefaultEventProcessingConfig signifies the number of goroutines to spin up while processing staged events; this ensures the gateway doesn't become CPU intensive.
+const DefaultEventProcessingConfig = 200
 
 // TypeMakeHTTPRequest makes a http request
 type TypeMakeHTTPRequest func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error

@@ -3,6 +3,8 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/spaceuptech/helpers"
@@ -12,28 +14,137 @@ import (
 
 func (m *Module) createProcessUpdateEventsRoutine() {
 	m.updateEventC = make(chan *queueUpdateEvent, 1000)
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 25; i++ {
 		go m.routineProcessUpdateEvents()
 	}
 }
 
 func (m *Module) routineProcessUpdateEvents() {
-	for ev := range m.updateEventC {
-		m.queueUpdateEvent(ev)
+	for {
+		select {
+		case <-m.globalCloserChannel:
+			fmt.Println("Closing routineProcessStaged")
+			return
+		case ev := <-m.updateEventC:
+			m.queueUpdateEvent(ev)
+			m.deleteEventFromProcessingEventsMapChannel <- []string{ev.req.Find["_id"].(string)}
+		}
+	}
+}
+
+func (m *Module) routineUpdateEventsStatusInDB(updateChan chan *queueUpdateEvent) {
+	duration := 1 * time.Second
+	t := time.NewTimer(duration)
+	defer t.Stop()
+	arr := make([]*queueUpdateEvent, 0)
+	for {
+		select {
+		case <-m.globalCloserChannel:
+			close(m.updateFailedEventInDBChannel)
+			fmt.Println("Closing routineUpdateEventsStatusInDB")
+			return
+		case ev := <-updateChan:
+			arr = append(arr, ev)
+		case <-t.C:
+			if len(arr) == 0 {
+				t.Reset(duration)
+				continue
+			}
+			eventIDs, updateRequest := m.generateInOperatorUpdateRequest(arr)
+			m.queueUpdateEvent(updateRequest)
+			m.deleteEventFromProcessingEventsMapChannel <- eventIDs
+			arr = make([]*queueUpdateEvent, 0)
+			t.Reset(duration)
+		}
+	}
+}
+
+func (m *Module) routineDeleteEventsFromSyncMap() {
+	duration := 5 * time.Second
+	t := time.NewTimer(duration)
+	defer t.Stop()
+
+	activeArr := make([]string, 0)
+	for {
+		select {
+		case <-m.globalCloserChannel:
+			fmt.Println("Closing routineDeleteEventsFromSyncMap")
+			return
+		case eventIDs := <-m.deleteEventFromProcessingEventsMapChannel:
+			activeArr = append(activeArr, eventIDs...)
+		case <-t.C:
+			passiveArr := activeArr
+			for _, eventID := range passiveArr {
+				// Delete the event from the processing list without fail
+				m.processingEvents.Delete(eventID)
+			}
+			t.Reset(duration)
+		}
 	}
 }
 
 func (m *Module) routineProcessIntents() {
-	m.tickerIntent = time.NewTicker(10 * time.Second)
-	for t := range m.tickerIntent.C {
-		m.processIntents(&t)
+	duration := 10 * time.Second
+	t := time.NewTimer(duration)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-m.globalCloserChannel:
+			fmt.Println("Closing routineProcessStaged")
+			return
+		case ct := <-t.C:
+			m.processIntents(&ct)
+			t.Reset(duration)
+		}
 	}
 }
 
 func (m *Module) routineProcessStaged() {
-	m.tickerStaged = time.NewTicker(10 * time.Second)
-	for t := range m.tickerStaged.C {
-		m.processStagedEvents(&t)
+	duration := 10 * time.Second
+	t := time.NewTimer(duration)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-m.globalCloserChannel:
+			fmt.Println("Closing routineProcessStaged")
+			return
+		case ct := <-t.C:
+			m.processStagedEvents(&ct)
+			t.Reset(duration)
+		}
+	}
+}
+
+func (m *Module) routineProcessEventsWithBuffering(processingConfig int) {
+	fmt.Println("Staring buffered eventing processing routine with capacity of", processingConfig)
+	guard := make(chan struct{}, processingConfig)
+	count := 0
+	defer close(guard)
+	for {
+		select {
+		case <-m.bufferedEventProcessingRoutineCloser:
+			// Before closing the routine, delete all the un processed events in the buffer
+			fmt.Println("Total number of unprocessed events in the buffer", len(m.bufferedEventProcessingChannel))
+			m.processingEvents = sync.Map{}
+			// TODO: Do i require a lock here
+			fmt.Println("Closing the buffered eventing processing routine")
+			return
+		case eventDoc := <-m.bufferedEventProcessingChannel:
+			if processingConfig == 0 {
+				continue
+			}
+
+			guard <- struct{}{} // would block if guard channel is already filled
+			count = count + 1
+			fmt.Println("Processing event count", count, len(m.bufferedEventProcessingChannel), processingConfig)
+			go func() {
+				m.processStagedEvent(eventDoc)
+				count = count - 1
+				<-guard
+			}()
+		}
 	}
 }
 
@@ -43,14 +154,20 @@ func (m *Module) routineHandleMessages() {
 		panic(err)
 	}
 
-	for msg := range ch {
-		pubsubMsg := new(model.PubSubMessage)
-		if err := json.Unmarshal([]byte(msg.Payload), pubsubMsg); err != nil {
-			_ = helpers.Logger.LogError("event-process", "Unable to marshal incoming process event request", err, map[string]interface{}{"payload": msg.Payload})
-			continue
-		}
+	for {
+		select {
+		case <-m.globalCloserChannel:
+			fmt.Println("Closing routineHandleMessages")
+			return
+		case msg := <-ch:
+			pubsubMsg := new(model.PubSubMessage)
+			if err := json.Unmarshal([]byte(msg.Payload), pubsubMsg); err != nil {
+				_ = helpers.Logger.LogError("event-process", "Unable to marshal incoming process event request", err, map[string]interface{}{"payload": msg.Payload})
+				continue
+			}
 
-		m.handlePubSubMessage(pubsubMsg)
+			m.handlePubSubMessage(pubsubMsg)
+		}
 	}
 }
 
@@ -60,14 +177,20 @@ func (m *Module) routineHandleEventResponseMessages() {
 		panic(err)
 	}
 
-	for msg := range ch {
-		pubsubMsg := new(model.PubSubMessage)
-		if err := json.Unmarshal([]byte(msg.Payload), pubsubMsg); err != nil {
-			_ = helpers.Logger.LogError("event-response-process", "Unable to marshal incoming process event response message", err, map[string]interface{}{"payload": msg.Payload})
-			continue
-		}
+	for {
+		select {
+		case <-m.globalCloserChannel:
+			fmt.Println("Closing routineHandleEventResponseMessages")
+			return
+		case msg := <-ch:
+			pubsubMsg := new(model.PubSubMessage)
+			if err := json.Unmarshal([]byte(msg.Payload), pubsubMsg); err != nil {
+				_ = helpers.Logger.LogError("event-response-process", "Unable to marshal incoming process event response message", err, map[string]interface{}{"payload": msg.Payload})
+				continue
+			}
 
-		m.handleEventResponseMessage(pubsubMsg)
+			m.handleEventResponseMessage(pubsubMsg)
+		}
 	}
 }
 

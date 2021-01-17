@@ -127,9 +127,10 @@ type DatabaseRule struct {
 
 // EventingConfig stores information of eventing config
 type EventingConfig struct {
-	Enabled       bool             `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
-	DBAlias       string           `json:"dbAlias" yaml:"dbAlias" mapstructure:"dbAlias"`
-	InternalRules EventingTriggers `json:"internalRules,omitempty" yaml:"internalRules,omitempty" mapstructure:"internalRules"`
+	Enabled          bool             `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+	DBAlias          string           `json:"dbAlias" yaml:"dbAlias" mapstructure:"dbAlias"`
+	ProcessingConfig int              `json:"processingConfig" yaml:"processingConfig" mapstructure:"processingConfig"`
+	InternalRules    EventingTriggers `json:"internalRules,omitempty" yaml:"internalRules,omitempty" mapstructure:"internalRules"`
 }
 
 // EventingSchema stores information of eventing schema
@@ -402,12 +403,13 @@ type StaticRoute struct {
 
 // Eventing holds the config for the eventing module (task queue)
 type Eventing struct {
-	Enabled       bool                        `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
-	DBAlias       string                      `json:"dbAlias" yaml:"dbAlias" mapstructure:"dbAlias"`
-	Rules         map[string]*EventingTrigger `json:"triggers,omitempty" yaml:"triggers" mapstructure:"triggers"`
-	InternalRules map[string]*EventingTrigger `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty" mapstructure:"internalTriggers"`
-	SecurityRules map[string]*Rule            `json:"securityRules,omitempty" yaml:"securityRules,omitempty" mapstructure:"securityRules"`
-	Schemas       map[string]SchemaObject     `json:"schemas,omitempty" yaml:"schemas,omitempty" mapstructure:"schemas"`
+	Enabled          bool                        `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+	DBAlias          string                      `json:"dbAlias" yaml:"dbAlias" mapstructure:"dbAlias"`
+	ProcessingConfig int                         `json:"processingConfig" yaml:"processingConfig" mapstructure:"processingConfig"`
+	Rules            map[string]*EventingTrigger `json:"triggers,omitempty" yaml:"triggers" mapstructure:"triggers"`
+	InternalRules    map[string]*EventingTrigger `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty" mapstructure:"internalTriggers"`
+	SecurityRules    map[string]*Rule            `json:"securityRules,omitempty" yaml:"securityRules,omitempty" mapstructure:"securityRules"`
+	Schemas          map[string]SchemaObject     `json:"schemas,omitempty" yaml:"schemas,omitempty" mapstructure:"schemas"`
 }
 
 // EventingTrigger stores information of eventing trigger
