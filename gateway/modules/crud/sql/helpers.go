@@ -98,6 +98,11 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 			array = append(array, goqu.I(k).Eq(v))
 		}
 	}
+
+	if len(find) == 0 {
+		array = append(array, goqu.I("1").Eq(goqu.I("1")))
+	}
+
 	return goqu.And(array...), regxarr
 }
 

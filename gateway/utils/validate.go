@@ -66,6 +66,14 @@ func attemptConvertInt64ToFloat(val interface{}) interface{} {
 }
 
 func compare(dbType string, v1, v2 interface{}) bool {
+	if v1 == nil && v2 == nil {
+		return true
+	}
+
+	if v1 == nil || v2 == nil {
+		return false
+	}
+
 	if reflect.TypeOf(v1).String() == reflect.String.String() && reflect.TypeOf(v2).String() == reflect.String.String() {
 		if dbType == string(model.MySQL) || dbType == string(model.SQLServer) {
 			return strings.EqualFold(fmt.Sprintf("%v", v1), fmt.Sprintf("%v", v2))

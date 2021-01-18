@@ -268,7 +268,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 					linkedInfo := fieldStruct.LinkedTable
 					loadKey := fmt.Sprintf("%s.%s", store["coreParentKey"], linkedInfo.From)
 					val, err := utils.LoadValue(loadKey, store)
-					if err != nil {
+					if err != nil || val == nil {
 						cb(nil, nil)
 						return
 					}
