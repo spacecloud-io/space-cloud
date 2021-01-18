@@ -172,7 +172,11 @@ func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails 
 		}
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob":
 		fieldDetails.Kind = model.TypeString
-	case "smallint", "mediumint", "int", "bigint":
+	case "smallint":
+		fieldDetails.Kind = model.TypeSmallInteger
+	case "bigint":
+		fieldDetails.Kind = model.TypeBigInteger
+	case "mediumint", "int":
 		fieldDetails.Kind = model.TypeInteger
 	case "float", "double":
 		fieldDetails.Kind = model.TypeFloat
@@ -226,7 +230,11 @@ func inspectionSQLServerCheckFieldType(field model.InspectorFieldType, fieldDeta
 		}
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "nvarchar":
 		fieldDetails.Kind = model.TypeString
-	case "smallint", "mediumint", "int", "bigint":
+	case "smallint":
+		fieldDetails.Kind = model.TypeSmallInteger
+	case "bigint":
+		fieldDetails.Kind = model.TypeBigInteger
+	case "int":
 		fieldDetails.Kind = model.TypeInteger
 	case "numeric", "decimal":
 		fieldDetails.Kind = model.TypeFloat
@@ -270,8 +278,12 @@ func inspectionPostgresCheckFieldType(field model.InspectorFieldType, fieldDetai
 		}
 	case "character", "bit", "text", "name":
 		fieldDetails.Kind = model.TypeString
-	case "bigint", "bigserial", "integer", "smallint", "smallserial", "serial":
+	case "integer", "bigserial", "smallserial", "serial":
 		fieldDetails.Kind = model.TypeInteger
+	case "smallint":
+		fieldDetails.Kind = model.TypeSmallInteger
+	case "bigint":
+		fieldDetails.Kind = model.TypeBigInteger
 	case "numeric", "decimal":
 		fieldDetails.Kind = model.TypeFloat
 		if field.NumericPrecision > 0 || field.NumericScale > 0 {

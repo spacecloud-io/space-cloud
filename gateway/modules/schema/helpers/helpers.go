@@ -23,7 +23,7 @@ func checkType(ctx context.Context, dbAlias, dbType, col string, value interface
 		switch fieldValue.Kind {
 		case model.TypeDateTime:
 			return time.Unix(int64(v)/1000, 0), nil
-		case model.TypeInteger:
+		case model.TypeInteger, model.TypeBigInteger, model.TypeSmallInteger:
 			return value, nil
 		case model.TypeFloat:
 			return float64(v), nil
@@ -51,7 +51,7 @@ func checkType(ctx context.Context, dbAlias, dbType, col string, value interface
 			return time.Unix(int64(v.(float64))/1000, 0), nil
 		case model.TypeFloat:
 			return value, nil
-		case model.TypeInteger:
+		case model.TypeInteger, model.TypeSmallInteger, model.TypeBigInteger:
 			return int64(value.(float64)), nil
 		default:
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type received for field %s in collection %s - wanted %s got Float", fieldValue.FieldName, col, fieldValue.Kind), nil, nil)
@@ -517,7 +517,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 
 	// Throw an error if the collection wasn't found
 	if !isCollectionFound {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Collection/Table (%s) not found in schema", collectionName), nil, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Collection/Table (%s) not found in schema or you have provided an unknown data type (%s)", collectionName, collectionName), nil, nil)
 	}
 	return fieldMap, nil
 }
@@ -549,6 +549,10 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *model.Field
 			return model.TypeFloat, nil
 		case model.TypeInteger:
 			return model.TypeInteger, nil
+		case model.TypeSmallInteger:
+			return model.TypeSmallInteger, nil
+		case model.TypeBigInteger:
+			return model.TypeBigInteger, nil
 		case model.TypeBoolean:
 			return model.TypeBoolean, nil
 		case model.TypeJSON:

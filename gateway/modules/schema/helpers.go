@@ -49,6 +49,10 @@ func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldT
 	case model.TypeFloat:
 		return fmt.Sprintf("decimal(%d,%d)", realColumnInfo.Args.Precision, realColumnInfo.Args.Scale), nil
 	case model.TypeInteger:
+		return "integer", nil
+	case model.TypeSmallInteger:
+		return "smallint", nil
+	case model.TypeBigInteger:
 		return "bigint", nil
 	case model.TypeJSON:
 		switch dbType {

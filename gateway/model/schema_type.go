@@ -73,6 +73,10 @@ const (
 	TypeUUID string = "UUID"
 	// TypeInteger is variable used for Variable of type Integer
 	TypeInteger string = "Integer"
+	// TypeSmallInteger is variable used for Variable of type small int
+	TypeSmallInteger string = "SmallInteger"
+	// TypeBigInteger is variable used for Variable of type big int
+	TypeBigInteger string = "BigInteger"
 	// TypeString is variable used for Variable of type String
 	TypeString string = "String"
 	// TypeFloat is variable used for Variable of type Float

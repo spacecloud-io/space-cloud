@@ -54,6 +54,16 @@ func Test_generateSDL(t *testing.T) {
 						TypeIDSize: model.SQLTypeIDSize,
 						IsPrimary:  true,
 					},
+					"amount": &model.FieldType{
+						FieldName:  "col2",
+						Kind:       model.TypeBigInteger,
+						TypeIDSize: model.SQLTypeIDSize,
+					},
+					"coolDownInterval": &model.FieldType{
+						FieldName:  "col2",
+						Kind:       model.TypeSmallInteger,
+						TypeIDSize: model.SQLTypeIDSize,
+					},
 					"age": &model.FieldType{
 						FieldName: "age",
 						Kind:      model.TypeFloat,
@@ -134,7 +144,7 @@ func Test_generateSDL(t *testing.T) {
 				},
 				},
 			},
-			want:    "type  table1 { \n\tage: Float        \n\tcol2: ID @primary @size(value: 50)      \n\tcol3: Integer @primary(autoIncrement:true,order:2)      \n\tcol4: Integer @primary(order:1)      \n\tcol5: Integer @primary      \n\tcreatedAt: DateTime  @createdAt      \n\tcustomer_id: ID!  @size(value: 50)       @foreign(table: customer, field: id ,onDelete: cascade)\n\tfirst_name: ID!  @size(value: 50)    @index(group: \"user_name\", sort: \"asc\", order: 1)   \n\tname: ID!  @size(value: 50)   @unique(group: \"user_name\", order: 1)     \n\torder_dates: DateTime       @link(table: order, from: id, to: customer_id, field: order_date) \n\trole: ID!  @size(value: 50)     @default(value: user)  \n\tspec: JSON        \n\tupdatedAt: DateTime   @updatedAt     \n}",
+			want:    "type  table1 { \n\tage: Float      \n\tamount: BigInteger        \n\tcol2: ID @primary @size(value: 50)      \n\tcol3: Integer @primary(autoIncrement:true,order:2)      \n\tcol4: Integer @primary(order:1)      \n\tcol5: Integer @primary      \n\tcoolDownInterval: SmallInteger      \n\tcreatedAt: DateTime  @createdAt      \n\tcustomer_id: ID!  @size(value: 50)       @foreign(table: customer, field: id ,onDelete: cascade)\n\tfirst_name: ID!  @size(value: 50)    @index(group: \"user_name\", sort: \"asc\", order: 1)   \n\tname: ID!  @size(value: 50)   @unique(group: \"user_name\", order: 1)     \n\torder_dates: DateTime       @link(table: order, from: id, to: customer_id, field: order_date) \n\trole: ID!  @size(value: 50)     @default(value: user)  \n\tspec: JSON        \n\tupdatedAt: DateTime   @updatedAt     \n}",
 			wantErr: false,
 		},
 	}
