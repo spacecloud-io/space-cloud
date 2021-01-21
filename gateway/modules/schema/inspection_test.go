@@ -27,13 +27,13 @@ func Test_generateInspection(t *testing.T) {
 	var checkColumnType = []testGenerateInspection{
 		// Mysql
 		{
-			name: "MySQL field col1 with type ID",
+			name: "MySQL field col1 with type Varchar",
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "YES"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "YES"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeID}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeVarChar}}},
 			wantErr: false,
 		},
 		{
@@ -51,7 +51,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "YES"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "YES"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeBoolean}}},
 			wantErr: false,
@@ -101,9 +101,29 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "float", FieldNull: "YES", NumericPrecision: 10, NumericScale: 5}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeFloat}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type double",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "YES", NumericPrecision: 10, NumericScale: 5}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeFloat}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type decimal",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "YES", NumericPrecision: 10, NumericScale: 5}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeDecimal, Args: &model.FieldArgs{Precision: 10, Scale: 5}}}},
 			wantErr: false,
 		},
 		{
@@ -137,13 +157,13 @@ func Test_generateInspection(t *testing.T) {
 		},
 		// Postgres
 		{
-			name: "Postgres field col1 with type ID",
+			name: "Postgres field col1 with type Varchar",
 			args: args{
 				dbType: "postgres",
 				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "character varying", FieldNull: "YES"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeID}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeVarChar}}},
 			wantErr: false,
 		},
 		{
@@ -201,9 +221,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "postgres",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "YES", NumericPrecision: 10, NumericScale: 5}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double precision", FieldNull: "YES", NumericPrecision: 10, NumericScale: 5}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeFloat}}},
 			wantErr: false,
 		},
 		{
@@ -221,7 +241,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "postgres",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "datetime", FieldNull: "YES"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "timestamp without time zone", FieldNull: "YES"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeDateTime}}},
 			wantErr: false,
@@ -237,13 +257,13 @@ func Test_generateInspection(t *testing.T) {
 		},
 		// 	Sql server
 		{
-			name: "SQL-Server field col1 with type ID",
+			name: "SQL-Server field col1 with type varchar",
 			args: args{
 				dbType: "sqlserver",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "YES"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "YES"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeID}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeVarChar}}},
 			wantErr: false,
 		},
 		{
@@ -261,7 +281,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "sqlserver",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "YES"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "YES"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeBoolean}}},
 			wantErr: false,
@@ -303,7 +323,7 @@ func Test_generateInspection(t *testing.T) {
 				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "YES", NumericPrecision: 10, NumericScale: 5}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeDecimal, Args: &model.FieldArgs{Precision: 10, Scale: 5}}}},
 			wantErr: false,
 		},
 		{
@@ -340,13 +360,13 @@ func Test_generateInspection(t *testing.T) {
 	var checkColumnTypeWithNotNull = []testGenerateInspection{
 		// Mysql
 		{
-			name: "MySQL field col1 which is not null with type ID ",
+			name: "MySQL field col1 which is not null with type Varchar ",
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar}}},
 			wantErr: false,
 		},
 		{
@@ -364,7 +384,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeBoolean}}},
 			wantErr: false,
@@ -414,9 +434,29 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "float", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 which is not null with type double ",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 which is not null with type decimal ",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeDecimal, Args: &model.FieldArgs{Precision: 10, Scale: 5}}}},
 			wantErr: false,
 		},
 		{
@@ -441,13 +481,13 @@ func Test_generateInspection(t *testing.T) {
 		},
 		// Postgres
 		{
-			name: "Postgres field col1 which is not null with type ID ",
+			name: "Postgres field col1 which is not null with type Varchar ",
 			args: args{
 				dbType: string(model.Postgres),
 				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "character varying", FieldNull: "NO"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar}}},
 			wantErr: false,
 		},
 		{
@@ -505,9 +545,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: string(model.Postgres),
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double precision", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat}}},
 			wantErr: false,
 		},
 		{
@@ -515,7 +555,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: string(model.Postgres),
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "datetime", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "timestamp without time zone", FieldNull: "NO"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeDateTime}}},
 			wantErr: false,
@@ -532,13 +572,13 @@ func Test_generateInspection(t *testing.T) {
 		},
 		// SQL server
 		{
-			name: "SQL-server field col1 which is not null with type ID ",
+			name: "SQL-server field col1 which is not null with type Varchar ",
 			args: args{
 				dbType: string(model.SQLServer),
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar}}},
 			wantErr: false,
 		},
 		{
@@ -556,7 +596,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: string(model.SQLServer),
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeBoolean}}},
 			wantErr: false,
@@ -598,7 +638,7 @@ func Test_generateInspection(t *testing.T) {
 				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeDecimal, Args: &model.FieldArgs{Precision: 10, Scale: 5}}}},
 			wantErr: false,
 		},
 		{
@@ -626,13 +666,13 @@ func Test_generateInspection(t *testing.T) {
 	var defaultTestCases = []testGenerateInspection{
 		// Mysql
 		{
-			name: "MySQL field col1 which is not null with type ID having default value INDIA",
+			name: "MySQL field col1 which is not null with type varchar having default value INDIA",
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO", FieldDefault: "INDIA", AutoIncrement: "false"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO", FieldDefault: "INDIA", AutoIncrement: "false"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeID, Default: "\"INDIA\""}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeVarChar, Default: "\"INDIA\""}}},
 			wantErr: false,
 		},
 		{
@@ -650,7 +690,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO", FieldDefault: "true", AutoIncrement: "false"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO", FieldDefault: "true", AutoIncrement: "false"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeBoolean, Default: "true"}}},
 			wantErr: false,
@@ -700,9 +740,29 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "float", FieldNull: "NO", FieldDefault: "9.8", AutoIncrement: "false", NumericPrecision: 10, NumericScale: 5}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeFloat, Default: "9.8"}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 which is not null with type double having default value 9.8",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", FieldDefault: "9.8", AutoIncrement: "false", NumericPrecision: 10, NumericScale: 5}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeFloat, Default: "9.8"}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 which is not null with type decimal having default value 9.8",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", FieldDefault: "9.8", AutoIncrement: "false", NumericPrecision: 10, NumericScale: 5}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}, Default: "9.8"}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeDecimal, Args: &model.FieldArgs{Precision: 10, Scale: 5}, Default: "9.8"}}},
 			wantErr: false,
 		},
 		{
@@ -733,7 +793,7 @@ func Test_generateInspection(t *testing.T) {
 				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "character varying", FieldNull: "NO", FieldDefault: "INDIA", AutoIncrement: "false"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID, IsDefault: true, Default: "\"INDIA\""}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IsDefault: true, Default: "\"INDIA\""}}},
 			wantErr: false,
 		},
 		{
@@ -781,7 +841,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "postgres",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", FieldDefault: "9.8", AutoIncrement: "false"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double precision", FieldNull: "NO", FieldDefault: "9.8", AutoIncrement: "false"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IsDefault: true, Default: "9.8"}}},
 			wantErr: false,
@@ -801,7 +861,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "postgres",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "timestamp", FieldNull: "NO", FieldDefault: "2020-05-30T00:42:05+00:00", AutoIncrement: "false"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "timestamp without time zone", FieldNull: "NO", FieldDefault: "2020-05-30T00:42:05+00:00", AutoIncrement: "false"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeDateTime, IsDefault: true, Default: "\"2020-05-30T00:42:05+00:00\""}}},
 			wantErr: false,
@@ -827,13 +887,13 @@ func Test_generateInspection(t *testing.T) {
 		},
 		// sql server
 		{
-			name: "SQL-Server field col1 which is not null with type ID having default value INDIA",
+			name: "SQL-Server field col1 which is not null with type varchar having default value INDIA",
 			args: args{
 				dbType: "sqlserver",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO", FieldDefault: "INDIA", AutoIncrement: "false"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO", FieldDefault: "INDIA", AutoIncrement: "false"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeID, Default: "\"INDIA\""}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeVarChar, Default: "\"INDIA\""}}},
 			wantErr: false,
 		},
 		{
@@ -841,7 +901,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "sqlserver",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(-1)", FieldNull: "NO", FieldDefault: "INDIA", AutoIncrement: "false"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(-1)", FieldNull: "NO", FieldDefault: "INDIA", AutoIncrement: "false", VarcharSize: -1}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeString, Default: "\"INDIA\""}}},
 			wantErr: false,
@@ -851,7 +911,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "sqlserver",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO", FieldDefault: "1", AutoIncrement: "false"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO", FieldDefault: "true", AutoIncrement: "false"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeBoolean, Default: "true"}}},
 			wantErr: false,
@@ -861,7 +921,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "sqlserver",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO", FieldDefault: "0", AutoIncrement: "false"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO", FieldDefault: "false", AutoIncrement: "false"}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeBoolean, Default: "false"}}},
 			wantErr: false,
@@ -903,7 +963,7 @@ func Test_generateInspection(t *testing.T) {
 				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", FieldDefault: "9.8", AutoIncrement: "false"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeFloat, Default: "9.8"}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeDecimal, Default: "9.8"}}},
 			wantErr: false,
 		},
 		{
@@ -918,15 +978,72 @@ func Test_generateInspection(t *testing.T) {
 		},
 	}
 
+	var autoIncrementTestCases = []testGenerateInspection{
+		// Mysql
+		{
+			name: "MySQL field col1 with type serial(bigInteger)",
+			args: args{
+				dbType:    "mysql",
+				col:       "table1",
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "bigint", AutoIncrement: "true", FieldNull: "YES"}},
+				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: "mysql_column1", Order: 1, Sort: "asc", IsUnique: true, IsPrimary: false}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", Kind: model.TypeBigInteger, IsAutoIncrement: true, IndexInfo: []*model.TableProperties{{Order: 1, Sort: "asc", IsUnique: true, ConstraintName: "mysql_column1", Group: "mysql_column1", Field: "column1"}}}}},
+			wantErr: false,
+		},
+		// Postgres
+		{
+			name: "Postgres field col1 with type serial",
+			args: args{
+				dbType: "postgres",
+				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "serial", AutoIncrement: "true", FieldNull: "YES"}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{IsAutoIncrement: true, FieldName: "column1", Kind: model.TypeInteger}}},
+			wantErr: false,
+		},
+		{
+			name: "Postgres field col1 with type smallserial",
+			args: args{
+				dbType: "postgres",
+				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "smallserial", AutoIncrement: "true", FieldNull: "YES"}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{IsAutoIncrement: true, FieldName: "column1", Kind: model.TypeSmallInteger}}},
+			wantErr: false,
+		},
+		{
+			name: "Postgres field col1 with type bigserial",
+			args: args{
+				dbType: "postgres",
+				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "bigserial", AutoIncrement: "true", FieldNull: "YES"}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{IsAutoIncrement: true, FieldName: "column1", Kind: model.TypeBigInteger}}},
+			wantErr: false,
+		},
+		// 	SQL server
+		{
+			name: "SQL server field col1 with type int",
+			args: args{
+				dbType: "sqlserver",
+				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "int", AutoIncrement: "true", FieldNull: "YES"}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{IsAutoIncrement: true, FieldName: "column1", Kind: model.TypeInteger}}},
+			wantErr: false,
+		},
+	}
+
 	var foreignKeyTestCases = []testGenerateInspection{
 		{
-			name: "MySQL field col1 with type ID which is not null having foreign key constraint created through or not from space cloud",
+			name: "MySQL field col1 with type varchar which is not null having foreign key constraint created through or not from space cloud",
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: helpers.GetConstraintName("table1", "column1"), DeleteRule: "NO_ACTION"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO", TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: helpers.GetConstraintName("table1", "column1"), DeleteRule: "NO_ACTION"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID, IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2", ConstraintName: helpers.GetConstraintName("table1", "column1"), OnDelete: "NO_ACTION"}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2", ConstraintName: helpers.GetConstraintName("table1", "column1"), OnDelete: "NO_ACTION"}}}},
 			wantErr: false,
 		},
 		{
@@ -954,9 +1071,19 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5, TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: helpers.GetConstraintName("table1", "column1"), DeleteRule: "NO_ACTION"}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: helpers.GetConstraintName("table1", "column1"), OnDelete: "NO_ACTION", Table: "table2"}}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type decimal which is not null having foreign key constraint created through or not from space cloud",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5, TableName: "table1", RefTableName: "table2", RefColumnName: "col2", ConstraintName: helpers.GetConstraintName("table1", "column1"), DeleteRule: "NO_ACTION"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: helpers.GetConstraintName("table1", "column1"), OnDelete: "NO_ACTION", Table: "table2"}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeDecimal, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IsForeign: true, JointTable: &model.TableProperties{To: "col2", ConstraintName: helpers.GetConstraintName("table1", "column1"), OnDelete: "NO_ACTION", Table: "table2"}}}},
 			wantErr: false,
 		},
 		{
@@ -983,14 +1110,14 @@ func Test_generateInspection(t *testing.T) {
 
 	var uniqueKeyTestCases = []testGenerateInspection{
 		{
-			name: "MySQL field col1 with type ID which is not null having single unique index constraint created through space cloud",
+			name: "MySQL field col1 with type Varchar which is not null having single unique index constraint created through space cloud",
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: true}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
 			wantErr: false,
 		},
 		{
@@ -1020,10 +1147,21 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: true}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Args: &model.FieldArgs{Precision: 10, Scale: 5}, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type decimal which is not null having single unique index constraint created through space cloud",
+			args: args{
+				dbType:    "mysql",
+				col:       "table1",
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: true}},
+			},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
 			wantErr: false,
 		},
 		{
@@ -1031,7 +1169,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO"}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: true}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeBoolean, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
@@ -1060,19 +1198,19 @@ func Test_generateInspection(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "MySQL field col1 with type ID, col2 with type Integer which is not null having multiple unique index constraint created through space cloud",
+			name: "MySQL field col1 with type Varchar, col2 with type Integer which is not null having multiple unique index constraint created through space cloud",
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "varchar", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: true},
 					{TableName: "table1", ColumnName: "column2", IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: true},
 				},
 			},
 			want: model.Collection{"table1": model.Fields{
-				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
-				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column2", IsUnique: true, Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
+				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
+				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column2", IsUnique: true, Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
 			}},
 			wantErr: false,
 		},
@@ -1115,15 +1253,15 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}, {ColumnName: "column2", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}, {ColumnName: "column2", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: true},
 					{TableName: "table1", ColumnName: "column2", IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: true},
 				},
 			},
 			want: model.Collection{"table1": model.Fields{
-				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Args: &model.FieldArgs{Precision: 10, Scale: 5}, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
-				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Args: &model.FieldArgs{Precision: 10, Scale: 5}, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column2", IsUnique: true, Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
+				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
+				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column2", IsUnique: true, Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
 			}},
 			wantErr: false,
 		},
@@ -1132,7 +1270,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "boolean", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "tinyint", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: true},
 					{TableName: "table1", ColumnName: "column2", IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: true},
@@ -1183,10 +1321,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: true}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}}},
 			wantErr: false,
 		},
 		{
@@ -1216,10 +1354,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: true}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}}},
 			wantErr: false,
 		},
 		{
@@ -1227,7 +1365,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO"}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: true}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeBoolean, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}}},
@@ -1260,15 +1398,15 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "varchar", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: true},
 					{TableName: "table1", ColumnName: "column2", IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: true},
 				},
 			},
 			want: model.Collection{"table1": model.Fields{
-				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
-				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column2", IsUnique: true, Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
+				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
+				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column2", IsUnique: true, Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
 			}},
 			wantErr: false,
 		},
@@ -1311,6 +1449,23 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}, {ColumnName: "column2", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+				indexKeys: []model.IndexType{
+					{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: true},
+					{TableName: "table1", ColumnName: "column2", IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: true},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
+				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column2", IsUnique: true, Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Decimal, col2 with type Float which is not null having multiple unique index constraint not created through space cloud",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}, {ColumnName: "column2", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: true},
@@ -1318,8 +1473,8 @@ func Test_generateInspection(t *testing.T) {
 				},
 			},
 			want: model.Collection{"table1": model.Fields{
-				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
-				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IndexInfo: []*model.TableProperties{{Field: "column2", IsUnique: true, Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
+				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeDecimal, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IndexInfo: []*model.TableProperties{{Field: "column1", IsUnique: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
+				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeDecimal, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IndexInfo: []*model.TableProperties{{Field: "column2", IsUnique: true, Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
 			}},
 			wantErr: false,
 		},
@@ -1328,7 +1483,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "boolean", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "tinyint", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: true},
 					{TableName: "table1", ColumnName: "column2", IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: true},
@@ -1382,10 +1537,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: false}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
 			wantErr: false,
 		},
 		{
@@ -1415,10 +1570,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: false}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Args: &model.FieldArgs{Precision: 10, Scale: 5}, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
 			wantErr: false,
 		},
 		{
@@ -1426,7 +1581,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO"}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: false}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeBoolean, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}}},
@@ -1459,15 +1614,15 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "varchar", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: false},
 					{TableName: "table1", ColumnName: "column2", IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: false},
 				},
 			},
 			want: model.Collection{"table1": model.Fields{
-				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
-				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column2", IsIndex: true, Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
+				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
+				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column2", IsIndex: true, Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
 			}},
 			wantErr: false,
 		},
@@ -1510,6 +1665,23 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}, {ColumnName: "column2", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+				indexKeys: []model.IndexType{
+					{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: false},
+					{TableName: "table1", ColumnName: "column2", IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: false},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
+				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column2", IsIndex: true, Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Decimal, col2 with type Float which is not null having multiple index constraint created through space cloud",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}, {ColumnName: "column2", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: false},
@@ -1517,8 +1689,8 @@ func Test_generateInspection(t *testing.T) {
 				},
 			},
 			want: model.Collection{"table1": model.Fields{
-				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Args: &model.FieldArgs{Precision: 10, Scale: 5}, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
-				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Args: &model.FieldArgs{Precision: 10, Scale: 5}, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column2", IsIndex: true, Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
+				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Args: &model.FieldArgs{Precision: 10, Scale: 5}, Kind: model.TypeDecimal, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
+				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Args: &model.FieldArgs{Precision: 10, Scale: 5}, Kind: model.TypeDecimal, IndexInfo: []*model.TableProperties{{Field: "column2", IsIndex: true, Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}},
 			}},
 			wantErr: false,
 		},
@@ -1527,7 +1699,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "boolean", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "tinyint", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: false},
 					{TableName: "table1", ColumnName: "column2", IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: false},
@@ -1574,14 +1746,14 @@ func Test_generateInspection(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "MySQL field col1 with type ID which is not null having single index constraint not created through space cloud",
+			name: "MySQL field col1 with type Varchar which is not null having single index constraint not created through space cloud",
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: false}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}}},
 			wantErr: false,
 		},
 		{
@@ -1611,10 +1783,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: false}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}}},
 			wantErr: false,
 		},
 		{
@@ -1622,7 +1794,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:    "mysql",
 				col:       "table1",
-				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO"}},
+				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: false}},
 			},
 			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeBoolean, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}}},
@@ -1655,15 +1827,15 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "varchar", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: false},
 					{TableName: "table1", ColumnName: "column2", IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: false},
 				},
 			},
 			want: model.Collection{"table1": model.Fields{
-				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
-				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeID, IndexInfo: []*model.TableProperties{{Field: "column2", IsIndex: true, Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
+				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
+				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IndexInfo: []*model.TableProperties{{Field: "column2", IsIndex: true, Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
 			}},
 			wantErr: false,
 		},
@@ -1706,15 +1878,15 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}, {ColumnName: "column2", FieldType: "decimal", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}, {ColumnName: "column2", FieldType: "double", FieldNull: "NO", NumericPrecision: 10, NumericScale: 5}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: false},
 					{TableName: "table1", ColumnName: "column2", IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: false},
 				},
 			},
 			want: model.Collection{"table1": model.Fields{
-				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
-				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeFloat, Args: &model.FieldArgs{Precision: 10, Scale: 5}, IndexInfo: []*model.TableProperties{{Field: "column2", IsIndex: true, Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
+				"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column1", IsIndex: true, Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
+				"column2": &model.FieldType{FieldName: "column2", IsFieldTypeRequired: true, Kind: model.TypeFloat, IndexInfo: []*model.TableProperties{{Field: "column2", IsIndex: true, Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}},
 			}},
 			wantErr: false,
 		},
@@ -1723,7 +1895,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "boolean", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "boolean", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "tinyint", FieldNull: "NO"}, {ColumnName: "column2", FieldType: "tinyint", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{
 					{TableName: "table1", ColumnName: "column1", IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: false},
 					{TableName: "table1", ColumnName: "column2", IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: false},
@@ -1777,9 +1949,9 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType: "mysql",
 				col:    "table1",
-				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(50)", FieldNull: "NO"}},
+				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar", FieldNull: "NO"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeID}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar}}},
 			wantErr: false,
 		},
 	}
@@ -1793,7 +1965,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:    []model.InspectorFieldType{{ColumnName: "column1", FieldType: "varchar(5550)", FieldNull: "NO"}},
 				indexKeys: []model.IndexType{{IsPrimary: true, ColumnName: "column1", Order: 1}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true, PrimaryKeyInfo: &model.TableProperties{Order: 1}}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, Kind: model.TypeVarChar, IsPrimary: true, PrimaryKeyInfo: &model.TableProperties{Order: 1}}}},
 			wantErr: false,
 		},
 	}
@@ -1813,6 +1985,7 @@ func Test_generateInspection(t *testing.T) {
 	testCases = append(testCases, checkColumnType...)
 	testCases = append(testCases, checkColumnTypeWithNotNull...)
 	testCases = append(testCases, defaultTestCases...)
+	testCases = append(testCases, autoIncrementTestCases...)
 	testCases = append(testCases, primaryKeyTestCases...)
 	testCases = append(testCases, foreignKeyTestCases...)
 	testCases = append(testCases, uniqueKeyTestCases...)

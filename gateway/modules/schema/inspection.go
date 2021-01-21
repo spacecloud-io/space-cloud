@@ -2,16 +2,18 @@ package schema
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	schemaHelpers "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 )
 
 // SchemaInspection returns the schema in schema definition language (SDL)
-func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
+func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col string, realSchema model.Collection) (string, error) {
 	dbType, err := s.crud.GetDBType(dbAlias)
 	if err != nil {
 		return "", err
@@ -21,7 +23,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 		return "", nil
 	}
 
-	inspectionCollection, err := s.Inspector(ctx, dbAlias, dbType, project, col)
+	inspectionCollection, err := s.Inspector(ctx, dbAlias, dbType, project, col, realSchema)
 	if err != nil {
 		return "", err
 	}
@@ -31,13 +33,41 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 }
 
 // Inspector generates schema
-func (s *Schema) Inspector(ctx context.Context, dbAlias, dbType, project, col string) (model.Collection, error) {
+func (s *Schema) Inspector(ctx context.Context, dbAlias, dbType, project, col string, realSchema model.Collection) (model.Collection, error) {
 	fields, indexes, err := s.crud.DescribeTable(ctx, dbAlias, col)
 
 	if err != nil {
 		return nil, err
 	}
-	return generateInspection(dbType, col, fields, indexes)
+	currentSchema, err := generateInspection(dbType, col, fields, indexes)
+	if err != nil {
+		return nil, err
+	}
+	currentTableFields, ok := currentSchema[col]
+	if !ok {
+		return currentSchema, nil
+	}
+
+	for columnName, realColumnInfo := range realSchema[col] {
+		if realColumnInfo.Kind == model.TypeID {
+			// TODO: Do this only if varchar ?
+			currentTableInfo, ok := currentTableFields[columnName]
+			if ok {
+				currentTableInfo.Kind = model.TypeID
+			}
+		}
+		if realColumnInfo.IsLinked {
+			currentTableFields[columnName] = realColumnInfo
+		}
+		if realColumnInfo.IsCreatedAt {
+			currentTableFields[columnName].IsCreatedAt = true
+		}
+		if realColumnInfo.IsUpdatedAt {
+			currentTableFields[columnName].IsUpdatedAt = true
+		}
+	}
+
+	return currentSchema, nil
 }
 
 func generateInspection(dbType, col string, fields []model.InspectorFieldType, indexes []model.IndexType) (model.Collection, error) {
@@ -55,15 +85,15 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, i
 		// field type
 		switch model.DBType(dbType) {
 		case model.Postgres:
-			if err := inspectionPostgresCheckFieldType(field, &fieldDetails); err != nil {
+			if err := inspectionPostgresCheckFieldType(col, field, &fieldDetails); err != nil {
 				return nil, err
 			}
 		case model.MySQL:
-			if err := inspectionMySQLCheckFieldType(field, &fieldDetails); err != nil {
+			if err := inspectionMySQLCheckFieldType(col, field, &fieldDetails); err != nil {
 				return nil, err
 			}
 		case model.SQLServer:
-			if err := inspectionSQLServerCheckFieldType(field, &fieldDetails); err != nil {
+			if err := inspectionSQLServerCheckFieldType(col, field, &fieldDetails); err != nil {
 				return nil, err
 			}
 		}
@@ -71,27 +101,13 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, i
 		// default key
 		if field.FieldDefault != "" {
 			fieldDetails.IsDefault = true
-			if model.DBType(dbType) == model.SQLServer {
-				if fieldDetails.Kind == model.TypeBoolean {
-					if field.FieldDefault == "1" {
-						field.FieldDefault = "true"
-					} else {
-						field.FieldDefault = "false"
-					}
-				}
-			}
 
 			// add string between quotes
-			if fieldDetails.Kind == model.TypeString || fieldDetails.Kind == model.TypeID || fieldDetails.Kind == model.TypeDateTime {
+			switch fieldDetails.Kind {
+			case model.TypeString, model.TypeVarChar, model.TypeChar, model.TypeID, model.TypeDateTime, model.TypeDate, model.TypeTime:
 				field.FieldDefault = fmt.Sprintf("\"%s\"", field.FieldDefault)
 			}
 			fieldDetails.Default = field.FieldDefault
-		}
-
-		if strings.HasPrefix(field.FieldDefault, "nextval") {
-			// override the default value, this is a special case if a postgres column has a auto increment value, the default value that database returns is -> ( nextval(auto_increment_test_auto_increment_test_seq )
-			fieldDetails.Default = ""
-			fieldDetails.IsDefault = false
 		}
 
 		// check foreignKey & identify if relation exists
@@ -100,20 +116,22 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, i
 			fieldDetails.JointTable = &model.TableProperties{Table: field.RefTableName, To: field.RefColumnName, OnDelete: field.DeleteRule, ConstraintName: field.ConstraintName}
 		}
 
+		if field.AutoIncrement == "true" {
+			fieldDetails.IsAutoIncrement = true
+			if model.DBType(dbType) == model.Postgres && strings.HasPrefix(field.FieldDefault, "nextval") {
+				// override the default value, this is a special case if a postgres column has a auto increment value, the default value that database returns is -> ( nextval(auto_increment_test_auto_increment_test_seq )
+				fieldDetails.Default = ""
+				fieldDetails.IsDefault = false
+			}
+		}
+
 		for _, indexValue := range indexes {
 			if indexValue.ColumnName == field.ColumnName {
 				temp := &model.TableProperties{Order: indexValue.Order, Sort: indexValue.Sort, ConstraintName: indexValue.IndexName}
 				if indexValue.IsPrimary {
 					fieldDetails.IsPrimary = true
 					fieldDetails.PrimaryKeyInfo = &model.TableProperties{
-						Order:           indexValue.Order,
-						IsAutoIncrement: field.AutoIncrement == "true",
-					}
-					if model.DBType(dbType) == model.Postgres && strings.HasPrefix(field.FieldDefault, "nextval") {
-						// override the default value, this is a special case if a postgres column has a auto increment value, the default value that database returns is -> ( nextval(auto_increment_test_auto_increment_test_seq )
-						fieldDetails.Default = ""
-						fieldDetails.IsDefault = false
-						fieldDetails.PrimaryKeyInfo.IsAutoIncrement = true
+						Order: indexValue.Order,
 					}
 					continue
 				} else if indexValue.IsUnique {
@@ -149,18 +167,10 @@ func getGroupNameFromIndexName(indexName string) string {
 	return strings.Split(indexName, "__")[2]
 }
 
-func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails *model.FieldType) error {
-	if field.FieldType == "varchar(-1)" || field.FieldType == "varchar(max)" {
-		fieldDetails.Kind = model.TypeString
-		return nil
-	}
-
+func inspectionMySQLCheckFieldType(col string, field model.InspectorFieldType, fieldDetails *model.FieldType) error {
 	result := strings.Split(field.FieldType, "(")
 
 	switch result[0] {
-	case "varchar":
-		fieldDetails.Kind = model.TypeID
-		fieldDetails.TypeIDSize = field.VarcharSize
 	case "date":
 		fieldDetails.Kind = model.TypeDate
 	case "time":
@@ -170,7 +180,13 @@ func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails 
 				Precision: field.DateTimePrecision,
 			}
 		}
-	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob":
+	case "varchar":
+		fieldDetails.Kind = model.TypeVarChar
+		fieldDetails.TypeIDSize = field.VarcharSize
+	case "char":
+		fieldDetails.Kind = model.TypeChar
+		fieldDetails.TypeIDSize = field.VarcharSize
+	case "tinytext", "text", "mediumtext", "longtext":
 		fieldDetails.Kind = model.TypeString
 	case "smallint":
 		fieldDetails.Kind = model.TypeSmallInteger
@@ -180,42 +196,32 @@ func inspectionMySQLCheckFieldType(field model.InspectorFieldType, fieldDetails 
 		fieldDetails.Kind = model.TypeInteger
 	case "float", "double":
 		fieldDetails.Kind = model.TypeFloat
-	case "numeric", "decimal":
-		fieldDetails.Kind = model.TypeFloat
+	case "decimal":
+		fieldDetails.Kind = model.TypeDecimal
 		if field.NumericPrecision > 0 || field.NumericScale > 0 {
 			fieldDetails.Args = &model.FieldArgs{
 				Precision: field.NumericPrecision,
 				Scale:     field.NumericScale,
 			}
 		}
-	case "datetime", "timestamp", "datetimeoffset":
+	case "datetime", "timestamp":
 		fieldDetails.Kind = model.TypeDateTime
 		if field.DateTimePrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
 				Precision: field.DateTimePrecision,
 			}
 		}
-	case "tinyint", "boolean", "bit":
+	case "bit", "tinyint":
 		fieldDetails.Kind = model.TypeBoolean
 	case "json":
 		fieldDetails.Kind = model.TypeJSON
 	default:
-		return errors.New("Inspection type check : no match found got " + result[0])
+		return helpers.Logger.LogError("", fmt.Sprintf("Cannot track/inspect table (%s)", col), fmt.Errorf("table contains a column (%s) with type (%s) which is not supported by space cloud", fieldDetails.FieldName, result), nil)
 	}
 	return nil
 }
 
-func inspectionSQLServerCheckFieldType(field model.InspectorFieldType, fieldDetails *model.FieldType) error {
-	if field.FieldType == "varchar(-1)" || field.FieldType == "varchar(max)" {
-		fieldDetails.Kind = model.TypeString
-		return nil
-	}
-	if strings.HasPrefix(field.FieldType, "varchar(") {
-		fieldDetails.Kind = model.TypeID
-		fieldDetails.TypeIDSize = field.VarcharSize
-		return nil
-	}
-
+func inspectionSQLServerCheckFieldType(col string, field model.InspectorFieldType, fieldDetails *model.FieldType) error {
 	result := strings.Split(field.FieldType, "(")
 
 	switch result[0] {
@@ -228,7 +234,17 @@ func inspectionSQLServerCheckFieldType(field model.InspectorFieldType, fieldDeta
 				Precision: field.DateTimePrecision,
 			}
 		}
-	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "nvarchar":
+	case "varchar", "nvarchar":
+		if field.VarcharSize == -1 {
+			fieldDetails.Kind = model.TypeString
+			return nil
+		}
+		fieldDetails.Kind = model.TypeVarChar
+		fieldDetails.TypeIDSize = field.VarcharSize
+	case "char", "nchar":
+		fieldDetails.Kind = model.TypeChar
+		fieldDetails.TypeIDSize = field.VarcharSize
+	case "text", "ntext":
 		fieldDetails.Kind = model.TypeString
 	case "smallint":
 		fieldDetails.Kind = model.TypeSmallInteger
@@ -237,101 +253,115 @@ func inspectionSQLServerCheckFieldType(field model.InspectorFieldType, fieldDeta
 	case "int":
 		fieldDetails.Kind = model.TypeInteger
 	case "numeric", "decimal":
-		fieldDetails.Kind = model.TypeFloat
+		fieldDetails.Kind = model.TypeDecimal
 		if field.NumericPrecision > 0 || field.NumericScale > 0 {
 			fieldDetails.Args = &model.FieldArgs{
 				Precision: field.NumericPrecision,
 				Scale:     field.NumericScale,
 			}
 		}
-	case "float", "double":
+	case "float", "real":
 		fieldDetails.Kind = model.TypeFloat
-	case "datetime", "timestamp", "datetimeoffset":
+	case "datetime", "datetime2", "smalldatetime", "timestamp", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
-	case "tinyint", "boolean", "bit":
+		if field.DateTimePrecision > 0 {
+			fieldDetails.Args = &model.FieldArgs{
+				Precision: field.DateTimePrecision,
+			}
+		}
+	case "bit", "tinyint":
 		fieldDetails.Kind = model.TypeBoolean
 	case "json":
 		fieldDetails.Kind = model.TypeJSON
 	default:
-		return errors.New("Inspection type check : no match found got " + result[0])
+		return helpers.Logger.LogError("", fmt.Sprintf("Cannot track/inspect table (%s)", col), fmt.Errorf("table contains a column (%s) with type (%s) which is not supported by space cloud", fieldDetails.FieldName, result), nil)
 	}
 	return nil
 }
 
-func inspectionPostgresCheckFieldType(field model.InspectorFieldType, fieldDetails *model.FieldType) error {
+func inspectionPostgresCheckFieldType(col string, field model.InspectorFieldType, fieldDetails *model.FieldType) error {
 	result := strings.Split(field.FieldType, "(")
 
 	switch result[0] {
-	case "character varying":
-		fieldDetails.Kind = model.TypeID
-		fieldDetails.TypeIDSize = field.VarcharSize
 	case "uuid":
 		fieldDetails.Kind = model.TypeUUID
 	case "date":
 		fieldDetails.Kind = model.TypeDate
-	case "time", "time without time zone":
+	case "time without time zone":
 		fieldDetails.Kind = model.TypeTime
 		if field.DateTimePrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
 				Precision: field.DateTimePrecision,
 			}
 		}
-	case "character", "bit", "text", "name":
+	case "character varying":
+		fieldDetails.Kind = model.TypeVarChar
+		fieldDetails.TypeIDSize = field.VarcharSize
+	case "character":
+		fieldDetails.Kind = model.TypeChar
+		fieldDetails.TypeIDSize = field.VarcharSize
+	case "text", "name":
 		fieldDetails.Kind = model.TypeString
-	case "integer", "bigserial", "smallserial", "serial":
+	case "integer", "serial":
 		fieldDetails.Kind = model.TypeInteger
-	case "smallint":
+	case "smallint", "smallserial":
 		fieldDetails.Kind = model.TypeSmallInteger
-	case "bigint":
+	case "bigint", "bigserial":
 		fieldDetails.Kind = model.TypeBigInteger
-	case "numeric", "decimal":
-		fieldDetails.Kind = model.TypeFloat
+	case "numeric":
+		fieldDetails.Kind = model.TypeDecimal
 		if field.NumericPrecision > 0 || field.NumericScale > 0 {
 			fieldDetails.Args = &model.FieldArgs{
 				Precision: field.NumericPrecision,
 				Scale:     field.NumericScale,
 			}
 		}
-	case "float", "double", "real", "double precision":
+	case "real", "double precision":
 		fieldDetails.Kind = model.TypeFloat
-	case "datetime", "timestamp", "interval", "datetimeoffset", "timestamp without time zone":
+	case "timestamp without time zone":
 		fieldDetails.Kind = model.TypeDateTime
+		if field.DateTimePrecision > 0 {
+			fieldDetails.Args = &model.FieldArgs{
+				Precision: field.DateTimePrecision,
+			}
+		}
 	case "boolean":
 		fieldDetails.Kind = model.TypeBoolean
 	case "jsonb", "json":
 		fieldDetails.Kind = model.TypeJSON
 	default:
-		return errors.New("Inspection type check : no match found got " + result[0])
+		return helpers.Logger.LogError("", fmt.Sprintf("Cannot track/inspect table (%s)", col), fmt.Errorf("table contains a column (%s) with type (%s) which is not supported by space cloud", fieldDetails.FieldName, result), nil)
 	}
 	return nil
 }
 
 // GetCollectionSchema returns schemas of collection aka tables for specified project & database
-func (s *Schema) GetCollectionSchema(ctx context.Context, project, dbType string) (map[string]*config.TableRule, error) {
+func (s *Schema) GetCollectionSchema(ctx context.Context, project, dbAlias string) (map[string]*config.TableRule, error) {
 
 	collections := []string{}
 	for _, dbSchema := range s.dbSchemas {
-		if dbSchema.DbAlias == dbType {
+		if dbSchema.DbAlias == dbAlias {
 			collections = append(collections, dbSchema.Table)
 			break
 		}
 	}
 
+	parsedSchema, _ := schemaHelpers.Parser(s.dbSchemas)
 	projectConfig := config.Crud{}
-	projectConfig[dbType] = &config.CrudStub{}
+	projectConfig[dbAlias] = &config.CrudStub{}
 	for _, colName := range collections {
 		if colName == "default" {
 			continue
 		}
-		schema, err := s.SchemaInspection(ctx, dbType, project, colName)
+		schema, err := s.SchemaInspection(ctx, dbAlias, project, colName, parsedSchema[dbAlias])
 		if err != nil {
 			return nil, err
 		}
 
-		if projectConfig[dbType].Collections == nil {
-			projectConfig[dbType].Collections = map[string]*config.TableRule{}
+		if projectConfig[dbAlias].Collections == nil {
+			projectConfig[dbAlias].Collections = map[string]*config.TableRule{}
 		}
-		projectConfig[dbType].Collections[colName] = &config.TableRule{Schema: schema}
+		projectConfig[dbAlias].Collections[colName] = &config.TableRule{Schema: schema}
 	}
-	return projectConfig[dbType].Collections, nil
+	return projectConfig[dbAlias].Collections, nil
 }

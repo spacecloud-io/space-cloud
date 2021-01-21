@@ -14,7 +14,6 @@ import (
 
 // GetSQLType return sql type
 func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldType) (string, error) {
-
 	switch realColumnInfo.Kind {
 	case model.TypeUUID:
 		if dbType == string(model.Postgres) {
@@ -25,29 +24,77 @@ func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldT
 		return fmt.Sprintf("time(%d)", realColumnInfo.Args.Precision), nil
 	case model.TypeDate:
 		return "date", nil
-	case model.TypeID:
-		return fmt.Sprintf("varchar(%d)", realColumnInfo.TypeIDSize), nil
-	case model.TypeString:
-		if dbType == string(model.SQLServer) {
-			return "varchar(max)", nil
+	case model.TypeChar:
+		switch dbType {
+		case string(model.Postgres):
+			if realColumnInfo.TypeIDSize == -1 {
+				return "character", nil
+			} else {
+				return fmt.Sprintf("character(%d)", realColumnInfo.TypeIDSize), nil
+			}
+		case string(model.MySQL):
+			return fmt.Sprintf("char(%d)", realColumnInfo.TypeIDSize), nil
+		case string(model.SQLServer):
+			return fmt.Sprintf("nchar(%d)", realColumnInfo.TypeIDSize), nil
 		}
-		return "text", nil
+	case model.TypeVarChar, model.TypeID:
+		switch dbType {
+		case string(model.Postgres):
+			if realColumnInfo.TypeIDSize == -1 {
+				return "character varying", nil
+			} else {
+				return fmt.Sprintf("character varying(%d)", realColumnInfo.TypeIDSize), nil
+			}
+		case string(model.MySQL):
+			return fmt.Sprintf("varchar(%d)", realColumnInfo.TypeIDSize), nil
+		case string(model.SQLServer):
+			return fmt.Sprintf("nvarchar(%d)", realColumnInfo.TypeIDSize), nil
+		}
+	case model.TypeString:
+		switch dbType {
+		case string(model.Postgres):
+			return "text", nil
+		case string(model.MySQL):
+			return "longtext", nil
+		case string(model.SQLServer):
+			return "nvarchar(max)", nil
+		}
 	case model.TypeDateTime:
 		switch dbType {
 		case string(model.MySQL):
 			return fmt.Sprintf("datetime(%d)", realColumnInfo.Args.Precision), nil
 		case string(model.SQLServer):
-			return "datetimeoffset", nil
-		default:
-			return "timestamp", nil
+			return fmt.Sprintf("datetime2(%d)", realColumnInfo.Args.Precision), nil
+		case string(model.Postgres):
+			return fmt.Sprintf("timestamp without time zone(%d)", realColumnInfo.Args.Precision), nil
 		}
 	case model.TypeBoolean:
-		if dbType == string(model.SQLServer) {
+		switch dbType {
+		case string(model.Postgres):
+			return "boolean", nil
+		case string(model.MySQL):
+			return "tinyint(1)", nil
+		case string(model.SQLServer):
 			return "bit", nil
+		default:
+			return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("json not supported for database %s", dbType), nil, nil)
 		}
-		return "boolean", nil
 	case model.TypeFloat:
-		return fmt.Sprintf("decimal(%d,%d)", realColumnInfo.Args.Precision, realColumnInfo.Args.Scale), nil
+		switch dbType {
+		case string(model.Postgres):
+			return "double precision", nil
+		case string(model.MySQL):
+			return "double", nil
+		case string(model.SQLServer):
+			return "float", nil
+		}
+	case model.TypeDecimal:
+		switch dbType {
+		case string(model.Postgres):
+			return fmt.Sprintf("numeric(%d,%d)", realColumnInfo.Args.Precision, realColumnInfo.Args.Scale), nil
+		case string(model.MySQL), string(model.SQLServer):
+			return fmt.Sprintf("decimal(%d,%d)", realColumnInfo.Args.Precision, realColumnInfo.Args.Scale), nil
+		}
 	case model.TypeInteger:
 		return "integer", nil
 	case model.TypeSmallInteger:
@@ -62,12 +109,11 @@ func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldT
 			return "json", nil
 		case string(model.SQLServer):
 			return "nvarchar(max)", nil
-		default:
-			return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("json not supported for database %s", dbType), nil, nil)
 		}
 	default:
 		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid schema type (%s) provided", realColumnInfo.Kind), fmt.Errorf("%s type not allowed", realColumnInfo.Kind), nil)
 	}
+	return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown db type provided (%s)", dbType), nil, nil)
 }
 
 func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
@@ -80,10 +126,6 @@ func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 
 	if realFieldStruct.IsPrimary && !realFieldStruct.IsFieldTypeRequired {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "primary key must be not null", nil, nil)
-	}
-
-	if realFieldStruct.IsPrimary && realFieldStruct.PrimaryKeyInfo.IsAutoIncrement && realFieldStruct.Kind != model.TypeInteger {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Primary key with auto increment is only applicable on type integer", nil, nil)
 	}
 
 	if realFieldStruct.Kind == model.TypeJSON {
@@ -330,7 +372,7 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 				continue
 			}
 			var autoIncrement string
-			if realFieldStruct.PrimaryKeyInfo.IsAutoIncrement {
+			if realFieldStruct.IsAutoIncrement {
 				switch model.DBType(dbType) {
 				case model.SQLServer:
 					autoIncrement = " IDENTITY(1,1)"
@@ -339,7 +381,16 @@ func (s *Schema) addNewTable(ctx context.Context, logicalDBName, dbType, dbAlias
 					autoIncrement = "AUTO_INCREMENT"
 
 				case model.Postgres:
-					sqlType = "bigserial"
+					switch realFieldStruct.Kind {
+					case model.TypeBigInteger:
+						sqlType = "bigserial"
+					case model.TypeSmallInteger:
+						sqlType = "smallserial"
+					case model.TypeInteger:
+						sqlType = "serial"
+					default:
+						return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot add autoIncrement constraint on non integer column (%s)", realFieldKey), nil, nil)
+					}
 				}
 			}
 			primaryKeyQuery += fmt.Sprintf("%s %s NOT NULL %s, ", realFieldKey, sqlType, autoIncrement)

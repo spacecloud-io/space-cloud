@@ -20,17 +20,18 @@ type (
 		NestedObject Fields `json:"nestedObject"`
 		IsPrimary    bool   `json:"isPrimary"`
 		// For directives
-		IsCreatedAt    bool               `json:"isCreatedAt"`
-		IsUpdatedAt    bool               `json:"isUpdatedAt"`
-		IsLinked       bool               `json:"isLinked"`
-		IsForeign      bool               `json:"isForeign"`
-		IsDefault      bool               `json:"isDefault"`
-		PrimaryKeyInfo *TableProperties   `json:"primaryKeyInfo"`
-		IndexInfo      []*TableProperties `json:"indexInfo"`
-		LinkedTable    *TableProperties   `json:"linkedTable"`
-		JointTable     *TableProperties   `json:"jointTable"`
-		Default        interface{}        `json:"default"`
-		TypeIDSize     int                `json:"size"`
+		IsCreatedAt     bool `json:"isCreatedAt"`
+		IsUpdatedAt     bool `json:"isUpdatedAt"`
+		IsLinked        bool `json:"isLinked"`
+		IsForeign       bool `json:"isForeign"`
+		IsDefault       bool `json:"isDefault"`
+		IsAutoIncrement bool
+		PrimaryKeyInfo  *TableProperties   `json:"primaryKeyInfo"`
+		IndexInfo       []*TableProperties `json:"indexInfo"`
+		LinkedTable     *TableProperties   `json:"linkedTable"`
+		JointTable      *TableProperties   `json:"jointTable"`
+		Default         interface{}        `json:"default"`
+		TypeIDSize      int                `json:"size"`
 	}
 
 	// FieldArgs are properties of the column
@@ -48,19 +49,17 @@ type (
 		// IsIndex tells us if this is an indexed column
 		IsIndex bool `json:"isIndex"`
 		// IsUnique tells us if this is an unique indexed column
-		IsUnique bool `json:"isUnique"`
-		// IsAutoIncrement if true then the primary key supports autoincrement
-		IsAutoIncrement bool
-		From            string
-		To              string
-		Table           string
-		Field           string
-		OnDelete        string
-		DBType          string
-		Group           string
-		Sort            string
-		Order           int
-		ConstraintName  string
+		IsUnique       bool `json:"isUnique"`
+		From           string
+		To             string
+		Table          string
+		Field          string
+		OnDelete       string
+		DBType         string
+		Group          string
+		Sort           string
+		Order          int
+		ConstraintName string
 	}
 )
 
@@ -77,10 +76,17 @@ const (
 	TypeSmallInteger string = "SmallInteger"
 	// TypeBigInteger is variable used for Variable of type big int
 	TypeBigInteger string = "BigInteger"
+	// TypeChar is variable used for Variable of type characters with fixed size
+	TypeChar string = "Char"
+	// TypeVarChar is variable used for Variable of type characters with variable size
+	TypeVarChar string = "Varchar"
 	// TypeString is variable used for Variable of type String
 	TypeString string = "String"
-	// TypeFloat is variable used for Variable of type Float
+	// TypeFloat is a data type used for storing fractional values without specifying the precision,
+	// the precision is set by the database
 	TypeFloat string = "Float"
+	// TypeDecimal is a data type used for storing fractional values in which the precision can be specified by the user
+	TypeDecimal string = "Decimal"
 	// TypeBoolean is variable used for Variable of type Boolean
 	TypeBoolean string = "Boolean"
 	// TypeDateTime is variable used for Variable of type DateTime
@@ -89,8 +95,8 @@ const (
 	TypeID string = "ID"
 	// TypeJSON is variable used for Variable of type Jsonb
 	TypeJSON string = "JSON"
-	// SQLTypeIDSize is variable used for specifying size of sql type ID
-	SQLTypeIDSize int = 50
+	// DefaultCharacterSize is variable used for specifying size of sql type ID
+	DefaultCharacterSize int = 100
 	// TypeObject is a string with value object
 	TypeObject string = "Object"
 	// TypeEnum is a variable type enum
@@ -103,6 +109,8 @@ const (
 	DirectiveForeign string = "foreign"
 	// DirectivePrimary is used in schema module to add primary key
 	DirectivePrimary string = "primary"
+	// DirectiveAutoIncrement is used in schema module to add primary key
+	DirectiveAutoIncrement string = "autoIncrement"
 	// DirectiveCreatedAt is used in schema module to specify the created location
 	DirectiveCreatedAt string = "createdAt"
 	// DirectiveUpdatedAt  is used in schema module to add Updated location
@@ -113,8 +121,8 @@ const (
 	DirectiveDefault string = "default"
 	// DirectiveArgs is used in schema module to specify the created location
 	DirectiveArgs string = "args"
-	// DirectiveVarcharSize denotes the maximum allowable character for field type ID
-	DirectiveVarcharSize string = "size"
+	// DirectiveStringSize denotes the maximum allowable character for field type Char, Varchar, ID
+	DirectiveStringSize string = "size"
 
 	// DefaultIndexSort specifies default order of sorting
 	DefaultIndexSort string = "asc"
@@ -122,11 +130,11 @@ const (
 	DefaultIndexOrder int = 1
 
 	// DefaultScale specifies the default scale to be used for sql column types float,date,datetime if not provided
-	DefaultScale int = 3
+	DefaultScale int = 10
 	// DefaultPrecision specifies the default precision to be used for sql column types float if not provided
-	DefaultPrecision int = 10
-	// DefaultDateTimePrecision specifies the default precision to be used for sql column types float if not provided
-	DefaultDateTimePrecision int = 3
+	DefaultPrecision int = 38
+	// DefaultDateTimePrecision specifies the default precision to be used for sql column types datetime & time
+	DefaultDateTimePrecision int = 6
 )
 
 // InspectorFieldType is the type for storing sql inspection information

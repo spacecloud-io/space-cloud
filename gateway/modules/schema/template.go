@@ -15,6 +15,8 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		// column type
 		"{{if eq $fieldValue.Kind \"Object\"}}" +
 		"{{$fieldValue.JointTable.Table}}" +
+		"{{else if and $fieldValue.IsLinked $fieldValue.IsList}}" +
+		"[{{$fieldValue.Kind}}]" +
 		"{{else}}" +
 		"{{$fieldValue.Kind}}" +
 		"{{end}}" +
@@ -34,7 +36,7 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		"{{else if $fieldValue.Args.Scale}}" +
 		"scale: {{$fieldValue.Args.Scale}}" +
 		"{{end}}" +
-		")" +
+		") " +
 		"{{end}}" +
 
 		// @primary directive
@@ -42,22 +44,28 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		"@primary" +
 		"{{end}}" +
 		"{{if $fieldValue.PrimaryKeyInfo}}" +
-		"{{if and $fieldValue.PrimaryKeyInfo.IsAutoIncrement $fieldValue.PrimaryKeyInfo.Order}}" +
-		"(autoIncrement: {{$fieldValue.PrimaryKeyInfo.IsAutoIncrement}}, order: {{$fieldValue.PrimaryKeyInfo.Order}}) " +
-		"{{else if $fieldValue.PrimaryKeyInfo.IsAutoIncrement}}" +
-		"(autoIncrement: {{$fieldValue.PrimaryKeyInfo.IsAutoIncrement}}) " +
-		"{{else if $fieldValue.PrimaryKeyInfo.Order}}" +
+		"{{if $fieldValue.PrimaryKeyInfo.Order}}" +
 		"(order: {{$fieldValue.PrimaryKeyInfo.Order}}) " +
 		"{{end}}" +
 		"{{end}}" +
 
+		// @autoIncrement directive
+		"{{if $fieldValue.IsAutoIncrement}}" +
+		"@autoIncrement " +
+		"{{end}}" +
+
 		// @size directive for type ID
-		"{{if eq $fieldValue.Kind \"ID\"}}" +
+		"{{if (or (eq $fieldValue.Kind \"Char\") (eq $fieldValue.Kind \"ID\") (eq $fieldValue.Kind \"Varchar\")) }}" +
+		"{{if eq $fieldValue.TypeIDSize -1 }}" +
+		"@size(value: \"max\") " +
+		"{{else}}" +
 		"@size(value: {{$fieldValue.TypeIDSize}}) " +
+		"{{end}}" +
 		"{{end}}" +
 		"{{if $fieldValue.IsCreatedAt}}" +
 		"@createdAt " +
 		"{{end}}" +
+
 		"{{if $fieldValue.IsUpdatedAt}}" +
 		"@updatedAt " +
 		"{{end}}" +
@@ -77,8 +85,18 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		"{{if $fieldValue.IsDefault}}" +
 		"@default(value: {{$fieldValue.Default}}) " +
 		"{{end}}" +
+
+		// @link directive
 		"{{if $fieldValue.IsLinked}}" +
-		"@link(table: {{$fieldValue.LinkedTable.Table}}, from: {{$fieldValue.LinkedTable.From}}, to: {{$fieldValue.LinkedTable.To}}, field: {{$fieldValue.LinkedTable.Field}}) " +
+		"{{if and $fieldValue.LinkedTable.Table $fieldValue.LinkedTable.From $fieldValue.LinkedTable.To $fieldValue.LinkedTable.To $fieldValue.LinkedTable.DBType $fieldValue.LinkedTable.Field}}" +
+		"@link(table: \"{{$fieldValue.LinkedTable.Table}}\", from: \"{{$fieldValue.LinkedTable.From}}\", to: \"{{$fieldValue.LinkedTable.To}}\", db: \"{{$fieldValue.LinkedTable.DBType}}\", field: \"{{$fieldValue.LinkedTable.Field}}\" ) " +
+		"{{else if and $fieldValue.LinkedTable.Table $fieldValue.LinkedTable.From $fieldValue.LinkedTable.To $fieldValue.LinkedTable.To $fieldValue.LinkedTable.DBType}}" +
+		"@link(table: \"{{$fieldValue.LinkedTable.Table}}\", from: \"{{$fieldValue.LinkedTable.From}}\", to: \"{{$fieldValue.LinkedTable.To}}\", db: \"{{$fieldValue.LinkedTable.DBType}}\" ) " +
+		"{{else if and $fieldValue.LinkedTable.Table $fieldValue.LinkedTable.From $fieldValue.LinkedTable.To $fieldValue.LinkedTable.To $fieldValue.LinkedTable.Field}}" +
+		"@link(table: \"{{$fieldValue.LinkedTable.Table}}\", from: \"{{$fieldValue.LinkedTable.From}}\", to: \"{{$fieldValue.LinkedTable.To}}\", field: \"{{$fieldValue.LinkedTable.Field}}\" ) " +
+		"{{else if and $fieldValue.LinkedTable.Table $fieldValue.LinkedTable.From $fieldValue.LinkedTable.To}}" +
+		"@link(table: \"{{$fieldValue.LinkedTable.Table}}\", from: \"{{$fieldValue.LinkedTable.From}}\", to: \"{{$fieldValue.LinkedTable.To}}\" ) " +
+		"{{end}}" +
 		"{{end}}" +
 
 		// @foreign directive
