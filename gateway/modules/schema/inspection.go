@@ -204,8 +204,15 @@ func inspectionMySQLCheckFieldType(col string, field model.InspectorFieldType, f
 				Scale:     field.NumericScale,
 			}
 		}
-	case "datetime", "timestamp":
+	case "datetime":
 		fieldDetails.Kind = model.TypeDateTime
+		if field.DateTimePrecision > 0 {
+			fieldDetails.Args = &model.FieldArgs{
+				Precision: field.DateTimePrecision,
+			}
+		}
+	case "timestamp":
+		fieldDetails.Kind = model.TypeDateTimeWithZone
 		if field.DateTimePrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
 				Precision: field.DateTimePrecision,
@@ -262,8 +269,15 @@ func inspectionSQLServerCheckFieldType(col string, field model.InspectorFieldTyp
 		}
 	case "float", "real":
 		fieldDetails.Kind = model.TypeFloat
-	case "datetime", "datetime2", "smalldatetime", "timestamp", "datetimeoffset":
+	case "datetime", "datetime2", "smalldatetime":
 		fieldDetails.Kind = model.TypeDateTime
+		if field.DateTimePrecision > 0 {
+			fieldDetails.Args = &model.FieldArgs{
+				Precision: field.DateTimePrecision,
+			}
+		}
+	case "datetimeoffset":
+		fieldDetails.Kind = model.TypeDateTimeWithZone
 		if field.DateTimePrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
 				Precision: field.DateTimePrecision,
@@ -320,6 +334,13 @@ func inspectionPostgresCheckFieldType(col string, field model.InspectorFieldType
 		fieldDetails.Kind = model.TypeFloat
 	case "timestamp without time zone":
 		fieldDetails.Kind = model.TypeDateTime
+		if field.DateTimePrecision > 0 {
+			fieldDetails.Args = &model.FieldArgs{
+				Precision: field.DateTimePrecision,
+			}
+		}
+	case "timestamp with time zone":
+		fieldDetails.Kind = model.TypeDateTimeWithZone
 		if field.DateTimePrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
 				Precision: field.DateTimePrecision,

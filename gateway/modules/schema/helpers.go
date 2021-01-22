@@ -29,9 +29,8 @@ func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldT
 		case string(model.Postgres):
 			if realColumnInfo.TypeIDSize == -1 {
 				return "character", nil
-			} else {
-				return fmt.Sprintf("character(%d)", realColumnInfo.TypeIDSize), nil
 			}
+			return fmt.Sprintf("character(%d)", realColumnInfo.TypeIDSize), nil
 		case string(model.MySQL):
 			return fmt.Sprintf("char(%d)", realColumnInfo.TypeIDSize), nil
 		case string(model.SQLServer):
@@ -42,9 +41,8 @@ func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldT
 		case string(model.Postgres):
 			if realColumnInfo.TypeIDSize == -1 {
 				return "character varying", nil
-			} else {
-				return fmt.Sprintf("character varying(%d)", realColumnInfo.TypeIDSize), nil
 			}
+			return fmt.Sprintf("character varying(%d)", realColumnInfo.TypeIDSize), nil
 		case string(model.MySQL):
 			return fmt.Sprintf("varchar(%d)", realColumnInfo.TypeIDSize), nil
 		case string(model.SQLServer):
@@ -66,7 +64,16 @@ func getSQLType(ctx context.Context, dbType string, realColumnInfo *model.FieldT
 		case string(model.SQLServer):
 			return fmt.Sprintf("datetime2(%d)", realColumnInfo.Args.Precision), nil
 		case string(model.Postgres):
-			return fmt.Sprintf("timestamp without time zone(%d)", realColumnInfo.Args.Precision), nil
+			return fmt.Sprintf("timestamp(%d) without time zone", realColumnInfo.Args.Precision), nil
+		}
+	case model.TypeDateTimeWithZone:
+		switch dbType {
+		case string(model.MySQL):
+			return fmt.Sprintf("timestamp(%d)", realColumnInfo.Args.Precision), nil
+		case string(model.SQLServer):
+			return fmt.Sprintf("datetimeoffset(%d)", realColumnInfo.Args.Precision), nil
+		case string(model.Postgres):
+			return fmt.Sprintf("timestamp(%d) with time zone", realColumnInfo.Args.Precision), nil
 		}
 	case model.TypeBoolean:
 		switch dbType {

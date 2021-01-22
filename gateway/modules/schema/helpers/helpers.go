@@ -21,7 +21,7 @@ func checkType(ctx context.Context, dbAlias, dbType, col string, value interface
 	case int:
 		// TODO: int64
 		switch fieldValue.Kind {
-		case model.TypeDateTime:
+		case model.TypeDateTime, model.TypeDateTimeWithZone:
 			return time.Unix(int64(v)/1000, 0), nil
 		case model.TypeInteger, model.TypeBigInteger, model.TypeSmallInteger:
 			return value, nil
@@ -33,10 +33,10 @@ func checkType(ctx context.Context, dbAlias, dbType, col string, value interface
 
 	case string:
 		switch fieldValue.Kind {
-		case model.TypeDateTime:
+		case model.TypeDateTime, model.TypeDateTimeWithZone:
 			unitTimeInRFC3339Nano, err := time.Parse(time.RFC3339Nano, v)
 			if err != nil {
-				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col), nil, nil)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col), err, nil)
 			}
 			return unitTimeInRFC3339Nano, nil
 		case model.TypeID, model.TypeString, model.TypeTime, model.TypeDate, model.TypeUUID, model.TypeVarChar, model.TypeChar:
@@ -47,7 +47,7 @@ func checkType(ctx context.Context, dbAlias, dbType, col string, value interface
 
 	case float32, float64:
 		switch fieldValue.Kind {
-		case model.TypeDateTime:
+		case model.TypeDateTime, model.TypeDateTimeWithZone:
 			return time.Unix(int64(v.(float64))/1000, 0), nil
 		case model.TypeFloat, model.TypeDecimal:
 			return value, nil
@@ -502,7 +502,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 			fieldTypeStuct.Kind = kind
 			// Set defaults
 			switch kind {
-			case model.TypeTime, model.TypeDateTime:
+			case model.TypeTime, model.TypeDateTime, model.TypeDateTimeWithZone:
 				if fieldTypeStuct.Args == nil {
 					fieldTypeStuct.Args = new(model.FieldArgs)
 				}
@@ -563,6 +563,8 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *model.Field
 			return model.TypeID, nil
 		case model.TypeDateTime:
 			return model.TypeDateTime, nil
+		case model.TypeDateTimeWithZone:
+			return model.TypeDateTimeWithZone, nil
 		case model.TypeFloat:
 			return model.TypeFloat, nil
 		case model.TypeDecimal:

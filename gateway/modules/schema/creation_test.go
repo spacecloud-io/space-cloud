@@ -1779,7 +1779,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudPostgres, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (id character varying(100) NOT NULL , col2 timestamp without time zone(6) ,PRIMARY KEY (id));", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id)"},
+			want:    []string{"CREATE TABLE test.table1 (id character varying(100) NOT NULL , col2 timestamp(6) without time zone ,PRIMARY KEY (id));", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -1792,7 +1792,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudPostgres, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (id character varying(100) NOT NULL , col2 timestamp without time zone(6) ,PRIMARY KEY (id));", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id) ON DELETE CASCADE"},
+			want:    []string{"CREATE TABLE test.table1 (id character varying(100) NOT NULL , col2 timestamp(6) without time zone ,PRIMARY KEY (id));", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id) ON DELETE CASCADE"},
 			wantErr: false,
 		},
 		{
@@ -2483,7 +2483,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeFloat}}},
 			},
 			fields:  fields{crud: crudPostgres, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD COLUMN col1 timestamp without time zone(6)"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD COLUMN col1 timestamp(6) without time zone"},
 			wantErr: false,
 		},
 		{
@@ -2522,7 +2522,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID}}},
 			},
 			fields:  fields{crud: crudPostgres, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD COLUMN col1 timestamp without time zone(6)"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD COLUMN col1 timestamp(6) without time zone"},
 			wantErr: false,
 		},
 	}

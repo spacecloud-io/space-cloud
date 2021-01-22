@@ -89,6 +89,8 @@ const (
 	TypeDecimal string = "Decimal"
 	// TypeBoolean is variable used for Variable of type Boolean
 	TypeBoolean string = "Boolean"
+	// TypeDateTimeWithZone is variable used for Variable of type DateTime
+	TypeDateTimeWithZone string = "DateTimeWithZone"
 	// TypeDateTime is variable used for Variable of type DateTime
 	TypeDateTime string = "DateTime"
 	// TypeID is variable used for Variable of type ID

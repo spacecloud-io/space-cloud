@@ -215,7 +215,7 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 					continue
 				}
 				mapping[colType.Name()] = string(v)
-			case "TIME", "DATE": // For mysql
+			case "TIMESTAMP", "TIME", "DATE": // For mysql
 				mapping[colType.Name()] = string(v)
 			}
 		case int64:
