@@ -28,7 +28,16 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 			orArray := v.([]interface{})
 			orFinalArray := []goqu.Expression{}
 			for _, item := range orArray {
-				exp, a := s.generator(ctx, item.(map[string]interface{}), isJoin)
+				f2 := item.(map[string]interface{})
+
+				// Add an always match case if or had an empty find. We do this so that sql generator
+				// doesn't ignore something like this
+				if len(f2) == 0 {
+					orFinalArray = append(orFinalArray, goqu.I("1").Eq(goqu.I("1")))
+					continue
+				}
+
+				exp, a := s.generator(ctx, f2, isJoin)
 				orFinalArray = append(orFinalArray, exp)
 				regxarr = append(regxarr, a...)
 			}
@@ -97,10 +106,6 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 			}
 			array = append(array, goqu.I(k).Eq(v))
 		}
-	}
-
-	if len(find) == 0 {
-		array = append(array, goqu.I("1").Eq(goqu.I("1")))
 	}
 
 	return goqu.And(array...), regxarr
