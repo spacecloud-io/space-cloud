@@ -393,14 +393,11 @@ func getEventResponseTopic(nodeID string) string {
 func (m *Module) stageBufferedEvent(eventDoc *model.EventDocument) {
 	// Return if the event is already being processed
 	if _, loaded := m.processingEvents.LoadOrStore(eventDoc.ID, true); loaded {
-		fmt.Println("Buffered stage got an repeated event with id", eventDoc.ID)
 		return
 	}
 
-	m.lock.Lock()
 	select {
 	case m.bufferedEventProcessingChannel <- eventDoc:
 	default:
 	}
-	m.lock.Unlock()
 }

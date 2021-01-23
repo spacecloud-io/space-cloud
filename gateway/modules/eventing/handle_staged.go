@@ -50,8 +50,6 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}
 
 	eventDocs := results.([]interface{})
-	fmt.Println("Length of event docs", len(eventDocs))
-	count := 0
 	for _, temp := range eventDocs {
 		eventDoc := new(model.EventDocument)
 		if err := mapstructure.Decode(temp, eventDoc); err != nil {
@@ -68,8 +66,6 @@ func (m *Module) processStagedEvents(t *time.Time) {
 		timestamp = timestamp.Add(15 * time.Second)
 
 		if t.After(timestamp) || t.Equal(timestamp) {
-			count++
-			fmt.Println("Staging event count", count)
 			m.stageBufferedEvent(eventDoc)
 		}
 	}

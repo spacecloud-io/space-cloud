@@ -23,7 +23,6 @@ func (m *Module) routineProcessUpdateEvents() {
 	for {
 		select {
 		case <-m.globalCloserChannel:
-			fmt.Println("Closing routineProcessStaged")
 			return
 		case ev := <-m.updateEventC:
 			m.queueUpdateEvent(ev)
@@ -33,15 +32,13 @@ func (m *Module) routineProcessUpdateEvents() {
 }
 
 func (m *Module) routineUpdateEventsStatusInDB(updateChan chan *queueUpdateEvent) {
-	duration := 1 * time.Second
+	duration := 250 * time.Millisecond
 	t := time.NewTimer(duration)
 	defer t.Stop()
 	arr := make([]*queueUpdateEvent, 0)
 	for {
 		select {
 		case <-m.globalCloserChannel:
-			close(m.updateFailedEventInDBChannel)
-			fmt.Println("Closing routineUpdateEventsStatusInDB")
 			return
 		case ev := <-updateChan:
 			arr = append(arr, ev)
@@ -64,20 +61,20 @@ func (m *Module) routineDeleteEventsFromSyncMap() {
 	t := time.NewTimer(duration)
 	defer t.Stop()
 
-	activeArr := make([]string, 0)
+	passiveArr, activeArr := make([]string, 0), make([]string, 0)
 	for {
 		select {
 		case <-m.globalCloserChannel:
-			fmt.Println("Closing routineDeleteEventsFromSyncMap")
 			return
 		case eventIDs := <-m.deleteEventFromProcessingEventsMapChannel:
 			activeArr = append(activeArr, eventIDs...)
 		case <-t.C:
-			passiveArr := activeArr
 			for _, eventID := range passiveArr {
 				// Delete the event from the processing list without fail
 				m.processingEvents.Delete(eventID)
 			}
+			passiveArr = activeArr
+			activeArr = make([]string, 0)
 			t.Reset(duration)
 		}
 	}
@@ -91,7 +88,7 @@ func (m *Module) routineProcessIntents() {
 	for {
 		select {
 		case <-m.globalCloserChannel:
-			fmt.Println("Closing routineProcessStaged")
+			fmt.Println("Closing routineProcessIntents")
 			return
 		case ct := <-t.C:
 			m.processIntents(&ct)
@@ -108,7 +105,6 @@ func (m *Module) routineProcessStaged() {
 	for {
 		select {
 		case <-m.globalCloserChannel:
-			fmt.Println("Closing routineProcessStaged")
 			return
 		case ct := <-t.C:
 			m.processStagedEvents(&ct)
@@ -117,33 +113,16 @@ func (m *Module) routineProcessStaged() {
 	}
 }
 
-func (m *Module) routineProcessEventsWithBuffering(processingConfig int) {
-	fmt.Println("Staring buffered eventing processing routine with capacity of", processingConfig)
-	guard := make(chan struct{}, processingConfig)
-	count := 0
-	defer close(guard)
+func (m *Module) routineProcessEventsWithBuffering() {
 	for {
 		select {
-		case <-m.bufferedEventProcessingRoutineCloser:
+		case <-m.globalCloserChannel:
 			// Before closing the routine, delete all the un processed events in the buffer
-			fmt.Println("Total number of unprocessed events in the buffer", len(m.bufferedEventProcessingChannel))
 			m.processingEvents = sync.Map{}
 			// TODO: Do i require a lock here
-			fmt.Println("Closing the buffered eventing processing routine")
 			return
 		case eventDoc := <-m.bufferedEventProcessingChannel:
-			if processingConfig == 0 {
-				continue
-			}
-
-			guard <- struct{}{} // would block if guard channel is already filled
-			count = count + 1
-			fmt.Println("Processing event count", count, len(m.bufferedEventProcessingChannel), processingConfig)
-			go func() {
-				m.processStagedEvent(eventDoc)
-				count = count - 1
-				<-guard
-			}()
+			go m.processStagedEvent(eventDoc)
 		}
 	}
 }
@@ -157,9 +136,11 @@ func (m *Module) routineHandleMessages() {
 	for {
 		select {
 		case <-m.globalCloserChannel:
-			fmt.Println("Closing routineHandleMessages")
 			return
 		case msg := <-ch:
+			if msg == nil {
+				continue
+			}
 			pubsubMsg := new(model.PubSubMessage)
 			if err := json.Unmarshal([]byte(msg.Payload), pubsubMsg); err != nil {
 				_ = helpers.Logger.LogError("event-process", "Unable to marshal incoming process event request", err, map[string]interface{}{"payload": msg.Payload})
@@ -180,9 +161,11 @@ func (m *Module) routineHandleEventResponseMessages() {
 	for {
 		select {
 		case <-m.globalCloserChannel:
-			fmt.Println("Closing routineHandleEventResponseMessages")
 			return
 		case msg := <-ch:
+			if msg == nil {
+				continue
+			}
 			pubsubMsg := new(model.PubSubMessage)
 			if err := json.Unmarshal([]byte(msg.Payload), pubsubMsg); err != nil {
 				_ = helpers.Logger.LogError("event-response-process", "Unable to marshal incoming process event response message", err, map[string]interface{}{"payload": msg.Payload})
