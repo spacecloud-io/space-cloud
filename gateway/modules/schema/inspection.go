@@ -301,7 +301,7 @@ func inspectionPostgresCheckFieldType(col string, field model.InspectorFieldType
 		fieldDetails.Kind = model.TypeUUID
 	case "date":
 		fieldDetails.Kind = model.TypeDate
-	case "time without time zone":
+	case "time without time zone", "time with time zone":
 		fieldDetails.Kind = model.TypeTime
 		if field.DateTimePrecision > 0 {
 			fieldDetails.Args = &model.FieldArgs{
