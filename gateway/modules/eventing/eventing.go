@@ -106,13 +106,6 @@ func New(projectID, nodeID string, auth model.AuthEventingInterface, crud model.
 	go m.routineDeleteEventsFromSyncMap()
 	m.createProcessUpdateEventsRoutine()
 
-	go func() {
-		fmt.Println("Called 1")
-		<-time.After(1 * time.Minute)
-		err := m.CloseConfig()
-		fmt.Println("Close config error", err)
-	}()
-
 	return m, nil
 }
 
