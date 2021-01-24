@@ -602,20 +602,8 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 			return
 		}
 
-		logicalDBName, err := syncman.GetLogicalDatabaseName(ctx, projectID, dbAlias)
-		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
-			return
-		}
-		schema := modules.Schema()
-		s, err := schema.SchemaInspection(ctx, dbAlias, logicalDBName, col)
-		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
-			return
-		}
-
 		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
-		status, err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s, reqParams)
+		status, err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, reqParams)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
@@ -625,7 +613,7 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 	}
 }
 
-// HandleUntrackCollectionSchema removes the collection from the database config
+// HandleUntrackCollectionSchema removes the tables(un tracks the table) from the schema config
 func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

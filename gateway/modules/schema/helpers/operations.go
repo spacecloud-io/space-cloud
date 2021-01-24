@@ -39,7 +39,7 @@ func SchemaValidator(ctx context.Context, dbAlias, dbType, col string, collectio
 			continue
 		}
 
-		if fieldValue.IsPrimary && fieldValue.PrimaryKeyInfo.IsAutoIncrement {
+		if fieldValue.IsAutoIncrement {
 			continue
 		}
 
@@ -57,7 +57,7 @@ func SchemaValidator(ctx context.Context, dbAlias, dbType, col string, collectio
 			if fieldValue.Kind == model.TypeID && !ok {
 				value = ksuid.New().String()
 			} else if !ok {
-				return nil, errors.New("required field " + fieldKey + " from " + col + " not present in request")
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("required field (%s) from table/colection (%s) not present in request", fieldKey, col), nil, nil)
 			}
 		}
 
@@ -372,6 +372,7 @@ func Parser(dbSchemas config.DatabaseSchemas) (model.Type, error) {
 		if dbSchema.Schema == "" {
 			continue
 		}
+		// fmt.Println("Schema", dbSchema.Schema)
 		s := source.NewSource(&source.Source{
 			Body: []byte(dbSchema.Schema),
 		})

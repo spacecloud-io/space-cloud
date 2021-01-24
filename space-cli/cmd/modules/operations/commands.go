@@ -174,12 +174,16 @@ func Commands() []*cobra.Command {
 			if err := viper.BindPFlag("delay", cmd.Flags().Lookup("delay")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('delay')", err)
 			}
+			if err := viper.BindPFlag("force", cmd.Flags().Lookup("force")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('force')", err)
+			}
 			if err := viper.BindPFlag("file", cmd.Flags().Lookup("file")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('file')", err)
 			}
 		},
 	}
 	apply.Flags().DurationP("delay", "", time.Duration(0), "Adds a delay between 2 subsequent request made by space cli to space cloud")
+	apply.Flags().BoolP("force", "", false, "Doesn't show warning prompts if some risky changes are made to the config")
 	apply.Flags().StringP("file", "f", "", "Path to the resource yaml file or directory")
 	err = viper.BindEnv("file", "FILE")
 	if err != nil {
@@ -269,6 +273,7 @@ func actionDestroy(cmd *cobra.Command, args []string) error {
 
 func actionApply(cmd *cobra.Command, args []string) error {
 	delay := viper.GetDuration("delay")
+	isForce := viper.GetBool("force")
 	var dirName string
 	file := viper.GetString("file")
 	if file == "" {
@@ -281,7 +286,7 @@ func actionApply(cmd *cobra.Command, args []string) error {
 	} else {
 		dirName = file
 	}
-	return Apply(dirName, delay)
+	return Apply(dirName, isForce, delay)
 }
 
 func actionStart(cmd *cobra.Command, args []string) error {

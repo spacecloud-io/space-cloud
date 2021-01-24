@@ -21,11 +21,11 @@ func checkType(ctx context.Context, dbAlias, dbType, col string, value interface
 	case int:
 		// TODO: int64
 		switch fieldValue.Kind {
-		case model.TypeDateTime:
+		case model.TypeDateTime, model.TypeDateTimeWithZone:
 			return time.Unix(int64(v)/1000, 0), nil
-		case model.TypeInteger:
+		case model.TypeInteger, model.TypeBigInteger, model.TypeSmallInteger:
 			return value, nil
-		case model.TypeFloat:
+		case model.TypeFloat, model.TypeDecimal:
 			return float64(v), nil
 		default:
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type received for field %s in collection %s - wanted %s got Integer", fieldValue.FieldName, col, fieldValue.Kind), nil, nil)
@@ -33,13 +33,13 @@ func checkType(ctx context.Context, dbAlias, dbType, col string, value interface
 
 	case string:
 		switch fieldValue.Kind {
-		case model.TypeDateTime:
+		case model.TypeDateTime, model.TypeDateTimeWithZone:
 			unitTimeInRFC3339Nano, err := time.Parse(time.RFC3339Nano, v)
 			if err != nil {
-				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col), nil, nil)
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col), err, nil)
 			}
 			return unitTimeInRFC3339Nano, nil
-		case model.TypeID, model.TypeString, model.TypeTime, model.TypeDate, model.TypeUUID:
+		case model.TypeID, model.TypeString, model.TypeTime, model.TypeDate, model.TypeUUID, model.TypeVarChar, model.TypeChar:
 			return value, nil
 		default:
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type received for field %s in collection %s - wanted %s got String", fieldValue.FieldName, col, fieldValue.Kind), nil, nil)
@@ -47,11 +47,11 @@ func checkType(ctx context.Context, dbAlias, dbType, col string, value interface
 
 	case float32, float64:
 		switch fieldValue.Kind {
-		case model.TypeDateTime:
+		case model.TypeDateTime, model.TypeDateTimeWithZone:
 			return time.Unix(int64(v.(float64))/1000, 0), nil
-		case model.TypeFloat:
+		case model.TypeFloat, model.TypeDecimal:
 			return value, nil
-		case model.TypeInteger:
+		case model.TypeInteger, model.TypeSmallInteger, model.TypeBigInteger:
 			return int64(value.(float64)), nil
 		default:
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type received for field %s in collection %s - wanted %s got Float", fieldValue.FieldName, col, fieldValue.Kind), nil, nil)
@@ -296,14 +296,15 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 			}
 
 			fieldTypeStuct := model.FieldType{
-				FieldName:  field.Name.Value,
-				TypeIDSize: 50,
+				FieldName: field.Name.Value,
 			}
 			if len(field.Directives) > 0 {
 				// Loop over all directives
 
 				for _, directive := range field.Directives {
 					switch directive.Name.Value {
+					case model.DirectiveAutoIncrement:
+						fieldTypeStuct.IsAutoIncrement = true
 					case model.DirectivePrimary:
 						fieldTypeStuct.IsPrimary = true
 						fieldTypeStuct.PrimaryKeyInfo = &model.TableProperties{}
@@ -312,9 +313,10 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								val, _ := utils.ParseGraphqlValue(argument.Value, nil)
 								switch t := val.(type) {
 								case bool:
-									fieldTypeStuct.PrimaryKeyInfo.IsAutoIncrement = t
+									// NOTE: This is for keeping backward compatibility with versions prior to 0.21.0
+									fieldTypeStuct.IsAutoIncrement = t
 								default:
-									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, argument.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": argument.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directive @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, argument.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": argument.Name.Value})
 								}
 
 							}
@@ -322,10 +324,10 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								val, _ := utils.ParseGraphqlValue(argument.Value, nil)
 								t, ok := val.(int)
 								if !ok {
-									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, argument.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": argument.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directive @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, argument.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": argument.Name.Value})
 								}
 								if t == 0 {
-									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Order cannot be zero for field (%s) directinve @(%s)", fieldTypeStuct.FieldName, directive.Name.Value), nil, map[string]interface{}{"arg": argument.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Order cannot be zero for field (%s) directive @(%s)", fieldTypeStuct.FieldName, directive.Name.Value), nil, map[string]interface{}{"arg": argument.Name.Value})
 								}
 								fieldTypeStuct.PrimaryKeyInfo.Order = t
 							}
@@ -338,14 +340,14 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								size, ok := val.(int)
 								if !ok {
-									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directive @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 								fieldTypeStuct.Args.Precision = size
 							case "scale":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								size, ok := val.(int)
 								if !ok {
-									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directive @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 								fieldTypeStuct.Args.Scale = size
 							}
@@ -354,16 +356,23 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 						fieldTypeStuct.IsCreatedAt = true
 					case model.DirectiveUpdatedAt:
 						fieldTypeStuct.IsUpdatedAt = true
-					case model.DirectiveVarcharSize:
+					case model.DirectiveStringSize:
 						for _, arg := range directive.Arguments {
 							switch arg.Name.Value {
 							case "value":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
-								size, ok := val.(int)
-								if !ok {
-									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+								switch size := val.(type) {
+								case string:
+									if size != "max" {
+										return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directive @(%s) argument (%s) got (%s)", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, size), nil, map[string]interface{}{"arg": arg.Name.Value})
+									}
+									// This is a special case for postgres, where the max length is not provided by the database, we make it -1
+									fieldTypeStuct.TypeIDSize = -1
+								case int:
+									fieldTypeStuct.TypeIDSize = size
+								default:
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directive @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
-								fieldTypeStuct.TypeIDSize = size
 							}
 						}
 					case model.DirectiveDefault:
@@ -391,22 +400,22 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								indexInfo.Group, ok = val.(string)
 								if !ok {
-									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directive @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 							case "order":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								indexInfo.Order, ok = val.(int)
 								if !ok {
-									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected int", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directive @(%s) argument (%s) got (%v) expected int", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 							case "sort":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								sort, ok := val.(string)
 								if !ok || (sort != "asc" && sort != "desc") {
 									if !ok {
-										return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directinve @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+										return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unexpected argument type provided for field (%s) directive @(%s) argument (%s) got (%v) expected string", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 									}
-									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unknow value provided for field (%s) directinve @(%s) argument (%s) got (%v) expected either (asc) or (desc)", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
+									return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unknow value provided for field (%s) directive @(%s) argument (%s) got (%v) expected either (asc) or (desc)", fieldTypeStuct.FieldName, directive.Name.Value, arg.Name.Value, reflect.TypeOf(val)), nil, map[string]interface{}{"arg": arg.Name.Value})
 								}
 								indexInfo.Sort = sort
 							}
@@ -491,15 +500,16 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 				return nil, err
 			}
 			fieldTypeStuct.Kind = kind
+			// Set defaults
 			switch kind {
-			case model.TypeTime, model.TypeDateTime:
+			case model.TypeTime, model.TypeDateTime, model.TypeDateTimeWithZone:
 				if fieldTypeStuct.Args == nil {
 					fieldTypeStuct.Args = new(model.FieldArgs)
 				}
 				if fieldTypeStuct.Args.Precision == 0 {
 					fieldTypeStuct.Args.Precision = model.DefaultDateTimePrecision
 				}
-			case model.TypeFloat:
+			case model.TypeDecimal:
 				if fieldTypeStuct.Args == nil {
 					fieldTypeStuct.Args = new(model.FieldArgs)
 				}
@@ -509,6 +519,10 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 				if fieldTypeStuct.Args.Precision == 0 {
 					fieldTypeStuct.Args.Precision = model.DefaultPrecision
 				}
+			case model.TypeID, model.TypeVarChar, model.TypeChar:
+				if fieldTypeStuct.TypeIDSize == 0 {
+					fieldTypeStuct.TypeIDSize = model.DefaultCharacterSize
+				}
 			}
 
 			fieldMap[field.Name.Value] = &fieldTypeStuct
@@ -517,7 +531,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 
 	// Throw an error if the collection wasn't found
 	if !isCollectionFound {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Collection/Table (%s) not found in schema", collectionName), nil, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Collection/Table (%s) not found in schema or you have provided an unknown data type (%s)", collectionName, collectionName), nil, nil)
 	}
 	return fieldMap, nil
 }
@@ -541,14 +555,26 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *model.Field
 		switch myType {
 		case model.TypeString, model.TypeEnum:
 			return model.TypeString, nil
+		case model.TypeChar:
+			return model.TypeChar, nil
+		case model.TypeVarChar:
+			return model.TypeVarChar, nil
 		case model.TypeID:
 			return model.TypeID, nil
 		case model.TypeDateTime:
 			return model.TypeDateTime, nil
+		case model.TypeDateTimeWithZone:
+			return model.TypeDateTimeWithZone, nil
 		case model.TypeFloat:
 			return model.TypeFloat, nil
+		case model.TypeDecimal:
+			return model.TypeDecimal, nil
 		case model.TypeInteger:
 			return model.TypeInteger, nil
+		case model.TypeSmallInteger:
+			return model.TypeSmallInteger, nil
+		case model.TypeBigInteger:
+			return model.TypeBigInteger, nil
 		case model.TypeBoolean:
 			return model.TypeBoolean, nil
 		case model.TypeJSON:
