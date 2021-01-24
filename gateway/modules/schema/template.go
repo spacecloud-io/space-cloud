@@ -2,7 +2,6 @@ package schema
 
 import (
 	"bytes"
-	"fmt"
 	"text/template"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -124,7 +123,6 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		"{{template \"renderColumn\" $fieldValue}}" +
 		"{{else if and (eq $sequence 4) $fieldValue.IsForeign}}" +
 		"{{template \"renderColumn\" $fieldValue}}" +
-		"{{ $count = 0 }}" +
 		"{{else if and (eq $sequence 5) $fieldValue.IsLinked}}" +
 		"{{template \"renderColumn\" $fieldValue}}" +
 		"{{else if and (eq $sequence 2) (not $fieldValue.IsLinked) (not $fieldValue.IsForeign) (eq (len $fieldValue.IndexInfo) 0) (not $fieldValue.IsPrimary) }}" +
@@ -153,6 +151,5 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 	if err := t.Execute(buf, schemaCol); err != nil {
 		return "", err
 	}
-	fmt.Println("String", buf.String())
 	return buf.String(), nil
 }
