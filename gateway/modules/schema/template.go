@@ -119,7 +119,7 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		// Show primary keys first
 		"{{if and (eq $sequence 1) $fieldValue.IsPrimary}}" +
 		"{{template \"renderColumn\" $fieldValue}}" +
-		"{{else if and (eq $sequence 3) (gt (len $fieldValue.IndexInfo) 0) }}" +
+		"{{else if and (eq $sequence 3) (gt (len $fieldValue.IndexInfo) 0) (not $fieldValue.IsForeign) }}" +
 		"{{template \"renderColumn\" $fieldValue}}" +
 		"{{else if and (eq $sequence 4) $fieldValue.IsForeign}}" +
 		"{{template \"renderColumn\" $fieldValue}}" +
