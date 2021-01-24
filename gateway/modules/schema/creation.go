@@ -33,7 +33,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, logical
 		return nil
 	}
 
-	currentSchema, err := s.Inspector(ctx, dbAlias, dbType, logicalDBName, tableName)
+	currentSchema, err := s.Inspector(ctx, dbAlias, dbType, logicalDBName, tableName, parsedSchema[dbAlias])
 	if err != nil {
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Schema Inspector Error", map[string]interface{}{"error": err.Error()})
 	}
@@ -111,6 +111,9 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			continue
 		}
 		for currentFieldKey, currentFieldStruct := range currentColValue {
+			if currentFieldStruct.IsLinked {
+				continue
+			}
 			realField, ok := realColValue[currentFieldKey]
 			if !ok || realField.IsLinked {
 				// remove field from current table
@@ -176,7 +179,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 
 		} else {
 			if !realColumnInfo.IsLinked {
-				if arr := deep.Equal(c.realColumnInfo.Args, c.currentColumnInfo.Args); c.realColumnInfo.Kind != c.currentColumnInfo.Kind || (c.realColumnInfo.Kind == model.TypeID && c.currentColumnInfo.Kind == model.TypeID && c.realColumnInfo.TypeIDSize != c.currentColumnInfo.TypeIDSize) || (c.currentColumnInfo.Args != nil && len(arr) > 0) {
+				if arr := deep.Equal(c.realColumnInfo.Args, c.currentColumnInfo.Args); c.realColumnInfo.Kind != c.currentColumnInfo.Kind || (c.realColumnInfo.TypeIDSize != c.currentColumnInfo.TypeIDSize) || (c.currentColumnInfo.Args != nil && len(arr) > 0) {
 					// As we are making sure that tables can only be created with primary key, this condition will occur if primary key is removed from a field
 					if c.realColumnInfo.IsPrimary {
 						return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Cannot change type of field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), nil, nil)

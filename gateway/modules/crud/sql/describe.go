@@ -36,10 +36,8 @@ select a.table_schema  AS 'TABLE_SCHEMA',
        a.is_nullable AS 'IS_NULLABLE',
        a.ordinal_position AS 'ORDINAL_POSITION',
        CASE
-           WHEN a.column_default = '1' THEN 'true'
-           WHEN a.column_default = '0' THEN 'false'
-           WHEN a.column_default = "b\'1\'" THEN 'true'
-           WHEN a.column_default = "b\'0\'" THEN 'false'
+           WHEN (a.column_default = '1' or a.column_default = "b\'1\'" ) AND (a.data_type = 'tinyint' or a.data_type = 'bit') THEN 'true'
+           WHEN (a.column_default = '0' or a.column_default = "b\'0\'" ) AND (a.data_type = 'tinyint' or a.data_type = 'bit') THEN 'false'
            ELSE coalesce(a.column_default,'')
        END AS 'DEFAULT',
        IF(upper(a.extra) = 'AUTO_INCREMENT', 'true', 'false') AS 'AUTO_INCREMENT',
@@ -77,7 +75,7 @@ where a.table_name= ? and a.table_schema= ? ;
        c.ordinal_position AS "ORDINAL_POSITION",
        SPLIT_PART(REPLACE(coalesce(c.column_default,''),'''',''), '::', 1) AS "DEFAULT",
        case when upper(c.column_default) like 'NEXTVAL%' then 'true' else 'false' end AS "AUTO_INCREMENT",
-       coalesce(c.character_maximum_length,0) AS "CHARACTER_MAXIMUM_LENGTH",
+       coalesce(c.character_maximum_length,-1) AS "CHARACTER_MAXIMUM_LENGTH",
        coalesce(c.numeric_precision,0) AS "NUMERIC_PRECISION",
        coalesce(c.numeric_scale,0) AS "NUMERIC_SCALE",
        coalesce(c.datetime_precision,0) AS "DATETIME_PRECISION",
@@ -113,16 +111,14 @@ select c.table_schema AS 'TABLE_SCHEMA',
        c.table_name  AS 'TABLE_NAME',
 
        c.column_name AS 'COLUMN_NAME',
-       case 
-		   when C.DATA_TYPE = 'varchar' 
-       			then concat(C.DATA_TYPE,'(',REPLACE(c.CHARACTER_MAXIMUM_LENGTH,'-1','max'),')')
-		   when upper(ckc.check_clause) like '%ISJSON%'
-				then 'json'
-		   else C.DATA_TYPE 
-	   end as 'DATA_TYPE',
+       case when upper(ckc.check_clause) like '%ISJSON%' then 'json' else c.data_type end    AS 'DATA_TYPE',
        c.is_nullable AS 'IS_NULLABLE',
        c.ordinal_position AS 'ORDINAL_POSITION',
-       REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT,''),'''',''),'(',''),')','') AS 'DEFAULT',
+       CASE
+           WHEN REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT, ''), '''', ''), '(', ''), ')', '') = '1' AND (c.DATA_TYPE = 'tinyint' or c.DATA_TYPE = 'bit') THEN 'true'
+           WHEN REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT, ''), '''', ''), '(', ''), ')', '') = '0' AND (c.DATA_TYPE = 'tinyint' or c.DATA_TYPE = 'bit') THEN 'false'
+           ELSE REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT, ''), '''', ''), '(', ''), ')', '')
+       END AS 'DEFAULT',
        case
            when COLUMNPROPERTY(object_id(c.TABLE_SCHEMA +'.'+ c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1
                then 'true'

@@ -425,29 +425,23 @@ func TestParseSchema(t *testing.T) {
 						"ID": &model.FieldType{
 							FieldName:      "ID",
 							Kind:           model.TypeID,
-							TypeIDSize:     model.SQLTypeIDSize,
+							TypeIDSize:     model.DefaultCharacterSize,
 							IsPrimary:      true,
 							PrimaryKeyInfo: &model.TableProperties{},
 						},
 						"age": &model.FieldType{
-							FieldName:  "age",
-							TypeIDSize: model.SQLTypeIDSize,
-							Kind:       model.TypeFloat,
-							Args: &model.FieldArgs{
-								Precision: model.DefaultPrecision,
-								Scale:     model.DefaultScale,
-							},
+							FieldName: "age",
+							Kind:      model.TypeFloat,
 						},
 						"spec": &model.FieldType{
-							FieldName:  "spec",
-							TypeIDSize: model.SQLTypeIDSize,
-							Kind:       model.TypeJSON,
+							FieldName: "spec",
+							Kind:      model.TypeJSON,
 						},
 						"customer_id": &model.FieldType{
 							FieldName:           "customer_id",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
-							TypeIDSize:          model.SQLTypeIDSize,
+							TypeIDSize:          model.DefaultCharacterSize,
 							IsForeign:           true,
 							JointTable: &model.TableProperties{
 								To:             "id",
@@ -481,36 +475,38 @@ func TestParseSchema(t *testing.T) {
 						"ID": &model.FieldType{
 							FieldName:      "ID",
 							Kind:           model.TypeID,
-							TypeIDSize:     model.SQLTypeIDSize,
+							TypeIDSize:     model.DefaultCharacterSize,
 							IsPrimary:      true,
 							PrimaryKeyInfo: &model.TableProperties{},
 						},
 						"age": &model.FieldType{
-							FieldName:  "age",
-							Kind:       model.TypeFloat,
-							TypeIDSize: model.SQLTypeIDSize,
+							FieldName: "age",
+							Kind:      model.TypeFloat,
+						},
+						"amount": &model.FieldType{
+							FieldName:           "amount",
+							Kind:                model.TypeDecimal,
+							IsFieldTypeRequired: true,
 							Args: &model.FieldArgs{
-								Precision: model.DefaultPrecision,
-								Scale:     model.DefaultScale,
+								Scale:     5,
+								Precision: 10,
 							},
 						},
 						"role": &model.FieldType{
 							FieldName:           "role",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
-							TypeIDSize:          model.SQLTypeIDSize,
+							TypeIDSize:          model.DefaultCharacterSize,
 							IsDefault:           true,
 							Default:             "user",
 						},
 						"spec": &model.FieldType{
-							FieldName:  "spec",
-							Kind:       model.TypeJSON,
-							TypeIDSize: model.SQLTypeIDSize,
+							FieldName: "spec",
+							Kind:      model.TypeJSON,
 						},
 						"createdAt": &model.FieldType{
 							FieldName:   "createdAt",
 							Kind:        model.TypeDateTime,
-							TypeIDSize:  model.SQLTypeIDSize,
 							IsCreatedAt: true,
 							Args: &model.FieldArgs{
 								Precision: model.DefaultDateTimePrecision,
@@ -519,7 +515,6 @@ func TestParseSchema(t *testing.T) {
 						"updatedAt": &model.FieldType{
 							FieldName:   "updatedAt",
 							Kind:        model.TypeDateTime,
-							TypeIDSize:  model.SQLTypeIDSize,
 							IsUpdatedAt: true,
 							Args: &model.FieldArgs{
 								Precision: model.DefaultDateTimePrecision,
@@ -529,7 +524,7 @@ func TestParseSchema(t *testing.T) {
 							FieldName:           "first_name",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
-							TypeIDSize:          model.SQLTypeIDSize,
+							TypeIDSize:          model.DefaultCharacterSize,
 							IndexInfo: []*model.TableProperties{
 								{
 									IsIndex: true,
@@ -544,7 +539,7 @@ func TestParseSchema(t *testing.T) {
 							FieldName:           "name",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
-							TypeIDSize:          model.SQLTypeIDSize,
+							TypeIDSize:          model.DefaultCharacterSize,
 							IndexInfo: []*model.TableProperties{
 								{
 									IsUnique: true,
@@ -559,7 +554,7 @@ func TestParseSchema(t *testing.T) {
 							FieldName:           "customer_id",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
-							TypeIDSize:          model.SQLTypeIDSize,
+							TypeIDSize:          model.DefaultCharacterSize,
 							IsForeign:           true,
 							JointTable: &model.TableProperties{
 								To:             "id",
@@ -569,11 +564,10 @@ func TestParseSchema(t *testing.T) {
 							},
 						},
 						"order_dates": &model.FieldType{
-							FieldName:  "order_dates",
-							IsList:     true,
-							Kind:       model.TypeDateTime,
-							TypeIDSize: model.SQLTypeIDSize,
-							IsLinked:   true,
+							FieldName: "order_dates",
+							IsList:    true,
+							Kind:      model.TypeDateTime,
+							IsLinked:  true,
 							Args: &model.FieldArgs{
 								Precision: model.DefaultDateTimePrecision,
 							},
@@ -596,6 +590,7 @@ func TestParseSchema(t *testing.T) {
 					Schema: `type tweet {
 						 ID : ID @primary
 						 age: Float
+						 amount: Decimal! @args(precision:10,scale:5)
 						 spec: JSON
 						 createdAt:DateTime@createdAt
 						 updatedAt:DateTime@updatedAt

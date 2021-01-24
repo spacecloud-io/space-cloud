@@ -11,6 +11,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
+	helpers2 "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -523,11 +524,12 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 		return http.StatusBadRequest, errors.New("specified database not present in config")
 	}
 
+	parsedSchama, _ := helpers2.Parser(projectConfig.DatabaseSchemas)
 	for _, dbSchema := range projectConfig.DatabaseSchemas {
 		if dbSchema.Table == "default" || dbSchema.DbAlias != dbAlias {
 			continue
 		}
-		result, err := schemaMod.SchemaInspection(ctx, dbAlias, projectConfig.DatabaseConfigs[config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseConfig, dbAlias)].DBName, dbSchema.Table)
+		result, err := schemaMod.SchemaInspection(ctx, dbAlias, projectConfig.DatabaseConfigs[config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseConfig, dbAlias)].DBName, dbSchema.Table, parsedSchama[dbAlias])
 		if err != nil {
 			return http.StatusInternalServerError, err
 		}
@@ -550,7 +552,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 }
 
 // SetSchemaInspection inspects the schema
-func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col, schema string, params model.RequestParams) (int, error) {
+func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col string, params model.RequestParams) (int, error) {
 	// Check if the request has been hijacked
 	hookResponse := s.integrationMan.InvokeHook(ctx, params)
 	if hookResponse.CheckResponse() {
@@ -572,13 +574,21 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 		return http.StatusBadRequest, err
 	}
 
-	// update schema in config
 	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, errors.New("specified database not present in config")
 	}
 
+	// Get the schema module
+	schemaMod, _ := s.modules.GetSchemaModuleForSyncMan(project)
+	parsedSchema, _ := helpers2.Parser(projectConfig.DatabaseSchemas)
+
+	result, err := schemaMod.SchemaInspection(ctx, dbAlias, projectConfig.DatabaseConfigs[config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseConfig, dbAlias)].DBName, col, parsedSchema[dbAlias])
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
 	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseSchema, dbAlias, col)
-	v := &config.DatabaseSchema{Table: col, DbAlias: dbAlias, Schema: schema}
+	v := &config.DatabaseSchema{Table: col, DbAlias: dbAlias, Schema: result}
 	if projectConfig.DatabaseSchemas == nil {
 		projectConfig.DatabaseSchemas = config.DatabaseSchemas{resourceID: v}
 	} else {
