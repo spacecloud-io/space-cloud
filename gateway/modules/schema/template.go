@@ -2,15 +2,18 @@ package schema
 
 import (
 	"bytes"
+	"fmt"
 	"text/template"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func generateSDL(schemaCol model.Collection) (string, error) {
-	schema := "type {{range $k,$v := .}} {{$k}} {\n {{range $fieldName, $fieldValue := $v}}" +
+	schema := "{{define \"renderColumn\" }}" +
+		"{{$fieldValue:= . }}" +
+
 		// column name
-		"\t{{$fieldName}}: " +
+		"\t{{$fieldValue.FieldName}}: " +
 
 		// column type
 		"{{if eq $fieldValue.Kind \"Object\"}}" +
@@ -65,7 +68,6 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		"{{if $fieldValue.IsCreatedAt}}" +
 		"@createdAt " +
 		"{{end}}" +
-
 		"{{if $fieldValue.IsUpdatedAt}}" +
 		"@updatedAt " +
 		"{{end}}" +
@@ -109,13 +111,48 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		"{{end}}" +
 		"\n" +
 		"{{end}}" +
+
+		// Start of template
+		"type {{range $k,$v := .}} {{$k}} {\n " + // for loop 1
+		"{{ range $i, $sequence :=  (repeat 5) }}" + // for loop 2
+		"{{range $fieldName, $fieldValue := $v}}" + // for loop 3
+
+		// Show primary keys first
+		"{{if and (eq $sequence 1) $fieldValue.IsPrimary}}" +
+		"{{template \"renderColumn\" $fieldValue}}" +
+		"{{else if and (eq $sequence 3) (gt (len $fieldValue.IndexInfo) 0) }}" +
+		"{{template \"renderColumn\" $fieldValue}}" +
+		"{{else if and (eq $sequence 4) $fieldValue.IsForeign}}" +
+		"{{template \"renderColumn\" $fieldValue}}" +
+		"{{ $count = 0 }}" +
+		"{{else if and (eq $sequence 5) $fieldValue.IsLinked}}" +
+		"{{template \"renderColumn\" $fieldValue}}" +
+		"{{else if and (eq $sequence 2) (not $fieldValue.IsLinked) (not $fieldValue.IsForeign) (eq (len $fieldValue.IndexInfo) 0) (not $fieldValue.IsPrimary) }}" +
+		"{{template \"renderColumn\" $fieldValue}}" +
 		"{{end}}" +
+		"{{end}}" + // for loop 3
+		"{{end}}" + // for loop 2
+		"{{end}}" + // for loop 1
 		"}"
 
+	var funcs = template.FuncMap{
+		"repeat": func(n int) []int {
+			var res []int
+			for i := 0; i < n; i++ {
+				res = append(res, i+1)
+			}
+			return res
+		},
+		"inc": func(n int) int {
+			return n + 1
+		},
+	}
+
 	buf := &bytes.Buffer{}
-	t := template.Must(template.New("greet").Parse(schema))
+	t := template.Must(template.New("greet").Funcs(funcs).Parse(schema))
 	if err := t.Execute(buf, schemaCol); err != nil {
 		return "", err
 	}
+	fmt.Println("String", buf.String())
 	return buf.String(), nil
 }
