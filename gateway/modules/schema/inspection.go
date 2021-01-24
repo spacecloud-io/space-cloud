@@ -49,21 +49,24 @@ func (s *Schema) Inspector(ctx context.Context, dbAlias, dbType, project, col st
 	}
 
 	for columnName, realColumnInfo := range realSchema[col] {
-		if realColumnInfo.Kind == model.TypeID {
-			// TODO: Do this only if varchar ?
-			currentTableInfo, ok := currentTableFields[columnName]
-			if ok {
-				currentTableInfo.Kind = model.TypeID
-			}
-		}
 		if realColumnInfo.IsLinked {
 			currentTableFields[columnName] = realColumnInfo
+			continue
 		}
+
+		currentTableInfo, ok := currentTableFields[columnName]
+		if !ok {
+			continue
+		}
+		if realColumnInfo.Kind == model.TypeID {
+			currentTableInfo.Kind = model.TypeID
+		}
+
 		if realColumnInfo.IsCreatedAt {
-			currentTableFields[columnName].IsCreatedAt = true
+			currentTableInfo.IsCreatedAt = true
 		}
 		if realColumnInfo.IsUpdatedAt {
-			currentTableFields[columnName].IsUpdatedAt = true
+			currentTableInfo.IsUpdatedAt = true
 		}
 	}
 

@@ -450,7 +450,6 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 	parsedSchema, _ := helpers2.Parser(projectConfig.DatabaseSchemas)
 
 	result, err := schemaMod.SchemaInspection(ctx, dbAlias, projectConfig.DatabaseConfigs[config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseConfig, dbAlias)].DBName, col, parsedSchema[dbAlias])
-	fmt.Println("ERR", err, parsedSchema[dbAlias])
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
