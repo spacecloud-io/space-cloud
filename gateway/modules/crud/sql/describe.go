@@ -36,8 +36,8 @@ select a.table_schema  AS 'TABLE_SCHEMA',
        a.is_nullable AS 'IS_NULLABLE',
        a.ordinal_position AS 'ORDINAL_POSITION',
        CASE
-           WHEN a.column_default = '1' AND (a.data_type = 'tinyint' or a.data_type = 'bit') THEN 'true'
-           WHEN a.column_default = '0' AND (a.data_type = 'tinyint' or a.data_type = 'bit') THEN 'false'
+           WHEN (a.column_default = '1' or a.column_default = "b\'1\'" ) AND (a.data_type = 'tinyint' or a.data_type = 'bit') THEN 'true'
+           WHEN (a.column_default = '0' or a.column_default = "b\'0\'" ) AND (a.data_type = 'tinyint' or a.data_type = 'bit') THEN 'false'
            ELSE coalesce(a.column_default,'')
        END AS 'DEFAULT',
        IF(upper(a.extra) = 'AUTO_INCREMENT', 'true', 'false') AS 'AUTO_INCREMENT',
