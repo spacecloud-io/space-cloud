@@ -63,7 +63,7 @@ func (m *Module) prepareFindObject(req *model.QueueEventRequest) error {
 	return nil
 }
 
-func (m *Module) queueUpdateEvent(ev *queueUpdateEvent) {
+func (m *Module) dbQueryForEventStatusUpdate(ev *queueUpdateEvent) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

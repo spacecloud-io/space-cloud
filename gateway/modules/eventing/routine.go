@@ -25,7 +25,7 @@ func (m *Module) routineProcessUpdateEvents() {
 		case <-m.globalCloserChannel:
 			return
 		case ev := <-m.updateEventC:
-			m.queueUpdateEvent(ev)
+			m.dbQueryForEventStatusUpdate(ev)
 			m.deleteEventFromProcessingEventsMapChannel <- []string{ev.req.Find["_id"].(string)}
 		}
 	}
@@ -36,22 +36,31 @@ func (m *Module) routineUpdateEventsStatusInDB(updateChan chan *queueUpdateEvent
 	t := time.NewTimer(duration)
 	defer t.Stop()
 	arr := make([]*queueUpdateEvent, 0)
+
+	flush := func() {
+		if len(arr) == 0 {
+			t.Reset(duration)
+			return
+		}
+		eventIDs, updateRequest := m.generateInOperatorUpdateRequest(arr)
+		m.dbQueryForEventStatusUpdate(updateRequest)
+		m.deleteEventFromProcessingEventsMapChannel <- eventIDs
+		arr = make([]*queueUpdateEvent, 0)
+		t.Reset(duration)
+	}
+
 	for {
 		select {
 		case <-m.globalCloserChannel:
 			return
 		case ev := <-updateChan:
 			arr = append(arr, ev)
-		case <-t.C:
-			if len(arr) == 0 {
-				t.Reset(duration)
-				continue
+			if len(arr) > 200 {
+				flush()
 			}
-			eventIDs, updateRequest := m.generateInOperatorUpdateRequest(arr)
-			m.queueUpdateEvent(updateRequest)
-			m.deleteEventFromProcessingEventsMapChannel <- eventIDs
-			arr = make([]*queueUpdateEvent, 0)
-			t.Reset(duration)
+
+		case <-t.C:
+			flush()
 		}
 	}
 }
@@ -119,8 +128,8 @@ func (m *Module) routineProcessEventsWithBuffering() {
 		case <-m.globalCloserChannel:
 			// Before closing the routine, delete all the un processed events in the buffer
 			m.processingEvents = sync.Map{}
-			// TODO: Do i require a lock here
 			return
+
 		case eventDoc := <-m.bufferedEventProcessingChannel:
 			go m.processStagedEvent(eventDoc)
 		}
