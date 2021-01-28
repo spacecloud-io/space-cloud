@@ -222,6 +222,8 @@ spec:
               value: "{{ .Values.devMode }}"
             - name: "SSL_ENABLE"
               value: "true"
+            - name: "RESTRICT_HOSTS"
+              value: "{{ .Values.gateway.restricted_hosts }}"
             - name: "CLUSTER_ID"
               value: "{{ .Values.clusterId }}"
             - name: "REDIS_CONN"
@@ -232,15 +234,15 @@ spec:
             - name: {{ $key | quote }}
               value: {{ $value | quote}}
           {{ end -}}
-          {{ if .Values.gateway.custom_ssl_secret }}
+          {{ if .Values.gateway.ssl.custom_ssl_secret }}
             - name: "SSL_CERT"
-              value: "/secrets/{{ .Values.gateway.custom_ssl_cert_key }}"
+              value: "/secrets/{{ .Values.gateway.ssl.custom_ssl_cert_key }}"
             - name: "SSL_KEY"
-              value: "/secrets/{{ .Values.gateway.custom_ssl_private_key }}"
+              value: "/secrets/{{ .Values.gateway.ssl.custom_ssl_private_key }}"
           {{ end }}
-          {{ if .Values.gateway.custom_ssl_secret }}
+          {{ if .Values.gateway.ssl.custom_ssl_secret }}
           volumeMounts:
-          - name: ssl_certs
+          - name: ssl-certs
             mountPath: "/secrets"
           {{ end }}
           ports:
@@ -253,11 +255,11 @@ spec:
             requests:
               memory: "{{ .Values.gateway.resources.requests.memory }}"
               cpu: "{{ .Values.gateway.resources.requests.cpu }}"
-      {{ if .Values.gateway.custom_ssl_secret }}
+      {{ if .Values.gateway.ssl.custom_ssl_secret }}
       volumes:
-      - name: ssl_certs
+      - name: ssl-certs
         secret:
-          secretName: "{{ .Values.gateway.custom_ssl_secret }}"
+          secretName: "{{ .Values.gateway.ssl.custom_ssl_secret }}"
           defaultMode: 0400
       {{ end }}
       terminationGracePeriodSeconds: 300

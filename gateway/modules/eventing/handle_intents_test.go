@@ -48,7 +48,7 @@ func TestModule_processIntents(t *testing.T) {
 				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "dbtype", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{}, errors.New("some error")},
+					paramsReturned: []interface{}{[]interface{}{}, new(model.SQLMetaData), errors.New("some error")},
 				},
 			},
 		},
@@ -66,7 +66,7 @@ func TestModule_processIntents(t *testing.T) {
 				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "dbtype", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{"key"}, nil},
+					paramsReturned: []interface{}{[]interface{}{"key"}, new(model.SQLMetaData), nil},
 				},
 			},
 		},
@@ -84,7 +84,7 @@ func TestModule_processIntents(t *testing.T) {
 				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "dbtype", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{EventTimestamp: time.Now().Format(time.RFC1123), ID: "id"}}, nil},
+					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{EventTimestamp: time.Now().Format(time.RFC1123), ID: "id"}}, new(model.SQLMetaData), nil},
 				},
 			},
 		},
@@ -102,7 +102,7 @@ func TestModule_processIntents(t *testing.T) {
 				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "dbtype", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
-					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{EventTimestamp: time.Now().Format(time.RFC3339Nano), ID: "id"}}, nil},
+					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{EventTimestamp: time.Now().Format(time.RFC3339Nano), ID: "id"}}, new(model.SQLMetaData), nil},
 				},
 			},
 		},

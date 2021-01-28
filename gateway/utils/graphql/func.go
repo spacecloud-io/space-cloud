@@ -8,6 +8,7 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -47,7 +48,7 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		}
 
 		_, result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, reqParams, params)
-		_ = graph.auth.PostProcessMethod(ctx, actions, result)
+		_ = authHelpers.PostProcessMethod(ctx, graph.aesKey, actions, result)
 		cb(result, err)
 	}()
 }

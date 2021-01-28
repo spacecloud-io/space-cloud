@@ -9,6 +9,6 @@ import (
 )
 
 // DescribeTable return a structure of sql table
-func (b *Bolt) DescribeTable(ctx context.Context, col string) ([]model.InspectorFieldType, []model.ForeignKeysType, []model.IndexType, error) {
-	return nil, nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Describe table operation not supported for selected database", nil, nil)
+func (b *Bolt) DescribeTable(ctx context.Context, col string) ([]model.InspectorFieldType, []model.IndexType, error) {
+	return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Describe table operation not supported for selected database", nil, nil)
 }

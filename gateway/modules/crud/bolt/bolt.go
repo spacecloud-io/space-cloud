@@ -42,7 +42,7 @@ func (b *Bolt) Close() error {
 
 // IsSame checks if we've got the same connection string
 func (b *Bolt) IsSame(conn, dbName string, driverConf config.DriverConfig) bool {
-	return b.connection == conn && dbName == b.bucketName //DriverConfig is not used for now.
+	return b.connection == conn && dbName == b.bucketName // DriverConfig is not used for now.
 }
 
 // IsClientSafe checks whether database is enabled and connected
@@ -82,4 +82,8 @@ func (b *Bolt) GetDBType() model.DBType {
 // SetQueryFetchLimit sets data fetch limit
 func (b *Bolt) SetQueryFetchLimit(limit int64) {
 	b.queryFetchLimit = &limit
+}
+
+// SetProjectAESKey sets aes key
+func (b *Bolt) SetProjectAESKey(aesKey []byte) {
 }

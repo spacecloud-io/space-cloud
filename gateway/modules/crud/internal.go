@@ -4,18 +4,23 @@ import (
 	"context"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 )
 
 // InternalCreate inserts a documents (or multiple when op is "all") into the database based on dbAlias.
 // It does not invoke any hooks. This should only be used by the eventing module.
 func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest, isIgnoreMetrics bool) error {
-	// First step is to validate the create operation
-	if err := m.schema.ValidateCreateOperation(ctx, dbAlias, col, req); err != nil {
-		return err
-	}
-
 	m.RLock()
 	defer m.RUnlock()
+
+	// Validate the create operation
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return err
+	}
+	if err := helpers.ValidateCreateOperation(ctx, dbAlias, dbType, col, m.schemaDoc, req); err != nil {
+		return err
+	}
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
@@ -48,8 +53,12 @@ func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col strin
 	m.RLock()
 	defer m.RUnlock()
 
-	// First step is to validate the update operation
-	if err := m.schema.ValidateUpdateOperation(ctx, dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
+	// validate the update operation
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return err
+	}
+	if err := helpers.ValidateUpdateOperation(ctx, dbAlias, dbType, col, req.Operation, req.Update, req.Find, m.schemaDoc); err != nil {
 		return err
 	}
 
@@ -63,7 +72,7 @@ func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col strin
 	}
 
 	// Adjust where clause
-	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+	if err := helpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
 		return err
 	}
 
@@ -94,7 +103,11 @@ func (m *Module) InternalDelete(ctx context.Context, dbAlias, project, col strin
 	}
 
 	// Adjust where clause
-	if err := m.schema.AdjustWhereClause(ctx, dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+	dbType, err := m.getDBType(dbAlias)
+	if err != nil {
+		return err
+	}
+	if err := helpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
 		return err
 	}
 

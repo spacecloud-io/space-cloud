@@ -24,19 +24,21 @@ func (s *Schema) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]i
 	tracker := map[string]*trackCols{}
 	for fieldName, fieldSchema := range colSchema {
 		// Process for unique index
-		if fieldSchema.IsIndex && fieldSchema.IsUnique {
-			t, p := tracker["i:"+fieldSchema.IndexInfo.Group]
-			if !p {
-				t = &trackCols{find: map[string]interface{}{}}
-				tracker["i:"+fieldSchema.IndexInfo.Group] = t
-			}
+		for _, indexInfo := range fieldSchema.IndexInfo {
+			if indexInfo.IsIndex {
+				t, p := tracker["i:"+indexInfo.Group]
+				if !p {
+					t = &trackCols{find: map[string]interface{}{}}
+					tracker["i:"+indexInfo.Group] = t
+				}
 
-			// Add count for want
-			t.want++
+				// Add count for want
+				t.want++
 
-			// Check if field is present in the find clause
-			if value, ok := isFieldPresentInFindAndIsValidForEventing(fieldName, obj, isFind); ok {
-				t.find[fieldName] = value
+				// Check if field is present in the find clause
+				if value, ok := isFieldPresentInFindAndIsValidForEventing(fieldName, obj, isFind); ok {
+					t.find[fieldName] = value
+				}
 			}
 		}
 

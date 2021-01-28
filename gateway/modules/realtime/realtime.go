@@ -1,6 +1,7 @@
 package realtime
 
 import (
+	"encoding/base64"
 	"os"
 	"sync"
 
@@ -34,6 +35,9 @@ type Module struct {
 
 	// Pubsub client
 	pubsubClient *pubsub.Module
+
+	// Auth module
+	aesKey []byte
 }
 
 // Init creates a new instance of the realtime module
@@ -101,6 +105,19 @@ func (m *Module) SetDatabaseSchemas(databaseSchemas config.DatabaseSchemas) {
 	// Add the rules to the eventing module
 	url := m.syncMan.GetRealtimeURL(m.project)
 	m.eventing.SetRealtimeTriggers(generateEventRules(m.dbConfigs, m.dbRules, m.dbSchemas, m.project, url))
+}
+
+// SetProjectAESKey set aes key
+func (m *Module) SetProjectAESKey(aesKey string) error {
+	m.Lock()
+	defer m.Unlock()
+
+	decodedAESKey, err := base64.StdEncoding.DecodeString(aesKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
+	return nil
 }
 
 // CloseConfig close the rules and secret key required by the realtime block

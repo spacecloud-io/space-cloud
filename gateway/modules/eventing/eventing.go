@@ -15,6 +15,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	schemaHelpers "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils/pubsub"
 )
 
@@ -31,9 +32,8 @@ type Module struct {
 	processingEvents sync.Map
 
 	// Variables defined during initialisation
-	auth   model.AuthEventingInterface
-	crud   model.CrudEventingInterface
-	schema model.SchemaEventingInterface
+	auth model.AuthEventingInterface
+	crud model.CrudEventingInterface
 
 	syncMan   model.SyncmanEventingInterface
 	fileStore model.FilestoreEventingInterface
@@ -62,7 +62,7 @@ type eventResponse struct {
 }
 
 // New creates a new instance of the eventing module
-func New(projectID, nodeID string, auth model.AuthEventingInterface, crud model.CrudEventingInterface, schemaModule model.SchemaEventingInterface, syncMan *syncman.Manager, file model.FilestoreEventingInterface, hook model.MetricEventingHook) (*Module, error) {
+func New(projectID, nodeID string, auth model.AuthEventingInterface, crud model.CrudEventingInterface, syncMan *syncman.Manager, file model.FilestoreEventingInterface, hook model.MetricEventingHook) (*Module, error) {
 	// Create a pub sub client
 	pubsubClient, err := pubsub.New(projectID, os.Getenv("REDIS_CONN"))
 	if err != nil {
@@ -74,7 +74,6 @@ func New(projectID, nodeID string, auth model.AuthEventingInterface, crud model.
 		nodeID:       nodeID,
 		auth:         auth,
 		crud:         crud,
-		schema:       schemaModule,
 		syncMan:      syncMan,
 		schemas:      map[string]model.Fields{},
 		fileStore:    file,
@@ -137,7 +136,7 @@ func (m *Module) SetSchemaConfig(evSchemas config.EventingSchemas) error {
 				Schema:  evSchema.Schema,
 			},
 		}
-		schemaType, err := m.schema.Parser(dummyDBSchema)
+		schemaType, err := schemaHelpers.Parser(dummyDBSchema)
 		if err != nil {
 			return err
 		}

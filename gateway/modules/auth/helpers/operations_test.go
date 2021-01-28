@@ -1,4 +1,4 @@
-package auth
+package helpers
 
 import (
 	"context"
@@ -8,94 +8,100 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 )
-
-func hash(s string) string {
-	h := sha256.New()
-	_, _ = h.Write([]byte(s))
-	hashed := hex.EncodeToString(h.Sum(nil))
-	return hashed
-}
 
 func TestPostProcessMethod(t *testing.T) {
 	var authMatchQuery = []struct {
 		testName      string
 		postProcess   *model.PostProcess
+		aesKey        []byte
 		result        interface{}
 		finalResult   interface{}
 		IsErrExpected bool
 	}{
 		{
 			testName: "remove from object", IsErrExpected: false,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      map[string]interface{}{"age": 10},
 			finalResult: map[string]interface{}{},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age"}}},
 		}, {
 			testName: "deep remove from object", IsErrExpected: false,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      map[string]interface{}{"k1": map[string]interface{}{"k2": "val"}},
 			finalResult: map[string]interface{}{"k1": map[string]interface{}{}},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.k1.k2"}}},
 		}, {
 			testName: "deep remove from object 2", IsErrExpected: false,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      map[string]interface{}{"k1": map[string]interface{}{"k12": "val"}, "k2": "v2"},
 			finalResult: map[string]interface{}{"k2": "v2"},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.k1"}}},
 		}, {
 			testName: "remove from array (single element)", IsErrExpected: false,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      []interface{}{map[string]interface{}{"age": 10}},
 			finalResult: []interface{}{map[string]interface{}{}},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age"}}},
 		}, {
 			testName: "remove from array (multiple elements)", IsErrExpected: false,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      []interface{}{map[string]interface{}{"age": 10, "yo": "haha"}, map[string]interface{}{"age": 10}, map[string]interface{}{"yes": 11}},
 			finalResult: []interface{}{map[string]interface{}{"yo": "haha"}, map[string]interface{}{}, map[string]interface{}{"yes": 11}},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age"}}},
 		}, {
 			testName: "Unsuccessful Test Case-remove", IsErrExpected: true,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      map[string]interface{}{"key": "value"},
 			finalResult: map[string]interface{}{"key": "value"},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "response.age", Value: nil}}},
 		}, {
 			testName: "force into object", IsErrExpected: false,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      map[string]interface{}{},
 			finalResult: map[string]interface{}{"k1": "v1"},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.k1", Value: "v1"}}},
 		}, {
 			testName: "force into array (single)", IsErrExpected: false,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      []interface{}{map[string]interface{}{}},
 			finalResult: []interface{}{map[string]interface{}{"k1": "v1"}},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.k1", Value: "v1"}}},
 		}, {
 			testName: "force into array (multiple)", IsErrExpected: false,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      []interface{}{map[string]interface{}{}, map[string]interface{}{"k2": "v2"}, map[string]interface{}{"k1": "v2"}},
 			finalResult: []interface{}{map[string]interface{}{"k1": "v1"}, map[string]interface{}{"k2": "v2", "k1": "v1"}, map[string]interface{}{"k1": "v1"}},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.k1", Value: "v1"}}},
 		}, {
 			testName: "Unsuccessful Test Case-force", IsErrExpected: true,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      map[string]interface{}{"res": map[string]interface{}{"age": 12}},
 			finalResult: map[string]interface{}{"res": map[string]interface{}{"age": 12}},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "resp.age", Value: "1234"}}},
 		}, {
 			testName: "Unsuccessful Test Case-neither force nor remove", IsErrExpected: true,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      map[string]interface{}{"res": map[string]interface{}{"age": 12}},
 			finalResult: map[string]interface{}{"res": map[string]interface{}{"age": 12}},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "forced", Field: "res.age", Value: "1234"}}},
 		},
 		{testName: "Unsuccessful Test Case-invalid result", IsErrExpected: true,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      1234,
 			finalResult: 1234,
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "forced", Field: "res.age", Value: "1234"}}},
 		},
 		{testName: "Unsuccessful Test Case-slice of interface as result", IsErrExpected: true,
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			result:      []interface{}{1234, "suyash"},
 			finalResult: []interface{}{1234, "suyash"},
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "forced", Field: "res.age", Value: "1234"}}},
 		},
 		{
 			testName:      "invalid field provided for encryption",
+			aesKey:        base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			postProcess:   &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "encrypt", Field: "res.age"}}},
 			result:        map[string]interface{}{"username": "username1"},
 			finalResult:   map[string]interface{}{"username": "username1"},
@@ -103,6 +109,7 @@ func TestPostProcessMethod(t *testing.T) {
 		},
 		{
 			testName:      "invalid type of loaded value for encryption",
+			aesKey:        base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			postProcess:   &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "encrypt", Field: "res.username"}}},
 			result:        map[string]interface{}{"username": 10},
 			finalResult:   map[string]interface{}{"username": 10},
@@ -110,12 +117,14 @@ func TestPostProcessMethod(t *testing.T) {
 		},
 		{
 			testName:    "valid key in encryption",
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "encrypt", Field: "res.username"}}},
 			result:      map[string]interface{}{"username": "username1"},
 			finalResult: map[string]interface{}{"username": base64.StdEncoding.EncodeToString([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
 		},
 		{
 			testName:      "invalid key in encryption",
+			aesKey:        base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g"),
 			postProcess:   &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "encrypt", Field: "res.username"}}},
 			result:        map[string]interface{}{"username": "username1"},
 			finalResult:   map[string]interface{}{"username": "username1"},
@@ -123,6 +132,7 @@ func TestPostProcessMethod(t *testing.T) {
 		},
 		{
 			testName:      "invalid field provided for decryption",
+			aesKey:        base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			postProcess:   &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "decrypt", Field: "res.age"}}},
 			result:        map[string]interface{}{"username": "username1"},
 			finalResult:   map[string]interface{}{"username": "username1"},
@@ -130,6 +140,7 @@ func TestPostProcessMethod(t *testing.T) {
 		},
 		{
 			testName:      "invalid type of loaded value for decryption",
+			aesKey:        base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			postProcess:   &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "decrypt", Field: "res.username"}}},
 			result:        map[string]interface{}{"username": 10},
 			finalResult:   map[string]interface{}{"username": 10},
@@ -137,12 +148,14 @@ func TestPostProcessMethod(t *testing.T) {
 		},
 		{
 			testName:    "valid key in decryption",
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "decrypt", Field: "res.username"}}},
 			result:      map[string]interface{}{"username": base64.StdEncoding.EncodeToString([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
 			finalResult: map[string]interface{}{"username": "username1"},
 		},
 		{
 			testName:      "invalid key in decryption",
+			aesKey:        base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g"),
 			postProcess:   &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "decrypt", Field: "res.username"}}},
 			result:        map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
 			finalResult:   map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
@@ -150,6 +163,7 @@ func TestPostProcessMethod(t *testing.T) {
 		},
 		{
 			testName:      "invalid field provided for hash",
+			aesKey:        base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			postProcess:   &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "hash", Field: "res.age"}}},
 			result:        map[string]interface{}{"password": "password"},
 			finalResult:   map[string]interface{}{"password": "password"},
@@ -157,6 +171,7 @@ func TestPostProcessMethod(t *testing.T) {
 		},
 		{
 			testName:      "invalid type of loaded value for hash",
+			aesKey:        base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			postProcess:   &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "hash", Field: "res.password"}}},
 			result:        map[string]interface{}{"password": 10},
 			finalResult:   map[string]interface{}{"password": 10},
@@ -164,24 +179,16 @@ func TestPostProcessMethod(t *testing.T) {
 		},
 		{
 			testName:    "valid hash",
+			aesKey:      base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="),
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "hash", Field: "res.password"}}},
 			result:      map[string]interface{}{"password": "password"},
 			finalResult: map[string]interface{}{"password": hash("password")},
 		},
 	}
 
-	project := "project"
-	dbRules := config.DatabaseRules{config.GenerateResourceID("chicago", "project", config.ResourceDatabaseRule): &config.DatabaseRule{Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}
-	auth := Init("chicago", "1", &crud.Module{}, nil)
-	_ = auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: project, AESKey: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", Secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}}, dbRules, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{})
 	for _, test := range authMatchQuery {
-		if test.testName == "invalid key in encryption" || test.testName == "invalid key in decryption" {
-			auth.aesKey = base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g")
-		} else {
-			auth.aesKey = base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")
-		}
 		t.Run(test.testName, func(t *testing.T) {
-			err := (auth).PostProcessMethod(context.Background(), test.postProcess, test.result)
+			err := PostProcessMethod(context.Background(), test.aesKey, test.postProcess, test.result)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Success GoErr", err, "Want Error", test.IsErrExpected)
 				return
@@ -193,4 +200,11 @@ func TestPostProcessMethod(t *testing.T) {
 			}
 		})
 	}
+}
+
+func hash(s string) string {
+	h := sha256.New()
+	_, _ = h.Write([]byte(s))
+	hashed := hex.EncodeToString(h.Sum(nil))
+	return hashed
 }

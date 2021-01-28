@@ -11,8 +11,9 @@ type GraphQLRequest struct {
 
 // ReadRequestKey is the key type for the dataloader
 type ReadRequestKey struct {
-	DBType     string
+	DBAlias    string
 	Col        string
+	DBType     string
 	HasOptions bool
 	Req        ReadRequest
 	ReqParams  RequestParams
