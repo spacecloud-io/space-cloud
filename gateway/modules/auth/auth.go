@@ -81,6 +81,7 @@ func (m *Module) IsTokenInternal(ctx context.Context, token string) error {
 	return errors.New("token has not been created internally")
 }
 
+// SetGraphql sets graphql in auth module
 func (m *Module) SetGraphql(g model.GraphQLAuthInterface) {
 	m.Lock()
 	defer m.Unlock()

@@ -21,6 +21,7 @@ type CrudAuthInterface interface {
 	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, error)
 }
 
+// GraphQLAuthInterface is an interface consisting of functions of graphql module used by auth module
 type GraphQLAuthInterface interface {
 	ExecGraphQLQuery(ctx context.Context, req *GraphQLRequest, token string, cb GraphQLCallback)
 }
