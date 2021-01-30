@@ -76,6 +76,7 @@ func New(projectID, clusterID, nodeID string, managers *managers.Managers, globa
 
 	u := userman.Init(c, a)
 	graphqlMan := graphql.New(a, c, fn, s)
+	a.SetGraphql(graphqlMan)
 
 	return &Modules{auth: a, db: c, user: u, file: f, functions: fn, realtime: rt, eventing: e, graphql: graphqlMan, schema: s, GlobalMods: globalMods, Managers: managers}, nil
 }

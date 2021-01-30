@@ -127,9 +127,10 @@ type DatabaseRule struct {
 
 // EventingConfig stores information of eventing config
 type EventingConfig struct {
-	Enabled       bool             `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
-	DBAlias       string           `json:"dbAlias" yaml:"dbAlias" mapstructure:"dbAlias"`
-	InternalRules EventingTriggers `json:"internalRules,omitempty" yaml:"internalRules,omitempty" mapstructure:"internalRules"`
+	Enabled              bool                `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+	DBAlias              string              `json:"dbAlias" yaml:"dbAlias" mapstructure:"dbAlias"`
+	DBTablesInclusionMap map[string][]string `json:"dbTablesInclusionMap" yaml:"dbTablesInclusionMap" mapstructure:"dbTablesInclusionMap"`
+	InternalRules        EventingTriggers    `json:"internalRules,omitempty" yaml:"internalRules,omitempty" mapstructure:"internalRules"`
 }
 
 // EventingSchema stores information of eventing schema
@@ -251,28 +252,30 @@ type TableRule struct {
 
 // Rule is the authorisation object at the query level
 type Rule struct {
-	ID       string                 `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id"`
-	Rule     string                 `json:"rule" yaml:"rule" mapstructure:"rule"`
-	Eval     string                 `json:"eval,omitempty" yaml:"eval,omitempty" mapstructure:"eval"`
-	Type     string                 `json:"type,omitempty" yaml:"type,omitempty" mapstructure:"type"`
-	F1       interface{}            `json:"f1,omitempty" yaml:"f1,omitempty" mapstructure:"f1"`
-	F2       interface{}            `json:"f2,omitempty" yaml:"f2,omitempty" mapstructure:"f2"`
-	Clauses  []*Rule                `json:"clauses,omitempty" yaml:"clauses,omitempty" mapstructure:"clauses"`
-	DB       string                 `json:"db,omitempty" yaml:"db,omitempty" mapstructure:"db"`
-	Col      string                 `json:"col,omitempty" yaml:"col,omitempty" mapstructure:"col"`
-	Find     map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty" mapstructure:"find"`
-	URL      string                 `json:"url,omitempty" yaml:"url,omitempty" mapstructure:"url"`
-	Fields   interface{}            `json:"fields,omitempty" yaml:"fields,omitempty" mapstructure:"fields"`
-	Field    string                 `json:"field,omitempty" yaml:"field,omitempty" mapstructure:"field"`
-	Value    interface{}            `json:"value,omitempty" yaml:"value,omitempty" mapstructure:"value"`
-	Clause   *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty" mapstructure:"clause"`
-	Name     string                 `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name"`
-	Error    string                 `json:"error,omitempty" yaml:"error,omitempty" mapstructure:"error"`
-	Store    string                 `json:"store,omitempty" yaml:"store,omitempty" mapstructure:"store"`
-	Claims   string                 `json:"claims,omitempty" yaml:"claims,omitempty" mapstructure:"claims"`
-	Template TemplatingEngine       `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
-	ReqTmpl  string                 `json:"requestTemplate,omitempty" yaml:"requestTemplate,omitempty" mapstructure:"requestTemplate"`
-	OpFormat string                 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
+	ID               string                 `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id"`
+	Rule             string                 `json:"rule" yaml:"rule" mapstructure:"rule"`
+	Eval             string                 `json:"eval,omitempty" yaml:"eval,omitempty" mapstructure:"eval"`
+	Type             string                 `json:"type,omitempty" yaml:"type,omitempty" mapstructure:"type"`
+	F1               interface{}            `json:"f1,omitempty" yaml:"f1,omitempty" mapstructure:"f1"`
+	F2               interface{}            `json:"f2,omitempty" yaml:"f2,omitempty" mapstructure:"f2"`
+	Clauses          []*Rule                `json:"clauses,omitempty" yaml:"clauses,omitempty" mapstructure:"clauses"`
+	DB               string                 `json:"db,omitempty" yaml:"db,omitempty" mapstructure:"db"`
+	Col              string                 `json:"col,omitempty" yaml:"col,omitempty" mapstructure:"col"`
+	Find             map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty" mapstructure:"find"`
+	URL              string                 `json:"url,omitempty" yaml:"url,omitempty" mapstructure:"url"`
+	Fields           interface{}            `json:"fields,omitempty" yaml:"fields,omitempty" mapstructure:"fields"`
+	Field            string                 `json:"field,omitempty" yaml:"field,omitempty" mapstructure:"field"`
+	Value            interface{}            `json:"value,omitempty" yaml:"value,omitempty" mapstructure:"value"`
+	Clause           *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty" mapstructure:"clause"`
+	Name             string                 `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name"`
+	Error            string                 `json:"error,omitempty" yaml:"error,omitempty" mapstructure:"error"`
+	Store            string                 `json:"store,omitempty" yaml:"store,omitempty" mapstructure:"store"`
+	Claims           string                 `json:"claims,omitempty" yaml:"claims,omitempty" mapstructure:"claims"`
+	Template         TemplatingEngine       `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
+	ReqTmpl          string                 `json:"requestTemplate,omitempty" yaml:"requestTemplate,omitempty" mapstructure:"requestTemplate"`
+	OpFormat         string                 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
+	GraphQLQuery     string                 `json:"graphqlQuery,omitempty" yaml:"graphqlQuery,omitempty" mapstructure:"graphqlQuery"`
+	GraphQLVariables map[string]interface{} `json:"graphqlVariables,omitempty" yaml:"graphqlVariables,omitempty" mapstructure:"graphqlVariables"`
 }
 
 // Auths holds the mapping of the sign in method
@@ -402,12 +405,13 @@ type StaticRoute struct {
 
 // Eventing holds the config for the eventing module (task queue)
 type Eventing struct {
-	Enabled       bool                        `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
-	DBAlias       string                      `json:"dbAlias" yaml:"dbAlias" mapstructure:"dbAlias"`
-	Rules         map[string]*EventingTrigger `json:"triggers,omitempty" yaml:"triggers" mapstructure:"triggers"`
-	InternalRules map[string]*EventingTrigger `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty" mapstructure:"internalTriggers"`
-	SecurityRules map[string]*Rule            `json:"securityRules,omitempty" yaml:"securityRules,omitempty" mapstructure:"securityRules"`
-	Schemas       map[string]SchemaObject     `json:"schemas,omitempty" yaml:"schemas,omitempty" mapstructure:"schemas"`
+	Enabled              bool                        `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+	DBAlias              string                      `json:"dbAlias" yaml:"dbAlias" mapstructure:"dbAlias"`
+	DBTablesInclusionMap map[string][]string         `json:"dbTablesInclusionMap" yaml:"dbTablesInclusionMap" mapstructure:"dbTablesInclusionMap"`
+	Rules                map[string]*EventingTrigger `json:"triggers,omitempty" yaml:"triggers" mapstructure:"triggers"`
+	InternalRules        map[string]*EventingTrigger `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty" mapstructure:"internalTriggers"`
+	SecurityRules        map[string]*Rule            `json:"securityRules,omitempty" yaml:"securityRules,omitempty" mapstructure:"securityRules"`
+	Schemas              map[string]SchemaObject     `json:"schemas,omitempty" yaml:"schemas,omitempty" mapstructure:"schemas"`
 }
 
 // EventingTrigger stores information of eventing trigger

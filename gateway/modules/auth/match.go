@@ -74,6 +74,12 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 	case "hash":
 		return m.matchHash(ctx, project, rule, args, auth)
 
+	case "graphql":
+		return m.matchGraphQL(ctx, project, rule, args, auth, returnWhere)
+
+	case "transform":
+		return m.matchTransform(ctx, rule, args)
+
 	default:
 		return nil, formatError(ctx, rule, fmt.Errorf("invalid rule type (%s) provided", rule.Rule))
 	}
@@ -436,4 +442,80 @@ func (m *Module) matchHash(ctx context.Context, projectID string, rule *config.R
 		}
 	}
 	return actions, nil
+}
+
+func (m *Module) matchGraphQL(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
+	newArgs := args["args"].(map[string]interface{})
+
+	var token string
+	if rule.Claims != "" {
+		obj, err := m.executeTemplate(ctx, rule, rule.Claims, newArgs)
+		if err != nil {
+			return nil, formatError(ctx, rule, err)
+		}
+		token, err = m.jwt.CreateToken(ctx, obj.(map[string]interface{}))
+		if err != nil {
+			return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create new token used by the webhook url in security rule (Webhook)", err, nil))
+		}
+	} else {
+		token = newArgs["token"].(string)
+	}
+
+	type result struct {
+		op  interface{}
+		err error
+	}
+	ch := make(chan result, 1)
+	defer close(ch)
+
+	m.graphql.ExecGraphQLQuery(ctx, &model.GraphQLRequest{Query: rule.GraphQLQuery, Variables: rule.GraphQLVariables}, token, func(op interface{}, err error) {
+		ch <- result{
+			op:  op,
+			err: err,
+		}
+	})
+
+	select {
+	case t := <-ch:
+		if t.err != nil {
+			return nil, formatError(ctx, rule, t.err)
+		}
+		if rule.Store == "" {
+			rule.Store = "args.result"
+		}
+		if err := utils.StoreValue(ctx, rule.Store, t.op, args); err != nil {
+			return nil, formatError(ctx, rule, err)
+		}
+
+		postProcess, err := m.matchRule(ctx, projectID, rule.Clause, args, auth, returnWhere)
+		return postProcess, formatError(ctx, rule, err)
+
+	case <-ctx.Done():
+		return nil, formatError(ctx, rule, fmt.Errorf("match graphql security rule: Request timed out"))
+	}
+}
+
+func (m *Module) matchTransform(ctx context.Context, rule *config.Rule, args map[string]interface{}) (*model.PostProcess, error) {
+	newArgs := args["args"].(map[string]interface{})
+
+	var obj interface{}
+	if rule.ReqTmpl != "" {
+		temp, err := m.executeTemplate(ctx, rule, rule.ReqTmpl, newArgs)
+		if err != nil {
+			return nil, formatError(ctx, rule, err)
+		}
+		obj = temp
+	} else {
+		obj = newArgs
+	}
+
+	if rule.Store == "" {
+		rule.Store = "args.result"
+	}
+
+	if err := utils.StoreValue(ctx, rule.Store, obj, args); err != nil {
+		return nil, formatError(ctx, rule, err)
+	}
+
+	return nil, nil
 }
