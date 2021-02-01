@@ -288,7 +288,7 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 					}
 					if prefix := match.Uri.GetPrefix(); prefix != "" {
 						tempMatcher.URL.Type = model.RouteHTTPMatchTypePrefix
-						tempMatcher.URL.Value = match.Uri.GetPrefix()
+						tempMatcher.URL.Value = prefix
 					}
 					if regex := match.Uri.GetRegex(); regex != "" {
 						tempMatcher.URL.Type = model.RouteHTTPMatchTypeRegex
