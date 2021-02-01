@@ -13,6 +13,7 @@ import (
 // Delete removes the document(s) from the database which match the condition
 func (m *Mongo) Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error) {
 	collection := m.getClient().Database(m.dbName).Collection(col)
+	req.Find = sanitizeWhereClause(ctx, col, req.Find)
 
 	switch req.Operation {
 	case utils.One:

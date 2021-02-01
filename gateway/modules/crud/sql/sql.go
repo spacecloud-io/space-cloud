@@ -29,14 +29,16 @@ type SQL struct {
 	client              *sqlx.DB
 	dbType              string
 	name                string // logical db name or schema name according to the database type
-	auth                model.AuthCrudInterface
 	driverConf          config.DriverConfig
 	connRetryCloserChan chan struct{}
+
+	// 	Auth module
+	aesKey []byte
 }
 
 // Init initialises a new sql instance
-func Init(dbType model.DBType, enabled bool, connection string, dbName string, auth model.AuthCrudInterface, driverConf config.DriverConfig) (s *SQL, err error) {
-	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil, auth: auth, driverConf: driverConf}
+func Init(dbType model.DBType, enabled bool, connection string, dbName string, driverConf config.DriverConfig) (s *SQL, err error) {
+	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil, driverConf: driverConf}
 
 	switch dbType {
 	case model.Postgres:
@@ -183,6 +185,11 @@ func doExecContext(ctx context.Context, query string, args []interface{}, execut
 // SetQueryFetchLimit sets data fetch limit
 func (s *SQL) SetQueryFetchLimit(limit int64) {
 	s.queryFetchLimit = &limit
+}
+
+// SetProjectAESKey sets aes key
+func (s *SQL) SetProjectAESKey(aesKey []byte) {
+	s.aesKey = aesKey
 }
 
 func (s *SQL) setClient(c *sqlx.DB) {

@@ -32,7 +32,7 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		value := config.LetsEncrypt{}
 		defer utils.CloseTheCloser(r.Body)
 		if err := json.NewDecoder(r.Body).Decode(&value); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return
 		}
 		value.ID = id
@@ -43,14 +43,14 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "letsencrypt", "modify", map[string]string{"project": projectID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, value)
 		status, err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, &value, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -75,7 +75,7 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "letsencrypt", "read", map[string]string{"project": projectID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -83,7 +83,7 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 
 		status, le, err := syncMan.GetLetsEncryptConfig(ctx, projectID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 

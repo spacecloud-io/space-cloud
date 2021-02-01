@@ -12,6 +12,7 @@ import (
 // Update updates the document(s) which match the condition provided.
 func (m *Mongo) Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error) {
 	collection := m.getClient().Database(m.dbName).Collection(col)
+	req.Find = sanitizeWhereClause(ctx, col, req.Find)
 
 	switch req.Operation {
 	case utils.One:

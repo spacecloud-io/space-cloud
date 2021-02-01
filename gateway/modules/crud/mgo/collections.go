@@ -2,6 +2,9 @@ package mgo
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -11,7 +14,7 @@ func (m *Mongo) GetCollections(ctx context.Context) ([]utils.DatabaseCollections
 
 	collections, err := m.getClient().Database(m.dbName).ListCollectionNames(ctx, map[string]interface{}{})
 	if err != nil {
-		return nil, err
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to query database to get tables in database (%s)", m.dbName), err, nil)
 	}
 
 	dbCols := make([]utils.DatabaseCollections, len(collections))

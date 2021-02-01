@@ -31,7 +31,7 @@ func (b *Bolt) Update(ctx context.Context, col string, req *model.UpdateRequest)
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to unmarshal data read from bbbolt db", err, nil)
 				}
 				// if valid then update
-				if utils.Validate(req.Find, currentObj) {
+				if utils.Validate(string(model.EmbeddedDB), req.Find, currentObj) {
 					objToSet, ok := req.Update["$set"].(map[string]interface{})
 					if !ok {
 						return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to update in bbolt - $set db operator not found or the operator value is not map", nil, nil)

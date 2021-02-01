@@ -31,7 +31,7 @@ func (b *Bolt) Delete(ctx context.Context, col string, req *model.DeleteRequest)
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to unmarshal data of bbolt db", err, nil)
 				}
 				// if valid then delete
-				if utils.Validate(req.Find, result) {
+				if utils.Validate(string(model.EmbeddedDB), req.Find, result) {
 					// delete data
 					if err := bucket.Delete(k); err != nil {
 						return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to delete bbolt key", err, nil)

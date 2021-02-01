@@ -184,11 +184,11 @@ spec:
             - name: "LOG_FORMAT"
               value: {{ .Values.meta.logFormat }}
             - name: "PROMETHEUS_ADDR"
-              value: {{ .Values.connections.prometheusConn }}
+              value: {{ .Values.connections.prometheusConn | quote }}
             - name: "JWT_SECRET"
-              value: {{ .Values.admin.secret }}
+              value: {{ .Values.admin.secret | quote }}
             - name: "CLUSTER_ID"
-              value: {{ .Values.clusterId }}
+              value: {{ .Values.clusterId | quote }}
             - name: "REDIS_CONN"
               value: {{ .Values.connections.redisConn }}
           {{ range $key, $value := .Values.runner.envs }}

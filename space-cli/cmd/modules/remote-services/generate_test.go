@@ -1,15 +1,17 @@
 package remoteservices
 
 import (
+	"encoding/json"
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/go-test/deep"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/input"
-	"github.com/stretchr/testify/mock"
 )
 
 func Test_generateService(t *testing.T) {
@@ -258,7 +260,7 @@ func Test_generateService(t *testing.T) {
 				},
 				Spec: map[string]interface{}{
 					"url":       "url",
-					"endpoints": []interface{}{map[string]interface{}{"endpointName": map[string]interface{}{"method": "POST", "path": "/"}}},
+					"endpoints": map[string]interface{}{"endpointName": map[string]interface{}{"method": "POST", "path": "/"}},
 				},
 			},
 		},
@@ -279,8 +281,9 @@ func Test_generateService(t *testing.T) {
 				t.Errorf("generateService() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("generateService() = %v, want %v", got, tt.want)
+			if arr := deep.Equal(got, tt.want); len(arr) != 0 {
+				a, _ := json.MarshalIndent(arr, "", " ")
+				t.Errorf("GenerateService() = %s", string(a))
 			}
 
 			mockSurvey.AssertExpectations(t)

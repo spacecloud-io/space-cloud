@@ -13,6 +13,13 @@ func NewArray(length int) *Array {
 	return &Array{array: make([]interface{}, length)}
 }
 
+// Append sets an item in the array at a particular index
+func (a *Array) Append(value interface{}) {
+	a.lock.Lock()
+	a.array = append(a.array, value)
+	a.lock.Unlock()
+}
+
 // Set sets an item in the array at a particular index
 func (a *Array) Set(index int, value interface{}) {
 	a.lock.Lock()

@@ -47,7 +47,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 			err = r.ParseForm()
 		}
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, fmt.Sprintf("Could not parse form: %s", err.Error()))
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, fmt.Errorf("Could not parse form: %s", err))
 			return
 		}
 
@@ -61,7 +61,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 		if makeAllString != "" {
 			makeAll, err = strconv.ParseBool(makeAllString)
 			if err != nil {
-				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, "Incorrect value for makeAll")
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, fmt.Errorf("Incorrect value for makeAll"))
 				return
 			}
 		}
@@ -69,7 +69,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 		if fileType == "file" {
 			file, header, err := r.FormFile("file")
 			if err != nil {
-				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, fmt.Sprintf("Incorrect value for file: %s", err))
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, fmt.Errorf("Incorrect value for file: %s", err))
 				return
 			}
 			defer utils.CloseTheCloser(file)
@@ -85,7 +85,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 
 			status, err := fileStore.UploadFile(ctx, projectID, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
 			if err != nil {
-				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 				return
 			}
 			_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})
@@ -93,7 +93,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 			name := r.FormValue("name")
 			status, err := fileStore.CreateDir(ctx, projectID, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
 			if err != nil {
-				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 				return
 			}
 			_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})
@@ -121,14 +121,14 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 			mode := r.URL.Query().Get("mode")
 			status, res, err := fileStore.ListFiles(ctx, projectID, token, &model.ListFilesRequest{Path: path, Type: mode})
 			if err != nil {
-				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 				return
 			}
 			_ = helpers.Response.SendResponse(ctx, w, status, map[string]interface{}{"result": res})
 			return
 		} else if op == "exist" {
 			if err := fileStore.DoesExists(ctx, projectID, token, path); err != nil {
-				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusNotFound, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusNotFound, err)
 				return
 			}
 			_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
@@ -138,7 +138,7 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 		// Read the file from file storage
 		status, file, err := fileStore.DownloadFile(ctx, projectID, token, path)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 		defer func() { _ = file.Close() }()
@@ -171,14 +171,14 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 		if fileType == "file" {
 			status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
 			if err != nil {
-				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 				return
 			}
 			_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})
 		} else if fileType == "dir" {
 			status, err := fileStore.DeleteDir(ctx, projectID, token, path, v)
 			if err != nil {
-				_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+				_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 				return
 			}
 			_ = helpers.Response.SendResponse(ctx, w, status, map[string]string{})

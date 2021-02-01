@@ -17,8 +17,8 @@ func (m *mockCrudSchemaInterface) GetDBType(dbAlias string) (string, error) {
 	return c.String(0), nil
 }
 
-func (m *mockCrudSchemaInterface) DescribeTable(ctx context.Context, dbAlias, col string) ([]model.InspectorFieldType, []model.ForeignKeysType, []model.IndexType, error) {
-	return nil, nil, nil, nil
+func (m *mockCrudSchemaInterface) DescribeTable(ctx context.Context, dbAlias, col string) ([]model.InspectorFieldType, []model.IndexType, error) {
+	return nil, nil, nil
 }
 
 func (m *mockCrudSchemaInterface) RawBatch(ctx context.Context, dbAlias string, batchedQueries []string) error {
