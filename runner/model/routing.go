@@ -61,7 +61,7 @@ type HTTPMatcher struct {
 	Key          string             `json:"key,omitempty" yaml:"key,omitempty"`
 	Value        string             `json:"value,omitempty" yaml:"value,omitempty"`
 	Type         RouteHTTPMatchType `json:"type,omitempty" yaml:"type,omitempty"`
-	IsIgnoreCase bool               `json:"isIgnoreCase,omitempty" yaml:"isIgnoreCase,omitempty"`
+	IgnoreCase bool               `json:"ignoreCase,omitempty" yaml:"ignoreCase,omitempty"`
 }
 
 // RouteSource is the source of routing
