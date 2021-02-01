@@ -311,7 +311,7 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 					}
 					if regex := headerValue.GetRegex(); regex != "" {
 						tempHeader.Type = model.RouteHTTPMatchTypeRegex
-						tempHeader.Value = headerValue.GetRegex()
+						tempHeader.Value = regex
 					}
 
 					if tempHeader.Value == "" || tempHeader.Type == "" {
