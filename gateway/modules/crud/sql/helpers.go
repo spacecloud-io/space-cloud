@@ -171,15 +171,15 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 					mapping[colType.Name()] = val
 				}
 			}
-			if dbType == model.SQLServer {
-				if typeName == "NVARCHAR" {
+			if dbType == model.SQLServer || typeName == "NVARCHAR" {
+				if (strings.HasPrefix(v, "{") && strings.HasSuffix(v, "}")) || (strings.HasPrefix(v, "[") && strings.HasSuffix(v, "]")) {
 					var val interface{}
 					if err := json.Unmarshal([]byte(v), &val); err == nil {
 						mapping[colType.Name()] = val
 						continue
 					}
-					mapping[colType.Name()] = v
 				}
+				mapping[colType.Name()] = v
 			}
 		case []byte:
 			switch typeName {
