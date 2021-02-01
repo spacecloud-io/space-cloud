@@ -303,7 +303,7 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 
 					if exact := headerValue.GetExact(); exact != "" {
 						tempHeader.Type = model.RouteHTTPMatchTypeExact
-						tempHeader.Value = headerValue.GetExact()
+						tempHeader.Value = exact
 					}
 					if prefix := headerValue.GetPrefix(); prefix != "" {
 						tempHeader.Type = model.RouteHTTPMatchTypePrefix
