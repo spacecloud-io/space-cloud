@@ -279,7 +279,7 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 			for i, match := range route.Match {
 				tempMatcher := new(model.Matcher)
 
-				if match.Uri.GetMatchType() != nil {
+				if  math.Uri != nil && match.Uri.GetMatchType() != nil {
 					tempMatcher.URL = new(model.HTTPMatcher)
 					tempMatcher.URL.IsIgnoreCase = match.IgnoreUriCase
 					if exact := match.Uri.GetExact(); exact != "" {
