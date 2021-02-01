@@ -436,9 +436,9 @@ func Test_prepareVirtualServiceHTTPRoutes(t *testing.T) {
 						Matchers: []*model.Matcher{
 							{
 								URL: &model.HTTPMatcher{
-									Value:        "/v2/",
-									Type:         model.RouteHTTPMatchTypeExact,
-									IsIgnoreCase: true,
+									Value:      "/v2/",
+									Type:       model.RouteHTTPMatchTypeExact,
+									IgnoreCase: true,
 								},
 								Headers: []*model.HTTPMatcher{
 									{

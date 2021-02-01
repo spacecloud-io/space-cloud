@@ -245,9 +245,9 @@ func TestIstio_GetServiceRoutes(t *testing.T) {
 							},
 							{
 								URL: &model.HTTPMatcher{
-									Value:        "/v2/",
-									Type:         model.RouteHTTPMatchTypeExact,
-									IsIgnoreCase: true,
+									Value:      "/v2/",
+									Type:       model.RouteHTTPMatchTypeExact,
+									IgnoreCase: true,
 								},
 								Headers: []*model.HTTPMatcher{
 									{

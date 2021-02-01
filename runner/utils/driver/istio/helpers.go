@@ -258,7 +258,7 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 
 			// Add url matchers
 			if matcher.URL != nil {
-				tempMatcher.IgnoreUriCase = matcher.URL.IsIgnoreCase
+				tempMatcher.IgnoreUriCase = matcher.URL.IgnoreCase
 				tempMatcher.Uri = new(networkingv1alpha3.StringMatch)
 				switch matcher.URL.Type {
 				case model.RouteHTTPMatchTypeExact:
