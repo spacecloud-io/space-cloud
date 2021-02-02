@@ -177,7 +177,12 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 }
 
 func getAggregateColumnName(column string) string {
-	return strings.Split(column, ":")[1]
+	columnName := strings.Split(column, ":")[1]
+	// NOTE: This is a special case for count aggregate operation
+	if strings.HasSuffix(columnName, "*") {
+		return "*"
+	}
+	return columnName
 }
 
 func getAggregateAsColumnName(function, column string) string {
@@ -186,6 +191,10 @@ func getAggregateAsColumnName(function, column string) string {
 
 	returnField := arr[0]
 	column = arr[1]
+	// NOTE: This is a special case for count aggregate operation
+	if strings.HasSuffix(column, "*") {
+		column = strings.Replace(column, "*", returnField, 1)
+	}
 	if len(arr) == 3 && arr[2] == "table" {
 		format = "table"
 	}
