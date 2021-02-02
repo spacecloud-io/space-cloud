@@ -252,10 +252,51 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 			}
 		}
 
+		matchers := make([]*networkingv1alpha3.HTTPMatchRequest, 0)
+		for _, matcher := range route.Matchers {
+			tempMatcher := new(networkingv1alpha3.HTTPMatchRequest)
+
+			// Add url matchers
+			if matcher.URL != nil {
+				tempMatcher.IgnoreUriCase = matcher.URL.IgnoreCase
+				tempMatcher.Uri = new(networkingv1alpha3.StringMatch)
+				switch matcher.URL.Type {
+				case model.RouteHTTPMatchTypeExact:
+					tempMatcher.Uri.MatchType = &networkingv1alpha3.StringMatch_Exact{Exact: matcher.URL.Value}
+				case model.RouteHTTPMatchTypePrefix:
+					tempMatcher.Uri.MatchType = &networkingv1alpha3.StringMatch_Prefix{Prefix: matcher.URL.Value}
+				case model.RouteHTTPMatchTypeRegex:
+					tempMatcher.Uri.MatchType = &networkingv1alpha3.StringMatch_Regex{Regex: matcher.URL.Value}
+				}
+			}
+
+			// 	Add header matchers
+			tempMatcher.Headers = map[string]*networkingv1alpha3.StringMatch{}
+			for _, header := range matcher.Headers {
+				switch header.Type {
+				case model.RouteHTTPMatchTypeExact:
+					tempMatcher.Headers[header.Key] = &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Exact{Exact: header.Value}}
+				case model.RouteHTTPMatchTypePrefix:
+					tempMatcher.Headers[header.Key] = &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Prefix{Prefix: header.Value}}
+				case model.RouteHTTPMatchTypeRegex:
+					tempMatcher.Headers[header.Key] = &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Regex{Regex: header.Value}}
+				case model.RouteHTTPMatchTypeCheckPresence:
+					tempMatcher.Headers[header.Key] = &networkingv1alpha3.StringMatch{}
+				}
+			}
+
+			tempMatcher.Port = uint32(route.Source.Port)
+			tempMatcher.Gateways = []string{"mesh"}
+			matchers = append(matchers, tempMatcher)
+		}
+		if len(matchers) == 0 {
+			matchers = append(matchers, &networkingv1alpha3.HTTPMatchRequest{Port: uint32(route.Source.Port), Gateways: []string{"mesh"}})
+		}
+
 		// Add the http route
 		httpRoutes = append(httpRoutes, &networkingv1alpha3.HTTPRoute{
 			Name:    fmt.Sprintf("http-%d", route.Source.Port),
-			Match:   []*networkingv1alpha3.HTTPMatchRequest{{Port: uint32(route.Source.Port), Gateways: []string{"mesh"}}},
+			Match:   matchers,
 			Retries: &networkingv1alpha3.HTTPRetry{Attempts: route.RequestRetries, PerTryTimeout: &types.Duration{Seconds: route.RequestTimeout}},
 			Route:   destinations,
 		})
