@@ -35,7 +35,7 @@ func HandleSetSecurityFunction(adminMan *admin.Manager, syncMan *syncman.Manager
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
 
-		reqParams, err := adminMan.IsTokenValid(ctx, token, "auth-id", "modify", map[string]string{"project": projectID, "id": id})
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "security-function", "modify", map[string]string{"project": projectID, "id": id})
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
@@ -72,7 +72,7 @@ func HandleGetSecurityFunction(adminMan *admin.Manager, syncMan *syncman.Manager
 		defer cancel()
 
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(ctx, token, "auth-provider", "read", map[string]string{"project": projectID, "id": providerID})
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "security-function", "read", map[string]string{"project": projectID, "id": providerID})
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
@@ -103,7 +103,7 @@ func HandleDeleteSecurityFunction(adminMan *admin.Manager, syncMan *syncman.Mana
 		defer cancel()
 
 		// Check if the request is authorised
-		reqParams, err := adminMan.IsTokenValid(ctx, token, "auth-provider", "delete", map[string]string{"project": projectID, "id": providerID})
+		reqParams, err := adminMan.IsTokenValid(ctx, token, "security-function", "delete", map[string]string{"project": projectID, "id": providerID})
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
