@@ -129,7 +129,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 				case "avg":
 					selArray = append(selArray, goqu.AVG(getAggregateColumnName(column)).As(asColumnName))
 				case "count":
-					selArray = append(selArray, goqu.COUNT("*").As(asColumnName))
+					selArray = append(selArray, goqu.COUNT(getAggregateColumnName(column)).As(asColumnName))
 				default:
 					return "", nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown aggregate funcion (%s)", function), nil, map[string]interface{}{})
 				}
@@ -177,7 +177,12 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 }
 
 func getAggregateColumnName(column string) string {
-	return strings.Split(column, ":")[1]
+	columnName := strings.Split(column, ":")[1]
+	// NOTE: This is a special case for count aggregate operation
+	if strings.HasSuffix(columnName, "*") {
+		return "*"
+	}
+	return columnName
 }
 
 func getAggregateAsColumnName(function, column string) string {
@@ -186,6 +191,10 @@ func getAggregateAsColumnName(function, column string) string {
 
 	returnField := arr[0]
 	column = arr[1]
+	// NOTE: This is a special case for count aggregate operation
+	if strings.HasSuffix(column, "*") {
+		column = strings.Replace(column, "*", returnField, 1)
+	}
 	if len(arr) == 3 && arr[2] == "table" {
 		format = "table"
 	}
@@ -361,12 +370,7 @@ func processAggregate(row, m map[string]interface{}, tableName string, isAggrega
 				funcValue, ok := funcMap[functionName]
 				if !ok {
 					// set new function
-					// NOTE: This case occurs for count function with no column name (using * operator instead)
-					if columnName == "" {
-						funcMap[functionName] = value
-					} else {
-						funcMap[functionName] = map[string]interface{}{columnName: value}
-					}
+					funcMap[functionName] = map[string]interface{}{columnName: value}
 					continue
 				}
 				// add new column to existing function
