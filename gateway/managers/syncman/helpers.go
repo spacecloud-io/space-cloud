@@ -178,6 +178,19 @@ func (s *Manager) validateResource(ctx context.Context, eventType string, resour
 			}
 		}
 		return false, nil
+	case config.ResourceSecurityFunction:
+		switch eventType {
+		case config.ResourceAddEvent, config.ResourceUpdateEvent:
+			value := new(config.SecurityFunction)
+			if err := mapstructure.Decode(resource, value); err != nil {
+				return false, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.SecurityFunction{}", reflect.TypeOf(resource)), nil, nil)
+			}
+
+			if reflect.DeepEqual(project.Auths[resourceID], value) {
+				return true, nil
+			}
+		}
+		return false, nil
 	case config.ResourceDatabaseConfig:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
@@ -478,6 +491,24 @@ func updateResource(ctx context.Context, eventType string, globalConfig *config.
 			}
 		case config.ResourceDeleteEvent:
 			delete(project.Auths, resourceID)
+		}
+
+		return nil
+	case config.ResourceSecurityFunction:
+		switch eventType {
+		case config.ResourceAddEvent, config.ResourceUpdateEvent:
+			value := new(config.SecurityFunction)
+			if err := mapstructure.Decode(resource, value); err != nil {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.SecurityFunction{}", reflect.TypeOf(resource)), nil, nil)
+			}
+
+			if project.SecurityFunctions == nil {
+				project.SecurityFunctions = config.SecurityFunctions{resourceID: value}
+			} else {
+				project.SecurityFunctions[resourceID] = value
+			}
+		case config.ResourceDeleteEvent:
+			delete(project.SecurityFunctions, resourceID)
 		}
 
 		return nil

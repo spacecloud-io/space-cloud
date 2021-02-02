@@ -15,19 +15,20 @@ import (
 // Module is responsible for authentication and authorisation
 type Module struct {
 	sync.RWMutex
-	dbRules          config.DatabaseRules
-	dbPrepQueryRules config.DatabasePreparedQueries
-	clusterID        string
-	nodeID           string
-	jwt              *jwtUtils.JWT
-	crud             model.CrudAuthInterface
-	fileRules        []*config.FileRule
-	funcRules        config.Services
-	eventingRules    map[string]*config.Rule
-	project          string
-	fileStoreType    string
-	makeHTTPRequest  utils.TypeMakeHTTPRequest
-	aesKey           []byte
+	dbRules           config.DatabaseRules
+	dbPrepQueryRules  config.DatabasePreparedQueries
+	clusterID         string
+	nodeID            string
+	jwt               *jwtUtils.JWT
+	crud              model.CrudAuthInterface
+	fileRules         []*config.FileRule
+	funcRules         config.Services
+	securityFunctions config.SecurityFunctions
+	eventingRules     map[string]*config.Rule
+	project           string
+	fileStoreType     string
+	makeHTTPRequest   utils.TypeMakeHTTPRequest
+	aesKey            []byte
 
 	// Admin Manager
 	adminMan adminMan
@@ -35,7 +36,7 @@ type Module struct {
 
 // Init creates a new instance of the auth object
 func Init(clusterID, nodeID string, crud model.CrudAuthInterface, adminMan adminMan) *Module {
-	return &Module{clusterID: clusterID, nodeID: nodeID, dbRules: make(config.DatabaseRules), dbPrepQueryRules: make(config.DatabasePreparedQueries), crud: crud, adminMan: adminMan, jwt: jwtUtils.New()}
+	return &Module{clusterID: clusterID, nodeID: nodeID, dbRules: make(config.DatabaseRules), securityFunctions: make(config.SecurityFunctions), dbPrepQueryRules: make(config.DatabasePreparedQueries), crud: crud, adminMan: adminMan, jwt: jwtUtils.New()}
 }
 
 // GetInternalAccessToken returns the token that can be used internally by Space Cloud

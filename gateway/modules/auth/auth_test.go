@@ -25,7 +25,7 @@ func TestCreateToken(t *testing.T) {
 	authModule := Init("chicago", "1", &crud.Module{}, nil)
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
-			_ = authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{Secrets: test.secretKeys}, nil, nil, nil, nil, config.EventingRules{})
+			_ = authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{Secrets: test.secretKeys}, nil, nil, nil, nil, config.EventingRules{}, config.SecurityFunctions{})
 			_, err := authModule.CreateToken(context.Background(), test.object)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got Error", err, "Wanted Error ", test.IsErrExpected)
@@ -48,7 +48,7 @@ func TestIsTokenInternal(t *testing.T) {
 	authModule := Init("chicago", "1", &crud.Module{}, nil)
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
-			_ = authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{Secrets: test.secretKeys}, nil, nil, nil, nil, config.EventingRules{})
+			_ = authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{Secrets: test.secretKeys}, nil, nil, nil, nil, config.EventingRules{}, config.SecurityFunctions{})
 			err := authModule.IsTokenInternal(context.Background(), test.token)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got This ", err, "Wanted Error-", test.IsErrExpected)
@@ -161,7 +161,7 @@ ASagEwagcvqKhYXbDyc4s2iechFqKq50Au5e9DlwWzgTCeG7dWupvtb29TBJhkOd
 	authModule := Init("chicago", "1", &crud.Module{}, nil)
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			if err := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{Secrets: test.secretKeys}, nil, nil, nil, nil, nil); err != nil {
+			if err := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{Secrets: test.secretKeys}, nil, nil, nil, nil, nil, config.SecurityFunctions{}); err != nil {
 				t.Errorf("error setting config of auth module  - %s", err.Error())
 			}
 			tokenClaims, err := authModule.jwt.ParseToken(context.Background(), test.token)

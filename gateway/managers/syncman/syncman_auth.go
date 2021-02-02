@@ -93,3 +93,85 @@ func (s *Manager) DeleteUserManagement(ctx context.Context, project, provider st
 
 	return http.StatusOK, nil
 }
+
+// SetSecurityFunction sets the security function
+func (s *Manager) SetSecurityFunction(ctx context.Context, project, id string, securityFunction *config.SecurityFunction, reqParams model.RequestParams) (int, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	securityFunction.ID = id
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceSecurityFunction, id)
+	if projectConfig.SecurityFunctions == nil {
+		projectConfig.SecurityFunctions = config.SecurityFunctions{resourceID: securityFunction}
+	} else {
+		projectConfig.SecurityFunctions[resourceID] = securityFunction
+	}
+
+	if err := s.modules.SetSecurityFunctionConfig(ctx, project, projectConfig.SecurityFunctions); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if err := s.store.SetResource(ctx, resourceID, securityFunction); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
+// GetSecurityFunction gets security function
+func (s *Manager) GetSecurityFunction(ctx context.Context, project, id string, params model.RequestParams) (int, []interface{}, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	if err != nil {
+		return http.StatusBadRequest, nil, err
+	}
+
+	if id != "*" {
+		securityFunction, ok := projectConfig.SecurityFunctions[config.GenerateResourceID(s.clusterID, project, config.ResourceSecurityFunction, id)]
+		if !ok {
+			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("security function with name (%s) does not exist in auth config", id), nil, nil)
+		}
+		return http.StatusOK, []interface{}{securityFunction}, nil
+	}
+
+	securityFunctions := make([]interface{}, 0)
+	for _, value := range projectConfig.SecurityFunctions {
+		securityFunctions = append(securityFunctions, value)
+	}
+
+	return http.StatusOK, securityFunctions, nil
+}
+
+// DeleteSecurityFunction deletes the security function
+func (s *Manager) DeleteSecurityFunction(ctx context.Context, project, id string, reqParams model.RequestParams) (int, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceSecurityFunction, id)
+
+	delete(projectConfig.SecurityFunctions, resourceID)
+
+	if err := s.modules.SetSecurityFunctionConfig(ctx, project, projectConfig.SecurityFunctions); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}

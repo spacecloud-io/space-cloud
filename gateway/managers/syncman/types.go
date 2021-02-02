@@ -52,7 +52,7 @@ type ModulesInterface interface {
 
 	// SetUsermanConfig set the config of the userman module
 	SetUsermanConfig(ctx context.Context, projectID string, auth config.Auths) error
-
+	SetSecurityFunctionConfig(ctx context.Context, _ string, securityFunctions config.SecurityFunctions) error
 	// Getters
 	GetSchemaModuleForSyncMan() model.SchemaEventingInterface
 	GetAuthModuleForSyncMan() model.AuthSyncManInterface

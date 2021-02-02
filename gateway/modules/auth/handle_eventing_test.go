@@ -113,7 +113,7 @@ func TestModule_IsEventingOpAuthorised(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_ = tt.m.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: tt.m.project, Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, tt.m.eventingRules)
+			_ = tt.m.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: tt.m.project, Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, tt.m.eventingRules, config.SecurityFunctions{})
 			if _, err := tt.m.IsEventingOpAuthorised(context.Background(), tt.args.project, tt.args.token, tt.args.event); (err != nil) != tt.wantErr {
 				t.Errorf("Module.IsEventingOpAuthorised() error = %v, wantErr %v", err, tt.wantErr)
 			}

@@ -22,6 +22,7 @@ var ResourceFetchingOrder = []Resource{
 	ResourceIngressGlobal,
 	ResourceIngressRoute,
 	ResourceAuthProvider,
+	ResourceSecurityFunction,
 	ResourceProjectLetsEncrypt,
 	ResourceCluster,
 	ResourceIntegration,
@@ -32,6 +33,9 @@ var ResourceFetchingOrder = []Resource{
 type Resource string
 
 const (
+	// ResourceSecurityFunction is a resource
+	ResourceSecurityFunction Resource = "security-function"
+
 	// ResourceAuthProvider is a resource
 	ResourceAuthProvider Resource = "auth-provider"
 

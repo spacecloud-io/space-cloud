@@ -31,7 +31,7 @@ func (m *Module) SetProjectConfig(projectConfig *config.ProjectConfig) error {
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(ctx context.Context, fileStoreType string, projectConfig *config.ProjectConfig, dbRules config.DatabaseRules, dbPreparedRules config.DatabasePreparedQueries, fileStoreRules config.FileStoreRules, remoteServices config.Services, eventingRules config.EventingRules) error {
+func (m *Module) SetConfig(ctx context.Context, fileStoreType string, projectConfig *config.ProjectConfig, dbRules config.DatabaseRules, dbPreparedRules config.DatabasePreparedQueries, fileStoreRules config.FileStoreRules, remoteServices config.Services, eventingRules config.EventingRules, securityFunctions config.SecurityFunctions) error {
 
 	if err := m.SetProjectConfig(projectConfig); err != nil {
 		return err
@@ -42,6 +42,7 @@ func (m *Module) SetConfig(ctx context.Context, fileStoreType string, projectCon
 	m.SetFileStoreRules(fileStoreRules)
 	m.SetEventingRules(eventingRules)
 	m.SetRemoteServiceConfig(remoteServices)
+	m.SetSecurityFunctionConfig(securityFunctions)
 
 	return nil
 }
@@ -63,6 +64,13 @@ func (m *Module) SetRemoteServiceConfig(remoteServices config.Services) {
 	m.Lock()
 	defer m.Unlock()
 	m.funcRules = remoteServices
+}
+
+// SetSecurityFunctionConfig sets the security function  config
+func (m *Module) SetSecurityFunctionConfig(securityFunctions config.SecurityFunctions) {
+	m.Lock()
+	defer m.Unlock()
+	m.securityFunctions = securityFunctions
 }
 
 // SetFileStoreRules sets the file store module config

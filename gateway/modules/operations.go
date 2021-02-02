@@ -37,7 +37,7 @@ func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.P
 		}
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of auth module", nil)
-		if err := m.auth.SetConfig(ctx, project.FileStoreConfig.StoreType, project.ProjectConfig, project.DatabaseRules, project.DatabasePreparedQueries, project.FileStoreRules, project.RemoteService, project.EventingRules); err != nil {
+		if err := m.auth.SetConfig(ctx, project.FileStoreConfig.StoreType, project.ProjectConfig, project.DatabaseRules, project.DatabasePreparedQueries, project.FileStoreRules, project.RemoteService, project.EventingRules, project.SecurityFunctions); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set auth module config", err, nil)
 		}
 
@@ -239,6 +239,13 @@ func (m *Modules) SetEventingRuleConfig(ctx context.Context, secureObj config.Ev
 func (m *Modules) SetUsermanConfig(ctx context.Context, _ string, auth config.Auths) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of user management module", nil)
 	m.user.SetConfig(auth)
+	return nil
+}
+
+// SetSecurityFunctionConfig set the config of the auth module
+func (m *Modules) SetSecurityFunctionConfig(ctx context.Context, _ string, securityFunctions config.SecurityFunctions) error {
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of auth security functions", nil)
+	m.auth.SetSecurityFunctionConfig(securityFunctions)
 	return nil
 }
 

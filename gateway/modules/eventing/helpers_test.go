@@ -71,7 +71,7 @@ func TestModule_selectRule(t *testing.T) {
 
 func TestModule_validate(t *testing.T) {
 	authModule := auth.Init("chicago", "1", &crud.Module{}, nil)
-	err := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{config.GenerateResourceID("chicago", "project", config.ResourceEventingRule, "event"): &config.Rule{ID: "event", Rule: "authenticated"}})
+	err := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{config.GenerateResourceID("chicago", "project", config.ResourceEventingRule, "event"): &config.Rule{ID: "event", Rule: "authenticated"}}, config.SecurityFunctions{})
 	if err != nil {
 		t.Fatalf("error setting config (%s)", err.Error())
 	}

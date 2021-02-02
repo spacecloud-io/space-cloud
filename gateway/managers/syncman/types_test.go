@@ -42,6 +42,11 @@ type mockModulesInterface struct {
 	mock.Mock
 }
 
+func (m *mockModulesInterface) SetSecurityFunctionConfig(ctx context.Context, projectID string, securityFunctions config.SecurityFunctions) error {
+	a := m.Called(ctx, projectID, securityFunctions)
+	return a.Error(0)
+}
+
 func (m *mockModulesInterface) SetInitialProjectConfig(ctx context.Context, config config.Projects) error {
 	a := m.Called(ctx, config)
 	return a.Error(0)

@@ -49,9 +49,13 @@ type FileStoreRules map[string]*FileRule // Key here is resource id --> clusterI
 // IngressRoutes is a map which stores database config information
 type IngressRoutes map[string]*Route // Key here is resource id --> clusterId--projectId--resourceType--routeId
 
+// SecurityFunctions is a map which stores security functions config information
+type SecurityFunctions map[string]*SecurityFunction // Key here is resource id --> clusterId--projectId--resourceType--securityFunctionId
+
 // Project holds the project level configuration
 type Project struct {
-	ProjectConfig *ProjectConfig `json:"projectConfig" yaml:"projectConfig" mapstructure:"projectConfig"`
+	ProjectConfig     *ProjectConfig    `json:"projectConfig" yaml:"projectConfig" mapstructure:"projectConfig"`
+	SecurityFunctions SecurityFunctions `json:"securityFunctions" yaml:"securityFunctions" mapstructure:"securityFunctions"`
 
 	DatabaseConfigs         DatabaseConfigs         `json:"dbConfigs" yaml:"dbConfigs" mapstructure:"dbConfigs"`
 	DatabaseSchemas         DatabaseSchemas         `json:"dbSchemas" yaml:"dbSchemas" mapstructure:"dbSchemas"`
@@ -251,28 +255,30 @@ type TableRule struct {
 
 // Rule is the authorisation object at the query level
 type Rule struct {
-	ID       string                 `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id"`
-	Rule     string                 `json:"rule" yaml:"rule" mapstructure:"rule"`
-	Eval     string                 `json:"eval,omitempty" yaml:"eval,omitempty" mapstructure:"eval"`
-	Type     string                 `json:"type,omitempty" yaml:"type,omitempty" mapstructure:"type"`
-	F1       interface{}            `json:"f1,omitempty" yaml:"f1,omitempty" mapstructure:"f1"`
-	F2       interface{}            `json:"f2,omitempty" yaml:"f2,omitempty" mapstructure:"f2"`
-	Clauses  []*Rule                `json:"clauses,omitempty" yaml:"clauses,omitempty" mapstructure:"clauses"`
-	DB       string                 `json:"db,omitempty" yaml:"db,omitempty" mapstructure:"db"`
-	Col      string                 `json:"col,omitempty" yaml:"col,omitempty" mapstructure:"col"`
-	Find     map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty" mapstructure:"find"`
-	URL      string                 `json:"url,omitempty" yaml:"url,omitempty" mapstructure:"url"`
-	Fields   interface{}            `json:"fields,omitempty" yaml:"fields,omitempty" mapstructure:"fields"`
-	Field    string                 `json:"field,omitempty" yaml:"field,omitempty" mapstructure:"field"`
-	Value    interface{}            `json:"value,omitempty" yaml:"value,omitempty" mapstructure:"value"`
-	Clause   *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty" mapstructure:"clause"`
-	Name     string                 `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name"`
-	Error    string                 `json:"error,omitempty" yaml:"error,omitempty" mapstructure:"error"`
-	Store    string                 `json:"store,omitempty" yaml:"store,omitempty" mapstructure:"store"`
-	Claims   string                 `json:"claims,omitempty" yaml:"claims,omitempty" mapstructure:"claims"`
-	Template TemplatingEngine       `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
-	ReqTmpl  string                 `json:"requestTemplate,omitempty" yaml:"requestTemplate,omitempty" mapstructure:"requestTemplate"`
-	OpFormat string                 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
+	ID                   string                 `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id"`
+	Rule                 string                 `json:"rule" yaml:"rule" mapstructure:"rule"`
+	Eval                 string                 `json:"eval,omitempty" yaml:"eval,omitempty" mapstructure:"eval"`
+	Type                 string                 `json:"type,omitempty" yaml:"type,omitempty" mapstructure:"type"`
+	F1                   interface{}            `json:"f1,omitempty" yaml:"f1,omitempty" mapstructure:"f1"`
+	F2                   interface{}            `json:"f2,omitempty" yaml:"f2,omitempty" mapstructure:"f2"`
+	Clauses              []*Rule                `json:"clauses,omitempty" yaml:"clauses,omitempty" mapstructure:"clauses"`
+	DB                   string                 `json:"db,omitempty" yaml:"db,omitempty" mapstructure:"db"`
+	Col                  string                 `json:"col,omitempty" yaml:"col,omitempty" mapstructure:"col"`
+	Find                 map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty" mapstructure:"find"`
+	URL                  string                 `json:"url,omitempty" yaml:"url,omitempty" mapstructure:"url"`
+	Fields               interface{}            `json:"fields,omitempty" yaml:"fields,omitempty" mapstructure:"fields"`
+	Field                string                 `json:"field,omitempty" yaml:"field,omitempty" mapstructure:"field"`
+	Value                interface{}            `json:"value,omitempty" yaml:"value,omitempty" mapstructure:"value"`
+	Clause               *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty" mapstructure:"clause"`
+	Name                 string                 `json:"name,omitempty" yaml:"name,omitempty" mapstructure:"name"`
+	Error                string                 `json:"error,omitempty" yaml:"error,omitempty" mapstructure:"error"`
+	Store                string                 `json:"store,omitempty" yaml:"store,omitempty" mapstructure:"store"`
+	Claims               string                 `json:"claims,omitempty" yaml:"claims,omitempty" mapstructure:"claims"`
+	Template             TemplatingEngine       `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
+	ReqTmpl              string                 `json:"requestTemplate,omitempty" yaml:"requestTemplate,omitempty" mapstructure:"requestTemplate"`
+	OpFormat             string                 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
+	SecurityFunctionName string                 `json:"securityFunctionName,omitempty" yaml:"securityFunctionName,omitempty" mapstructure:"securityFunctionName"`
+	FnBlockVariables     map[string]string      `json:"fnBlockVariables,omitempty" yaml:"fnBlockVariables,omitempty" mapstructure:"fnBlockVariables"`
 }
 
 // Auths holds the mapping of the sign in method
@@ -436,4 +442,11 @@ type SchemaObject struct {
 type LetsEncrypt struct {
 	ID                 string   `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id"`
 	WhitelistedDomains []string `json:"domains" yaml:"domains" mapstructure:"domains"`
+}
+
+// SecurityFunction describes the configuration for security function
+type SecurityFunction struct {
+	ID        string   `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id"`
+	Rule      *Rule    `json:"rule" yaml:"rule" mapstructure:"rule"`
+	Variables []string `json:"variables" yaml:"variables" mapstructure:"variables"`
 }

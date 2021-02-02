@@ -129,13 +129,88 @@ func TestMatch_Rule(t *testing.T) {
 			args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}},
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
+		{
+			name:          "Match global security function rule",
+			IsErrExpected: false,
+			project:       "default",
+			rule: &config.Rule{
+				Rule:                 "function",
+				SecurityFunctionName: "force-and-remove",
+				FnBlockVariables: map[string]string{
+					"role":        "args.auth.role",
+					"id":          "args.find.id",
+					"custom-role": "super-user",
+					"operation":   "args.op",
+				},
+			},
+			args: map[string]interface{}{
+				"args": map[string]interface{}{
+					"op": "one",
+					"auth": map[string]interface{}{
+						"role":    "admin",
+						"user-id": "UL6VUwwGEFTgxzoZPy9g",
+					},
+					"find": map[string]interface{}{
+						"id": 1500,
+					},
+				},
+			},
+			auth: map[string]interface{}{
+				"role":    "admin",
+				"user-id": "UL6VUwwGEFTgxzoZPy9g",
+			},
+		},
 	}
 	auth := Init("chicago", "1", &crud.Module{}, nil)
 	dbRules := config.DatabaseRules{config.GenerateResourceID("chicago", "project", config.ResourceDatabaseRule, ""): &config.DatabaseRule{Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}
+	securityFunctions := config.SecurityFunctions{
+		config.GenerateResourceID("chicago", "default", config.ResourceSecurityFunction, "force-and-remove"): &config.SecurityFunction{
+			ID: "force-and-remove",
+			Rule: &config.Rule{
+				Name: "Main and rule",
+				Rule: "and",
+				Clauses: []*config.Rule{
+					{
+						Name: "match role rule",
+						Rule: "match",
+						Type: "string",
+						Eval: "==",
+						F1:   "args.role",
+						F2:   "admin",
+					},
+					{
+						Name: "match id rule",
+						Rule: "match",
+						Type: "number",
+						Eval: "!=",
+						F1:   "args.id",
+						F2:   100,
+					},
+					{
+						Name: "match custom-role rule",
+						Rule: "match",
+						Type: "string",
+						Eval: "==",
+						F1:   "args.custom-role",
+						F2:   "super-user",
+					},
+				},
+			},
+			Variables: []string{"role", "id", "operation", "custom-role"},
+		},
+	}
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	err := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "default", AESKey: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}}, dbRules, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{})
+	err := auth.SetConfig(context.TODO(),
+		"local",
+		&config.ProjectConfig{ID: "default", AESKey: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}},
+		dbRules,
+		config.DatabasePreparedQueries{},
+		config.FileStoreRules{},
+		config.Services{},
+		config.EventingRules{},
+		securityFunctions)
 	if err != nil {
 		t.Errorf("Unable to set auth config %s", err.Error())
 		return
@@ -198,7 +273,7 @@ func TestMatchForce_Rule(t *testing.T) {
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	err := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{})
+	err := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{}, config.SecurityFunctions{})
 	if err != nil {
 		t.Errorf("Unable to set auth config %s", err.Error())
 		return
@@ -306,7 +381,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	err := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{})
+	err := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{}, config.SecurityFunctions{})
 	if err != nil {
 		t.Errorf("Unable to set auth config %s", err.Error())
 		return
@@ -754,7 +829,7 @@ func TestModule_matchFunc(t *testing.T) {
 				}
 				return nil
 			}
-			_ = tt.m.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", AESKey: string(tt.m.aesKey), Secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{})
+			_ = tt.m.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", AESKey: string(tt.m.aesKey), Secrets: []*config.Secret{{IsPrimary: true, Alg: config.HS256, Secret: "some-secret"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{}, config.SecurityFunctions{})
 			if err := tt.m.matchFunc(context.Background(), tt.args.rule, HTTPCall, tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("matchFunc() error = %v, wantErr %v", err, tt.wantErr)
 			}

@@ -56,6 +56,9 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 	case "webhook":
 		return nil, m.matchFunc(ctx, rule, m.makeHTTPRequest, args)
 
+	case "function":
+		return m.matchSecurityFunction(ctx, project, args, auth, rule, returnWhere)
+
 	case "query":
 		return m.matchQuery(ctx, project, rule, m.crud, args, auth, returnWhere)
 
@@ -426,4 +429,26 @@ func (m *Module) matchHash(ctx context.Context, projectID string, rule *config.R
 		}
 	}
 	return actions, nil
+}
+
+func (m *Module) matchSecurityFunction(ctx context.Context, projectID string, args, auth map[string]interface{}, rule *config.Rule, stub model.ReturnWhereStub) (*model.PostProcess, error) {
+	securityFunction, ok := m.securityFunctions[config.GenerateResourceID(m.clusterID, m.project, config.ResourceSecurityFunction, rule.SecurityFunctionName)]
+	if !ok {
+		return nil, formatError(ctx, rule, fmt.Errorf("global security rule function (%s) not found in config", rule.SecurityFunctionName))
+	}
+
+	tempArgs := make(map[string]interface{})
+	for _, variable := range securityFunction.Variables {
+		variableValue, ok := rule.FnBlockVariables[variable]
+		if !ok {
+			return nil, formatError(ctx, rule, fmt.Errorf("cannot execute global security rule function (%s), required variable name (%s) not provided", rule.SecurityFunctionName, variable))
+		}
+		tempArgs[variable] = variableValue
+		newVariableValue, err := utils.LoadValue(variableValue, args)
+		if err == nil {
+			tempArgs[variable] = newVariableValue
+		}
+	}
+
+	return m.matchRule(ctx, projectID, securityFunction.Rule, map[string]interface{}{"args": tempArgs}, auth, stub)
 }

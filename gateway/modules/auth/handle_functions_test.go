@@ -108,7 +108,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 	authModule := Init("chicago", "1", &crud.Module{}, nil)
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			if er := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: test.secretKeys}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, test.module.funcRules, config.EventingRules{}); er != nil {
+			if er := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: test.secretKeys}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, test.module.funcRules, config.EventingRules{}, config.SecurityFunctions{}); er != nil {
 				t.Errorf("error setting config of auth module  - %s", er.Error())
 			}
 			_, reqParams, err := (authModule).IsFuncCallAuthorised(context.Background(), test.project, test.service, test.function, test.token, test.params)

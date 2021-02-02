@@ -128,6 +128,8 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 					selArray = append(selArray, goqu.MIN(getAggregateColumnName(column)).As(asColumnName))
 				case "avg":
 					selArray = append(selArray, goqu.AVG(getAggregateColumnName(column)).As(asColumnName))
+				case "distinctCount":
+					selArray = append(selArray, goqu.COUNT(goqu.DISTINCT(getAggregateColumnName(column))).As(asColumnName))
 				case "count":
 					selArray = append(selArray, goqu.COUNT("*").As(asColumnName))
 				default:

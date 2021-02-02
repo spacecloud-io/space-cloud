@@ -135,6 +135,9 @@ func (s *Manager) Start(port int) error {
 		case config.ResourceAuthProvider:
 			_ = s.modules.SetUsermanConfig(ctx, projectID, s.projectConfig.Projects[projectID].Auths)
 
+		case config.ResourceSecurityFunction:
+			_ = s.modules.SetSecurityFunctionConfig(ctx, projectID, s.projectConfig.Projects[projectID].SecurityFunctions)
+
 		case config.ResourceDatabaseConfig:
 			p := s.projectConfig.Projects[projectID]
 			_ = s.modules.SetDatabaseConfig(ctx, projectID, p.DatabaseConfigs, p.DatabaseSchemas, p.DatabaseRules, p.DatabasePreparedQueries)
