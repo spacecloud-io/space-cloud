@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
@@ -16,7 +15,7 @@ type resp struct {
 
 // GetClusterConfig gets clusters config
 func GetClusterConfig() ([]*model.SpecObject, error) {
-	url := fmt.Sprintf("/v1/config/cluster")
+	url := "/v1/config/cluster"
 
 	// Get the spec from the server
 	payload := new(resp)
@@ -40,7 +39,7 @@ func GetClusterConfig() ([]*model.SpecObject, error) {
 
 // GetIntegration gets integration
 func GetIntegration() ([]*model.SpecObject, error) {
-	url := fmt.Sprintf("/v1/config/integrations")
+	url := "/v1/config/integrations"
 
 	// Get the spec from the server
 	payload := new(model.Response)
