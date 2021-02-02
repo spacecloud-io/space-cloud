@@ -103,7 +103,7 @@ func TestIstio_GetServiceRoutes(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Get HTTP Routes with internal & external targets",
+			name: "Get HTTP Routes with internal, external targets & traffic splitting",
 			args: args{
 				ctx:       context.Background(),
 				projectID: "myProject",
@@ -123,8 +123,48 @@ func TestIstio_GetServiceRoutes(t *testing.T) {
 					Hosts: []string{getServiceDomainName("myProject", "greeter")},
 					Http: []*networkingv1alpha3.HTTPRoute{
 						{
-							Name:    fmt.Sprintf("http-%d", 8080),
-							Match:   []*networkingv1alpha3.HTTPMatchRequest{{Port: uint32(8080), Gateways: []string{"mesh"}}},
+							Name: fmt.Sprintf("http-%d", 8080),
+							Match: []*networkingv1alpha3.HTTPMatchRequest{
+								{
+									Uri: &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Exact{Exact: "/v2/"}},
+									Headers: map[string]*networkingv1alpha3.StringMatch{
+										"version": {
+											MatchType: &networkingv1alpha3.StringMatch_Exact{Exact: "v2"},
+										},
+									},
+									Port:     uint32(8080),
+									Gateways: []string{"mesh"},
+								},
+								{
+									Uri: &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Prefix{Prefix: "/v2/"}},
+									Headers: map[string]*networkingv1alpha3.StringMatch{
+										"version": {
+											MatchType: &networkingv1alpha3.StringMatch_Prefix{Prefix: "v2"},
+										},
+									},
+									Port:     uint32(8080),
+									Gateways: []string{"mesh"},
+								},
+								{
+									Uri: &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Regex{Regex: "/v2/"}},
+									Headers: map[string]*networkingv1alpha3.StringMatch{
+										"version": {
+											MatchType: &networkingv1alpha3.StringMatch_Regex{Regex: "v2"},
+										},
+									},
+									Port:     uint32(8080),
+									Gateways: []string{"mesh"},
+								},
+								{
+									Uri:           &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Exact{Exact: "/v2/"}},
+									IgnoreUriCase: true,
+									Headers: map[string]*networkingv1alpha3.StringMatch{
+										"version": nil,
+									},
+									Port:     uint32(8080),
+									Gateways: []string{"mesh"},
+								},
+							},
 							Retries: &networkingv1alpha3.HTTPRetry{Attempts: 5, PerTryTimeout: &types.Duration{Seconds: model.DefaultRequestTimeout}},
 							Route: []*networkingv1alpha3.HTTPRouteDestination{
 								{
@@ -163,6 +203,60 @@ func TestIstio_GetServiceRoutes(t *testing.T) {
 						ID:             "greeter",
 						RequestRetries: 5,
 						RequestTimeout: model.DefaultRequestTimeout,
+						Matchers: []*model.Matcher{
+							{
+								URL: &model.HTTPMatcher{
+									Value: "/v2/",
+									Type:  model.RouteHTTPMatchTypeExact,
+								},
+								Headers: []*model.HTTPMatcher{
+									{
+										Key:   "version",
+										Value: "v2",
+										Type:  model.RouteHTTPMatchTypeExact,
+									},
+								},
+							},
+							{
+								URL: &model.HTTPMatcher{
+									Value: "/v2/",
+									Type:  model.RouteHTTPMatchTypePrefix,
+								},
+								Headers: []*model.HTTPMatcher{
+									{
+										Key:   "version",
+										Value: "v2",
+										Type:  model.RouteHTTPMatchTypePrefix,
+									},
+								},
+							},
+							{
+								URL: &model.HTTPMatcher{
+									Value: "/v2/",
+									Type:  model.RouteHTTPMatchTypeRegex,
+								},
+								Headers: []*model.HTTPMatcher{
+									{
+										Key:   "version",
+										Value: "v2",
+										Type:  model.RouteHTTPMatchTypeRegex,
+									},
+								},
+							},
+							{
+								URL: &model.HTTPMatcher{
+									Value:      "/v2/",
+									Type:       model.RouteHTTPMatchTypeExact,
+									IgnoreCase: true,
+								},
+								Headers: []*model.HTTPMatcher{
+									{
+										Key:  "version",
+										Type: model.RouteHTTPMatchTypeCheckPresence,
+									},
+								},
+							},
+						},
 						Source: model.RouteSource{
 							Protocol: model.HTTP,
 							Port:     8080,
