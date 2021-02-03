@@ -78,7 +78,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return m.matchGraphQL(ctx, project, rule, args, auth, returnWhere)
 
 	case "transform":
-		return m.matchTransform(ctx, rule, args)
+		return m.matchTransform(ctx, project, rule, args, auth, returnWhere)
 
 	default:
 		return nil, formatError(ctx, rule, fmt.Errorf("invalid rule type (%s) provided", rule.Rule))
@@ -495,7 +495,7 @@ func (m *Module) matchGraphQL(ctx context.Context, projectID string, rule *confi
 	}
 }
 
-func (m *Module) matchTransform(ctx context.Context, rule *config.Rule, args map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) matchTransform(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}, stub model.ReturnWhereStub) (*model.PostProcess, error) {
 	newArgs := args["args"].(map[string]interface{})
 
 	var obj interface{}
@@ -517,5 +517,5 @@ func (m *Module) matchTransform(ctx context.Context, rule *config.Rule, args map
 		return nil, formatError(ctx, rule, err)
 	}
 
-	return nil, nil
+	return m.matchRule(ctx, projectID, rule.Clause, args, auth, stub)
 }

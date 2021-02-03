@@ -130,6 +130,30 @@ func TestMatch_Rule(t *testing.T) {
 			args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}},
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
+		{
+			name:    "Transform rule",
+			project: "default",
+			rule: &config.Rule{
+				Rule:     "transform",
+				ReqTmpl:  `{ "name": "{{.auth.role}}", "id": "{{.auth.user_id}}" }`,
+				OpFormat: "json",
+				Template: "go",
+				Clause: &config.Rule{
+					Rule: "and",
+					Clauses: []*config.Rule{
+						{
+							Rule: "match",
+							Type: "string",
+							Eval: "==",
+							F1:   "args.result.name",
+							F2:   "admin",
+						},
+					},
+				},
+			},
+			args: map[string]interface{}{"args": map[string]interface{}{"token": "", "auth": map[string]interface{}{"role": "admin", "user_id": "GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g"}}},
+			auth: map[string]interface{}{"role": "admin", "user_id": "GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g"},
+		},
 	}
 	auth := Init("chicago", "1", &crud.Module{}, nil)
 	dbRules := config.DatabaseRules{config.GenerateResourceID("chicago", "project", config.ResourceDatabaseRule, ""): &config.DatabaseRule{Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}
