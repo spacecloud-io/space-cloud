@@ -108,7 +108,7 @@ func Test_generateSDL(t *testing.T) {
 						Kind:                model.TypeID,
 						TypeIDSize:          model.DefaultCharacterSize,
 						IndexInfo: []*model.TableProperties{{
-							IsIndex:  true,
+							IsIndex:  false,
 							IsUnique: true,
 							Group:    "user_name",
 							Order:    1,
@@ -157,7 +157,7 @@ func Test_generateSDL(t *testing.T) {
 				"\n\tspec: JSON" +
 				"\n\tupdatedAt: DateTime   @updatedAt" +
 				"\n\tfirst_name: ID!  @size(value: 100)    @index(group: \"user_name\", sort: \"asc\", order: 1)" +
-				"\n\tname: ID!  @size(value: 100)   @unique(group: \"user_name\", order: 1)" +
+				"\n\tname: ID!  @size(value: 100)   @unique(group: \"user_name\", sort: \"asc\",  order: 1)" +
 				"\n\tcustomer_id: ID!  @size(value: 100) @foreign(table: customer, field: id ,onDelete: cascade)" +
 				"\n\torder_dates: [DateTime]       @link(table: \"order\", from: \"id\", to: \"customer_id\", db:\"mongo\", field: \"order_date\")" +
 				"\n}",

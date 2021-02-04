@@ -72,15 +72,17 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		"{{end}}" +
 
 		// @unique or @index directive
+		"{{ range $i, $sequence :=  (repeat 2) }}" + // for loop indexInfo
 		"{{range $k,$v := $fieldValue.IndexInfo }}" +
-		"{{if $v.IsUnique}}" +
-		"@unique(group: \"{{$v.Group}}\", order: {{$v.Order}}) " +
+		"{{if and (eq $sequence 1) $v.IsUnique}}" +
+		"@unique(group: \"{{$v.Group}}\", sort: \"{{$v.Sort}}\", order: {{$v.Order}}) " +
 		"{{else}}" +
-		"{{if $v.IsIndex}}" +
+		"{{if and (eq $sequence 2) $v.IsIndex}}" +
 		"@index(group: \"{{$v.Group}}\", sort: \"{{$v.Sort}}\", order: {{$v.Order}}) " +
 		"{{end}}" +
 		"{{end}}" +
 		"{{end}}" +
+		"{{end}}" + // for loop indexInfo
 
 		// @default directive
 		"{{if $fieldValue.IsDefault}}" +
@@ -119,7 +121,7 @@ func generateSDL(schemaCol model.Collection) (string, error) {
 		// Show primary keys first
 		"{{if and (eq $sequence 1) $fieldValue.IsPrimary}}" +
 		"{{template \"renderColumn\" $fieldValue}}" +
-		"{{else if and (eq $sequence 3) (gt (len $fieldValue.IndexInfo) 0) (not $fieldValue.IsForeign) }}" +
+		"{{else if and (eq $sequence 3) (gt (len $fieldValue.IndexInfo) 0) (not $fieldValue.IsForeign) (not $fieldValue.IsPrimary) (not $fieldValue.IsLinked) }}" +
 		"{{template \"renderColumn\" $fieldValue}}" +
 		"{{else if and (eq $sequence 4) $fieldValue.IsForeign}}" +
 		"{{template \"renderColumn\" $fieldValue}}" +
