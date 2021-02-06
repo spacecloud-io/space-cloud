@@ -420,10 +420,11 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								indexInfo.Sort = sort
 							}
 						}
-						if ok {
-							indexInfo.Field = field.Name.Value
-							fieldTypeStuct.IndexInfo = append(fieldTypeStuct.IndexInfo, indexInfo)
+						if indexInfo.Group == "" {
+							indexInfo.Group = field.Name.Value
 						}
+						indexInfo.Field = field.Name.Value
+						fieldTypeStuct.IndexInfo = append(fieldTypeStuct.IndexInfo, indexInfo)
 
 					case model.DirectiveLink:
 						fieldTypeStuct.IsLinked = true
