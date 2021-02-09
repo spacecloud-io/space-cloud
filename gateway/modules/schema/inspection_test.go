@@ -782,7 +782,7 @@ func Test_generateInspection(t *testing.T) {
 				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "json", FieldNull: "NO", FieldDefault: `{"id":"zerfvnex","name":"john"}`, AutoIncrement: "false"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeJSON, Default: `{"id":"zerfvnex","name":"john"}`}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeJSON, Default: `"{\"id\":\"zerfvnex\",\"name\":\"john\"}"`}}},
 			wantErr: false,
 		},
 		// postgres
@@ -882,7 +882,7 @@ func Test_generateInspection(t *testing.T) {
 				col:    "table1",
 				fields: []model.InspectorFieldType{{ColumnName: "column1", FieldType: "jsonb", FieldNull: "NO", FieldDefault: `{"id":"zerfvnex","name":"john"}`, AutoIncrement: "false"}},
 			},
-			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeJSON, Default: `{"id":"zerfvnex","name":"john"}`}}},
+			want:    model.Collection{"table1": model.Fields{"column1": &model.FieldType{FieldName: "column1", IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeJSON, Default: `"{\"id\":\"zerfvnex\",\"name\":\"john\"}"`}}},
 			wantErr: false,
 		},
 		// sql server
