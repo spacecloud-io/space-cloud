@@ -1,10 +1,13 @@
 package functions
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
@@ -136,7 +139,7 @@ func prepareHeaders(ctx context.Context, headers config.Headers, state map[strin
 	return out
 }
 
-func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
+func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (io.Reader, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -159,20 +162,51 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 		}
 	default:
 		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"serviceId": serviceID, "endpointId": endpointID})
-		return params, nil
 	}
 
+	var body interface{}
 	switch endpoint.Kind {
 	case config.EndpointKindInternal, config.EndpointKindExternal:
 		if req == nil {
-			return params, nil
+			body = params
+		} else {
+			body = req
 		}
-		return req, nil
 	case config.EndpointKindPrepared:
-		return map[string]interface{}{"query": graph, "variables": req}, nil
+		body = map[string]interface{}{"query": graph, "variables": req}
 	default:
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
 	}
+
+	var requestBody io.Reader
+	switch endpoint.ReqPayloadFormat {
+	case "", config.EndpointRequestPayloadFormatJSON:
+		// Marshal json into byte array
+		data, err := json.Marshal(body)
+		if err != nil {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot marshal provided data for graphQL API endpoint (%s)", endpointID), err, map[string]interface{}{"serviceId": serviceID})
+		}
+		requestBody = bytes.NewReader(data)
+		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: "application/json", Op: "add"})
+	case config.EndpointRequestPayloadFormatFormData:
+		buff := new(bytes.Buffer)
+		writer := multipart.NewWriter(buff)
+
+		for key, val := range body.(map[string]interface{}) {
+			value, ok := val.(string)
+			if !ok {
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type of value provided for arg (%s) expecting string as endpoint (%s) has request payload of (form-data) type ", endpointID, key), err, map[string]interface{}{"serviceId": serviceID})
+			}
+			_ = writer.WriteField(key, value)
+		}
+		err = writer.Close()
+		if err != nil {
+			return nil, err
+		}
+		requestBody = bytes.NewReader(buff.Bytes())
+		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: writer.FormDataContentType(), Op: "add"})
+	}
+	return requestBody, err
 }
 
 func (m *Module) adjustResBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
