@@ -187,7 +187,7 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot marshal provided data for graphQL API endpoint (%s)", endpointID), err, map[string]interface{}{"serviceId": serviceID})
 		}
 		requestBody = bytes.NewReader(data)
-		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: "application/json", Op: "add"})
+		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: "application/json", Op: "set"})
 	case config.EndpointRequestPayloadFormatFormData:
 		buff := new(bytes.Buffer)
 		writer := multipart.NewWriter(buff)
@@ -204,7 +204,7 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 			return nil, err
 		}
 		requestBody = bytes.NewReader(buff.Bytes())
-		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: writer.FormDataContentType(), Op: "add"})
+		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: writer.FormDataContentType(), Op: "set"})
 	}
 	return requestBody, err
 }
