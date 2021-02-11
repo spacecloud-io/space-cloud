@@ -303,19 +303,24 @@ type Service struct {
 
 // Endpoint holds the config of a endpoint
 type Endpoint struct {
-	Kind      EndpointKind     `json:"kind" yaml:"kind" mapstructure:"kind"`
-	Tmpl      TemplatingEngine `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
-	ReqTmpl   string           `json:"requestTemplate" yaml:"requestTemplate" mapstructure:"requestTemplate"`
-	GraphTmpl string           `json:"graphTemplate" yaml:"graphTemplate" mapstructure:"graphTemplate"`
-	ResTmpl   string           `json:"responseTemplate" yaml:"responseTemplate" mapstructure:"responseTemplate"`
-	OpFormat  string           `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
-	Token     string           `json:"token,omitempty" yaml:"token,omitempty" mapstructure:"token"`
-	Claims    string           `json:"claims,omitempty" yaml:"claims,omitempty" mapstructure:"claims"`
-	Method    string           `json:"method" yaml:"method" mapstructure:"method"`
-	Path      string           `json:"path" yaml:"path" mapstructure:"path"`
-	Rule      *Rule            `json:"rule,omitempty" yaml:"rule,omitempty" mapstructure:"rule"`
-	Headers   Headers          `json:"headers,omitempty" yaml:"headers,omitempty" mapstructure:"headers"`
-	Timeout   int              `json:"timeout,omitempty" yaml:"timeout,omitempty" mapstructure:"timeout"` // Timeout is in seconds
+	Kind EndpointKind     `json:"kind" yaml:"kind" mapstructure:"kind"`
+	Tmpl TemplatingEngine `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
+	// ReqPayloadFormat specifies the payload format
+	// depending upon the payload format, the graphQL request that
+	// gets converted to http request will use that format as it's payload
+	// currently supported formats are application/json,multipart/form-data
+	ReqPayloadFormat string  `json:"requestPayloadFormat" yaml:"requestPayloadFormat" mapstructure:"requestPayloadFormat"`
+	ReqTmpl          string  `json:"requestTemplate" yaml:"requestTemplate" mapstructure:"requestTemplate"`
+	GraphTmpl        string  `json:"graphTemplate" yaml:"graphTemplate" mapstructure:"graphTemplate"`
+	ResTmpl          string  `json:"responseTemplate" yaml:"responseTemplate" mapstructure:"responseTemplate"`
+	OpFormat         string  `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
+	Token            string  `json:"token,omitempty" yaml:"token,omitempty" mapstructure:"token"`
+	Claims           string  `json:"claims,omitempty" yaml:"claims,omitempty" mapstructure:"claims"`
+	Method           string  `json:"method" yaml:"method" mapstructure:"method"`
+	Path             string  `json:"path" yaml:"path" mapstructure:"path"`
+	Rule             *Rule   `json:"rule,omitempty" yaml:"rule,omitempty" mapstructure:"rule"`
+	Headers          Headers `json:"headers,omitempty" yaml:"headers,omitempty" mapstructure:"headers"`
+	Timeout          int     `json:"timeout,omitempty" yaml:"timeout,omitempty" mapstructure:"timeout"` // Timeout is in seconds
 }
 
 // EndpointKind describes the type of endpoint. Default value - internal
@@ -330,6 +335,12 @@ const (
 
 	// EndpointKindPrepared describes an endpoint on on Space Cloud GraphQL layer
 	EndpointKindPrepared EndpointKind = "prepared"
+
+	// EndpointRequestPayloadFormatJSON specifies json payload format for the request
+	EndpointRequestPayloadFormatJSON string = "json"
+
+	// EndpointRequestPayloadFormatFormData specifies multipart/form-data payload format for the request
+	EndpointRequestPayloadFormatFormData string = "form-data"
 )
 
 // TemplatingEngine describes the type of endpoint. Default value - go
