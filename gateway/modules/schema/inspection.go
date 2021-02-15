@@ -108,7 +108,7 @@ func generateInspection(dbType, col string, fields []model.InspectorFieldType, i
 
 			// add string between quotes
 			switch fieldDetails.Kind {
-			case model.TypeString, model.TypeVarChar, model.TypeChar, model.TypeID, model.TypeDateTime, model.TypeDate, model.TypeTime:
+			case model.TypeString, model.TypeVarChar, model.TypeChar, model.TypeID, model.TypeDateTime, model.TypeDate, model.TypeTime, model.TypeDateTimeWithZone:
 				field.FieldDefault = fmt.Sprintf("\"%s\"", field.FieldDefault)
 			case model.TypeJSON:
 				data, err := json.Marshal(field.FieldDefault)
