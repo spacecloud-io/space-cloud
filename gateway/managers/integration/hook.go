@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/spaceuptech/helpers"
 
@@ -69,8 +68,8 @@ func (m *Manager) invokeHooks(ctx context.Context, params model.RequestParams) a
 			"verb":     params.Op,
 		})
 		var res config.IntegrationHookResponse
-		req := &utils.HTTPRequest{URL: hook.URL, Params: params, Method: http.MethodPost, SCToken: scToken}
-		status, err := utils.MakeHTTPRequest(ctx, req, &res)
+
+		status, err := invokeHook(ctx, hook.URL, scToken, params, &res)
 		if err != nil {
 			err = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to make request to hook (%s) in integration (%s)", hook.ID, hook.IntegrationID), err, nil)
 
