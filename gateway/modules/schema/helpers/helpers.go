@@ -526,6 +526,9 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 				}
 			}
 
+			if fieldMap[field.Name.Value] != nil {
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Column (%s) already exists in the Collection/Table(%s). Duplicate column not allowed", field.Name.Value, collectionName), nil, nil)
+			}
 			fieldMap[field.Name.Value] = &fieldTypeStuct
 		}
 	}
