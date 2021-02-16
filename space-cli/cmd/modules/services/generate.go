@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -22,8 +23,15 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 	}
 
 	serviceID := ""
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Service ID"}, &serviceID); err != nil {
-		return nil, err
+	for {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Service ID"}, &serviceID); err != nil {
+			return nil, err
+		}
+		var validID = regexp.MustCompile(`^(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$`)
+		if validID.MatchString(serviceID) {
+			break
+		}
+		fmt.Printf(`invalid name for serviceID: (%s): a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'`, serviceID)
 	}
 
 	serviceVersion := ""
@@ -78,8 +86,15 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 	}
 
 	replicaRange := ""
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &replicaRange); err != nil {
-		return nil, err
+	for {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &replicaRange); err != nil {
+			return nil, err
+		}
+		arr1 := strings.Split(replicaRange, "-")
+		if len(arr1) == 2 {
+			break
+		}
+		fmt.Println("Replica Range format should be lowerLimit-upperLimit (e.g. 1-100).")
 	}
 	replicaMin, replicaMax := 1, 100
 	arr := strings.Split(replicaRange, "-")
