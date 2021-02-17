@@ -26,7 +26,7 @@ func addDatabase(chartReleaseName, dbType, setValuesFlag, valuesYamlFile, chartL
 	}
 
 	// The regex stratifies kubernetes resource name specification
-	var validID = regexp.MustCompile(`[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*`)
+	var validID = regexp.MustCompile(`^(([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\-]*[a-z0-9])$`)
 	if !validID.MatchString(chartReleaseName) {
 		return fmt.Errorf(`invalid name for database: (%s): a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'`, chartReleaseName)
 	}
