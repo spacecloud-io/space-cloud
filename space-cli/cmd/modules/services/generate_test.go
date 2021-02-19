@@ -71,7 +71,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "basic"},
 				},
 				{
 					method:         "AskOne",
@@ -88,7 +88,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "basic"},
 				},
 				{
 					method:         "AskOne",
@@ -110,7 +110,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "basic"},
 				},
 				{
 					method:         "AskOne",
@@ -153,7 +153,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "basic"},
 				},
 				{
 					method:         "AskOne",
@@ -180,7 +180,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "basic"},
 				},
 				{
 					method:         "AskOne",
@@ -212,7 +212,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "basic"},
 				},
 				{
 					method:         "AskOne",
@@ -244,7 +244,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "basic"},
 				},
 				{
 					method:         "AskOne",
@@ -281,7 +281,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "basic"},
 				},
 				{
 					method:         "AskOne",
@@ -323,7 +323,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "basic"},
 				},
 				{
 					method:         "AskOne",
@@ -365,7 +365,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "basic"},
 				},
 				{
 					method:         "AskOne",

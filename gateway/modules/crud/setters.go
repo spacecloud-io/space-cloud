@@ -2,6 +2,7 @@ package crud
 
 import (
 	"context"
+	"encoding/base64"
 	"strings"
 
 	"github.com/graph-gophers/dataloader"
@@ -23,6 +24,22 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 	}
 
 	m.project = project
+
+	for dbAlias, v := range m.blocks {
+		doesExist := false
+		for _, databaseConfig := range crud {
+			// Trim away the sql prefix for backward compatibility
+			blockKey := strings.TrimPrefix(databaseConfig.DbAlias, "sql-")
+			if dbAlias == blockKey {
+				doesExist = true
+			}
+		}
+		if !doesExist {
+			// Database that has been removed, close the db connections to free connection pool
+			_ = v.Close()
+			delete(m.blocks, dbAlias)
+		}
+	}
 
 	// clear previous data loader1
 	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
@@ -52,13 +69,15 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 			var err error
 			connectionString, err = m.getSecrets(project, secretName, "CONN")
 			if err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch secret from runner", err, map[string]interface{}{"project": project})
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to fetch connection string secret from runner", err, map[string]interface{}{"project": project})
 			}
 		}
 
 		if block, p := m.blocks[blockKey]; p {
 
 			block.SetQueryFetchLimit(v.Limit)
+			m.databaseConfigs[blockKey].BatchTime = v.BatchTime
+			m.databaseConfigs[blockKey].BatchRecords = v.BatchRecords
 
 			// Skip if the connection string, dbName & driver config is same
 			if block.IsSame(connectionString, v.DBName, v.DriverConf) {
@@ -110,7 +129,7 @@ func (m *Module) SetPreparedQueryConfig(ctx context.Context, prepQueries config.
 }
 
 // SetSchemaConfig set schema config of crud module
-func (m *Module) SetSchemaConfig(ctx context.Context, schemas config.DatabaseSchemas) error {
+func (m *Module) SetSchemaConfig(ctx context.Context, schemaDoc model.Type, schemas config.DatabaseSchemas) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -119,9 +138,11 @@ func (m *Module) SetSchemaConfig(ctx context.Context, schemas config.DatabaseSch
 		return nil
 	}
 
+	m.schemaDoc = schemaDoc
+
 	m.closeBatchOperation()
 	if err := m.initBatchOperation(m.project, schemas); err != nil {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to initialized database batch operation", err, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to initialize database batch operation", err, nil)
 	}
 	return nil
 }
@@ -134,19 +155,26 @@ func (m *Module) SetGetSecrets(function utils.GetSecrets) {
 	m.getSecrets = function
 }
 
-// SetSchema sets the schema module
-func (m *Module) SetSchema(s model.SchemaCrudInterface) {
-	m.schema = s
-}
-
-// SetAuth sets the auth module
-func (m *Module) SetAuth(a model.AuthCrudInterface) {
-	m.auth = a
-}
-
 // SetHooks sets the internal hooks
 func (m *Module) SetHooks(metricHook model.MetricCrudHook) {
 	m.metricHook = metricHook
+}
+
+// SetProjectAESKey set aes config for sql databases
+func (m *Module) SetProjectAESKey(aesKey string) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	decodedAESKey, err := base64.StdEncoding.DecodeString(aesKey)
+	if err != nil {
+		return err
+	}
+
+	for _, block := range m.blocks {
+		block.SetProjectAESKey(decodedAESKey)
+	}
+
+	return nil
 }
 
 // SetAdminManager sets the admin manager

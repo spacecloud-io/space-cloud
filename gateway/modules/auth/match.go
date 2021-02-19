@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"crypto/aes"
-	"crypto/cipher"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -138,7 +138,7 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 
 	// Execute the read request
 	attr := map[string]string{"project": project, "db": rule.DB, "col": rule.Col}
-	data, err := crud.Read(ctx, rule.DB, rule.Col, req, model.RequestParams{Claims: auth, Resource: "db-read", Op: "access", Attributes: attr})
+	data, _, err := crud.Read(ctx, rule.DB, rule.Col, req, model.RequestParams{Claims: auth, Resource: "db-read", Op: "access", Attributes: attr})
 	if err != nil {
 		return nil, formatError(ctx, rule, err)
 	}
@@ -371,7 +371,7 @@ func (m *Module) matchDecrypt(ctx context.Context, projectID string, rule *confi
 				return nil, formatError(ctx, rule, err)
 			}
 			decrypted := make([]byte, len(decodedValue))
-			err1 := decryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
+			err1 := authHelpers.DecryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
 			if err1 != nil {
 				return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error decrypting value in matchDecrypt", err, nil))
 			}
@@ -384,16 +384,6 @@ func (m *Module) matchDecrypt(ctx context.Context, projectID string, rule *confi
 		}
 	}
 	return actions, nil
-}
-
-func decryptAESCFB(dst, src, key, iv []byte) error {
-	aesBlockDecrypter, err := aes.NewCipher([]byte(key))
-	if err != nil {
-		return err
-	}
-	aesDecrypter := cipher.NewCFBDecrypter(aesBlockDecrypter, iv)
-	aesDecrypter.XORKeyStream(dst, src)
-	return nil
 }
 
 func (m *Module) matchHash(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {

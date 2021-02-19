@@ -34,7 +34,7 @@ func HandleSetCacheConfig(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "cache-config", "modify", map[string]string{})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -44,7 +44,7 @@ func HandleSetCacheConfig(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		reqParams = utils.ExtractRequestParams(r, reqParams, c)
 		status, err := syncMan.SetCacheConfig(ctx, c, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -67,14 +67,14 @@ func HandleGetCacheConfig(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		// Check if the request is authorised
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "cache-config", "read", map[string]string{})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 		status, cacheConfig, err := syncMan.GetCacheConfig(ctx, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -97,7 +97,7 @@ func HandleGetCacheConnectionState(adminMan *admin.Manager, caching *caching.Cac
 		// Check if the request is authorised
 		_, err := adminMan.IsTokenValid(ctx, token, "cache-config", "read", map[string]string{})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -127,12 +127,12 @@ func HandlePurgeCache(adminMan *admin.Manager, caching *caching.Cache) http.Hand
 		// Check if the request is authorised
 		_, err := adminMan.IsTokenValid(ctx, token, "cache-config", "read", map[string]string{})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
 		if err := caching.PurgeCache(ctx, projectID, c); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -174,17 +174,17 @@ func HandleInstantInvalidate(modules *modules.Modules) http.HandlerFunc {
 		// Check if the request is authorised
 		auth, err := modules.Auth(projectID)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err)
 			return
 		}
 
 		if err := auth.IsSCAccessToken(ctx, token); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
 		if err := modules.GlobalMods.Caching().InvalidateDatabaseCache(ctx, projectID, c.Data.DB, c.Data.Col, c.Type, c.Data.Doc); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 

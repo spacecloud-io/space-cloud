@@ -193,7 +193,7 @@ func (c *Cache) InvalidateDatabaseCache(ctx context.Context, projectID, dbAlias,
 					continue
 				}
 
-				if removeTablePrefixInWhereClauseFields(rootTable, whereClause) || utils.Validate(whereClause, doc) {
+				if removeTablePrefixInWhereClauseFields(rootTable, whereClause) || utils.Validate(string(model.MySQL), whereClause, doc) {
 					if err := c.instantInvalidationDelete(ctx, projectID, dbAlias, ogKey); err != nil {
 						return err
 					}

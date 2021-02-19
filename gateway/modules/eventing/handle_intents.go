@@ -39,7 +39,7 @@ func (m *Module) processIntents(t *time.Time) {
 
 	attr := map[string]string{"project": m.project, "db": dbAlias, "col": col}
 	reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
-	results, err := m.crud.Read(ctx, dbAlias, col, &readRequest, reqParams)
+	results, _, err := m.crud.Read(ctx, dbAlias, col, &readRequest, reqParams)
 	if err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Eventing intent routine error", err, nil)
 		return

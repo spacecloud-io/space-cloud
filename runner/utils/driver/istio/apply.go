@@ -111,18 +111,12 @@ func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error 
 func (i *Istio) ApplyServiceRoutes(ctx context.Context, projectID, serviceID string, routes model.Routes) error {
 	ns := projectID
 
-	// Get the scale info of all versions of the service
-	prevVirtualService, err := i.getPreviousVirtualServiceIfExists(ctx, ns, serviceID)
-	if err != nil {
-		return err
-	}
-
 	scaleConfig, err := i.getAllVersionScaleConfig(ctx, ns, serviceID)
 	if err != nil {
 		return err
 	}
 
-	virtualService, err := i.generateVirtualServiceBasedOnRoutes(ctx, projectID, serviceID, scaleConfig, routes, prevVirtualService)
+	virtualService, err := i.generateVirtualServiceBasedOnRoutes(ctx, projectID, serviceID, scaleConfig, routes)
 	if err != nil {
 		return err
 	}

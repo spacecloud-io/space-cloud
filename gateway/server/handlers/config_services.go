@@ -39,14 +39,14 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "remote-service", "modify", map[string]string{"project": projectID, "service": service})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, v)
 		status, err := syncMan.SetService(ctx, projectID, service, &v, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -75,7 +75,7 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "remote-service", "read", map[string]string{"project": projectID, "service": serviceID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -83,7 +83,7 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		status, services, err := syncMan.GetServices(ctx, projectID, serviceID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -110,14 +110,14 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 
 		reqParams, err := adminMan.IsTokenValid(ctx, token, "remote-service", "modify", map[string]string{"project": projectID, "service": service})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 		status, err := syncMan.DeleteService(ctx, projectID, service, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 

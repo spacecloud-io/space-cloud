@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -18,7 +17,7 @@ type HTTPRequest struct {
 	Headers        headers
 	Method, URL    string
 	Token, SCToken string
-	Params         interface{}
+	Params         io.Reader
 }
 
 type headers interface {
@@ -27,17 +26,11 @@ type headers interface {
 
 // MakeHTTPRequest fires an http request and returns a response
 func MakeHTTPRequest(ctx context.Context, request *HTTPRequest, vPtr interface{}) (int, error) {
-	// Marshal json into byte array
-	data, _ := json.Marshal(request.Params)
-
 	// Make a request object
-	req, err := http.NewRequestWithContext(ctx, request.Method, request.URL, bytes.NewBuffer(data))
+	req, err := http.NewRequestWithContext(ctx, request.Method, request.URL, request.Params)
 	if err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create http request for url (%s)", request.URL), err, nil)
 	}
-
-	// Add the headers
-	req.Header.Add("Content-Type", "application/json")
 
 	// Add the token only if its provided
 	if request.Token != "" {

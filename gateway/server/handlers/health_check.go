@@ -18,7 +18,7 @@ func HandleHealthCheck(syncMan *syncman.Manager) http.HandlerFunc {
 		defer cancel()
 
 		if err := syncMan.HealthCheck(); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 

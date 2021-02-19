@@ -25,7 +25,7 @@ func HandlePostIntegration(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		// Get the body of the request
 		req := new(config.IntegrationConfig)
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, "Unable to parse request body")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return
 		}
 		defer utils.CloseTheCloser(r.Body)
@@ -33,7 +33,7 @@ func HandlePostIntegration(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		// Validate the token
 		reqParams, err := adminMan.IsTokenValid(r.Context(), token, "integration", "modify", map[string]string{"integration": req.ID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, "You are not authorised to make this request")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
 			return
 		}
 
@@ -50,7 +50,7 @@ func HandlePostIntegration(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		// Enable the integration
 		status, err := syncMan.EnableIntegration(ctx, req, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -73,7 +73,7 @@ func HandleDeleteIntegration(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		// Validate the token
 		reqParams, err := adminMan.IsTokenValid(r.Context(), token, "integration", "modify", map[string]string{"integration": name})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, "You are not authorised to make this request")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
 			return
 		}
 
@@ -88,7 +88,7 @@ func HandleDeleteIntegration(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		// remove the integration
 		status, err := syncMan.RemoveIntegration(ctx, name, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -114,7 +114,7 @@ func HandleGetIntegrations(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		// Validate the token
 		reqParams, err := adminMan.IsTokenValid(r.Context(), token, "integration", "read", map[string]string{"integration": integrationID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, "You are not authorised to make this request")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
 			return
 		}
 
@@ -128,7 +128,7 @@ func HandleGetIntegrations(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		reqParams.Headers = r.Header
 		status, integrations, err := syncMan.GetIntegrations(ctx, integrationID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -146,7 +146,7 @@ func HandleGetIntegrationTokens(syncMan *syncman.Manager) http.HandlerFunc {
 		// Get the body of the request
 		req := new(request)
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, "Unable to parse request body")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return
 		}
 		defer utils.CloseTheCloser(r.Body)
@@ -154,7 +154,7 @@ func HandleGetIntegrationTokens(syncMan *syncman.Manager) http.HandlerFunc {
 		// Get tokens for integration
 		status, tokens, err := syncMan.GetIntegrationTokens(r.Context(), req.ID, req.Key)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, status, err)
 			return
 		}
 
@@ -174,7 +174,7 @@ func HandleAddIntegrationHook(adminMan *admin.Manager, syncMan *syncman.Manager)
 		// Get the body of the request
 		req := new(config.IntegrationHook)
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, "Unable to parse request body")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return
 		}
 		defer utils.CloseTheCloser(r.Body)
@@ -182,7 +182,7 @@ func HandleAddIntegrationHook(adminMan *admin.Manager, syncMan *syncman.Manager)
 		// Validate the token
 		reqParams, err := adminMan.IsTokenValid(r.Context(), token, "integration-hook", "modify", map[string]string{"integration": name, "hook": req.ID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, "You are not authorised to make this request")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
 			return
 		}
 
@@ -198,7 +198,7 @@ func HandleAddIntegrationHook(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 		status, err := syncMan.AddIntegrationHook(ctx, name, req, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -222,7 +222,7 @@ func HandleDeleteIntegrationHook(adminMan *admin.Manager, syncMan *syncman.Manag
 		// Validate the token
 		reqParams, err := adminMan.IsTokenValid(r.Context(), token, "integration-hook", "modify", map[string]string{"integration": name, "hook": hookID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, "You are not authorised to make this request")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
 			return
 		}
 
@@ -246,7 +246,7 @@ func HandleDeleteIntegrationHook(adminMan *admin.Manager, syncMan *syncman.Manag
 
 		status, err := syncMan.RemoveIntegrationHook(ctx, name, hookID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
@@ -275,7 +275,7 @@ func HandleGetIntegrationHooks(adminMan *admin.Manager, syncMan *syncman.Manager
 		// Validate the token
 		reqParams, err := adminMan.IsTokenValid(r.Context(), token, "integration-hook", "read", map[string]string{"integration": name, "hook": hookID})
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, "You are not authorised to make this request")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
 			return
 		}
 
@@ -289,7 +289,7 @@ func HandleGetIntegrationHooks(adminMan *admin.Manager, syncMan *syncman.Manager
 		reqParams.Headers = r.Header
 		status, hooks, err := syncMan.GetIntegrationHooks(ctx, name, hookID, reqParams)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, status, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 

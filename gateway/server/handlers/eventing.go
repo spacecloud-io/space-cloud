@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -43,7 +44,7 @@ func HandleAdminQueueEvent(adminMan *admin.Manager, modules *modules.Modules) ht
 		// Return if the eventing module is not enabled
 		if !eventing.IsEnabled() {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling queue event request eventing feature isn't enabled", nil, nil)
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusNotFound, "This feature isn't enabled")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusNotFound, errors.New("This feature isn't enabled"))
 			return
 		}
 
@@ -52,14 +53,14 @@ func HandleAdminQueueEvent(adminMan *admin.Manager, modules *modules.Modules) ht
 
 		// Get the JWT token from header
 		if err := adminMan.CheckIfAdmin(ctx, utils.GetTokenFromHeader(r)); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
 			return
 		}
 
 		// Queue the event
 		if err := eventing.QueueAdminEvent(ctx, req.Events); err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling queue event request", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -89,7 +90,7 @@ func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 		// Return if the eventing module is not enabled
 		if !eventing.IsEnabled() {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling queue event request eventing feature isn't enabled", nil, nil)
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusNotFound, "This feature isn't enabled")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusNotFound, errors.New("This feature isn't enabled"))
 			return
 		}
 
@@ -102,7 +103,7 @@ func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 		res, err := eventing.QueueEvent(ctx, projectID, token, &req)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), "error handling queue event request", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 

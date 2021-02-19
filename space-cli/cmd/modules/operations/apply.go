@@ -10,12 +10,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
+
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // Apply reads the config file(s) from the provided file / directory and applies it to the server
-func Apply(applyName string, delay time.Duration) error {
+func Apply(applyName string, isForceApply bool, delay time.Duration) error {
 	if !strings.HasSuffix(applyName, ".yaml") {
 		dirName := applyName
 		if err := os.Chdir(dirName); err != nil {
@@ -50,6 +52,17 @@ func Apply(applyName string, delay time.Duration) error {
 
 				// Apply all spec
 				for _, spec := range specs {
+					if spec.Type == "db-schema" && !isForceApply {
+						prompt := &survey.Confirm{
+							Message: "Changing the schema can cause data loss (this option will be applied to all resources of type db-schema).\n Are you sure you want to continue?",
+						}
+						_ = survey.AskOne(prompt, &isForceApply)
+						if !isForceApply {
+							utils.LogInfo(fmt.Sprintf("Skipping the resource (db-schema) having meta %v", spec.Meta))
+							continue
+						}
+					}
+
 					if err := ApplySpec(token, account, spec); err != nil {
 						return utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
 					}
@@ -72,6 +85,16 @@ func Apply(applyName string, delay time.Duration) error {
 
 	// Apply all spec
 	for _, spec := range specs {
+		if spec.Type == "db-schema" && !isForceApply {
+			prompt := &survey.Confirm{
+				Message: "Changing the schema can cause data loss (this option will be applied to all resources of type db-schema).\n Are you sure you want to continue?",
+			}
+			_ = survey.AskOne(prompt, &isForceApply)
+			if !isForceApply {
+				utils.LogInfo(fmt.Sprintf("Skipping the resource (db-schema) having meta %v", spec.Meta))
+				continue
+			}
+		}
 		if err := ApplySpec(token, account, spec); err != nil {
 			return utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
 		}

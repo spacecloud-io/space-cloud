@@ -10,6 +10,7 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -44,12 +45,12 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 	ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	result, err := m.crud.Read(ctx2, data.DBType, data.Group, readReq, reqParams)
+	result, _, err := m.crud.Read(ctx2, data.DBType, data.Group, readReq, reqParams)
 	if err != nil {
 		return nil, err
 	}
 
-	_ = m.auth.PostProcessMethod(ctx, actions, result)
+	_ = authHelpers.PostProcessMethod(ctx, m.aesKey, actions, result)
 
 	feedData := make([]*model.FeedData, 0)
 	array, ok := result.([]interface{})

@@ -88,21 +88,21 @@ func (m *Manager) SetConfig(licenseConfig *config.License) error {
 	if licenseMode == licenseModeOffline {
 		isLeader, err := m.syncMan.CheckIfLeaderGateway(m.nodeID)
 		if err != nil {
-			return helpers.Logger.LogError("validate-license-without-lock", "Unable to check who is the current leader gateway", err, nil)
+			return helpers.Logger.LogError("set-admin-config", "Unable to check if i am the leader gateway", err, map[string]interface{}{"nodeId": m.nodeID})
 		}
 		if isLeader && m.license.LicenseKey == "" || m.license.LicenseValue == "" {
 			// Set the licenseKey and value with unique values
 			m.license.LicenseKey = ksuid.New().String()
 			m.license.LicenseValue = ksuid.New().String()
 
-			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Setting license key & value", map[string]interface{}{"key": m.license.LicenseKey, "value": m.license.LicenseValue})
+			helpers.Logger.LogDebug("set-admin-config", "Setting offline license key & value", map[string]interface{}{"key": m.license.LicenseKey, "value": m.license.LicenseValue})
 
 			go func() {
 				if err := m.syncMan.SetLicense(context.Background(), m.license); err != nil {
-					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set admin config with session id", nil, nil)
+					_ = helpers.Logger.LogError("set-admin-config", "Unable to set license in syncman", err, nil)
 				}
 			}()
-			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Successfully set session id", map[string]interface{}{"sessionId": m.license.LicenseKey + m.license.LicenseValue})
+			helpers.Logger.LogDebug("set-admin-config", "Successfully set session id", map[string]interface{}{"sessionId": m.license.LicenseKey + m.license.LicenseValue})
 			return nil
 		}
 	}

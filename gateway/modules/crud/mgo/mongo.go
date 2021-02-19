@@ -42,7 +42,7 @@ func Init(enabled bool, connection, dbName string, driverConf config.DriverConfi
 	closer := make(chan struct{}, 1)
 	mongoStub.connRetryCloserChan = closer
 	go func() {
-		ticker := time.NewTicker(10 * time.Second)
+		ticker := time.NewTicker(15 * time.Second)
 		for {
 			select {
 			case <-ticker.C:
@@ -131,10 +131,12 @@ func (m *Mongo) connect() error {
 	}
 
 	if err := client.Connect(ctx); err != nil {
+		_ = client.Disconnect(ctx)
 		return err
 	}
 
 	if err := client.Ping(ctx, nil); err != nil {
+		_ = client.Disconnect(ctx)
 		return err
 	}
 
@@ -150,6 +152,10 @@ func (m *Mongo) GetDBType() model.DBType {
 // SetQueryFetchLimit sets data fetch limit
 func (m *Mongo) SetQueryFetchLimit(limit int64) {
 	m.queryFetchLimit = &limit
+}
+
+// SetProjectAESKey sets aes key
+func (m *Mongo) SetProjectAESKey(aesKey []byte) {
 }
 
 func (m *Mongo) setClient(c *mongo.Client) {

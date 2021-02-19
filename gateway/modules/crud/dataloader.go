@@ -13,8 +13,19 @@ import (
 
 type resultsHolder struct {
 	sync.Mutex
-	results      []*dataloader.Result
-	whereClauses []interface{}
+	results []*dataloader.Result
+	metas   []meta
+}
+
+type meta struct {
+	whereClause map[string]interface{}
+	op          string
+	dbType      string
+}
+
+type queryResult struct {
+	doc      interface{}
+	metaData *model.SQLMetaData
 }
 
 func (holder *resultsHolder) getResults() []*dataloader.Result {
@@ -34,10 +45,14 @@ func (holder *resultsHolder) getWhereClauses() []interface{} {
 	holder.Lock()
 	defer holder.Unlock()
 
-	return holder.whereClauses
+	arr := make([]interface{}, 0)
+	for _, v := range holder.metas {
+		arr = append(arr, v.whereClause)
+	}
+	return arr
 }
 
-func (holder *resultsHolder) addWhereClause(whereClause map[string]interface{}, matchClause []map[string]interface{}) {
+func (holder *resultsHolder) addMeta(op, dbType string, whereClause map[string]interface{}, matchClause []map[string]interface{}) {
 	holder.Lock()
 	for i, where := range matchClause {
 		for k, v := range where {
@@ -47,11 +62,11 @@ func (holder *resultsHolder) addWhereClause(whereClause map[string]interface{}, 
 			whereClause[k] = v
 		}
 	}
-	holder.whereClauses = append(holder.whereClauses, whereClause)
+	holder.metas = append(holder.metas, meta{whereClause: whereClause, op: op, dbType: dbType})
 	holder.Unlock()
 }
 
-func (holder *resultsHolder) fillResults(res []interface{}) {
+func (holder *resultsHolder) fillResults(metData *model.SQLMetaData, res []interface{}) {
 	holder.Lock()
 	defer holder.Unlock()
 
@@ -67,20 +82,33 @@ func (holder *resultsHolder) fillResults(res []interface{}) {
 		}
 
 		// Get the where clause
-		whereClause := holder.whereClauses[index]
-
+		meta := holder.metas[index]
+		isOperationTypeOne := meta.op == utils.One
 		docs := make([]interface{}, 0)
 		for _, doc := range res {
-			if utils.Validate(whereClause.(map[string]interface{}), doc) {
+			if utils.Validate(meta.dbType, meta.whereClause, doc) {
 				docs = append(docs, doc)
+			}
+			if isOperationTypeOne {
+				break
 			}
 		}
 
 		// Increment the where clause index
 		index++
 
+		var result interface{}
+		if isOperationTypeOne {
+			if len(docs) > 0 {
+				result = docs[0]
+			} else {
+				result = nil
+			}
+		} else {
+			result = docs
+		}
 		// Store the matched docs in result
-		holder.results[i] = &dataloader.Result{Data: docs}
+		holder.results[i] = &dataloader.Result{Data: queryResult{doc: result, metaData: metData}}
 	}
 }
 
@@ -126,14 +154,14 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 	}
 
 	holder := resultsHolder{
-		results:      make([]*dataloader.Result, len(keys)),
-		whereClauses: []interface{}{},
+		results: make([]*dataloader.Result, len(keys)),
+		metas:   make([]meta, 0),
 	}
 
 	for index, key := range keys {
 		req := key.(model.ReadRequestKey)
 
-		dbAlias = req.DBType
+		dbAlias = req.DBAlias
 		col = req.Col
 
 		// Execute query immediately if it has options
@@ -148,7 +176,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 				req.Req.IsBatch = false      // NOTE: DO NOT REMOVE THIS
 				req.Req.Options.Select = nil // Need to make this nil so that we load all the fields data
 				// Execute the query
-				res, err := m.Read(ctx, dbAlias, req.Col, &req.Req, req.ReqParams)
+				res, metaData, err := m.Read(ctx, dbAlias, req.Col, &req.Req, req.ReqParams)
 				if err != nil {
 
 					// Cancel the context and add the error response to the result
@@ -158,7 +186,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 				}
 
 				// Add the response to the result
-				holder.addResult(i, &dataloader.Result{Data: res})
+				holder.addResult(i, &dataloader.Result{Data: queryResult{doc: res, metaData: metaData}})
 			}(index)
 
 			// Continue to the next key
@@ -166,7 +194,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 		}
 
 		// Append the where clause to the list
-		holder.addWhereClause(req.Req.Find, req.Req.MatchWhere)
+		holder.addMeta(req.Req.Operation, req.DBType, req.Req.Find, req.Req.MatchWhere)
 	}
 
 	// Wait for all results to be done
@@ -179,11 +207,11 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 		// Prepare a merged request
 		req := model.ReadRequest{Find: map[string]interface{}{"$or": clauses}, Operation: utils.All, Options: &model.ReadOptions{}}
 		// Fire the merged request
-		res, err := m.Read(ctx, dbAlias, col, &req, model.RequestParams{Resource: "db-read", Op: "access", Attributes: map[string]string{"project": m.project, "db": dbAlias, "col": col}})
+		res, metaData, err := m.Read(ctx, dbAlias, col, &req, model.RequestParams{Resource: "db-read", Op: "access", Attributes: map[string]string{"project": m.project, "db": dbAlias, "col": col}})
 		if err != nil {
 			holder.fillErrorMessage(err)
 		} else {
-			holder.fillResults(res.([]interface{}))
+			holder.fillResults(metaData, res.([]interface{}))
 		}
 	}
 

@@ -23,6 +23,7 @@ COPY --from=stage0 --chown=demiourgos728:root /1/opt/docker /opt/docker
 COPY --from=stage0 --chown=demiourgos728:root /2/opt/docker /opt/docker
 COPY --from=stage1 --chown=demiourgos728:root /build/app /usr/local/bin/conn-string-parser
 COPY --chown=demiourgos728:root src/main/resources/application.conf /config/application.conf
+RUN chmod -R 0777 /opt/docker
 USER 1001:0
 ENTRYPOINT ["/opt/docker/bin/db-events-soruce"]
 CMD []

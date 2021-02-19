@@ -340,8 +340,8 @@ func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAli
 	return c.Error(0)
 }
 
-func (m *mockSchemaEventingInterface) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
-	c := m.Called(ctx, dbAlias, project, col)
+func (m *mockSchemaEventingInterface) SchemaInspection(ctx context.Context, dbAlias, project, col string, realSchema model.Collection) (string, error) {
+	c := m.Called(ctx, dbAlias, project, col, realSchema)
 	return c.String(0), c.Error(1)
 }
 

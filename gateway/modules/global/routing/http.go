@@ -74,7 +74,7 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 			for _, key := range route.CacheOptions {
 				value, err := utils.LoadValue(key, map[string]interface{}{"args": map[string]interface{}{"auth": claims, "token": token, "url": request.URL.String()}})
 				if err != nil {
-					_ = helpers.Response.SendErrorResponse(request.Context(), writer, http.StatusBadRequest, err.Error())
+					_ = helpers.Response.SendErrorResponse(request.Context(), writer, http.StatusBadRequest, err)
 					return
 				}
 				cacheOptionsArray = append(cacheOptionsArray, value)
@@ -82,8 +82,7 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 
 			key, isCacheHit, result, err := r.caching.GetIngressRoute(request.Context(), route.ID, cacheOptionsArray)
 			if err != nil {
-				writer.WriteHeader(status)
-				_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+				_ = helpers.Response.SendErrorResponse(request.Context(), writer, http.StatusBadRequest, err)
 				return
 			}
 			if isCacheHit {
