@@ -143,7 +143,7 @@ func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 		}
 	}
 
-	if (realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
+	if realFieldStruct.IsLinked && realFieldStruct.IsDefault {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set default directive with other constraints", nil, nil)
 	}
 
@@ -151,11 +151,6 @@ func checkErrors(ctx context.Context, realFieldStruct *model.FieldType) error {
 		if realFieldStruct.Kind == model.TypeJSON {
 			if indexInfo.IsIndex || indexInfo.IsUnique {
 				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("cannot set index on field (%s) having type json", realFieldStruct.FieldName), nil, nil)
-			}
-		}
-		if realFieldStruct.IsDefault {
-			if indexInfo.IsIndex || indexInfo.IsUnique {
-				return helpers.Logger.LogError(helpers.GetRequestID(ctx), "cannot set default directive with other constraints", nil, nil)
 			}
 		}
 	}
@@ -309,7 +304,7 @@ func (c *creationModule) addDefaultKey() string {
 	c.currentColumnInfo.Default = c.realColumnInfo.Default
 	switch model.DBType(dbType) {
 	case model.MySQL:
-		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER " + c.ColumnName + " SET DEFAULT " + c.typeSwitch()
+		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " MODIFY COLUMN " + c.ColumnName + " " + c.columnType + " DEFAULT(" + c.typeSwitch() + ")"
 	case model.SQLServer:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD CONSTRAINT c_" + c.ColumnName + " DEFAULT " + c.typeSwitch() + " FOR " + c.ColumnName
 	case model.Postgres:

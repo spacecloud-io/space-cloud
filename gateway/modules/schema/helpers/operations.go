@@ -44,7 +44,14 @@ func SchemaValidator(ctx context.Context, dbAlias, dbType, col string, collectio
 		}
 
 		if !ok && fieldValue.IsDefault {
-			value = fieldValue.Default
+			defaultStringValue, isString := fieldValue.Default.(string)
+			if fieldValue.Kind == model.TypeJSON && isString {
+				var v interface{}
+				_ = json.Unmarshal([]byte(defaultStringValue), &v)
+				value = v
+			} else {
+				value = fieldValue.Default
+			}
 			ok = true
 		}
 

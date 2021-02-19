@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -54,7 +55,14 @@ func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields model.
 		}
 
 		if fieldSchema.IsDefault {
-			fieldDefaults[fieldName] = fieldSchema.Default
+			defaultStringValue, isString := fieldSchema.Default.(string)
+			if fieldSchema.Kind == model.TypeJSON && isString {
+				var v interface{}
+				_ = json.Unmarshal([]byte(defaultStringValue), &v)
+				fieldDefaults[fieldName] = v
+			} else {
+				fieldDefaults[fieldName] = fieldSchema.Default
+			}
 		}
 	}
 

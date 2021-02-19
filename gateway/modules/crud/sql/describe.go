@@ -36,8 +36,9 @@ select a.table_schema  AS 'TABLE_SCHEMA',
        a.is_nullable AS 'IS_NULLABLE',
        a.ordinal_position AS 'ORDINAL_POSITION',
        CASE
-           WHEN (a.column_default = '1' or a.column_default = "b\'1\'" ) AND (a.data_type = 'tinyint' or a.data_type = 'bit') THEN 'true'
-           WHEN (a.column_default = '0' or a.column_default = "b\'0\'" ) AND (a.data_type = 'tinyint' or a.data_type = 'bit') THEN 'false'
+           WHEN (a.column_default = '1' or a.column_default = '0x01' ) AND (a.data_type = 'tinyint' or a.data_type = 'bit') THEN 'true'
+           WHEN (a.column_default = '0' or a.column_default = '0x00' ) AND (a.data_type = 'tinyint' or a.data_type = 'bit') THEN 'false'
+           WHEN (a.column_default like '_utf8mb4%') THEN TRIM(BOTH '\\''' FROM TRIM(LEADING '_utf8mb4' FROM a.COLUMN_DEFAULT))
            ELSE coalesce(a.column_default,'')
        END AS 'DEFAULT',
        IF(upper(a.extra) = 'AUTO_INCREMENT', 'true', 'false') AS 'AUTO_INCREMENT',
@@ -115,7 +116,7 @@ select c.table_schema AS 'TABLE_SCHEMA',
        c.is_nullable AS 'IS_NULLABLE',
        c.ordinal_position AS 'ORDINAL_POSITION',
        CASE
-           WHEN REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT, ''), '''', ''), '(', ''), ')', '') = '1' AND (c.DATA_TYPE = 'tinyint' or c.DATA_TYPE = 'bit') THEN 'true'
+           WHEN REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT, ''), '''', ''), '(', ''), ')', '') <> '0' AND (c.DATA_TYPE = 'tinyint' or c.DATA_TYPE = 'bit') THEN 'true'
            WHEN REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT, ''), '''', ''), '(', ''), ')', '') = '0' AND (c.DATA_TYPE = 'tinyint' or c.DATA_TYPE = 'bit') THEN 'false'
            ELSE REPLACE(REPLACE(REPLACE(coalesce(C.COLUMN_DEFAULT, ''), '''', ''), '(', ''), ')', '')
        END AS 'DEFAULT',

@@ -235,7 +235,7 @@ func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName str
 
 	parsedSchema, err := schemaHelpers.Parser(dbSchemas)
 	if err != nil {
-		return err
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable parse provided schema SDL", err, nil)
 	}
 	for _, dbSchema := range dbSchemas {
 		if dbSchema.Schema == "" {

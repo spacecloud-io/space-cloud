@@ -420,10 +420,11 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								indexInfo.Sort = sort
 							}
 						}
-						if ok {
-							indexInfo.Field = field.Name.Value
-							fieldTypeStuct.IndexInfo = append(fieldTypeStuct.IndexInfo, indexInfo)
+						if indexInfo.Group == "" {
+							indexInfo.Group = field.Name.Value
 						}
+						indexInfo.Field = field.Name.Value
+						fieldTypeStuct.IndexInfo = append(fieldTypeStuct.IndexInfo, indexInfo)
 
 					case model.DirectiveLink:
 						fieldTypeStuct.IsLinked = true
@@ -524,7 +525,9 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 					fieldTypeStuct.TypeIDSize = model.DefaultCharacterSize
 				}
 			}
-
+			if _, ok := fieldMap[field.Name.Value]; ok {
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Column (%s) already exists in the Collection/Table(%s). Duplicate column not allowed", field.Name.Value, collectionName), nil, nil)
+			}
 			fieldMap[field.Name.Value] = &fieldTypeStuct
 		}
 	}

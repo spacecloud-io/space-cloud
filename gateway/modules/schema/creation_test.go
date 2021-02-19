@@ -1201,7 +1201,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 integer NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 ALTER col1 SET DEFAULT 543"},
+			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 integer NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 MODIFY COLUMN col1 integer DEFAULT(543)"},
 			wantErr: false,
 		},
 		{
@@ -1214,7 +1214,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 bigint NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 ALTER col1 SET DEFAULT 543"},
+			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 bigint NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 MODIFY COLUMN col1 bigint DEFAULT(543)"},
 			wantErr: false,
 		},
 		{
@@ -1227,7 +1227,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 smallint NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 ALTER col1 SET DEFAULT 543"},
+			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 smallint NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 MODIFY COLUMN col1 smallint DEFAULT(543)"},
 			wantErr: false,
 		},
 		{
@@ -1240,7 +1240,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 double NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 ALTER col1 SET DEFAULT 5.2"},
+			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 double NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 MODIFY COLUMN col1 double DEFAULT(5.2)"},
 			wantErr: false,
 		},
 		{
@@ -1253,7 +1253,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 longtext NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 ALTER col1 SET DEFAULT 'string'"},
+			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 longtext NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 MODIFY COLUMN col1 longtext DEFAULT('string')"},
 			wantErr: false,
 		},
 		{
@@ -1266,7 +1266,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 tinyint(1) NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 ALTER col1 SET DEFAULT true"},
+			want:    []string{"CREATE TABLE table1 (id varchar(100) NOT NULL , col1 tinyint(1) NOT NULL ,PRIMARY KEY (id));", "ALTER TABLE table1 MODIFY COLUMN col1 tinyint(1) DEFAULT(true)"},
 			wantErr: false,
 		},
 		{
