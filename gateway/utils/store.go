@@ -292,6 +292,19 @@ func getValue(key string, obj interface{}) (interface{}, error) {
 		}
 		return val[index], nil
 
+	case primitive.A:
+		// The key should be a number (index) if the object is an array
+		index, err := strconv.Atoi(key)
+		if err != nil {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Key (%s) provided instead of index", key), err, nil)
+		}
+
+		// Check if index is not out of bounds otherwise return value at that index
+		if index >= len(val) {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Index (%d) out of bounds", index), nil, nil)
+		}
+		return val[index], nil
+
 	case map[string]interface{}:
 		// Throw error if key is not present in state. Otherwise return value
 		tempObj, p := val[key]

@@ -69,38 +69,12 @@ func TestModule_selectRule(t *testing.T) {
 	}
 }
 
-type a struct {
-}
-
-func (new a) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
-	return nil, false
-}
-func (new a) Parser(dbSchemas config.DatabaseSchemas) (model.Type, error) {
-	return nil, nil
-}
-func (new a) SchemaValidator(ctx context.Context, dbAlias, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
-	return nil, nil
-}
-func (new a) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, dbSchemas config.DatabaseSchemas) error {
-	return nil
-}
-func (new a) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
-	panic("implement me")
-}
-func (new a) GetSchema(dbAlias, col string) (model.Fields, bool) {
-	return nil, false
-}
-func (new *a) GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error) {
-	return nil, nil
-}
-
 func TestModule_validate(t *testing.T) {
 	authModule := auth.Init("chicago", "1", &crud.Module{}, nil)
 	err := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{config.GenerateResourceID("chicago", "project", config.ResourceEventingRule, "event"): &config.Rule{ID: "event", Rule: "authenticated"}})
 	if err != nil {
 		t.Fatalf("error setting config (%s)", err.Error())
 	}
-	var newSchema = a{}
 	type args struct {
 		ctx     context.Context
 		project string
@@ -144,7 +118,6 @@ func TestModule_validate(t *testing.T) {
 			name: "no schema given",
 			m: &Module{
 				schemas: map[string]model.Fields{"event": {}},
-				schema:  &newSchema,
 				auth:    authModule,
 				config: &config.Eventing{
 					SecurityRules: map[string]*config.Rule{

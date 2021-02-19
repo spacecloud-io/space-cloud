@@ -1,10 +1,5 @@
 package com.spaceuptech.dbevents.database
 
-import java.nio.ByteBuffer
-import java.util.{Calendar, Properties}
-import java.util.concurrent.{Callable, ExecutorService}
-import java.util.function.Consumer
-
 import akka.actor.typed.ActorRef
 import com.mongodb.client.model.changestream.{ChangeStreamDocument, FullDocument, OperationType}
 import com.mongodb.{MongoClient, MongoClientURI}
@@ -12,9 +7,15 @@ import com.spaceuptech.dbevents.database.Database.ChangeRecord
 import com.spaceuptech.dbevents.{DatabaseSource, Global}
 import io.debezium.engine.format.Json
 import io.debezium.engine.{ChangeEvent, DebeziumEngine}
-import org.bson.{BsonDocument, Document}
+import org.bson.{BsonDocument, BsonType, BsonValue, Document}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
+
+import java.nio.ByteBuffer
+import java.time.{Instant, OffsetDateTime, ZoneId}
+import java.util.concurrent.{Callable, ExecutorService}
+import java.util.function.Consumer
+import java.util.{Calendar, Properties}
 
 object Utils {
   def startMongoWatcher(projectId: String, dbAlias: String, conn: String, dbName: String, executorService: ExecutorService, actor: ActorRef[Database.Command]): MongoStatus = {
@@ -58,7 +59,7 @@ object Utils {
               payload = ChangeRecordPayload(
                 op = "c",
                 before = None,
-                after = Some(mongoDocumentToMap(doc.getFullDocument)),
+                after = Some(mongoBsonValueToValue(doc.getFullDocument.toBsonDocument(classOf[BsonValue], MongoClient.getDefaultCodecRegistry)).asInstanceOf[Map[String, Any]]),
                 source = getMongoSource(projectId, dbAlias, doc)
               ),
               project = projectId,
@@ -72,7 +73,7 @@ object Utils {
               payload = ChangeRecordPayload(
                 op = "u",
                 before = Option(mongoDocumentKeyToMap(doc.getDocumentKey)),
-                after = Some(mongoDocumentToMap(doc.getFullDocument)),
+                after = Some(mongoBsonValueToValue(doc.getFullDocument.toBsonDocument(classOf[BsonValue], MongoClient.getDefaultCodecRegistry)).asInstanceOf[Map[String, Any]]),
                 source = getMongoSource(projectId, dbAlias, doc)
               ),
               project = projectId,
@@ -130,7 +131,7 @@ object Utils {
     BsonDocument.parse(new String(data.array(), "UTF-8"))
   }
 
-  def mongoDocumentKeyToMap(find: BsonDocument): Map[String, Any] =  {
+  def mongoDocumentKeyToMap(find: BsonDocument): Map[String, Any] = {
     var id: String = ""
     val field = find.get("_id")
 
@@ -145,21 +146,50 @@ object Utils {
     Map("_id" -> id)
   }
 
-  def mongoDocumentToMap(doc: Document): Map[String, Any] =  {
-    implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
+  def mongoBsonValueToValue(value: BsonValue): Any = {
+    // Skip if value is null
+    if (value == null) return null
 
-    // Convert to json object
-    val jsonString = doc.toJson
-    var m = parse(jsonString).extract[Map[String, Any]]
+    value.getBsonType match {
+      case BsonType.INT32 =>
+        value.asInt32().getValue
+      case BsonType.INT64 =>
+        value.asInt64().getValue
+      case BsonType.OBJECT_ID =>
+        value.asObjectId().getValue.toHexString
+      case BsonType.DATE_TIME =>
+        OffsetDateTime.ofInstant(Instant.ofEpochMilli(value.asDateTime().getValue), ZoneId.systemDefault()).toString
+      case BsonType.TIMESTAMP =>
+        OffsetDateTime.ofInstant(Instant.ofEpochMilli(value.asTimestamp().getValue), ZoneId.systemDefault()).toString
+      case BsonType.DOCUMENT =>
+        val doc = value.asDocument().toBsonDocument(classOf[BsonDocument], MongoClient.getDefaultCodecRegistry)
+        var obj: Map[String, Any] = Map.empty
+        doc.keySet().forEach(key => {
+          obj += (key -> mongoBsonValueToValue(doc.get(key)))
+        })
+        obj
+      case BsonType.ARRAY =>
+        val arr = value.asArray().getValues
+        var op: Array[Any] = Array.empty
 
-    // See _id is an object id
-    try {
-      m += "_id" -> doc.getObjectId("_id").toHexString
-    } catch {
-      case _: Throwable =>
+        arr.forEach(value => {
+          op = op :+ mongoBsonValueToValue(value)
+        })
+
+        op
+      case BsonType.BOOLEAN =>
+        value.asBoolean().getValue
+      case BsonType.STRING =>
+        value.asString().getValue
+      case BsonType.DOUBLE =>
+        value.asDouble().getValue
+      case BsonType.DECIMAL128 =>
+        value.asDecimal128().doubleValue()
+      case BsonType.BINARY =>
+        value.asBinary().getData
+      case _ =>
+        value.toString
     }
-
-    m
   }
 
   def getMongoSource(projectId: String, dbAlias: String, doc: ChangeStreamDocument[Document]): ChangeRecordPayloadSource = {
@@ -232,6 +262,24 @@ object Utils {
     props
   }
 
+  def getOffsetStorageClass: String = {
+    Global.storageType match {
+      case "k8s" => "com.spaceuptech.dbevents.database.KubeOffsetBackingStore"
+      case _ => "org.apache.kafka.connect.storage.FileOffsetBackingStore"
+    }
+  }
+
+  def getDatabaseHistoryStorageClass: String = {
+    Global.storageType match {
+      case "k8s" => "com.spaceuptech.dbevents.database.KubeDatabaseHistory"
+      case _ => "io.debezium.relational.history.FileDatabaseHistory"
+    }
+  }
+
+  def generateConnectorName(source: DatabaseSource): String = {
+    s"${source.project}_${source.dbAlias}"
+  }
+
   def prepareSQLServerConfig(source: DatabaseSource): Properties = {
     val name = generateConnectorName(source)
 
@@ -247,15 +295,13 @@ object Utils {
     props.setProperty("database.hostname", source.config.getOrElse("host", "localhost"))
     props.setProperty("database.port", source.config.getOrElse("port", "1433"))
     props.setProperty("database.user", source.config.getOrElse("user", "sa"))
-    props.setProperty("database.password", source.config.getOrElse("password", "mypassword"))
+    props.setProperty("database.password", source.config.getOrElse("password", "password"))
     props.setProperty("database.dbname", source.config.getOrElse("db", "test"))
     props.setProperty("database.server.name", s"${generateConnectorName(source)}_connector")
     props.setProperty("database.history", getDatabaseHistoryStorageClass)
     props.setProperty("database.history.file.filename", s"./dbevents-dbhistory-$name.dat")
     props
   }
-
-
 
   def preparePostgresConfig(source: DatabaseSource): Properties = {
     val name = generateConnectorName(source)
@@ -283,23 +329,5 @@ object Utils {
     props.setProperty("table.exclude.list", "event_logs,invocation_logs")
 
     props
-  }
-
-  def getOffsetStorageClass: String = {
-    Global.storageType match {
-      case "k8s" => "com.spaceuptech.dbevents.database.KubeOffsetBackingStore"
-      case _ => "org.apache.kafka.connect.storage.FileOffsetBackingStore"
-    }
-  }
-
-  def getDatabaseHistoryStorageClass: String = {
-    Global.storageType match {
-      case "k8s" => "com.spaceuptech.dbevents.database.KubeDatabaseHistory"
-      case _ => "io.debezium.relational.history.FileDatabaseHistory"
-    }
-  }
-
-  def generateConnectorName(source: DatabaseSource): String = {
-    s"${source.project}_${source.dbAlias}"
   }
 }

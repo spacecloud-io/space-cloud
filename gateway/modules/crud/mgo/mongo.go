@@ -131,10 +131,12 @@ func (m *Mongo) connect() error {
 	}
 
 	if err := client.Connect(ctx); err != nil {
+		_ = client.Disconnect(ctx)
 		return err
 	}
 
 	if err := client.Ping(ctx, nil); err != nil {
+		_ = client.Disconnect(ctx)
 		return err
 	}
 
@@ -150,6 +152,10 @@ func (m *Mongo) GetDBType() model.DBType {
 // SetQueryFetchLimit sets data fetch limit
 func (m *Mongo) SetQueryFetchLimit(limit int64) {
 	m.queryFetchLimit = &limit
+}
+
+// SetProjectAESKey sets aes key
+func (m *Mongo) SetProjectAESKey(aesKey []byte) {
 }
 
 func (m *Mongo) setClient(c *mongo.Client) {

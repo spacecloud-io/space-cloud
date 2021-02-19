@@ -10,6 +10,7 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -34,13 +35,13 @@ func (m *Module) helperSendFeed(ctx context.Context, data *model.FeedData) {
 
 			switch data.Type {
 			case utils.RealtimeDelete:
-				_ = m.auth.PostProcessMethod(ctx, query.actions, dataPoint.Payload)
+				_ = authHelpers.PostProcessMethod(ctx, m.aesKey, query.actions, dataPoint.Payload)
 				query.sendFeed(dataPoint)
 				m.metrics.AddDBOperation(m.project, data.DBType, data.Group, 1, model.Read)
 
 			case utils.RealtimeInsert, utils.RealtimeUpdate:
-				if utils.Validate(query.whereObj, data.Payload) {
-					_ = m.auth.PostProcessMethod(ctx, query.actions, dataPoint.Payload)
+				if utils.Validate(model.DefaultValidate, query.whereObj, data.Payload) {
+					_ = authHelpers.PostProcessMethod(ctx, m.aesKey, query.actions, dataPoint.Payload)
 					query.sendFeed(dataPoint)
 					m.metrics.AddDBOperation(m.project, data.DBType, data.Group, 1, model.Read)
 				}

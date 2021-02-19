@@ -22,6 +22,9 @@ type ReadRequest struct {
 
 // ReadOptions is the options required for a read request
 type ReadOptions struct {
+	// Debug field is used internally to show
+	// _query meta data in the graphql
+	Debug      bool             `json:"debug"`
 	Select     map[string]int32 `json:"select"`
 	Sort       []string         `json:"sort"`
 	Skip       *int64           `json:"skip"`
@@ -62,6 +65,9 @@ type DeleteRequest struct {
 // PreparedQueryRequest is the http body received for a PreparedQuery request
 type PreparedQueryRequest struct {
 	Params map[string]interface{} `json:"params"`
+	// This field is used internally to show
+	// _query meta data in the graphql
+	Debug bool
 }
 
 // AggregateRequest is the http body received for an aggregate request
@@ -80,6 +86,15 @@ type AllRequest struct {
 	Type      string                 `json:"type"`
 	DBAlias   string                 `json:"dBAlias"`
 	Extras    map[string]interface{} `json:"extras"`
+}
+
+// SQLMetaData stores sql query information
+type SQLMetaData struct {
+	Col       string        `json:"col" structs:"col"`
+	SQL       string        `json:"sql" structs:"sql"`
+	DbAlias   string        `json:"db" structs:"db"`
+	Args      []interface{} `json:"args" structs:"args"`
+	QueryTime string        `json:"queryTime" structs:"queryTime"`
 }
 
 // BatchRequest is the http body for a batch request
@@ -105,6 +120,9 @@ const (
 
 	// SQLServer is the type used for MsSQL
 	SQLServer DBType = "sqlserver"
+
+	// DefaultValidate is used for default validation operation
+	DefaultValidate = "default"
 
 	// DefaultFetchLimit is the default value to be used as a limit to fetch rows/collection in each read query
 	DefaultFetchLimit = 1000

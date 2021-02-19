@@ -36,14 +36,14 @@ gateway:
     custom_ssl_secret: "" # If required change this to the Kubernetes secret name containing custom SSL cert
     custom_ssl_cert_key: "" # Secret key containing SSL public certificate
     custom_ssl_private_key: "" # Secret key containing SSL private key
-  autoScaler: 
+  autoScaler:
     averageCPUUtilization: 70
     minReplicas: 1
     maxReplicas: 10
   disableUI: "false"
   replicas: 3
   restricted_hosts: "*" # Comma seperated IPs for restricting access to admin UI
-  envs: 
+  envs:
 
 # Runner service configuration
 runner:
@@ -57,11 +57,11 @@ runner:
     limits:
       memory: "512Mi"
       cpu: "500m"
-  autoScaler: 
+  autoScaler:
     averageCPUUtilization: 70
     minReplicas: 1
-    maxReplicas: 10  
-  envs: 
+    maxReplicas: 10
+  envs:
 
 # Redis service configuration
 redis:
@@ -93,9 +93,10 @@ prometheus:
 
 # DB events service configuration
 dbEvents:
+  enabled: true # NOTE: don't put the boolean value in double quotes
   image:
     name: "spaceuptech/dbevents"
-    version: "0.1.0"
+    version: "0.2.0"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always
   resources:
     requests:
@@ -107,5 +108,5 @@ dbEvents:
 
 # Connection string used by gateway & runner to connect to other services
 connections:
-  redisConn: "redis.space-cloud.svc.cluster.local:6379" 
+  redisConn: "redis.space-cloud.svc.cluster.local:6379"
   prometheusConn: "http://prometheus.space-cloud.svc.cluster.local:9090" 

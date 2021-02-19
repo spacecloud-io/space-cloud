@@ -734,7 +734,7 @@ func Test_processRows(t *testing.T) {
 			finalArray := make([]interface{}, 0)
 			mapping := map[string]map[string]interface{}{}
 			for _, row := range tt.args.rows {
-				s.processRows(context.Background(), []string{tt.args.table}, tt.args.isAggregate, row.(map[string]interface{}), tt.args.join, mapping, &finalArray, nil, map[string]map[string]string{})
+				s.processRows(context.Background(), false, []string{tt.args.table}, tt.args.isAggregate, row.(map[string]interface{}), tt.args.join, mapping, &finalArray, nil, map[string]map[string]string{})
 			}
 
 			if !reflect.DeepEqual(finalArray, tt.result) {

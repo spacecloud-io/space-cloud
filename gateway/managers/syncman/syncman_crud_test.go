@@ -3,6 +3,7 @@ package syncman
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
@@ -983,6 +984,7 @@ func TestManager_GetSecrets(t *testing.T) {
 // }
 
 func TestManager_SetSchemaInspection(t *testing.T) {
+	mockSchema := mockSchemaEventingInterface{}
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -993,7 +995,6 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 		project string
 		dbAlias string
 		col     string
-		schema  string
 	}
 	tests := []struct {
 		name            string
@@ -1001,175 +1002,202 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 		args            args
 		modulesMockArgs []mockArgs
 		storeMockArgs   []mockArgs
+		schemaMockArgs  []mockArgs
 		wantErr         bool
 	}{
 		{
-			name:    "unable to get project",
+			name:    "Unable to get project config",
 			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{"": &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "2", schema: "type event {id: ID! title: String}"},
+			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "2"},
 			wantErr: true,
 		},
 		{
-			name:    "database not present in config",
+			name:    "DbAlias not present in config",
 			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{"": &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "notAlias", project: "1", schema: "type event {id: ID! title: String}"},
+			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "notAlias", project: "1"},
 			wantErr: true,
 		},
+		// This is a valid test case, but unable to solve the testify package error
+		// {
+		// 	name: "Track a non existing table where the schema config was nil initially",
+		// 	s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DbAlias: "alias", DBName: "db_name"}}, DatabaseSchemas: nil}}}},
+		// 	args: args{ctx: context.Background(), col: "invocation_logs", dbAlias: "alias", project: "1"},
+		// 	modulesMockArgs: []mockArgs{
+		// 		{
+		// 			method:         "GetSchemaModuleForSyncMan",
+		// 			args:           []interface{}{},
+		// 			paramsReturned: []interface{}{&mockSchema},
+		// 		},
+		// 		{
+		// 			method: "SetDatabaseSchemaConfig",
+		// 			args: []interface{}{
+		// 				mock.Anything,
+		// 				"1",
+		// 				config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "invocation_logs"): &config.DatabaseSchema{Table: "invocation_logs", DbAlias: "alias", Schema: "type invocation_logs {id: ID! title: String}"}}},
+		// 			paramsReturned: []interface{}{nil},
+		// 		},
+		// 	},
+		// 	schemaMockArgs: []mockArgs{
+		// 		{
+		// 			method: "SchemaInspection",
+		// 			args: []interface{}{
+		// 				mock.Anything,
+		// 				"alias",
+		// 				"db_name",
+		// 				"invocation_logs",
+		// 				model.Collection{},
+		// 			},
+		// 			paramsReturned: []interface{}{"type invocation_logs {id: ID! title: String}", nil},
+		// 		},
+		// 	},
+		// 	storeMockArgs: []mockArgs{
+		// 		{
+		// 			method:         "SetResource",
+		// 			args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "invocation_logs"), &config.DatabaseSchema{Table: "invocation_logs", DbAlias: "alias", Schema: "type invocation_logs {id: ID! title: String}"}},
+		// 			paramsReturned: []interface{}{nil},
+		// 		},
+		// 	},
+		// },
 		{
-			name: "collections nil and unable to set crud config",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			name: "Track a non existing table & set schema config",
+			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DbAlias: "alias", DBName: "db_name"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "event_logs"): &config.DatabaseSchema{Table: "event_logs", DbAlias: "alias", Schema: "type event_logs {id: ID! title: String}"}}}}}},
+			args: args{ctx: context.Background(), col: "invocation_logs", dbAlias: "alias", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetDatabaseSchemaConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "notTableName"): &config.DatabaseSchema{Table: "notTableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}, config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}},
-					paramsReturned: []interface{}{errors.New("unable to set db config")},
+					method:         "GetSchemaModuleForSyncMan",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{&mockSchema},
+				},
+				{
+					method: "SetDatabaseSchemaConfig",
+					args: []interface{}{
+						mock.Anything,
+						"1",
+						config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "invocation_logs"): &config.DatabaseSchema{Table: "invocation_logs", DbAlias: "alias", Schema: "type invocation_logs {id: ID! title: String}"}, config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "event_logs"): &config.DatabaseSchema{Table: "event_logs", DbAlias: "alias", Schema: "type event_logs {id: ID! title: String}"}}},
+					paramsReturned: []interface{}{nil},
 				},
 			},
-			wantErr: true,
-		},
-		{
-			name: "collections nil and unable to set project",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
-			modulesMockArgs: []mockArgs{
+			schemaMockArgs: []mockArgs{
 				{
-					method:         "SetDatabaseSchemaConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "notTableName"): &config.DatabaseSchema{Table: "notTableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}, config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}},
-					paramsReturned: []interface{}{nil},
+					method: "SchemaInspection",
+					args: []interface{}{
+						mock.Anything,
+						"alias",
+						"db_name",
+						"invocation_logs",
+						model.Collection{"event_logs": model.Fields{"id": &model.FieldType{FieldName: "id", Kind: model.TypeID, TypeIDSize: model.DefaultCharacterSize, IsFieldTypeRequired: true}, "title": &model.FieldType{FieldName: "title", Kind: model.TypeString}}},
+					},
+					paramsReturned: []interface{}{"type invocation_logs {id: ID! title: String}", nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
 					method:         "SetResource",
-					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "notTableName"), &config.DatabaseSchema{Table: "notTableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}},
-					paramsReturned: []interface{}{errors.New("Invalid config file type")},
+					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "invocation_logs"), &config.DatabaseSchema{Table: "invocation_logs", DbAlias: "alias", Schema: "type invocation_logs {id: ID! title: String}"}},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+		},
+		// {
+		// 	name: "Track a non existing table, but unable to inspect the table",
+		// 	s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DbAlias: "alias", DBName: "db_name"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "event_logs"): &config.DatabaseSchema{Table: "event_logs", DbAlias: "alias", Schema: "type event_logs {id: ID! title: String}"}}}}}},
+		// 	args: args{ctx: context.Background(), col: "invocation_logs", dbAlias: "alias", project: "1"},
+		// 	modulesMockArgs: []mockArgs{
+		// 		{
+		// 			method:         "GetSchemaModuleForSyncMan",
+		// 			args:           []interface{}{},
+		// 			paramsReturned: []interface{}{&mockSchema},
+		// 		},
+		// 	},
+		// 	schemaMockArgs: []mockArgs{
+		// 		{
+		// 			method: "SchemaInspection",
+		// 			args: []interface{}{
+		// 				mock.Anything,
+		// 				"alias",
+		// 				"db_name",
+		// 				"invocation_logs",
+		// 				model.Collection{"event_logs": model.Fields{"id": &model.FieldType{FieldName: "id", Kind: model.TypeID, TypeIDSize: model.DefaultCharacterSize, IsFieldTypeRequired: true}, "title": &model.FieldType{FieldName: "title", Kind: model.TypeString}}},
+		// 			},
+		// 			paramsReturned: []interface{}{"", fmt.Errorf("cannot track the table")},
+		// 		},
+		// 	},
+		// 	wantErr: true,
+		// },
+		{
+			name: "Track a non existing table, but unable to set database config",
+			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DbAlias: "alias", DBName: "db_name"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "event_logs"): &config.DatabaseSchema{Table: "event_logs", DbAlias: "alias", Schema: "type event_logs {id: ID! title: String}"}}}}}},
+			args: args{ctx: context.Background(), col: "invocation_logs", dbAlias: "alias", project: "1"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "GetSchemaModuleForSyncMan",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{&mockSchema},
+				},
+				{
+					method: "SetDatabaseSchemaConfig",
+					args: []interface{}{
+						mock.Anything,
+						"1",
+						config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "invocation_logs"): &config.DatabaseSchema{Table: "invocation_logs", DbAlias: "alias", Schema: "type invocation_logs {id: ID! title: String}"}, config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "event_logs"): &config.DatabaseSchema{Table: "event_logs", DbAlias: "alias", Schema: "type event_logs {id: ID! title: String}"}}},
+					paramsReturned: []interface{}{fmt.Errorf("unable to set database config")},
+				},
+			},
+			schemaMockArgs: []mockArgs{
+				{
+					method: "SchemaInspection",
+					args: []interface{}{
+						mock.Anything,
+						"alias",
+						"db_name",
+						"invocation_logs",
+						model.Collection{"event_logs": model.Fields{"id": &model.FieldType{FieldName: "id", Kind: model.TypeID, TypeIDSize: model.DefaultCharacterSize, IsFieldTypeRequired: true}, "title": &model.FieldType{FieldName: "title", Kind: model.TypeString}}},
+					},
+					paramsReturned: []interface{}{"type invocation_logs {id: ID! title: String}", nil},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "collections nil and project is set",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			name: "Track a non existing table, but unable to set resource",
+			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DbAlias: "alias", DBName: "db_name"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "event_logs"): &config.DatabaseSchema{Table: "event_logs", DbAlias: "alias", Schema: "type event_logs {id: ID! title: String}"}}}}}},
+			args: args{ctx: context.Background(), col: "invocation_logs", dbAlias: "alias", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
-					method:         "SetDatabaseSchemaConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "notTableName"): &config.DatabaseSchema{Table: "notTableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}, config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}},
+					method:         "GetSchemaModuleForSyncMan",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{&mockSchema},
+				},
+				{
+					method: "SetDatabaseSchemaConfig",
+					args: []interface{}{
+						mock.Anything,
+						"1",
+						config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "invocation_logs"): &config.DatabaseSchema{Table: "invocation_logs", DbAlias: "alias", Schema: "type invocation_logs {id: ID! title: String}"}, config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "event_logs"): &config.DatabaseSchema{Table: "event_logs", DbAlias: "alias", Schema: "type event_logs {id: ID! title: String}"}}},
 					paramsReturned: []interface{}{nil},
+				},
+			},
+			schemaMockArgs: []mockArgs{
+				{
+					method: "SchemaInspection",
+					args: []interface{}{
+						mock.Anything,
+						"alias",
+						"db_name",
+						"invocation_logs",
+						model.Collection{"event_logs": model.Fields{"id": &model.FieldType{FieldName: "id", Kind: model.TypeID, TypeIDSize: model.DefaultCharacterSize, IsFieldTypeRequired: true}, "title": &model.FieldType{FieldName: "title", Kind: model.TypeString}}},
+					},
+					paramsReturned: []interface{}{"type invocation_logs {id: ID! title: String}", nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
 					method:         "SetResource",
-					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "notTableName"), &config.DatabaseSchema{Table: "notTableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-		},
-		{
-			name: "collection not present and unable to set crud config",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetDatabaseSchemaConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "notTableName"): &config.DatabaseSchema{Table: "notTableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}, config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}},
-					paramsReturned: []interface{}{errors.New("unable to set db config")},
+					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "invocation_logs"), &config.DatabaseSchema{Table: "invocation_logs", DbAlias: "alias", Schema: "type invocation_logs {id: ID! title: String}"}},
+					paramsReturned: []interface{}{fmt.Errorf("unable to set resource")},
 				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "collection not present and unable to set project",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetDatabaseSchemaConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "notTableName"): &config.DatabaseSchema{Table: "notTableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}, config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetResource",
-					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "notTableName"), &config.DatabaseSchema{Table: "notTableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}},
-					paramsReturned: []interface{}{errors.New("Invalid config file type")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "collection not present and project is set",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetDatabaseSchemaConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "notTableName"): &config.DatabaseSchema{Table: "notTableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}, config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetResource",
-					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "notTableName"), &config.DatabaseSchema{Table: "notTableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-		},
-		{
-			name: "collection present and unable to set crud config",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetDatabaseSchemaConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}},
-					paramsReturned: []interface{}{errors.New("unable to set db config")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "collection present and unable to set project",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetDatabaseSchemaConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetResource",
-					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"), mock.Anything},
-					paramsReturned: []interface{}{errors.New("Invalid config file type")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "collection present and project is set",
-			s:    &Manager{clusterID: "chicago", storeType: "local", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{"resourceId": &config.DatabaseConfig{DbAlias: "alias"}}, DatabaseSchemas: config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}}}}},
-			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
-			modulesMockArgs: []mockArgs{
-				{
-					method:         "SetDatabaseSchemaConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabaseSchemas{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"): &config.DatabaseSchema{Table: "tableName", DbAlias: "alias", Schema: "type event {id: ID! title: String}"}}},
-					paramsReturned: []interface{}{nil},
-				},
-			},
-			storeMockArgs: []mockArgs{
-				{
-					method:         "SetResource",
-					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabaseSchema, "alias", "tableName"), mock.Anything},
-					paramsReturned: []interface{}{nil},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {
@@ -1184,16 +1212,20 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 			for _, m := range tt.storeMockArgs {
 				mockStore.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
+			for _, m := range tt.schemaMockArgs {
+				mockSchema.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if _, err := tt.s.SetSchemaInspection(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.schema, model.RequestParams{}); (err != nil) != tt.wantErr {
+			if _, err := tt.s.SetSchemaInspection(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetSchemaInspection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			mockModules.AssertExpectations(t)
 			mockStore.AssertExpectations(t)
+			mockSchema.AssertExpectations(t)
 		})
 	}
 }

@@ -7,11 +7,13 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/fatih/structs"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -55,11 +57,20 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}
-		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
+		result, metaData, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
+		if err != nil {
+			cb("", "", nil, err)
+			return
+		}
+
+		if req.Options.Debug && metaData != nil {
+			val := store["_query"]
+			val.(*utils.Array).Append(structs.Map(metaData))
+		}
 
 		// Post process only if joins were not enabled
 		if isPostProcessingEnabled(req.PostProcess) && len(req.Options.Join) == 0 {
-			_ = graph.auth.PostProcessMethod(ctx, req.PostProcess[col], result)
+			_ = authHelpers.PostProcessMethod(ctx, graph.aesKey, req.PostProcess[col], result)
 		}
 
 		cb(dbAlias, col, result, err)
@@ -114,19 +125,53 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		return
 	}
 
+	isDataloaderDisabled, err := isDataLoaderDisabled(ctx, field, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
 	go func() {
 		//  batch operation cannot be performed with aggregation or joins or when post processing is applied
-		req.IsBatch = !(len(req.Aggregate) > 0 || len(req.Options.Join) > 0)
+		req.IsBatch = !(isDataloaderDisabled || len(req.Aggregate) > 0 || len(req.Options.Join) > 0)
 		req.Options.HasOptions = hasOptions
-		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
+		result, metaData, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
+		if err != nil {
+			cb("", "", nil, err)
+			return
+		}
+
+		if req.Options.Debug && metaData != nil {
+			val := store["_query"]
+			val.(*utils.Array).Append(structs.Map(metaData))
+		}
 
 		// Post process only if joins were not enabled
 		if isPostProcessingEnabled(req.PostProcess) && len(req.Options.Join) == 0 {
-			_ = graph.auth.PostProcessMethod(ctx, req.PostProcess[col], result)
+			_ = authHelpers.PostProcessMethod(ctx, graph.aesKey, req.PostProcess[col], result)
 		}
 
 		cb(dbAlias, col, result, err)
 	}()
+}
+
+func isDataLoaderDisabled(ctx context.Context, field *ast.Field, store utils.M) (bool, error) {
+	for _, arg := range field.Arguments {
+		switch arg.Name.Value {
+		case "disableDataloader": // create
+			val, err := utils.ParseGraphqlValue(arg.Value, store)
+			if err != nil {
+				helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to extract argument from graphql query (%s)", arg.Name.Value), map[string]interface{}{"argValue": arg.Value.GetValue()})
+				continue
+			}
+			tempBool, ok := val.(bool)
+			if !ok {
+				return false, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Field (disableDataloader) should be of type boolean", nil, nil)
+			}
+			return tempBool, nil
+		}
+	}
+	return false, nil
 }
 
 func (graph *Module) runAuthForJoins(ctx context.Context, dbType, dbAlias, token string, req *model.ReadRequest, join []*model.JoinOption) error {
@@ -165,7 +210,14 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 		cb("", "", nil, err)
 		return
 	}
-	req := model.PreparedQueryRequest{Params: params}
+
+	isDebug, err := getDebugParam(ctx, field.Arguments, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	req := model.PreparedQueryRequest{Params: params, Debug: isDebug}
 	// Check if PreparedQuery op is authorised
 	actions, reqParams, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
 	if err != nil {
@@ -174,8 +226,17 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 	}
 
 	go func() {
-		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
-		_ = graph.auth.PostProcessMethod(ctx, actions, result)
+		result, metaData, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
+		if err != nil {
+			cb("", "", nil, err)
+			return
+		}
+
+		if req.Debug && metaData != nil {
+			val := store["_query"]
+			val.(*utils.Array).Append(structs.Map(metaData))
+		}
+		_ = authHelpers.PostProcessMethod(ctx, graph.aesKey, actions, result)
 		cb(dbAlias, id, result, err)
 	}()
 }
@@ -183,8 +244,13 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 func generateReadRequest(ctx context.Context, field *ast.Field, store utils.M) (*model.ReadRequest, bool, error) {
 	var err error
 
+	op, err := extractQueryOp(ctx, field.Arguments, store)
+	if err != nil {
+		return nil, false, err
+	}
+
 	// Create a read request object
-	readRequest := model.ReadRequest{Operation: utils.All, Options: new(model.ReadOptions), PostProcess: map[string]*model.PostProcess{}}
+	readRequest := model.ReadRequest{Operation: op, Options: new(model.ReadOptions), PostProcess: map[string]*model.PostProcess{}}
 
 	readRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
@@ -249,6 +315,10 @@ func (graph *Module) checkIfLinkCanBeOptimized(fieldStruct *model.FieldType, dbA
 	if err != nil {
 		return nil, false
 	}
+	// SQL self join not supported by space cloud
+	if referredTableName == col {
+		return nil, false
+	}
 	linkedOp := utils.All
 	if !fieldStruct.IsList {
 		linkedOp = utils.One
@@ -283,6 +353,12 @@ func (graph *Module) extractSelectionSet(ctx context.Context, field *ast.Field, 
 
 	for _, selection := range field.SelectionSet.Selections {
 		v := selection.(*ast.Field)
+
+		// Skip dbFetchTs fields
+		if v.Name.Value == "_dbFetchTs" {
+			continue
+		}
+
 		// skip aggregate field & fields with directives
 		if v.Name.Value == utils.GraphQLAggregate || (len(v.Directives) > 0 && v.Directives[0].Name.Value == utils.GraphQLAggregate) {
 			f, err := aggregateSingleField(ctx, v, store, col, model.DBType(dbType), aggregateFound)
@@ -494,6 +570,25 @@ func getAggregateArguments(field *ast.Directive, store utils.M) (string, string,
 	return operation, fieldName, nil
 }
 
+func extractQueryOp(ctx context.Context, args []*ast.Argument, store utils.M) (string, error) {
+	for _, v := range args {
+		switch v.Name.Value {
+		case "op":
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
+			if err != nil {
+				return "", err
+			}
+			switch temp.(string) {
+			case utils.All, utils.One:
+				return temp.(string), nil
+			default:
+				return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid value provided for field (op)", nil, nil)
+			}
+		}
+	}
+	return utils.All, nil
+}
+
 func extractGroupByClause(ctx context.Context, args []*ast.Argument, store utils.M) ([]interface{}, error) {
 	for _, v := range args {
 		switch v.Name.Value {
@@ -642,9 +737,36 @@ func generateOptions(ctx context.Context, args []*ast.Argument, store utils.M) (
 			}
 
 			options.Distinct = &tempString
+		case "debug":
+			hasOptions = true // Set the flag to true
+
+			isDebug, err := getDebugParam(ctx, []*ast.Argument{v}, store)
+			if err != nil {
+				return nil, false, err
+			}
+
+			options.Debug = isDebug
 		}
 	}
 	return &options, hasOptions, nil
+}
+
+func getDebugParam(ctx context.Context, args []*ast.Argument, store utils.M) (bool, error) {
+	for _, v := range args {
+		if v.Name.Value == "debug" {
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
+			if err != nil {
+				return false, err
+			}
+
+			tempBool, ok := temp.(bool)
+			if !ok {
+				return false, fmt.Errorf("invalid type (%s) for debug", reflect.TypeOf(temp))
+			}
+			return tempBool, nil
+		}
+	}
+	return false, nil
 }
 
 func isJointTable(table string, join []*model.JoinOption) (*model.JoinOption, bool) {
