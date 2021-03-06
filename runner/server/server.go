@@ -77,20 +77,6 @@ func (s *Server) Start() error {
 	// Initialise the various routes of the s
 	s.routes()
 
-	// Start proxy server
-	go func() {
-		// Create a new router
-		router := mux.NewRouter()
-		router.PathPrefix("/").HandlerFunc(s.handleProxy())
-
-		// Start http server
-		corsObj := utils.CreateCorsObject()
-		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Starting server proxy on port %s", s.config.ProxyPort), nil)
-		if err := http.ListenAndServe(":"+s.config.ProxyPort, corsObj.Handler(loggerMiddleWare(router))); err != nil {
-			helpers.Logger.LogFatal(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Proxy server failed: - %v", err), nil)
-		}
-	}()
-
 	// Start the http server
 	corsObj := utils.CreateCorsObject()
 	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Starting server on port %s", s.config.Port), nil)

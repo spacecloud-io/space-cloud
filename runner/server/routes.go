@@ -14,6 +14,8 @@ func (s *Server) routes() {
 	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/services/{serviceId}/{version}").HandlerFunc(s.handleApplyService())
 	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/services").HandlerFunc(s.HandleGetServices())
 	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/services/status").HandlerFunc(s.HandleGetServicesStatus())
+	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/scale-up/{serviceId}/{version}").HandlerFunc(s.handleScaleUpService())
+	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/wait/{serviceId}/{version} ").HandlerFunc(s.handleWaitServices())
 
 	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}/services/{serviceId}/{version}").HandlerFunc(s.HandleDeleteService())
 

@@ -17,8 +17,9 @@ import (
 // Istio manages the istio on kubernetes deployment target
 type Istio struct {
 	// For internal use
-	auth   *auth.Module
-	config *Config
+	auth        *auth.Module
+	config      *Config
+	waitservice *map[string]Deployment
 
 	// Drivers to talk to k8s and istio
 	kube       kubernetes.Interface
@@ -66,7 +67,23 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 	// Start the keda external scaler
 	go kedaScaler.Start()
 
-	return &Istio{auth: auth, config: c, kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}, nil
+	waitservice := make(map[string]Deployment)
+	if err := WatchDeployments(func(eventType string, availableReplicas, readyReplicas int32, projectID, deploymentID string) {
+		waitservice = map[string]Deployment{
+			projectID: Deployment{
+				DeployemtID: map[string]Replicas{
+					deploymentID: Replicas{
+						AvailableReplicas: availableReplicas,
+						ReadyReplicas:     readyReplicas,
+					},
+				},
+			},
+		}
+	}); err != nil {
+		return nil, err
+	}
+
+	return &Istio{auth: auth, config: c, waitservice: &waitservice, kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}, nil
 }
 
 func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {

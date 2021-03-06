@@ -3,14 +3,22 @@ package istio
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/spaceuptech/helpers"
-	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
-
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
+
+//Deployment stores the deploymentID
+type Deployment struct {
+	DeployemtID map[string]Replicas
+}
+
+//Replicas stores the value of AvailableReplicas and ReadyReplicas
+type Replicas struct {
+	AvailableReplicas int32
+	ReadyReplicas     int32
+}
 
 // WaitForService adjusts scales, up the service to scale up the number of nodes from zero to one
 // TODO: Do one watch per service. Right now its possible to have multiple watches for the same service
@@ -18,25 +26,26 @@ func (i *Istio) WaitForService(ctx context.Context, service *model.Service) erro
 	ns := service.ProjectID
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Scaling up service (%s:%s:%s) from zero", ns, service.ID, service.Version), nil)
 
-	timeout := int64(5 * 60)
-	labels := fmt.Sprintf("app=%s,version=%s", service.ID, service.Version)
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Watching for service (%s:%s:%s) to scale up and enter ready state", ns, service.ID, service.Version), nil)
-	watcher, err := i.kube.AppsV1().Deployments(ns).Watch(ctx, metav1.ListOptions{Watch: true, LabelSelector: labels, TimeoutSeconds: &timeout})
-	if err != nil {
-		return err
-	}
-	defer watcher.Stop()
 
-	for ev := range watcher.ResultChan() {
-		if ev.Type == watch.Error {
-			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("service (%s:%s:%s) could not be scaled up", ns, service.ID, service.Version), nil, nil)
+	ticker := time.NewTicker(200 * time.Millisecond)
+	done := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case _ = <-ticker.C:
+				if (*i.waitservice)[service.ProjectID].DeployemtID[service.ID].AvailableReplicas >= 1 && (*i.waitservice)[service.ProjectID].DeployemtID[service.ID].ReadyReplicas >= 1 {
+					return
+				}
+			}
 		}
-		deployment := ev.Object.(*appsv1.Deployment)
-		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Received watch event for service (%s:%s): available replicas - %d; ready replicas - %d", ns, service.ID, deployment.Status.AvailableReplicas, deployment.Status.ReadyReplicas), nil)
-		if deployment.Status.AvailableReplicas >= 1 && deployment.Status.ReadyReplicas >= 1 {
-			return nil
-		}
-	}
+	}()
+	time.Sleep(5 * time.Second)
+	ticker.Stop()
+	done <- true
 
 	return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("service (%s:%s) could not be started", ns, service.ID), nil, nil)
 }
