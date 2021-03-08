@@ -15,17 +15,16 @@ import (
 )
 
 const (
-	// ResourceDeleteEvent syncman uses this const to represent a delete event
-	ResourceDeleteEvent = "delete"
-	// ResourceUpdateEvent syncman uses this const to represent a delete event
-	ResourceUpdateEvent = "update"
-	// ResourceAddEvent syncman uses this const to represent a delete event
-	ResourceAddEvent = "add"
+	// resourceDeleteEvent istio uses this const to represent a delete event
+	resourceDeleteEvent = "delete"
+	// resourceUpdateEvent istio uses this const to represent a delete event
+	resourceUpdateEvent = "update"
+	// resourceAddEvent istio uses this const to represent a delete event
+	resourceAddEvent = "add"
 )
 
 func onAddOrUpdateResource(eventType string, obj interface{}) (string, int32, int32, string, string) {
 	deployment := obj.(*appsv1.Deployment)
-	//helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Received watch event for service (%s:%s): available replicas - %d; ready replicas - %d", ns, service.ID, deployment.Status.AvailableReplicas, deployment.Status.ReadyReplicas), nil)
 	return eventType, deployment.Status.AvailableReplicas, deployment.Status.ReadyReplicas, deployment.Namespace, deployment.Labels["app"]
 }
 
@@ -37,23 +36,20 @@ func WatchDeployments(cb func(eventType string, availableReplicas, readyReplicas
 			options.LabelSelector = "app.kubernetes.io/managed-by=space-cloud"
 		}
 		kube := new(kubernetes.Clientset)
-		informer := informers.NewSharedInformerFactoryWithOptions(kube, 15*time.Minute, informers.WithTweakListOptions(options)).Core().V1().Deployment().Informer()
+		informer := informers.NewSharedInformerFactoryWithOptions(kube, 15*time.Minute, informers.WithTweakListOptions(options)).Apps().V1().Deployments().Informer()
 		stopper := make(chan struct{})
 		defer close(stopper)
 		defer runtime.HandleCrash() // handles a crash & logs an error
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				evenType, availableReplicas, readyReplicas, projectID, deploymentID := onAddOrUpdateResource(ResourceAddEvent, obj)
-				cb(evenType, availableReplicas, readyReplicas, projectID, deploymentID)
+				cb(onAddOrUpdateResource(resourceAddEvent, obj))
 			},
 			UpdateFunc: func(old, obj interface{}) {
-				evenType, availableReplicas, readyReplicas, projectID, deploymentID := onAddOrUpdateResource(ResourceUpdateEvent, obj)
-				cb(evenType, availableReplicas, readyReplicas, projectID, deploymentID)
+				cb(onAddOrUpdateResource(resourceAddEvent, obj))
 			},
 			DeleteFunc: func(obj interface{}) {
-				evenType, availableReplicas, readyReplicas, projectID, deploymentID := onAddOrUpdateResource(ResourceDeleteEvent, obj)
-				cb(evenType, availableReplicas, readyReplicas, projectID, deploymentID)
+				cb(onAddOrUpdateResource(resourceAddEvent, obj))
 			},
 		})
 

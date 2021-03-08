@@ -14,12 +14,21 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
 )
 
+// Deployment stores the deploymentID
+type Deployment map[string]Replicas
+
+// Replicas stores the value of AvailableReplicas and ReadyReplicas
+type Replicas struct {
+	AvailableReplicas int32
+	ReadyReplicas     int32
+}
+
 // Istio manages the istio on kubernetes deployment target
 type Istio struct {
 	// For internal use
 	auth        *auth.Module
 	config      *Config
-	waitservice *map[string]Deployment
+	waitservice map[string]Deployment
 
 	// Drivers to talk to k8s and istio
 	kube       kubernetes.Interface
@@ -69,21 +78,37 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 
 	waitservice := make(map[string]Deployment)
 	if err := WatchDeployments(func(eventType string, availableReplicas, readyReplicas int32, projectID, deploymentID string) {
-		waitservice = map[string]Deployment{
-			projectID: Deployment{
-				DeployemtID: map[string]Replicas{
-					deploymentID: Replicas{
+		switch eventType {
+		case resourceAddEvent, resourceUpdateEvent:
+			if waitservice[projectID] == nil {
+				waitservice[projectID] = Deployment{
+					deploymentID: {
 						AvailableReplicas: availableReplicas,
 						ReadyReplicas:     readyReplicas,
 					},
-				},
-			},
+				}
+			} else {
+				waitservice[projectID][deploymentID] = Replicas{
+					AvailableReplicas: availableReplicas,
+					ReadyReplicas:     readyReplicas,
+				}
+			}
+		case resourceDeleteEvent:
+			_, ok := waitservice[projectID]
+			if ok {
+				_, found := waitservice[projectID][deploymentID]
+				if found {
+					delete(waitservice[projectID], deploymentID)
+				} else {
+					delete(waitservice, projectID)
+				}
+			}
 		}
 	}); err != nil {
 		return nil, err
 	}
 
-	return &Istio{auth: auth, config: c, waitservice: &waitservice, kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}, nil
+	return &Istio{auth: auth, config: c, waitservice: waitservice, kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}, nil
 }
 
 func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {
@@ -98,4 +123,8 @@ func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {
 // Type returns the type of the driver
 func (i *Istio) Type() model.DriverType {
 	return model.TypeIstio
+}
+
+func (i *Istio) getStatusOfDeployement(projectID, deployementID string) bool {
+	return i.waitservice[projectID][deployementID].AvailableReplicas >= 1 && i.waitservice[projectID][deployementID].ReadyReplicas >= 1
 }

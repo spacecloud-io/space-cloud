@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -18,7 +17,7 @@ func (s *Server) handleWaitServices() http.HandlerFunc {
 
 		defer utils.CloseTheCloser(r.Body)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
 
 		// Verify token
@@ -29,40 +28,12 @@ func (s *Server) handleWaitServices() http.HandlerFunc {
 			return
 		}
 
-		// http: Request.RequestURI can't be set in client requests.
-		// http://golang.org/src/pkg/net/http/client.go
-		r.RequestURI = ""
-
-		// Get the meta data from headers
-		project := r.Header.Get("x-og-project")
-		service := r.Header.Get("x-og-service")
-		ogHost := r.Header.Get("x-og-host")
-		ogPort := r.Header.Get("x-og-port")
-		ogVersion := r.Header.Get("x-og-version")
-
-		// Delete the headers
-		r.Header.Del("x-og-project")
-		r.Header.Del("x-og-service")
-		r.Header.Del("x-og-host")
-		r.Header.Del("x-og-port")
-		r.Header.Del("x-og-version")
-
-		// Change the destination with the original host and port
-		r.Host = ogHost
-		r.URL.Host = fmt.Sprintf("%s:%s", ogHost, ogPort)
-
-		// Set the url scheme to http
-		r.URL.Scheme = "http"
-
-		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Proxy is making request to host (%s) port (%s)", ogHost, ogPort), nil)
-
 		// Wait for the service to scale up
-		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s-%s", project, service, ogVersion), func() error {
-			return s.driver.WaitForService(ctx, &model.Service{ProjectID: project, ID: service, Version: ogVersion})
-		}); err != nil {
+		if err := s.driver.WaitForService(ctx, &model.Service{ProjectID: r.Header.Get("x-og-project"), ID: r.Header.Get("x-og-service"), Version: r.Header.Get("x-og-version")}); err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
 			return
 		}
+		_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
 	}
 }
 
@@ -80,35 +51,9 @@ func (s *Server) handleScaleUpService() http.HandlerFunc {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
-		// http: Request.RequestURI can't be set in client requests.
-		// http://golang.org/src/pkg/net/http/client.go
-		r.RequestURI = ""
-
-		// Get the meta data from headers
-		project := r.Header.Get("x-og-project")
-		service := r.Header.Get("x-og-service")
-		ogHost := r.Header.Get("x-og-host")
-		ogPort := r.Header.Get("x-og-port")
-		ogVersion := r.Header.Get("x-og-version")
-
-		// Delete the headers
-		r.Header.Del("x-og-project")
-		r.Header.Del("x-og-service")
-		r.Header.Del("x-og-host")
-		r.Header.Del("x-og-port")
-		r.Header.Del("x-og-version")
-
-		// Change the destination with the original host and port
-		r.Host = ogHost
-		r.URL.Host = fmt.Sprintf("%s:%s", ogHost, ogPort)
-
-		// Set the url scheme to http
-		r.URL.Scheme = "http"
-
-		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Proxy is making request to host (%s) port (%s)", ogHost, ogPort), nil)
 
 		// Instruct driver to scale up
-		if err := s.driver.ScaleUp(ctx, project, service, ogVersion); err != nil {
+		if err := s.driver.ScaleUp(ctx, r.Header.Get("x-og-project"), r.Header.Get("x-og-service"), r.Header.Get("x-og-version")); err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
 			return
 		}
