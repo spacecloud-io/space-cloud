@@ -32,6 +32,7 @@ gateway/gateway
 runner/runner
 metric-proxy/metric-proxy
 space-cli/space-cli
+runner-proxy/runner-proxy
 
 # Ignore the vendor folders
 metric-proxy/vendor
