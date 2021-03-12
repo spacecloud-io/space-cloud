@@ -1,6 +1,8 @@
 package istio
 
 import (
+	"sync"
+
 	kedaVersionedClient "github.com/kedacore/keda/pkg/generated/clientset/versioned"
 	versionedclient "istio.io/client-go/pkg/clientset/versioned"
 	v1 "k8s.io/api/core/v1"
@@ -29,6 +31,7 @@ type Istio struct {
 	auth         *auth.Module
 	config       *Config
 	seviceStatus map[string]deployments
+	lock         sync.RWMutex
 
 	// Drivers to talk to k8s and istio
 	kube       kubernetes.Interface
@@ -76,33 +79,35 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 	// Start the keda external scaler
 	go kedaScaler.Start()
 
-	waitservice := make(map[string]deployments)
+	i := &Istio{auth: auth, config: c, seviceStatus: make(map[string]deployments), kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}
 	if err := WatchDeployments(func(eventType string, availableReplicas, readyReplicas int32, projectID, deploymentID string) {
+		i.lock.Lock()
+		defer i.lock.Unlock()
+
 		switch eventType {
 		case resourceAddEvent, resourceUpdateEvent:
-			if waitservice[projectID] == nil {
-				waitservice[projectID] = deployments{
+			if i.seviceStatus[projectID] == nil {
+				i.seviceStatus[projectID] = deployments{
 					deploymentID: {
 						AvailableReplicas: availableReplicas,
 						ReadyReplicas:     readyReplicas,
 					},
 				}
 			} else {
-				waitservice[projectID][deploymentID] = status{
+				i.seviceStatus[projectID][deploymentID] = status{
 					AvailableReplicas: availableReplicas,
 					ReadyReplicas:     readyReplicas,
 				}
 			}
 		case resourceDeleteEvent:
-			deployments, ok := waitservice[projectID]
+			deployments, ok := i.seviceStatus[projectID]
 			if ok {
 				_, found := deployments[deploymentID]
 				if found {
 					delete(deployments, deploymentID)
-				} else {
-					if len(deployments) == 0 {
-						delete(waitservice, projectID)
-					}
+				}
+				if len(deployments) == 0 {
+					delete(i.seviceStatus, projectID)
 				}
 			}
 		}
@@ -110,7 +115,7 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 		return nil, err
 	}
 
-	return &Istio{auth: auth, config: c, seviceStatus: waitservice, kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}, nil
+	return i, nil
 }
 
 func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {
@@ -128,10 +133,13 @@ func (i *Istio) Type() model.DriverType {
 }
 
 func (i *Istio) getStatusOfDeployement(projectID, deployementID string) bool {
+	i.lock.RLock()
 	if deployments, ok := i.seviceStatus[projectID]; ok {
-		if _, ok := deployments[deployementID]; ok {
-			return i.seviceStatus[projectID][deployementID].AvailableReplicas >= 1 && i.seviceStatus[projectID][deployementID].ReadyReplicas >= 1
+		if status, ok := deployments[deployementID]; ok {
+			i.lock.RUnlock()
+			return status.AvailableReplicas >= 1 && status.ReadyReplicas >= 1
 		}
 	}
+	i.lock.RUnlock()
 	return false
 }

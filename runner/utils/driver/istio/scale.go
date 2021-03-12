@@ -22,7 +22,7 @@ func (i *Istio) WaitForService(ctx context.Context, service *model.Service) erro
 	for {
 		select {
 		case <-ctx.Done():
-			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("service (%s:%s) could not be started", service.ProjectID, service.ID), nil, nil)
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Service (%s) could not be started", service.ID), nil, nil)
 		case <-ticker.C:
 			if i.getStatusOfDeployement(service.ProjectID, service.ID) {
 				return nil

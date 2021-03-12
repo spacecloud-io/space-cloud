@@ -21,14 +21,6 @@ func (s *Server) handleWaitServices() http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
 
-		// Verify token
-		_, err := s.auth.VerifyToken(utils.GetToken(r))
-		if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Failed to wait for service response", err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
-			return
-		}
-
 		vars := mux.Vars(r)
 		project := vars["project"]
 		serviceID := vars["serviceId"]
