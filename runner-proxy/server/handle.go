@@ -47,14 +47,12 @@ func (s *Server) handleProxy() http.HandlerFunc {
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Proxy is making request to host (%s) port (%s)", ogHost, ogPort), nil)
 
+		// Update the ttl of cached deployment
 		id := fmt.Sprintf("%s-%s-%s", project, service, ogVersion)
-		item, ok := s.m.m[id]
-		if ok {
-			if time.Now().Unix()-item.lastAccess < int64(120) {
-				s.m.m[id] = &Item{lastAccess: time.Now().Unix()}
-				_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
-				return
-			}
+		exist := s.cache.GetDeployment(id)
+		if exist {
+			_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
+			return
 		}
 
 		// get token from header
@@ -68,15 +66,17 @@ func (s *Server) handleProxy() http.HandlerFunc {
 			return
 		}
 
-		// makes http request to Wait for the service to scale up
+		// Wait for the service to scale up
 		url = fmt.Sprintf("/v1/runner/%s/wait/%s/%s", project, service, ogVersion)
-		if err := utils.MakeHTTPRequest(ctx, "GET", url, token, "", map[string]interface{}{}, &vPtr); err != nil {
+		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s-%s", project, service, ogVersion), func() error {
+			return utils.MakeHTTPRequest(ctx, "GET", url, token, "", map[string]interface{}{}, &vPtr)
+		}); err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
 			return
 		}
 
 		//after successfull http request make a new entry in TTLMap with id as key
-		s.m.put(id)
+		s.cache.Put(id)
 
 		var res *http.Response
 		for i := 0; i < 5; i++ {

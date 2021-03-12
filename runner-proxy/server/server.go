@@ -14,36 +14,32 @@ import (
 
 // Server is the module responsible to manage the runner
 type Server struct {
-	// For storing config
-	config *Config
-
 	// For handling http related stuff
 	router *mux.Router
 
 	debounce *utils.Debounce
-	m        *TTLMap
+	cache    *utils.TTLMap
 }
 
 // New creates a new instance of the runner
-func New(c *Config) (*Server, error) {
+func New() (*Server, error) {
 	debounce := utils.NewDebounce()
-	m := tick()
+	m := utils.Tick()
 	// Return a new runner instance
 	return &Server{
-		config:   c,
 		router:   mux.NewRouter(),
 		debounce: debounce,
-		m:        m,
+		cache:    m,
 	}, nil
 }
 
 // Start begins the runner
-func (s *Server) Start() error {
+func (s *Server) Start(port string) error {
 	// Initialise the various routes of the s
 	s.routes()
 
 	// Start http server
 	corsObj := utils.CreateCorsObject()
-	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Starting server proxy on port %s", s.config.Port), nil)
-	return http.ListenAndServe(":"+s.config.Port, corsObj.Handler(loggerMiddleWare(s.router)))
+	helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Starting server proxy on port %s", port), nil)
+	return http.ListenAndServe(":"+port, corsObj.Handler(loggerMiddleWare(s.router)))
 }

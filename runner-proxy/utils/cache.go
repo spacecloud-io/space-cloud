@@ -1,4 +1,4 @@
-package server
+package utils
 
 import (
 	"sync"
@@ -16,10 +16,11 @@ type TTLMap struct {
 	l sync.Mutex
 }
 
-func tick() (m *TTLMap) {
+// Tick creates a TTLMap object and constantly check for outdated elements inside the object.
+func Tick() (m *TTLMap) {
 	m = &TTLMap{m: make(map[string]*Item)}
 	go func() {
-		for now := range time.Tick(time.Second) {
+		for now := range time.Tick(10 * time.Second) {
 			m.l.Lock()
 			for k, v := range m.m {
 				if now.Unix()-v.lastAccess > int64(120) {
@@ -36,8 +37,11 @@ func (m *TTLMap) len() int {
 	return len(m.m)
 }
 
-func (m *TTLMap) put(k string) {
+// Put insert new value in TTLMap
+func (m *TTLMap) Put(k string) {
 	m.l.Lock()
+	defer m.l.Unlock()
+
 	it, ok := m.m[k]
 	if !ok {
 		it = &Item{lastAccess: time.Now().Unix()}
@@ -45,5 +49,19 @@ func (m *TTLMap) put(k string) {
 	} else {
 		m.m[k] = &Item{lastAccess: time.Now().Unix()}
 	}
-	m.l.Unlock()
+}
+
+// GetDeployment check if the element exist in the TTLMap
+func (m *TTLMap) GetDeployment(k string) bool {
+	m.l.Lock()
+	defer m.l.Unlock()
+
+	it, ok := m.m[k]
+	if ok {
+		if time.Now().Unix()-it.lastAccess < int64(120) {
+			m.m[k] = &Item{lastAccess: time.Now().Unix()}
+			return true
+		}
+	}
+	return false
 }

@@ -23,11 +23,6 @@ func main() {
 					Usage: "The port the runner will bind too",
 					Value: "4055",
 				},
-				cli.BoolFlag{
-					Name:   "dev",
-					EnvVar: "DEV",
-					Usage:  "start runner without authentication",
-				},
 				cli.StringFlag{
 					Name:   "log-level",
 					EnvVar: "LOG_LEVEL",
@@ -47,6 +42,6 @@ func main() {
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
-		helpers.Logger.LogFatal(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Failed to start runner: %v", err), nil)
+		helpers.Logger.LogFatal(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Failed to start runner-proxy: %v", err), nil)
 	}
 }
