@@ -214,7 +214,7 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 
 				// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service to service incoming requests.
 				if versionScaleConfig.MinReplicas == 0 {
-					destHost = "runner.space-cloud.svc.cluster.local"
+					destHost = "runner-proxy.space-cloud.svc.cluster.local"
 					destPort = proxyPort
 				}
 
@@ -379,7 +379,7 @@ func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32
 			for _, dest := range httpRoute.Route {
 
 				// Check if the route was for a service with min scale 0. If the destination has the host of runner, it means it is communicating via the proxy.
-				if dest.Destination.Host == "runner.space-cloud.svc.cluster.local" {
+				if dest.Destination.Host == "runner-proxy.space-cloud.svc.cluster.local" {
 					// We are only interested in this case if the new min replica for this version is more than 0. If the min replica was zero there would be no change
 					if service.AutoScale.MinReplicas == 0 {
 						continue
@@ -404,7 +404,7 @@ func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32
 
 				// Update the destination to communicate via the proxy if its for our version
 				if dest.Destination.Host == getInternalServiceDomain(service.ProjectID, service.ID, service.Version) {
-					dest.Destination.Host = "runner.space-cloud.svc.cluster.local"
+					dest.Destination.Host = "runner-proxy.space-cloud.svc.cluster.local"
 					dest.Destination.Port = &networkingv1alpha3.PortSelector{Number: proxyPort}
 				}
 			}

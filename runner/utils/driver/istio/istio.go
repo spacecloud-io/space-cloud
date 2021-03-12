@@ -1,6 +1,8 @@
 package istio
 
 import (
+	"sync"
+
 	kedaVersionedClient "github.com/kedacore/keda/pkg/generated/clientset/versioned"
 	versionedclient "istio.io/client-go/pkg/clientset/versioned"
 	v1 "k8s.io/api/core/v1"
@@ -14,11 +16,22 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
 )
 
+// deployment stores the deploymentID
+type deployments map[string]status
+
+// status stores the value of AvailableReplicas and ReadyReplicas
+type status struct {
+	AvailableReplicas int32
+	ReadyReplicas     int32
+}
+
 // Istio manages the istio on kubernetes deployment target
 type Istio struct {
 	// For internal use
-	auth   *auth.Module
-	config *Config
+	auth         *auth.Module
+	config       *Config
+	seviceStatus map[string]deployments
+	lock         sync.RWMutex
 
 	// Drivers to talk to k8s and istio
 	kube       kubernetes.Interface
@@ -66,7 +79,43 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 	// Start the keda external scaler
 	go kedaScaler.Start()
 
-	return &Istio{auth: auth, config: c, kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}, nil
+	i := &Istio{auth: auth, config: c, seviceStatus: make(map[string]deployments), kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}
+	if err := WatchDeployments(func(eventType string, availableReplicas, readyReplicas int32, projectID, deploymentID string) {
+		i.lock.Lock()
+		defer i.lock.Unlock()
+
+		switch eventType {
+		case resourceAddEvent, resourceUpdateEvent:
+			if i.seviceStatus[projectID] == nil {
+				i.seviceStatus[projectID] = deployments{
+					deploymentID: {
+						AvailableReplicas: availableReplicas,
+						ReadyReplicas:     readyReplicas,
+					},
+				}
+			} else {
+				i.seviceStatus[projectID][deploymentID] = status{
+					AvailableReplicas: availableReplicas,
+					ReadyReplicas:     readyReplicas,
+				}
+			}
+		case resourceDeleteEvent:
+			deployments, ok := i.seviceStatus[projectID]
+			if ok {
+				_, found := deployments[deploymentID]
+				if found {
+					delete(deployments, deploymentID)
+				}
+				if len(deployments) == 0 {
+					delete(i.seviceStatus, projectID)
+				}
+			}
+		}
+	}); err != nil {
+		return nil, err
+	}
+
+	return i, nil
 }
 
 func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {
@@ -81,4 +130,16 @@ func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {
 // Type returns the type of the driver
 func (i *Istio) Type() model.DriverType {
 	return model.TypeIstio
+}
+
+func (i *Istio) getStatusOfDeployement(projectID, deployementID string) bool {
+	i.lock.RLock()
+	if deployments, ok := i.seviceStatus[projectID]; ok {
+		if status, ok := deployments[deployementID]; ok {
+			i.lock.RUnlock()
+			return status.AvailableReplicas >= 1 && status.ReadyReplicas >= 1
+		}
+	}
+	i.lock.RUnlock()
+	return false
 }

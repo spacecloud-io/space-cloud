@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -445,88 +444,5 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
-	}
-}
-
-func (s *Server) handleProxy() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
-		defer cancel()
-
-		// Close the body of the request
-		defer utils.CloseTheCloser(r.Body)
-
-		// http: Request.RequestURI can't be set in client requests.
-		// http://golang.org/src/pkg/net/http/client.go
-		r.RequestURI = ""
-
-		// Get the meta data from headers
-		project := r.Header.Get("x-og-project")
-		service := r.Header.Get("x-og-service")
-		ogHost := r.Header.Get("x-og-host")
-		ogPort := r.Header.Get("x-og-port")
-		ogVersion := r.Header.Get("x-og-version")
-
-		// Delete the headers
-		r.Header.Del("x-og-project")
-		r.Header.Del("x-og-service")
-		r.Header.Del("x-og-host")
-		r.Header.Del("x-og-port")
-		r.Header.Del("x-og-version")
-
-		// Change the destination with the original host and port
-		r.Host = ogHost
-		r.URL.Host = fmt.Sprintf("%s:%s", ogHost, ogPort)
-
-		// Set the url scheme to http
-		r.URL.Scheme = "http"
-
-		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Proxy is making request to host (%s) port (%s)", ogHost, ogPort), nil)
-
-		// Instruct driver to scale up
-		if err := s.driver.ScaleUp(ctx, project, service, ogVersion); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
-			return
-		}
-
-		// Wait for the service to scale up
-		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s-%s", project, service, ogVersion), func() error {
-			return s.driver.WaitForService(ctx, &model.Service{ProjectID: project, ID: service, Version: ogVersion})
-		}); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
-			return
-		}
-
-		var res *http.Response
-		for i := 0; i < 5; i++ {
-			// Fire the request
-			var err error
-			res, err = http.DefaultClient.Do(r)
-			if err != nil {
-				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
-				return
-			}
-
-			// TODO: Make this retry logic better
-			if res.StatusCode != http.StatusServiceUnavailable {
-				break
-			}
-
-			time.Sleep(350 * time.Millisecond)
-
-			// Close the body
-			_, _ = io.Copy(ioutil.Discard, res.Body)
-			utils.CloseTheCloser(res.Body)
-		}
-
-		defer utils.CloseTheCloser(res.Body)
-
-		// Copy headers and status code
-		for k, v := range res.Header {
-			w.Header()[k] = v
-		}
-
-		w.WriteHeader(res.StatusCode)
-		_, _ = io.Copy(w, res.Body)
 	}
 }
