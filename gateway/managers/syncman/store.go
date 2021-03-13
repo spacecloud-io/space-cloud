@@ -8,7 +8,6 @@ import (
 
 // Store abstracts the implementation of letsencrypt storage operations
 type Store interface {
-	WatchServices(cb func(projects scServices)) error
 	WatchResources(cb func(eventType, resourceId string, resourceType config.Resource, resource interface{})) error
 
 	Register()

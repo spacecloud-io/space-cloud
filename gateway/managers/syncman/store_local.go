@@ -12,11 +12,10 @@ import (
 type LocalStore struct {
 	configPath   string
 	globalConfig *config.Config
-	services     scServices
 }
 
 // NewLocalStore creates a new local store
-func NewLocalStore(nodeID string, ssl *config.SSL) (*LocalStore, error) {
+func NewLocalStore(ssl *config.SSL) (*LocalStore, error) {
 	configPath := os.Getenv("CONFIG")
 	if configPath == "" {
 		configPath = "config.yaml"
@@ -35,8 +34,7 @@ func NewLocalStore(nodeID string, ssl *config.SSL) (*LocalStore, error) {
 	if ssl.Enabled {
 		conf.SSL = ssl
 	}
-	services := scServices{}
-	return &LocalStore{configPath: configPath, globalConfig: conf, services: append(services, &service{id: nodeID})}, nil
+	return &LocalStore{configPath: configPath, globalConfig: conf}, nil
 }
 
 // Register registers space cloud to the local store
@@ -44,12 +42,6 @@ func (s *LocalStore) Register() {}
 
 // WatchResources maintains consistency over all projects
 func (s *LocalStore) WatchResources(cb func(eventType, resourceId string, resourceType config.Resource, resource interface{})) error {
-	return nil
-}
-
-// WatchServices maintains consistency over all services
-func (s *LocalStore) WatchServices(cb func(scServices)) error {
-	cb(s.services)
 	return nil
 }
 

@@ -29,6 +29,7 @@ type Manager struct {
 	// Configuration for clustering
 	storeType string
 	store     Store
+	service   Service
 	services  []*service
 
 	// For authentication
@@ -51,12 +52,21 @@ func New(nodeID, clusterID, storeType, runnerAddr string, adminMan *admin.Manage
 
 	// Initialise the consul client if enabled
 	var s Store
+	var service Service
 	var err error
 	switch storeType {
 	case "local":
-		s, err = NewLocalStore(nodeID, ssl)
+		s, err = NewLocalStore(ssl)
+		if err != nil {
+			return nil, err
+		}
+		service, err = NewLocalService(nodeID)
 	case "kube":
 		s, err = NewKubeStore(clusterID)
+		if err != nil {
+			return nil, err
+		}
+		service, err = NewKubeService(clusterID)
 	default:
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot initialize syncaman as invalid store type (%v) provided", storeType), nil, nil)
 	}
@@ -65,6 +75,7 @@ func New(nodeID, clusterID, storeType, runnerAddr string, adminMan *admin.Manage
 		return nil, err
 	}
 	m.store = s
+	m.service = service
 	m.store.Register()
 
 	return m, nil
@@ -195,7 +206,7 @@ func (s *Manager) Start(port int) error {
 	}
 
 	// Start routine to observe active space-cloud services
-	if err := s.store.WatchServices(func(services scServices) {
+	if err := s.service.WatchServices(func(services scServices) {
 		s.lockServices.Lock()
 		defer s.lockServices.Unlock()
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services})
