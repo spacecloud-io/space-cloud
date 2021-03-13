@@ -59,6 +59,17 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "STORE_TYPE",
 		Value:  "local",
 	},
+	cli.StringFlag{
+		Name:   "service-type",
+		Usage:  "The config service to use for storing service configs and other meta data",
+		EnvVar: "STORE_TYPE",
+		Value:  "local",
+	},
+	cli.StringFlag{
+		Name:   "connection-string",
+		Usage:  "The connection string is used to connect to postgres",
+		EnvVar: "CONNECTION_STRING",
+	},
 	cli.IntFlag{
 		Name:  "port",
 		Value: 4122,
@@ -191,6 +202,9 @@ func actionRun(c *cli.Context) error {
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
+	serviceType := c.String("service-type")
+	connectionstring := c.String("connection-string")
+
 	if clusterID == "" {
 		return fmt.Errorf("provider cluster id through --cluster flag or using setting enviornment vairable CLUSTER_ID")
 	}
@@ -221,7 +235,7 @@ func actionRun(c *cli.Context) error {
 		adminSecret = "some-secret"
 	}
 	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
-	s, err := server.New(nodeID, clusterID, storeType, runnerAddr, isDev, adminUserInfo, ssl)
+	s, err := server.New(nodeID, clusterID, storeType, serviceType, connectionstring, runnerAddr, isDev, adminUserInfo, ssl)
 	if err != nil {
 		return err
 	}

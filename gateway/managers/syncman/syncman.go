@@ -27,10 +27,11 @@ type Manager struct {
 	port       int
 
 	// Configuration for clustering
-	storeType string
-	store     Store
-	service   Service
-	services  []*service
+	storeType   string
+	serviceType string
+	store       Store
+	service     Service
+	services    []*service
 
 	// For authentication
 	adminMan AdminSyncmanInterface
@@ -45,10 +46,19 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, storeType, runnerAddr string, adminMan *admin.Manager, ssl *config.SSL) (*Manager, error) {
+func New(nodeID, clusterID, storeType, serviceType, connectionstring, runnerAddr string, adminMan *admin.Manager, ssl *config.SSL) (*Manager, error) {
+
+	if storeType == "local" || storeType == "kube" {
+		serviceType = storeType
+	}
+	if storeType == "database" {
+		if serviceType != "local" && serviceType != "kube" {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot initialize syncman as invalid service type (%v) provided service type should be (kube) or (local)", serviceType), nil, nil)
+		}
+	}
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, storeType: storeType, serviceType: serviceType, runnerAddr: runnerAddr, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
 	var s Store
@@ -57,15 +67,21 @@ func New(nodeID, clusterID, storeType, runnerAddr string, adminMan *admin.Manage
 	switch storeType {
 	case "local":
 		s, err = NewLocalStore(ssl)
-		if err != nil {
-			return nil, err
-		}
-		service, err = NewLocalService(nodeID)
 	case "kube":
 		s, err = NewKubeStore(clusterID)
-		if err != nil {
-			return nil, err
-		}
+	case "database":
+	default:
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot initialize syncman as invalid store type (%v) provided", storeType), nil, nil)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	switch serviceType {
+	case "local":
+		service, err = NewLocalService(nodeID)
+	case "kube":
 		service, err = NewKubeService(clusterID)
 	default:
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot initialize syncaman as invalid store type (%v) provided", storeType), nil, nil)
@@ -74,6 +90,7 @@ func New(nodeID, clusterID, storeType, runnerAddr string, adminMan *admin.Manage
 	if err != nil {
 		return nil, err
 	}
+
 	m.store = s
 	m.service = service
 	m.store.Register()
