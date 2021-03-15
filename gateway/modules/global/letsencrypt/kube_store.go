@@ -1,6 +1,7 @@
 package letsencrypt
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mholt/certmagic"
+	"github.com/caddyserver/certmagic"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	kubeErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -151,7 +152,7 @@ func (s *KubeStore) Stat(key string) (certmagic.KeyInfo, error) {
 }
 
 // Lock implements a lock mechanism
-func (s *KubeStore) Lock(key string) error {
+func (s *KubeStore) Lock(ctx context.Context, key string) error {
 	start := time.Now()
 	lockFile := s.lockFileName(key)
 
@@ -254,12 +255,14 @@ func (s *KubeStore) makeKey(key string) string {
 	newKey := fmt.Sprintf("letsencrypt-%s", key)
 	newKey = strings.ReplaceAll(newKey, "/", "--")
 	newKey = strings.ReplaceAll(newKey, "_", "---")
+	newKey = strings.ReplaceAll(newKey, "@", "----")
 	return newKey
 }
 
 func (s *KubeStore) getOriginalKey(key string) string {
 	// Make sure you replace the maximum number of `-` first. It's in descending order
 	oldKey := strings.TrimPrefix(key, "letsencrypt-")
+	oldKey = strings.ReplaceAll(oldKey, "----", "@")
 	oldKey = strings.ReplaceAll(oldKey, "---", "_")
 	oldKey = strings.ReplaceAll(oldKey, "--", "/")
 	return oldKey

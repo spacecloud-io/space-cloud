@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/mholt/certmagic"
+	"github.com/caddyserver/certmagic"
 	"github.com/sirupsen/logrus"
 )
 
@@ -13,7 +13,8 @@ type LetsEncrypt struct {
 	lock sync.Mutex
 
 	// For internal use
-	client  *certmagic.Config
+	config  *certmagic.Config
+	client  *certmagic.ACMEManager
 	domains domainMapping
 }
 
@@ -22,31 +23,36 @@ func New() (*LetsEncrypt, error) {
 	// Load config from environment variables
 	c := loadConfig()
 
-	client := certmagic.NewDefault()
-	client.Agreed = true
-	client.Email = c.Email
+	certmagic.DefaultACME.Agreed = true
+	certmagic.DefaultACME.Email = c.Email
+
+	config := certmagic.NewDefault()
 
 	// Set the store for certificates
 	switch c.StoreType {
 	case StoreLocal:
-		client.Storage = certmagic.Default.Storage
+		config.Storage = certmagic.Default.Storage
 	case StoreSC:
-		client.Storage = NewScStore()
+		config.Storage = NewScStore()
 	case StoreKube:
 		c, err := NewKubeStore()
 		if err != nil {
 			logrus.Errorf("error initializing lets encrypt unable to initialize kubernetes store - %s", err.Error())
 			return nil, err
 		}
-		client.Storage = c
+		config.Storage = c
 	default:
 		return nil, fmt.Errorf("unsupported store type (%s) provided for lets encrypt", c.StoreType)
 	}
 
-	return &LetsEncrypt{client: client, domains: domainMapping{}}, nil
+	client := certmagic.NewACMEManager(config, certmagic.ACMEManager{
+		Agreed: true,
+	})
+
+	return &LetsEncrypt{config: config, client: client, domains: domainMapping{}}, nil
 }
 
-//SetLetsEncryptEmail sets config email
+// SetLetsEncryptEmail sets config email
 func (l *LetsEncrypt) SetLetsEncryptEmail(email string) {
 	l.lock.Lock()
 	defer l.lock.Unlock()

@@ -1,4 +1,4 @@
-FROM golang:1.13.5-alpine3.10
+FROM golang:1.15.3-alpine3.12
 WORKDIR /build
 
 # Take the current space cloud version as a argument

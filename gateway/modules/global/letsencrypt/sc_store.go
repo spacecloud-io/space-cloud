@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mholt/certmagic"
+	"github.com/caddyserver/certmagic"
 	"github.com/sirupsen/logrus"
 	apigo "github.com/spaceuptech/space-api-go"
 	"github.com/spaceuptech/space-api-go/db"
@@ -231,7 +231,7 @@ var StorageKeys certmagic.KeyBuilder
 
 // Lock obtains a lock named by the given key. It blocks
 // until the lock can be obtained or an error is returned.
-func (s *Storage) Lock(key string) error {
+func (s *Storage) Lock(ctx context.Context, key string) error {
 	start := time.Now()
 	lockFile := s.lockFileName(key)
 
