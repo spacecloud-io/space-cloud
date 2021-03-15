@@ -279,34 +279,7 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 
 		return 0, nil, nil, nil, errors.New("unknown error occurred")
 
-	case utils.One:
-		mapping := make(map[string]interface{})
-		if !rows.Next() {
-			return 0, nil, nil, nil, errors.New("SQL: No response from db")
-		}
-
-		err := rows.MapScan(mapping)
-		if err != nil {
-			return 0, nil, nil, nil, err
-		}
-
-		switch s.GetDBType() {
-		case model.MySQL, model.Postgres, model.SQLServer:
-			mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
-		}
-
-		processAggregate(mapping, mapping, col, isAggregate)
-		if req.PostProcess != nil {
-			_ = authHelpers.PostProcessMethod(ctx, s.aesKey, req.PostProcess[col], mapping)
-		}
-
-		if req.Options.Debug {
-			mapping["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
-		}
-
-		return 1, mapping, make(map[string]map[string]string), metaData, nil
-
-	case utils.All, utils.Distinct:
+	case utils.All, utils.Distinct, utils.One:
 		array := make([]interface{}, 0)
 		mapping := make(map[string]map[string]interface{})
 		jointMapping := make(map[string]map[string]string)
@@ -339,6 +312,13 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			}
 
 			s.processRows(ctx, req.Options.Debug, []string{col}, isAggregate, row, req.Options.Join, mapping, &array, req.PostProcess, jointMapping)
+		}
+
+		if operation == utils.One {
+			if count == 0 {
+				return 0, nil, nil, nil, errors.New("SQL: No response from db")
+			}
+			return 1, array[0], jointMapping, metaData, nil
 		}
 
 		return count, array, jointMapping, metaData, nil
