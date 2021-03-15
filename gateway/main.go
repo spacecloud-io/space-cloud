@@ -61,14 +61,20 @@ var essentialFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:   "service-type",
-		Usage:  "The config service to use for storing service configs and other meta data",
-		EnvVar: "STORE_TYPE",
+		Usage:  "The service to use for detecting changes in gateway services",
+		EnvVar: "SERVICE_TYPE",
 		Value:  "local",
 	},
 	cli.StringFlag{
-		Name:   "connection-string",
+		Name:   "db-store-conn",
 		Usage:  "The connection string is used to connect to postgres",
-		EnvVar: "CONNECTION_STRING",
+		EnvVar: "DB_STORE_CONN",
+	},
+	cli.StringFlag{
+		Name:   "db-schema-name",
+		Usage:  "The schema name is used to provide schema to postgres",
+		EnvVar: "DB_SCHEMA_NAME",
+		Value:  "public",
 	},
 	cli.IntFlag{
 		Name:  "port",
@@ -203,11 +209,22 @@ func actionRun(c *cli.Context) error {
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
 	serviceType := c.String("service-type")
-	connectionstring := c.String("connection-string")
+	dbstoreconn := c.String("db-store-conn")
+	dbschemaname := c.String("db-schema-name")
+
+	if storeType == "local" || storeType == "kube" {
+		serviceType = storeType
+	}
+	if storeType == "database" {
+		if serviceType != "local" && serviceType != "kube" {
+			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot initialize syncman as invalid service type (%v) provided service type should be (kube) or (local)", serviceType), nil, nil)
+		}
+	}
 
 	if clusterID == "" {
 		return fmt.Errorf("provider cluster id through --cluster flag or using setting enviornment vairable CLUSTER_ID")
 	}
+
 	// Load ui flag
 	disableUI := c.Bool("disable-ui")
 
@@ -235,7 +252,7 @@ func actionRun(c *cli.Context) error {
 		adminSecret = "some-secret"
 	}
 	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
-	s, err := server.New(nodeID, clusterID, storeType, serviceType, connectionstring, runnerAddr, isDev, adminUserInfo, ssl)
+	s, err := server.New(nodeID, clusterID, storeType, serviceType, dbstoreconn, dbschemaname, runnerAddr, isDev, adminUserInfo, ssl)
 	if err != nil {
 		return err
 	}

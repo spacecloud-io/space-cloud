@@ -13,10 +13,10 @@ type Managers struct {
 }
 
 // New creates a new managers instance
-func New(nodeID, clusterID, storeType, serviceType, connectionstring, runnerAddr string, isDev bool, adminUserInfo *config.AdminUser, ssl *config.SSL) (*Managers, error) {
+func New(nodeID, clusterID, storeType, serviceType, dbstoreconn, dbschemaname, runnerAddr string, isDev bool, adminUserInfo *config.AdminUser, ssl *config.SSL) (*Managers, error) {
 	// Create the fundamental modules
 	adminMan := admin.New(nodeID, clusterID, isDev, adminUserInfo)
-	syncMan, err := syncman.New(nodeID, clusterID, storeType, serviceType, connectionstring, runnerAddr, adminMan, ssl)
+	syncMan, err := syncman.New(nodeID, clusterID, storeType, serviceType, dbstoreconn, dbschemaname, runnerAddr, adminMan, ssl)
 	if err != nil {
 		return nil, err
 	}
