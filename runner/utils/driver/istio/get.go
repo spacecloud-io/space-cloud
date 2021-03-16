@@ -269,12 +269,60 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 
 	for _, service := range services.Items {
 		serviceID := service.Labels["app"]
-		routes := make(model.Routes, len(service.Spec.Http)+len(service.Spec.Tcp))
+		routes := make(model.Routes, 0)
 
-		for i, route := range service.Spec.Http {
+		for _, route := range service.Spec.Http {
 
 			// Generate the targets
 			targets := make([]model.RouteTarget, len(route.Route))
+			matchers := make([]*model.Matcher, len(route.Match))
+			for i, match := range route.Match {
+				tempMatcher := new(model.Matcher)
+
+				if match.Uri != nil && match.Uri.GetMatchType() != nil {
+					tempMatcher.URL = new(model.HTTPMatcher)
+					tempMatcher.URL.IgnoreCase = match.IgnoreUriCase
+					if exact := match.Uri.GetExact(); exact != "" {
+						tempMatcher.URL.Type = model.RouteHTTPMatchTypeExact
+						tempMatcher.URL.Value = exact
+					}
+					if prefix := match.Uri.GetPrefix(); prefix != "" {
+						tempMatcher.URL.Type = model.RouteHTTPMatchTypePrefix
+						tempMatcher.URL.Value = prefix
+					}
+					if regex := match.Uri.GetRegex(); regex != "" {
+						tempMatcher.URL.Type = model.RouteHTTPMatchTypeRegex
+						tempMatcher.URL.Value = regex
+					}
+				}
+
+				tempMatcher.Headers = make([]*model.HTTPMatcher, 0)
+				for headerKey, headerValue := range match.Headers {
+					tempHeader := new(model.HTTPMatcher)
+					tempHeader.Key = headerKey
+
+					if exact := headerValue.GetExact(); exact != "" {
+						tempHeader.Type = model.RouteHTTPMatchTypeExact
+						tempHeader.Value = exact
+					}
+					if prefix := headerValue.GetPrefix(); prefix != "" {
+						tempHeader.Type = model.RouteHTTPMatchTypePrefix
+						tempHeader.Value = prefix
+					}
+					if regex := headerValue.GetRegex(); regex != "" {
+						tempHeader.Type = model.RouteHTTPMatchTypeRegex
+						tempHeader.Value = regex
+					}
+
+					if tempHeader.Value == "" || tempHeader.Type == "" {
+						tempHeader.Type = model.RouteHTTPMatchTypeCheckPresence
+					}
+
+					tempMatcher.Headers = append(tempMatcher.Headers, tempHeader)
+				}
+				matchers[i] = tempMatcher
+			}
+
 			for j, destination := range route.Route {
 				target := model.RouteTarget{Weight: destination.Weight}
 
@@ -307,10 +355,10 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 			}
 
 			// Set the route
-			routes[i] = &model.Route{ID: serviceID, RequestTimeout: route.Retries.PerTryTimeout.Seconds, RequestRetries: route.Retries.Attempts, Source: model.RouteSource{Port: int32(route.Match[0].Port), Protocol: model.HTTP}, Targets: targets}
+			routes = append(routes, &model.Route{ID: serviceID, RequestTimeout: route.Retries.PerTryTimeout.Seconds, RequestRetries: route.Retries.Attempts, Source: model.RouteSource{Port: int32(route.Match[0].Port), Protocol: model.HTTP}, Targets: targets, Matchers: matchers})
 		}
 
-		for i, route := range service.Spec.Tcp {
+		for _, route := range service.Spec.Tcp {
 
 			// Generate the targets
 			targets := make([]model.RouteTarget, len(route.Route))
@@ -344,7 +392,7 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 			}
 
 			// Set the route
-			routes[i] = &model.Route{ID: serviceID, Source: model.RouteSource{Port: int32(route.Match[0].Port), Protocol: model.TCP}, Targets: targets}
+			routes = append(routes, &model.Route{ID: serviceID, Source: model.RouteSource{Port: int32(route.Match[0].Port), Protocol: model.TCP}, Targets: targets})
 		}
 
 		// Set the routes of a service
@@ -367,7 +415,7 @@ func (i *Istio) GetServiceRole(ctx context.Context, projectID string) ([]*model.
 	if err != nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list cluster roles in project (%s)", projectID), err, nil)
 	}
-	serviceRole := make([]*model.Role, len(rolelist.Items)+len(clusterRoleList.Items))
+	serviceRole := make([]*model.Role, 0)
 
 	for _, role := range rolelist.Items {
 		serviceID := role.Labels["app"]
