@@ -17,6 +17,7 @@ type PostgresStore struct {
 	db           *sql.DB
 	globalConfig *config.Config
 	clusterID    string
+	dbschemaname string
 }
 
 type postgres struct {
@@ -70,7 +71,7 @@ func NewPostgresStore(connectionstring, clusterID, dbschemaname string) (*Postgr
 	if _, err = db.Exec(qry); err != nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Table creation query failed (%s)", qry), err, nil)
 	}
-	return &PostgresStore{db: db, globalConfig: conf, clusterID: clusterID}, nil
+	return &PostgresStore{db: db, globalConfig: conf, clusterID: clusterID, dbschemaname: dbschemaname}, nil
 }
 
 // Register registers space cloud to the postgres store
@@ -78,35 +79,43 @@ func (s *PostgresStore) Register() {}
 
 // WatchResources maintains consistency over all projects
 func (s *PostgresStore) WatchResources(cb func(eventType, resourceId string, resourceType config.Resource, resource interface{})) error {
-	var (
-		resourceID   string
-		resource     interface{}
-		res          string
-		resourceType interface{}
-		project      string
-	)
+	type qry struct {
+		resourceID   string      `db:"resourceId"`
+		resourceType interface{} `db:"resourceType"`
+		resource     string      `db:"resource"`
+		project      string      `db:"project"`
+		clusterID    string      `db:"clusterId"`
+	}
+	var r qry
+	resources := make(map[string]postgres)
+	var res interface{}
 
-	resources := make([]postgres, 0)
+	var rows *sql.Rows
 	go func() {
 		for range time.NewTicker(10 * time.Second).C {
 
-			rows, err := s.db.Query("SELECT resourceId,resourceType,resource,project FROM $1 WHERE clusterID = $2", scConfig, s.clusterID)
+			rows, err := s.db.Query("SELECT resourceId,resourceType,resource,project FROM $1 WHERE clusterID = $2", fmt.Sprintf("%s.%s", s.dbschemaname, scConfig), s.clusterID)
 			if err != nil {
 				return
 			}
-			defer func() { _ = rows.Close() }()
 
 			for rows.Next() {
-				err := rows.Scan(&resourceID, &resourceType, &res, &project)
+				err := rows.Scan(&r)
 				if err != nil {
 					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to get rows from database", err, nil)
 					return
 				}
-				if err := json.Unmarshal([]byte(res), &resource); err != nil {
+				if err := json.Unmarshal([]byte(r.resource), &res); err != nil {
 					_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to unmarshal resource from database", err, nil)
 					return
 				}
-				resources = append(resources, postgres{resourceID: resourceID, resourceType: resourceType, resource: resource, project: project, clusterID: s.clusterID})
+				resources[r.resourceID] = postgres{
+					resourceID:   r.resourceID,
+					resourceType: r.resourceType,
+					resource:     res,
+					project:      r.project,
+					clusterID:    r.clusterID,
+				}
 			}
 			err = rows.Err()
 			if err != nil {
@@ -115,14 +124,210 @@ func (s *PostgresStore) WatchResources(cb func(eventType, resourceId string, res
 			}
 
 			for _, i := range resources {
-				evenType, resourceID, resourceType, resource := s.helper(resources, i.resourceID, i.resourceType.(config.Resource), i.resource, i.project)
+				evenType, resourceID, resourceType, resource := s.helperAddOrUpdate(i.resourceID, i.resourceType.(config.Resource), i.resource, i.project)
 				if resource == nil || resourceID == "" {
 					return
 				}
 				cb(evenType, resourceID, resourceType, resource)
 			}
+
+			// Delete
+			var obj interface{}
+			for _, configs := range s.globalConfig.Projects {
+
+				// project
+				projectconfig := configs.ProjectConfig
+				if _, ok := resources[projectconfig.ID]; !ok {
+					evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+					if resource == nil || resourceID == "" {
+						return
+					}
+					cb(evenType, resourceID, resourceType, resource)
+				}
+
+				// Database Config
+				databaseConfigs := configs.DatabaseConfigs
+				for resourceID := range databaseConfigs {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+
+				// Database rule
+				databaseRule := configs.DatabaseRules
+				for resourceID := range databaseRule {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+
+				// Database schema
+				databaseSchema := configs.DatabaseSchemas
+				for resourceID := range databaseSchema {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+
+				//Database Prepared Queries
+				databasePrepQueries := configs.DatabasePreparedQueries
+				for resourceID := range databasePrepQueries {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+
+				// Eventing config
+				//eventingConfig := configs.EventingConfig
+				// TODO
+
+				// Eventing Schema
+				eventingSchema := configs.EventingSchemas
+				for resourceID := range eventingSchema {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+
+				// Eventing Rule
+				eventingRule := configs.EventingRules
+				for resourceID := range eventingRule {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+
+				// Eventing trigger
+				eventingTrigger := configs.EventingTriggers
+				for resourceID := range eventingTrigger {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+
+				// FileStoreConfig
+				//TODO
+
+				// FileStoreRule
+				fileStoreRule := configs.FileStoreRules
+				for resourceID := range fileStoreRule {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+
+				// Auths
+				auths := configs.Auths
+				for resourceID := range auths {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+
+				// LetsEncrypt
+				LetsEncrypt := configs.LetsEncrypt
+				if _, ok := resources[LetsEncrypt.ID]; !ok {
+					evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+					if resource == nil || resourceID == "" {
+						return
+					}
+					cb(evenType, resourceID, resourceType, resource)
+				}
+
+				// Ingress Routes
+				ingresRoutes := configs.IngressRoutes
+				for resourceID := range ingresRoutes {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+
+				// Ingress Global
+				// ingressGlobal := configs.IngressGlobal
+				//TODO
+
+				// Service
+				services := configs.RemoteService
+				for resourceID := range services {
+					if _, ok := resources[resourceID]; !ok {
+						evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+						if resource == nil || resourceID == "" {
+							return
+						}
+						cb(evenType, resourceID, resourceType, resource)
+					}
+				}
+			}
+
+			// Cluster
+			// Cluster :=s.globalConfig.ClusterConfig
+			// TODO
+
+			// Integration
+			for resourceID := range s.globalConfig.Integrations {
+				if _, ok := resources[resourceID]; !ok {
+					evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+					if resource == nil || resourceID == "" {
+						return
+					}
+					cb(evenType, resourceID, resourceType, resource)
+				}
+			}
+
+			// IntegrationHook
+			for resourceID := range s.globalConfig.IntegrationHooks {
+				if _, ok := resources[resourceID]; !ok {
+					evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+					if resource == nil || resourceID == "" {
+						return
+					}
+					cb(evenType, resourceID, resourceType, resource)
+				}
+			}
+
 		}
 	}()
+	defer func() { _ = rows.Close() }()
 	return nil
 }
 
@@ -142,21 +347,21 @@ func (s *PostgresStore) SetResource(ctx context.Context, resourceID string, reso
 	}
 
 	query := "SELECT * FROM $1 WHERE resourceid=$2"
-	row := s.db.QueryRow(query, scConfig, resourceID)
+	row := s.db.QueryRow(query, fmt.Sprintf("%s.%s", s.dbschemaname, scConfig), resourceID)
 	var count int
 	err = row.Scan(&count)
 
 	switch err {
 	case sql.ErrNoRows:
 		sqlStatement := `INSERT INTO $1 (resourceId, resourceType, resource, project, clusterId) VALUES ($2, $3, $4, $5, $6)`
-		_, err = s.db.Exec(sqlStatement, scConfig, resourceID, resourceType, string(res), projectID, clusterID)
+		_, err = s.db.Exec(sqlStatement, fmt.Sprintf("%s.%s", s.dbschemaname, scConfig), resourceID, resourceType, string(res), projectID, clusterID)
 		if err != nil {
 			return err
 		}
 		return nil
 	case nil:
 		sqlStatement := `UPDATE $1 SET resourceType = $3, resource = $4, project = $5, clusterId = $6 WHERE resourceId = $2;`
-		res, err := s.db.Exec(sqlStatement, scConfig, resourceID, resourceType, string(res), projectID, clusterID)
+		res, err := s.db.Exec(sqlStatement, fmt.Sprintf("%s.%s", s.dbschemaname, scConfig), resourceID, resourceType, string(res), projectID, clusterID)
 		if err != nil {
 			return err
 		}
@@ -175,7 +380,7 @@ func (s *PostgresStore) DeleteResource(ctx context.Context, resourceID string) e
 		return err
 	}
 	sqlStatement := `DELETE FROM $1 WHERE resourceId = $2;`
-	_, err := s.db.Exec(sqlStatement, scConfig, resourceID)
+	_, err := s.db.Exec(sqlStatement, fmt.Sprintf("%s.%s", s.dbschemaname, scConfig), resourceID)
 	return err
 }
 
@@ -188,7 +393,7 @@ func (s *PostgresStore) GetGlobalConfig() (*config.Config, error) {
 		res        string
 	)
 	for _, resourceType := range config.ResourceFetchingOrder {
-		rows, err := s.db.Query("SELECT resourceId,resource FROM $1 WHERE resourceType = $2 AND clusterID = $3", scConfig, resourceType, s.clusterID)
+		rows, err := s.db.Query("SELECT resourceId,resource FROM $1 WHERE resourceType = $2 AND clusterID = $3", fmt.Sprintf("%s.%s", s.dbschemaname, scConfig), resourceType, s.clusterID)
 		if err != nil {
 			return nil, err
 		}

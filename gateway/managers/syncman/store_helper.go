@@ -6,7 +6,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
-func (s *PostgresStore) helper(resources []postgres, resourceID string, resourceType config.Resource, resource interface{}, project string) (string, string, config.Resource, interface{}) {
+func (s *PostgresStore) helperAddOrUpdate(resourceID string, resourceType config.Resource, resource interface{}, project string) (string, string, config.Resource, interface{}) {
 	var evenType string
 	var obj interface{}
 
