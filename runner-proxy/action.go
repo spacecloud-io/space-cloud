@@ -16,6 +16,7 @@ func actionRunner(c *cli.Context) error {
 	port := c.String("port")
 	loglevel := c.String("log-level")
 	logFormat := c.String("log-format")
+	secret := c.String("admin-secret")
 
 	// Set the log level
 	if err := helpers.InitLogger(loglevel, logFormat, false); err != nil {
@@ -23,7 +24,7 @@ func actionRunner(c *cli.Context) error {
 	}
 
 	// Create a new runner object
-	r, err := server.New()
+	r, err := server.New(secret)
 	if err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Failed to start runner", err, nil)
 		os.Exit(-1)

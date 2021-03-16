@@ -1,0 +1,2 @@
+ignore:
+  - encode_optype.go

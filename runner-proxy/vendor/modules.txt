@@ -1,0 +1,98 @@
+# github.com/cpuguy83/go-md2man/v2 v2.0.0
+## explicit
+github.com/cpuguy83/go-md2man/v2/md2man
+# github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0
+github.com/decred/dcrd/dcrec/secp256k1/v3
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+## explicit
+github.com/dgrijalva/jwt-go
+# github.com/fatih/structs v1.1.0
+github.com/fatih/structs
+# github.com/goccy/go-json v0.4.7
+github.com/goccy/go-json
+# github.com/gorilla/mux v1.8.0
+## explicit
+github.com/gorilla/mux
+# github.com/gorilla/websocket v1.4.2
+## explicit
+github.com/gorilla/websocket
+# github.com/kr/text v0.2.0
+## explicit
+# github.com/lestrrat-go/backoff/v2 v2.0.7
+github.com/lestrrat-go/backoff/v2
+# github.com/lestrrat-go/httpcc v1.0.0
+github.com/lestrrat-go/httpcc
+# github.com/lestrrat-go/iter v1.0.0
+github.com/lestrrat-go/iter/arrayiter
+github.com/lestrrat-go/iter/mapiter
+# github.com/lestrrat-go/jwx v1.1.5
+## explicit
+github.com/lestrrat-go/jwx/internal/base64
+github.com/lestrrat-go/jwx/internal/blackmagic
+github.com/lestrrat-go/jwx/internal/ecutil
+github.com/lestrrat-go/jwx/internal/iter
+github.com/lestrrat-go/jwx/internal/json
+github.com/lestrrat-go/jwx/internal/pool
+github.com/lestrrat-go/jwx/jwa
+github.com/lestrrat-go/jwx/jwk
+github.com/lestrrat-go/jwx/x25519
+# github.com/lestrrat-go/option v1.0.0
+github.com/lestrrat-go/option
+# github.com/mitchellh/mapstructure v1.3.3
+## explicit
+github.com/mitchellh/mapstructure
+# github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e
+## explicit
+# github.com/pkg/errors v0.9.1
+## explicit
+github.com/pkg/errors
+# github.com/rs/cors v1.7.0
+## explicit
+github.com/rs/cors
+# github.com/russross/blackfriday/v2 v2.0.1
+github.com/russross/blackfriday/v2
+# github.com/segmentio/ksuid v1.0.2
+## explicit
+github.com/segmentio/ksuid
+# github.com/shurcooL/sanitized_anchor_name v1.0.0
+github.com/shurcooL/sanitized_anchor_name
+# github.com/spaceuptech/helpers v0.2.2
+## explicit
+github.com/spaceuptech/helpers
+# github.com/spaceuptech/space-api-go v0.17.3
+github.com/spaceuptech/space-api-go
+github.com/spaceuptech/space-api-go/config
+github.com/spaceuptech/space-api-go/db
+github.com/spaceuptech/space-api-go/eventing
+github.com/spaceuptech/space-api-go/filestore
+github.com/spaceuptech/space-api-go/realtime
+github.com/spaceuptech/space-api-go/transport
+github.com/spaceuptech/space-api-go/transport/websocket
+github.com/spaceuptech/space-api-go/types
+github.com/spaceuptech/space-api-go/utils
+# github.com/stretchr/testify v1.6.1
+## explicit
+# github.com/urfave/cli v1.22.5
+## explicit
+github.com/urfave/cli
+# go.uber.org/atomic v1.6.0
+go.uber.org/atomic
+# go.uber.org/multierr v1.5.0
+go.uber.org/multierr
+# go.uber.org/zap v1.15.0
+go.uber.org/zap
+go.uber.org/zap/buffer
+go.uber.org/zap/internal/bufferpool
+go.uber.org/zap/internal/color
+go.uber.org/zap/internal/exit
+go.uber.org/zap/zapcore
+# golang.org/x/crypto v0.0.0-20201217014255-9d1352758620
+golang.org/x/crypto/curve25519
+# golang.org/x/lint v0.0.0-20200302205851-738671d3881b
+## explicit
+# gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b
+## explicit
+# gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+## explicit
+# honnef.co/go/tools v0.0.1-2020.1.5
+## explicit

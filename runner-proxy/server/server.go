@@ -19,17 +19,20 @@ type Server struct {
 
 	debounce *utils.Debounce
 	cache    *utils.TTLMap
+	auth     *utils.Auth
 }
 
 // New creates a new instance of the runner
-func New() (*Server, error) {
+func New(secret string) (*Server, error) {
 	debounce := utils.NewDebounce()
 	m := utils.Tick()
+	a := utils.New(secret)
 	// Return a new runner instance
 	return &Server{
 		router:   mux.NewRouter(),
 		debounce: debounce,
 		cache:    m,
+		auth:     a,
 	}, nil
 }
 

@@ -1,0 +1,39 @@
+test
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.zip
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+main/main.go
+
+node_modules
+css
+.sass-cache
+
+space-cloud
+raft-store
+publish.sh
+
+test_config.yaml
+config.yaml
+
+# Helper scripts
+kube
+docker-build.sh
+build/
+
+#IDEs
+.idea
+.vscode
+
+yarn.lock

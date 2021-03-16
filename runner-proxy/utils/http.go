@@ -42,7 +42,6 @@ func MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, pa
 		req.Header.Add("Authorization", "Bearer "+token)
 	}
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("x-sc-token", "Bearer "+scToken)
 
 	// Create a http client and fire the request
 	client := &http.Client{}

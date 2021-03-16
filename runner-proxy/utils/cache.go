@@ -13,7 +13,7 @@ type Item struct {
 // TTLMap keeps track of which service was called at what time
 type TTLMap struct {
 	m map[string]*Item
-	l sync.Mutex
+	l sync.RWMutex
 }
 
 // Tick creates a TTLMap object and constantly check for outdated elements inside the object.
@@ -39,8 +39,8 @@ func (m *TTLMap) len() int {
 
 // Put insert new value in TTLMap
 func (m *TTLMap) Put(k string) {
-	m.l.Lock()
-	defer m.l.Unlock()
+	m.l.RLock()
+	defer m.l.RUnlock()
 
 	it, ok := m.m[k]
 	if !ok {
@@ -59,7 +59,6 @@ func (m *TTLMap) GetDeployment(k string) bool {
 	it, ok := m.m[k]
 	if ok {
 		if time.Now().Unix()-it.lastAccess < int64(120) {
-			m.m[k] = &Item{lastAccess: time.Now().Unix()}
 			return true
 		}
 	}

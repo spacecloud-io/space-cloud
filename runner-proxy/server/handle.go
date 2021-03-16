@@ -47,32 +47,32 @@ func (s *Server) handleProxy() http.HandlerFunc {
 
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Proxy is making request to host (%s) port (%s)", ogHost, ogPort), nil)
 
+		// get token from header
+		token, err := s.auth.CreateToken(ctx, map[string]interface{}{})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
+			return
+		}
+
 		// Update the ttl of cached deployment
 		id := fmt.Sprintf("%s-%s-%s", project, service, ogVersion)
 		exist := s.cache.GetDeployment(id)
-		if exist {
-			_ = helpers.Response.SendOkayResponse(ctx, http.StatusOK, w)
-			return
-		}
+		if !exist {
 
-		// get token from header
-		token := utils.GetToken(r)
+			// makes http request to instruct driver to scale up
+			var vPtr interface{}
+			url := fmt.Sprintf("/v1/runner/%s/scale-up/%s/%s", project, service, ogVersion)
+			if err := utils.MakeHTTPRequest(ctx, "POST", url, token, "", map[string]interface{}{}, &vPtr); err != nil {
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
+				return
+			}
 
-		// makes http request to instruct driver to scale up
-		var vPtr interface{}
-		url := fmt.Sprintf("/v1/runner/%s/scale-up/%s/%s", project, service, ogVersion)
-		if err := utils.MakeHTTPRequest(ctx, "POST", url, token, "", map[string]interface{}{}, &vPtr); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
-			return
-		}
-
-		// Wait for the service to scale up
-		url = fmt.Sprintf("/v1/runner/%s/wait/%s/%s", project, service, ogVersion)
-		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s-%s", project, service, ogVersion), func() error {
-			return utils.MakeHTTPRequest(ctx, "GET", url, token, "", map[string]interface{}{}, &vPtr)
-		}); err != nil {
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
-			return
+			// Wait for the service to scale up
+			url = fmt.Sprintf("/v1/runner/%s/wait/%s/%s", project, service, ogVersion)
+			if err := utils.MakeHTTPRequest(ctx, "GET", url, token, "", map[string]interface{}{}, &vPtr); err != nil {
+				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
+				return
+			}
 		}
 
 		//after successfull http request make a new entry in TTLMap with id as key

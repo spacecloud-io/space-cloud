@@ -35,6 +35,12 @@ func main() {
 					Usage:  "Set the log format [json | console]",
 					Value:  helpers.LogFormatJSON,
 				},
+				cli.StringFlag{
+					Name:   "admin-secret",
+					Usage:  "Set the admin secret",
+					EnvVar: "ADMIN_SECRET",
+					Value:  "some-secret",
+				},
 			},
 			Action: actionRunner,
 		},
