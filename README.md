@@ -1,4 +1,4 @@
-<p align="center"><a href="https://www.spaceuptech.com"><img src="https://spaceuptech.com/icons/space-cloud-block-diagram1.png" alt="Space Cloud"></a></p>
+<p align="center"><a href="https://www.spaceuptech.com"><img src="https://spaceuptech.com/images/kit/logo.svg" alt="Space Cloud"></a></p>
 
 <h3 align="center">
   Develop, Deploy and Secure Serverless Apps on Kubernetes.
