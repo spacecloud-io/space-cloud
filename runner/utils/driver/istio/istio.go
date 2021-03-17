@@ -80,7 +80,7 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 	go kedaScaler.Start()
 
 	i := &Istio{auth: auth, config: c, seviceStatus: make(map[string]deployments), kube: kube, istio: istio, keda: kedaClient, kedaScaler: kedaScaler}
-	if err := WatchDeployments(func(eventType string, availableReplicas, readyReplicas int32, projectID, deploymentID string) {
+	if err := i.WatchDeployments(func(eventType string, availableReplicas, readyReplicas int32, projectID, deploymentID string) {
 		i.lock.Lock()
 		defer i.lock.Unlock()
 

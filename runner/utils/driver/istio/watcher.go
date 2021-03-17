@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/informers/internalinterfaces"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -29,14 +28,14 @@ func onAddOrUpdateResource(eventType string, obj interface{}) (string, int32, in
 }
 
 // WatchDeployments maintains consistency over all Deployment
-func WatchDeployments(cb func(eventType string, availableReplicas, readyReplicas int32, projectID, deploymentID string)) error {
+func (i *Istio) WatchDeployments(cb func(eventType string, availableReplicas, readyReplicas int32, projectID, deploymentID string)) error {
 
 	go func() {
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
 			options.LabelSelector = "app.kubernetes.io/managed-by=space-cloud"
 		}
-		kube := new(kubernetes.Clientset)
-		informer := informers.NewSharedInformerFactoryWithOptions(kube, 15*time.Minute, informers.WithTweakListOptions(options)).Apps().V1().Deployments().Informer()
+
+		informer := informers.NewSharedInformerFactoryWithOptions(i.kube, 15*time.Minute, informers.WithTweakListOptions(options)).Apps().V1().Deployments().Informer()
 		stopper := make(chan struct{})
 		defer close(stopper)
 		defer runtime.HandleCrash() // handles a crash & logs an error
