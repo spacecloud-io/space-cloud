@@ -61,14 +61,14 @@ func (s *Server) handleProxy() http.HandlerFunc {
 
 			// makes http request to instruct driver to scale up
 			var vPtr interface{}
-			url := fmt.Sprintf("/v1/runner/%s/scale-up/%s/%s", project, service, ogVersion)
+			url := fmt.Sprintf("http://localhost:4050/v1/runner/%s/scale-up/%s/%s", project, service, ogVersion)
 			if err := utils.MakeHTTPRequest(ctx, "POST", url, token, "", map[string]interface{}{}, &vPtr); err != nil {
 				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
 				return
 			}
 
 			// Wait for the service to scale up
-			url = fmt.Sprintf("/v1/runner/%s/wait/%s/%s", project, service, ogVersion)
+			url = fmt.Sprintf("http://localhost:4050/v1/runner/%s/wait/%s/%s", project, service, ogVersion)
 			if err := utils.MakeHTTPRequest(ctx, "GET", url, token, "", map[string]interface{}{}, &vPtr); err != nil {
 				_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusServiceUnavailable, err)
 				return

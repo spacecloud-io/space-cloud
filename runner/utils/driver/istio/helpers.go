@@ -426,7 +426,7 @@ func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32
 
 				// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service to service incoming requests.
 				if service.AutoScale.MinReplicas == 0 {
-					destHost = "runner.space-cloud.svc.cluster.local"
+					destHost = "runner-proxy.space-cloud.svc.cluster.local"
 					destPort = proxyPort
 				}
 
