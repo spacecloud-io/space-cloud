@@ -133,11 +133,12 @@ func (s *PostgresStore) WatchResources(cb func(eventType, resourceId string, res
 
 			// Delete
 			var obj interface{}
-			for _, configs := range s.globalConfig.Projects {
+			for project, configs := range s.globalConfig.Projects {
 
 				// project
 				projectconfig := configs.ProjectConfig
-				if _, ok := resources[projectconfig.ID]; !ok {
+				resID := config.GenerateResourceID(s.clusterID, projectconfig.ID, config.ResourceProject, projectconfig.ID)
+				if _, ok := resources[resID]; !ok {
 					evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
 					if resource == nil || resourceID == "" {
 						return
@@ -194,8 +195,15 @@ func (s *PostgresStore) WatchResources(cb func(eventType, resourceId string, res
 				}
 
 				// Eventing config
-				//eventingConfig := configs.EventingConfig
-				// TODO
+				// eventingConfig := configs.EventingConfig
+				resID = config.GenerateResourceID(s.clusterID, project, config.ResourceEventingConfig, "eventing")
+				if _, ok := resources[resID]; !ok {
+					evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+					if resource == nil || resourceID == "" {
+						return
+					}
+					cb(evenType, resourceID, resourceType, resource)
+				}
 
 				// Eventing Schema
 				eventingSchema := configs.EventingSchemas
@@ -234,7 +242,14 @@ func (s *PostgresStore) WatchResources(cb func(eventType, resourceId string, res
 				}
 
 				// FileStoreConfig
-				//TODO
+				resID = config.GenerateResourceID(s.clusterID, project, config.ResourceFileStoreConfig, "filestore")
+				if _, ok := resources[resID]; !ok {
+					evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+					if resource == nil || resourceID == "" {
+						return
+					}
+					cb(evenType, resourceID, resourceType, resource)
+				}
 
 				// FileStoreRule
 				fileStoreRule := configs.FileStoreRules
@@ -284,7 +299,14 @@ func (s *PostgresStore) WatchResources(cb func(eventType, resourceId string, res
 
 				// Ingress Global
 				// ingressGlobal := configs.IngressGlobal
-				//TODO
+				resID = config.GenerateResourceID(s.clusterID, project, config.ResourceIngressGlobal, "global")
+				if _, ok := resources[resID]; !ok {
+					evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+					if resource == nil || resourceID == "" {
+						return
+					}
+					cb(evenType, resourceID, resourceType, resource)
+				}
 
 				// Service
 				services := configs.RemoteService
@@ -301,7 +323,14 @@ func (s *PostgresStore) WatchResources(cb func(eventType, resourceId string, res
 
 			// Cluster
 			// Cluster :=s.globalConfig.ClusterConfig
-			// TODO
+			resID := config.GenerateResourceID(s.clusterID, "", config.ResourceCluster, "cluster")
+			if _, ok := resources[resID]; !ok {
+				evenType, resourceID, resourceType, resource := onAddOrUpdateResource(config.ResourceDeleteEvent, obj)
+				if resource == nil || resourceID == "" {
+					return
+				}
+				cb(evenType, resourceID, resourceType, resource)
+			}
 
 			// Integration
 			for resourceID := range s.globalConfig.Integrations {
