@@ -24,9 +24,13 @@ func (l *LetsEncrypt) AddExistingCertificate(certFile, keyFile string) error {
 }
 
 // SetProjectDomains sets the config required by lets encrypt
-func (l *LetsEncrypt) SetProjectDomains(project string, c config.LetsEncrypt) error {
+func (l *LetsEncrypt) SetProjectDomains(project string, c *config.LetsEncrypt) error {
 	l.lock.Lock()
 	defer l.lock.Unlock()
+
+	// if c == nil {
+	// 	c = new(config.LetsEncrypt)
+	// }
 
 	if c.WhitelistedDomains == nil {
 		c.WhitelistedDomains = make([]string, 0)

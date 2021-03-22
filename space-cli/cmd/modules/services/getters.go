@@ -15,7 +15,7 @@ func GetServicesRoutes(project, commandName string, params map[string]string) ([
 
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
@@ -51,13 +51,49 @@ func GetServicesRoutes(project, commandName string, params map[string]string) ([
 	return objs, nil
 }
 
+// GetServicesRole gets services role
+func GetServicesRole(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+	url := fmt.Sprintf("/v1/runner/%s/service-roles", project)
+
+	// Get the spec from the server
+	payload := new(model.Response)
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
+		return nil, err
+	}
+
+	var objs []*model.SpecObject
+	for _, item := range payload.Result {
+		spec := item.(map[string]interface{})
+		id, ok := spec["id"]
+		if !ok {
+			// array may have an empty object
+			continue
+		}
+		meta := map[string]string{"project": project, "serviceId": spec["service"].(string), "roleId": id.(string)}
+
+		// Delete the unwanted keys from spec
+		delete(spec, "id")
+		delete(spec, "project")
+		delete(spec, "service")
+
+		// Generating the object
+		s, err := utils.CreateSpecObject("/v1/runner/{project}/services/{serviceId}/{roleId}", commandName, meta, spec)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, s)
+	}
+
+	return objs, nil
+}
+
 // GetServicesSecrets gets services secrets
 func GetServicesSecrets(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/runner/%s/secrets", project)
 
 	// Get the spec from the server
 	result := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, result); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, result); err != nil {
 		return nil, err
 	}
 
@@ -87,7 +123,7 @@ func GetServices(project, commandName string, params map[string]string) ([]*mode
 	url := fmt.Sprintf("/v1/runner/%s/services", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 

@@ -5,11 +5,17 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/spf13/viper"
+
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/transport"
 )
 
 // GetServiceLogs gets logs of specified service
 func GetServiceLogs(project, taskID, replicaID string, isFollow bool) error {
+	since := viper.GetString("since")
+	sinceTime := viper.GetString("since-time")
+	tail := viper.GetString("tail")
+
 	u, err := url.Parse(fmt.Sprintf("/v1/runner/%s/services/logs", project))
 	if err != nil {
 		return err
@@ -18,8 +24,15 @@ func GetServiceLogs(project, taskID, replicaID string, isFollow bool) error {
 	if isFollow {
 		params.Set("follow", "true")
 	}
+	if since != "" && sinceTime != "" {
+		return fmt.Errorf("cannot set both flags --since and --since-time at once")
+	}
 	params.Set("taskId", taskID)
 	params.Set("replicaId", replicaID)
+	params.Set("since", since)
+	params.Set("since-time", sinceTime)
+	params.Set("tail", tail)
+
 	u.RawQuery = params.Encode()
 	if err := transport.Client.GetLogs(u.RequestURI()); err != nil {
 		return err
@@ -28,7 +41,7 @@ func GetServiceLogs(project, taskID, replicaID string, isFollow bool) error {
 }
 
 func getServiceStatus(project, commandName string, params map[string]string) ([]string, error) {
-	//ReplicaInfo describes structure of replica info
+	// ReplicaInfo describes structure of replica info
 	type ReplicaInfo struct {
 		ID     string `json:"id" yaml:"id"`
 		Status string `json:"status" yaml:"status"`
@@ -44,7 +57,7 @@ func getServiceStatus(project, commandName string, params map[string]string) ([]
 		Result []*ServiceStatus `json:"result,omitempty"`
 	}
 	payload := new(temp)
-	if err := transport.Client.Get(http.MethodGet, fmt.Sprintf("/v1/runner/%s/services/status", project), params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, fmt.Sprintf("/v1/runner/%s/services/status", project), params, payload); err != nil {
 		return nil, err
 	}
 	replicaIDs := make([]string, 0)

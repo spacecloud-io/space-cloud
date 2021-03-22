@@ -13,7 +13,7 @@ import (
 )
 
 // SetEventingRule sets the eventing rules
-func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string, value *config.EventingRule, params model.RequestParams) (int, error) {
+func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string, value *config.EventingTrigger, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -24,16 +24,18 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 		return http.StatusBadRequest, err
 	}
 
-	if projectConfig.Modules.Eventing.Rules == nil {
-		projectConfig.Modules.Eventing.Rules = map[string]*config.EventingRule{}
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceEventingTrigger, ruleName)
+	if projectConfig.EventingTriggers == nil {
+		projectConfig.EventingTriggers = config.EventingTriggers{resourceID: value}
+	} else {
+		projectConfig.EventingTriggers[resourceID] = value
 	}
-	projectConfig.Modules.Eventing.Rules[ruleName] = value
 
-	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetEventingTriggerConfig(ctx, projectConfig.EventingTriggers); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.SetResource(ctx, resourceID, value); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -50,13 +52,15 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	delete(projectConfig.Modules.Eventing.Rules, ruleName)
 
-	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceEventingTrigger, ruleName)
+	delete(projectConfig.EventingTriggers, resourceID)
+
+	if err := s.modules.SetEventingTriggerConfig(ctx, projectConfig.EventingTriggers); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -73,15 +77,16 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	dbConfig, ok := projectConfig.Modules.Crud[dbAlias]
-	if !ok && enabled {
+
+	dbConfig, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias)
+	if !p && enabled {
 		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown db alias (%s) provided while setting eventing config", dbAlias), nil, nil)
 	}
 
-	projectConfig.Modules.Eventing.DBAlias = dbAlias
-	projectConfig.Modules.Eventing.Enabled = enabled
+	projectConfig.EventingConfig.DBAlias = dbAlias
+	projectConfig.EventingConfig.Enabled = enabled
 
-	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetEventingConfig(ctx, project, projectConfig.EventingConfig, projectConfig.EventingRules, projectConfig.EventingSchemas, projectConfig.EventingTriggers); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
@@ -95,17 +100,18 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 		}); err != nil {
 			return http.StatusInternalServerError, err
 		}
-		status, err := s.setCollectionRules(ctx, projectConfig, project, dbAlias, utils.TableEventingLogs, &config.TableRule{Rules: map[string]*config.Rule{"create": {Rule: "deny"}, "read": {Rule: "deny"}, "update": {Rule: "deny"}, "delete": {Rule: "deny"}}})
+		status, err := s.setCollectionRules(ctx, projectConfig, project, dbAlias, utils.TableEventingLogs, &config.DatabaseRule{Rules: map[string]*config.Rule{"create": {Rule: "deny"}, "read": {Rule: "deny"}, "update": {Rule: "deny"}, "delete": {Rule: "deny"}}})
 		if err != nil {
 			return status, err
 		}
-		status, err = s.setCollectionRules(ctx, projectConfig, project, dbAlias, utils.TableInvocationLogs, &config.TableRule{Rules: map[string]*config.Rule{"create": {Rule: "deny"}, "read": {Rule: "deny"}, "update": {Rule: "deny"}, "delete": {Rule: "deny"}}})
+		status, err = s.setCollectionRules(ctx, projectConfig, project, dbAlias, utils.TableInvocationLogs, &config.DatabaseRule{Rules: map[string]*config.Rule{"create": {Rule: "deny"}, "read": {Rule: "deny"}, "update": {Rule: "deny"}, "delete": {Rule: "deny"}}})
 		if err != nil {
 			return status, err
 		}
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceEventingConfig, "eventing")
+	if err := s.store.SetResource(ctx, resourceID, projectConfig.EventingConfig); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -122,8 +128,7 @@ func (s *Manager) GetEventingConfig(ctx context.Context, project string, params 
 		return http.StatusBadRequest, nil, err
 	}
 
-	eventing := projectConfig.Modules.Eventing
-	return http.StatusOK, config.Eventing{DBAlias: eventing.DBAlias, Enabled: eventing.Enabled}, nil
+	return http.StatusOK, projectConfig.EventingConfig, nil
 }
 
 // SetEventingSchema sets the schema for the given event type
@@ -137,19 +142,19 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 		return http.StatusBadRequest, err
 	}
 
-	if len(projectConfig.Modules.Eventing.Schemas) != 0 {
-		projectConfig.Modules.Eventing.Schemas[evType] = config.SchemaObject{Schema: schema, ID: evType}
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceEventingSchema, evType)
+	v := &config.EventingSchema{Schema: schema, ID: evType}
+	if projectConfig.EventingSchemas == nil {
+		projectConfig.EventingSchemas = config.EventingSchemas{resourceID: v}
 	} else {
-		projectConfig.Modules.Eventing.Schemas = map[string]config.SchemaObject{
-			evType: {Schema: schema, ID: evType},
-		}
+		projectConfig.EventingSchemas[resourceID] = v
 	}
 
-	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetEventingSchemaConfig(ctx, projectConfig.EventingSchemas); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.SetResource(ctx, resourceID, v); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -166,13 +171,14 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
-	delete(projectConfig.Modules.Eventing.Schemas, evType)
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceEventingSchema, evType)
+	delete(projectConfig.EventingSchemas, resourceID)
 
-	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetEventingSchemaConfig(ctx, projectConfig.EventingSchemas); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -191,19 +197,18 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 		return http.StatusBadRequest, err
 	}
 
-	if len(projectConfig.Modules.Eventing.SecurityRules) != 0 {
-		projectConfig.Modules.Eventing.SecurityRules[evType] = rule
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceEventingRule, evType)
+	if projectConfig.EventingRules == nil {
+		projectConfig.EventingRules = config.EventingRules{resourceID: rule}
 	} else {
-		projectConfig.Modules.Eventing.SecurityRules = map[string]*config.Rule{
-			evType: rule,
-		}
+		projectConfig.EventingRules[resourceID] = rule
 	}
 
-	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetEventingRuleConfig(ctx, projectConfig.EventingRules); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.SetResource(ctx, resourceID, rule); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -221,13 +226,14 @@ func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, e
 		return http.StatusBadRequest, err
 	}
 
-	delete(projectConfig.Modules.Eventing.SecurityRules, evType)
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceEventingRule, evType)
+	delete(projectConfig.EventingRules, resourceID)
 
-	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetEventingRuleConfig(ctx, projectConfig.EventingRules); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error setting eventing config", err, nil)
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -246,7 +252,8 @@ func (s *Manager) GetEventingTriggerRules(ctx context.Context, project, id strin
 	}
 
 	if id != "*" {
-		service, ok := projectConfig.Modules.Eventing.Rules[id]
+		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceEventingTrigger, id)
+		service, ok := projectConfig.EventingTriggers[resourceID]
 		if !ok {
 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Trigger rule (%s) does not exists for eventing config", id), nil, nil)
 		}
@@ -254,7 +261,7 @@ func (s *Manager) GetEventingTriggerRules(ctx context.Context, project, id strin
 	}
 
 	services := []interface{}{}
-	for _, value := range projectConfig.Modules.Eventing.Rules {
+	for _, value := range projectConfig.EventingTriggers {
 		services = append(services, value)
 	}
 	return http.StatusOK, services, nil
@@ -272,7 +279,8 @@ func (s *Manager) GetEventingSchema(ctx context.Context, project, id string, par
 	}
 
 	if id != "*" {
-		service, ok := projectConfig.Modules.Eventing.Schemas[id]
+		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceEventingSchema, id)
+		service, ok := projectConfig.EventingSchemas[resourceID]
 		if !ok {
 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Schema (%s) does not exists in eventing config", id), nil, nil)
 		}
@@ -280,7 +288,7 @@ func (s *Manager) GetEventingSchema(ctx context.Context, project, id string, par
 	}
 
 	services := []interface{}{}
-	for _, value := range projectConfig.Modules.Eventing.Schemas {
+	for _, value := range projectConfig.EventingSchemas {
 		services = append(services, value)
 	}
 	return http.StatusOK, services, nil
@@ -298,7 +306,8 @@ func (s *Manager) GetEventingSecurityRules(ctx context.Context, project, id stri
 	}
 
 	if id != "*" {
-		service, ok := projectConfig.Modules.Eventing.SecurityRules[id]
+		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceEventingRule, id)
+		service, ok := projectConfig.EventingRules[resourceID]
 		if !ok {
 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Security rule (%s) does not exists for eventing config", id), nil, nil)
 		}
@@ -307,7 +316,7 @@ func (s *Manager) GetEventingSecurityRules(ctx context.Context, project, id stri
 	}
 
 	services := []interface{}{}
-	for _, value := range projectConfig.Modules.Eventing.SecurityRules {
+	for _, value := range projectConfig.EventingRules {
 		services = append(services, value)
 	}
 	return http.StatusOK, services, nil

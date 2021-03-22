@@ -1,10 +1,13 @@
 package functions
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
@@ -63,16 +66,27 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	}
 	method = endpoint.Method
 
-	// Overwrite the token if provided
-	if endpoint.Token != "" {
-		token = endpoint.Token
-	}
-
 	/***************** Set the request body *****************/
 
 	newParams, err := m.adjustReqBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, params)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
+	}
+
+	/***************** Set the request token ****************/
+
+	// Overwrite the token if provided
+	if endpoint.Token != "" {
+		token = endpoint.Token
+	}
+
+	// Create a new token if claims are provided
+	if endpoint.Claims != "" {
+		newToken, err := m.generateWebhookToken(ctx, serviceID, endpointID, token, endpoint, auth, params)
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
+		token = newToken
 	}
 
 	/******** Fire the request and get the response ********/
@@ -125,7 +139,7 @@ func prepareHeaders(ctx context.Context, headers config.Headers, state map[strin
 	return out
 }
 
-func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
+func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (io.Reader, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -148,20 +162,51 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 		}
 	default:
 		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"serviceId": serviceID, "endpointId": endpointID})
-		return params, nil
 	}
 
+	var body interface{}
 	switch endpoint.Kind {
 	case config.EndpointKindInternal, config.EndpointKindExternal:
 		if req == nil {
-			return params, nil
+			body = params
+		} else {
+			body = req
 		}
-		return req, nil
 	case config.EndpointKindPrepared:
-		return map[string]interface{}{"query": graph, "variables": req}, nil
+		body = map[string]interface{}{"query": graph, "variables": req}
 	default:
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
 	}
+
+	var requestBody io.Reader
+	switch endpoint.ReqPayloadFormat {
+	case "", config.EndpointRequestPayloadFormatJSON:
+		// Marshal json into byte array
+		data, err := json.Marshal(body)
+		if err != nil {
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot marshal provided data for graphQL API endpoint (%s)", endpointID), err, map[string]interface{}{"serviceId": serviceID})
+		}
+		requestBody = bytes.NewReader(data)
+		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: "application/json", Op: "set"})
+	case config.EndpointRequestPayloadFormatFormData:
+		buff := new(bytes.Buffer)
+		writer := multipart.NewWriter(buff)
+
+		for key, val := range body.(map[string]interface{}) {
+			value, ok := val.(string)
+			if !ok {
+				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type of value provided for arg (%s) expecting string as endpoint (%s) has request payload of (form-data) type ", endpointID, key), err, map[string]interface{}{"serviceId": serviceID})
+			}
+			_ = writer.WriteField(key, value)
+		}
+		err = writer.Close()
+		if err != nil {
+			return nil, err
+		}
+		requestBody = bytes.NewReader(buff.Bytes())
+		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: writer.FormDataContentType(), Op: "set"})
+	}
+	return requestBody, err
 }
 
 func (m *Module) adjustResBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
@@ -188,6 +233,29 @@ func (m *Module) adjustResBody(ctx context.Context, serviceID, endpointID, token
 		return params, nil
 	}
 	return res, nil
+}
+
+func (m *Module) generateWebhookToken(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (string, error) {
+	var req interface{}
+	var err error
+
+	switch endpoint.Tmpl {
+	case config.TemplatingEngineGo:
+		if tmpl, p := m.templates[getGoTemplateKey("claim", serviceID, endpointID)]; p {
+			req, err = tmpl2.GoTemplate(ctx, tmpl, endpoint.OpFormat, token, auth, params)
+			if err != nil {
+				return "", err
+			}
+		}
+	default:
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), map[string]interface{}{"serviceId": serviceID, "endpointId": endpointID})
+		return token, nil
+	}
+
+	if req == nil {
+		return token, nil
+	}
+	return m.auth.CreateToken(ctx, req.(map[string]interface{}))
 }
 
 func adjustPath(ctx context.Context, path string, claims, params interface{}) (string, error) {
@@ -231,11 +299,13 @@ func (m *Module) loadService(service string) *config.Service {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if s, p := m.config.InternalServices[service]; p {
-		return s
+	for _, s := range m.config {
+		if s.ID == service {
+			return s
+		}
 	}
 
-	return m.config.Services[service]
+	return nil
 }
 
 func (m *Module) getProject() string {

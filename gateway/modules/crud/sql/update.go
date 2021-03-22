@@ -22,7 +22,7 @@ import (
 
 // Update updates the document(s) which match the condition provided.
 func (s *SQL) Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error) {
-	tx, err := s.client.BeginTxx(ctx, nil) // TODO - Write *sqlx.TxOption instead of nil
+	tx, err := s.getClient().BeginTxx(ctx, nil) // TODO - Write *sqlx.TxOption instead of nil
 	if err != nil {
 		return 0, err
 	}
@@ -50,7 +50,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 				if err != nil {
 					return 0, err
 				}
-				helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Update Query", map[string]interface{}{"sqlQuery": sqlQuery, "queryArgs": sqlQuery})
+				helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Update Query", map[string]interface{}{"sqlQuery": sqlQuery, "queryArgs": args})
 				res, err := doExecContext(ctx, sqlQuery, args, executor)
 				if err != nil {
 					return 0, err
@@ -67,7 +67,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 		return count, nil
 
 	case utils.Upsert:
-		count, _, err := s.read(ctx, col, &model.ReadRequest{Find: req.Find, Operation: utils.All}, executor)
+		count, _, _, _, err := s.read(ctx, col, &model.ReadRequest{Find: req.Find, Operation: utils.All}, executor)
 		if err != nil {
 			return 0, err
 		}

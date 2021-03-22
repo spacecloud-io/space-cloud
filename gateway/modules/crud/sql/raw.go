@@ -21,7 +21,7 @@ func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
 
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Executing sql raw query", map[string]interface{}{"queries": queries})
 
-	tx, err := s.client.BeginTx(ctx, &sql.TxOptions{})
+	tx, err := s.getClient().BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return err
 	}
@@ -41,19 +41,26 @@ func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
 }
 
 // RawQuery query document(s) from the database
-func (s *SQL) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
-	return s.readExec(ctx, "", query, args, s.client, &model.ReadRequest{Operation: utils.All})
+func (s *SQL) RawQuery(ctx context.Context, query string, isDebug bool, args []interface{}) (int64, interface{}, *model.SQLMetaData, error) {
+	count, result, _, metaData, err := s.readExec(ctx, "", query, args, s.getClient(), &model.ReadRequest{Operation: utils.All, Options: &model.ReadOptions{Debug: isDebug}})
+	return count, result, metaData, err
 }
 
-// GetConnectionState : Function to get connection state
+// GetConnectionState : function to check connection state
 func (s *SQL) GetConnectionState(ctx context.Context) bool {
-	if !s.enabled || s.client == nil {
+	if !s.enabled || s.getClient() == nil {
 		return false
 	}
 
 	// Ping to check if connection is established
-	err := s.client.PingContext(ctx)
-	return err == nil
+	err := s.getClient().PingContext(ctx)
+	if err != nil {
+		_ = s.getClient().Close()
+		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to ping sql database - %s", s.name), err, nil)
+		return false
+	}
+
+	return true
 }
 
 // CreateDatabaseIfNotExist creates a schema / database

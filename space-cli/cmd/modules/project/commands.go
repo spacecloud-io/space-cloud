@@ -19,25 +19,14 @@ func GenerateSubCommands() []*cobra.Command {
 	return []*cobra.Command{generateProject}
 }
 
-// GetSubCommands dis the list of commands the project module exposes
+// GetSubCommands is the list of commands the project module exposes
 func GetSubCommands() []*cobra.Command {
 
 	var getprojects = &cobra.Command{
-		Use:     "projects",
-		Aliases: []string{"project"},
-		RunE:    actionGetProjectConfig,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project := viper.GetString("project")
-			objs, err := GetProjectConfig(project, "project", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var ids []string
-			for _, v := range objs {
-				ids = append(ids, v.Meta["id"])
-			}
-			return ids, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "projects",
+		Aliases:           []string{"project"},
+		RunE:              actionGetProjectConfig,
+		ValidArgsFunction: projectAutoCompletionFun,
 	}
 
 	return []*cobra.Command{getprojects}
@@ -74,4 +63,28 @@ func actionGenerateProject(cmd *cobra.Command, args []string) error {
 	}
 
 	return utils.AppendConfigToDisk(project, projectFilePath)
+}
+
+// DeleteSubCommands is the list of commands the project module exposes
+func DeleteSubCommands() []*cobra.Command {
+
+	var getprojects = &cobra.Command{
+		Use:               "projects",
+		Aliases:           []string{"project"},
+		RunE:              actionDeleteProjectConfig,
+		ValidArgsFunction: projectAutoCompletionFun,
+		Example:           "space-cli delete projects --project myproject",
+	}
+
+	return []*cobra.Command{getprojects}
+}
+
+func actionDeleteProjectConfig(cmd *cobra.Command, args []string) error {
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	return DeleteProject(project)
 }

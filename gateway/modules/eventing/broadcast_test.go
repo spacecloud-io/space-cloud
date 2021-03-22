@@ -27,7 +27,7 @@ func TestModule_ProcessTransmittedEvents(t *testing.T) {
 				{
 					ID:        "id",
 					Token:     -1,
-					Timestamp: time.Now().Format(time.RFC3339),
+					Timestamp: time.Now().Format(time.RFC3339Nano),
 				},
 			}},
 			syncMockArgs: []mockArgs{
@@ -92,5 +92,3 @@ func TestModule_ProcessTransmittedEvents(t *testing.T) {
 		})
 	}
 }
-
-// TODO: cover the goroutine as well

@@ -4,7 +4,6 @@ import (
 	"context"
 	"reflect"
 	"testing"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -722,6 +721,16 @@ func TestLoadValue(t *testing.T) {
 			want: "2",
 		},
 		{
+			name: "bson array inside map, for mongo",
+			args: args{
+				key: "a.b.2",
+				state: map[string]interface{}{
+					"a": map[string]interface{}{"b": primitive.A{"0", "1", "2"}},
+				},
+			},
+			want: "2",
+		},
+		{
 			name: "map inside array inside map",
 			args: args{
 				key: "a.b.0.c",
@@ -837,7 +846,7 @@ func TestLoadValue(t *testing.T) {
 					"a": 3,
 				},
 			},
-			//want:    5,
+			// want:    5,
 			wantErr: true,
 		},
 		{
@@ -898,7 +907,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    false,
+			// want:    false,
 			wantErr: true,
 		},
 		{
@@ -928,7 +937,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -943,7 +952,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -973,7 +982,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1009,7 +1018,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1027,7 +1036,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1045,7 +1054,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1063,7 +1072,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1081,7 +1090,7 @@ func TestLoadValue(t *testing.T) {
 					},
 				},
 			},
-			//want:    true,
+			// want:    true,
 			wantErr: true,
 		},
 		{
@@ -1103,17 +1112,17 @@ func TestLoadValue(t *testing.T) {
 			// want:    true,
 			wantErr: true,
 		},
+		// {
+		// 	name: "utils.addDuration testing 1",
+		// 	args: args{
+		// 		key:   "utils.addDuration('utils.now()', '0h')",
+		// 		state: map[string]interface{}{},
+		// 	},
+		// 	want:    time.Now().UTC().Format(time.RFC3339Nano),
+		// 	wantErr: false,
+		// },
 		{
-			name: "utils.addDuration testing",
-			args: args{
-				key:   "utils.addDuration('utils.now()', '0h')",
-				state: map[string]interface{}{},
-			},
-			want:    time.Now().UTC().Format(time.RFC3339),
-			wantErr: false,
-		},
-		{
-			name: "utils.addDuration testing",
+			name: "utils.addDuration testing 2",
 			args: args{
 				key:   "utils.addDuration('2020-01-01T00:00:00Z', '4h')",
 				state: map[string]interface{}{},
@@ -1122,7 +1131,7 @@ func TestLoadValue(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "utils.roundUpDate testing",
+			name: "utils.roundUpDate testing 3",
 			args: args{
 				key:   "utils.roundUpDate('2020-03-25', 'month')",
 				state: map[string]interface{}{},
@@ -1354,7 +1363,7 @@ func Test_convertOrCreate(t *testing.T) {
 					"op1": 4,
 				},
 			},
-			//want:    map[string]interface{}{},
+			// want:    map[string]interface{}{},
 			wantErr: true,
 		},
 	}

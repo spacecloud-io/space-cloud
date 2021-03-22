@@ -23,13 +23,18 @@ func (s *Manager) SetUserManagement(ctx context.Context, project, provider strin
 		return http.StatusBadRequest, err
 	}
 
-	projectConfig.Modules.Auth[provider] = value
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceAuthProvider, provider)
+	if projectConfig.Auths == nil {
+		projectConfig.Auths = config.Auths{resourceID: value}
+	} else {
+		projectConfig.Auths[resourceID] = value
+	}
 
-	if err := s.modules.SetUsermanConfig(project, projectConfig.Modules.Auth); err != nil {
+	if err := s.modules.SetUsermanConfig(ctx, project, projectConfig.Auths); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	if err := s.setProject(ctx, projectConfig); err != nil {
+	if err := s.store.SetResource(ctx, resourceID, value); err != nil {
 		return http.StatusInternalServerError, err
 	}
 
@@ -47,7 +52,7 @@ func (s *Manager) GetUserManagement(ctx context.Context, project, providerID str
 	}
 
 	if providerID != "*" {
-		auth, ok := projectConfig.Modules.Auth[providerID]
+		auth, ok := projectConfig.Auths[config.GenerateResourceID(s.clusterID, project, config.ResourceAuthProvider, providerID)]
 		if !ok {
 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("provider with id (%s) does not exist in user management config", providerID), nil, nil)
 		}
@@ -56,9 +61,35 @@ func (s *Manager) GetUserManagement(ctx context.Context, project, providerID str
 	}
 
 	providers := []interface{}{}
-	for _, value := range projectConfig.Modules.Auth {
+	for _, value := range projectConfig.Auths {
 		providers = append(providers, value)
 	}
 
 	return http.StatusOK, providers, nil
+}
+
+// DeleteUserManagement deletes the user management
+func (s *Manager) DeleteUserManagement(ctx context.Context, project, provider string, reqParams model.RequestParams) (int, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(ctx, project)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceAuthProvider, provider)
+
+	delete(projectConfig.Auths, resourceID)
+
+	if err := s.modules.SetUsermanConfig(ctx, project, projectConfig.Auths); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	if err := s.store.DeleteResource(ctx, resourceID); err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 }

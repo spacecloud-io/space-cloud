@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.name }}
+  namespace: db
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.name }}
+  namespace: db
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.name }}
+  namespace: db
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.name }}
+    namespace: db
+roleRef:
+  kind: Role
+  name: {{ .Values.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.name }}-storage
+  namespace: db
+  labels:
+    app: {{ .Values.name }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Values.name }}
+  name: {{ .Values.name }}
+  namespace: db
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      serviceAccountName: {{ .Values.name }}
+      volumes:
+      - name: {{ .Values.name }}-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.name }}-storage
+      containers:
+      - env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: {{ .Values.credentials.username }}
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: {{ .Values.credentials.password }}
+        image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: {{ .Values.name }}
+        args: 
+        - "mongod"
+        - "--replSet"
+        - "rs0"
+        - "--bind_ip"
+        - "0.0.0.0"
+        ports:
+        - containerPort: 27017
+          protocol: TCP
+        resources:
+          limits:
+            memory: "{{ .Values.resources.limits.memory }}"
+            cpu: "{{ .Values.resources.limits.cpu }}"
+          requests:
+            memory: "{{ .Values.resources.requests.memory }}"
+            cpu: "{{ .Values.resources.requests.cpu }}"
+        volumeMounts:
+        - mountPath: /data/db
+          name: {{ .Values.name }}-storage
+      - name: mongo-sidecar
+        image: cvallance/mongo-k8s-sidecar
+        env:
+        - name: MONGO_SIDECAR_POD_LABELS
+          value: "app={{ .Values.name }}"
+        - name: KUBE_NAMESPACE
+          value: "db"
+        - name: MONGODB_USERNAME
+          value: {{ .Values.credentials.username }}
+        - name: MONGODB_PASSWORD
+          value: {{ .Values.credentials.password }}
+        - name: MONGODB_DATABASE
+          value: "admin"
+        - name: MONGO_PORT
+          value: "27017"
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Values.name }}
+  name: {{ .Values.name }}
+  namespace: db
+spec:
+  ports:
+  - port: 27017
+    protocol: TCP
+    targetPort: 27017
+  selector:
+    app: {{ .Values.name }}
+  sessionAffinity: None
+  type: ClusterIP

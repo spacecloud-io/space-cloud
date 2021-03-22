@@ -3,6 +3,7 @@ package syncman
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,7 +31,7 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 		reqParams, err := admin.IsTokenValid(ctx, token, "runner", "modify", nil)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -55,7 +56,7 @@ func (s *Manager) HandleRunnerApplySecret(admin *admin.Manager) http.HandlerFunc
 		reqParams, err := admin.IsTokenValid(ctx, token, "secret", "modify", map[string]string{"project": projectID, "id": vars["id"]})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -84,7 +85,7 @@ func (s *Manager) HandleRunnerListSecret(admin *admin.Manager) http.HandlerFunc 
 		reqParams, err := admin.IsTokenValid(ctx, token, "secret", "read", map[string]string{"project": projectID, "id": id})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -109,7 +110,7 @@ func (s *Manager) HandleRunnerSetFileSecretRootPath(admin *admin.Manager) http.H
 		reqParams, err := admin.IsTokenValid(ctx, token, "secret", "modify", map[string]string{"project": projectID, "id": vars["id"]})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -134,7 +135,7 @@ func (s *Manager) HandleRunnerDeleteSecret(admin *admin.Manager) http.HandlerFun
 		reqParams, err := admin.IsTokenValid(ctx, token, "secret", "modify", map[string]string{"project": projectID, "id": vars["id"]})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -159,7 +160,7 @@ func (s *Manager) HandleRunnerSetSecretKey(admin *admin.Manager) http.HandlerFun
 		reqParams, err := admin.IsTokenValid(ctx, token, "secret", "modify", map[string]string{"project": projectID, "id": vars["id"], "key": vars["key"]})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -184,7 +185,7 @@ func (s *Manager) HandleRunnerDeleteSecretKey(admin *admin.Manager) http.Handler
 		reqParams, err := admin.IsTokenValid(ctx, token, "secret", "modify", map[string]string{"project": projectID, "id": vars["id"], "key": vars["key"]})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -209,7 +210,7 @@ func (s *Manager) HandleRunnerApplyService(admin *admin.Manager) http.HandlerFun
 		reqParams, err := admin.IsTokenValid(ctx, token, "service", "modify", map[string]string{"project": projectID, "id": vars["serviceId"], "version": vars["version"]})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -242,7 +243,7 @@ func (s *Manager) HandleRunnerGetServices(admin *admin.Manager) http.HandlerFunc
 		reqParams, err := admin.IsTokenValid(ctx, token, "service", "read", map[string]string{"project": projectID, "id": id, "version": version})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -267,7 +268,7 @@ func (s *Manager) HandleRunnerGetDeploymentStatus(admin *admin.Manager) http.Han
 		reqParams, err := admin.IsTokenValid(ctx, token, "service", "read", map[string]string{"project": projectID})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 		// Create a context of execution
@@ -291,7 +292,7 @@ func (s *Manager) HandleRunnerDeleteService(admin *admin.Manager) http.HandlerFu
 		reqParams, err := admin.IsTokenValid(ctx, token, "service", "modify", map[string]string{"project": projectID, "id": vars["serviceId"], "version": vars["version"]})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -316,7 +317,7 @@ func (s *Manager) HandleRunnerServiceRoutingRequest(admin *admin.Manager) http.H
 		reqParams, err := admin.IsTokenValid(ctx, token, "service-route", "modify", map[string]string{"project": projectID, "id": vars["serviceId"]})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -346,7 +347,92 @@ func (s *Manager) HandleRunnerGetServiceRoutingRequest(admin *admin.Manager) htt
 		reqParams, err := admin.IsTokenValid(ctx, token, "service-route", "read", map[string]string{"project": projectID, "id": id})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
+			return
+		}
+
+		// Create a context of execution
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+
+		s.forwardRequestToRunner(ctx, w, r, admin, reqParams)
+	}
+}
+
+// HandleRunnerSetServiceRole handles requests of the runner
+func (s *Manager) HandleRunnerSetServiceRole(admin *admin.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		reqParams, err := admin.IsTokenValid(ctx, token, "service-role", "modify", map[string]string{"project": projectID, "serviceId": vars["serviceId"], "id": vars["roleId"]})
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
+			return
+		}
+
+		// Create a context of execution
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+
+		s.forwardRequestToRunner(ctx, w, r, admin, reqParams)
+	}
+}
+
+// HandleRunnerGetServiceRoleRequest handles requests of the runner
+func (s *Manager) HandleRunnerGetServiceRoleRequest(admin *admin.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		serviceID := r.URL.Query().Get("id")
+		if serviceID == "" {
+			serviceID = "*"
+		}
+
+		roleID := r.URL.Query().Get("roleId")
+		if roleID == "" {
+			roleID = "*"
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		reqParams, err := admin.IsTokenValid(ctx, token, "service-role", "read", map[string]string{"project": projectID, "serviceId": serviceID, "id": roleID})
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
+			return
+		}
+
+		// Create a context of execution
+		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
+
+		s.forwardRequestToRunner(ctx, w, r, admin, reqParams)
+	}
+}
+
+// HandleRunnerDeleteServiceRole handles requests of the runner
+func (s *Manager) HandleRunnerDeleteServiceRole(admin *admin.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		reqParams, err := admin.IsTokenValid(ctx, token, "service-role", "modify", map[string]string{"project": projectID, "serviceId": vars["serviceId"], "id": vars["roleId"]})
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -360,6 +446,16 @@ func (s *Manager) HandleRunnerGetServiceRoutingRequest(admin *admin.Manager) htt
 // HandleRunnerGetServiceLogs handles requests of the runner
 func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if s.GetRunnerAddr() == "" {
+			helpers.Logger.LogWarn(helpers.GetRequestID(r.Context()), "Cannot forward request to runner, as runner address not provided to gateway during setup", nil)
+			if r.Method == http.MethodGet {
+				_ = helpers.Response.SendResponse(r.Context(), w, http.StatusOK, model.Response{Result: []interface{}{}})
+				return
+			}
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, errors.New("Space cloud cannot process this request, as you haven't started space cloud in kubernetes"))
+			return
+		}
+
 		userToken := utils.GetTokenFromHeader(r)
 
 		vars := mux.Vars(r)
@@ -368,7 +464,7 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 		_, err := admin.IsTokenValid(r.Context(), userToken, "service", "read", map[string]string{"project": projectID})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -393,7 +489,7 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 		token, err := admin.GetInternalAccessToken()
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), fmt.Sprintf("Unable to forward  runner request failed to generate internal access token -%v", err), err, nil)
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err)
 			return
 		}
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -401,17 +497,17 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 		// TODO: Use http2 client if that was the incoming request protocol
 		response, err := http.DefaultClient.Do(r)
 		if err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err)
 			return
 		}
 		defer utils.CloseTheCloser(response.Body)
 		if response.StatusCode != 200 {
 			respBody := map[string]interface{}{}
 			if err := json.NewDecoder(response.Body).Decode(&respBody); err != nil {
-				_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
+				_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err)
 				return
 			}
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, fmt.Sprintf("received invalid status code (%d) got error - %v", response.StatusCode, respBody["error"]))
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, fmt.Errorf("received invalid status code (%d) got error - %v", response.StatusCode, respBody["error"]))
 			return
 		}
 		streamData := false
@@ -431,7 +527,7 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 			done := r.Context().Done()
 			flusher, ok := w.(http.Flusher)
 			if !ok {
-				_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, "expected http.ResponseWriter to be an http.Flusher")
+				_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, errors.New("expected http.ResponseWriter to be an http.Flusher"))
 				return
 			}
 			w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -448,7 +544,7 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 							w.WriteHeader(http.StatusNoContent)
 							return
 						}
-						_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err.Error())
+						_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, err)
 					}
 					if str != "\n" {
 						fmt.Fprintf(w, "%s", str)
@@ -457,12 +553,21 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 				}
 			}
 		} else {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, "Missing headers X-Content-Type-Options & nosniff")
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, errors.New("Missing headers X-Content-Type-Options & nosniff"))
 		}
 	}
 }
 
 func (s *Manager) forwardRequestToRunner(ctx context.Context, w http.ResponseWriter, r *http.Request, admin *admin.Manager, params model.RequestParams) {
+	if s.GetRunnerAddr() == "" {
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), "Cannot forward request to runner, as runner address not provided to gateway during setup", nil)
+		if r.Method == http.MethodGet {
+			_ = helpers.Response.SendResponse(r.Context(), w, http.StatusOK, model.Response{Result: []interface{}{}})
+			return
+		}
+		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, errors.New("Space cloud cannot process this request, as you haven't started space cloud in kubernetes"))
+		return
+	}
 
 	// http: Request.RequestURI can't be set in client requests.
 	// http://golang.org/src/pkg/net/http/client.go
@@ -481,7 +586,7 @@ func (s *Manager) forwardRequestToRunner(ctx context.Context, w http.ResponseWri
 	token, err := admin.GetInternalAccessToken()
 	if err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to forward  runner request failed to generate internal access token -%v", err), err, nil)
-		_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+		_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 		return
 	}
 	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -489,7 +594,7 @@ func (s *Manager) forwardRequestToRunner(ctx context.Context, w http.ResponseWri
 	// TODO: Use http2 client if that was the incoming request protocol
 	response, err := http.DefaultClient.Do(r)
 	if err != nil {
-		_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err.Error())
+		_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 		return
 	}
 	defer utils.CloseTheCloser(response.Body)
@@ -519,15 +624,14 @@ func (s *Manager) GetClusterType(ctx context.Context, admin AdminSyncmanInterfac
 
 	token, err := admin.GetInternalAccessToken()
 	if err != nil {
-		_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "GetClusterType failed to generate internal access token", err, nil)
-		return "", err
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "GetClusterType failed to generate internal access token", err, nil)
 	}
 
 	data := new(model.Response)
 
 	err = s.MakeHTTPRequest(ctx, http.MethodGet, fmt.Sprintf("http://%s/v1/runner/cluster-type", s.runnerAddr), token, "", map[string]interface{}{}, data)
 	if err != nil {
-		return "", err
+		return "", helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to fetch cluster type from runner", err, nil)
 	}
 
 	return data.Result.(string), err

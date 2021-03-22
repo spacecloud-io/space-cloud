@@ -99,7 +99,7 @@ func (m *Module) LoadMetrics() []interface{} {
 	metricDocs := make([]interface{}, 0)
 
 	// Capture the current time
-	t := time.Now().Format(time.RFC3339)
+	t := time.Now().Format(time.RFC3339Nano)
 
 	// Iterate over all projects to generate the metric docs
 	m.projects.Range(func(key, value interface{}) bool {

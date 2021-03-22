@@ -13,6 +13,7 @@ import (
 func TestModule_getEventingRule(t *testing.T) {
 	type args struct {
 		eventType string
+		project   string
 	}
 	tests := []struct {
 		name    string
@@ -23,33 +24,33 @@ func TestModule_getEventingRule(t *testing.T) {
 	}{
 		{
 			name: "rule found",
-			m:    &Module{eventingRules: map[string]*config.Rule{"some-type": &config.Rule{}}},
-			args: args{eventType: "some-type"},
+			m:    &Module{clusterID: "chicago", eventingRules: map[string]*config.Rule{config.GenerateResourceID("chicago", "project", config.ResourceEventingRule, "some-type"): &config.Rule{}}},
+			args: args{eventType: "some-type", project: "project"},
 			want: &config.Rule{},
 		},
 		{
 			name:    "rule not found",
 			m:       &Module{eventingRules: map[string]*config.Rule{"some-type2": &config.Rule{}}},
-			args:    args{eventType: "some-type1"},
+			args:    args{eventType: "some-type1", project: "project"},
 			wantErr: true,
 		},
 		{
 			name: "default rule found",
-			m:    &Module{eventingRules: map[string]*config.Rule{"default": &config.Rule{Rule: "allow"}}},
-			args: args{eventType: "some-type"},
+			m:    &Module{clusterID: "chicago", eventingRules: map[string]*config.Rule{config.GenerateResourceID("chicago", "project", config.ResourceEventingRule, "default"): &config.Rule{Rule: "allow"}}},
+			args: args{eventType: "some-type", project: "project"},
 			want: &config.Rule{Rule: "allow"},
 		},
 		{
 			name:    "empty rules",
 			m:       &Module{},
-			args:    args{eventType: "some-type"},
+			args:    args{eventType: "some-type", project: "project"},
 			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.getEventingRule(context.Background(), tt.args.eventType)
+			got, err := tt.m.getEventingRule(context.Background(), tt.args.project, tt.args.eventType)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.getEventingRule() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -76,7 +77,7 @@ func TestModule_IsEventingOpAuthorised(t *testing.T) {
 	}{
 		{
 			name: "got rule",
-			m:    &Module{jwt: jwtUtils.New(), project: "some-project", eventingRules: map[string]*config.Rule{"some-type": &config.Rule{Rule: "authenticated"}}},
+			m:    &Module{clusterID: "chicago", jwt: jwtUtils.New(), project: "some-project", eventingRules: map[string]*config.Rule{config.GenerateResourceID("chicago", "some-project", config.ResourceEventingRule, "some-type"): &config.Rule{Rule: "authenticated"}}},
 			args: args{ctx: context.Background(), project: "some-project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 		},
 		{
@@ -87,7 +88,7 @@ func TestModule_IsEventingOpAuthorised(t *testing.T) {
 		},
 		{
 			name: "valid project details",
-			m:    &Module{jwt: jwtUtils.New(), project: "some-project", eventingRules: map[string]*config.Rule{"some-type": &config.Rule{Rule: "allow"}}},
+			m:    &Module{clusterID: "chicago", jwt: jwtUtils.New(), project: "some-project", eventingRules: map[string]*config.Rule{config.GenerateResourceID("chicago", "some-project", config.ResourceEventingRule, "some-type"): &config.Rule{Rule: "allow"}}},
 			args: args{ctx: context.Background(), project: "some-project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 		},
 		{
@@ -112,7 +113,7 @@ func TestModule_IsEventingOpAuthorised(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_ = tt.m.SetConfig(tt.m.project, "", []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, "", nil, nil, nil, &config.Eventing{})
+			_ = tt.m.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: tt.m.project, Secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, tt.m.eventingRules)
 			if _, err := tt.m.IsEventingOpAuthorised(context.Background(), tt.args.project, tt.args.token, tt.args.event); (err != nil) != tt.wantErr {
 				t.Errorf("Module.IsEventingOpAuthorised() error = %v, wantErr %v", err, tt.wantErr)
 			}

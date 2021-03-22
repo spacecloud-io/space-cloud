@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/helpers"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,107 +13,26 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-func extractPreferredServiceAffinityObject(arr []v1.WeightedPodAffinityTerm, multiplier int32) []model.Affinity {
-	affinities := []model.Affinity{}
-	for _, preferredSchedulingTerm := range arr {
-		matchExpression := []model.MatchExpressions{}
-		for _, expression := range preferredSchedulingTerm.PodAffinityTerm.LabelSelector.MatchExpressions {
-			matchExpression = append(matchExpression, model.MatchExpressions{
-				Key:       expression.Key,
-				Values:    expression.Values,
-				Attribute: "label",
-				Operator:  string(expression.Operator),
-			})
-		}
-		affinities = append(affinities, model.Affinity{
-			ID:               ksuid.New().String(),
-			Type:             model.AffinityTypeService,
-			Weight:           preferredSchedulingTerm.Weight * multiplier,
-			Operator:         model.AffinityOperatorPreferred,
-			TopologyKey:      preferredSchedulingTerm.PodAffinityTerm.TopologyKey,
-			Projects:         preferredSchedulingTerm.PodAffinityTerm.Namespaces,
-			MatchExpressions: matchExpression,
-		})
-	}
-	return affinities
-}
-
-func extractRequiredServiceAffinityObject(arr []v1.PodAffinityTerm, multiplier int32) []model.Affinity {
-	affinities := []model.Affinity{}
-	for _, preferredSchedulingTerm := range arr {
-		matchExpression := []model.MatchExpressions{}
-		for _, expression := range preferredSchedulingTerm.LabelSelector.MatchExpressions {
-			matchExpression = append(matchExpression, model.MatchExpressions{
-				Key:       expression.Key,
-				Values:    expression.Values,
-				Attribute: "label",
-				Operator:  string(expression.Operator),
-			})
-		}
-		affinities = append(affinities, model.Affinity{
-			ID:               ksuid.New().String(),
-			Type:             model.AffinityTypeService,
-			Weight:           100 * multiplier,
-			Operator:         model.AffinityOperatorRequired,
-			TopologyKey:      preferredSchedulingTerm.TopologyKey,
-			Projects:         preferredSchedulingTerm.Namespaces,
-			MatchExpressions: matchExpression,
-		})
-	}
-	return affinities
-}
-
-func extractPreferredNodeAffinityObject(arr []v1.PreferredSchedulingTerm) []model.Affinity {
-	affinities := []model.Affinity{}
-	for _, preferredSchedulingTerm := range arr {
-		matchExpression := []model.MatchExpressions{}
-		for _, expression := range preferredSchedulingTerm.Preference.MatchExpressions {
-			matchExpression = append(matchExpression, model.MatchExpressions{
-				Key:       expression.Key,
-				Values:    expression.Values,
-				Attribute: "label",
-				Operator:  string(expression.Operator),
-			})
-		}
-		affinities = append(affinities, model.Affinity{
-			ID:               ksuid.New().String(),
-			Type:             model.AffinityTypeNode,
-			Weight:           preferredSchedulingTerm.Weight,
-			Operator:         model.AffinityOperatorPreferred,
-			MatchExpressions: matchExpression,
-		})
-	}
-	return affinities
-}
-
-func extractRequiredNodeAffinityObject(arr []v1.NodeSelectorTerm) []model.Affinity {
-	affinities := []model.Affinity{}
-	for _, nodeSelectorTerm := range arr {
-		matchExpression := []model.MatchExpressions{}
-		for _, expression := range nodeSelectorTerm.MatchExpressions {
-			matchExpression = append(matchExpression, model.MatchExpressions{
-				Key:       expression.Key,
-				Values:    expression.Values,
-				Attribute: "label",
-				Operator:  string(expression.Operator),
-			})
-		}
-		affinities = append(affinities, model.Affinity{
-			ID:               ksuid.New().String(),
-			Type:             model.AffinityTypeNode,
-			Operator:         model.AffinityOperatorRequired,
-			MatchExpressions: matchExpression,
-		})
-	}
-	return affinities
-}
-
 // GetServices gets the services for istio
 func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
+	// Get all deployments in project
 	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Error getting service in istio - unable to find deployment", err, nil)
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to find deployments in project", err, nil)
 	}
+
+	// Get all keda trigger authentication in project
+	triggerAuthList, err := i.keda.KedaV1alpha1().TriggerAuthentications(projectID).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to find keda trigger auths in project", err, nil)
+	}
+
+	// Get all the keda scaled objects in projects
+	scaledObjectList, err := i.keda.KedaV1alpha1().ScaledObjects(projectID).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to find keda scaled object in project", err, nil)
+	}
+
 	services := []*model.Service{}
 	for _, deployment := range deploymentList.Items {
 		service := new(model.Service)
@@ -175,11 +93,10 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 		service.Labels = deployment.Spec.Template.Labels
 
 		// Get scale config
-		scale, err := getScaleConfigFromDeployment(ctx, deployment)
-		if err != nil {
-			return nil, err
+		service.AutoScale = getScaleConfigFromKedaConfig(service.ID, service.Version, scaledObjectList.Items, triggerAuthList.Items)
+		if service.AutoScale == nil {
+			service.AutoScale = getScaleConfigFromDeployment(deployment)
 		}
-		service.Scale = scale
 
 		for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
 			if containerInfo.Name == "metric-proxy" || containerInfo.Name == "istio-proxy" {
@@ -223,13 +140,13 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 			delete(envs, runtimeEnvVariable)
 
 			// Delete internal environment variables if runtime was code
-			if runtime == model.Code {
-				delete(envs, model.ArtifactURL)
-				delete(envs, model.ArtifactToken)
-				delete(envs, model.ArtifactProject)
-				delete(envs, model.ArtifactService)
-				delete(envs, model.ArtifactVersion)
-			}
+			// if runtime == model.Code {
+			// 	delete(envs, model.ArtifactURL)
+			// 	delete(envs, model.ArtifactToken)
+			// 	delete(envs, model.ArtifactProject)
+			// 	delete(envs, model.ArtifactService)
+			// 	delete(envs, model.ArtifactVersion)
+			// }
 
 			// Get the image pull policy
 			imagePullPolicy := model.PullIfNotExists
@@ -317,8 +234,8 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]*mode
 	}
 	result := make([]*model.ServiceStatus, 0)
 	for _, deployment := range deploymentList.Items {
-		serviceID := deployment.Labels["app"]
-		serviceVersion := deployment.Labels["version"]
+		serviceID := deployment.Labels["app.kubernetes.io/name"]
+		serviceVersion := deployment.Labels["app.kubernetes.io/version"]
 
 		podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s,version=%s", serviceID, serviceVersion)})
 		if err != nil {
@@ -352,7 +269,7 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 
 	for _, service := range services.Items {
 		serviceID := service.Labels["app"]
-		routes := make(model.Routes, len(service.Spec.Http))
+		routes := make(model.Routes, len(service.Spec.Http)+len(service.Spec.Tcp))
 
 		for i, route := range service.Spec.Http {
 
@@ -390,7 +307,44 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 			}
 
 			// Set the route
-			routes[i] = &model.Route{ID: serviceID, Source: model.RouteSource{Port: int32(route.Match[0].Port)}, Targets: targets}
+			routes[i] = &model.Route{ID: serviceID, RequestTimeout: route.Retries.PerTryTimeout.Seconds, RequestRetries: route.Retries.Attempts, Source: model.RouteSource{Port: int32(route.Match[0].Port), Protocol: model.HTTP}, Targets: targets}
+		}
+
+		for i, route := range service.Spec.Tcp {
+
+			// Generate the targets
+			targets := make([]model.RouteTarget, len(route.Route))
+			for j, destination := range route.Route {
+				target := model.RouteTarget{Weight: destination.Weight}
+
+				// Figure out the route type
+				target.Type = model.RouteTargetExternal
+				if checkIfInternalServiceDomain(projectID, serviceID, destination.Destination.Host) {
+					target.Type = model.RouteTargetVersion
+				}
+
+				switch target.Type {
+				case model.RouteTargetVersion:
+					// Set the version field if target type was version
+					_, _, version := splitInternalServiceDomain(destination.Destination.Host)
+					target.Version = version
+
+					// Set the port
+					target.Port = int32(destination.Destination.Port.Number)
+
+				case model.RouteTargetExternal:
+					// Set the host field if target type was external
+					target.Host = destination.Destination.Host
+
+					// Set the port
+					target.Port = int32(destination.Destination.Port.Number)
+				}
+
+				targets[j] = target
+			}
+
+			// Set the route
+			routes[i] = &model.Route{ID: serviceID, Source: model.RouteSource{Port: int32(route.Match[0].Port), Protocol: model.TCP}, Targets: targets}
 		}
 
 		// Set the routes of a service
@@ -398,4 +352,52 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 	}
 
 	return serviceRoutes, nil
+}
+
+// GetServiceRole gets the service role rules of each service
+func (i *Istio) GetServiceRole(ctx context.Context, projectID string) ([]*model.Role, error) {
+	ns := projectID
+
+	rolelist, err := i.kube.RbacV1().Roles(ns).List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list roles in project (%s)", projectID), err, nil)
+	}
+
+	clusterRoleList, err := i.kube.RbacV1().ClusterRoles().List(ctx, metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=space-cloud"})
+	if err != nil {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list cluster roles in project (%s)", projectID), err, nil)
+	}
+	serviceRole := make([]*model.Role, len(rolelist.Items)+len(clusterRoleList.Items))
+
+	for _, role := range rolelist.Items {
+		serviceID := role.Labels["app"]
+		Role := new(model.Role)
+		Role.ID = role.Name
+		Role.Project = role.Namespace
+		Role.Service = serviceID
+		Role.Type = model.ServiceRoleProject
+		Rules := make([]model.Rule, 0)
+		for _, rule := range role.Rules {
+			Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
+		}
+		Role.Rules = Rules
+		serviceRole = append(serviceRole, Role)
+	}
+
+	for _, role := range clusterRoleList.Items {
+		serviceID := role.Labels["app"]
+		Role := new(model.Role)
+		Role.ID = role.Name
+		Role.Project = projectID
+		Role.Service = serviceID
+		Role.Type = model.ServiceRoleCluster
+		Rules := make([]model.Rule, 0)
+		for _, rule := range role.Rules {
+			Rules = append(Rules, model.Rule{APIGroups: rule.APIGroups, Verbs: rule.Verbs, Resources: rule.Resources})
+		}
+		Role.Rules = Rules
+		serviceRole = append(serviceRole, Role)
+	}
+
+	return serviceRole, nil
 }

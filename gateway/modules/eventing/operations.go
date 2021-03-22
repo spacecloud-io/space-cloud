@@ -25,6 +25,39 @@ func (m *Module) IsEnabled() bool {
 	return m.config.Enabled
 }
 
+// QueueAdminEvent queues a new event created by the admin. This does no validation and hence must be used cautiously.
+// For most use cases, consider using QueueEvent instead.
+func (m *Module) QueueAdminEvent(ctx context.Context, reqs []*model.QueueEventRequest) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	batchID := m.generateBatchID()
+
+	// Prepare the find object for update and delete events
+	for _, req := range reqs {
+		if err := m.prepareFindObject(req); err != nil {
+			return err
+		}
+	}
+
+	for i := 1; i <= 3; i++ {
+		if err := m.batchRequests(ctx, reqs, batchID); err != nil {
+			if i == 3 {
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to queue admin event cannot batch requests", err, nil)
+			}
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		break
+	}
+
+	// Log event metric
+	for _, req := range reqs {
+		m.metricHook(m.project, req.Type)
+	}
+	return nil
+}
+
 // QueueEvent queues a new event
 func (m *Module) QueueEvent(ctx context.Context, project, token string, req *model.QueueEventRequest) (interface{}, error) {
 	m.lock.RLock()
@@ -64,8 +97,8 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	return nil, nil
 }
 
-// SendEventResponse sends response to client via channel
-func (m *Module) SendEventResponse(ctx context.Context, batchID string, payload interface{}) {
+// ProcessEventResponseMessage sends response to client via channel
+func (m *Module) ProcessEventResponseMessage(ctx context.Context, batchID string, payload interface{}) {
 	// get channel from map
 	value, ok := m.eventChanMap.Load(batchID)
 	if !ok {
@@ -79,7 +112,7 @@ func (m *Module) SendEventResponse(ctx context.Context, batchID string, payload 
 }
 
 // SetRealtimeTriggers adds triggers which are used for space cloud internally
-func (m *Module) SetRealtimeTriggers(eventingRules []*config.EventingRule) {
+func (m *Module) SetRealtimeTriggers(eventingRules []*config.EventingTrigger) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -91,6 +124,7 @@ func (m *Module) SetRealtimeTriggers(eventingRules []*config.EventingRule) {
 
 	for _, incomingRule := range eventingRules {
 		key := strings.Join([]string{"realtime", incomingRule.Options["db"], incomingRule.Options["col"], incomingRule.Type}, "-")
+		incomingRule.ID = key
 		m.config.InternalRules[key] = incomingRule
 	}
 }

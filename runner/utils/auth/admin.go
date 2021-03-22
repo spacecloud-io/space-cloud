@@ -40,13 +40,3 @@ func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 	return nil, errors.New("token could not be verified")
 
 }
-
-// GenerateTokenForArtifactStore creates a token for the artifact store
-func (m *Module) GenerateTokenForArtifactStore(serviceID, projectID, version string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":      serviceID,
-		"project": projectID,
-		"version": version,
-	})
-	return token.SignedString([]byte(m.config.Secret))
-}

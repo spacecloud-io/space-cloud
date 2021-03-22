@@ -22,22 +22,31 @@ type ReadRequest struct {
 
 // ReadOptions is the options required for a read request
 type ReadOptions struct {
+	// Debug field is used internally to show
+	// _query meta data in the graphql
+	Debug      bool             `json:"debug"`
 	Select     map[string]int32 `json:"select"`
 	Sort       []string         `json:"sort"`
 	Skip       *int64           `json:"skip"`
 	Limit      *int64           `json:"limit"`
 	Distinct   *string          `json:"distinct"`
-	Join       []JoinOption     `json:"join"`
+	Join       []*JoinOption    `json:"join"`
 	ReturnType string           `json:"returnType"`
 	HasOptions bool             `json:"hasOptions"` // used internally
 }
 
 // JoinOption describes the way a join needs to be performed
 type JoinOption struct {
+	// Op can be either All or One
+	// This field decides the way the result of join is returned
+	// If op is all, the result is returned as an array
+	// If op is one, the result is returned as an object
+	Op    string                 `json:"Op" mapstructure:"Op"`
 	Type  string                 `json:"type" mapstructure:"type"`
 	Table string                 `json:"table" mapstructure:"table"`
+	As    string                 `json:"as" mapstructure:"as"`
 	On    map[string]interface{} `json:"on" mapstructure:"on"`
-	Join  []JoinOption           `json:"join" mapstructure:"join"`
+	Join  []*JoinOption          `json:"join" mapstructure:"join"`
 }
 
 // UpdateRequest is the http body received for an update request
@@ -56,6 +65,9 @@ type DeleteRequest struct {
 // PreparedQueryRequest is the http body received for a PreparedQuery request
 type PreparedQueryRequest struct {
 	Params map[string]interface{} `json:"params"`
+	// This field is used internally to show
+	// _query meta data in the graphql
+	Debug bool
 }
 
 // AggregateRequest is the http body received for an aggregate request
@@ -74,6 +86,15 @@ type AllRequest struct {
 	Type      string                 `json:"type"`
 	DBAlias   string                 `json:"dBAlias"`
 	Extras    map[string]interface{} `json:"extras"`
+}
+
+// SQLMetaData stores sql query information
+type SQLMetaData struct {
+	Col       string        `json:"col" structs:"col"`
+	SQL       string        `json:"sql" structs:"sql"`
+	DbAlias   string        `json:"db" structs:"db"`
+	Args      []interface{} `json:"args" structs:"args"`
+	QueryTime string        `json:"queryTime" structs:"queryTime"`
 }
 
 // BatchRequest is the http body for a batch request
@@ -99,4 +120,10 @@ const (
 
 	// SQLServer is the type used for MsSQL
 	SQLServer DBType = "sqlserver"
+
+	// DefaultValidate is used for default validation operation
+	DefaultValidate = "default"
+
+	// DefaultFetchLimit is the default value to be used as a limit to fetch rows/collection in each read query
+	DefaultFetchLimit = 1000
 )

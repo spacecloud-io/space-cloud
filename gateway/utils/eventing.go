@@ -28,6 +28,7 @@ const (
 		payload: String
 		status: String
 		remark: String
+		trigger_type: ID @size(value: 10)
 		invocations: [invocation_logs]! @link(table: "invocation_logs", from: "_id", to: "event_id")
 	  }`
 )

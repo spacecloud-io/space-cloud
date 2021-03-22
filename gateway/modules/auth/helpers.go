@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"text/template"
 
 	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 )
 
 func (m *Module) getFields(ctx context.Context, fields interface{}, args map[string]interface{}) ([]interface{}, error) {
@@ -71,4 +74,31 @@ func getRuleFieldForReturnWhere(field interface{}, args map[string]interface{}, 
 		return fmt.Sprintf("'%v'", field)
 	}
 	return field
+}
+
+func (m *Module) executeTemplate(ctx context.Context, rule *config.Rule, templateString string, newArgs map[string]interface{}) (interface{}, error) {
+	var obj interface{}
+	switch rule.Template {
+	// If nothing provided default templating engine is go
+	case config.TemplatingEngineGo, "":
+		// Create a new template object
+		t := template.New(rule.Name)
+		t = t.Funcs(tmpl2.CreateGoFuncMaps(m))
+		t, err := t.Parse(templateString)
+		if err != nil {
+			return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse provided template in security rule (Webhook)", err, nil))
+		}
+		if rule.OpFormat == "" {
+			rule.OpFormat = "json"
+		}
+		var tempArgs interface{} = newArgs
+		obj, err = tmpl2.GoTemplate(ctx, t, rule.OpFormat, newArgs["token"].(string), newArgs["auth"], tempArgs)
+		if err != nil {
+			return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to execute provided template in security rule (Webhook)", err, nil))
+		}
+	default:
+		helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step for security rule (Webhook) & using the default body.", rule.Template), nil)
+		obj = newArgs
+	}
+	return obj, nil
 }

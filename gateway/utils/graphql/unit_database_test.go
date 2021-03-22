@@ -40,12 +40,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -132,12 +132,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -203,12 +203,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -269,12 +269,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -335,12 +335,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -401,12 +401,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -470,12 +470,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -542,12 +542,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -618,7 +618,7 @@ var queryTestCases = []tests{
 					IsBatch:     false,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"aggregate": map[string]interface{}{"sum": map[string]interface{}{"power_level": 100}}}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"aggregate": map[string]interface{}{"sum": map[string]interface{}{"power_level": 100}}}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -694,7 +694,7 @@ var queryTestCases = []tests{
 					IsBatch:     false,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"aggregate": map[string]interface{}{"sum": map[string]interface{}{"power_level": 100}}}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"aggregate": map[string]interface{}{"sum": map[string]interface{}{"power_level": 100}}}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -768,12 +768,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "4", "name": "snorlax", "power_level": 30}, map[string]interface{}{"id": "5", "name": "jigglypuff", "power_level": 40}, map[string]interface{}{"id": "5", "name": "squirtle", "power_level": 50}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "4", "name": "snorlax", "power_level": 30}, map[string]interface{}{"id": "5", "name": "jigglypuff", "power_level": 40}, map[string]interface{}{"id": "5", "name": "squirtle", "power_level": 50}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -843,12 +843,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -918,12 +918,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}, map[string]interface{}{"id": "2", "name": "ditto", "power_level": 50}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}, map[string]interface{}{"id": "2", "name": "ditto", "power_level": 50}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -993,12 +993,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "4", "name": "snorlax", "power_level": 30}, map[string]interface{}{"id": "5", "name": "jigglypuff", "power_level": 40}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "4", "name": "snorlax", "power_level": 30}, map[string]interface{}{"id": "5", "name": "jigglypuff", "power_level": 40}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -1068,12 +1068,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "4", "name": "snorlax", "power_level": 30}, map[string]interface{}{"id": "5", "name": "jigglypuff", "power_level": 40}, map[string]interface{}{"id": "5", "name": "squirtle", "power_level": 50}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "4", "name": "snorlax", "power_level": 30}, map[string]interface{}{"id": "5", "name": "jigglypuff", "power_level": 40}, map[string]interface{}{"id": "5", "name": "squirtle", "power_level": 50}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -1143,12 +1143,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -1218,12 +1218,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}, map[string]interface{}{"id": "5", "name": "squirtle", "power_level": 50}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}, map[string]interface{}{"id": "5", "name": "squirtle", "power_level": 50}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -1293,12 +1293,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -1367,11 +1367,11 @@ var queryTestCases = []tests{
 	// 				GroupBy:   []interface{}{},
 	// 				Operation: utils.All,
 	// 				Options: &model.ReadOptions{
-	// 					Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+	// 					Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 	// 				},
 	// 				IsBatch: true,
 	// 			}},
-	// 			paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
+	// 			paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, map[string]interface{}{},nil},
 	// 		},
 	// 	},
 	// 	schemaMockArgs: []mockArgs{
@@ -1453,12 +1453,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -1538,12 +1538,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -1622,12 +1622,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -1698,11 +1698,11 @@ var queryTestCases = []tests{
 	// 				GroupBy:   []interface{}{},
 	// 				Operation: utils.All,
 	// 				Options: &model.ReadOptions{
-	// 					Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+	// 					Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1, "pokemons.power_level": 1},
 	// 				},
 	// 				IsBatch: true,
 	// 			}},
-	// 			paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, nil},
+	// 			paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}}, map[string]interface{}{},nil},
 	// 		},
 	// 	},
 	// 	schemaMockArgs: []mockArgs{
@@ -1778,14 +1778,14 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1},
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 						Sort:       []string{"name"},
 						HasOptions: true,
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -1847,14 +1847,14 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1, "caught_on": 1},
+						Select:     map[string]int32{"caught_pokemons.id": 1, "caught_pokemons.name": 1, "caught_pokemons.caught_on": 1},
 						Sort:       []string{"name", "-caught_on"},
 						HasOptions: true,
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"caught_pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash", "caught_on": "2019-06-01"}, map[string]interface{}{"id": "2", "name": "james", "caught_on": "2019-06-01"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash", "caught_on": "2019-06-01"}, map[string]interface{}{"id": "2", "name": "james", "caught_on": "2019-06-01"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -1916,13 +1916,13 @@ var queryTestCases = []tests{
 	// 				GroupBy:   []interface{}{},
 	// 				Operation: utils.All,
 	// 				Options: &model.ReadOptions{
-	// 					Select:     map[string]int32{"id": 1, "name": 1, "caught_on": 1},
+	// 					Select:     map[string]int32{"caught_pokemons.id": 1, "caught_pokemons.name": 1, "caught_pokemons.caught_on": 1},
 	// 					Sort:       []string{"name", "-caught_on"},
 	// 					HasOptions: true,
 	// 				},
 	// 				IsBatch: true,
 	// 			}},
-	// 			paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash", "caught_on": "2019-06-01"}, map[string]interface{}{"id": "2", "name": "james", "caught_on": "2019-06-01"}}, nil},
+	// 			paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash", "caught_on": "2019-06-01"}, map[string]interface{}{"id": "2", "name": "james", "caught_on": "2019-06-01"}}, map[string]interface{}{},nil},
 	// 		},
 	// 	},
 	// 	schemaMockArgs: []mockArgs{
@@ -1990,14 +1990,14 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.Distinct,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"type": 1},
+						Select:     map[string]int32{"pokemons.type": 1},
 						Distinct:   &distinct,
 						HasOptions: true,
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"type": "fire"}, map[string]interface{}{"type": "water"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"type": "fire"}, map[string]interface{}{"type": "water"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -2058,14 +2058,14 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1},
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 						Limit:      &number,
 						HasOptions: true,
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -2127,14 +2127,14 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1},
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 						Skip:       &number,
 						HasOptions: true,
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -2197,7 +2197,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1},
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 						Skip:       &number,
 						Limit:      &number,
 						HasOptions: true,
@@ -2205,7 +2205,7 @@ var queryTestCases = []tests{
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -2267,13 +2267,13 @@ var queryTestCases = []tests{
 	// 				GroupBy:   []interface{}{},
 	// 				Operation: utils.All,
 	// 				Options: &model.ReadOptions{
-	// 					Select:     map[string]int32{"id": 1, "name": 1},
+	// 					Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 	// 					Skip:       &number,
 	// 					HasOptions: true,
 	// 				},
 	// 				IsBatch: true,
 	// 			}},
-	// 			paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+	// 			paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, map[string]interface{}{},nil},
 	// 		},
 	// 	},
 	// 	schemaMockArgs: []mockArgs{
@@ -2340,7 +2340,7 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select:     map[string]int32{"id": 1, "name": 1},
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1},
 						Skip:       &number,
 						Sort:       []string{"name"},
 						HasOptions: true,
@@ -2348,7 +2348,7 @@ var queryTestCases = []tests{
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -2414,12 +2414,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, new(model.SQLMetaData), nil},
 			},
 			{
 				method:         "GetDBType",
@@ -2445,12 +2445,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"type": 1, "name": 1},
+						Select: map[string]int32{"pokemons.type": 1, "pokemons.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"type": "water", "name": "bulbasur"}, map[string]interface{}{"type": "fire", "name": "charmander"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"type": "water", "name": "bulbasur"}, map[string]interface{}{"type": "fire", "name": "charmander"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -2519,12 +2519,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, new(model.SQLMetaData), nil},
 			},
 			{
 				method:         "GetDBType",
@@ -2550,12 +2550,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"type": 1, "name": 1},
+						Select: map[string]int32{"pokemons.type": 1, "pokemons.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"type": "water", "name": "bulbasur"}, map[string]interface{}{"type": "fire", "name": "charmander"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"type": "water", "name": "bulbasur"}, map[string]interface{}{"type": "fire", "name": "charmander"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -2598,7 +2598,7 @@ var queryTestCases = []tests{
 		wantResult: map[string]interface{}{"pokemons": []interface{}{map[string]interface{}{"type": "water", "name": "bulbasur"}, map[string]interface{}{"type": "fire", "name": "charmander"}}, "trainers": []interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}},
 	},
 	{
-		name: "Query: Same database joins",
+		name: "Query: Same database joins, link converted to optimised join",
 		crudMockArgs: []mockArgs{
 			{
 				method:         "GetDBType",
@@ -2624,38 +2624,20 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1, "pokemons.id": 1, "pokemons.name": 1},
+						Join: []*model.JoinOption{
+							{
+								Op:    utils.All,
+								Type:  "LEFT",
+								On:    map[string]interface{}{"trainers.id": "pokemons.trainer_id"},
+								Table: "pokemons",
+							},
+						},
 					},
-					IsBatch:     true,
-					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
+					IsBatch:     false,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{PostProcessAction: nil}, "pokemons": &model.PostProcess{PostProcessAction: nil}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
-			},
-			{
-				method: "Read",
-				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
-					Find:        map[string]interface{}{"trainer_id": "1"},
-					Operation:   utils.All,
-					Options:     &model.ReadOptions{},
-					GroupBy:     []interface{}{},
-					Aggregate:   map[string][]string{},
-					IsBatch:     true,
-					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
-				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
-			},
-			{
-				method: "Read",
-				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
-					Find:        map[string]interface{}{"trainer_id": "2"},
-					Operation:   utils.All,
-					GroupBy:     []interface{}{},
-					Options:     &model.ReadOptions{},
-					Aggregate:   map[string][]string{},
-					IsBatch:     true,
-					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
-				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -2698,6 +2680,91 @@ var queryTestCases = []tests{
 		wantResult: map[string]interface{}{"trainers": []interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}}},
 	},
 	{
+		name: "Query: Sorting Nested Queries, using optimized join",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "trainers", &model.ReadRequest{
+					Extras:    map[string]interface{}{},
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						HasOptions: true,
+						Select:     map[string]int32{"trainers.id": 1, "trainers.name": 1, "pokemons.id": 1, "pokemons.name": 1},
+						Join: []*model.JoinOption{
+							{
+								Op:    utils.All,
+								Type:  "LEFT",
+								On:    map[string]interface{}{"trainers.id": "pokemons.trainer_id"},
+								Table: "pokemons",
+							},
+						},
+						Sort: []string{"pokemons.name"},
+					},
+					IsBatch:     false,
+					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{PostProcessAction: nil}, "pokemons": &model.PostProcess{PostProcessAction: nil}},
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}}}, new(model.SQLMetaData), nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", DBType: "db", From: "id", To: "trainer_id"}}}, true},
+			},
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "trainer_id": &model.FieldType{FieldName: "trainer_id", IsFieldTypeRequired: true, Kind: model.TypeID, IsForeign: true, JointTable: &model.TableProperties{Table: "trainers", To: "id"}}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								trainers(sort: ["pokemons.name"]) @db {
+									id
+									name
+									pokemons {
+										id
+										name
+									}
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"trainers": []interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "2", "name": "pikachu"}, map[string]interface{}{"id": "1", "name": "squirtle"}}}}},
+	},
+
+	{
 		name: "Query: Performing joins on the fly",
 		crudMockArgs: []mockArgs{
 			{
@@ -2724,12 +2791,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, new(model.SQLMetaData), nil},
 			},
 			{
 				method:         "IsPreparedQueryPresent",
@@ -2747,12 +2814,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, new(model.SQLMetaData), nil},
 			},
 			{
 				method: "Read",
@@ -2765,12 +2832,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"pokemons.id": 1, "pokemons.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -2843,12 +2910,12 @@ var queryTestCases = []tests{
 					GroupBy:   []interface{}{},
 					Operation: utils.All,
 					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
+						Select: map[string]int32{"trainers.id": 1, "trainers.name": 1},
 					},
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"trainers": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, new(model.SQLMetaData), nil},
 			},
 			{
 				method:         "IsPreparedQueryPresent",
@@ -2871,7 +2938,7 @@ var queryTestCases = []tests{
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, new(model.SQLMetaData), nil},
 			},
 			{
 				method: "Read",
@@ -2889,7 +2956,7 @@ var queryTestCases = []tests{
 					IsBatch:     true,
 					PostProcess: map[string]*model.PostProcess{"pokemons": &model.PostProcess{}},
 				}, model.RequestParams{}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, new(model.SQLMetaData), nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{

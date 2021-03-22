@@ -1,5 +1,7 @@
 package realtime
 
+import "github.com/spaceuptech/space-cloud/gateway/model"
+
 type schemaInterface interface {
-	CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool)
+	GetSchema(dbAlias, col string) (model.Fields, bool)
 }

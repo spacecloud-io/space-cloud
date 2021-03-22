@@ -52,6 +52,13 @@ func getJWKRefreshTime(url string) (*jwkSecret, error) {
 		var cacheTime string
 		for _, value := range strings.Split(values, ",") {
 			value = strings.TrimSpace(value)
+
+			// Make default cache time 5 minutes
+			if value == "no-cache" {
+				cacheTime = strconv.Itoa(5 * 60)
+				break
+			}
+
 			if strings.HasPrefix(value, "max-age") {
 				cacheTime = strings.Split(value, "=")[1]
 				break
@@ -63,7 +70,7 @@ func getJWKRefreshTime(url string) (*jwkSecret, error) {
 		}
 		duration, err := strconv.Atoi(cacheTime)
 		if err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to process jwt url (%s), Cache-control header contains data of inavlid type expecting string", url), nil, nil)
+			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to process jwt url (%s), Cache-control header contains data of inavlid type expecting string", url), err, nil)
 		}
 		obj.refreshTime = time.Now().Add(time.Duration(duration) * time.Second)
 		return obj, nil
@@ -199,7 +206,19 @@ func (j *JWT) fetchJWKRoutine(t time.Time) {
 				_ = helpers.Logger.LogError("", fmt.Sprintf("Unable to refresh jwk keys having kid (%s) and url (%s)", kid, secret.url), err, nil)
 				continue
 			}
+			jwkSecretInfo.audience = secret.audience
+			jwkSecretInfo.issuer = secret.issuer
 			j.jwkSecrets[kid] = jwkSecretInfo
+			// Delete kids of existing JWK url
+			for key, value := range j.mapJwkKidToSecretKid {
+				if value == kid {
+					delete(j.mapJwkKidToSecretKid, key)
+				}
+			}
+			// Add new kids to existing JWK url
+			for _, key := range jwkSecretInfo.set.Keys {
+				j.mapJwkKidToSecretKid[key.KeyID()] = kid
+			}
 		}
 	}
 }

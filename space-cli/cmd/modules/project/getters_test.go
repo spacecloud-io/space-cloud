@@ -37,7 +37,7 @@ func TestGetProjectConfig(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -76,7 +76,7 @@ func TestGetProjectConfig(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/*", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -111,7 +111,7 @@ func TestGetProjectConfig(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject", map[string]string{"id": "myproject"}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -146,7 +146,7 @@ func TestGetProjectConfig(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
 						Result: []interface{}{map[string]interface{}{

@@ -48,7 +48,8 @@ func Commands() []*cobra.Command {
 }
 
 func actionDeploy(cmd *cobra.Command, args []string) error {
-	projectID := viper.GetString("project")
+	projectID, _ := utils.GetProjectID()
+
 	dockerFilePath := viper.GetString("docker-file")
 	dockerImage := viper.GetString("image-name")
 	serviceFilePath := viper.GetString("service-file")

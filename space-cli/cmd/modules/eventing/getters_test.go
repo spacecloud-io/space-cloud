@@ -38,7 +38,7 @@ func TestGetEventingTrigger(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/eventing/triggers", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -71,7 +71,7 @@ func TestGetEventingTrigger(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/eventing/triggers", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -146,7 +146,7 @@ func TestGetEventingConfig(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/eventing/config", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -179,7 +179,7 @@ func TestGetEventingConfig(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/eventing/config", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -251,7 +251,7 @@ func TestGetEventingSchema(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/eventing/schema", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -281,7 +281,7 @@ func TestGetEventingSchema(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/eventing/schema", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarchal"), model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -350,7 +350,7 @@ func TestGetEventingSecurityRule(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/eventing/rules", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -381,7 +381,7 @@ func TestGetEventingSecurityRule(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/eventing/rules", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
 						Result: []interface{}{map[string]interface{}{

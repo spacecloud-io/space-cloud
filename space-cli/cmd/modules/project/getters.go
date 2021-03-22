@@ -21,7 +21,7 @@ func GetProjectConfig(project, commandName string, params map[string]string) ([]
 	url := fmt.Sprintf("/v1/config/projects/%s", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.MakeHTTPRequest(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 

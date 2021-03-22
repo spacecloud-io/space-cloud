@@ -3,21 +3,27 @@ package auth
 import (
 	"context"
 	"crypto/aes"
-	"crypto/cipher"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
-	"text/template"
 
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 )
+
+// MatchRule checks if the rule is matched or not
+func (m *Module) MatchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	return m.matchRule(ctx, project, rule, args, auth, returnWhere)
+}
 
 func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
 	if project != m.project {
@@ -78,8 +84,12 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 
 	var token string
 	var err error
-	if len(rule.Claims) > 0 {
-		token, err = m.jwt.CreateToken(ctx, rule.Claims)
+	if rule.Claims != "" {
+		obj, err := m.executeTemplate(ctx, rule, rule.Claims, newArgs)
+		if err != nil {
+			return err
+		}
+		token, err = m.jwt.CreateToken(ctx, obj.(map[string]interface{}))
 		if err != nil {
 			return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to create new token used by the webhook url in security rule (Webhook)", err, nil))
 		}
@@ -89,26 +99,9 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 
 	var obj interface{}
 	if rule.ReqTmpl != "" {
-		switch rule.Template {
-		// If nothing provided default templating engine is go
-		case config.TemplatingEngineGo, "":
-			// Create a new template object
-			t := template.New(rule.Name)
-			t = t.Funcs(tmpl2.CreateGoFuncMaps(m))
-			t, err = t.Parse(rule.ReqTmpl)
-			if err != nil {
-				return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse provided template in security rule (Webhook)", err, nil))
-			}
-			if rule.OpFormat == "" {
-				rule.OpFormat = "json"
-			}
-			obj, err = tmpl2.GoTemplate(ctx, t, rule.OpFormat, newArgs["token"].(string), newArgs["auth"], args["args"])
-			if err != nil {
-				return formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to execute provided template in security rule (Webhook)", err, nil))
-			}
-		default:
-			helpers.Logger.LogWarn(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step for security rule (Webhook) & using the default body.", rule.Template), nil)
-			obj = newArgs
+		obj, err = m.executeTemplate(ctx, rule, rule.ReqTmpl, newArgs)
+		if err != nil {
+			return err
 		}
 	} else {
 		obj = newArgs
@@ -144,7 +137,7 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 
 	// Execute the read request
 	attr := map[string]string{"project": project, "db": rule.DB, "col": rule.Col}
-	data, err := crud.Read(ctx, rule.DB, rule.Col, req, model.RequestParams{Claims: auth, Resource: "db-read", Op: "access", Attributes: attr})
+	data, _, err := crud.Read(ctx, rule.DB, rule.Col, req, model.RequestParams{Claims: auth, Resource: "db-read", Op: "access", Attributes: attr})
 	if err != nil {
 		return nil, formatError(ctx, rule, err)
 	}
@@ -377,7 +370,7 @@ func (m *Module) matchDecrypt(ctx context.Context, projectID string, rule *confi
 				return nil, formatError(ctx, rule, err)
 			}
 			decrypted := make([]byte, len(decodedValue))
-			err1 := decryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
+			err1 := authHelpers.DecryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
 			if err1 != nil {
 				return nil, formatError(ctx, rule, helpers.Logger.LogError(helpers.GetRequestID(ctx), "error decrypting value in matchDecrypt", err, nil))
 			}
@@ -390,16 +383,6 @@ func (m *Module) matchDecrypt(ctx context.Context, projectID string, rule *confi
 		}
 	}
 	return actions, nil
-}
-
-func decryptAESCFB(dst, src, key, iv []byte) error {
-	aesBlockDecrypter, err := aes.NewCipher([]byte(key))
-	if err != nil {
-		return err
-	}
-	aesDecrypter := cipher.NewCFBDecrypter(aesBlockDecrypter, iv)
-	aesDecrypter.XORKeyStream(dst, src)
-	return nil
 }
 
 func (m *Module) matchHash(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {

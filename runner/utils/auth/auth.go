@@ -17,9 +17,6 @@ type Config struct {
 	// For authentication of runner and store
 	Secret string
 
-	// For proxy authentication
-	ProxySecret string
-
 	// disable authentication while development
 	IsDev bool
 }

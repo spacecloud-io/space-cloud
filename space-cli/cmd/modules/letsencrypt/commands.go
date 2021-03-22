@@ -61,3 +61,25 @@ func actionGenerateLetsEncryptDomain(cmd *cobra.Command, args []string) error {
 
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
+
+// DeleteSubCommands is the list of commands the ingress module exposes
+func DeleteSubCommands() []*cobra.Command {
+
+	var getletsencrypt = &cobra.Command{
+		Use:     "letsencrypt",
+		RunE:    actionDeleteLetsEncrypt,
+		Example: "space-cli delete letsencrypt --project myproject",
+	}
+
+	return []*cobra.Command{getletsencrypt}
+}
+
+func actionDeleteLetsEncrypt(cmd *cobra.Command, args []string) error {
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	return deleteLetsencryptDomains(project)
+}

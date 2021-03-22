@@ -62,7 +62,7 @@ type FileStore interface {
 }
 
 // SetConfig set the rules and secret key required by the filestore block
-func (m *Module) SetConfig(project string, conf *config.FileStore) error {
+func (m *Module) SetConfig(project string, conf *config.FileStoreConfig) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -154,7 +154,7 @@ func (m *Module) IsEnabled() bool {
 	return m.enabled
 }
 
-func initBlock(conf *config.FileStore) (FileStore, error) {
+func initBlock(conf *config.FileStoreConfig) (FileStore, error) {
 	switch utils.FileStoreType(conf.StoreType) {
 	case utils.Local:
 		return local.Init(conf.Conn)

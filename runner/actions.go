@@ -25,7 +25,6 @@ func actionRunner(c *cli.Context) error {
 
 	// Get jwt config
 	jwtSecret := c.String("jwt-secret")
-	jwtProxySecret := c.String("jwt-proxy-secret")
 
 	// Get driver config
 	driverType := c.String("driver")
@@ -35,7 +34,7 @@ func actionRunner(c *cli.Context) error {
 	isDev := c.Bool("dev")
 	isMetricDisabled := c.Bool("disable-metrics")
 
-	artifactAddr := c.String("artifact-addr")
+	prometheusAddr := c.String("prometheus-addr")
 	clusterName := c.String("cluster-name")
 	if driverType == model.DockerType {
 		helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Runner is starting in cluster (%s)", clusterName), nil)
@@ -52,15 +51,14 @@ func actionRunner(c *cli.Context) error {
 		ProxyPort:        proxyPort,
 		IsMetricDisabled: isMetricDisabled,
 		Auth: &auth.Config{
-			Secret:      jwtSecret,
-			ProxySecret: jwtProxySecret,
-			IsDev:       isDev,
+			Secret: jwtSecret,
+			IsDev:  isDev,
 		},
 		Driver: &driver.Config{
 			DriverType:     model.DriverType(driverType),
 			ConfigFilePath: driverConfig,
 			IsInCluster:    !outsideCluster,
-			ArtifactAddr:   artifactAddr,
+			PrometheusAddr: prometheusAddr,
 			ClusterName:    clusterName,
 		},
 	})

@@ -26,6 +26,18 @@ func GetSubCommands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('follow')", nil)
 			}
+			err = viper.BindPFlag("since", cmd.Flags().Lookup("since"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('since')", nil)
+			}
+			err = viper.BindPFlag("since-time", cmd.Flags().Lookup("since-time"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('since-time')", nil)
+			}
+			err = viper.BindPFlag("tail", cmd.Flags().Lookup("tail"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('tail')", nil)
+			}
 		},
 		RunE: actionGetServiceLogs,
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -48,6 +60,10 @@ func GetSubCommands() []*cobra.Command {
 
 	getServiceLogs.Flags().StringP("task-id", "", "", "The unique id for the task")
 	getServiceLogs.Flags().BoolP("follow", "", false, "Follow log output")
+	getServiceLogs.Flags().StringP("since", "", "", "Only return logs newer than a relative duration like 5s, 2m, or 3h. Defaults to all logs. Only one of\nsince-time / since may be used.")
+	getServiceLogs.Flags().StringP("since-time", "", "", "Only return logs after a specific date (RFC3339). Defaults to all logs. Only one of since-time /\nsince may be used.")
+	getServiceLogs.Flags().StringP("tail", "", "", "Lines of recent log file to display. Defaults to -1 with no selector, showing all log lines otherwise")
+
 	if err := getServiceLogs.RegisterFlagCompletionFunc("task-id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		project, check := utils.GetProjectID()
 		if !check {

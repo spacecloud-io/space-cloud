@@ -39,7 +39,7 @@ func TestGetIngressRoutes(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -75,7 +75,7 @@ func TestGetIngressRoutes(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -111,7 +111,7 @@ func TestGetIngressRoutes(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -140,7 +140,7 @@ func TestGetIngressRoutes(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -195,7 +195,7 @@ func TestGetIngressRoutes(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -227,7 +227,7 @@ func TestGetIngressRoutes(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -276,7 +276,7 @@ func TestGetIngressRoutes(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -310,7 +310,7 @@ func TestGetIngressRoutes(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{
@@ -382,7 +382,7 @@ func TestGetIngressRoutes(t *testing.T) {
 			},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -451,7 +451,7 @@ func TestGetIngressGlobal(t *testing.T) {
 			args: args{commandName: "ingress-global", project: "project"},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/project/routing/ingress/global", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{errors.New("unable to unmarshall"), model.Response{
 						Result: []interface{}{map[string]interface{}{
@@ -468,7 +468,7 @@ func TestGetIngressGlobal(t *testing.T) {
 			args: args{commandName: "ingress-global", project: "project"},
 			transportMockArgs: []mockArgs{
 				{
-					method: "Get",
+					method: "MakeHTTPRequest",
 					args:   []interface{}{"GET", "/v1/config/projects/project/routing/ingress/global", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{

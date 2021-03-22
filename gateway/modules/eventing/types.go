@@ -12,6 +12,14 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+var limit int64 = 1000
+
+type queueUpdateEvent struct {
+	project, db, col string
+	req              *model.UpdateRequest
+	err              string
+}
+
 type mockHTTPInterface struct {
 	mock.Mock
 }
@@ -25,6 +33,16 @@ type mockCrudInterface struct {
 	mock.Mock
 }
 
+func (m *mockCrudInterface) GetSchema(dbAlias, col string) (model.Fields, bool) {
+	c := m.Called(dbAlias, col)
+	return c.Get(0).(model.Fields), c.Bool(1)
+}
+
+func (m *mockCrudInterface) GetDBType(dbAlias string) (string, error) {
+	c := m.Called(dbAlias)
+	return c.String(0), c.Error(1)
+}
+
 func (m *mockCrudInterface) InternalCreate(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest, isIgnoreMetrics bool) error {
 	c := m.Called(ctx, dbAlias, project, col, req, isIgnoreMetrics)
 	if err := c.Error(0); err != nil {
@@ -33,12 +51,12 @@ func (m *mockCrudInterface) InternalCreate(ctx context.Context, dbAlias, project
 	return nil
 }
 
-func (m *mockCrudInterface) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, error) {
+func (m *mockCrudInterface) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	c := m.Called(ctx, dbAlias, col, req)
 	if len(c) > 1 {
-		return c.Get(0).(interface{}), c.Error(1)
+		return c.Get(0).(interface{}), c.Get(1).(*model.SQLMetaData), c.Error(2)
 	}
-	return c.Get(0).(interface{}), nil
+	return c.Get(0).(interface{}), c.Get(1).(*model.SQLMetaData), nil
 }
 
 func (m *mockCrudInterface) InternalUpdate(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
@@ -50,7 +68,7 @@ type mockSyncmanEventingInterface struct {
 	mock.Mock
 }
 
-func (m *mockSyncmanEventingInterface) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
+func (m *mockSyncmanEventingInterface) GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error) {
 	c := m.Called(ctx, project, token)
 	return c.String(0), c.Error(1)
 }
@@ -83,17 +101,17 @@ func (m *mockSyncmanEventingInterface) MakeHTTPRequest(ctx context.Context, meth
 	return c.Error(0)
 }
 
-type mockAdminEventingInterface struct {
-	mock.Mock
-}
-
-func (m *mockAdminEventingInterface) GetInternalAccessToken() (string, error) {
-	c := m.Called()
-	return c.String(0), c.Error(1)
-}
-
 type mockAuthEventingInterface struct {
 	mock.Mock
+}
+
+func (m *mockAuthEventingInterface) MatchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}, returnWhere model.ReturnWhereStub) (*model.PostProcess, error) {
+	return nil, nil
+}
+
+func (m *mockAuthEventingInterface) CreateToken(ctx context.Context, tokenClaims model.TokenClaims) (string, error) {
+	c := m.Called(ctx, tokenClaims)
+	return c.String(0), c.Error(1)
 }
 
 func (m *mockAuthEventingInterface) IsEventingOpAuthorised(ctx context.Context, project, token string, event *model.QueueEventRequest) (model.RequestParams, error) {
@@ -109,38 +127,6 @@ func (m *mockAuthEventingInterface) GetSCAccessToken(context.Context) (string, e
 func (m *mockAuthEventingInterface) GetInternalAccessToken(context.Context) (string, error) {
 	c := m.Called()
 	return c.String(0), c.Error(1)
-}
-
-type mockSchemaEventingInterface struct {
-	mock.Mock
-}
-
-func (m *mockSchemaEventingInterface) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
-	panic("implement me")
-}
-
-func (m *mockSchemaEventingInterface) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
-	c := m.Called(dbAlias, col, obj, isFind)
-	return map[string]interface{}{}, c.Bool(1)
-}
-
-func (m *mockSchemaEventingInterface) Parser(crud config.Crud) (model.Type, error) {
-	c := m.Called(crud)
-	return nil, c.Error(1)
-}
-
-func (m *mockSchemaEventingInterface) SchemaValidator(ctx context.Context, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
-	c := m.Called(col, collectionFields, doc)
-	return nil, c.Error(1)
-}
-
-func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
-	c := m.Called(ctx, dbAlias, logicalDBName, tables)
-	return c.Error(0)
-}
-func (m *mockSchemaEventingInterface) GetSchema(dbAlias, col string) (model.Fields, bool) {
-	c := m.Called(dbAlias, col)
-	return c.Get(0).(model.Fields), c.Bool(1)
 }
 
 type mockFileStoreEventingInterface struct {

@@ -1,0 +1,47 @@
+[0m[[0m[0mdebug[0m] [0m[0mWaiting for threads to exit or System.exit to be called.[0m
+[0m[[0m[0mdebug[0m] [0m[0mGetting org.scala-sbt:compiler-bridge_2.12:1.3.5:compile for Scala 2.12.10[0m
+[0m[[0m[0mdebug[0m] [0m[0mWaiting for thread run-main-0 to terminate.[0m
+[0m[[0m[0minfo[0m] [0m[0mNon-compiled module 'compiler-bridge_2.12' for Scala 2.12.10. Compiling...[0m
+[0m[[0m[0mdebug[0m] [0m[0mCreating plain compiler interface for 2.12.10.[0m
+[0m[[0m[0mdebug[0m] [0m[0m  > Arguments: [0m
+[0m[[0m[0mdebug[0m] [0m[0m	-nowarn[0m
+[0m[[0m[0mdebug[0m] [0m[0m	-d[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ade6ba65[0m
+[0m[[0m[0mdebug[0m] [0m[0m	-bootclasspath[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/Users/YourTechBud/.sbt/boot/scala-2.12.10/lib/scala-library.jar[0m
+[0m[[0m[0mdebug[0m] [0m[0m	-classpath[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/Users/YourTechBud/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-sbt/compiler-interface/1.3.5/compiler-interface-1.3.5.jar:/Users/YourTechBud/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/com/google/protobuf/protobuf-java/3.7.0/protobuf-java-3.7.0.jar:/Users/YourTechBud/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-sbt/util-interface/1.3.0/util-interface-1.3.0.jar:/Users/YourTechBud/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-sbt/compiler-bridge_2.12/1.3.5/compiler-bridge_2.12-1.3.5-sources.jar:/Users/YourTechBud/.sbt/boot/scala-2.12.10/lib/scala-compiler.jar:/Users/YourTechBud/.sbt/boot/scala-2.12.10/lib/jline.jar:/Users/YourTechBud/.sbt/boot/scala-2.12.10/lib/scala-reflect.jar:/Users/YourTechBud/.sbt/boot/scala-2.12.10/lib/jansi.jar:/Users/YourTechBud/.sbt/boot/scala-2.12.10/lib/scala-xml_2.12.jar[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/API.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/Analyzer.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/CallbackGlobal.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/ClassName.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/Command.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/Compat.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/CompilerInterface.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/ConsoleInterface.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/DelegatingReporter.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/Dependency.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/ExtractAPI.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/ExtractUsedNames.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/GlobalHelpers.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/InteractiveConsoleFactory.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/InteractiveConsoleHelper.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/InteractiveConsoleInterface.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/InteractiveConsoleResponse.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/JarUtils.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/JavaUtils.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/LocalToNonLocalClass.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/LocateClassFile.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/Log.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/Message.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	/var/folders/pk/5m6_54cs3bl_7b8q5s_xvb7h0000gn/T/sbt_ff902a68/xsbt/ScaladocInterface.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m      [0m
+[0m[[0m[0minfo[0m] [0m[0m  Compilation completed in 7.404s.[0m
+[0m[[0m[0mdebug[0m] [0m[0mGetting org.scala-sbt:compiler-bridge_2.12:1.3.5:compile for Scala 2.12.10[0m
+[0m[[0m[0minfo[0m] [0m[0mStarting scala interpreter...[0m
+[0m[[0m[33mwarn[0m] [0m[0mRun canceled.[0m
+[0m[[0m[0mdebug[0m] [0m[0mNot interrupting system thread Thread[process reaper,10,system][0m
+[0m[[0m[0mdebug[0m] [0m[0mInterrupting thread Common-Cleaner[0m
+[0m[[0m[0mdebug[0m] [0m[0m	Interrupted Common-Cleaner[0m
+[0m[[0m[0mdebug[0m] [0m[0mInterrupting thread run-main-0[0m
+[0m[[0m[0mdebug[0m] [0m[0m	Interrupted run-main-0[0m

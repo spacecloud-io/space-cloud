@@ -13,7 +13,7 @@ func (s *SQL) Batch(ctx context.Context, req *model.BatchRequest) ([]int64, erro
 	counts := make([]int64, len(req.Requests))
 
 	// Create a transaction object
-	tx, err := s.client.BeginTxx(ctx, nil) // TODO - Write *sqlx.TxOption instead of nil
+	tx, err := s.getClient().BeginTxx(ctx, nil) // TODO - Write *sqlx.TxOption instead of nil
 	if err != nil {
 		return counts, err
 	}

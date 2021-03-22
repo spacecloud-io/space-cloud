@@ -21,7 +21,7 @@ func (m *Module) ProcessTransmittedEvents(eventDocs []*model.EventDocument) {
 
 	for _, eventDoc := range eventDocs {
 		if eventDoc.Token >= start && eventDoc.Token <= end {
-			timestamp, err := time.Parse(time.RFC3339, eventDoc.Timestamp)
+			timestamp, err := time.Parse(time.RFC3339Nano, eventDoc.Timestamp)
 			if err != nil {
 				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Could not parse (%s) in event doc (%s) as time", eventDoc.Timestamp, eventDoc.ID), err, nil)
 				continue

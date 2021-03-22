@@ -22,25 +22,10 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getServices = &cobra.Command{
-		Use:     "remote-services",
-		Aliases: []string{"remote-service"},
-		RunE:    actionGetRemoteServices,
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			project, check := utils.GetProjectID()
-			if !check {
-				utils.LogDebug("Project not specified in flag", nil)
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			objs, err := GetRemoteServices(project, "remote-service", map[string]string{})
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveDefault
-			}
-			var ids []string
-			for _, v := range objs {
-				ids = append(ids, v.Meta["id"])
-			}
-			return ids, cobra.ShellCompDirectiveDefault
-		},
+		Use:               "remote-services",
+		Aliases:           []string{"remote-service"},
+		RunE:              actionGetRemoteServices,
+		ValidArgsFunction: remoteServicesAutoCompleteFun,
 	}
 	return []*cobra.Command{getServices}
 }
@@ -80,4 +65,32 @@ func actionGenerateService(cmd *cobra.Command, args []string) error {
 	}
 
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+}
+
+// DeleteSubCommands is the list of commands the remote-services module exposes
+func DeleteSubCommands() []*cobra.Command {
+
+	var getServices = &cobra.Command{
+		Use:               "remote-services",
+		Aliases:           []string{"remote-service"},
+		RunE:              actionDeleteRemoteServices,
+		ValidArgsFunction: remoteServicesAutoCompleteFun,
+		Example:           "space-cli delete remote-services serviceID --project myproject",
+	}
+	return []*cobra.Command{getServices}
+}
+
+func actionDeleteRemoteServices(cmd *cobra.Command, args []string) error {
+	// Get the project
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+
+	prefix := ""
+	if len(args) != 0 {
+		prefix = args[0]
+	}
+
+	return deleteRemoteService(project, prefix)
 }

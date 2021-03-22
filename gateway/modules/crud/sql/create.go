@@ -24,7 +24,7 @@ func (s *SQL) Create(ctx context.Context, col string, req *model.CreateRequest) 
 	}
 
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Executing create query", map[string]interface{}{"sqlQuery": sqlQuery, "queryArgs": args})
-	res, err := doExecContext(ctx, sqlQuery, args, s.client)
+	res, err := doExecContext(ctx, sqlQuery, args, s.getClient())
 	if err != nil {
 		return 0, err
 	}

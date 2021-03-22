@@ -31,15 +31,6 @@ type BatchIntentHook func(ctx context.Context, dbAlias string, req *BatchRequest
 // StageEventHook is used to stage an intended event
 type StageEventHook func(ctx context.Context, intent *EventIntent, err error)
 
-// CrudHooks is the struct to store the hooks related to the crud module
-type CrudHooks struct {
-	Create CreateIntentHook
-	Update UpdateIntentHook
-	Delete DeleteIntentHook
-	Batch  BatchIntentHook
-	Stage  StageEventHook
-}
-
 // EventingModule is the interface to mock the eventing module
 type EventingModule interface {
 	CreateFileIntentHook(ctx context.Context, req *CreateFileRequest) (*EventIntent, error)

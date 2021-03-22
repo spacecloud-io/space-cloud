@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
@@ -17,6 +18,7 @@ import (
 	_ "github.com/lib/pq"                               // Import for postgres
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	authHelpers "github.com/spaceuptech/space-cloud/gateway/modules/auth/helpers"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -25,6 +27,14 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 	dbType := s.dbType
 	if dbType == string(model.SQLServer) {
 		dbType = string(model.Postgres)
+	}
+
+	if req.Options == nil {
+		req.Options = &model.ReadOptions{}
+	}
+	if req.Options.Limit == nil {
+		req.Options.Limit = s.queryFetchLimit
+		req.Options.HasOptions = true
 	}
 
 	dialect := goqu.Dialect(dbType)
@@ -43,18 +53,6 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 			return "", nil, errors.New("select cannot be nil when using joins")
 		}
 
-		// Check if the select clause exists
-		if req.Options.Select != nil {
-			for key := range req.Options.Select {
-				if !isJoin {
-					selArray = append(selArray, key)
-					continue
-				}
-
-				arr := strings.Split(key, ".")
-				selArray = append(selArray, goqu.I(key).As(strings.Join(arr, "__")))
-			}
-		}
 		if req.Options.Skip != nil {
 			query = query.Offset(uint(*req.Options.Skip))
 		}
@@ -83,11 +81,27 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 			query = query.Order(orderBys...)
 		}
 
-		q, err := s.processJoins(ctx, query, req.Options.Join)
+		q, err := s.processJoins(ctx, query, req.Options.Join, req.Options.Select, len(req.Aggregate) > 0)
 		if err != nil {
 			return "", nil, err
 		}
 		query = q
+		// Check if the select clause exists
+		if req.Options.Select != nil {
+			for key := range req.Options.Select {
+				if key == "_dbFetchTs" {
+					continue
+				}
+
+				if !isJoin {
+					selArray = append(selArray, key)
+					continue
+				}
+
+				arr := strings.Split(key, ".")
+				selArray = append(selArray, goqu.I(key).As(strings.Join(arr, "__")))
+			}
+		}
 	}
 
 	switch req.Operation {
@@ -115,7 +129,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 				case "avg":
 					selArray = append(selArray, goqu.AVG(getAggregateColumnName(column)).As(asColumnName))
 				case "count":
-					selArray = append(selArray, goqu.COUNT("*").As(asColumnName))
+					selArray = append(selArray, goqu.COUNT(getAggregateColumnName(column)).As(asColumnName))
 				default:
 					return "", nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown aggregate funcion (%s)", function), nil, map[string]interface{}{})
 				}
@@ -123,11 +137,6 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		}
 		query = query.Select(selArray...)
 		if len(req.GroupBy) > 0 {
-			for _, group := range req.GroupBy {
-				if arr := strings.Split(group.(string), "."); len(arr) > 1 && arr[0] != col && req.Options.ReturnType != "table" {
-					return "", nil, fmt.Errorf("use `returnType` `table` to perform group by on joint tables")
-				}
-			}
 			query = query.GroupBy(req.GroupBy...)
 		}
 	}
@@ -140,6 +149,13 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 
+	if model.DBType(s.dbType) == model.SQLServer {
+		sqlString, err = mutateSQLServerLimitAndOffsetOperation(sqlString, req)
+		if err != nil {
+			return "", nil, err
+		}
+	}
+
 	for _, v := range regexArr {
 		switch s.dbType {
 		case "mysql":
@@ -148,6 +164,8 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		case "postgres":
 			vReplaced := strings.Replace(v, "=", "~", -1)
 			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
+		case "sqlserver":
+			return "", nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "SQL server doesn't support regex operation", nil, nil)
 		}
 
 	}
@@ -159,7 +177,12 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 }
 
 func getAggregateColumnName(column string) string {
-	return strings.Split(column, ":")[1]
+	columnName := strings.Split(column, ":")[1]
+	// NOTE: This is a special case for count aggregate operation
+	if strings.HasSuffix(columnName, "*") {
+		return "*"
+	}
+	return columnName
 }
 
 func getAggregateAsColumnName(function, column string) string {
@@ -168,6 +191,10 @@ func getAggregateAsColumnName(function, column string) string {
 
 	returnField := arr[0]
 	column = arr[1]
+	// NOTE: This is a special case for count aggregate operation
+	if strings.HasSuffix(column, "*") {
+		column = strings.Replace(column, "*", returnField, 1)
+	}
 	if len(arr) == 3 && arr[2] == "table" {
 		format = "table"
 	}
@@ -184,14 +211,14 @@ func splitAggregateAsColumnName(asColumnName string) (format, returnField, funct
 }
 
 // Read query document(s) from the database
-func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
-	return s.read(ctx, col, req, s.client)
+func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
+	return s.read(ctx, col, req, s.getClient())
 }
 
-func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, error) {
+func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	sqlString, args, err := s.generateReadQuery(ctx, col, req)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, nil, nil, err
 	}
 
 	if col != utils.TableInvocationLogs && col != utils.TableEventingLogs {
@@ -201,21 +228,26 @@ func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, exec
 	return s.readExec(ctx, col, sqlString, args, executor, req)
 }
 
-func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, error) {
+func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interface{}, executor executor, req *model.ReadRequest) (int64, interface{}, map[string]map[string]string, *model.SQLMetaData, error) {
 	operation := req.Operation
 	isAggregate := len(req.Aggregate) > 0
-
+	metaData := new(model.SQLMetaData)
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, nil, nil, err
 	}
 	defer func() { _ = stmt.Close() }()
 
+	start := time.Now()
 	rows, err := stmt.QueryxContext(ctx, args...)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, nil, nil, err
 	}
 	defer func() { _ = rows.Close() }()
+	metaData.QueryTime = time.Since(start).String()
+	metaData.SQL = sqlString
+	metaData.Col = col
+	metaData.Args = args
 
 	var rowTypes []*sql.ColumnType
 
@@ -228,12 +260,12 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 	case utils.Count:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {
-			return 0, nil, errors.New("SQL: No response from db")
+			return 0, nil, nil, nil, errors.New("SQL: No response from db")
 		}
 
 		err := rows.MapScan(mapping)
 		if err != nil {
-			return 0, nil, err
+			return 0, nil, nil, nil, err
 		}
 
 		switch s.GetDBType() {
@@ -242,37 +274,15 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 		}
 
 		for _, v := range mapping {
-			return v.(int64), v, nil
+			return v.(int64), v, make(map[string]map[string]string), metaData, nil
 		}
 
-		return 0, nil, errors.New("unknown error occurred")
+		return 0, nil, nil, nil, errors.New("unknown error occurred")
 
-	case utils.One:
-		mapping := make(map[string]interface{})
-		if !rows.Next() {
-			return 0, nil, errors.New("SQL: No response from db")
-		}
-
-		err := rows.MapScan(mapping)
-		if err != nil {
-			return 0, nil, err
-		}
-
-		switch s.GetDBType() {
-		case model.MySQL, model.Postgres, model.SQLServer:
-			mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
-		}
-
-		processAggregate(mapping, mapping, isAggregate)
-		if req.PostProcess != nil {
-			_ = s.auth.PostProcessMethod(ctx, req.PostProcess[col], mapping)
-		}
-
-		return 1, mapping, nil
-
-	case utils.All, utils.Distinct:
+	case utils.All, utils.Distinct, utils.One:
 		array := make([]interface{}, 0)
 		mapping := make(map[string]map[string]interface{})
+		jointMapping := make(map[string]map[string]string)
 		var count int64
 		for rows.Next() {
 
@@ -282,7 +292,7 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			row := make(map[string]interface{})
 			err := rows.MapScan(row)
 			if err != nil {
-				return 0, nil, err
+				return 0, nil, nil, nil, err
 			}
 
 			switch s.GetDBType() {
@@ -291,26 +301,44 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			}
 
 			if req.Options == nil || req.Options.ReturnType == "table" || len(req.Options.Join) == 0 {
-				processAggregate(row, row, isAggregate)
+				processAggregate(row, row, "*", isAggregate)
+
+				if req.Options.Debug {
+					row["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+				}
+
 				array = append(array, row)
 				continue
 			}
 
-			s.processRows(ctx, []string{col}, isAggregate, row, req.Options.Join, mapping, &array, req.PostProcess)
+			s.processRows(ctx, req.Options.Debug, []string{col}, isAggregate, row, req.Options.Join, mapping, &array, req.PostProcess, jointMapping)
 		}
 
-		return count, array, nil
+		if operation == utils.One {
+			if count == 0 {
+				return 0, nil, nil, nil, errors.New("SQL: No response from db")
+			}
+			return 1, array[0], jointMapping, metaData, nil
+		}
+
+		return count, array, jointMapping, metaData, nil
 
 	default:
-		return 0, nil, utils.ErrInvalidParams
+		return 0, nil, nil, nil, utils.ErrInvalidParams
 	}
 }
-func processAggregate(row, m map[string]interface{}, isAggregate bool) {
+func processAggregate(row, m map[string]interface{}, tableName string, isAggregate bool) {
 	if isAggregate {
 		funcMap := map[string]interface{}{}
 		for asColumnName, value := range row {
 			format, returnField, functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
 			if isAggregateColumn {
+				// Only process aggregated field if it belongs to the current table
+				if arr := strings.Split(columnName, "__"); len(arr) == 2 {
+					if arr[0] != tableName && tableName != "*" {
+						continue
+					}
+				}
 				delete(row, asColumnName)
 
 				if format == "table" {
@@ -322,12 +350,7 @@ func processAggregate(row, m map[string]interface{}, isAggregate bool) {
 				funcValue, ok := funcMap[functionName]
 				if !ok {
 					// set new function
-					// NOTE: This case occurs for count function with no column name (using * operator instead)
-					if columnName == "" {
-						funcMap[functionName] = value
-					} else {
-						funcMap[functionName] = map[string]interface{}{columnName: value}
-					}
+					funcMap[functionName] = map[string]interface{}{columnName: value}
 					continue
 				}
 				// add new column to existing function
@@ -339,7 +362,9 @@ func processAggregate(row, m map[string]interface{}, isAggregate bool) {
 		}
 	}
 }
-func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool, row map[string]interface{}, join []model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess) {
+func (s *SQL) processRows(ctx context.Context, isDebug bool, table []string, isAggregate bool, row map[string]interface{}, join []*model.JoinOption, mapping map[string]map[string]interface{}, finalArray *[]interface{}, postProcess map[string]*model.PostProcess, joinMapping map[string]map[string]string) {
+	// row obtained from database contains flattened result of all tables(if join was specified)
+	// m variable will only store result of specific table
 	m := map[string]interface{}{}
 	keyMap := map[string]interface{}{}
 
@@ -348,6 +373,13 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 	// Get keys of this table
 	for k, v := range row {
 		a := strings.Split(k, "__")
+		if a[0] == utils.GraphQLAggregate {
+			_, _, _, columnName, _ := splitAggregateAsColumnName(k)
+			if arr := strings.Split(columnName, "__"); len(arr) == 2 {
+				a[0] = arr[0] // table name
+				a[1] = arr[1] // column name
+			}
+		}
 		if utils.StringExists(table, a[0]) {
 			keyMap[a[1]] = v
 		}
@@ -373,12 +405,13 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 
 		// Perform post processing
 		if postProcess != nil {
-			_ = s.auth.PostProcessMethod(ctx, postProcess[table[length]], m)
+			_ = authHelpers.PostProcessMethod(ctx, s.aesKey, postProcess[table[length]], m)
 		}
 
 		// Process aggregate field only if its the root table that we are processing
-		if length == 0 {
-			processAggregate(row, m, isAggregate)
+		processAggregate(row, m, table[length], isAggregate)
+		if isDebug && length == 0 {
+			m["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 		}
 	}
 
@@ -389,16 +422,33 @@ func (s *SQL) processRows(ctx context.Context, table []string, isAggregate bool,
 	// Process joint tables for rows
 	for _, j := range join {
 		var arr []interface{}
-
+		utils.GenerateJoinKeys(j.Table, j.On, row, joinMapping)
 		// Check if table name is already present in parent row. If not, create a new array
-		if arrTemp, p := m[j.Table]; p {
-			arr = arrTemp.([]interface{})
+		tableName := j.Table
+		if j.As != "" {
+			tableName = j.As
+		}
+		if arrTemp, p := m[tableName]; p {
+			switch t := arrTemp.(type) {
+			case []interface{}:
+				arr = t
+			case map[string]interface{}:
+				arr = []interface{}{t}
+			}
 		} else {
 			arr = []interface{}{}
 		}
 
 		// Recursively call the same function again
-		s.processRows(ctx, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess)
-		m[j.Table] = arr
+		s.processRows(ctx, isDebug, append(table, j.Table), isAggregate, row, j.Join, mapping, &arr, postProcess, joinMapping)
+		if j.Op == utils.All || j.Op == "" {
+			m[tableName] = arr
+		} else {
+			if len(arr) > 0 {
+				m[tableName] = arr[0]
+			} else {
+				m[tableName] = map[string]interface{}{}
+			}
+		}
 	}
 }

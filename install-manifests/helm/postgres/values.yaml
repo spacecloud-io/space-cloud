@@ -1,0 +1,26 @@
+# Default values for mongo
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+credentials:
+  password: mysecretpassword
+  username: postgres
+
+# name used for creating kubernetes resources
+dbAlias: "postgres"
+
+# Storage size of mysql
+size: "10Gi"
+
+image:
+  name: "postgres"
+  tag: "latest"
+  pullPolicy: IfNotPresent # IfNotPresent | Always
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"

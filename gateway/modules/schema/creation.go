@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 
+	"github.com/go-test/deep"
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	schemaHelpers "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -32,7 +33,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, logical
 		return nil
 	}
 
-	currentSchema, err := s.Inspector(ctx, dbAlias, dbType, logicalDBName, tableName)
+	currentSchema, err := s.Inspector(ctx, dbAlias, dbType, logicalDBName, tableName, parsedSchema[dbAlias])
 	if err != nil {
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Schema Inspector Error", map[string]interface{}{"error": err.Error()})
 	}
@@ -110,6 +111,9 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			continue
 		}
 		for currentFieldKey, currentFieldStruct := range currentColValue {
+			if currentFieldStruct.IsLinked {
+				continue
+			}
 			realField, ok := realColValue[currentFieldKey]
 			if !ok || realField.IsLinked {
 				// remove field from current table
@@ -149,7 +153,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		}
 
 		currentColumnInfo, ok := currentTableInfo[realColumnName]
-		columnType, err := getSQLType(ctx, realColumnInfo.TypeIDSize, dbType, realColumnInfo.Kind)
+		columnType, err := getSQLType(ctx, dbType, realColumnInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -175,10 +179,13 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 
 		} else {
 			if !realColumnInfo.IsLinked {
-				if c.realColumnInfo.Kind != c.currentColumnInfo.Kind || (c.realColumnInfo.Kind == model.TypeID && c.currentColumnInfo.Kind == model.TypeID && c.realColumnInfo.TypeIDSize != c.currentColumnInfo.TypeIDSize) {
+				if arr := deep.Equal(c.realColumnInfo.Args, c.currentColumnInfo.Args); c.realColumnInfo.Kind != c.currentColumnInfo.Kind || (c.realColumnInfo.TypeIDSize != c.currentColumnInfo.TypeIDSize) || (c.currentColumnInfo.Args != nil && len(arr) > 0) {
 					// As we are making sure that tables can only be created with primary key, this condition will occur if primary key is removed from a field
-					if !c.realColumnInfo.IsPrimary && c.currentColumnInfo.IsPrimary {
+					if c.realColumnInfo.IsPrimary {
 						return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Cannot change type of field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), nil, nil)
+					}
+					if !c.realColumnInfo.IsPrimary && c.currentColumnInfo.IsPrimary {
+						return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf(`Cannot remove primary constraint on field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), nil, nil)
 					}
 					// for changing the type of column, drop the column then add new column
 					queries := c.modifyColumnType(dbType)
@@ -202,44 +209,39 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 
 	for indexName, fields := range realIndexMap {
 		if _, ok := currentIndexMap[indexName]; !ok {
-			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexMap))
+			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexTableProperties))
 			continue
 		}
-		if !reflect.DeepEqual(fields.IndexMap, cleanIndexMap(currentIndexMap[indexName].IndexMap)) {
+		if arr := deep.Equal(fields.IndexTableProperties, cleanIndexMap(currentIndexMap[indexName].IndexTableProperties)); len(arr) > 0 {
 			batchedQueries = append(batchedQueries, s.removeIndex(dbType, dbAlias, logicalDBName, tableName, currentIndexMap[indexName].IndexName))
-			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexMap))
+			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexTableProperties))
 		}
 	}
 
 	return batchedQueries, nil
 }
 
-func cleanIndexMap(v []*model.FieldType) []*model.FieldType {
-	for _, fieldType := range v {
-		fieldType.IndexInfo.ConstraintName = ""
+func cleanIndexMap(v []*model.TableProperties) []*model.TableProperties {
+	for _, indexInfo := range v {
+		indexInfo.ConstraintName = ""
 	}
 	return v
 }
 
 // SchemaModifyAll modifies all the tables provided
-func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
+func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, dbSchemas config.DatabaseSchemas) error {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	crud := config.Crud{}
-	crud[dbAlias] = &config.CrudStub{
-		Enabled:     true,
-		Collections: tables,
-	}
-	parsedSchema, err := s.Parser(crud)
+	parsedSchema, err := schemaHelpers.Parser(dbSchemas)
 	if err != nil {
-		return err
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable parse provided schema SDL", err, nil)
 	}
-	for tableName, info := range tables {
-		if info.Schema == "" {
+	for _, dbSchema := range dbSchemas {
+		if dbSchema.Schema == "" {
 			continue
 		}
-		if err := s.SchemaCreation(ctx, dbAlias, tableName, logicalDBName, parsedSchema); err != nil {
+		if err := s.SchemaCreation(ctx, dbAlias, dbSchema.Table, logicalDBName, parsedSchema); err != nil {
 			return err
 		}
 	}

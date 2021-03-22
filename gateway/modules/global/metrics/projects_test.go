@@ -28,41 +28,48 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 			name: "valid config",
 			args: args{
 				project: &config.Project{
-					ID: "project",
-					Modules: &config.Modules{
-						Crud: map[string]*config.CrudStub{"db": {
-							Type: "postgres",
-							Collections: map[string]*config.TableRule{
-								"table1": {},
-							},
-							Enabled: true,
-						}},
-						Auth: config.Auth{"auth": {
-							ID:      "email",
-							Enabled: true,
-						}},
-						Services: &config.ServicesModule{Services: map[string]*config.Service{"service": {}}},
-						FileStore: &config.FileStore{
-							Enabled:   true,
-							StoreType: "local",
-							Rules:     []*config.FileRule{{ID: "file"}},
+					ProjectConfig: &config.ProjectConfig{ID: "project"},
+					DatabaseConfigs: config.DatabaseConfigs{
+						"": &config.DatabaseConfig{DbAlias: "postgres", Type: "postgres", Enabled: true},
+					},
+					DatabaseSchemas: config.DatabaseSchemas{
+						"resourceID1": &config.DatabaseSchema{
+							DbAlias: "postgres",
+							Table:   "table1",
 						},
-						Eventing: config.Eventing{
-							Enabled: true,
-							DBAlias: "db",
-							Rules: map[string]*config.EventingRule{
-								"type": {
-									Type: "type",
-								},
-							},
+						"resourceID2": &config.DatabaseSchema{
+							DbAlias: "postgres",
+							Table:   "event_logs",
 						},
-						LetsEncrypt: config.LetsEncrypt{
-							ID:                 "letsEncrypt",
-							WhitelistedDomains: []string{"1"},
+						"resourceID3": &config.DatabaseSchema{
+							DbAlias: "postgres",
+							Table:   "invocation_logs",
 						},
-						Routes: config.Routes{{
-							ID: "route",
-						}},
+						"resourceID4": &config.DatabaseSchema{
+							DbAlias: "postgres",
+							Table:   "default",
+						},
+					},
+					Auths: config.Auths{
+						"": &config.AuthStub{ID: "email", Enabled: true},
+					},
+					RemoteService: config.Services{
+						"": &config.Service{},
+					},
+					FileStoreConfig: &config.FileStoreConfig{
+						Enabled:   true,
+						StoreType: "local",
+					},
+					FileStoreRules: config.FileStoreRules{
+						"": &config.FileRule{ID: "file"},
+					},
+					EventingConfig: &config.EventingConfig{Enabled: true, DBAlias: "postgres"},
+					EventingTriggers: config.EventingTriggers{
+						"": &config.EventingTrigger{Type: "type"},
+					},
+					LetsEncrypt: &config.LetsEncrypt{WhitelistedDomains: []string{"www.google.com"}},
+					IngressRoutes: config.IngressRoutes{
+						"": &config.Route{ID: "route"},
 					},
 				},
 				ssl: &config.SSL{
@@ -80,8 +87,8 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 				"ssl_enabled":  true,
 				"project":      "project",
 				"crud": map[string]interface{}{
-					"db": map[string]interface{}{
-						"tables": -2,
+					"postgres": map[string]interface{}{
+						"tables": 1,
 					},
 				},
 				"databases": map[string][]string{
@@ -118,7 +125,7 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 					continue
 				}
 				if !reflect.DeepEqual(gotValue, value) {
-					t.Errorf("createCrudDocuments() got value = %v %T want = %v %T", gotValue, gotValue, value, value)
+					t.Errorf("createCrudDocuments() got value = %v %T want = %v %T for key (%s)", gotValue, gotValue, value, value, key)
 				}
 			}
 			if _, ok := got3["start_time"]; !ok {

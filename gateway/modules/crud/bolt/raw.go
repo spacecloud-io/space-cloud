@@ -5,11 +5,13 @@ import (
 	"errors"
 
 	"github.com/spaceuptech/helpers"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // RawQuery query document(s) from the database
-func (b *Bolt) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
-	return 0, "", errors.New("error raw querry cannot be performed over embedded database")
+func (b *Bolt) RawQuery(ctx context.Context, query string, isDebug bool, args []interface{}) (int64, interface{}, *model.SQLMetaData, error) {
+	return 0, "", nil, errors.New("error raw query cannot be performed over embedded database")
 }
 
 // CreateDatabaseIfNotExist creates a project if none exist
@@ -29,5 +31,12 @@ func (b *Bolt) GetConnectionState(ctx context.Context) bool {
 		return false
 	}
 
-	return b.client.Info() != nil
+	// Ping to check if connection is established
+	err := b.client.Info()
+	if err != nil {
+		_ = b.client.Close()
+		return false
+	}
+
+	return true
 }

@@ -19,7 +19,7 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 	defer m.lock.Unlock()
 
 	clusterID := m.adminMan.GetClusterID()
-	projectID := project.ID
+	projectID := project.ProjectConfig.ID
 	min := map[string]interface{}{"start_time": time.Now().UnixNano() / int64(time.Millisecond)}
 	// Create the find and update clauses
 	set := map[string]interface{}{
@@ -35,20 +35,16 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 
 	set["ssl_enabled"] = ssl != nil && ssl.Enabled
 
-	modules := project.Modules
+	// modules := project.Modules
 	// crud info
 	set["crud"] = map[string]interface{}{"tables": map[string]interface{}{}}
 	set["databases"] = map[string][]string{"databases": {}}
-	if modules.Crud != nil {
+	if project.DatabaseConfigs != nil {
 		temps := map[string]interface{}{}
 		dbs := []string{}
-		for dbAlias, v := range modules.Crud {
-			if v.Enabled {
-				dbs = append(dbs, v.Type)
-				temps[dbAlias] = map[string]interface{}{
-					"tables": len(v.Collections) - 3, // NOTE : 2 is the number of tables used internally for eventing (invocation logs & event logs) + 1 which is the default table
-				}
-			}
+		for _, dbConfig := range project.DatabaseConfigs {
+			dbs = append(dbs, dbConfig.Type)
+			temps[dbConfig.DbAlias] = map[string]interface{}{"tables": getTablesCount(dbConfig.DbAlias, project.DatabaseSchemas, project.EventingConfig)}
 		}
 		set["crud"] = temps
 		set["databases"] = map[string][]string{"databases": dbs}
@@ -56,18 +52,18 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 
 	set["file_store_store_type"] = "na"
 	set["file_store_rules"] = 0
-	if modules.FileStore != nil && modules.FileStore.Enabled {
-		set["file_store_store_type"] = modules.FileStore.StoreType
-		set["file_store_rules"] = len(modules.FileStore.Rules)
+	if project.FileStoreConfig != nil && project.FileStoreConfig.Enabled {
+		set["file_store_store_type"] = project.FileStoreConfig.StoreType
+		set["file_store_rules"] = len(project.FileStoreRules)
 	}
 
 	// auth info
 	set["auth"] = map[string]interface{}{"providers": 0}
-	if modules.Auth != nil {
+	if project.Auths != nil {
 		temps := []string{}
-		for k, v := range modules.Auth {
+		for _, v := range project.Auths {
 			if v.Enabled {
-				temps = append(temps, k)
+				temps = append(temps, v.ID)
 			}
 		}
 		set["auth"] = map[string]interface{}{"providers": len(temps)}
@@ -75,23 +71,37 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 
 	// services info
 	set["services"] = 0
-	if modules.Services != nil {
-		set["services"] = len(modules.Services.Services)
+	if project.RemoteService != nil {
+		set["services"] = len(project.RemoteService)
 	}
 
 	// let's encrypt info
-	set["lets_encrypt"] = len(modules.LetsEncrypt.WhitelistedDomains)
+	set["lets_encrypt"] = len(project.LetsEncrypt.WhitelistedDomains)
 
 	// routing info
 	set["routes"] = 0
-	if modules.Routes != nil {
-		set["routes"] = len(modules.Routes)
+	if project.IngressRoutes != nil {
+		set["routes"] = len(project.IngressRoutes)
 	}
 
 	// eventing info
-	set["total_events"] = len(modules.Eventing.Rules)
+	set["total_events"] = len(project.EventingTriggers)
 
 	return fmt.Sprintf("%s--%s", clusterID, projectID), set, min
+}
+
+func getTablesCount(dbAlias string, dbSchemas config.DatabaseSchemas, eventConf *config.EventingConfig) int {
+	count := 0
+	for _, schema := range dbSchemas {
+		if schema.DbAlias == dbAlias && schema.Table != "default" {
+			count++
+		}
+	}
+	if eventConf.Enabled && eventConf.DBAlias == dbAlias {
+		// NOTE : 2 is the number of tables used internally for eventing (invocation logs & event logs)
+		count -= 2
+	}
+	return count
 }
 
 // NOTE: test not written for below function

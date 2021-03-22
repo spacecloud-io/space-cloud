@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/project"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
@@ -30,6 +31,25 @@ func Commands() []*cobra.Command {
 		}
 		return nil, cobra.ShellCompDirectiveDefault
 	}
+
+	var setDefaultProjectCommand = &cobra.Command{
+		Use:   "set-default-project",
+		Short: "Sets the default project to be used if --project flag is not provided",
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			obj, err := project.GetProjectConfig("", "project", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var projects []string
+			for _, v := range obj {
+				projects = append(projects, v.Meta["project"])
+			}
+			return projects, cobra.ShellCompDirectiveDefault
+		},
+		SilenceErrors: true,
+		RunE:          actionSetDefaultProject,
+	}
+
 	var viewAccountsCommand = &cobra.Command{
 		Use:   "view",
 		Short: "list all space-cloud accounts",
@@ -65,8 +85,17 @@ func Commands() []*cobra.Command {
 	accountsCmd.AddCommand(viewAccountsCommand)
 	accountsCmd.AddCommand(setAccountCommand)
 	accountsCmd.AddCommand(deleteAccountCommand)
+	accountsCmd.AddCommand(setDefaultProjectCommand)
 
 	return []*cobra.Command{accountsCmd}
+}
+
+func actionSetDefaultProject(cmd *cobra.Command, args []string) error {
+	project := ""
+	if len(args) > 0 {
+		project = args[0]
+	}
+	return utils.SetDefaultProject(project)
 }
 
 func actionViewAccount(cmd *cobra.Command, args []string) error {

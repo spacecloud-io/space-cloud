@@ -7,7 +7,11 @@ import (
 )
 
 // SetProjectRoutes adds a project's routes to the global list of routes
-func (r *Routing) SetProjectRoutes(project string, routes config.Routes) error {
+func (r *Routing) SetProjectRoutes(project string, routesConfig config.IngressRoutes) error {
+	routes := make(config.Routes, 0)
+	for _, route := range routesConfig {
+		routes = append(routes, route)
+	}
 	r.lock.Lock()
 	defer r.lock.Unlock()
 

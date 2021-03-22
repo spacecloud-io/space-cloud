@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/go-test/deep"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
@@ -19,7 +19,6 @@ func Test_generateSDL(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "Successful test",
 			args: args{
@@ -27,8 +26,43 @@ func Test_generateSDL(t *testing.T) {
 					"col2": &model.FieldType{
 						FieldName:  "col2",
 						Kind:       model.TypeID,
-						TypeIDSize: model.SQLTypeIDSize,
+						TypeIDSize: model.DefaultCharacterSize,
 						IsPrimary:  true,
+					},
+					"col3": &model.FieldType{
+						FieldName:       "col3",
+						Kind:            model.TypeInteger,
+						TypeIDSize:      model.DefaultCharacterSize,
+						IsPrimary:       true,
+						IsAutoIncrement: true,
+						PrimaryKeyInfo: &model.TableProperties{
+							Order: 2,
+						},
+					},
+					"col4": &model.FieldType{
+						FieldName:  "col4",
+						Kind:       model.TypeInteger,
+						TypeIDSize: model.DefaultCharacterSize,
+						IsPrimary:  true,
+						PrimaryKeyInfo: &model.TableProperties{
+							Order: 1,
+						},
+					},
+					"col5": &model.FieldType{
+						FieldName:  "col5",
+						Kind:       model.TypeInteger,
+						TypeIDSize: model.DefaultCharacterSize,
+						IsPrimary:  true,
+					},
+					"amount": &model.FieldType{
+						FieldName:  "amount",
+						Kind:       model.TypeBigInteger,
+						TypeIDSize: model.DefaultCharacterSize,
+					},
+					"coolDownInterval": &model.FieldType{
+						FieldName:  "coolDownInterval",
+						Kind:       model.TypeSmallInteger,
+						TypeIDSize: model.DefaultCharacterSize,
 					},
 					"age": &model.FieldType{
 						FieldName: "age",
@@ -48,7 +82,7 @@ func Test_generateSDL(t *testing.T) {
 						FieldName:           "role",
 						IsFieldTypeRequired: true,
 						Kind:                model.TypeID,
-						TypeIDSize:          model.SQLTypeIDSize,
+						TypeIDSize:          model.DefaultCharacterSize,
 						IsDefault:           true,
 						Default:             "user",
 					},
@@ -60,32 +94,32 @@ func Test_generateSDL(t *testing.T) {
 						FieldName:           "first_name",
 						IsFieldTypeRequired: true,
 						Kind:                model.TypeID,
-						TypeIDSize:          model.SQLTypeIDSize,
-						IsIndex:             true,
-						IndexInfo: &model.TableProperties{
-							Group: "user_name",
-							Order: 1,
-							Sort:  "asc",
-						},
+						TypeIDSize:          model.DefaultCharacterSize,
+						IndexInfo: []*model.TableProperties{{
+							IsIndex: true,
+							Group:   "user_name",
+							Order:   1,
+							Sort:    "asc",
+						}},
 					},
 					"name": &model.FieldType{
 						FieldName:           "name",
 						IsFieldTypeRequired: true,
 						Kind:                model.TypeID,
-						TypeIDSize:          model.SQLTypeIDSize,
-						IsIndex:             true,
-						IsUnique:            true,
-						IndexInfo: &model.TableProperties{
-							Group: "user_name",
-							Order: 1,
-							Sort:  "asc",
-						},
+						TypeIDSize:          model.DefaultCharacterSize,
+						IndexInfo: []*model.TableProperties{{
+							IsIndex:  false,
+							IsUnique: true,
+							Group:    "user_name",
+							Order:    1,
+							Sort:     "asc",
+						}},
 					},
 					"customer_id": &model.FieldType{
 						FieldName:           "customer_id",
 						IsFieldTypeRequired: true,
 						Kind:                model.TypeID,
-						TypeIDSize:          model.SQLTypeIDSize,
+						TypeIDSize:          model.DefaultCharacterSize,
 						IsForeign:           true,
 						JointTable: &model.TableProperties{
 							To:             "id",
@@ -110,7 +144,23 @@ func Test_generateSDL(t *testing.T) {
 				},
 				},
 			},
-			want:    "type  table1 { \n\tage: Float        \n\tcol2: ID @primary @size(value: 50)      \n\tcreatedAt: DateTime  @createdAt      \n\tcustomer_id: ID!  @size(value: 50)       @foreign(table: customer, field: id ,onDelete: cascade)\n\tfirst_name: ID!  @size(value: 50)    @index(group: \"user_name\", sort: \"asc\", order: 1)   \n\tname: ID!  @size(value: 50)   @unique(group: \"user_name\", order: 1)     \n\torder_dates: DateTime       @link(table: order, from: id, to: customer_id, field: order_date) \n\trole: ID!  @size(value: 50)     @default(value: user)  \n\tspec: JSON        \n\tupdatedAt: DateTime   @updatedAt     \n}",
+			want: "type  table1 { " +
+				"\n\tcol2: ID @primary @size(value: 100)" +
+				"\n\tcol3: Integer @primary(order:2)@autoIncrement" +
+				"\n\tcol4: Integer @primary(order:1)" +
+				"\n\tcol5: Integer @primary" +
+				"\n\tage: Float" +
+				"\n\tamount: BigInteger" +
+				"\n\tcoolDownInterval: SmallInteger" +
+				"\n\tcreatedAt: DateTime  @createdAt" +
+				"\n\trole: ID!  @size(value: 100)     @default(value: user)" +
+				"\n\tspec: JSON" +
+				"\n\tupdatedAt: DateTime   @updatedAt" +
+				"\n\tfirst_name: ID!  @size(value: 100)    @index(group: \"user_name\", sort: \"asc\", order: 1)" +
+				"\n\tname: ID!  @size(value: 100)   @unique(group: \"user_name\", sort: \"asc\",  order: 1)" +
+				"\n\tcustomer_id: ID!  @size(value: 100) @foreign(table: customer, field: id ,onDelete: cascade)" +
+				"\n\torder_dates: [DateTime]       @link(table: \"order\", from: \"id\", to: \"customer_id\", db:\"mongo\", field: \"order_date\")" +
+				"\n}",
 			wantErr: false,
 		},
 	}
@@ -121,9 +171,10 @@ func Test_generateSDL(t *testing.T) {
 				t.Errorf("generateSDL() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			// minify string by removing space
-			if !cmp.Equal(strings.Replace(got, " ", "", -1), strings.Replace(tt.want, " ", "", -1)) {
-				t.Errorf("generateSDL() = %v, want %v", got, tt.want)
+			if arr := deep.Equal(strings.Replace(got, " ", "", -1), strings.Replace(tt.want, " ", "", -1)); len(arr) > 0 {
+				t.Errorf("generateSDL() differences = %v", arr)
 			}
 		})
 	}
