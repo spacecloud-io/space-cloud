@@ -39,6 +39,7 @@ metric-proxy/vendor
 runner/vendor
 gateway/vendor
 space-cli/vendor
+runner-proxy/vendor
 
 space-cli/cmd/cmd
 
