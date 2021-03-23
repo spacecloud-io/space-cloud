@@ -59,6 +59,21 @@ entries:
     version: 0.1.0
   space-cloud:
   - apiVersion: v3
+    appVersion: 0.21.2
+    created: "2021-03-23T14:50:26.9208374+05:30"
+    description: Helm Chart to install Space Cloud
+    digest: 566cbbd7cb3bdbb5080ef048171a8087bab9036b26ae9b3a1016fb8fea6b4511
+    home: https://spaceuptech.com/
+    keywords:
+    - baaS
+    name: space-cloud
+    sources:
+    - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/space-cloud
+    type: application
+    urls:
+    - space-cloud-0.21.2.tgz
+    version: 0.21.2
+  - apiVersion: v3
     appVersion: 0.21.1
     created: "2021-03-15T18:22:43.8366512+05:30"
     description: Helm Chart to install Space Cloud
@@ -118,4 +133,4 @@ entries:
     urls:
     - https://storage.googleapis.com/space-cloud/helm/sqlserver/sqlserver-0.1.0.tgz
     version: 0.1.0
-generated: "2021-03-15T18:22:43.8289356+05:30"
+generated: "2021-03-23T14:50:26.9022297+05:30"

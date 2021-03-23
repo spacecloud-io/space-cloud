@@ -1,7 +1,7 @@
 version: '3.9'
 services:
   gateway:
-    image: "spaceuptech/gateway:0.21.1"
+    image: "spaceuptech/gateway:0.21.2"
     pull_policy: "if_not_present"         # other values never, if_not_present
     restart: "always"                     # other values no, on-failure
     environment:
