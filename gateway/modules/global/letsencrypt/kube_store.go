@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mholt/certmagic"
+	"github.com/caddyserver/certmagic"
 	"github.com/spaceuptech/helpers"
 	v1 "k8s.io/api/core/v1"
 	kubeErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -145,7 +145,7 @@ func (s *KubeStore) Stat(key string) (certmagic.KeyInfo, error) {
 }
 
 // Lock implements a lock mechanism
-func (s *KubeStore) Lock(key string) error {
+func (s *KubeStore) Lock(ctx context.Context, key string) error {
 	start := time.Now()
 	lockFile := s.lockFileName(key)
 
