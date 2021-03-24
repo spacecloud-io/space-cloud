@@ -215,9 +215,12 @@ func actionRun(c *cli.Context) error {
 	if storeType == "local" || storeType == "kube" {
 		serviceType = storeType
 	}
+
 	if storeType == "database" {
-		if serviceType != "local" || serviceType != "kube" {
-			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot initialize syncman as invalid service type (%v) provided service type should be (kube) or (local)", serviceType), nil, nil)
+		if serviceType != "local" {
+			if serviceType != "kube" {
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot initialize syncman as invalid service type (%v) provided service type should be (kube) or (local)", serviceType), nil, nil)
+			}
 		}
 	}
 
