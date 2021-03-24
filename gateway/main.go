@@ -67,12 +67,12 @@ var essentialFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:   "db-store-conn",
-		Usage:  "The connection string is used to connect to postgres",
+		Usage:  "Postgres database connection string for storing space cloud config",
 		EnvVar: "DB_STORE_CONN",
 	},
 	cli.StringFlag{
 		Name:   "db-schema-name",
-		Usage:  "The schema name is used to provide schema to postgres",
+		Usage:  "Schema used for storing space cloud-config",
 		EnvVar: "DB_SCHEMA_NAME",
 		Value:  "public",
 	},
@@ -216,7 +216,7 @@ func actionRun(c *cli.Context) error {
 		serviceType = storeType
 	}
 	if storeType == "database" {
-		if serviceType != "local" && serviceType != "kube" {
+		if serviceType != "local" || serviceType != "kube" {
 			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Cannot initialize syncman as invalid service type (%v) provided service type should be (kube) or (local)", serviceType), nil, nil)
 		}
 	}
