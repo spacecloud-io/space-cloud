@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// SyncManAdminInterface is an interface consisting of functions of synman module used by auth admin module
 type SyncManAdminInterface interface {
 	SetLicense(ctx context.Context, cluster *config.License) error
 	CheckIfLeaderGateway(nodeID string) (bool, error)
@@ -169,10 +170,12 @@ type ReturnWhereStub struct {
 	PrefixColName bool
 }
 
+// Service stores id of the service
 type Service struct {
 	ID string
 }
 
+// ScServices stores array of gateway services
 type ScServices []*Service
 
 func (a ScServices) Len() int           { return len(a) }

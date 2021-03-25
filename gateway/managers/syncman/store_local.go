@@ -14,9 +14,6 @@ type LocalStore struct {
 	configPath   string
 	globalConfig *config.Config
 	services     model.ScServices
-
-	// Callbacks
-	watchAdminCB func(clusters []*config.Admin)
 }
 
 // NewLocalStore creates a new local store
@@ -62,6 +59,7 @@ func (s *LocalStore) WatchLicense(cb func(eventType, resourceID string, resource
 	cb(config.ResourceAddEvent, config.GenerateResourceID("", "noProject", config.ResourceLicense, "license"), config.ResourceLicense, s.globalConfig.License)
 }
 
+// SetLicense set license config in file
 func (s *LocalStore) SetLicense(ctx context.Context, resourceID string, resource *config.License) error {
 	s.globalConfig.License = resource
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)

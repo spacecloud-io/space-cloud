@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+// SetServices sets services in admin
 func (m *Manager) SetServices(eventType string, services model.ScServices) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

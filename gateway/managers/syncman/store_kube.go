@@ -82,6 +82,7 @@ func onAddOrUpdateLicenses(eventType string, obj interface{}) (string, string, c
 	return eventType, string(resourceID), config.Resource(resourceType), licenseConfig
 }
 
+// WatchLicense over the changes in license config
 func (s *KubeStore) WatchLicense(cb func(eventType, resourceID string, resourceType config.Resource, resource *config.License)) {
 	go func() {
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
@@ -331,7 +332,7 @@ func (s *KubeStore) SetResource(ctx context.Context, resourceID string, resource
 	return err
 }
 
-// SetResource sets the project of the kube store
+// SetLicense sets the project of the kube store
 func (s *KubeStore) SetLicense(ctx context.Context, resourceID string, resource *config.License) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting License", map[string]interface{}{"resourceId": resourceID})
 

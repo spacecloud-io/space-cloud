@@ -10,6 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+// SetPubSubRoutines sets pub sub routines
 func (s *Manager) SetPubSubRoutines(nodeID string) error {
 	ch, err := s.pubsubClient.Subscribe(context.Background(), generatePubSubTopic(nodeID, pubSubOperationUpgrade))
 	if err != nil {
@@ -85,30 +86,30 @@ func (s *Manager) handlePubSubUpgradeMessage(msg *model.PubSubMessage) {
 	_ = s.pubsubClient.SendAck(ctx, msg.ReplyTo, true)
 }
 
-func (s *Manager) handlePubSubRenewMessage(msg *model.PubSubMessage) {
-	// TODO: Do i require a lock here ?
-	// Create a context
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
+// func (s *Manager) handlePubSubRenewMessage(msg *model.PubSubMessage) {
+// 	// TODO: Do i require a lock here ?
+// 	// Create a context
+// 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+// 	defer cancel()
 
-	isLeader, err := s.leader.IsLeader(ctx, s.nodeID)
-	if err != nil {
-		_ = helpers.Logger.LogError("pub-sub-renew-process", "Only leader can process an license renew request", err, map[string]interface{}{"nodeId": s.nodeID})
-		_ = s.pubsubClient.SendAck(ctx, msg.ReplyTo, false)
-		return
-	}
-	if !isLeader {
-		helpers.Logger.LogDebug("pub-sub-upgrade-process", "Not a leader", nil)
-		_ = s.pubsubClient.SendAck(ctx, msg.ReplyTo, false)
-		return
-	}
+// 	isLeader, err := s.leader.IsLeader(ctx, s.nodeID)
+// 	if err != nil {
+// 		_ = helpers.Logger.LogError("pub-sub-renew-process", "Only leader can process an license renew request", err, map[string]interface{}{"nodeId": s.nodeID})
+// 		_ = s.pubsubClient.SendAck(ctx, msg.ReplyTo, false)
+// 		return
+// 	}
+// 	if !isLeader {
+// 		helpers.Logger.LogDebug("pub-sub-upgrade-process", "Not a leader", nil)
+// 		_ = s.pubsubClient.SendAck(ctx, msg.ReplyTo, false)
+// 		return
+// 	}
 
-	helpers.Logger.LogDebug("pub-sub-upgrade-process", "Renewing license", nil)
-	if err := s.RenewLicense(ctx); err != nil {
-		_ = helpers.Logger.LogError("pub-sub-renew-process", "Unable to renew license", err, map[string]interface{}{"payload": msg.Payload})
-		_ = s.pubsubClient.SendAck(ctx, msg.ReplyTo, false)
-		return
-	}
-	helpers.Logger.LogDebug("pub-sub-renew-process", "Sending positive acknowledgement", nil)
-	_ = s.pubsubClient.SendAck(ctx, msg.ReplyTo, true)
-}
+// 	helpers.Logger.LogDebug("pub-sub-upgrade-process", "Renewing license", nil)
+// 	if err := s.RenewLicense(ctx); err != nil {
+// 		_ = helpers.Logger.LogError("pub-sub-renew-process", "Unable to renew license", err, map[string]interface{}{"payload": msg.Payload})
+// 		_ = s.pubsubClient.SendAck(ctx, msg.ReplyTo, false)
+// 		return
+// 	}
+// 	helpers.Logger.LogDebug("pub-sub-renew-process", "Sending positive acknowledgement", nil)
+// 	_ = s.pubsubClient.SendAck(ctx, msg.ReplyTo, true)
+// }

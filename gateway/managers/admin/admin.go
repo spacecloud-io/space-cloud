@@ -66,12 +66,14 @@ func New(nodeID, clusterID string, isDev bool, adminUserInfo *config.AdminUser) 
 	return m
 }
 
+// SetSyncMan sets syncman manager
 func (m *Manager) SetSyncMan(s model.SyncManAdminInterface) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.syncMan = s
 }
 
+// SetIntegrationMan sets integration manager
 func (m *Manager) SetIntegrationMan(i IntegrationInterface) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -125,6 +127,7 @@ func (m *Manager) GetConfig() *config.License {
 	return m.license
 }
 
+// SetIntegrationConfig sets integration config
 func (m *Manager) SetIntegrationConfig(integrations config.Integrations) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

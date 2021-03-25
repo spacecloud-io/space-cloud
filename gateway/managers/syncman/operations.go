@@ -139,6 +139,7 @@ func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestPara
 	return http.StatusOK, s.projectConfig.ClusterConfig, nil
 }
 
+// SetLicense sets license
 func (s *Manager) SetLicense(ctx context.Context, license *config.License) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()

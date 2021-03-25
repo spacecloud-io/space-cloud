@@ -17,6 +17,7 @@ func (m *Manager) GetIntegrationToken(id string) (string, error) {
 	return m.createToken(map[string]interface{}{"id": id, "role": "integration"})
 }
 
+// ParseLicense parses license string
 func (m *Manager) ParseLicense(license string) (map[string]interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -31,6 +32,7 @@ func (m *Manager) ParseLicense(license string) (map[string]interface{}, error) {
 	return m.parseLicenseToken(license)
 }
 
+// ValidateIntegrationSyncOperation validates integration sync operation
 func (m *Manager) ValidateIntegrationSyncOperation(integrations config.Integrations) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()

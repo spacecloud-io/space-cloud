@@ -91,7 +91,6 @@ func (m *Manager) invokeHooks(ctx context.Context, params model.RequestParams) a
 
 		case config.IgnoreHookResponse:
 			// Do nothing
-			break
 
 		case config.HijackHookResponse:
 			// Check if hook hook has permission to hijack

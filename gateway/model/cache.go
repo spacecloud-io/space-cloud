@@ -10,7 +10,7 @@ import (
 type CachePurgeRequest struct {
 	Resource  config.Resource `json:"resource,omitempty"`
 	DbAlias   string          `json:"dbAlias,omitempty"`
-	ServiceId string          `json:"serviceId,omitempty"`
+	ServiceID string          `json:"serviceId,omitempty"`
 	ID        string          `json:"id,omitempty"`
 }
 
@@ -20,6 +20,7 @@ type CacheIngressRoute struct {
 	Headers http.Header `json:"headers"`
 }
 
+// CacheDatabaseResult is used to store cached database result
 type CacheDatabaseResult struct {
 	Result      interface{} `json:"result"`
 	MetricCount int64       `json:"metricCount"`

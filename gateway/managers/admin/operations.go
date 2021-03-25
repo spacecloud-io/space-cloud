@@ -153,6 +153,7 @@ func (m *Manager) RefreshToken(ctx context.Context, token string) (string, error
 	return newToken, nil
 }
 
+// IsRegistered tell if the gateway is registered
 func (m *Manager) IsRegistered() bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -174,6 +175,8 @@ func (m *Manager) GetCredentials() map[string]interface{} {
 func (m *Manager) GetClusterID() string {
 	return m.clusterID
 }
+
+// GetSessionID selects a session id from the current gateway services
 func (m *Manager) GetSessionID() (string, error) {
 	if licenseMode == licenseModeOffline {
 		return m.getOfflineLicenseSessionID(), nil
@@ -188,6 +191,7 @@ func (m *Manager) GetSessionID() (string, error) {
 	return selectRandomSessionID(m.services), nil // first time license renewal
 }
 
+// GetEnterpriseClusterID gets enterprise cluster id
 func (m *Manager) GetEnterpriseClusterID() string {
 	return m.license.LicenseKey
 }

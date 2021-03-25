@@ -11,6 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+// SetOfflineLicense sets offline license
 func (s *Manager) SetOfflineLicense(ctx context.Context, license string) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), `Upgrading gateway to enterprise...`, nil)
 
@@ -22,6 +23,7 @@ func (s *Manager) SetOfflineLicense(ctx context.Context, license string) error {
 	return s.SetLicense(ctx, oldConfig)
 }
 
+// RenewLicense renews license
 func (s *Manager) RenewLicense(ctx context.Context) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), `Force renewing the license key...`, nil)
 	if !s.adminMan.IsRegistered() {
@@ -57,6 +59,7 @@ func (s *Manager) GetLeaderGatewayID(ctx context.Context) (string, error) {
 	return s.leader.GetLeaderNodeID(ctx)
 }
 
+// ConvertToEnterprise convert open source gateway to enterprise
 func (s *Manager) ConvertToEnterprise(ctx context.Context, req *model.LicenseUpgradeRequest) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), `Upgrading gateway to enterprise...`, map[string]interface{}{"data": req})
 	if s.adminMan.IsRegistered() {

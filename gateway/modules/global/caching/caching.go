@@ -73,6 +73,7 @@ func (c *Cache) SetCachingConfig(ctx context.Context, cacheConfig *config.CacheC
 	return nil
 }
 
+// AddDBRules adds db rules
 func (c *Cache) AddDBRules(projectID string, dbRules config.DatabaseRules) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -80,6 +81,7 @@ func (c *Cache) AddDBRules(projectID string, dbRules config.DatabaseRules) {
 	c.dbRules[projectID] = dbRules
 }
 
+// SetAdminModule sets admin module
 func (c *Cache) SetAdminModule(admin *admin.Manager) {
 	c.lock.Lock()
 	defer c.lock.Unlock()

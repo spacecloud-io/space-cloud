@@ -44,6 +44,7 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 	}
 }
 
+// HandleDownGrade returns the handler to downgrade enterprise license
 func HandleDownGrade(admin *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -74,7 +75,7 @@ func HandleDownGrade(admin *admin.Manager, syncMan *syncman.Manager) http.Handle
 	}
 }
 
-// HandleUpgrade returns the handler to load the projects via a REST endpoint
+// HandleRenewLicense returns the handler to renew existing license
 func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

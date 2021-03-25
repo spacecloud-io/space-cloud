@@ -34,8 +34,7 @@ func (m *Manager) licenseRenewalCumValidationRoutine() {
 	for {
 		randomInt := rand.Intn(max-min) + min
 		t := time.Duration(randomInt) * time.Hour
-		select {
-		case <-time.After(t):
+		for range time.After(t) {
 			// Operate if in enterprise mode
 			if m.isEnterpriseMode() {
 				isLeader, err := m.syncMan.CheckIfLeaderGateway(m.nodeID)
@@ -86,7 +85,7 @@ func (m *Manager) validationRoutine() {
 		}
 	}
 	if !doesExists {
-		_ = helpers.Logger.LogError("validation-routine", fmt.Sprintf("Follower gateway is not able to validate the license, resetting global license"), nil, map[string]interface{}{"error": err, "services": m.services, "license": m.license.License})
+		_ = helpers.Logger.LogError("validation-routine", "Follower gateway is not able to validate the license, resetting global license", nil, map[string]interface{}{"error": err, "services": m.services, "license": m.license.License})
 		m.resetQuotasWithoutLock()
 	}
 }
@@ -97,8 +96,7 @@ func (m *Manager) fetchPublicKeyRoutine() {
 	ticker := time.NewTicker(4 * 7 * 24 * time.Hour) // fetch public once every 4 weeks
 	defer ticker.Stop()
 
-	select {
-	case <-ticker.C:
+	for range ticker.C {
 		// Operate if in enterprise mode
 		if m.isEnterpriseMode() && licenseMode == licenseModeOnline {
 			// Fetch the public key periodically
@@ -129,7 +127,7 @@ func (m *Manager) fetchPublicKeyWithoutLock() error {
 		"timeout": 10,
 	}
 	data, _ := json.Marshal(body)
-	res, err := http.Post(fmt.Sprintf("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/getPublicKey"), "application/json", bytes.NewBuffer(data))
+	res, err := http.Post("https://api.spaceuptech.com/v1/api/spacecloud/services/billing/getPublicKey", "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return helpers.Logger.LogError("fetch-public-key-without-lock", "Unable to contact server to fetch public key", err, nil)
 	}
@@ -156,6 +154,7 @@ func (m *Manager) fetchPublicKeyWithoutLock() error {
 	return nil
 }
 
+// ValidateLicense validates license
 func (m *Manager) ValidateLicense(services model.ScServices) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -219,6 +218,7 @@ func (m *Manager) validateLicenseWithoutLock(services model.ScServices) error {
 	return nil
 }
 
+// RenewLicense renews license
 func (m *Manager) RenewLicense(force bool) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -282,9 +282,8 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 			return fmt.Errorf("%s-%s", v.Message, v.Error)
 		}
 		return nil
-	} else {
-		m.licenseFetchErrorCount = 0
 	}
+	m.licenseFetchErrorCount = 0
 
 	licenseObj, isSessionValid, err := m.validateSessionID(m.services, v.Result.License)
 	if err != nil {
@@ -301,6 +300,7 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	return nil
 }
 
+// ResetQuotas reset quotas to it's default value
 func (m *Manager) ResetQuotas() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -395,7 +395,7 @@ func (m *Manager) parseLicenseToken(tokenString string) (map[string]interface{},
 
 func selectRandomSessionID(gateways model.ScServices) string {
 	if len(gateways) == 0 {
-		helpers.Logger.LogWarn("select-random-session-id", fmt.Sprintf("Length of gateways is zero"), nil)
+		helpers.Logger.LogWarn("select-random-session-id", "Length of gateways is zero", nil)
 		return ""
 	}
 	min := 0

@@ -82,7 +82,7 @@ const (
 	// ResourceLicense is a resource
 	ResourceLicense Resource = "license"
 
-	// ResourceLicense is a resource
+	// ResourceCacheConfig is a resource
 	ResourceCacheConfig Resource = "cache-config"
 
 	// ResourceDeployService is a resource

@@ -6,6 +6,7 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+// GetLeaderNodeID gets leader node id
 func (s *Module) GetLeaderNodeID(ctx context.Context) (string, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -18,6 +19,7 @@ func (s *Module) GetLeaderNodeID(ctx context.Context) (string, error) {
 	return value, nil
 }
 
+// IsLeader checks if the provided node id is the leader gateway or not
 func (s *Module) IsLeader(ctx context.Context, nodeID string) (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
