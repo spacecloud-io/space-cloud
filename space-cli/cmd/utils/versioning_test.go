@@ -20,9 +20,9 @@ func TestGetChartDownloadURL(t *testing.T) {
 			name: "Right URL and version",
 			args: args{
 				url:     model.HelmSpaceCloudChartDownloadURL,
-				version: "0.21.1",
+				version: "0.21.2",
 			},
-			want: "https://storage.googleapis.com/space-cloud/helm/space-cloud/space-cloud-0.21.1.tgz",
+			want: "https://storage.googleapis.com/space-cloud/helm/space-cloud/space-cloud-0.21.2.tgz",
 		},
 	}
 	for _, tt := range tests {

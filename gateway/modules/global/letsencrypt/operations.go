@@ -9,7 +9,7 @@ import (
 
 // TLSConfig returns the tls config to be used by the http server
 func (l *LetsEncrypt) TLSConfig() *tls.Config {
-	return l.client.TLSConfig()
+	return l.config.TLSConfig()
 }
 
 // LetsEncryptHTTPChallengeHandler handle the http challenge
@@ -20,7 +20,7 @@ func (l *LetsEncrypt) LetsEncryptHTTPChallengeHandler(h http.Handler) http.Handl
 // AddExistingCertificate lets the user add an existing certificate. This certificate
 // will not be automatically renewed via let's encrypt
 func (l *LetsEncrypt) AddExistingCertificate(certFile, keyFile string) error {
-	return l.client.CacheUnmanagedCertificatePEMFile(certFile, keyFile, []string{})
+	return l.config.CacheUnmanagedCertificatePEMFile(certFile, keyFile, []string{})
 }
 
 // SetProjectDomains sets the config required by lets encrypt
@@ -41,7 +41,7 @@ func (l *LetsEncrypt) SetProjectDomains(project string, c *config.LetsEncrypt) e
 	}
 
 	l.domains.setProjectDomains(project, c.WhitelistedDomains)
-	return l.client.ManageSync(l.domains.getUniqueDomains())
+	return l.config.ManageSync(l.domains.getUniqueDomains())
 }
 
 // DeleteProjectDomains deletes a projects associated domains
@@ -50,5 +50,5 @@ func (l *LetsEncrypt) DeleteProjectDomains(project string) error {
 	defer l.lock.Unlock()
 
 	l.domains.deleteProject(project)
-	return l.client.ManageSync(l.domains.getUniqueDomains())
+	return l.config.ManageSync(l.domains.getUniqueDomains())
 }
