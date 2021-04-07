@@ -2,7 +2,6 @@ package admin
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -85,9 +84,9 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 		}
 	}
 
-	if length > m.quotas.MaxDatabases {
-		return fmt.Errorf("plan needs to be upgraded to use more than %d databases", m.quotas.MaxDatabases)
-	}
+	// if length > m.quotas.MaxDatabases {
+	// 	return fmt.Errorf("plan needs to be upgraded to use more than %d databases", m.quotas.MaxDatabases)
+	// }
 
 	return nil
 }
@@ -121,7 +120,8 @@ func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config
 		}
 	}
 
-	return totalProjects < m.quotas.MaxProjects
+	// return totalProjects < m.quotas.MaxProjects
+	return true
 }
 
 // RefreshToken is used to create a new token based on an existing one
@@ -141,18 +141,6 @@ func (m *Manager) RefreshToken(ctx context.Context, token string) (string, error
 	return newToken, nil
 }
 
-func (m *Manager) IsRegistered() bool {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	return m.isRegistered()
-}
-
-// GetQuotas gets number of projects & databases that can be created
-func (m *Manager) GetQuotas() *model.UsageQuotas {
-	return &m.quotas
-}
-
 // GetCredentials gets user name & pass
 func (m *Manager) GetCredentials() map[string]interface{} {
 	return map[string]interface{}{"user": m.user.User, "pass": m.user.Pass}
@@ -161,13 +149,6 @@ func (m *Manager) GetCredentials() map[string]interface{} {
 // GetClusterID returns the cluster id
 func (m *Manager) GetClusterID() string {
 	return m.clusterID
-}
-func (m *Manager) GetSessionID() string {
-	return m.sessionID
-}
-
-func (m *Manager) GetEnterpriseClusterID() string {
-	return m.config.LicenseKey
 }
 
 // GetSecret returns the admin secret

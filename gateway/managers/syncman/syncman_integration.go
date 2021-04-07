@@ -30,9 +30,9 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	if err := s.adminMan.ValidateIntegrationSyncOperation(config.Integrations{integrationConfig}); err != nil {
-		return http.StatusUpgradeRequired, err
-	}
+	// if err := s.adminMan.ValidateIntegrationSyncOperation(config.Integrations{integrationConfig}); err != nil {
+	// 	return http.StatusUpgradeRequired, err
+	// }
 
 	// Create a project if it doesn't already exist
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), fmt.Sprintf("Creating a new project for integration (%s)", integrationConfig.ID), nil)
@@ -72,10 +72,11 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 	integrationConfig.Key = integrationKey
 
 	// Instruct runner to create deployment
-	license, err := s.adminMan.ParseLicense(integrationConfig.License)
-	if err != nil {
-		return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse integration license", err, nil)
-	}
+	// license, err := s.adminMan.ParseLicense(integrationConfig.License)
+	// if err != nil {
+	// 	return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse integration license", err, nil)
+	// }
+	license := make(map[string]interface{})
 	integrationConfig.Deployments = license["deployments"].([]interface{})
 	for _, service := range integrationConfig.Deployments {
 		obj := service.(map[string]interface{})

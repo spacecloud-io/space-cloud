@@ -104,11 +104,7 @@ func (s *ConsulStore) WatchAdminConfig(cb func(cluster []*config.Admin)) error {
 	p.HybridHandler = func(val watch.BlockingParamVal, data interface{}) {
 		kvPairs := data.(api.KVPairs)
 		clusters := []*config.Admin{
-			{
-				LicenseKey:   "",
-				LicenseValue: "",
-				License:      "",
-			},
+			{},
 		}
 
 		for _, kv := range kvPairs {

@@ -124,9 +124,6 @@ func getDefaultAdminConfig() *config.Admin {
 		ClusterConfig: &config.ClusterConfig{
 			EnableTelemetry: true,
 		},
-		LicenseKey:   "",
-		LicenseValue: "",
-		License:      "",
 	}
 }
 

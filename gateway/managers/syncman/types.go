@@ -13,17 +13,12 @@ import (
 type AdminSyncmanInterface interface {
 	GetInternalAccessToken() (string, error)
 	IsTokenValid(ctx context.Context, token, resource, op string, attr map[string]string) (model.RequestParams, error)
-	IsRegistered() bool
-	GetSessionID() string
-	RenewLicense(bool) error
 	ValidateProjectSyncOperation(c *config.Config, project *config.Project) bool
 	SetConfig(admin *config.Admin, isFirst bool) error
 	GetConfig() *config.Admin
 
 	// For integrations
 	GetIntegrationToken(id string) (string, error)
-	ParseLicense(license string) (map[string]interface{}, error)
-	ValidateIntegrationSyncOperation(integrations config.Integrations) error
 }
 
 type integrationInterface interface {

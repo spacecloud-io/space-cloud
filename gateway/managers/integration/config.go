@@ -10,10 +10,10 @@ func (m *Manager) SetConfig(array config.Integrations) error {
 	defer m.lock.Unlock()
 
 	// Check if integration array is valid
-	if err := m.adminMan.ValidateIntegrationSyncOperation(array); err != nil {
-		m.config = map[string]*config.IntegrationConfig{}
-		return err
-	}
+	// if err := m.adminMan.ValidateIntegrationSyncOperation(array); err != nil {
+	// 	m.config = map[string]*config.IntegrationConfig{}
+	// 	return err
+	// }
 
 	// Reset existing config
 	m.config = make(map[string]*config.IntegrationConfig, len(array))

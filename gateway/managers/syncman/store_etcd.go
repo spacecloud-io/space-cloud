@@ -156,11 +156,7 @@ func (s *ETCDStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 	}
 
 	clusters := []*config.Admin{
-		{
-			LicenseKey:   "",
-			LicenseValue: "",
-			License:      "",
-		},
+		{},
 	}
 	for _, kv := range res.Kvs {
 		// Get the id of the item

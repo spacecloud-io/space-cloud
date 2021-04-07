@@ -47,20 +47,12 @@ func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 			return
 		}
 
-		isProd, plan, quotas, loginURL, clusterName, licenseRenewal, licenseKey, licenseValue, sessionID, licenseMode := adminMan.LoadEnv()
+		isProd, loginURL:= adminMan.LoadEnv()
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{
 			"isProd":       isProd,
-			"plan":         plan,
-			"quotas":       quotas,
 			"version":      utils.BuildVersion,
-			"licenseKey":   licenseKey,
-			"licenseValue": licenseValue,
-			"clusterName":  clusterName,
-			"nextRenewal":  licenseRenewal,
 			"clusterType":  clusterType,
 			"loginURL":     loginURL,
-			"sessionId":    sessionID,
-			"licenseMode":  licenseMode,
 		})
 	}
 }

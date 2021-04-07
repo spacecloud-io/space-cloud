@@ -71,9 +71,6 @@ const (
 // Admin holds the admin config
 type Admin struct {
 	ClusterConfig *ClusterConfig `json:"clusterConfig" yaml:"clusterConfig"`
-	LicenseKey    string         `json:"licenseKey" yaml:"licenseKey"`
-	LicenseValue  string         `json:"licenseValue" yaml:"licenseValue"`
-	License       string         `json:"license" yaml:"license"`
 	Integrations  Integrations   `json:"integrations" yaml:"integrations"`
 }
 

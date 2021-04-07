@@ -37,7 +37,7 @@ type metrics struct {
 // New creates a instance of metrics package
 func New(isMetricDisabled bool, driverType model.DriverType) *Module {
 	m := &Module{
-		isMetricsDisabled: isMetricDisabled,
+		isMetricsDisabled: true,
 		clusterID:         os.Getenv("CLUSTER_ID"),
 		nodeID:            ksuid.New().String(),
 		sink:              api.New("spacecloud", "api.spaceuptech.com", true).DB("db"),
