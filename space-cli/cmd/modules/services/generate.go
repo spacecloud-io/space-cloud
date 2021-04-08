@@ -171,14 +171,147 @@ func GenerateServiceRoute(projectID string) (*model.SpecObject, error) {
 		return nil, err
 	}
 
-	var port int32
+	protocol := ""
+	if err := input.Survey.AskOne(&survey.Select{Message: "Select request protocol:", Options: []string{"http", "tcp"}}, &protocol); err != nil {
+		return nil, err
+	}
+
+	port := 0
 	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Port:", Default: "8080"}, &port); err != nil {
 		return nil, err
 	}
 
-	version := ""
-	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Version:"}, &version); err != nil {
+	retries := 0
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Retries:", Default: "3"}, &retries); err != nil {
 		return nil, err
+	}
+
+	timeout := 0
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Timeout in seconds:", Default: "180"}, &timeout); err != nil {
+		return nil, err
+	}
+
+	targets := make([]interface{}, 0)
+	totalWeight := 0
+	wantToAddAnotherTarget := false
+	for {
+
+		targetType := ""
+		if err := input.Survey.AskOne(&survey.Select{Message: "Select target type:", Options: []string{"version", "external"}}, &targetType); err != nil {
+			return nil, err
+		}
+
+		servicePort := 0
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter service port:"}, &servicePort); err != nil {
+			return nil, err
+		}
+
+		t := map[string]interface{}{"port": servicePort, "type": targetType}
+		if targetType == "external" {
+			address := ""
+			if err := input.Survey.AskOne(&survey.Input{Message: "Enter host address:"}, &address); err != nil {
+				return nil, err
+			}
+			t["host"] = address
+		} else {
+			version := ""
+			if err := input.Survey.AskOne(&survey.Input{Message: "Enter Version:"}, &version); err != nil {
+				return nil, err
+			}
+			t["version"] = version
+		}
+
+		weight := 0
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter weight"}, &weight); err != nil {
+			return nil, err
+		}
+		t["weight"] = weight
+
+		targets = append(targets, t)
+		totalWeight += weight
+		if totalWeight == 100 {
+			break
+		}
+		if err := input.Survey.AskOne(&survey.Confirm{Message: "Do you want to another target?"}, &wantToAddAnotherTarget); err != nil {
+			return nil, err
+		}
+		if !wantToAddAnotherTarget {
+			break
+		}
+	}
+
+	if totalWeight != 100 {
+		_ = utils.LogError("sum of weights of all targets should be 100", nil)
+		return nil, nil
+	}
+
+	matchers := make([]interface{}, 0)
+	wantToAddAnotherMatcher := false
+	for {
+
+		matcherType := ""
+		if err := input.Survey.AskOne(&survey.Select{Message: "Select matcher type:", Options: []string{"url", "header"}}, &matcherType); err != nil {
+			return nil, err
+		}
+
+		t := map[string]interface{}{}
+		if matcherType == "url" {
+			matchCondition := ""
+			if err := input.Survey.AskOne(&survey.Select{Message: "Select match condition:", Options: []string{"exact", "prefix", "regex"}}, &matchCondition); err != nil {
+				return nil, err
+			}
+
+			address := ""
+			if err := input.Survey.AskOne(&survey.Input{Message: "Enter URL:"}, &address); err != nil {
+				return nil, err
+			}
+
+			ignoreCase := false
+			if err := input.Survey.AskOne(&survey.Confirm{Message: "Do you want to ignore case?"}, &ignoreCase); err != nil {
+				return nil, err
+			}
+
+			t["url"] = map[string]interface{}{
+				"value":        address,
+				"type":         matchCondition,
+				"isIgnoreCase": ignoreCase,
+			}
+
+		} else {
+			matchCondition := ""
+			if err := input.Survey.AskOne(&survey.Select{Message: "Select match condition:", Options: []string{"exact", "prefix", "regex", "check-presence"}}, &matchCondition); err != nil {
+				return nil, err
+			}
+
+			headerKey := ""
+			if err := input.Survey.AskOne(&survey.Input{Message: "Enter header key:"}, &headerKey); err != nil {
+				return nil, err
+			}
+
+			headerValue := ""
+			if matchCondition != "check-presence" {
+				if err := input.Survey.AskOne(&survey.Input{Message: "Enter header value:"}, &headerValue); err != nil {
+					return nil, err
+				}
+			}
+
+			t["headers"] = []interface{}{
+				map[string]interface{}{
+					"key":   headerKey,
+					"value": headerValue,
+					"type":  matchCondition,
+				},
+			}
+		}
+
+		matchers = append(matchers, t)
+
+		if err := input.Survey.AskOne(&survey.Confirm{Message: "Do you want to add another matcher?"}, &wantToAddAnotherMatcher); err != nil {
+			return nil, err
+		}
+		if !wantToAddAnotherMatcher {
+			break
+		}
 	}
 
 	v := &model.SpecObject{
@@ -192,15 +325,13 @@ func GenerateServiceRoute(projectID string) (*model.SpecObject, error) {
 			"routes": []interface{}{
 				map[string]interface{}{
 					"source": map[string]interface{}{
-						"port": port,
+						"port":     port,
+						"protocol": protocol,
 					},
-					"targets": []interface{}{
-						map[string]interface{}{
-							"type":    "internal",
-							"version": version,
-							"weight":  100,
-						},
-					},
+					"requestRetries": retries,
+					"requestTimeout": timeout,
+					"matchers":       matchers,
+					"targets":        targets,
 				},
 			},
 		},
