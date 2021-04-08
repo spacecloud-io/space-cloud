@@ -71,7 +71,7 @@ entries:
     - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/space-cloud
     type: application
     urls:
-    - space-cloud-0.21.3.tgz
+    - https://storage.googleapis.com/space-cloud/helm/space-cloud/space-cloud-0.21.3.tgz
     version: 0.21.3
   - apiVersion: v3
     appVersion: 0.21.2
@@ -86,7 +86,7 @@ entries:
     - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/space-cloud
     type: application
     urls:
-    - space-cloud-0.21.2.tgz
+    - https://storage.googleapis.com/space-cloud/helm/space-cloud/space-cloud-0.21.2.tgz
     version: 0.21.2
   - apiVersion: v3
     appVersion: 0.21.1
