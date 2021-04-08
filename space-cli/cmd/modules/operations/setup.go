@@ -63,13 +63,7 @@ func Setup(username, key, config, version, secret, imagePrefix, clusterName stri
 	}
 	if version == "" {
 		utils.LogInfo("Fetching latest Space Cloud Version")
-
-		var err error
-		version, err = utils.GetLatestVersion("")
-		if err != nil {
-			_ = utils.LogError("Unable to fetch the latest Space Cloud version. Sticking to tag latest", err)
-			version = "latest"
-		}
+		version = model.Version
 	}
 
 	if secret == "" {

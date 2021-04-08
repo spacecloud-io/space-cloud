@@ -16,4 +16,7 @@ const (
 
 	// ApplyWithNoDelay used as param to indicate to used 0 delay while applying spec objects
 	ApplyWithNoDelay = time.Duration(0)
+
+	// Version specifies space cli version
+	Version string = "0.19.9"
 )
