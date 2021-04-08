@@ -63,7 +63,7 @@ func Setup(username, key, config, version, secret, imagePrefix, clusterName stri
 	}
 	if version == "" {
 		utils.LogInfo("Fetching latest Space Cloud Version")
-		version = "latest"
+		version = model.Version
 	}
 
 	if secret == "" {

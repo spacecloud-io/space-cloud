@@ -18,5 +18,5 @@ const (
 	ApplyWithNoDelay = time.Duration(0)
 
 	// Version specifies space cli version
-	Version string = "0.19.8"
+	Version string = "0.19.9"
 )
