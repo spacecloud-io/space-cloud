@@ -275,8 +275,8 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 
 			// Generate the targets
 			targets := make([]model.RouteTarget, len(route.Route))
-			matchers := make([]*model.Matcher, len(route.Match))
-			for i, match := range route.Match {
+			matchers := make([]*model.Matcher, 0)
+			for _, match := range route.Match {
 				tempMatcher := new(model.Matcher)
 
 				if match.Uri != nil && match.Uri.GetMatchType() != nil {
@@ -320,7 +320,10 @@ func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[str
 
 					tempMatcher.Headers = append(tempMatcher.Headers, tempHeader)
 				}
-				matchers[i] = tempMatcher
+
+				if len(tempMatcher.Headers) > 0 || tempMatcher.URL != nil {
+					matchers = append(matchers, tempMatcher)
+				}
 			}
 
 			for j, destination := range route.Route {

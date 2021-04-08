@@ -271,7 +271,9 @@ func prepareVirtualServiceHTTPRoutes(ctx context.Context, projectID, serviceID s
 			}
 
 			// 	Add header matchers
-			tempMatcher.Headers = map[string]*networkingv1alpha3.StringMatch{}
+			if len(matcher.Headers) > 0 {
+				tempMatcher.Headers = map[string]*networkingv1alpha3.StringMatch{}
+			}
 			for _, header := range matcher.Headers {
 				switch header.Type {
 				case model.RouteHTTPMatchTypeExact:
