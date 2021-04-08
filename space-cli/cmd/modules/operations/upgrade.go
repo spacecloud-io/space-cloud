@@ -32,10 +32,7 @@ func Upgrade(clusterName string, version string, imagePrefix string) error {
 	latestVersion := version
 	if latestVersion == "default" {
 		// Getting latest version
-		latestVersion, err = utils.GetLatestVersion(currentVersion)
-		if err != nil {
-			return err
-		}
+		latestVersion = model.Version
 	}
 
 	if currentVersion == latestVersion {
