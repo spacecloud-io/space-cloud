@@ -1,9 +1,9 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
-	"reflect"
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -515,8 +515,9 @@ func TestGenerateService(t *testing.T) {
 func TestGenerateServiceRoute(t *testing.T) {
 	// surveyReturnValue stores the values returned from the survey
 	surveyReturnValue := ""
-	// surveyReturnPortValue stores the values returned from the survey for port
-	var surveyReturnPortValue int32
+	// surveyReturnIntValue stores the values returned from the survey for port
+	var surveyReturnIntValue int
+	var surveyReturnBoolValue bool
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -556,83 +557,266 @@ func TestGenerateServiceRoute(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		// {
+		// 	name: "unable to survey port",
+		// 	args: args{projectID: "project"},
+		// 	surveyMockArgs: []mockArgs{
+		// 		{
+		// 			method:         "AskOne",
+		// 			args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
+		// 			paramsReturned: []interface{}{nil, "routeID"},
+		// 		},
+		// 		{
+		// 			method:         "AskOne",
+		// 			args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnIntValue, mock.Anything},
+		// 			paramsReturned: []interface{}{errors.New("unable to call AskOne"), "8080"},
+		// 		},
+		// 	},
+		// 	wantErr: true,
+		// },
+		// {
+		// 	name: "unable to survey version",
+		// 	args: args{projectID: "project"},
+		// 	surveyMockArgs: []mockArgs{
+		// 		{
+		// 			method:         "AskOne",
+		// 			args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
+		// 			paramsReturned: []interface{}{nil, "routeID"},
+		// 		},
+		// 		{
+		// 			method:         "AskOne",
+		// 			args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnIntValue, mock.Anything},
+		// 			paramsReturned: []interface{}{nil, "8080"},
+		// 		},
+		// 		{
+		// 			method:         "AskOne",
+		// 			args:           []interface{}{&survey.Input{Message: "Enter Version:"}, &surveyReturnValue, mock.Anything},
+		// 			paramsReturned: []interface{}{errors.New("unable to call AskOne"), "version"},
+		// 		},
+		// 	},
+		// 	wantErr: true,
+		// },
 		{
-			name: "unable to survey port",
+			name: "service route generated versioned target with url matcher",
 			args: args{projectID: "project"},
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "routeID"},
+					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "new-service"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnPortValue, mock.Anything},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "8080"},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "unable to survey version",
-			args: args{projectID: "project"},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "routeID"},
+					args:           []interface{}{&survey.Select{Message: "Select request protocol:", Options: []string{"http", "tcp"}}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "http"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnPortValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "8080"},
+					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnIntValue},
+					paramsReturned: []interface{}{nil, 8080},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Version:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "version"},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "service route generated",
-			args: args{projectID: "project"},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "routeID"},
+					args:           []interface{}{&survey.Input{Message: "Enter Retries:", Default: "3"}, &surveyReturnIntValue},
+					paramsReturned: []interface{}{nil, 3},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnPortValue, mock.Anything},
-					paramsReturned: []interface{}{nil, int32(8080)},
+					args:           []interface{}{&survey.Input{Message: "Enter Timeout in seconds:", Default: "180"}, &surveyReturnIntValue},
+					paramsReturned: []interface{}{nil, 180},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Version:"}, &surveyReturnValue, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select target type:", Options: []string{"version", "external"}}, &surveyReturnValue},
 					paramsReturned: []interface{}{nil, "version"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter service port:"}, &surveyReturnIntValue},
+					paramsReturned: []interface{}{nil, 8080},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Version:"}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "v1"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter weight"}, &surveyReturnIntValue},
+					paramsReturned: []interface{}{nil, 100},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Select matcher type:", Options: []string{"url", "header"}}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "url"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Select match condition:", Options: []string{"exact", "prefix", "regex"}}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "exact"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter URL:"}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "/v2"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Confirm{Message: "Do you want to ignore case?"}, &surveyReturnBoolValue},
+					paramsReturned: []interface{}{nil, true},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Confirm{Message: "Do you want to add another matcher?"}, &surveyReturnBoolValue},
+					paramsReturned: []interface{}{nil, false},
 				},
 			},
 			want: &model.SpecObject{
 				API:  "/v1/runner/{project}/service-routes/{id}",
 				Type: "service-route",
 				Meta: map[string]string{
-					"id":      "routeID",
+					"id":      "new-service",
 					"project": "project",
 				},
 				Spec: map[string]interface{}{
 					"routes": []interface{}{
 						map[string]interface{}{
+							"requestRetries": 3,
+							"requestTimeout": 180,
 							"source": map[string]interface{}{
-								"port": int32(8080),
+								"port":     8080,
+								"protocol": "http",
 							},
 							"targets": []interface{}{
 								map[string]interface{}{
-									"type":    "internal",
-									"version": "version",
+									"type":    "version",
+									"version": "v1",
+									"port":    8080,
 									"weight":  100,
+								},
+							},
+							"matchers": []interface{}{
+								map[string]interface{}{
+									"url": map[string]interface{}{
+										"value":        "/v2",
+										"type":         "exact",
+										"isIgnoreCase": true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "service route generated external target with header matcher",
+			args: args{projectID: "project"},
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Route ID:"}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "new-service"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Select request protocol:", Options: []string{"http", "tcp"}}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "http"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Port:", Default: "8080"}, &surveyReturnIntValue},
+					paramsReturned: []interface{}{nil, 8080},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Retries:", Default: "3"}, &surveyReturnIntValue},
+					paramsReturned: []interface{}{nil, 3},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Timeout in seconds:", Default: "180"}, &surveyReturnIntValue},
+					paramsReturned: []interface{}{nil, 180},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Select target type:", Options: []string{"version", "external"}}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "external"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter service port:"}, &surveyReturnIntValue},
+					paramsReturned: []interface{}{nil, 8080},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter host address:"}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "project.svc.cluster.local"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter weight"}, &surveyReturnIntValue},
+					paramsReturned: []interface{}{nil, 100},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Select matcher type:", Options: []string{"url", "header"}}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "header"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Select match condition:", Options: []string{"exact", "prefix", "regex", "check-presence"}}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "exact"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter header key:"}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter header value:"}, &surveyReturnValue},
+					paramsReturned: []interface{}{nil, "value"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Confirm{Message: "Do you want to add another matcher?"}, &surveyReturnBoolValue},
+					paramsReturned: []interface{}{nil, false},
+				},
+			},
+			want: &model.SpecObject{
+				API:  "/v1/runner/{project}/service-routes/{id}",
+				Type: "service-route",
+				Meta: map[string]string{
+					"id":      "new-service",
+					"project": "project",
+				},
+				Spec: map[string]interface{}{
+					"routes": []interface{}{
+						map[string]interface{}{
+							"requestRetries": 3,
+							"requestTimeout": 180,
+							"source": map[string]interface{}{
+								"port":     8080,
+								"protocol": "http",
+							},
+							"targets": []interface{}{
+								map[string]interface{}{
+									"type":   "external",
+									"host":   "project.svc.cluster.local",
+									"port":   8080,
+									"weight": 100,
+								},
+							},
+							"matchers": []interface{}{
+								map[string]interface{}{
+									"headers": []interface{}{
+										map[string]interface{}{
+											"key":   "key",
+											"value": "value",
+											"type":  "exact",
+										},
+									},
 								},
 							},
 						},
@@ -657,8 +841,10 @@ func TestGenerateServiceRoute(t *testing.T) {
 				t.Errorf("GenerateServiceRoute() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GenerateServiceRoute() = %v, want %v", got, tt.want)
+
+			if arr := deep.Equal(got, tt.want); len(arr) > 0 {
+				a, _ := json.MarshalIndent(arr, "", " ")
+				t.Errorf("GetServiceRoutes() diff = %v", string(a))
 			}
 
 			mockSurvey.AssertExpectations(t)
