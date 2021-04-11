@@ -32,7 +32,6 @@ func TestManager_GetClusterID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
 				isProd:    tt.fields.isProd,
 				clusterID: tt.fields.clusterID,
@@ -65,7 +64,6 @@ func TestManager_GetCredentials(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
 				isProd:    tt.fields.isProd,
 				clusterID: tt.fields.clusterID,
@@ -94,39 +92,6 @@ func TestManager_GetInternalAccessToken(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetInternalAccessToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
-			}
-		})
-	}
-}
-
-func TestManager_GetQuotas(t *testing.T) {
-	type fields struct {
-		quotas    model.UsageQuotas
-		user      *config.AdminUser
-		isProd    bool
-		clusterID string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   *model.UsageQuotas
-	}{
-		{
-			name:   "Valid case",
-			fields: fields{quotas: model.UsageQuotas{MaxDatabases: 1, MaxProjects: 1}},
-			want:   &model.UsageQuotas{MaxProjects: 1, MaxDatabases: 1},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &Manager{
-				quotas:    tt.fields.quotas,
-				user:      tt.fields.user,
-				isProd:    tt.fields.isProd,
-				clusterID: tt.fields.clusterID,
-			}
-			if got := m.GetQuotas(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetQuotas() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -209,7 +174,6 @@ func TestManager_IsTokenValid(t *testing.T) {
 			}
 
 			m := &Manager{
-				quotas:         tt.fields.quotas,
 				user:           tt.fields.user,
 				isProd:         tt.fields.isProd,
 				clusterID:      tt.fields.clusterID,
@@ -283,18 +247,9 @@ func TestManager_ValidateSyncOperation(t *testing.T) {
 			},
 			want: true,
 		},
-		{
-			name: "project max projects creation limit reached",
-			args: args{
-				c:       &config.Config{Projects: config.Projects{"projectID": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "projectID"}}}},
-				project: &config.Project{ProjectConfig: &config.ProjectConfig{ID: "project2"}},
-			},
-			want: false,
-		},
 	}
 
 	m := New("nodeID", "clusterID", true, &config.AdminUser{})
-	m.quotas = model.UsageQuotas{MaxProjects: 1, MaxDatabases: 1}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := m.ValidateProjectSyncOperation(tt.args.c, tt.args.project.ProjectConfig); got != tt.want {

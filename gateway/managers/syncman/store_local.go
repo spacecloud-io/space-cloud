@@ -57,16 +57,6 @@ func (s *LocalStore) WatchServices(cb func(string, string, model.ScServices)) er
 	return nil
 }
 
-// WatchLicense watches over changes in license secret
-func (s *LocalStore) WatchLicense(cb func(eventType, resourceID string, resourceType config.Resource, resource *config.License)) {
-	cb(config.ResourceAddEvent, config.GenerateResourceID("", "noProject", config.ResourceLicense, "license"), config.ResourceLicense, s.globalConfig.License)
-}
-
-func (s *LocalStore) SetLicense(ctx context.Context, resourceID string, resource *config.License) error {
-	s.globalConfig.License = resource
-	return config.StoreConfigToFile(s.globalConfig, s.configPath)
-}
-
 // SetResource sets the project of the local globalConfig
 func (s *LocalStore) SetResource(ctx context.Context, resourceID string, resource interface{}) error {
 	if err := updateResource(ctx, config.ResourceAddEvent, s.globalConfig, resourceID, "", resource); err != nil {

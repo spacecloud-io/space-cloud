@@ -79,8 +79,6 @@ const (
 	ResourceIntegrationHook Resource = "integration-hook"
 	// ResourceCluster is a resource
 	ResourceCluster Resource = "cluster"
-	// ResourceLicense is a resource
-	ResourceLicense Resource = "license"
 
 	// ResourceLicense is a resource
 	ResourceCacheConfig Resource = "cache-config"

@@ -114,10 +114,6 @@ func (m *mockAdminSyncmanInterface) ValidateProjectSyncOperation(projects *confi
 	return m.Called(projects, projectID).Bool(0)
 }
 
-func (m *mockAdminSyncmanInterface) SetConfig(admin *config.License) error {
-	return m.Called(admin).Error(0)
-}
-
 func (m *mockAdminSyncmanInterface) IsTokenValid(_ context.Context, token, resource, op string, attr map[string]string) (model.RequestParams, error) {
 	c := m.Called(token, resource, op, attr)
 	return c.Get(0).(model.RequestParams), c.Error(1)
@@ -126,10 +122,6 @@ func (m *mockAdminSyncmanInterface) IsTokenValid(_ context.Context, token, resou
 func (m *mockAdminSyncmanInterface) GetInternalAccessToken() (string, error) {
 	c := m.Called()
 	return c.String(0), c.Error(1)
-}
-
-func (m *mockAdminSyncmanInterface) GetConfig() *config.License {
-	return m.Called().Get(0).(*config.License)
 }
 
 type mockModulesInterface struct {
@@ -250,15 +242,6 @@ func (m *mockModulesInterface) GetAuthModuleForSyncMan(projectID string) (model.
 
 type mockStoreInterface struct {
 	mock.Mock
-}
-
-func (m *mockStoreInterface) WatchLicense(cb func(eventType string, resourceId string, resourceType config.Resource, resource *config.License)) {
-	m.Called(cb)
-}
-
-func (m *mockStoreInterface) SetLicense(ctx context.Context, resourceID string, resource *config.License) error {
-	c := m.Called(ctx, resourceID, resource)
-	return c.Error(0)
 }
 
 func (m *mockStoreInterface) GetGlobalConfig() (*config.Config, error) {

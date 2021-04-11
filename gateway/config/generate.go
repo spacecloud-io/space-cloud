@@ -8,7 +8,6 @@ func GenerateEmptyConfig() *Config {
 		ClusterConfig:    new(ClusterConfig),
 		Integrations:     make(Integrations),
 		IntegrationHooks: make(IntegrationHooks),
-		License:          new(License),
 		CacheConfig:      new(CacheConfig),
 	}
 }

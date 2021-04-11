@@ -79,10 +79,6 @@ func New(nodeID, clusterID, storeType, runnerAddr string, adminMan AdminSyncmanI
 	m.pubsubClient = pubsubClient
 	m.leader = leader.New(nodeID, pubsubClient)
 
-	if err := m.SetPubSubRoutines(nodeID); err != nil {
-		return nil, err
-	}
-
 	return m, nil
 }
 
@@ -124,7 +120,6 @@ func (s *Manager) Start(port int) error {
 		return err
 	}
 
-	_ = s.adminMan.SetConfig(globalConfig.License)
 	s.adminMan.SetServices(config.ResourceAddEvent, s.services)
 	s.adminMan.SetIntegrationConfig(globalConfig.Integrations)
 	_ = s.integrationMan.SetConfig(globalConfig.Integrations, globalConfig.IntegrationHooks)
@@ -254,11 +249,6 @@ func (s *Manager) Start(port int) error {
 		case config.ResourceIntegrationHook:
 			s.integrationMan.SetIntegrationHooks(s.projectConfig.IntegrationHooks)
 
-		case config.ResourceLicense:
-			if err := s.adminMan.SetConfig(s.projectConfig.License); err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
-				return
-			}
 		case config.ResourceCacheConfig:
 			if err := s.modules.Caching().SetCachingConfig(ctx, s.projectConfig.CacheConfig); err != nil {
 				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
@@ -271,21 +261,6 @@ func (s *Manager) Start(port int) error {
 	}); err != nil {
 		return err
 	}
-	s.store.WatchLicense(func(eventType, resourceID string, resourceType config.Resource, resource *config.License) {
-
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating license", map[string]interface{}{"event": eventType, "resourceId": resourceID, "resource": resource, "resourceType": resourceType})
-
-		if resourceType == config.ResourceLicense {
-			if err := s.adminMan.SetConfig(resource); err != nil {
-				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
-				return
-			}
-			s.lock.Lock()
-			s.projectConfig.License = resource
-			s.lock.Unlock()
-		}
-
-	})
 
 	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Exiting syncman start", nil)
 	return nil

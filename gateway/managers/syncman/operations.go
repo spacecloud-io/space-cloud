@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/spaceuptech/helpers"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -137,15 +135,6 @@ func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestPara
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return http.StatusOK, s.projectConfig.ClusterConfig, nil
-}
-
-func (s *Manager) SetLicense(ctx context.Context, license *config.License) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	helpers.Logger.LogInfo("set-license", "Setting global license", map[string]interface{}{"licenseConfig": license})
-	s.projectConfig.License = license
-	resourceID := config.GenerateResourceID(s.clusterID, "noProject", config.ResourceLicense, "license")
-	return s.store.SetLicense(ctx, resourceID, license)
 }
 
 // GetConfig returns the config present in the state

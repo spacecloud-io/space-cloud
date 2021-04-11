@@ -11,7 +11,6 @@ type Config struct {
 	ClusterConfig    *ClusterConfig   `json:"clusterConfig" yaml:"clusterConfig" mapstructure:"clusterConfig"`
 	Integrations     Integrations     `json:"integrations" yaml:"integrations" mapstructure:"integrations"`
 	IntegrationHooks IntegrationHooks `json:"integrationsHooks" yaml:"integrationsHooks" mapstructure:"integrationsHooks"`
-	License          *License         `json:"license" yaml:"license" mapstructure:"license"`
 	CacheConfig      *CacheConfig     `json:"cacheConfig" yaml:"cacheConfig" mapstructure:"cacheConfig"`
 }
 
@@ -19,13 +18,6 @@ type Config struct {
 type ClusterConfig struct {
 	LetsEncryptEmail string `json:"letsencryptEmail" yaml:"letsencryptEmail" mapstructure:"letsencryptEmail"`
 	EnableTelemetry  bool   `json:"enableTelemetry" yaml:"enableTelemetry" mapstructure:"enableTelemetry"`
-}
-
-// License holds license information
-type License struct {
-	LicenseKey   string `json:"licenseKey" yaml:"licenseKey" mapstructure:"licenseKey"`
-	LicenseValue string `json:"licenseValue" yaml:"licenseValue" mapstructure:"licenseValue"`
-	License      string `json:"license" yaml:"license" mapstructure:"license"`
 }
 
 // Projects is a map which stores config information of all project in a cluster
@@ -210,9 +202,6 @@ const (
 // Admin holds the admin config
 type Admin struct {
 	ClusterConfig *ClusterConfig `json:"clusterConfig" yaml:"clusterConfig" mapstructure:"clusterConfig"`
-	LicenseKey    string         `json:"licenseKey" yaml:"licenseKey" mapstructure:"licenseKey"`
-	LicenseValue  string         `json:"licenseValue" yaml:"licenseValue" mapstructure:"licenseValue"`
-	License       string         `json:"license" yaml:"license" mapstructure:"license"`
 	Integrations  Integrations   `json:"integrations" yaml:"integrations" mapstructure:"integrations"`
 }
 

@@ -2,13 +2,10 @@ package integration
 
 import (
 	"net/http"
-
-	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
 type adminManager interface {
 	GetInternalAccessToken() (string, error)
-	ValidateIntegrationSyncOperation(integrations config.Integrations) error
 }
 
 type authResponse struct {

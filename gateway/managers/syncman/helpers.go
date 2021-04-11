@@ -434,20 +434,6 @@ func updateResource(ctx context.Context, eventType string, globalConfig *config.
 		}
 		return nil
 
-	case config.ResourceLicense:
-		switch eventType {
-		case config.ResourceAddEvent, config.ResourceUpdateEvent:
-			value := new(config.License)
-			if err := mapstructure.Decode(resource, value); err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.IntegrationHook{}", reflect.TypeOf(resource)), nil, nil)
-			}
-
-			globalConfig.License = value
-		case config.ResourceDeleteEvent:
-		}
-
-		return nil
-
 	case config.ResourceCacheConfig:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:

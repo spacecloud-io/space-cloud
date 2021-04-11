@@ -2,7 +2,6 @@ package admin
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -85,10 +84,6 @@ func (m *Manager) IsDBConfigValid(config config.DatabaseConfigs) error {
 		}
 	}
 
-	if length > m.quotas.MaxDatabases {
-		return fmt.Errorf("plan needs to be upgraded to use more than %d databases", m.quotas.MaxDatabases)
-	}
-
 	return nil
 }
 
@@ -96,10 +91,6 @@ func (m *Manager) IsDBConfigValid(config config.DatabaseConfigs) error {
 func (m *Manager) CheckIfCachingCanBeEnabled(ctx context.Context) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-
-	if m.quotas.IntegrationLevel < 5 {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "plan needs to be upgraded to use caching module", nil, nil)
-	}
 
 	return nil
 }
@@ -133,7 +124,7 @@ func (m *Manager) ValidateProjectSyncOperation(c *config.Config, project *config
 		}
 	}
 
-	return totalProjects < m.quotas.MaxProjects
+	return true
 }
 
 // RefreshToken is used to create a new token based on an existing one
@@ -153,18 +144,6 @@ func (m *Manager) RefreshToken(ctx context.Context, token string) (string, error
 	return newToken, nil
 }
 
-func (m *Manager) IsRegistered() bool {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	return m.isRegistered()
-}
-
-// GetQuotas gets number of projects & databases that can be created
-func (m *Manager) GetQuotas() *model.UsageQuotas {
-	return &m.quotas
-}
-
 // GetCredentials gets user name & pass
 func (m *Manager) GetCredentials() map[string]interface{} {
 	return map[string]interface{}{"user": m.user.User, "pass": m.user.Pass}
@@ -173,23 +152,6 @@ func (m *Manager) GetCredentials() map[string]interface{} {
 // GetClusterID returns the cluster id
 func (m *Manager) GetClusterID() string {
 	return m.clusterID
-}
-func (m *Manager) GetSessionID() (string, error) {
-	if licenseMode == licenseModeOffline {
-		return m.getOfflineLicenseSessionID(), nil
-	}
-	if m.isEnterpriseMode() {
-		licenseObj, err := m.decryptLicense(m.license.License)
-		if err != nil {
-			return "", helpers.Logger.LogError("get-session-id", "Unable to validate license key", err, nil)
-		}
-		return licenseObj.SessionID, nil
-	}
-	return selectRandomSessionID(m.services), nil // first time license renewal
-}
-
-func (m *Manager) GetEnterpriseClusterID() string {
-	return m.license.LicenseKey
 }
 
 // GetSecret returns the admin secret

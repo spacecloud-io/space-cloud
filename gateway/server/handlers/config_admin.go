@@ -47,27 +47,17 @@ func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 			return
 		}
 
-		isProd, plan, quotas, loginURL, clusterName, licenseRenewal, licenseKey, licenseValue, sessionID, licenseMode, err := adminMan.LoadEnv()
+		isProd, loginURL, err := adminMan.LoadEnv()
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
 			return
 		}
 
-		leaderID, _ := syncMan.GetLeaderGatewayID(ctx)
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{
-			"isProd":       isProd,
-			"plan":         plan,
-			"quotas":       quotas,
-			"version":      utils.BuildVersion,
-			"licenseKey":   licenseKey,
-			"licenseValue": licenseValue,
-			"clusterName":  clusterName,
-			"nextRenewal":  licenseRenewal,
-			"clusterType":  clusterType,
-			"loginURL":     loginURL,
-			"sessionId":    sessionID,
-			"licenseMode":  licenseMode,
-			"leaderId":     leaderID,
+			"isProd":      isProd,
+			"version":     utils.BuildVersion,
+			"clusterType": clusterType,
+			"loginURL":    loginURL,
 		})
 	}
 }

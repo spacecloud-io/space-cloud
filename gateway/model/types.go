@@ -8,7 +8,6 @@ import (
 )
 
 type SyncManAdminInterface interface {
-	SetLicense(ctx context.Context, cluster *config.License) error
 	CheckIfLeaderGateway(nodeID string) (bool, error)
 }
 

@@ -19,10 +19,10 @@ func (m *Manager) SetIntegrations(integrations config.Integrations) error {
 	defer m.lock.Unlock()
 
 	// Check if integration are valid
-	if err := m.adminMan.ValidateIntegrationSyncOperation(integrations); err != nil {
-		m.integrationConfig = map[string]*config.IntegrationConfig{}
-		return err
-	}
+	// if err := m.adminMan.ValidateIntegrationSyncOperation(integrations); err != nil {
+	// 	m.integrationConfig = map[string]*config.IntegrationConfig{}
+	// 	return err
+	// }
 
 	m.integrationConfig = integrations
 	return nil
