@@ -15,9 +15,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/pubsub"
 )
 
-const pubSubOperationRenew = "renew"
-const pubSubOperationUpgrade = "upgrade"
-
 // Manager syncs the project config between folders
 type Manager struct {
 	lock         sync.RWMutex

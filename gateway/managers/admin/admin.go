@@ -50,6 +50,7 @@ func (m *Manager) SetIntegrationMan(i IntegrationInterface) {
 	m.integrationMan = i
 }
 
+// SetIntegrationConfig sets integration config
 func (m *Manager) SetIntegrationConfig(integrations config.Integrations) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

@@ -67,10 +67,6 @@ func (s *Manager) checkIfDbAliasExists(dbConfigs config.DatabaseConfigs, dbAlias
 	return nil, false
 }
 
-func generatePubSubTopic(nodeID, operation string) string {
-	return fmt.Sprintf("%s--%s", nodeID, operation)
-}
-
 func splitResourceID(ctx context.Context, resourceID string) (clusterID string, projectID string, resource config.Resource, err error) {
 	arr := strings.Split(resourceID, "--")
 	// ResourceId format --> clusterId--ProjectId--resourceType--someId-...
