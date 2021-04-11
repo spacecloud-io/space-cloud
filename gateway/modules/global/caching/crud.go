@@ -14,6 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
+// GetDatabaseKey gets database key
 func (c *Cache) GetDatabaseKey(ctx context.Context, projectID, dbAlias, tableName string, req *model.ReadRequest) (*CacheResult, error) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
@@ -68,6 +69,7 @@ func (c *Cache) GetDatabaseKey(ctx context.Context, projectID, dbAlias, tableNam
 	return cacheResult, nil
 }
 
+// SetDatabaseKey sets database key
 func (c *Cache) SetDatabaseKey(ctx context.Context, projectID, dbAlias, col string, result *model.CacheDatabaseResult, dbCacheOptions *CacheResult, cache *config.ReadCacheOptions, cacheJoinInfo map[string]map[string]string) error {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
@@ -115,6 +117,7 @@ func (c *Cache) SetDatabaseKey(ctx context.Context, projectID, dbAlias, col stri
 	return nil
 }
 
+// InvalidateDatabaseCache invalidates database cache
 func (c *Cache) InvalidateDatabaseCache(ctx context.Context, projectID, dbAlias, rootTable, opType string, doc map[string]interface{}) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -161,6 +164,9 @@ func (c *Cache) InvalidateDatabaseCache(ctx context.Context, projectID, dbAlias,
 				}
 
 				_, _, _, _, _, _, _, columnName, _, _, err := c.splitFullDatabaseKey(ctx, fullJoinKey)
+				if err != nil {
+					return err
+				}
 				columnValue, ok := doc[columnName]
 				if !ok {
 					return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Column name (%s) not found in doc object", columnName), nil, map[string]interface{}{"fullJoinKey": fullJoinKey})

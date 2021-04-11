@@ -30,6 +30,7 @@ type BatchSpecApplyRequest struct {
 	Specs []*SpecObject `json:"specs" yaml:"specs"`
 }
 
+// LicenseUpgradeRequest is the body of license upgrade request
 type LicenseUpgradeRequest struct {
 	LicenseKey   string `json:"licenseKey" mapstructure:"licenseKey"`
 	LicenseValue string `json:"licenseValue" mapstructure:"licenseValue"`

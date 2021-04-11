@@ -15,6 +15,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+// EnableIntegration enables integration
 func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *config.IntegrationConfig, params model.RequestParams) (int, error) {
 	// Check if the request has been hijacked
 	hookResponse := s.integrationMan.InvokeHook(ctx, params)
@@ -322,7 +323,7 @@ func (s *Manager) RemoveIntegrationHook(ctx context.Context, integrationID, hook
 	return http.StatusOK, nil
 }
 
-// GetIntegrationHook removes an integration hook
+// GetIntegrationHooks gets a integration hook
 func (s *Manager) GetIntegrationHooks(ctx context.Context, integrationID, hookID string, params model.RequestParams) (int, []interface{}, error) {
 	// Check if the request has been hijacked
 	hookResponse := s.integrationMan.InvokeHook(ctx, params)

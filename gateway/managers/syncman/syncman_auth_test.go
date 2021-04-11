@@ -124,23 +124,17 @@ func TestManager_SetUserManagement(t *testing.T) {
 
 func TestManager_GetUserManagement(t *testing.T) {
 
-	type mockArgs struct {
-		method         string
-		args           []interface{}
-		paramsReturned []interface{}
-	}
 	type args struct {
 		ctx        context.Context
 		project    string
 		providerID string
 	}
 	tests := []struct {
-		name            string
-		s               *Manager
-		args            args
-		integrationArgs []mockArgs
-		want            []interface{}
-		wantErr         bool
+		name    string
+		s       *Manager
+		args    args
+		want    []interface{}
+		wantErr bool
 	}{
 		{
 			name:    "unable to get project",
@@ -152,39 +146,18 @@ func TestManager_GetUserManagement(t *testing.T) {
 			name: "providerID is empty",
 			s:    &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: map[string]*config.AuthStub{"provider": {ID: "id"}}}}}},
 			args: args{ctx: context.Background(), project: "1", providerID: "*"},
-			integrationArgs: []mockArgs{
-				{
-					method:         "InvokeHook",
-					args:           []interface{}{mock.Anything},
-					paramsReturned: []interface{}{mockHookResponse{}},
-				},
-			},
 			want: []interface{}{&config.AuthStub{ID: "id"}},
 		},
 		{
-			name: "providerID is not present in config",
-			s:    &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: map[string]*config.AuthStub{"provider": {ID: "id"}}}}}},
-			args: args{ctx: context.Background(), project: "1", providerID: "notProvider"},
-			integrationArgs: []mockArgs{
-				{
-					method:         "InvokeHook",
-					args:           []interface{}{mock.Anything},
-					paramsReturned: []interface{}{mockHookResponse{}},
-				},
-			},
+			name:    "providerID is not present in config",
+			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: map[string]*config.AuthStub{"provider": {ID: "id"}}}}}},
+			args:    args{ctx: context.Background(), project: "1", providerID: "notProvider"},
 			wantErr: true,
 		},
 		{
 			name: "providerID is present in config",
 			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, Auths: map[string]*config.AuthStub{config.GenerateResourceID("chicago", "1", config.ResourceAuthProvider, "provider"): {ID: "provider"}}}}}},
 			args: args{ctx: context.Background(), project: "1", providerID: "provider"},
-			integrationArgs: []mockArgs{
-				{
-					method:         "InvokeHook",
-					args:           []interface{}{mock.Anything},
-					paramsReturned: []interface{}{mockHookResponse{}},
-				},
-			},
 			want: []interface{}{&config.AuthStub{ID: "provider"}},
 		},
 	}

@@ -80,7 +80,7 @@ const (
 	// ResourceCluster is a resource
 	ResourceCluster Resource = "cluster"
 
-	// ResourceLicense is a resource
+	// ResourceCacheConfig is a resource
 	ResourceCacheConfig Resource = "cache-config"
 
 	// ResourceDeployService is a resource

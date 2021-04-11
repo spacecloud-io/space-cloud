@@ -748,6 +748,7 @@ func updateResource(ctx context.Context, eventType string, globalConfig *config.
 	}
 }
 
+// CheckIfLeaderGateway tells if the provided gateway is the current leader gateway or not
 func (s *Manager) CheckIfLeaderGateway(nodeID string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

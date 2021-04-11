@@ -11,6 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+// SetRemoteServiceKey set remote service key
 func (c *Cache) SetRemoteServiceKey(ctx context.Context, redisKey string, remoteServiceCacheOptions *CacheResult, cache *config.ReadCacheOptions, result interface{}) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -28,6 +29,7 @@ func (c *Cache) SetRemoteServiceKey(ctx context.Context, redisKey string, remote
 	return c.set(ctx, redisKey, cache, string(data))
 }
 
+// GetRemoteService get remote service
 func (c *Cache) GetRemoteService(ctx context.Context, projectID, serviceID, endpoint string, cache *config.ReadCacheOptions, cacheOptions []interface{}) (*CacheResult, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -59,6 +61,7 @@ func (c *Cache) GetRemoteService(ctx context.Context, projectID, serviceID, endp
 	return cacheResult, nil
 }
 
+// GetIngressRoute get ingress route
 func (c *Cache) GetIngressRoute(ctx context.Context, routeID string, cacheOptions []interface{}) (string, bool, *model.CacheIngressRoute, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -84,6 +87,7 @@ func (c *Cache) GetIngressRoute(ctx context.Context, routeID string, cacheOption
 	return key, isCacheHit, obj, err
 }
 
+// SetIngressRouteKey sets ingress route key
 func (c *Cache) SetIngressRouteKey(ctx context.Context, redisKey string, cache *config.ReadCacheOptions, result *model.CacheIngressRoute) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -96,6 +100,7 @@ func (c *Cache) SetIngressRouteKey(ctx context.Context, redisKey string, cache *
 	return c.set(ctx, redisKey, cache, string(data))
 }
 
+// ConnectionState gets the current connection state
 func (c *Cache) ConnectionState(ctx context.Context) bool {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -103,6 +108,7 @@ func (c *Cache) ConnectionState(ctx context.Context) bool {
 	return c.redisClient.Ping(ctx).Err() == nil
 }
 
+// PurgeCache purges cache
 func (c *Cache) PurgeCache(ctx context.Context, projectID string, req *model.CachePurgeRequest) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -118,10 +124,10 @@ func (c *Cache) PurgeCache(ctx context.Context, projectID string, req *model.Cac
 	prefixKey := ""
 	switch req.Resource {
 	case config.ResourceRemoteService:
-		if req.ServiceId != "*" && req.ID != "*" {
+		if req.ServiceID != "*" && req.ID != "*" {
 			prefixKey = c.generateRemoteServiceEndpointPrefixKey(projectID, req.DbAlias, req.ID)
-		} else if req.ServiceId != "*" {
-			prefixKey = c.generateRemoteServicePrefixKey(projectID, req.ServiceId)
+		} else if req.ServiceID != "*" {
+			prefixKey = c.generateRemoteServicePrefixKey(projectID, req.ServiceID)
 		} else {
 			prefixKey = c.generateRemoteServiceResourcePrefixKey(projectID)
 		}

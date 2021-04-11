@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/spaceuptech/helpers"
 
@@ -217,26 +216,4 @@ func (c *Cache) instantInvalidationDelete(ctx context.Context, projectID, dbAlia
 	}
 
 	return nil
-}
-
-func (c *Cache) startRedisScanner(ctx context.Context, receiver chan []string, closer chan struct{}, pattern string) {
-	var nextCursor uint64 = 0
-	var keysArr []string
-	var err error
-
-	for {
-		scan := c.redisClient.Scan(ctx, nextCursor, pattern, 20)
-		keysArr, nextCursor, err = scan.Result()
-		if err != nil {
-			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list redis keys with prefix (%s)", pattern), err, map[string]interface{}{})
-			closer <- struct{}{}
-			break
-		}
-		receiver <- keysArr
-		if nextCursor == 0 {
-			time.Sleep(5 * time.Second)
-			closer <- struct{}{}
-			break
-		}
-	}
 }
