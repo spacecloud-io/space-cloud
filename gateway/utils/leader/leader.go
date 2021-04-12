@@ -14,6 +14,7 @@ var leaderElectionRedisKey = "license-manager"
 
 const leaderTime = 10 * time.Second // time for which a gateway can be a leader in a cluster
 
+// Module handles all the leader tasks
 type Module struct {
 	lock sync.RWMutex
 
@@ -22,6 +23,7 @@ type Module struct {
 	cbs          map[string]func()
 }
 
+// New initializes leader module
 func New(nodeID string, module *pubsub.Module) *Module {
 	m := &Module{pubsubClient: module, nodeID: nodeID, cbs: map[string]func(){}}
 
@@ -32,12 +34,14 @@ func New(nodeID string, module *pubsub.Module) *Module {
 	return m
 }
 
+// AddCallBack adds a call back function
 func (s *Module) AddCallBack(id string, cb func()) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.cbs[id] = cb
 }
 
+// RemoveCallBack removes a call back function
 func (s *Module) RemoveCallBack(id string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -50,11 +54,8 @@ func (s *Module) applyForLeaderPosition() {
 	defer ticker.Stop()
 
 	s.applyForLeader()
-	for {
-		select {
-		case <-ticker.C:
-			s.applyForLeader()
-		}
+	for range ticker.C {
+		s.applyForLeader()
 	}
 }
 
@@ -82,13 +83,10 @@ func (s *Module) renewYourLeaderPosition() {
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			if err := s.pubsubClient.RenewKeyTTLOnMatch(context.Background(), leaderElectionRedisKey, s.nodeID, leaderTime); err != nil {
-				helpers.Logger.LogDebug("renewYourLeaderPosition", "Unable to renew leader position", map[string]interface{}{"key": leaderElectionRedisKey, "nodeId": s.nodeID})
-				continue
-			}
+	for range ticker.C {
+		if err := s.pubsubClient.RenewKeyTTLOnMatch(context.Background(), leaderElectionRedisKey, s.nodeID, leaderTime); err != nil {
+			helpers.Logger.LogDebug("renewYourLeaderPosition", "Unable to renew leader position", map[string]interface{}{"key": leaderElectionRedisKey, "nodeId": s.nodeID})
+			continue
 		}
 	}
 }

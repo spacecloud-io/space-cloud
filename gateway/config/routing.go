@@ -49,8 +49,8 @@ type Route struct {
 	Source           RouteSource   `json:"source" yaml:"source" mapstructure:"source"`
 	Targets          []RouteTarget `json:"targets" yaml:"targets" mapstructure:"targets"`
 	Rule             *Rule         `json:"rule" yaml:"rule" mapstructure:"rule"`
-	IsRouteCacheable bool          `json:"isRouteCacheable" yaml:"isRouteCacheable" mapstructure:"isRouteCacheable`
-	CacheOptions     []string      `json:"cacheOptions" yaml:"cacheOptions" mapstructure:"cacheOptions`
+	IsRouteCacheable bool          `json:"isRouteCacheable" yaml:"isRouteCacheable" mapstructure:"isRouteCacheable"`
+	CacheOptions     []string      `json:"cacheOptions" yaml:"cacheOptions" mapstructure:"cacheOptions"`
 	Modify           struct {
 		Tmpl            TemplatingEngine `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
 		ReqTmpl         string           `json:"requestTemplate" yaml:"requestTemplate" mapstructure:"requestTemplate"`

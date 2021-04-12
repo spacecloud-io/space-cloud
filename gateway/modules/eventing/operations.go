@@ -130,6 +130,7 @@ func (m *Module) SetRealtimeTriggers(eventingRules []*config.EventingTrigger) {
 	}
 }
 
+// SetInternalTriggersFromDbRules set internal triggers from db rules
 func (m *Module) SetInternalTriggersFromDbRules(dbRules config.DatabaseRules) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

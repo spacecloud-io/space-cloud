@@ -182,7 +182,7 @@ func (m *Module) SetAdminManager(a *admin.Manager) {
 	m.admin = a
 }
 
-// SetAdminManager sets the integration manager
+// SetIntegrationManager sets the integration manager
 func (m *Module) SetIntegrationManager(i integrationManagerInterface) {
 	m.integrationMan = i
 }

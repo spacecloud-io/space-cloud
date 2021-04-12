@@ -8,12 +8,10 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_GetClusterID(t *testing.T) {
 	type fields struct {
-		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
 		clusterID string
@@ -45,7 +43,6 @@ func TestManager_GetClusterID(t *testing.T) {
 
 func TestManager_GetCredentials(t *testing.T) {
 	type fields struct {
-		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
 		clusterID string
@@ -104,7 +101,6 @@ func TestManager_IsTokenValid(t *testing.T) {
 		paramsReturned []interface{}
 	}
 	type fields struct {
-		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
 		clusterID string

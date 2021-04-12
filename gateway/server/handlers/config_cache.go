@@ -82,7 +82,7 @@ func HandleGetCacheConfig(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 	}
 }
 
-// HandleSetCacheConfig is an endpoint handler which sets cache config
+// HandleGetCacheConnectionState is an endpoint handler which get cache connection state
 func HandleGetCacheConnectionState(adminMan *admin.Manager, caching *caching.Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -105,7 +105,7 @@ func HandleGetCacheConnectionState(adminMan *admin.Manager, caching *caching.Cac
 	}
 }
 
-// HandleSetCacheConfig is an endpoint handler which sets cache config
+// HandlePurgeCache is an endpoint handler which purge cache
 func HandlePurgeCache(adminMan *admin.Manager, caching *caching.Cache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -140,7 +140,7 @@ func HandlePurgeCache(adminMan *admin.Manager, caching *caching.Cache) http.Hand
 	}
 }
 
-// HandleSetCacheConfig is an endpoint handler which sets cache config
+// HandleInstantInvalidate is an endpoint handler for handling instant invalidation
 func HandleInstantInvalidate(modules *modules.Modules) http.HandlerFunc {
 	type request struct {
 		Type string `json:"type"`

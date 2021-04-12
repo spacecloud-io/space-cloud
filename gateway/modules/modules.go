@@ -216,6 +216,7 @@ func (m *Modules) projects() *config.Config {
 	return &config.Config{Projects: projects}
 }
 
+// Delete the project
 func (m *Modules) Delete(projectID string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

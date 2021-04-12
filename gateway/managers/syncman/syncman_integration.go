@@ -15,6 +15,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
+// EnableIntegration enables integration
 func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *config.IntegrationConfig, params model.RequestParams) (int, error) {
 	// Check if the request has been hijacked
 	hookResponse := s.integrationMan.InvokeHook(ctx, params)
@@ -77,7 +78,9 @@ func (s *Manager) EnableIntegration(ctx context.Context, integrationConfig *conf
 	// if err != nil {
 	// 	return http.StatusBadRequest, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to parse integration license", err, nil)
 	// }
-	license := make(map[string]interface{}, 0)
+	// NOTE: This is just to resolve linting errors, as integration is depreciated
+	// If integration is brough back, then change these lines
+	license := make(map[string]interface{})
 	integrationConfig.Deployments = license["deployments"].([]interface{})
 	for _, service := range integrationConfig.Deployments {
 		obj := service.(map[string]interface{})
@@ -322,7 +325,7 @@ func (s *Manager) RemoveIntegrationHook(ctx context.Context, integrationID, hook
 	return http.StatusOK, nil
 }
 
-// GetIntegrationHook removes an integration hook
+// GetIntegrationHooks gets a integration hook
 func (s *Manager) GetIntegrationHooks(ctx context.Context, integrationID, hookID string, params model.RequestParams) (int, []interface{}, error) {
 	// Check if the request has been hijacked
 	hookResponse := s.integrationMan.InvokeHook(ctx, params)

@@ -58,6 +58,7 @@ func (m *Module) GetSCAccessToken(ctx context.Context) (string, error) {
 	})
 }
 
+// IsSCAccessToken checks if its an SC access token
 func (m *Module) IsSCAccessToken(ctx context.Context, token string) error {
 	claims, err := m.ParseToken(ctx, token)
 	if err != nil {

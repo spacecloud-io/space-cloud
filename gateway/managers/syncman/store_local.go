@@ -14,9 +14,6 @@ type LocalStore struct {
 	configPath   string
 	globalConfig *config.Config
 	services     model.ScServices
-
-	// Callbacks
-	watchAdminCB func(clusters []*config.Admin)
 }
 
 // NewLocalStore creates a new local store

@@ -67,10 +67,6 @@ func (s *Manager) checkIfDbAliasExists(dbConfigs config.DatabaseConfigs, dbAlias
 	return nil, false
 }
 
-func generatePubSubTopic(nodeID, operation string) string {
-	return fmt.Sprintf("%s--%s", nodeID, operation)
-}
-
 func splitResourceID(ctx context.Context, resourceID string) (clusterID string, projectID string, resource config.Resource, err error) {
 	arr := strings.Split(resourceID, "--")
 	// ResourceId format --> clusterId--ProjectId--resourceType--someId-...
@@ -748,6 +744,7 @@ func updateResource(ctx context.Context, eventType string, globalConfig *config.
 	}
 }
 
+// CheckIfLeaderGateway tells if the provided gateway is the current leader gateway or not
 func (s *Manager) CheckIfLeaderGateway(nodeID string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

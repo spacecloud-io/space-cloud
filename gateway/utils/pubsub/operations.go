@@ -98,6 +98,7 @@ func (m *Module) CancelSubscription(topic string) {
 	delete(m.mapping, topic)
 }
 
+// SetKeyIfNotExists set key in redis if not exists
 func (m *Module) SetKeyIfNotExists(ctx context.Context, key, value string, t time.Duration) (bool, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -105,6 +106,7 @@ func (m *Module) SetKeyIfNotExists(ctx context.Context, key, value string, t tim
 	return m.client.SetNX(ctx, key, value, t).Result()
 }
 
+// RenewKeyTTLOnMatch renews the ttl of the key if it exists & its value matches
 func (m *Module) RenewKeyTTLOnMatch(ctx context.Context, key, value string, t time.Duration) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()

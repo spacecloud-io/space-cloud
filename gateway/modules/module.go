@@ -14,7 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
 )
 
-// Modules is an object that sets up the modules
+// Module is an object that sets up the modules
 type Module struct {
 	auth      *auth.Module
 	db        *crud.Module

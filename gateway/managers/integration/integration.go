@@ -6,7 +6,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
-// Module is responsible for handling all integration related tasks
+// Manager is responsible for handling all integration related tasks
 type Manager struct {
 	lock sync.RWMutex
 

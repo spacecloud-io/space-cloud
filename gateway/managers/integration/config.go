@@ -14,6 +14,7 @@ func (m *Manager) SetConfig(integrations config.Integrations, integrationHooks c
 	return nil
 }
 
+// SetIntegrations sets integtaion config
 func (m *Manager) SetIntegrations(integrations config.Integrations) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -28,6 +29,7 @@ func (m *Manager) SetIntegrations(integrations config.Integrations) error {
 	return nil
 }
 
+// SetIntegrationHooks set integration hooks
 func (m *Manager) SetIntegrationHooks(integrationHooks config.IntegrationHooks) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
