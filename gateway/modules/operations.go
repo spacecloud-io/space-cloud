@@ -10,7 +10,7 @@ import (
 )
 
 // SetInitialProjectConfig sets the config all modules
-func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.Projects) error {
+func (m *Module) SetInitialProjectConfig(ctx context.Context, projects config.Projects) error {
 	for projectID, project := range projects {
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of db module", nil)
 		if err := m.db.SetConfig(projectID, project.DatabaseConfigs); err != nil {
@@ -91,12 +91,14 @@ func (m *Modules) SetInitialProjectConfig(ctx context.Context, projects config.P
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set routing module config", err, nil)
 		}
 		m.GlobalMods.Routing().SetGlobalConfig(project.IngressGlobal)
+		m.eventing.SetInternalTriggersFromDbRules(project.DatabaseRules)
+		m.GlobalMods.Caching().AddDBRules(projectID, project.DatabaseRules)
 	}
 	return nil
 }
 
 // SetProjectConfig set project config
-func (m *Modules) SetProjectConfig(ctx context.Context, p *config.ProjectConfig) error {
+func (m *Module) SetProjectConfig(ctx context.Context, p *config.ProjectConfig) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting project config", nil)
 	if err := m.auth.SetProjectConfig(p); err != nil {
 		return err
@@ -110,7 +112,7 @@ func (m *Modules) SetProjectConfig(ctx context.Context, p *config.ProjectConfig)
 }
 
 // SetDatabaseConfig sets the config of db, auth, schema and realtime modules
-func (m *Modules) SetDatabaseConfig(ctx context.Context, projectID string, databaseConfigs config.DatabaseConfigs, schemaConfigs config.DatabaseSchemas, ruleConfigs config.DatabaseRules, prepConfigs config.DatabasePreparedQueries) error {
+func (m *Module) SetDatabaseConfig(ctx context.Context, projectID string, databaseConfigs config.DatabaseConfigs, schemaConfigs config.DatabaseSchemas, ruleConfigs config.DatabaseRules, prepConfigs config.DatabasePreparedQueries) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of db module", nil)
 	if err := m.db.SetConfig(projectID, databaseConfigs); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set db module config", err, nil)
@@ -125,7 +127,7 @@ func (m *Modules) SetDatabaseConfig(ctx context.Context, projectID string, datab
 	}
 
 	// Set the db rule config too
-	if err := m.SetDatabaseRulesConfig(ctx, ruleConfigs); err != nil {
+	if err := m.SetDatabaseRulesConfig(ctx, projectID, ruleConfigs); err != nil {
 		return err
 	}
 
@@ -138,7 +140,7 @@ func (m *Modules) SetDatabaseConfig(ctx context.Context, projectID string, datab
 }
 
 // SetDatabaseSchemaConfig sets database schema config
-func (m *Modules) SetDatabaseSchemaConfig(ctx context.Context, projectID string, schemaConfigs config.DatabaseSchemas) error {
+func (m *Module) SetDatabaseSchemaConfig(ctx context.Context, projectID string, schemaConfigs config.DatabaseSchemas) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of db schema in db module", nil)
 	schemaDoc, err := schemaHelpers.Parser(schemaConfigs)
 	if err != nil {
@@ -156,15 +158,17 @@ func (m *Modules) SetDatabaseSchemaConfig(ctx context.Context, projectID string,
 }
 
 // SetDatabaseRulesConfig set database rules of db module
-func (m *Modules) SetDatabaseRulesConfig(ctx context.Context, ruleConfigs config.DatabaseRules) error {
+func (m *Module) SetDatabaseRulesConfig(ctx context.Context, projectID string, ruleConfigs config.DatabaseRules) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of db rule in db module", nil)
 	m.auth.SetDatabaseRules(ruleConfigs)
 	m.realtime.SetDatabaseRules(ruleConfigs)
+	m.eventing.SetInternalTriggersFromDbRules(ruleConfigs)
+	m.GlobalMods.Caching().AddDBRules(projectID, ruleConfigs)
 	return nil
 }
 
 // SetDatabasePreparedQueryConfig set prepared config of database moudle
-func (m *Modules) SetDatabasePreparedQueryConfig(ctx context.Context, prepConfigs config.DatabasePreparedQueries) error {
+func (m *Module) SetDatabasePreparedQueryConfig(ctx context.Context, prepConfigs config.DatabasePreparedQueries) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of db prepared query in db module", nil)
 	if err := m.db.SetPreparedQueryConfig(ctx, prepConfigs); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set db prepared query in db module", err, nil)
@@ -174,7 +178,7 @@ func (m *Modules) SetDatabasePreparedQueryConfig(ctx context.Context, prepConfig
 }
 
 // SetFileStoreConfig sets the config of auth and filestore modules
-func (m *Modules) SetFileStoreConfig(ctx context.Context, projectID string, fileStore *config.FileStoreConfig) error {
+func (m *Module) SetFileStoreConfig(ctx context.Context, projectID string, fileStore *config.FileStoreConfig) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of file storage module", nil)
 	if err := m.file.SetConfig(projectID, fileStore); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set filestore module config", err, nil)
@@ -184,13 +188,13 @@ func (m *Modules) SetFileStoreConfig(ctx context.Context, projectID string, file
 }
 
 // SetFileStoreSecurityRuleConfig sets the config of auth and filestore modules
-func (m *Modules) SetFileStoreSecurityRuleConfig(ctx context.Context, _ string, fileStoreRules config.FileStoreRules) {
+func (m *Module) SetFileStoreSecurityRuleConfig(ctx context.Context, _ string, fileStoreRules config.FileStoreRules) {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of file store rules in auth module", nil)
 	m.auth.SetFileStoreRules(fileStoreRules)
 }
 
 // SetEventingConfig sets the config of eventing module
-func (m *Modules) SetEventingConfig(ctx context.Context, projectID string, eventingConfig *config.EventingConfig, secureObj config.EventingRules, eventingSchemas config.EventingSchemas, eventingTriggers config.EventingTriggers) error {
+func (m *Module) SetEventingConfig(ctx context.Context, projectID string, eventingConfig *config.EventingConfig, secureObj config.EventingRules, eventingSchemas config.EventingSchemas, eventingTriggers config.EventingTriggers) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of eventing module", nil)
 	if err := m.eventing.SetConfig(projectID, eventingConfig); err != nil {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set eventing module config", err, nil)
@@ -214,19 +218,19 @@ func (m *Modules) SetEventingConfig(ctx context.Context, projectID string, event
 }
 
 // SetEventingSchemaConfig sets the config of eventing module
-func (m *Modules) SetEventingSchemaConfig(ctx context.Context, eventingSchemas config.EventingSchemas) error {
+func (m *Module) SetEventingSchemaConfig(ctx context.Context, eventingSchemas config.EventingSchemas) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting schema config of eventing module", nil)
 	return m.eventing.SetSchemaConfig(eventingSchemas)
 }
 
 // SetEventingTriggerConfig sets the config of eventing module
-func (m *Modules) SetEventingTriggerConfig(ctx context.Context, eventingTriggers config.EventingTriggers) error {
+func (m *Module) SetEventingTriggerConfig(ctx context.Context, eventingTriggers config.EventingTriggers) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting trigger config of eventing module", nil)
 	return m.eventing.SetTriggerConfig(eventingTriggers)
 }
 
 // SetEventingRuleConfig sets the config of eventing module
-func (m *Modules) SetEventingRuleConfig(ctx context.Context, secureObj config.EventingRules) error {
+func (m *Module) SetEventingRuleConfig(ctx context.Context, secureObj config.EventingRules) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting rules config of eventing module", nil)
 	if err := m.eventing.SetSecurityRuleConfig(secureObj); err != nil {
 		return err
@@ -236,33 +240,33 @@ func (m *Modules) SetEventingRuleConfig(ctx context.Context, secureObj config.Ev
 }
 
 // SetUsermanConfig set the config of the userman module
-func (m *Modules) SetUsermanConfig(ctx context.Context, _ string, auth config.Auths) error {
+func (m *Module) SetUsermanConfig(ctx context.Context, _ string, auth config.Auths) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of user management module", nil)
 	m.user.SetConfig(auth)
 	return nil
 }
 
 // SetLetsencryptConfig set the config of letsencrypt module
-func (m *Modules) SetLetsencryptConfig(ctx context.Context, projectID string, c *config.LetsEncrypt) error {
+func (m *Module) SetLetsencryptConfig(ctx context.Context, projectID string, c *config.LetsEncrypt) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting letsencrypt config of project", nil)
 	return m.GlobalMods.LetsEncrypt().SetProjectDomains(projectID, c)
 }
 
 // SetIngressRouteConfig set the config of routing module
-func (m *Modules) SetIngressRouteConfig(ctx context.Context, projectID string, routes config.IngressRoutes) error {
+func (m *Module) SetIngressRouteConfig(ctx context.Context, projectID string, routes config.IngressRoutes) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of routing module", nil)
 	return m.GlobalMods.Routing().SetProjectRoutes(projectID, routes)
 }
 
 // SetIngressGlobalRouteConfig set config of routing module
-func (m *Modules) SetIngressGlobalRouteConfig(ctx context.Context, _ string, c *config.GlobalRoutesConfig) error {
+func (m *Module) SetIngressGlobalRouteConfig(ctx context.Context, _ string, c *config.GlobalRoutesConfig) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of global routing", nil)
 	m.GlobalMods.Routing().SetGlobalConfig(c)
 	return nil
 }
 
 // SetRemoteServiceConfig set config of functions module
-func (m *Modules) SetRemoteServiceConfig(ctx context.Context, projectID string, services config.Services) error {
+func (m *Module) SetRemoteServiceConfig(ctx context.Context, projectID string, services config.Services) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Setting config of auth module", nil)
 	m.auth.SetRemoteServiceConfig(services)
 

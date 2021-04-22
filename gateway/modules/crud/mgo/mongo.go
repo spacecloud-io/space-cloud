@@ -42,7 +42,7 @@ func Init(enabled bool, connection, dbName string, driverConf config.DriverConfi
 	closer := make(chan struct{}, 1)
 	mongoStub.connRetryCloserChan = closer
 	go func() {
-		ticker := time.NewTicker(10 * time.Second)
+		ticker := time.NewTicker(15 * time.Second)
 		for {
 			select {
 			case <-ticker.C:

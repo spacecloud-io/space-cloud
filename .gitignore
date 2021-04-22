@@ -12,7 +12,7 @@ test
 *.dylib
 *.db
 # Test binary, build with `go test -c`
-*.test  
+*.test
 
 # sh file for bash completion
 *.sh
@@ -56,10 +56,8 @@ gateway/scripts
 metric-proxy/scripts
 docker-build.sh
 
-
+scripts/*
 #IDEs
-.idea
-.vscode
 
 yarn.lock
 

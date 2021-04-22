@@ -737,6 +737,10 @@ func Test_processRows(t *testing.T) {
 				s.processRows(context.Background(), false, []string{tt.args.table}, tt.args.isAggregate, row.(map[string]interface{}), tt.args.join, mapping, &finalArray, nil, map[string]map[string]string{})
 			}
 
+			for _, elem := range finalArray {
+				delete(elem.(map[string]interface{}), "_dbFetchTs")
+			}
+
 			if !reflect.DeepEqual(finalArray, tt.result) {
 				t.Errorf("processRows() = %v; wanted = %v", finalArray, tt.result)
 			}

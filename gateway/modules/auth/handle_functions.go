@@ -9,6 +9,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // IsFuncCallAuthorised checks if the func call is authorised
@@ -30,6 +31,22 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 		auth, err = m.jwt.ParseToken(ctx, token)
 		if err != nil {
 			return nil, model.RequestParams{}, err
+		}
+	}
+
+	// Check if internal token
+	if auth != nil {
+		if id, p := auth["id"]; p && id == utils.InternalUserID {
+			hookResponse := m.integrationMan.InvokeHook(ctx, model.RequestParams{
+				Claims:     auth,
+				Resource:   "internal-api-access",
+				Op:         "service-call",
+				Attributes: map[string]string{"project": project},
+			})
+			if hookResponse.CheckResponse() {
+				attr := map[string]string{"project": project, "service": service, "endpoint": function}
+				return nil, model.RequestParams{Resource: "service-call", Op: "access", Claims: auth, Attributes: attr}, hookResponse.Error()
+			}
 		}
 	}
 

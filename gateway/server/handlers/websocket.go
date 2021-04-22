@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -27,12 +28,8 @@ import (
 
 // WebsocketModulesInterface is used to accept the modules object
 type WebsocketModulesInterface interface {
-	Realtime() modules.RealtimeInterface
-	GraphQL() modules.GraphQLInterface
-}
-
-// RealtimeInterface is used to accept the realtime module
-type RealtimeInterface interface {
+	Realtime(projectID string) (modules.RealtimeInterface, error)
+	GraphQL(projectID string) (modules.GraphQLInterface, error)
 }
 
 var upgrader = websocket.Upgrader{
@@ -55,10 +52,17 @@ func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 			return
 		}
 
+		// Create a new client
 		c := client.CreateWebsocketClient(socket)
 		defer c.Close()
 
-		realtime := modules.Realtime()
+		realtime, err := modules.Realtime(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		defer realtime.RemoveClient(c.ClientID())
 
@@ -70,6 +74,7 @@ func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 		c.Read(func(req *model.Message) bool {
 			switch req.Type {
 			case utils.TypeRealtimeSubscribe:
+
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				if err := mapstructure.Decode(req.Data, data); err != nil {
@@ -80,7 +85,7 @@ func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 				}
 				data.Project = projectID
 
-				// Subscribe to realtime feed
+				// Subscribe to the realtime feed
 				feedData, err := realtime.Subscribe(clientID, data, func(feed *model.FeedData) {
 					c.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
 				})
@@ -148,9 +153,21 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		realtime := modules.Realtime()
-		graph := modules.GraphQL()
+		realtime, err := modules.Realtime(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
+		graph, err := modules.GraphQL(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 		// Create a map to store subscription ids
 		var graphqlIDMapper sync.Map
 

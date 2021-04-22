@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 )
@@ -20,12 +21,15 @@ func TestSchema_CheckIfEventingIsPossible(t *testing.T) {
 		isFind  bool
 	}
 	crudPostgres := crud.Init()
+	crudPostgres.SetAdminManager(&admin.Manager{})
 	_ = crudPostgres.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "postgres"): &config.DatabaseConfig{DbAlias: "postgres", Type: "sql-postgres", Enabled: false}})
 
 	crudMySQL := crud.Init()
+	crudMySQL.SetAdminManager(&admin.Manager{})
 	_ = crudMySQL.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "mysql"): &config.DatabaseConfig{DbAlias: "mysql", Type: "sql-mysql", Enabled: false}})
 
 	crudSQLServer := crud.Init()
+	crudSQLServer.SetAdminManager(&admin.Manager{})
 	_ = crudSQLServer.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "sqlserver"): &config.DatabaseConfig{DbAlias: "sqlserver", Type: "sql-sqlserver", Enabled: false}})
 	tests := []struct {
 		name              string

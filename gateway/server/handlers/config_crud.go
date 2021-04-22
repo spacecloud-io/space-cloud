@@ -41,7 +41,11 @@ func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) h
 			return
 		}
 
-		crud := modules.DB()
+		crud, err := modules.DB(projectID)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
+			return
+		}
 		collections, err := crud.GetCollections(ctx, dbAlias)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
@@ -64,8 +68,8 @@ func HandleGetDatabaseConnectionState(adminMan *admin.Manager, modules *modules.
 		token := utils.GetTokenFromHeader(r)
 
 		vars := mux.Vars(r)
-		projectID := vars["project"]
 		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
 
 		defer utils.CloseTheCloser(r.Body)
 
@@ -79,7 +83,12 @@ func HandleGetDatabaseConnectionState(adminMan *admin.Manager, modules *modules.
 			return
 		}
 
-		crud := modules.DB()
+		crud, err := modules.DB(projectID)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err)
+			return
+		}
+
 		connState := crud.GetConnectionState(ctx, dbAlias)
 
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, model.Response{Result: connState})
@@ -109,7 +118,11 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 			return
 		}
 
-		crud := modules.DB()
+		crud, err := modules.DB(projectID)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
+			return
+		}
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, nil)
 		status, err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col, crud, reqParams)
@@ -707,7 +720,12 @@ func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, modules *mod
 			return
 		}
 
-		schema := modules.Schema()
+		schema, err := modules.Schema(projectID)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err)
+			return
+		}
+
 		schemas, err := schema.GetCollectionSchema(ctx, projectID, dbAlias)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)

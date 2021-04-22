@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -9,6 +10,28 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
+
+// GenerateToken creates a token with the appropriate claims
+func (m *Manager) GenerateToken(ctx context.Context, token string, tokenClaims map[string]interface{}) (string, error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	claims, err := m.parseToken(ctx, token)
+	if err != nil {
+		return "", err
+	}
+
+	res := m.integrationMan.HandleConfigAuth(ctx, "admin-token", "create", claims, nil)
+	if res.CheckResponse() {
+		if err := res.Error(); err != nil {
+			return "", err
+		}
+
+		return m.createToken(tokenClaims)
+	}
+
+	return "", errors.New("only integrations are allowed to generate token")
+}
 
 func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error) {
 

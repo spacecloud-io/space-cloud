@@ -40,7 +40,7 @@ func main() {
 				cli.BoolFlag{
 					Name:   "disable-metrics",
 					EnvVar: "DISABLE_METRICS",
-					Usage:  "Disable anonymous metric collection",
+					Usage:  "Delete anonymous metric collection",
 				},
 				cli.BoolFlag{
 					Name:   "dev",

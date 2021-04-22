@@ -2,10 +2,12 @@ package syncman
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -461,7 +463,7 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		_, err := admin.IsTokenValid(r.Context(), userToken, "service", "read", map[string]string{"project": projectID})
+		params, err := admin.IsTokenValid(r.Context(), userToken, "service", "read", map[string]string{"project": projectID})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(r.Context()), fmt.Sprintf("Unable to forward  runner request failed to validate token -%v", err), err, nil)
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err)
@@ -469,8 +471,33 @@ func (s *Manager) HandleRunnerGetServiceLogs(admin *admin.Manager) http.HandlerF
 		}
 
 		// Create a context of execution
-		_, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
+
+		// Load request params
+		params.Method = r.Method
+		params.Path = r.URL.Path
+		params.Headers = r.Header
+
+		// Check if the request has been hijacked
+		hookResponse := s.integrationMan.InvokeHook(ctx, params)
+		if hookResponse.CheckResponse() {
+			// Check if an error occurred
+			if err := hookResponse.Error(); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Integration hook responded with an error", err, nil)
+				_ = helpers.Response.SendErrorResponse(ctx, w, hookResponse.Status(), err)
+				return
+			}
+
+			result := hookResponse.Result()
+			if result != nil {
+				_ = helpers.Response.SendResponse(ctx, w, hookResponse.Status(), model.Response{Result: result})
+				return
+			}
+
+			_ = helpers.Response.SendOkayResponse(ctx, hookResponse.Status(), w)
+			return
+		}
 
 		// http: Request.RequestURI can't be set in client requests.
 		// http://golang.org/src/pkg/net/http/client.go
@@ -566,6 +593,52 @@ func (s *Manager) forwardRequestToRunner(ctx context.Context, w http.ResponseWri
 			return
 		}
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, errors.New("Space cloud cannot process this request, as you haven't started space cloud in kubernetes"))
+		return
+	}
+
+	// Extract the request
+	var payload interface{}
+	if r.Method == http.MethodPost {
+		// Extract the body
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to read request body", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
+			return
+		}
+		if err := json.Unmarshal(data, &payload); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to read unmarshal request body", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
+			return
+		}
+
+		// Reset the body without fail
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	}
+
+	// Load request params
+	params.Method = r.Method
+	params.Path = r.URL.Path
+	params.Headers = r.Header
+	params.Payload = payload
+
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), "Integration hook responded with an error", err, nil)
+			_ = helpers.Response.SendErrorResponse(ctx, w, hookResponse.Status(), err)
+			return
+		}
+
+		result := hookResponse.Result()
+		if result != nil {
+			_ = helpers.Response.SendResponse(ctx, w, hookResponse.Status(), model.Response{Result: result})
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, hookResponse.Status(), w)
 		return
 	}
 

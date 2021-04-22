@@ -6,12 +6,10 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_createToken(t *testing.T) {
 	type fields struct {
-		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
 		clusterID string
@@ -37,7 +35,6 @@ func TestManager_createToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
 				isProd:    tt.fields.isProd,
 				clusterID: tt.fields.clusterID,

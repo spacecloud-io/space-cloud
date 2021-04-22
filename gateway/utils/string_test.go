@@ -382,22 +382,24 @@ func TestJoinLeadingTrailing(t *testing.T) {
 func TestStringExists(t *testing.T) {
 	type args struct {
 		array   []string
-		element string
+		element []string
 	}
 	tests := []struct {
 		name string
 		args args
 		want bool
 	}{
-		{name: "valid match - ideal case", want: true, args: args{element: "string1", array: []string{"string1", "string2"}}},
-		{name: "valid match - repeated presence", want: true, args: args{element: "string1", array: []string{"string1", "string1"}}},
-		{name: "invalid match - bad case", want: false, args: args{element: "string1", array: []string{"STRING1", "string2"}}},
-		{name: "invalid match - element not present", want: false, args: args{element: "string1", array: []string{"string2"}}},
-		{name: "invalid match - array not present", want: false, args: args{element: "string1", array: nil}},
+		{name: "valid match - ideal case", want: true, args: args{element: []string{"string1"}, array: []string{"string1", "string2"}}},
+		{name: "valid match - ideal case [multiple] 1", want: true, args: args{element: []string{"string1", "*"}, array: []string{"string1", "string2"}}},
+		{name: "valid match - ideal case [multiple] 1", want: true, args: args{element: []string{"string3", "*"}, array: []string{"*", "string1", "string2"}}},
+		{name: "valid match - repeated presence", want: true, args: args{element: []string{"string1"}, array: []string{"string1", "string1"}}},
+		{name: "invalid match - bad case", want: false, args: args{element: []string{"string1"}, array: []string{"STRING1", "string2"}}},
+		{name: "invalid match - element not present", want: false, args: args{element: []string{"string1"}, array: []string{"string2"}}},
+		{name: "invalid match - array not present", want: false, args: args{element: []string{"string1"}, array: nil}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := StringExists(tt.args.array, tt.args.element); got != tt.want {
+			if got := StringExists(tt.args.array, tt.args.element...); got != tt.want {
 				t.Errorf("StringExists() = %v, want %v", got, tt.want)
 			}
 		})

@@ -105,7 +105,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			result:        map[string]interface{}{"token1": "token1value", "token2": "token2value"},
 		},
 	}
-	authModule := Init("chicago", "1", &crud.Module{}, nil)
+	authModule := Init("chicago", "1", &crud.Module{}, nil, nil)
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			if er := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: "project", Secrets: test.secretKeys}, config.DatabaseRules{}, config.DatabasePreparedQueries{}, config.FileStoreRules{}, test.module.funcRules, config.EventingRules{}); er != nil {

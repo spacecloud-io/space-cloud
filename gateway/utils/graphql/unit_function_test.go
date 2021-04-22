@@ -21,7 +21,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", model.RequestParams{Payload: map[string]interface{}{"num1": 10, "num2": 20}}, &model.FunctionsRequest{Timeout: 10, Params: map[string]interface{}{"num1": 10, "num2": 20}}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -62,7 +62,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", &model.RequestParams{Payload: map[string]interface{}{"num1": 10, "num2": 20}}, &model.FunctionsRequest{Timeout: 10, Params: map[string]interface{}{"num1": 10, "num2": 20}}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -108,7 +108,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", &model.RequestParams{Payload: map[string]interface{}{"num1": 10, "num2": 20}}, &model.FunctionsRequest{Timeout: 10, Params: map[string]interface{}{"num1": 10, "num2": 20}}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -155,7 +155,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", &model.RequestParams{Payload: map[string]interface{}{"num1": 10, "num2": 20}}, &model.FunctionsRequest{Timeout: 10, Params: map[string]interface{}{"num1": 10, "num2": 20}}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -196,7 +196,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", &model.RequestParams{Payload: map[string]interface{}{"num1": 10, "num2": 20}}, &model.FunctionsRequest{Timeout: 10, Params: map[string]interface{}{"num1": 10, "num2": 20}}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -237,7 +237,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", &model.RequestParams{Payload: map[string]interface{}{"num1": 10, "num2": 20}}, &model.FunctionsRequest{Timeout: 10, Params: map[string]interface{}{"num1": 10, "num2": 20}}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},

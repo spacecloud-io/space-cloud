@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // KubeStore is an object for storing kubestore information
@@ -122,7 +123,7 @@ func (s *KubeStore) WatchResources(cb func(eventType, resourceID string, resourc
 	return nil
 }
 
-func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
+func onAddOrUpdateServices(obj interface{}, services model.ScServices) (string, model.ScServices) {
 	pod := obj.(*v1.Pod)
 	id := string(pod.UID)
 
@@ -130,19 +131,19 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 	if pod.Status.Phase != v1.PodRunning || pod.Status.PodIP == "" {
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Pod (%s) isn't running yet. Current status - %s", id, pod.Status.Phase), nil)
 		for index, service := range services {
-			if service.id == id {
+			if service.ID == id {
 				helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Removing space cloud service from kubernetes", map[string]interface{}{"id": id})
 				services[index] = services[len(services)-1]
 				services = services[:len(services)-1]
 				break
 			}
 		}
-		return services
+		return id, services
 	}
 
 	doesExist := false
 	for _, service := range services {
-		if service.id == id {
+		if service.ID == id {
 			helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating space cloud service in kubernetes", map[string]interface{}{"id": id})
 			doesExist = true
 			break
@@ -152,15 +153,16 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 	// add service if it doesn't exist
 	if !doesExist {
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Adding a space cloud service in kubernetes", map[string]interface{}{"id": id})
-		services = append(services, &service{id: id})
+		services = append(services, &model.Service{ID: id})
 	}
-	return services
+	return id, services
 }
 
 // WatchServices maintains consistency over all services
-func (s *KubeStore) WatchServices(cb func(scServices)) error {
+func (s *KubeStore) WatchServices(cb func(string, string, model.ScServices)) error {
 	go func() {
-		services := scServices{}
+		services := model.ScServices{}
+		var serviceID string
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
 			options.LabelSelector = fmt.Sprintf("app=%s,clusterId=%s", "gateway", s.clusterID)
 		}
@@ -171,15 +173,15 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				services = onAddOrUpdateServices(obj, services)
+				serviceID, services = onAddOrUpdateServices(obj, services)
 				sort.Stable(services)
-				cb(services)
+				cb(config.ResourceAddEvent, serviceID, services)
 			},
 			DeleteFunc: func(obj interface{}) {
 				pod := obj.(*v1.Pod)
-				id := pod.Name
+				id := string(pod.UID)
 				for index, service := range services {
-					if service.id == id {
+					if service.ID == id {
 						// remove service
 						helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Removing space cloud service from kubernetes", map[string]interface{}{"id": id})
 						services[index] = services[len(services)-1]
@@ -188,12 +190,12 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 					}
 				}
 				sort.Stable(services)
-				cb(services)
+				cb(config.ResourceDeleteEvent, id, services)
 			},
 			UpdateFunc: func(old, obj interface{}) {
-				services = onAddOrUpdateServices(obj, services)
+				serviceID, services = onAddOrUpdateServices(obj, services)
 				sort.Stable(services)
-				cb(services)
+				cb(config.ResourceUpdateEvent, serviceID, services)
 			},
 		})
 
@@ -272,6 +274,24 @@ func (s *KubeStore) DeleteResource(ctx context.Context, resourceID string) error
 	return err
 }
 
+// DeleteProject deletes all the config resources which matches label projectId
+func (s *KubeStore) DeleteProject(ctx context.Context, projectID string) error {
+	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Deleting entire project", map[string]interface{}{"projectId": projectID})
+	// iterate over the map in reverse order
+	for i := len(config.ResourceFetchingOrder) - 1; i >= 0; i-- {
+		list, err := s.kube.CoreV1().ConfigMaps(spaceCloud).List(v12.ListOptions{LabelSelector: fmt.Sprintf("projectId=%s,kind=%s", projectID, config.ResourceFetchingOrder[i])})
+		if err != nil {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list config maps which has label projectId = (%s)", projectID), err, nil)
+		}
+		for _, item := range list.Items {
+			if err := s.DeleteResource(ctx, item.Name); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // GetGlobalConfig gets config of all resource required by a cluster
 func (s *KubeStore) GetGlobalConfig() (*config.Config, error) {
 	globalConfig := config.GenerateEmptyConfig()
@@ -287,6 +307,7 @@ func (s *KubeStore) GetGlobalConfig() (*config.Config, error) {
 			}
 		}
 	}
+
 	s.projectsConfig = globalConfig
 	return globalConfig, nil
 }

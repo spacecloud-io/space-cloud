@@ -31,6 +31,12 @@ func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFee
 		return nil, err
 	}
 
+	return m.DoRealtimeSubscribe(ctx, clientID, data, actions, reqParams, sendFeed)
+}
+
+// DoRealtimeSubscribe makes the realtime query
+func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, actions *model.PostProcess, reqParams model.RequestParams, sendFeed model.SendFeed) ([]*model.FeedData, error) {
+	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 	if data.Options.SkipInitial {
 		m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
 		return []*model.FeedData{}, nil
@@ -39,7 +45,7 @@ func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFee
 	ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	result, _, err := m.crud.Read(ctx2, data.DBType, data.Group, &readReq, reqParams)
+	result, _, err := m.crud.Read(ctx2, data.DBType, data.Group, readReq, reqParams)
 	if err != nil {
 		return nil, err
 	}

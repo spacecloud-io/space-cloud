@@ -29,17 +29,21 @@ const (
 // HandleCreateFile creates the create file or directory endpoint
 func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		fileStore := modules.File()
-
 		// Extract the path from the url
 		token, projectID, _ := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
 
+		fileStore, err := modules.File(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
 		defer cancel()
 
-		var err error
 		contentType := strings.Split(r.Header.Get("Content-type"), ";")[0]
 		if contentType == contentTypeEncodedForm || contentType == contentTypeMultiPartForm {
 			err = r.ParseMultipartForm((1 << 20) * 10)
@@ -104,12 +108,17 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 // HandleRead creates read file and list directory endpoint
 func HandleRead(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		fileStore := modules.File()
-
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
+
+		fileStore, err := modules.File(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
 		defer cancel()
@@ -151,7 +160,6 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		fileStore := modules.File()
 		fileTypeQuery, exists := r.URL.Query()["fileType"]
 		fileType := "file"
 		if exists {
@@ -161,6 +169,14 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
+
+		fileStore, err := modules.File(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		v := map[string]interface{}{}
 		_ = json.NewDecoder(r.Body).Decode(&v)

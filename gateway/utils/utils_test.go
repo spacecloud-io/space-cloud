@@ -150,3 +150,118 @@ func TestArrayContains(t *testing.T) {
 		})
 	}
 }
+
+func TestIsValidJoin(t *testing.T) {
+	type args struct {
+		on             map[string]interface{}
+		jointTableName string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  bool
+		want1 string
+	}{
+		{
+			name: "joint table on the right",
+			args: args{
+				on:             map[string]interface{}{"user.id": "post.user_id"},
+				jointTableName: "post",
+			},
+			want:  true,
+			want1: "user_id",
+		},
+		{
+			name: "joint table on the right with eq",
+			args: args{
+				on:             map[string]interface{}{"user.id": map[string]interface{}{"$eq": "post.user_id"}},
+				jointTableName: "post",
+			},
+			want:  true,
+			want1: "user_id",
+		},
+		{
+			name: "joint table on the right with invalid operator",
+			args: args{
+				on:             map[string]interface{}{"user.id": map[string]interface{}{"$ne": "post.user_id"}},
+				jointTableName: "post",
+			},
+			want:  false,
+			want1: "none",
+		},
+		{
+			name: "joint table on the right with literal",
+			args: args{
+				on:             map[string]interface{}{"user.id": map[string]interface{}{"$eq": 10}},
+				jointTableName: "post",
+			},
+			want:  false,
+			want1: "none",
+		},
+		{
+			name: "joint table on the right with literal",
+			args: args{
+				on:             map[string]interface{}{"user.id": 10},
+				jointTableName: "post",
+			},
+			want:  false,
+			want1: "none",
+		},
+		{
+			name: "joint table on the left",
+			args: args{
+				on:             map[string]interface{}{"post.user_id": "user.id"},
+				jointTableName: "post",
+			},
+			want:  true,
+			want1: "user_id",
+		},
+		{
+			name: "joint table on the left with eq",
+			args: args{
+				on:             map[string]interface{}{"post.user_id": map[string]interface{}{"$eq": "user.id"}},
+				jointTableName: "post",
+			},
+			want:  true,
+			want1: "user_id",
+		},
+		{
+			name: "joint table on the left with ne",
+			args: args{
+				on:             map[string]interface{}{"post.user_id": map[string]interface{}{"$ne": "user.id"}},
+				jointTableName: "post",
+			},
+			want:  false,
+			want1: "none",
+		},
+		{
+			name: "or clause",
+			args: args{
+				on:             map[string]interface{}{"$or": map[string]interface{}{"$or": "user.id"}},
+				jointTableName: "post",
+			},
+			want:  false,
+			want1: "none",
+		},
+		{
+			name: "no join table",
+			args: args{
+				on:             map[string]interface{}{"abc.user_id": "user.id"},
+				jointTableName: "post",
+			},
+			want:  false,
+			want1: "none",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := IsValidJoin(tt.args.on, tt.args.jointTableName)
+			if got != tt.want {
+				t.Errorf("IsValidJoin() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("IsValidJoin() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}

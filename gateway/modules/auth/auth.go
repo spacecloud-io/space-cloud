@@ -5,6 +5,8 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/spaceuptech/helpers"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 
@@ -30,12 +32,13 @@ type Module struct {
 	aesKey           []byte
 
 	// Admin Manager
-	adminMan adminMan
+	adminMan       adminMan
+	integrationMan integrationManagerInterface
 }
 
 // Init creates a new instance of the auth object
-func Init(clusterID, nodeID string, crud model.CrudAuthInterface, adminMan adminMan) *Module {
-	return &Module{clusterID: clusterID, nodeID: nodeID, dbRules: make(config.DatabaseRules), dbPrepQueryRules: make(config.DatabasePreparedQueries), crud: crud, adminMan: adminMan, jwt: jwtUtils.New()}
+func Init(clusterID, nodeID string, crud model.CrudAuthInterface, adminMan adminMan, integrationMan integrationManagerInterface) *Module {
+	return &Module{clusterID: clusterID, nodeID: nodeID, dbRules: make(config.DatabaseRules), dbPrepQueryRules: make(config.DatabasePreparedQueries), crud: crud, adminMan: adminMan, jwt: jwtUtils.New(), integrationMan: integrationMan}
 }
 
 // GetInternalAccessToken returns the token that can be used internally by Space Cloud
@@ -53,6 +56,22 @@ func (m *Module) GetSCAccessToken(ctx context.Context) (string, error) {
 		"id":   m.nodeID,
 		"role": "SpaceCloud",
 	})
+}
+
+// IsSCAccessToken checks if its an SC access token
+func (m *Module) IsSCAccessToken(ctx context.Context, token string) error {
+	claims, err := m.ParseToken(ctx, token)
+	if err != nil {
+		return err
+	}
+	roleValue, ok := claims["role"]
+	if !ok {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Claim (role) not present in jwt token", nil, nil)
+	}
+	if roleValue != "SpaceCloud" {
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Invalid sc access token provided, role mismatch", nil, nil)
+	}
+	return nil
 }
 
 // CreateToken generates a new JWT Token with the token claims

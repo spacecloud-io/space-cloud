@@ -3,13 +3,13 @@ package crud
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"strings"
 
 	"github.com/graph-gophers/dataloader"
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -19,22 +19,36 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 	m.Lock()
 	defer m.Unlock()
 
-	if len(crud) > 1 {
-		return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Crud module cannot have more than 1 database", nil, map[string]interface{}{"project": project})
+	if err := m.admin.IsDBConfigValid(crud); err != nil {
+		return err
 	}
 
 	m.project = project
-	if len(crud) == 0 && m.block != nil {
-		// Close all previous connection
-		_ = m.block.Close()
-		m.block = nil
-		return nil
+
+	for dbAlias, v := range m.blocks {
+		doesExist := false
+		for _, databaseConfig := range crud {
+			// Trim away the sql prefix for backward compatibility
+			blockKey := strings.TrimPrefix(databaseConfig.DbAlias, "sql-")
+			if dbAlias == blockKey {
+				doesExist = true
+			}
+		}
+		if !doesExist {
+			// Database that has been removed, close the db connections to free connection pool
+			_ = v.Close()
+			delete(m.blocks, dbAlias)
+		}
 	}
+
 	// clear previous data loader1
 	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
 
 	// Create a new crud blocks
 	for _, v := range crud {
+		// Trim away the sql prefix for backward compatibility
+		blockKey := strings.TrimPrefix(v.DbAlias, "sql-")
+
 		if v.Type == "" {
 			v.Type = v.DbAlias
 		}
@@ -59,18 +73,19 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 			}
 		}
 
-		if m.block != nil {
-			m.block.SetQueryFetchLimit(v.Limit)
-			m.config.BatchTime = v.BatchTime
-			m.config.BatchRecords = v.BatchRecords
+		if block, p := m.blocks[blockKey]; p {
+
+			block.SetQueryFetchLimit(v.Limit)
+			m.databaseConfigs[blockKey].BatchTime = v.BatchTime
+			m.databaseConfigs[blockKey].BatchRecords = v.BatchRecords
 
 			// Skip if the connection string, dbName & driver config is same
-			if m.block.IsSame(connectionString, v.DBName, v.DriverConf) {
+			if block.IsSame(connectionString, v.DBName, v.DriverConf) {
 				continue
 			}
 			// Close the previous database connection
-			if err := m.block.Close(); err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to close database connections", err, map[string]interface{}{"project": project})
+			if err := block.Close(); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to close database connections", err, map[string]interface{}{"project": project})
 			}
 		}
 
@@ -87,11 +102,9 @@ func (m *Module) SetConfig(project string, crud config.DatabaseConfigs) error {
 			helpers.Logger.LogInfo(helpers.GetRequestID(context.TODO()), "Successfully connected to database", map[string]interface{}{"project": project, "dbAlias": v.DbAlias, "dbType": v.Type})
 		}
 
-		m.dbType = v.Type
-		m.config = v
-		m.block = c
-		m.alias = strings.TrimPrefix(v.DbAlias, "sql-")
-		m.block.SetQueryFetchLimit(v.Limit)
+		m.databaseConfigs[blockKey] = v
+		m.blocks[blockKey] = c
+		c.SetQueryFetchLimit(v.Limit)
 	}
 
 	return nil
@@ -102,16 +115,13 @@ func (m *Module) SetPreparedQueryConfig(ctx context.Context, prepQueries config.
 	m.Lock()
 	defer m.Unlock()
 
-	if m.block == nil {
+	if m.blocks == nil {
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Unable to get database connection, crud module not initialized", nil)
 		return nil
 	}
 
 	temp := make(config.DatabasePreparedQueries)
 	for _, preparedQuery := range prepQueries {
-		if preparedQuery.DbAlias != m.alias {
-			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unknown dbAlias (%s) provided in prepared query", preparedQuery.DbAlias), nil, map[string]interface{}{"queryId": preparedQuery.ID})
-		}
 		temp[getPreparedQueryKey(strings.TrimPrefix(preparedQuery.DbAlias, "sql-"), preparedQuery.ID)] = preparedQuery
 	}
 	m.queries = temp
@@ -123,7 +133,7 @@ func (m *Module) SetSchemaConfig(ctx context.Context, schemaDoc model.Type, sche
 	m.Lock()
 	defer m.Unlock()
 
-	if m.block == nil {
+	if m.blocks == nil {
 		helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Unable to get database connection, crud module not initialized", nil)
 		return nil
 	}
@@ -155,17 +165,29 @@ func (m *Module) SetProjectAESKey(aesKey string) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	if m.config == nil {
-		return nil
-	}
-	crud, err := m.getCrudBlock(m.config.DbAlias)
-	if err != nil {
-		return err
-	}
 	decodedAESKey, err := base64.StdEncoding.DecodeString(aesKey)
 	if err != nil {
 		return err
 	}
-	crud.SetProjectAESKey(decodedAESKey)
+
+	for _, block := range m.blocks {
+		block.SetProjectAESKey(decodedAESKey)
+	}
+
 	return nil
+}
+
+// SetAdminManager sets the admin manager
+func (m *Module) SetAdminManager(a *admin.Manager) {
+	m.admin = a
+}
+
+// SetIntegrationManager sets the integration manager
+func (m *Module) SetIntegrationManager(i integrationManagerInterface) {
+	m.integrationMan = i
+}
+
+// SetCachingModule sets caching module
+func (m *Module) SetCachingModule(c cachingInterface) {
+	m.caching = c
 }

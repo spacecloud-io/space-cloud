@@ -63,6 +63,18 @@ func (s *Manager) GetProjectRoutes(ctx context.Context, project string) (int, in
 
 // SetProjectRoute adds a route in specified project config
 func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *config.Route, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -93,6 +105,18 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *co
 
 // DeleteProjectRoute deletes a route from specified project config
 func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -123,6 +147,18 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 
 // GetIngressRouting gets ingress routing from config
 func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -131,6 +167,7 @@ func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
+
 	if routeID != "*" {
 		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceIngressRoute, routeID)
 		value, ok := projectConfig.IngressRoutes[resourceID]
@@ -149,6 +186,18 @@ func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string
 
 // SetGlobalRouteConfig sets the project level ingress routing config
 func (s *Manager) SetGlobalRouteConfig(ctx context.Context, project string, globalConfig *config.GlobalRoutesConfig, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -176,6 +225,18 @@ func (s *Manager) SetGlobalRouteConfig(ctx context.Context, project string, glob
 
 // GetGlobalRouteConfig returns the project level ingress routing config
 func (s *Manager) GetGlobalRouteConfig(ctx context.Context, project string, params model.RequestParams) (int, interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

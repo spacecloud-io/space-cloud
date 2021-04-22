@@ -36,7 +36,11 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 	}
 
 	// Finally we authorize the request
-	a := modules.Auth()
+	a, err := modules.Auth(route.Project)
+	if err != nil {
+		return "", nil, http.StatusBadRequest, err
+	}
+
 	args := map[string]interface{}{"params": params, "query": makeQueryArguments(req)}
 	auth, err := a.AuthorizeRequest(ctx, route.Rule, route.Project, token, args)
 	if err != nil {

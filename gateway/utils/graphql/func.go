@@ -33,11 +33,22 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		return
 	}
 
+	cacheConfig, err := generateCacheOptions(ctx, field.Directives, store)
+	if err != nil {
+		cb(nil, err)
+		return
+	}
+
 	actions, reqParams, err := graph.auth.IsFuncCallAuthorised(ctx, graph.project, serviceName, funcName, token, params)
 	if err != nil {
 		cb(nil, err)
 		return
 	}
+	// Note: there is some inconsistency between REST & GraphQL of remote services, this does not affect the core logic
+	// The reqParams object contains only token information such as claims,
+	// but in REST api, we use this function to extract more info from request,< reqParams = utils.ExtractRequestParams(r, reqParams, req) >
+	// which is not possible in graphql, we can only set the body of req params object
+	reqParams.Payload = params
 
 	go func() {
 		var ctx2 = ctx
@@ -47,7 +58,7 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 			ctx2 = c
 		}
 
-		_, result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, reqParams, params)
+		_, result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, reqParams, &model.FunctionsRequest{Params: params, Timeout: timeout, Cache: cacheConfig})
 		_ = authHelpers.PostProcessMethod(ctx, graph.aesKey, actions, result)
 		cb(result, err)
 	}()

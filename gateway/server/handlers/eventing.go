@@ -25,8 +25,16 @@ func HandleAdminQueueEvent(adminMan *admin.Manager, modules *modules.Modules) ht
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		projectID := vars["project"]
 
-		eventing := modules.Eventing()
+		eventing, err := modules.Eventing(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Load the params from the body
 		req := request{}
@@ -67,8 +75,13 @@ func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		eventing := modules.Eventing()
-
+		eventing, err := modules.Eventing(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 		// Load the params from the body
 		req := model.QueueEventRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&req)

@@ -48,7 +48,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 
 		isJoin := len(req.Options.Join) > 0
 
-		// Throw error if select is not provided during joins
+		// Throw error if both select and aggregate is not provided during joins
 		if isJoin && len(req.Options.Select) == 0 && len(req.Aggregate) == 0 {
 			return "", nil, errors.New("select cannot be nil when using joins")
 		}
@@ -419,7 +419,6 @@ func (s *SQL) processRows(ctx context.Context, isDebug bool, table []string, isA
 		return
 	}
 
-	// Process joint tables for rows
 	for _, j := range join {
 		var arr []interface{}
 		utils.GenerateJoinKeys(j.Table, j.On, row, joinMapping)

@@ -26,8 +26,21 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		serviceID := vars["service"]
 		function := vars["func"]
 
-		auth := modules.Auth()
-		functions := modules.Functions()
+		auth, err := modules.Auth(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		functions, err := modules.Functions(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Load the params from the body
 		req := model.FunctionsRequest{}
@@ -55,7 +68,7 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, req)
 
-		status, result, err := functions.CallWithContext(ctx, serviceID, function, token, reqParams, req.Params)
+		status, result, err := functions.CallWithContext(ctx, serviceID, function, token, reqParams, &req)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Receieved error from service call (%s:%s)", serviceID, function), err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)

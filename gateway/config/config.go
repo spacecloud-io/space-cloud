@@ -11,6 +11,7 @@ type Config struct {
 	ClusterConfig    *ClusterConfig   `json:"clusterConfig" yaml:"clusterConfig" mapstructure:"clusterConfig"`
 	Integrations     Integrations     `json:"integrations" yaml:"integrations" mapstructure:"integrations"`
 	IntegrationHooks IntegrationHooks `json:"integrationsHooks" yaml:"integrationsHooks" mapstructure:"integrationsHooks"`
+	CacheConfig      *CacheConfig     `json:"cacheConfig" yaml:"cacheConfig" mapstructure:"cacheConfig"`
 }
 
 // ClusterConfig holds the cluster level configuration
@@ -119,10 +120,11 @@ type DatabaseSchema struct {
 
 // DatabaseRule stores information of db rule
 type DatabaseRule struct {
-	Table             string           `json:"col,omitempty" yaml:"col" mapstructure:"col"`
-	DbAlias           string           `json:"dbAlias,omitempty" yaml:"dbAlias" mapstructure:"dbAlias"`
-	IsRealTimeEnabled bool             `json:"isRealtimeEnabled,omitempty" yaml:"isRealtimeEnabled" mapstructure:"isRealtimeEnabled"`
-	Rules             map[string]*Rule `json:"rules,omitempty" yaml:"rules" mapstructure:"rules"`
+	Table                   string           `json:"col,omitempty" yaml:"col" mapstructure:"col"`
+	DbAlias                 string           `json:"dbAlias,omitempty" yaml:"dbAlias" mapstructure:"dbAlias"`
+	IsRealTimeEnabled       bool             `json:"isRealtimeEnabled,omitempty" yaml:"isRealtimeEnabled" mapstructure:"isRealtimeEnabled"`
+	EnableCacheInvalidation bool             `json:"enableCacheInvalidation,omitempty" yaml:"enableCacheInvalidation" mapstructure:"enableCacheInvalidation"`
+	Rules                   map[string]*Rule `json:"rules,omitempty" yaml:"rules" mapstructure:"rules"`
 }
 
 // EventingConfig stores information of eventing config
@@ -148,6 +150,15 @@ type FileStoreConfig struct {
 	Secret         string `json:"secret" yaml:"secret" mapstructure:"secret"`
 	DisableSSL     *bool  `json:"disableSSL,omitempty" yaml:"disableSSL,omitempty" mapstructure:"disableSSL"`
 	ForcePathStyle *bool  `json:"forcePathStyle,omitempty" yaml:"forcePathStyle,omitempty" mapstructure:"forcePathStyle"`
+}
+
+// CacheConfig describes the config of the caching module
+type CacheConfig struct {
+	Enabled bool   `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
+	Conn    string `json:"conn" yaml:"conn" mapstructure:"conn"`
+
+	// Represents Time To Live in seconds, default value is 5 minutes (5 * 60 seconds) if not provided
+	DefaultTTL int `json:"defaultTTL" yaml:"defaultTTL" mapstructure:"defaultTTL"`
 }
 
 // Secret describes the a secret object
@@ -191,9 +202,6 @@ const (
 // Admin holds the admin config
 type Admin struct {
 	ClusterConfig *ClusterConfig `json:"clusterConfig" yaml:"clusterConfig" mapstructure:"clusterConfig"`
-	LicenseKey    string         `json:"licenseKey" yaml:"licenseKey" mapstructure:"licenseKey"`
-	LicenseValue  string         `json:"licenseValue" yaml:"licenseValue" mapstructure:"licenseValue"`
-	License       string         `json:"license" yaml:"license" mapstructure:"license"`
 	Integrations  Integrations   `json:"integrations" yaml:"integrations" mapstructure:"integrations"`
 }
 
@@ -273,6 +281,7 @@ type Rule struct {
 	Template TemplatingEngine       `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
 	ReqTmpl  string                 `json:"requestTemplate,omitempty" yaml:"requestTemplate,omitempty" mapstructure:"requestTemplate"`
 	OpFormat string                 `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
+	Cache    *ReadCacheOptions      `json:"cache,omitempty" yaml:"cache,omitempty" mapstructure:"cache"`
 }
 
 // Auths holds the mapping of the sign in method
@@ -309,18 +318,19 @@ type Endpoint struct {
 	// depending upon the payload format, the graphQL request that
 	// gets converted to http request will use that format as it's payload
 	// currently supported formats are application/json,multipart/form-data
-	ReqPayloadFormat string  `json:"requestPayloadFormat" yaml:"requestPayloadFormat" mapstructure:"requestPayloadFormat"`
-	ReqTmpl          string  `json:"requestTemplate" yaml:"requestTemplate" mapstructure:"requestTemplate"`
-	GraphTmpl        string  `json:"graphTemplate" yaml:"graphTemplate" mapstructure:"graphTemplate"`
-	ResTmpl          string  `json:"responseTemplate" yaml:"responseTemplate" mapstructure:"responseTemplate"`
-	OpFormat         string  `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
-	Token            string  `json:"token,omitempty" yaml:"token,omitempty" mapstructure:"token"`
-	Claims           string  `json:"claims,omitempty" yaml:"claims,omitempty" mapstructure:"claims"`
-	Method           string  `json:"method" yaml:"method" mapstructure:"method"`
-	Path             string  `json:"path" yaml:"path" mapstructure:"path"`
-	Rule             *Rule   `json:"rule,omitempty" yaml:"rule,omitempty" mapstructure:"rule"`
-	Headers          Headers `json:"headers,omitempty" yaml:"headers,omitempty" mapstructure:"headers"`
-	Timeout          int     `json:"timeout,omitempty" yaml:"timeout,omitempty" mapstructure:"timeout"` // Timeout is in seconds
+	ReqPayloadFormat string   `json:"requestPayloadFormat" yaml:"requestPayloadFormat" mapstructure:"requestPayloadFormat"`
+	ReqTmpl          string   `json:"requestTemplate" yaml:"requestTemplate" mapstructure:"requestTemplate"`
+	GraphTmpl        string   `json:"graphTemplate" yaml:"graphTemplate" mapstructure:"graphTemplate"`
+	ResTmpl          string   `json:"responseTemplate" yaml:"responseTemplate" mapstructure:"responseTemplate"`
+	OpFormat         string   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
+	Token            string   `json:"token,omitempty" yaml:"token,omitempty" mapstructure:"token"`
+	Claims           string   `json:"claims,omitempty" yaml:"claims,omitempty" mapstructure:"claims"`
+	Method           string   `json:"method" yaml:"method" mapstructure:"method"`
+	Path             string   `json:"path" yaml:"path" mapstructure:"path"`
+	Rule             *Rule    `json:"rule,omitempty" yaml:"rule,omitempty" mapstructure:"rule"`
+	Headers          Headers  `json:"headers,omitempty" yaml:"headers,omitempty" mapstructure:"headers"`
+	Timeout          int      `json:"timeout,omitempty" yaml:"timeout,omitempty" mapstructure:"timeout"` // Timeout is in seconds
+	CacheOptions     []string `json:"cacheOptions" yaml:"cacheOptions" mapstructure:"cacheOptions"`
 }
 
 // EndpointKind describes the type of endpoint. Default value - internal
@@ -447,4 +457,10 @@ type SchemaObject struct {
 type LetsEncrypt struct {
 	ID                 string   `json:"id,omitempty" yaml:"id,omitempty" mapstructure:"id"`
 	WhitelistedDomains []string `json:"domains" yaml:"domains" mapstructure:"domains"`
+}
+
+// ReadCacheOptions describes the cache options in requests
+type ReadCacheOptions struct {
+	TTL               int64 `json:"ttl" yaml:"ttl" mapstructure:"ttl"` // here ttl is represented in seconds
+	InstantInvalidate bool  `json:"instantInvalidate" yaml:"instantInvalidate" mapstructure:"instantInvalidate"`
 }

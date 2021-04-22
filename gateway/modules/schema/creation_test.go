@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	. "github.com/spaceuptech/space-cloud/gateway/modules/schema/helpers"
@@ -33,23 +34,27 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		wantErr bool
 	}
 
+	adminMan := &admin.Manager{}
 	crudPostgres := crud.Init()
+	crudPostgres.SetAdminManager(adminMan)
 	err := crudPostgres.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "postgres"): &config.DatabaseConfig{DbAlias: "postgres", Type: "sql-postgres", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize postgres", err)
 	}
 
 	crudMySQL := crud.Init()
+	crudMySQL.SetAdminManager(adminMan)
 	err = crudMySQL.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "mysql"): &config.DatabaseConfig{DbAlias: "mysql", Type: "sql-mysql", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize my sql", err)
 
 	}
+
 	crudSQLServer := crud.Init()
+	crudSQLServer.SetAdminManager(adminMan)
 	err = crudSQLServer.SetConfig("test", config.DatabaseConfigs{config.GenerateResourceID("chicago", "myproject", config.ResourceDatabaseConfig, "sqlserver"): &config.DatabaseConfig{DbAlias: "sqlserver", Type: "sql-sqlserver", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize sql server", err)
-
 	}
 
 	var noQueriesGeneratedTestCases = []testGenerateCreationQueries{

@@ -47,20 +47,17 @@ func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 			return
 		}
 
-		isProd, plan, quotas, loginURL, clusterName, licenseRenewal, licenseKey, licenseValue, sessionID, licenseMode := adminMan.LoadEnv()
+		isProd, loginURL, err := adminMan.LoadEnv()
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusInternalServerError, err)
+			return
+		}
+
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{
-			"isProd":       isProd,
-			"plan":         plan,
-			"quotas":       quotas,
-			"version":      utils.BuildVersion,
-			"licenseKey":   licenseKey,
-			"licenseValue": licenseValue,
-			"clusterName":  clusterName,
-			"nextRenewal":  licenseRenewal,
-			"clusterType":  clusterType,
-			"loginURL":     loginURL,
-			"sessionId":    sessionID,
-			"licenseMode":  licenseMode,
+			"isProd":      isProd,
+			"version":     utils.BuildVersion,
+			"clusterType": clusterType,
+			"loginURL":    loginURL,
 		})
 	}
 }
@@ -171,5 +168,30 @@ func HandleGenerateTokenForMissionControl(adminMan *admin.Manager, syncMan *sync
 		}
 
 		_ = helpers.Response.SendResponse(ctx, w, status, model.Response{Result: newToken})
+	}
+}
+
+// HandleGenerateAdminToken generates an admin token with the claims provided
+func HandleGenerateAdminToken(adminMan *admin.Manager) http.HandlerFunc {
+	type Request struct {
+		Claims map[string]interface{} `json:"claims"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Load the request from the body
+		req := new(Request)
+		_ = json.NewDecoder(r.Body).Decode(req)
+		defer utils.CloseTheCloser(r.Body)
+
+		newToken, err := adminMan.GenerateToken(r.Context(), token, req.Claims)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusForbidden, err)
+			return
+		}
+
+		_ = helpers.Response.SendResponse(r.Context(), w, http.StatusOK, model.Response{Result: map[string]string{"token": newToken}})
 	}
 }

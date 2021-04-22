@@ -129,7 +129,7 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 		req.Operation = utils.All
 		return s.update(ctx, col, req, executor)
 	default: // (case utils.One)
-		return 0, utils.ErrInvalidParams
+		return 0, errors.New("sql databases do no support op type `one` for updates")
 	}
 }
 

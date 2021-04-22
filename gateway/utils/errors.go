@@ -13,6 +13,3 @@ var ErrUnsupportedDatabase = errors.New("Unsupported database. Make sure your da
 
 // ErrDatabaseConnection is thrown when SC was unable to connect to the requested database
 var ErrDatabaseConnection = errors.New("Could not connect to database. Make sure it is up and connection string provided to SC is correct")
-
-// ErrDatabaseConfigAbsent is thrown when database config is not present
-var ErrDatabaseConfigAbsent = errors.New("No such database found in SC config file")

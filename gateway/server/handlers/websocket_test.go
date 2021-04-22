@@ -629,12 +629,12 @@ type mockWebsocketModules struct {
 	graphql  modules.GraphQLInterface
 }
 
-func (m *mockWebsocketModules) Realtime() modules.RealtimeInterface {
-	return m.realtime
+func (m *mockWebsocketModules) Realtime(projectID string) (modules.RealtimeInterface, error) {
+	return m.realtime, nil
 }
 
-func (m *mockWebsocketModules) GraphQL() modules.GraphQLInterface {
-	return m.graphql
+func (m *mockWebsocketModules) GraphQL(projectID string) (modules.GraphQLInterface, error) {
+	return m.graphql, nil
 }
 
 // Create all the mock interfaces

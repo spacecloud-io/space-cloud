@@ -18,8 +18,10 @@ type Module struct {
 	lock sync.RWMutex
 
 	// Dependencies
-	auth    model.AuthFunctionInterface
-	manager *syncman.Manager
+	auth           model.AuthFunctionInterface
+	manager        *syncman.Manager
+	integrationMan integrationManagerInterface
+	caching        cachingInterface
 
 	// Variable configuration
 	project    string
@@ -32,8 +34,8 @@ type Module struct {
 }
 
 // Init returns a new instance of the Functions module
-func Init(clusterID string, auth model.AuthFunctionInterface, manager *syncman.Manager, hook model.MetricFunctionHook) *Module {
-	return &Module{clusterID: clusterID, auth: auth, manager: manager, metricHook: hook}
+func Init(clusterID string, auth model.AuthFunctionInterface, manager *syncman.Manager, integrationMan integrationManagerInterface, hook model.MetricFunctionHook) *Module {
+	return &Module{clusterID: clusterID, auth: auth, manager: manager, integrationMan: integrationMan, metricHook: hook}
 }
 
 // SetConfig sets the configuration of the functions module
@@ -95,4 +97,9 @@ func (m *Module) SetConfig(project string, c config.Services) error {
 		}
 	}
 	return nil
+}
+
+// SetCachingModule sets caching module
+func (m *Module) SetCachingModule(c cachingInterface) {
+	m.caching = c
 }

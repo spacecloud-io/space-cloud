@@ -47,17 +47,19 @@ func getPreparedQueryKey(dbAlias, id string) string {
 
 // NOTE: the parent function should take lock on module before calling this function
 func (m *Module) getDBInfo(dbAlias string) (*config.DatabaseConfig, error) {
-	if m.alias != dbAlias {
+	value, ok := m.databaseConfigs[dbAlias]
+	if !ok {
 		return nil, fmt.Errorf("dbAlias (%s) does not exists", dbAlias)
 	}
-	return m.config, nil
+	return value, nil
 }
 
 func (m *Module) getCrudBlock(dbAlias string) (Crud, error) {
-	if m.block != nil && m.alias == dbAlias {
-		return m.block, nil
+	block, p := m.blocks[dbAlias]
+	if !p {
+		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to get database connection. Ensure you have added a database", fmt.Errorf("crud module not initialized for database (%s)", dbAlias), nil)
 	}
-	return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to get database connection, ensure you have added a database", fmt.Errorf("crud module not initialized for database (%s)", dbAlias), nil)
+	return block, nil
 }
 
 // splitConnectionString splits the connection string
@@ -71,8 +73,10 @@ func splitConnectionString(connection string) (string, bool) {
 
 func (m *Module) getDBType(dbAlias string) (string, error) {
 	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
-	if dbAlias != m.alias {
+	block, p := m.blocks[dbAlias]
+	if !p {
 		return "", fmt.Errorf("cannot get db type as invalid db alias (%s) provided", dbAlias)
 	}
-	return m.dbType, nil
+
+	return string(block.GetDBType()), nil
 }

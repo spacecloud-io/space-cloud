@@ -8,10 +8,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/caching"
+
+	"github.com/stretchr/testify/mock"
 )
 
 func TestManager_SetDatabaseConnection(t *testing.T) {
@@ -161,6 +162,7 @@ func TestManager_SetDatabaseConnection(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetDatabaseConnection(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetDatabaseConnection() error = %v, wantErr %v", err, tt.wantErr)
@@ -241,6 +243,11 @@ func TestManager_RemoveDatabaseConfig(t *testing.T) {
 					args:           []interface{}{mock.Anything, "1", config.DatabaseConfigs{}},
 					paramsReturned: []interface{}{nil},
 				},
+				{
+					method:         "Caching",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{caching.Init("chicago", "nodeid")},
+				},
 			},
 			storeMockArgs: []mockArgs{
 				{
@@ -266,8 +273,9 @@ func TestManager_RemoveDatabaseConfig(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
-			_, err := tt.s.RemoveDatabaseConfig(context.Background(), tt.args.project, tt.args.dbAlias, model.RequestParams{})
-			if (err != nil) != tt.wantErr {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
+
+			if _, err := tt.s.RemoveDatabaseConfig(context.Background(), tt.args.project, tt.args.dbAlias, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.RemoveDatabaseConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -378,6 +386,7 @@ func TestManager_GetPreparedQuery(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetPreparedQuery(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.id, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetPreparedQuery() error = %v, wantErr %v", err, tt.wantErr)
@@ -431,7 +440,7 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabasePreparedQueryConfig",
-					args:           []interface{}{mock.Anything, config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "queryID"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "queryID", SQL: "field"}}},
+					args:           []interface{}{mock.Anything, "1", config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "queryID"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "queryID", SQL: "field"}}},
 					paramsReturned: []interface{}{errors.New("unable to set db config")},
 				},
 			},
@@ -444,7 +453,7 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabasePreparedQueryConfig",
-					args:           []interface{}{mock.Anything, config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "queryID"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "queryID", SQL: "field"}}},
+					args:           []interface{}{mock.Anything, "1", config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "queryID"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "queryID", SQL: "field"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -472,6 +481,7 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetPreparedQueries(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.id, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetPreparedQueries() error = %v, wantErr %v", err, tt.wantErr)
@@ -564,7 +574,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabasePreparedQueryConfig",
-					args:           []interface{}{mock.Anything, config.DatabasePreparedQueries{}},
+					args:           []interface{}{mock.Anything, "myproject", config.DatabasePreparedQueries{}},
 					paramsReturned: []interface{}{errors.New("unable to set database prepared query config")},
 				},
 			},
@@ -599,7 +609,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 				{
 					method: "SetDatabasePreparedQueryConfig",
 					args: []interface{}{
-						mock.Anything, config.DatabasePreparedQueries{},
+						mock.Anything, "myproject", config.DatabasePreparedQueries{},
 					},
 					paramsReturned: []interface{}{nil},
 				},
@@ -628,6 +638,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.RemovePreparedQueries(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.id, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.RemovePreparedQueries() error = %v, wantErr %v", err, tt.wantErr)
@@ -689,7 +700,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{mock.Anything, config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{Table: "tableName", DbAlias: "alias", Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}}},
+					args:           []interface{}{mock.Anything, "1", config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{Table: "tableName", DbAlias: "alias", Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}}},
 					paramsReturned: []interface{}{errors.New("error setting db module config")},
 				},
 			},
@@ -702,7 +713,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{mock.Anything, config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{Table: "tableName", DbAlias: "alias", Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}}},
+					args:           []interface{}{mock.Anything, "1", config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{Table: "tableName", DbAlias: "alias", Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -722,7 +733,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{mock.Anything, config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{Table: "tableName", DbAlias: "alias", Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}}},
+					args:           []interface{}{mock.Anything, "1", config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "tableName", "rule"): &config.DatabaseRule{Table: "tableName", DbAlias: "alias", Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -741,7 +752,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{mock.Anything, config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "notTableName", "rule"): &config.DatabaseRule{Table: "notTableName", DbAlias: "alias", Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}}},
+					args:           []interface{}{mock.Anything, "1", config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "notTableName", "rule"): &config.DatabaseRule{Table: "notTableName", DbAlias: "alias", Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}}},
 					paramsReturned: []interface{}{errors.New("unable to set db config")},
 				},
 			},
@@ -754,7 +765,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{mock.Anything, config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "notTableName", "rule"): &config.DatabaseRule{Table: "notTableName", DbAlias: "alias", Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}}},
+					args:           []interface{}{mock.Anything, "1", config.DatabaseRules{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseRule, "alias", "notTableName", "rule"): &config.DatabaseRule{Table: "notTableName", DbAlias: "alias", Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -782,6 +793,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetCollectionRules(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetCollectionRules() error = %v, wantErr %v", err, tt.wantErr)
@@ -1065,8 +1077,8 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 				{
 					method: "SetDatabaseSchemaConfig",
@@ -1131,8 +1143,8 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 				{
 					method: "SetDatabaseSchemaConfig",
@@ -1165,8 +1177,8 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 				{
 					method: "SetDatabaseSchemaConfig",
@@ -1218,6 +1230,7 @@ func TestManager_SetSchemaInspection(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetSchemaInspection(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetSchemaInspection() error = %v, wantErr %v", err, tt.wantErr)
@@ -1287,7 +1300,7 @@ func TestManager_RemoveSchemaInspection(t *testing.T) {
 				},
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{mock.Anything, config.DatabaseRules{}},
+					args:           []interface{}{mock.Anything, "1", config.DatabaseRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -1312,7 +1325,7 @@ func TestManager_RemoveSchemaInspection(t *testing.T) {
 				},
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{mock.Anything, config.DatabaseRules{}},
+					args:           []interface{}{mock.Anything, "1", config.DatabaseRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -1330,6 +1343,7 @@ func TestManager_RemoveSchemaInspection(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
@@ -1345,6 +1359,7 @@ func TestManager_RemoveSchemaInspection(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.RemoveCollection(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.RemoveCollection() error = %v, wantErr %v", err, tt.wantErr)
@@ -1395,7 +1410,8 @@ func TestManager_applySchemas(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockErrorSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockErrorSchema, nil},
 				},
 			},
 			schemaErrorMockArgs: []mockArgs{
@@ -1414,7 +1430,8 @@ func TestManager_applySchemas(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 				{
 					method:         "SetDatabaseSchemaConfig",
@@ -1445,7 +1462,8 @@ func TestManager_applySchemas(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 				{
 					method:         "SetDatabaseSchemaConfig",
@@ -1468,7 +1486,8 @@ func TestManager_applySchemas(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 				{
 					method:         "SetDatabaseSchemaConfig",
@@ -1492,7 +1511,8 @@ func TestManager_applySchemas(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 				{
 					method:         "SetDatabaseSchemaConfig",
@@ -1530,6 +1550,7 @@ func TestManager_applySchemas(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if err := tt.s.applySchemas(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.projectConfig, tt.args.v); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.applySchemas() error = %v, wantErr %v", err, tt.wantErr)
@@ -1584,7 +1605,8 @@ func TestManager_SetModifyAllSchema(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 				{
 					method:         "SetDatabaseSchemaConfig",
@@ -1615,7 +1637,8 @@ func TestManager_SetModifyAllSchema(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "GetSchemaModuleForSyncMan",
-					paramsReturned: []interface{}{&mockSchema},
+					args:           []interface{}{"1"},
+					paramsReturned: []interface{}{&mockSchema, nil},
 				},
 				{
 					method:         "SetDatabaseSchemaConfig",
@@ -1650,6 +1673,7 @@ func TestManager_SetModifyAllSchema(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetModifyAllSchema(context.Background(), tt.args.dbAlias, tt.args.project, tt.args.v, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetModifyAllSchema() error = %v, wantErr %v", err, tt.wantErr)
@@ -1702,6 +1726,7 @@ func TestManager_GetDatabaseConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetDatabaseConfig(context.Background(), tt.args.project, tt.args.dbAlias, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetDatabaseConfig() error = %v, wantErr %v", err, tt.wantErr)
@@ -1761,6 +1786,7 @@ func TestManager_GetCollectionRules(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetCollectionRules(context.Background(), tt.args.project, tt.args.dbAlias, tt.args.col, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetCollectionRules() error = %v, wantErr %v", err, tt.wantErr)
@@ -1915,7 +1941,7 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{context.Background(), config.DatabaseRules{}},
+					args:           []interface{}{context.Background(), "myProject", config.DatabaseRules{}},
 					paramsReturned: []interface{}{errors.New("unable to set db config")},
 				},
 			},
@@ -1952,7 +1978,7 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{context.Background(), config.DatabaseRules{}},
+					args:           []interface{}{context.Background(), "myProject", config.DatabaseRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -1996,7 +2022,7 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabaseRulesConfig",
-					args:           []interface{}{context.Background(), config.DatabaseRules{}},
+					args:           []interface{}{context.Background(), "myProject", config.DatabaseRules{}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -2015,6 +2041,7 @@ func TestManager_DeleteCollectionRules(t *testing.T) {
 
 			mockModules := mockModulesInterface{}
 			mockStore := mockStoreInterface{}
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			for _, m := range tt.modulesMockArgs {
 				mockModules.On(m.method, m.args...).Return(m.paramsReturned...)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/segmentio/ksuid"
@@ -95,4 +96,37 @@ func (m *Module) CancelSubscription(topic string) {
 
 	// Remove it from the mapping
 	delete(m.mapping, topic)
+}
+
+// SetKeyIfNotExists set key in redis if not exists
+func (m *Module) SetKeyIfNotExists(ctx context.Context, key, value string, t time.Duration) (bool, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	return m.client.SetNX(ctx, key, value, t).Result()
+}
+
+// RenewKeyTTLOnMatch renews the ttl of the key if it exists & its value matches
+func (m *Module) RenewKeyTTLOnMatch(ctx context.Context, key, value string, t time.Duration) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	result, err := m.client.Get(ctx, key).Result()
+	if err != nil {
+		return err
+	}
+
+	if result == value {
+		return m.client.Set(ctx, key, value, t).Err()
+	}
+
+	return nil
+}
+
+// GetKey gets value of specified key from database
+func (m *Module) GetKey(ctx context.Context, key string) (string, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	return m.client.Get(ctx, key).Result()
 }

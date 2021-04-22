@@ -160,6 +160,8 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 				doc["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
 			}
 
+			// doc["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
+
 			if len(req.Aggregate) > 0 {
 				getNestedObject(doc)
 			}
