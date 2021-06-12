@@ -1,4 +1,4 @@
-<p align="center"><a href="https://www.spaceuptech.com"><img src="https://space-cloud.io/images/kit/logo_full.svg" alt="Space Cloud"></a></p>
+<p align="center"><a href="https://space-cloud.io"><img src="https://space-cloud.io/images/kit/logo_full.svg" alt="Space Cloud"></a></p>
 
 <h3 align="center">
   Develop, Deploy and Secure Serverless Apps on Kubernetes.
@@ -25,7 +25,7 @@
     <a href="https://twitter.com/intent/follow?screen_name=spacecloudio"><img src="https://img.shields.io/badge/Follow-spacecloudio-blue.svg?style=flat&logo=twitter"></a>
 </p>
 
-Space Cloud is a Kubernetes based serverless platform that provides **instant, realtime APIs on any database**, with [event triggers](https://docs.spaceuptech.com/microservices/eventing) and unified APIs for your [custom business logic](https://docs.spaceuptech.com/microservices/graphql).
+Space Cloud is a Kubernetes based serverless platform that provides **instant, realtime APIs on any database**, with [event triggers](https://docs.space-cloud.io/microservices/eventing) and unified APIs for your [custom business logic](https://docs.space-cloud.io/microservices/graphql).
 
 Space Cloud helps you build modern applications without having to write any backend code in most cases.
 
