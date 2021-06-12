@@ -1,4 +1,4 @@
-<p align="center"><a href="https://www.spaceuptech.com"><img src="https://spaceuptech.com/icons/space-cloud-block-diagram1.png" alt="Space Cloud"></a></p>
+<p align="center"><a href="https://space-cloud.io"><img src="https://space-cloud.io/images/kit/logo_full.svg" alt="Space Cloud"></a></p>
 
 <h3 align="center">
   Develop, Deploy and Secure Serverless Apps on Kubernetes.
@@ -6,9 +6,9 @@
 
 <p align="center">
   <strong>
-    <a href="https://spaceuptech.com/">Website</a>
+    <a href="https://space-cloud.io/">Website</a>
     •
-    <a href="https://docs.spaceuptech.com/">Docs</a>
+    <a href="https://docs.space-cloud.io/">Docs</a>
     •
     <a href="https://discord.gg/RkGjW93">Support</a>
   </strong>
@@ -22,10 +22,10 @@
     <a href="https://opensource.org/licenses/Apache-2.0"><img
     alt="Apache License"
     src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"></a>
-    <a href="https://twitter.com/intent/follow?screen_name=spaceuptech"><img src="https://img.shields.io/badge/                 Follow-spaceuptech-blue.svg?style=flat&logo=twitter"></a>
+    <a href="https://twitter.com/intent/follow?screen_name=spacecloudio"><img src="https://img.shields.io/badge/Follow-spacecloudio-blue.svg?style=flat&logo=twitter"></a>
 </p>
 
-Space Cloud is a Kubernetes based serverless platform that provides **instant, realtime APIs on any database**, with [event triggers](https://docs.spaceuptech.com/microservices/eventing) and unified APIs for your [custom business logic](https://docs.spaceuptech.com/microservices/graphql).
+Space Cloud is a Kubernetes based serverless platform that provides **instant, realtime APIs on any database**, with [event triggers](https://docs.space-cloud.io/microservices/eventing) and unified APIs for your [custom business logic](https://docs.space-cloud.io/microservices/graphql).
 
 Space Cloud helps you build modern applications without having to write any backend code in most cases.
 
@@ -102,8 +102,8 @@ With that, it also provides **autoscaling functionality** out of the box includi
 The documentation and community should help you troubleshoot most issues. If you have encountered a bug or need to get in touch with us, you can contact us using one of the following channels:
 
 - Support & feedback: [Discord](https://discord.gg/RkGjW93)
-- Issue & bug tracking: [GitHub issues](https://github.com/spaceuptech/space-cloud/issues)
-- Follow product updates: [@spaceuptech](https://twitter.com/spaceuptech)
+- Issue & bug tracking: [GitHub issues](https://github.com/spacecloud-io/space-cloud/issues)
+- Follow product updates: [@spaceupcloudio](https://twitter.com/spacecloudio)
 
 ## Contributing
 
@@ -117,4 +117,4 @@ Space Cloud is a young project. We'd love to have you onboard if you wish to con
 
 ## License
 
-Space Cloud is [Apache 2.0 licensed](https://github.com/spaceuptech/space-cloud/blob/master/LICENSE).
+Space Cloud is [Apache 2.0 licensed](https://github.com/spacecloud-io/space-cloud/blob/master/LICENSE).
