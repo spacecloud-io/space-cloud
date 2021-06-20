@@ -90,7 +90,7 @@ However, it's important to note that **the client does not send database (SQL) q
 We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud allows you to access your **custom HTTP servers** via the same consistent APIs of Space Cloud.  In this scenario, Space Cloud acts merely as an API gateway between your `services` and the client. However, the cool part is that you can even perform **joins on your microservices and database** via the GraphQL API of Space Cloud
 
 <div style="text-align: center">
-<img src="https://spaceuptech.com/icons/space-cloud-detailed.png"  style="max-width: 80%" alt="Detailed Space Cloud architecture" />
+<img src="https://space-cloud.io/images/graphQL-diagram.svg"  style="max-width: 80%" alt="Detailed Space Cloud architecture" />
 </div>
 
 Space Cloud integrates with [Kubernetes](https://kubernetes.io) and [Istio](https://istio.io) natively to bring to you a highly scalable Serverless Platform. It encrypts all traffic by default and lets you describe communication policies to protect your microservices.
