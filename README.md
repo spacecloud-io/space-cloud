@@ -87,7 +87,7 @@ Space Cloud is meant to replace any backend php, nodejs, java code you may write
 
 However, it's important to note that **the client does not send database (SQL) queries** to Space Cloud. Instead, it sends an object describing the query to be executed. This object is first **validated** by Space Cloud (using security rules). Once the client is authorized to make the request, **a database query is dynamically generated and executed**. The results are sent directly to the concerned client.
 
-We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud allows you to access your **custom HTTP servers** via the same consistent APIs of Space Cloud.  In this scenario, Space Cloud acts merely as an API gateway between your `services` and the client. However, the cool part is that you can even perform **joins on your microservices and database** via the GraphQL API of Space Cloud
+We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud allows you to access your **custom HTTP servers** via the same consistent APIs of Space Cloud.  In this scenario, Space Cloud acts merely as an API gateway between your `services` and the client. However, the cool part is that you can even perform **joins on your microservices and database** via the GraphQL API of Space Cloud.
 
 <div style="text-align: center">
 <img src="https://spaceuptech.com/icons/space-cloud-detailed.png"  style="max-width: 80%" alt="Detailed Space Cloud architecture" />
@@ -95,7 +95,7 @@ We understand that not every app can be built using only CRUD operations. Someti
 
 Space Cloud integrates with [Kubernetes](https://kubernetes.io) and [Istio](https://istio.io) natively to bring to you a highly scalable Serverless Platform. It encrypts all traffic by default and lets you describe communication policies to protect your microservices.
 
-With that, it also provides **autoscaling functionality** out of the box including **scaling down to zero**
+With that, it also provides **autoscaling functionality** out of the box including **scaling down to zero**.
 
 ## Support & Troubleshooting
 
