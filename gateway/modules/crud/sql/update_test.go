@@ -36,6 +36,9 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 		want1   []interface{}
 		wantErr bool
 	}{
+		// #######################################################################################
+		// ###################################  MySQL  ###########################################
+		// #######################################################################################
 		{
 			name:   "msyql: valid set find on json",
 			fields: fields{dbType: "mysql"},
@@ -83,7 +86,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 				col:     "col",
 				op:      "$set",
 				req: model.UpdateRequest{
-
 					Find: map[string]interface{}{
 						"FindString1": "1",
 					},
@@ -269,8 +271,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -324,8 +325,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Find:   map[string]interface{}{},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -362,8 +362,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -381,8 +380,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -400,8 +398,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -419,8 +416,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -438,8 +434,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -457,10 +452,13 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
+
+		// #######################################################################################
+		// ###################################  Postgres  ########################################
+		// #######################################################################################
 		{
 			name:   "postgres: valid set find on json",
 			fields: fields{dbType: "postgres"},
@@ -508,7 +506,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 				col:     "col",
 				op:      "$set",
 				req: model.UpdateRequest{
-
 					Find: map[string]interface{}{
 						"FindString1": "1",
 						"FindString2": "2",
@@ -713,8 +710,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -767,8 +763,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Find:   map[string]interface{}{},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -805,8 +800,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -824,8 +818,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -843,8 +836,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -862,8 +854,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -881,8 +872,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -900,10 +890,13 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
+
+		// #######################################################################################
+		// ###################################  SQLServer  #######################################
+		// #######################################################################################
 		{
 			name:   "sqlserver: valid set ",
 			fields: fields{dbType: "sqlserver"},
@@ -932,7 +925,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 				col:     "col",
 				op:      "$set",
 				req: model.UpdateRequest{
-
 					Find: map[string]interface{}{
 						"FindString1": "1",
 						"FindString2": "2",
@@ -1138,8 +1130,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -1192,8 +1183,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Find:   map[string]interface{}{},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -1230,8 +1220,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -1249,8 +1238,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -1268,8 +1256,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -1287,8 +1274,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -1306,8 +1292,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -1325,8 +1310,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "",
-
+			want:    "",
 			wantErr: true,
 		},
 	}
