@@ -16,7 +16,6 @@ import (
 
 func TestSQL_generateReadQuery(t *testing.T) {
 	// temp := "one"
-	testAggregateValue := []string{"table:Column1"}
 	type fields struct {
 		enabled    bool
 		connection string
@@ -36,7 +35,6 @@ func TestSQL_generateReadQuery(t *testing.T) {
 		want1   []interface{}
 		wantErr bool
 	}{
-		// TODO: Add test cases.
 		// #######################################################################################
 		// ###################################  MySQL  ###########################################
 		// #######################################################################################
@@ -211,84 +209,6 @@ func TestSQL_generateReadQuery(t *testing.T) {
 			want:    []string{"SELECT DISTINCT Column1 FROM table"},
 			want1:   []interface{}{},
 			wantErr: false,
-		},
-		{
-			name:   "Sum",
-			fields: fields{dbType: "mysql"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"sum": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT SUM(Column1) AS aggregate___nested___table___sum___Column1 FROM table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "Max",
-			fields: fields{dbType: "mysql"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"max": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT MAX(Column1) AS aggregate___nested___table___max___Column1 FROM table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "min",
-			fields: fields{dbType: "mysql"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"min": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT MIN(Column1) AS aggregate___nested___table___min___Column1 FROM table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "avg",
-			fields: fields{dbType: "mysql"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"avg": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT AVG(Column1) AS aggregate___nested___table___avg___Column1 FROM table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "Count",
-			fields: fields{dbType: "mysql"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"count": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT COUNT(Column1) AS aggregate___nested___table___count___Column1 FROM table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "Wrong Operation",
-			fields: fields{dbType: "mysql"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{Select: map[string]int32{"Column1": 1}},
-					Aggregate: map[string][]string{"wrongOp": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{""},
-			want1:   nil,
-			wantErr: true,
 		},
 		{
 			name:   "simple join without select",
@@ -502,84 +422,6 @@ func TestSQL_generateReadQuery(t *testing.T) {
 			want1:   []interface{}{},
 			wantErr: false,
 		},
-		{
-			name:   "Sum",
-			fields: fields{dbType: "postgres"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"sum": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT SUM(Column1) AS aggregate___nested___table___sum___Column1 FROM test.table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "Max",
-			fields: fields{dbType: "postgres"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"max": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT MAX(Column1) AS aggregate___nested___table___max___Column1 FROM test.table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "min",
-			fields: fields{dbType: "postgres"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"min": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT MIN(Column1) AS aggregate___nested___table___min___Column1 FROM test.table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "avg",
-			fields: fields{dbType: "postgres"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"avg": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT AVG(Column1) AS aggregate___nested___table___avg___Column1 FROM test.table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "Count",
-			fields: fields{dbType: "postgres"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"count": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT COUNT(Column1) AS aggregate___nested___table___count___Column1 FROM test.table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "Wrong Operation",
-			fields: fields{dbType: "postgres"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{Select: map[string]int32{"Column1": 1}},
-					Aggregate: map[string][]string{"wrongOp": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{""},
-			want1:   nil,
-			wantErr: true,
-		},
 
 		// #######################################################################################
 		// ###################################  SQLServer  #######################################
@@ -751,84 +593,6 @@ func TestSQL_generateReadQuery(t *testing.T) {
 			want:    []string{"SELECT DISTINCT Column1 FROM test.table"},
 			want1:   []interface{}{},
 			wantErr: false,
-		},
-		{
-			name:   "Sum",
-			fields: fields{dbType: "sqlserver"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"sum": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT SUM(Column1) AS aggregate___nested___table___sum___Column1 FROM test.table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "Max",
-			fields: fields{dbType: "sqlserver"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"max": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT MAX(Column1) AS aggregate___nested___table___max___Column1 FROM test.table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "min",
-			fields: fields{dbType: "sqlserver"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"min": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT MIN(Column1) AS aggregate___nested___table___min___Column1 FROM test.table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "avg",
-			fields: fields{dbType: "sqlserver"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"avg": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT AVG(Column1) AS aggregate___nested___table___avg___Column1 FROM test.table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "Count",
-			fields: fields{dbType: "sqlserver"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{},
-					Aggregate: map[string][]string{"count": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{"SELECT COUNT(Column1) AS aggregate___nested___table___count___Column1 FROM test.table"},
-			want1:   []interface{}{},
-			wantErr: false,
-		},
-		{
-			name:   "Wrong Operation",
-			fields: fields{dbType: "sqlserver"},
-			args: args{project: "test", col: "table",
-				req: &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{Select: map[string]int32{"Column1": 1}},
-					Aggregate: map[string][]string{"wrongOp": testAggregateValue},
-					Operation: "all"}},
-			want:    []string{""},
-			want1:   nil,
-			wantErr: true,
 		},
 	}
 
