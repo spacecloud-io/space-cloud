@@ -20,8 +20,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin bool) (goqu.Expression, []string) {
-	var regxarr []string
+func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin bool) goqu.Expression {
 	array := []goqu.Expression{}
 	for k, v := range find {
 		if strings.HasPrefix(k, "$or") {
@@ -37,9 +36,8 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 					continue
 				}
 
-				exp, a := s.generator(ctx, f2, isJoin)
+				exp := s.generator(ctx, f2, isJoin)
 				orFinalArray = append(orFinalArray, exp)
-				regxarr = append(regxarr, a...)
 			}
 
 			array = append(array, goqu.Or(orFinalArray...))
@@ -56,11 +54,11 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 				case "$regex":
 					switch s.dbType {
 					case "postgres":
-						regxarr = append(regxarr, fmt.Sprintf("%s = $", k))
+						array = append(array, goqu.L(fmt.Sprintf("(%s ~ ?)", k), v2))
 					case "mysql":
-						regxarr = append(regxarr, fmt.Sprintf("%s = ?", k))
+						array = append(array, goqu.L(fmt.Sprintf("(%s REGEXP ?)", k), v2))
 					}
-					array = append(array, goqu.I(k).Eq(v2))
+
 				case "$like":
 					array = append(array, goqu.I(k).Like(v2))
 				case "$eq":
@@ -108,29 +106,27 @@ func (s *SQL) generator(ctx context.Context, find map[string]interface{}, isJoin
 		}
 	}
 
-	return goqu.And(array...), regxarr
+	return goqu.And(array...)
 }
 
-func (s *SQL) generateWhereClause(ctx context.Context, q *goqu.SelectDataset, find map[string]interface{}, matchWhere []map[string]interface{}) (query *goqu.SelectDataset, arr []string) {
+func (s *SQL) generateWhereClause(ctx context.Context, q *goqu.SelectDataset, find map[string]interface{}, matchWhere []map[string]interface{}) (query *goqu.SelectDataset) {
 	query = q
 
 	exps := make([]goqu.Expression, len(matchWhere))
 	for i, f := range matchWhere {
-		exps[i], _ = s.generator(ctx, f, false)
+		exps[i] = s.generator(ctx, f, false)
 	}
 
-	regexArr := make([]string, 0)
 	if len(find) > 0 {
-		exp, arr := s.generator(ctx, find, false)
+		exp := s.generator(ctx, find, false)
 		exps = append(exps, exp)
-		regexArr = arr
 	}
 
 	if len(exps) > 0 {
 		query = query.Where(goqu.And(exps...))
 	}
 
-	return query, regexArr
+	return query
 }
 
 func generateRecord(temp interface{}) (goqu.Record, error) {
@@ -256,7 +252,7 @@ func mysqlTypeCheck(ctx context.Context, dbType model.DBType, types []*sql.Colum
 
 func (s *SQL) processJoins(ctx context.Context, query *goqu.SelectDataset, join []*model.JoinOption, sel map[string]int32, isAggregate bool) (*goqu.SelectDataset, error) {
 	for _, j := range join {
-		on, _ := s.generator(ctx, j.On, true)
+		on := s.generator(ctx, j.On, true)
 		switch j.Type {
 		case "", "LEFT":
 			query = query.LeftJoin(goqu.T(s.getColName(j.Table)), goqu.On(on))

@@ -42,7 +42,7 @@ func (s *SQL) generateDeleteQuery(ctx context.Context, req *model.DeleteRequest,
 
 	if req.Find != nil {
 		// Get the where clause from query object
-		query, _ = s.generateWhereClause(ctx, query, req.Find, nil)
+		query = s.generateWhereClause(ctx, query, req.Find, nil)
 	}
 
 	// Generate SQL string and arguments
