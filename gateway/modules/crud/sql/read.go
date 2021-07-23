@@ -39,9 +39,9 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 
 	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getColName(col)).Prepared(true)
-	var regexArr []string
+
 	// Get the where clause from query object
-	query, regexArr = s.generateWhereClause(ctx, query, req.Find, req.MatchWhere)
+	query = s.generateWhereClause(ctx, query, req.Find, req.MatchWhere)
 
 	selArray := make([]interface{}, 0)
 	if req.Options != nil {
@@ -154,20 +154,6 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		if err != nil {
 			return "", nil, err
 		}
-	}
-
-	for _, v := range regexArr {
-		switch s.dbType {
-		case "mysql":
-			vReplaced := strings.Replace(v, "=", "REGEXP", -1)
-			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
-		case "postgres":
-			vReplaced := strings.Replace(v, "=", "~", -1)
-			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
-		case "sqlserver":
-			return "", nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "SQL server doesn't support regex operation", nil, nil)
-		}
-
 	}
 
 	if s.dbType == string(model.SQLServer) {
