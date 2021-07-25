@@ -42,9 +42,8 @@ require (
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.2
-	github.com/xdg/stringprep v1.0.0 // indirect
 	go.etcd.io/bbolt v1.3.3
-	go.mongodb.org/mongo-driver v1.4.4
+	go.mongodb.org/mongo-driver v1.5.1
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0
 	google.golang.org/api v0.18.0
