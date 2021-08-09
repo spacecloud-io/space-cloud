@@ -13,7 +13,6 @@ require (
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.7.0
-	github.com/spaceuptech/space-api-go v0.17.3
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.6.1
