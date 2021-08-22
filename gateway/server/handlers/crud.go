@@ -164,11 +164,26 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 			req.Options = new(model.ReadOptions)
 		}
 
-		// Rest API is not allowed to do joins for security reasons
-		req.Options.Join = nil
+		// Check if read op is authorised
+		// NOTE: meta.dbType is actually the dbAlias
+		dbType, _ := crud.GetDBType(meta.dbType)
 
-		actions, reqParams, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req, model.ReturnWhereStub{})
+		returnWhere := model.ReturnWhereStub{Col: meta.col, PrefixColName: len(req.Options.Join) > 0, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}
+		actions, reqParams, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req, returnWhere)
 		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
+			return
+		}
+		if len(returnWhere.Where) > 0 {
+			req.MatchWhere = append(req.MatchWhere, returnWhere.Where)
+		}
+
+		if req.PostProcess == nil {
+			req.PostProcess = map[string]*model.PostProcess{}
+		}
+		req.PostProcess[meta.col] = actions
+
+		if err := auth.RunAuthForJoins(ctx, meta.projectID, dbType, meta.dbType, meta.token, &req, req.Options.Join); err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
 			return
 		}

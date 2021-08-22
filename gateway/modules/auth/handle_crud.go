@@ -254,6 +254,29 @@ func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias
 	return actions, model.RequestParams{Claims: auth, Resource: "db-prepared-query", Op: "access", Attributes: attr}, nil
 }
 
+// RunAuthForJoins runs the read authorizer function for all nested joins
+func (m *Module) RunAuthForJoins(ctx context.Context, project, dbType, dbAlias, token string, req *model.ReadRequest, join []*model.JoinOption) error {
+	for _, j := range join {
+		returnWhere := model.ReturnWhereStub{Col: j.Table, PrefixColName: len(req.Options.Join) > 0, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}
+		actions, _, err := m.IsReadOpAuthorised(ctx, project, dbAlias, j.Table, token, req, returnWhere)
+		if err != nil {
+			return err
+		}
+
+		if len(returnWhere.Where) > 0 {
+			req.MatchWhere = append(req.MatchWhere, returnWhere.Where)
+		}
+
+		req.PostProcess[j.Table] = actions
+
+		if err := m.RunAuthForJoins(ctx, project, dbType, dbAlias, token, req, j.Join); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *Module) authenticateCrudRequest(ctx context.Context, projectID, dbAlias, col, token string, op model.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {
 	// Get rule
 	rule, err = m.getCrudRule(ctx, projectID, dbAlias, col, op)
