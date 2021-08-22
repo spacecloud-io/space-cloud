@@ -47,11 +47,11 @@ func NewKubeStore() (*KubeStore, error) {
 // Store stores specified key & value in kube store
 func (s *KubeStore) Store(key string, value []byte) error {
 	key = s.makeKey(key)
-	_, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
+	_, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(context.TODO(), key, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a new Secret
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Creating secret (%s)", key), nil)
-		_, err = s.kubeClient.CoreV1().Secrets(s.projectID).Create(s.generateSecretValue(key, value))
+		_, err = s.kubeClient.CoreV1().Secrets(s.projectID).Create(context.TODO(), s.generateSecretValue(key, value), metav1.CreateOptions{})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("unable to create secret for key (%s) in kubernetes store of lets encrypt", key), err, nil)
 		}
@@ -59,7 +59,7 @@ func (s *KubeStore) Store(key string, value []byte) error {
 	} else if err == nil {
 		// secret already exists...update it!
 		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Updating secret (%s)", key), nil)
-		_, err = s.kubeClient.CoreV1().Secrets(s.projectID).Update(s.generateSecretValue(key, value))
+		_, err = s.kubeClient.CoreV1().Secrets(s.projectID).Update(context.TODO(), s.generateSecretValue(key, value), metav1.UpdateOptions{})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("unable to update secret for key (%s) in kubernetes store of lets encrypt", key), err, nil)
 		}
@@ -72,7 +72,7 @@ func (s *KubeStore) Store(key string, value []byte) error {
 // Load loads specified key from kube store
 func (s *KubeStore) Load(key string) ([]byte, error) {
 	key = s.makeKey(key)
-	secret, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
+	secret, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(context.TODO(), key, metav1.GetOptions{})
 	if err != nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to get secret for key (%s) in kubernetes store of lets encrypt", key), err, nil)
 	}
@@ -82,7 +82,7 @@ func (s *KubeStore) Load(key string) ([]byte, error) {
 // Delete deletes specified key from kube store
 func (s *KubeStore) Delete(key string) error {
 	key = s.makeKey(key)
-	err := s.kubeClient.CoreV1().Secrets(s.projectID).Delete(key, &metav1.DeleteOptions{})
+	err := s.kubeClient.CoreV1().Secrets(s.projectID).Delete(context.TODO(), key, metav1.DeleteOptions{})
 	if kubeErrors.IsNotFound(err) || err == nil {
 		return nil
 	}
@@ -92,7 +92,7 @@ func (s *KubeStore) Delete(key string) error {
 // Exists check if specified key exists in kube store
 func (s *KubeStore) Exists(key string) bool {
 	key = s.makeKey(key)
-	_, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
+	_, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(context.TODO(), key, metav1.GetOptions{})
 	if err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Unable to check secret if exists (%s) in kubernetes store of lets encrypt", key), err, nil)
 		return false
@@ -103,7 +103,7 @@ func (s *KubeStore) Exists(key string) bool {
 // List return all key having prefix
 func (s *KubeStore) List(prefix string, recursive bool) ([]string, error) {
 	// List all secrets
-	kubeSecret, err := s.kubeClient.CoreV1().Secrets(s.projectID).List(metav1.ListOptions{LabelSelector: "app=letsencrypt"})
+	kubeSecret, err := s.kubeClient.CoreV1().Secrets(s.projectID).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=letsencrypt"})
 	if err != nil {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to list secrets in kubernetes store of lets encrypt", err, map[string]interface{}{"prefix": prefix, "recursive": recursive})
 	}
@@ -122,7 +122,7 @@ func (s *KubeStore) List(prefix string, recursive bool) ([]string, error) {
 // Stat returns stat for specified key
 func (s *KubeStore) Stat(key string) (certmagic.KeyInfo, error) {
 	key = s.makeKey(key)
-	secret, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
+	secret, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(context.TODO(), key, metav1.GetOptions{})
 	if err != nil {
 		return certmagic.KeyInfo{}, err
 	}

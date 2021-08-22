@@ -254,6 +254,7 @@ func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias
 	return actions, model.RequestParams{Claims: auth, Resource: "db-prepared-query", Op: "access", Attributes: attr}, nil
 }
 
+// RunAuthForJoins runs the read authorizer function for all nested joins
 func (m *Module) RunAuthForJoins(ctx context.Context, project, dbType, dbAlias, token string, req *model.ReadRequest, join []*model.JoinOption) error {
 	for _, j := range join {
 		returnWhere := model.ReturnWhereStub{Col: j.Table, PrefixColName: len(req.Options.Join) > 0, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}

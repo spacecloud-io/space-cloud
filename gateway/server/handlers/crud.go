@@ -169,7 +169,7 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 		dbType, _ := crud.GetDBType(meta.dbType)
 
 		returnWhere := model.ReturnWhereStub{Col: meta.col, PrefixColName: len(req.Options.Join) > 0, ReturnWhere: dbType != string(model.Mongo), Where: map[string]interface{}{}}
-		actions, reqParams, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req, model.ReturnWhereStub{})
+		actions, reqParams, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req, returnWhere)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
 			return

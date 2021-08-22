@@ -227,7 +227,7 @@ func (s *KubeStore) SetResource(ctx context.Context, resourceID string, resource
 	}
 
 	name := makeIDConfigMapCompatible(resourceID)
-	configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(name, v12.GetOptions{})
+	configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(ctx, name, v12.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		configMap := &v1.ConfigMap{
 			ObjectMeta: v12.ObjectMeta{
@@ -243,7 +243,7 @@ func (s *KubeStore) SetResource(ctx context.Context, resourceID string, resource
 				"data": string(resourceJSONString),
 			},
 		}
-		_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Create(configMap)
+		_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Create(ctx, configMap, v12.CreateOptions{})
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set project in kube store couldn't create config map", err, nil)
 		}
@@ -255,7 +255,7 @@ func (s *KubeStore) SetResource(ctx context.Context, resourceID string, resource
 
 	configMap.Data["data"] = string(resourceJSONString)
 
-	_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Update(configMap)
+	_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Update(ctx, configMap, v12.UpdateOptions{})
 	if err != nil {
 		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set project in kube store couldn't update config map", err, nil)
 	}
@@ -265,7 +265,7 @@ func (s *KubeStore) SetResource(ctx context.Context, resourceID string, resource
 // DeleteResource deletes a resource from cluster
 func (s *KubeStore) DeleteResource(ctx context.Context, resourceID string) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Deleting resource", map[string]interface{}{"resourceId": resourceID})
-	err := s.kube.CoreV1().ConfigMaps(spaceCloud).Delete(makeIDConfigMapCompatible(resourceID), &v12.DeleteOptions{})
+	err := s.kube.CoreV1().ConfigMaps(spaceCloud).Delete(ctx, makeIDConfigMapCompatible(resourceID), v12.DeleteOptions{})
 	if kubeErrors.IsNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -279,7 +279,7 @@ func (s *KubeStore) DeleteProject(ctx context.Context, projectID string) error {
 	helpers.Logger.LogDebug(helpers.GetRequestID(ctx), "Deleting entire project", map[string]interface{}{"projectId": projectID})
 	// iterate over the map in reverse order
 	for i := len(config.ResourceFetchingOrder) - 1; i >= 0; i-- {
-		list, err := s.kube.CoreV1().ConfigMaps(spaceCloud).List(v12.ListOptions{LabelSelector: fmt.Sprintf("projectId=%s,kind=%s", projectID, config.ResourceFetchingOrder[i])})
+		list, err := s.kube.CoreV1().ConfigMaps(spaceCloud).List(ctx, v12.ListOptions{LabelSelector: fmt.Sprintf("projectId=%s,kind=%s", projectID, config.ResourceFetchingOrder[i])})
 		if err != nil {
 			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to list config maps which has label projectId = (%s)", projectID), err, nil)
 		}
@@ -296,7 +296,7 @@ func (s *KubeStore) DeleteProject(ctx context.Context, projectID string) error {
 func (s *KubeStore) GetGlobalConfig() (*config.Config, error) {
 	globalConfig := config.GenerateEmptyConfig()
 	for _, resourceType := range config.ResourceFetchingOrder {
-		configMaps, err := s.kube.CoreV1().ConfigMaps(spaceCloud).List(v12.ListOptions{LabelSelector: fmt.Sprintf("clusterId=%s,kind=%s", s.clusterID, resourceType)})
+		configMaps, err := s.kube.CoreV1().ConfigMaps(spaceCloud).List(context.TODO(), v12.ListOptions{LabelSelector: fmt.Sprintf("clusterId=%s,kind=%s", s.clusterID, resourceType)})
 		if err != nil {
 			return nil, err
 		}
