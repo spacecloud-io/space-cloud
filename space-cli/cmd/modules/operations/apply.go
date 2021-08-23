@@ -17,7 +17,7 @@ import (
 )
 
 // Apply reads the config file(s) from the provided file / directory and applies it to the server
-func Apply(applyName string, isForceApply bool, delay time.Duration) error {
+func Apply(applyName string, isForceApply bool, delay time.Duration, retry int) error {
 	if !strings.HasSuffix(applyName, ".yaml") {
 		dirName := applyName
 		if err := os.Chdir(dirName); err != nil {
@@ -63,8 +63,17 @@ func Apply(applyName string, isForceApply bool, delay time.Duration) error {
 						}
 					}
 
-					if err := ApplySpec(token, account, spec); err != nil {
-						return utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
+					retryPerSpec := retry
+					for retryPerSpec > 0 {
+						err := ApplySpec(token, account, spec)
+						if err == nil {
+							break
+						}
+						retryPerSpec -= 1
+						if retryPerSpec == 0 {
+							return utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
+						}
+						utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
 					}
 					time.Sleep(delay)
 				}
@@ -95,8 +104,17 @@ func Apply(applyName string, isForceApply bool, delay time.Duration) error {
 				continue
 			}
 		}
-		if err := ApplySpec(token, account, spec); err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
+		retryPerSpec := retry
+		for retryPerSpec > 0 {
+			err := ApplySpec(token, account, spec)
+			if err == nil {
+				break
+			}
+			retryPerSpec -= 1
+			if retryPerSpec == 0 {
+				return utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
+			}
+			utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
 		}
 		time.Sleep(delay)
 	}
