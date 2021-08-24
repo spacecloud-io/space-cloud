@@ -69,11 +69,11 @@ func Apply(applyName string, isForceApply bool, delay time.Duration, retry int) 
 						if err == nil {
 							break
 						}
-						retryPerSpec -= 1
+						retryPerSpec--
 						if retryPerSpec == 0 {
 							return utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
 						}
-						utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
+						_ = utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
 					}
 					time.Sleep(delay)
 				}
@@ -110,11 +110,11 @@ func Apply(applyName string, isForceApply bool, delay time.Duration, retry int) 
 			if err == nil {
 				break
 			}
-			retryPerSpec -= 1
+			retryPerSpec--
 			if retryPerSpec == 0 {
 				return utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
 			}
-			utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
+			_ = utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
 		}
 		time.Sleep(delay)
 	}
