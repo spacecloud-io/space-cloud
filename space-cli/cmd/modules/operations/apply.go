@@ -63,17 +63,17 @@ func Apply(applyName string, isForceApply bool, delay time.Duration, retry int) 
 						}
 					}
 
-					retryPerSpec := retry
-					for retryPerSpec > 0 {
-						err := ApplySpec(token, account, spec)
-						if err == nil {
+					currentRetryCount := 0
+					for currentRetryCount >= 0 {
+						if err := ApplySpec(token, account, spec); err == nil {
 							break
 						}
-						retryPerSpec--
-						if retryPerSpec == 0 {
-							return utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
+						err = utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
+						if currentRetryCount == retry {
+							return err
 						}
-						_ = utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
+						currentRetryCount++
+						utils.LogInfo(fmt.Sprintf("Retrying spec object with id (%v) and type (%v)", spec.Meta["id"], spec.Type))
 					}
 					time.Sleep(delay)
 				}
@@ -104,17 +104,17 @@ func Apply(applyName string, isForceApply bool, delay time.Duration, retry int) 
 				continue
 			}
 		}
-		retryPerSpec := retry
-		for retryPerSpec > 0 {
-			err := ApplySpec(token, account, spec)
-			if err == nil {
+		currentRetryCount := 0
+		for currentRetryCount >= 0 {
+			if err := ApplySpec(token, account, spec); err == nil {
 				break
 			}
-			retryPerSpec--
-			if retryPerSpec == 0 {
-				return utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
+			err = utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
+			if currentRetryCount == retry {
+				return err
 			}
-			_ = utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
+			currentRetryCount++
+			utils.LogInfo(fmt.Sprintf("Retrying spec object with id (%v) and type (%v)", spec.Meta["id"], spec.Type))
 		}
 		time.Sleep(delay)
 	}
