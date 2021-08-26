@@ -65,7 +65,8 @@ func Apply(applyName string, isForceApply bool, delay time.Duration, retry int) 
 
 					currentRetryCount := 0
 					for {
-						if err := ApplySpec(token, account, spec); err == nil {
+						err = ApplySpec(token, account, spec)
+						if err == nil {
 							break
 						}
 						err = utils.LogError(fmt.Sprintf("Unable to apply file (%s) spec object with id (%v) type (%v)", fileName, spec.Meta["id"], spec.Type), err)
@@ -106,7 +107,8 @@ func Apply(applyName string, isForceApply bool, delay time.Duration, retry int) 
 		}
 		currentRetryCount := 0
 		for {
-			if err := ApplySpec(token, account, spec); err == nil {
+			err = ApplySpec(token, account, spec)
+			if err == nil {
 				break
 			}
 			err = utils.LogError(fmt.Sprintf("Unable to apply spec object with id (%v) type (%v)", spec.Meta["id"], spec.Type), err)
