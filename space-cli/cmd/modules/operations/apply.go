@@ -64,7 +64,7 @@ func Apply(applyName string, isForceApply bool, delay time.Duration, retry int) 
 					}
 
 					currentRetryCount := 0
-					for currentRetryCount >= 0 {
+					for {
 						if err := ApplySpec(token, account, spec); err == nil {
 							break
 						}
@@ -105,7 +105,7 @@ func Apply(applyName string, isForceApply bool, delay time.Duration, retry int) 
 			}
 		}
 		currentRetryCount := 0
-		for currentRetryCount >= 0 {
+		for {
 			if err := ApplySpec(token, account, spec); err == nil {
 				break
 			}
