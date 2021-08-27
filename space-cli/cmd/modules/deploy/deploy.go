@@ -61,7 +61,7 @@ func deployService(dockerFilePath, serviceFilePath string) error {
 	}
 
 	// Time to apply the service file config
-	if err := operations.Apply(serviceFilePath, true, model.ApplyWithNoDelay); err != nil {
+	if err := operations.Apply(serviceFilePath, true, model.ApplyWithNoDelay, 1); err != nil {
 		return utils.LogError("Unable to apply service file config", err)
 	}
 
