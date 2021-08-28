@@ -1,7 +1,7 @@
 apiVersion: v3
 name: space-cloud
-version: 0.21.4 # Chart version
-appVersion: 0.21.4 # Space Cloud version
+version: 0.21.5 # Chart version
+appVersion: 0.21.5 # Space Cloud version
 description: Helm Chart to install Space Cloud
 type: application
 keywords:

@@ -32,4 +32,4 @@ const (
 )
 
 // Version version of space cli
-const Version string = "0.21.4"
+const Version string = "0.21.5"
