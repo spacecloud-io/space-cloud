@@ -2,7 +2,7 @@ rm ./space-cli.zip
 rm ./space-cli
 rm ./space-cli.exe
 
-SPACE_CLI_VERSION="0.21.4"
+SPACE_CLI_VERSION="0.21.5"
 
 GOOS=linux CGO_ENABLED=0 go build -a -ldflags '-s -w -extldflags "-static"' .
 zip space-cli.zip ./space-cli
