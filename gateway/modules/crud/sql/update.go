@@ -146,7 +146,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 
 	if req.Find != nil {
 		// Get the where clause from query object
-		query, _ = s.generateWhereClause(ctx, query, req.Find, nil)
+		query = s.generateWhereClause(ctx, query, req.Find, nil)
 	}
 
 	if req.Update == nil {
@@ -196,10 +196,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 			if s.dbType == string(model.MySQL) {
 				sqlString = strings.Replace(sqlString, k+"=?", k+"="+k+"+?", -1)
 			}
-			if s.dbType == string(model.Postgres) {
-				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"+$", -1)
-			}
-			if s.dbType == string(model.SQLServer) {
+			if dbType == string(model.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"+$", -1)
 			}
 
@@ -217,9 +214,6 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 			if dbType == string(model.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"*$", -1)
 			}
-			if dbType == string(model.SQLServer) {
-				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"*$", -1)
-			}
 
 		}
 
@@ -232,10 +226,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 			if s.dbType == string(model.MySQL) {
 				sqlString = strings.Replace(sqlString, k+"=?", k+"=GREATEST("+k+","+"?"+")", -1)
 			}
-			if s.dbType == string(model.Postgres) {
-				sqlString = strings.Replace(sqlString, k+"=$", k+"=GREATEST("+k+","+"$"+"", -1)
-			}
-			if s.dbType == string(model.SQLServer) {
+			if dbType == string(model.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"=GREATEST("+k+","+"$"+"", -1)
 			}
 		}
@@ -253,9 +244,6 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 			if dbType == string(model.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"=LEAST("+k+","+"$", -1)
 			}
-			if s.dbType == string(model.SQLServer) {
-				sqlString = strings.Replace(sqlString, k+"=$", k+"=LEAST("+k+","+"$", -1)
-			}
 		}
 		sqlString = s.sanitiseUpdateQuery(sqlString)
 
@@ -269,9 +257,6 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 				sqlString = strings.Replace(sqlString, k+"=?", k+"="+val, -1)
 			}
 			if dbType == string(model.Postgres) {
-				sqlString = strings.Replace(sqlString, k+"=$", k+"="+val, -1)
-			}
-			if dbType == string(model.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+val, -1)
 			}
 

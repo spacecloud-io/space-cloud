@@ -22,7 +22,7 @@ gateway:
     periodSeconds: 10 # field specifies that the kubelet should perform a liveness probe every 10 seconds.
     timeout: 5 # http request timeout, it should be less than (periodSeconds)
   image:
-    name: "spaceuptech/gateway"
+    name: "spacecloudio/gateway"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always
   resources:
     requests:
@@ -48,7 +48,7 @@ gateway:
 # Runner service configuration
 runner:
   image:
-    name: "spaceuptech/runner"
+    name: "spacecloudio/runner"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always
   resources:
     requests:
@@ -95,7 +95,7 @@ prometheus:
 dbEvents:
   enabled: true # NOTE: don't put the boolean value in double quotes
   image:
-    name: "spaceuptech/dbevents"
+    name: "spacecloudio/dbevents"
     version: "0.2.0"
     pullPolicy: "IfNotPresent" # IfNotPresent | Always
   resources:

@@ -658,7 +658,7 @@ func (s *Schema) getSchemaResponse(ctx context.Context, format, dbName, tableNam
 	resourceID := config.GenerateResourceID(s.clusterID, s.project, config.ResourceDatabaseSchema, dbName, tableName)
 	dbSchema, ok := s.dbSchemas[resourceID]
 	if !ok {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", dbName, tableName), nil, nil)
+		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("collection (%s) not present in config for dbAlias (%s) )", tableName, dbName), nil, nil)
 	}
 
 	collectionInfo, _ := s.GetSchema(dbName, tableName)
