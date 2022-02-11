@@ -10,14 +10,14 @@ import (
 // LoadAdminConfig creates a caddy config from the viper config provided. This only contains the admin
 // and logging portion of the configuration. The config loaders will be responsible to load the
 // configuration of the applications.
-func LoadAdminConfig(isInitialLoad bool) caddy.Config {
+func LoadAdminConfig(isInitialLoad bool) *caddy.Config {
 	// TODO: Read base config from viper over here.
 	loadingInterval := caddy.Duration(time.Second) * 5
 	if isInitialLoad {
 		loadingInterval = 0
 	}
 
-	return caddy.Config{
+	return &caddy.Config{
 		Admin: &caddy.AdminConfig{
 			Disabled: true,
 			Config: &caddy.ConfigSettings{

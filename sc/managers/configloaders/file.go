@@ -6,6 +6,8 @@ import (
 	"github.com/caddyserver/caddy/v2"
 	"go.uber.org/zap"
 
+	"github.com/spacecloud-io/space-cloud/config"
+	"github.com/spacecloud-io/space-cloud/managers/configloaders/common"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
@@ -37,12 +39,15 @@ func (l *FileLoader) Provision(ctx caddy.Context) error {
 
 // LoadConfig returns the final caddy config from the store.
 func (l *FileLoader) LoadConfig(ctx caddy.Context) ([]byte, error) {
-	l.logger.Info("File module called")
+	// Load SC config file from file system
+	scConfig := new(config.Config)
+	if err := utils.LoadFile(l.Path, scConfig); err != nil {
+		l.logger.Error("Unable to load SpaceCloud config file", zap.Error(err))
+		return nil, err
+	}
 
-	appRaw, _ := json.Marshal(map[string]string{})
-	c := utils.LoadAdminConfig(false)
-	c.AppsRaw = caddy.ModuleMap{"database": appRaw}
-	return json.Marshal(c)
+	// Load the new caddy config
+	return json.Marshal(common.PrepareConfig(scConfig))
 }
 
 // Interface guards

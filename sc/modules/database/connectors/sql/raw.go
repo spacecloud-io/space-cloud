@@ -48,7 +48,7 @@ func (s *SQL) RawQuery(ctx context.Context, query string, isDebug bool, args []i
 
 // GetConnectionState : function to check connection state
 func (s *SQL) GetConnectionState(ctx context.Context) bool {
-	if !s.enabled || s.getClient() == nil {
+	if s.getClient() == nil {
 		return false
 	}
 

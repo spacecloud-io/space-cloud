@@ -18,7 +18,6 @@ func TestSQL_generateReadAggregateQuery(t *testing.T) {
 	// temp := "one"
 	testAggregateValue := []string{"table:Column1"}
 	type fields struct {
-		enabled    bool
 		connection string
 		client     *sqlx.DB
 		dbType     string
@@ -286,7 +285,6 @@ func TestSQL_generateReadAggregateQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &SQL{
-				enabled:    tt.fields.enabled,
 				connection: tt.fields.connection,
 				client:     tt.fields.client,
 				dbType:     tt.fields.dbType,

@@ -14,7 +14,7 @@ func GetRootCommand() *cobra.Command {
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c := utils.LoadAdminConfig(true)
-			if err := caddy.Run(&c); err != nil {
+			if err := caddy.Run(c); err != nil {
 				return err
 			}
 
