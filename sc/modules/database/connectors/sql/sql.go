@@ -3,7 +3,6 @@ package sql
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -23,7 +22,6 @@ import (
 // SQL holds the sql db object
 type SQL struct {
 	lock                sync.RWMutex
-	enabled             bool
 	queryFetchLimit     *int64
 	connection          string
 	client              *sqlx.DB
@@ -37,9 +35,10 @@ type SQL struct {
 }
 
 // Init initialises a new sql instance
-func Init(dbType model.DBType, enabled bool, connection string, dbName string, driverConf config.DriverConfig) (s *SQL, err error) {
-	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil, driverConf: driverConf}
+func Init(dbType model.DBType, connection string, dbName string, driverConf config.DriverConfig) (*SQL, error) {
+	s := &SQL{connection: connection, name: dbName, client: nil, driverConf: driverConf}
 
+	// Set the dbtype based on input model
 	switch dbType {
 	case model.Postgres:
 		s.dbType = "postgres"
@@ -51,17 +50,15 @@ func Init(dbType model.DBType, enabled bool, connection string, dbName string, d
 		s.dbType = "sqlserver"
 
 	default:
-		err = fmt.Errorf("%s db not supported", dbType)
-		return
+		return nil, fmt.Errorf("%s db not supported", dbType)
 	}
 
-	if s.enabled {
-		err = s.connect()
-		if err != nil {
-			return nil, err
-		}
+	// Attempt connection with the database
+	if err := s.connect(); err != nil {
+		return nil, err
 	}
 
+	// Start a background routine to health check the database
 	closer := make(chan struct{}, 1)
 	s.connRetryCloserChan = closer
 	go func() {
@@ -83,7 +80,8 @@ func Init(dbType model.DBType, enabled bool, connection string, dbName string, d
 			}
 		}
 	}()
-	return
+
+	return s, nil
 }
 
 // IsSame checks if we've got the same connection string
@@ -118,11 +116,8 @@ func (s *SQL) GetDBType() model.DBType {
 	return model.MySQL
 }
 
-// IsClientSafe checks whether database is enabled and connected
+// IsClientSafe checks whether database is connected
 func (s *SQL) IsClientSafe(ctx context.Context) error {
-	if !s.enabled {
-		return errors.New("the database isn't enabled")
-	}
 	if s.getClient() == nil {
 		if err := s.connect(); err != nil {
 			helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Error connecting to "+s.dbType+" : "+err.Error()), nil)

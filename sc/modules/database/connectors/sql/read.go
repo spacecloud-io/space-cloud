@@ -389,10 +389,11 @@ func (s *SQL) processRows(ctx context.Context, isDebug bool, table []string, isA
 		mapping[key] = m
 		*finalArray = append(*finalArray, m)
 
+		// TODO: Fix post processing logic
 		// Perform post processing
-		if postProcess != nil {
-			//_ = authHelpers.PostProcessMethod(ctx, s.aesKey, postProcess[table[length]], m)
-		}
+		// if postProcess != nil {
+		// 	//_ = authHelpers.PostProcessMethod(ctx, s.aesKey, postProcess[table[length]], m)
+		// }
 
 		// Process aggregate field only if its the root table that we are processing
 		processAggregate(row, m, table[length], isAggregate)
