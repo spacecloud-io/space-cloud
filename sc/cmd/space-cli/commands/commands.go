@@ -6,7 +6,7 @@ import (
 	"github.com/spacecloud-io/space-cloud/cmd/space-cli/commands/run"
 )
 
-// NewCommand return xlr8s sub commands
+// NewRootCommand returns space-cli command
 func NewRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "space-cli",

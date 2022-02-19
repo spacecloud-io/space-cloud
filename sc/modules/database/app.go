@@ -8,13 +8,13 @@ import (
 )
 
 func init() {
-	caddy.RegisterModule(DatabaseApp{})
+	caddy.RegisterModule(App{})
 }
 
 var connectorPool = caddy.NewUsagePool()
 
-// DatabaseApp manages all the database modules
-type DatabaseApp struct {
+// App manages all the database modules
+type App struct {
 	// The config this app needs
 	DBConfigs map[string]*Config `json:"dbConfigs,omitempty"`
 
@@ -24,25 +24,25 @@ type DatabaseApp struct {
 }
 
 // CaddyModule returns the Caddy module information.
-func (DatabaseApp) CaddyModule() caddy.ModuleInfo {
+func (App) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "database",
-		New: func() caddy.Module { return new(DatabaseApp) },
+		New: func() caddy.Module { return new(App) },
 	}
 }
 
 // Provision sets up the file loader module.
-func (l *DatabaseApp) Provision(ctx caddy.Context) error {
+func (l *App) Provision(ctx caddy.Context) error {
 	l.logger = ctx.Logger(l)
 
 	return nil
 }
 
 // Start begins the database app operations
-func (l *DatabaseApp) Start() error {
+func (l *App) Start() error {
 	// Create an empty connectors map
 	if l.connectors == nil {
-		l.connectors = make(map[string]*connectors.Module, 0)
+		l.connectors = make(map[string]*connectors.Module)
 	}
 
 	// Iterate over all database configs
@@ -82,7 +82,7 @@ func (l *DatabaseApp) Start() error {
 }
 
 // Stop ends the database app operations
-func (l *DatabaseApp) Stop() error {
+func (l *App) Stop() error {
 	// Iterate over all database configs
 	for k, dbConfig := range l.DBConfigs {
 		// Split the config key
@@ -103,6 +103,6 @@ func (l *DatabaseApp) Stop() error {
 
 // Interface guards
 var (
-	_ caddy.Provisioner = (*DatabaseApp)(nil)
-	_ caddy.App         = (*DatabaseApp)(nil)
+	_ caddy.Provisioner = (*App)(nil)
+	_ caddy.App         = (*App)(nil)
 )

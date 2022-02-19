@@ -13,7 +13,7 @@ func PrepareConfig(scConfig *config.Config) (*caddy.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.AppsRaw = make(caddy.ModuleMap, 0)
+	c.AppsRaw = make(caddy.ModuleMap)
 
 	// Load all the apps. Each app will have data for all the projects combined
 	c.AppsRaw["database"] = prepareDatabaseApp(scConfig)
