@@ -2,19 +2,30 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/caddyserver/caddy/v2"
+	"github.com/spf13/viper"
 )
 
 // LoadAdminConfig creates a caddy config from the viper config provided. This only contains the admin
 // and logging portion of the configuration. The config loaders will be responsible to load the
 // configuration of the applications.
-func LoadAdminConfig(isInitialLoad bool) *caddy.Config {
-	// TODO: Read base config from viper over here.
-	loadingInterval := caddy.Duration(time.Second) * 5
+func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
+	interval := viper.GetInt64("loading-interval")
+	loadingInterval := caddy.Duration(time.Second) * caddy.Duration(interval)
 	if isInitialLoad {
 		loadingInterval = 0
+	}
+
+	// Selecting store-type
+	var loader json.RawMessage
+	switch v := viper.GetString("store-type"); v {
+	case "file":
+		loader = prepareFileLoaderConfig()
+	default:
+		return nil, fmt.Errorf("store-type (%s) is not suppoerted", v)
 	}
 
 	return &caddy.Config{
@@ -22,19 +33,23 @@ func LoadAdminConfig(isInitialLoad bool) *caddy.Config {
 			Disabled: true,
 			Config: &caddy.ConfigSettings{
 				LoadInterval: loadingInterval,
-
-				// TODO: Choose the right loader based on the flags
-				LoadRaw: prepareFileLoaderConfig(),
+				LoadRaw:      loader,
 			},
 		},
-		// TODO: Configure logging as well
-	}
+		Logging: &caddy.Logging{
+			Logs: map[string]*caddy.CustomLog{
+				"default": {
+					Level: viper.GetString("log-level"),
+				},
+			},
+		},
+	}, nil
 }
 
 func prepareFileLoaderConfig() json.RawMessage {
 	config := map[string]interface{}{
 		"module": "file",
-		"path":   "./config.yaml",
+		"path":   viper.GetString("config-path"),
 	}
 
 	raw, _ := json.Marshal(config)

@@ -1,4 +1,4 @@
-package configloaders
+package file
 
 import (
 	"encoding/json"
@@ -47,7 +47,13 @@ func (l *FileLoader) LoadConfig(ctx caddy.Context) ([]byte, error) {
 	}
 
 	// Load the new caddy config
-	return json.Marshal(common.PrepareConfig(scConfig))
+	config, err := common.PrepareConfig(scConfig)
+	if err != nil {
+		l.logger.Error("Unable to prepare caddy config", zap.Error(err))
+		return nil, err
+	}
+
+	return json.Marshal(config)
 }
 
 // Interface guards

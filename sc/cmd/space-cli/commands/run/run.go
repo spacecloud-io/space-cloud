@@ -1,0 +1,45 @@
+package run
+
+import (
+	"strings"
+
+	"github.com/caddyserver/caddy/v2"
+	"github.com/spacecloud-io/space-cloud/utils"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
+// NewCommand get space-cli run command
+func NewCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "run",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			viper.AutomaticEnv()
+			viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+			// Blob store
+			_ = viper.BindPFlag("loading-interval", cmd.Flags().Lookup("loading-interval"))
+			_ = viper.BindPFlag("log-level", cmd.Flags().Lookup("log-level"))
+			_ = viper.BindPFlag("store-type", cmd.Flags().Lookup("store-type"))
+			_ = viper.BindPFlag("config-path", cmd.Flags().Lookup("config-path"))
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			c, err := utils.LoadAdminConfig(true)
+			if err != nil {
+				return err
+			}
+
+			if err := caddy.Run(c); err != nil {
+				return err
+			}
+
+			select {}
+		},
+	}
+
+	cmd.Flags().IntP("loading-interval", "", 5, "The interval to pull config")
+	cmd.Flags().StringP("log-level", "", "DEBUG", "Set the log level [DEBUG | INFO | WARN | ERROR | PANIC | FATAL]")
+	cmd.Flags().StringP("store-type", "", "file", "The config store to use for storing project configs and other meta data eg. file, kube, db")
+	cmd.Flags().StringP("config-path", "", "", "The path to config file")
+
+	return cmd
+}
