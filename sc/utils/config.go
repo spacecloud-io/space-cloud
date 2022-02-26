@@ -31,6 +31,8 @@ func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
 	switch v := viper.GetString("store-type"); v {
 	case "file":
 		loader = prepareFileLoaderConfig()
+	case "kube":
+		loader = prepareKubeLoaderConfig()
 	default:
 		return nil, fmt.Errorf("store-type (%s) is not suppoerted", v)
 	}
@@ -59,6 +61,15 @@ func prepareFileLoaderConfig() json.RawMessage {
 	config := map[string]interface{}{
 		"module": "file",
 		"path":   path,
+	}
+
+	raw, _ := json.Marshal(config)
+	return raw
+}
+
+func prepareKubeLoaderConfig() json.RawMessage {
+	config := map[string]interface{}{
+		"module": "kube",
 	}
 
 	raw, _ := json.Marshal(config)
