@@ -35,5 +35,5 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v2
         with:
-          working-directory: sc
+          working-directory: sc/cmd/space-cli
           args: --exclude-use-default=false --timeout 600s
