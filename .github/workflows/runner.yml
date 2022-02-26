@@ -5,6 +5,7 @@ on:
       - 'runner/**'  
     branches:
       - main
+      - 'v**'
 jobs:
   runner:
     name: Build and test Runner

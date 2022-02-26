@@ -5,6 +5,7 @@ on:
       - 'space-cli/**'  
     branches:
       - main
+      - 'v**'
 jobs:
   cli:
     name: Build and test space cli

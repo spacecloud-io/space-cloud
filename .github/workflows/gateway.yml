@@ -5,6 +5,7 @@ on:
       - 'gateway/**'  
     branches:
       - main
+      - 'v**'
 jobs:
   gateway:
     name: Build and test gateway

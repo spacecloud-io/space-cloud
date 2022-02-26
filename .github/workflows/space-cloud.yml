@@ -5,6 +5,7 @@ on:
       - 'sc/**'  
     branches:
       - main
+      - 'v**'
 jobs:
   sc:
     name: Build and test space-cloud
@@ -28,7 +29,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Build
-        run: cd sc && go build -v .
+        run: cd sc/cmd/space-cli && go build -v .
       - name: Test
         run: cd sc && go test ./...
       - name: Lint
