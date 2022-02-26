@@ -24,14 +24,15 @@ type Module struct {
 func New(projectID, conn string) (*Module, error) {
 	// Set a default connection string if not provided
 	if conn == "" {
-		conn = "localhost:6379"
+		conn = "redis://localhost:6379"
 	}
 
-	c := redis.NewClient(&redis.Options{
-		Addr:     conn,
-		Password: "",
-		DB:       0,
-	})
+	opt, err := redis.ParseURL(conn)
+	if err != nil {
+		return nil, err
+	}
+
+	c := redis.NewClient(opt)
 
 	// Create a temporary context
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
