@@ -16,8 +16,8 @@ import (
 	"github.com/spacecloud-io/space-cloud/model"
 )
 
-// SchemaValidator validates provided doc object against it's schema
-func SchemaValidator(ctx context.Context, dbAlias, dbType, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+// Validate validates provided doc object against it's schema
+func Validate(ctx context.Context, dbAlias, dbType, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 	for schemaKey := range doc {
 		if _, p := collectionFields[schemaKey]; !p {
 			return nil, errors.New("The field " + schemaKey + " is not present in schema of " + col)

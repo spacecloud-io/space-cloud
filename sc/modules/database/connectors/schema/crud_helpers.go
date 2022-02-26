@@ -43,7 +43,7 @@ func ValidateCreateOperation(ctx context.Context, dbAlias, dbType, col string, s
 		if !ok {
 			return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("document provided for collection (%s:%s)", dbAlias, col), nil, nil)
 		}
-		newDoc, err := SchemaValidator(ctx, dbAlias, dbType, col, collectionFields, doc)
+		newDoc, err := Validate(ctx, dbAlias, dbType, col, collectionFields, doc)
 		if err != nil {
 			return err
 		}

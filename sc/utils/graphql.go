@@ -9,6 +9,7 @@ import (
 	"github.com/graphql-go/graphql/language/kinds"
 )
 
+// ParseGraphqlValue returns an interface that can be casted to string
 func ParseGraphqlValue(value ast.Value, store map[string]interface{}) (interface{}, error) {
 	switch value.GetKind() {
 	case kinds.ObjectValue:

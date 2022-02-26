@@ -82,7 +82,7 @@ func checkType(ctx context.Context, dbAlias, dbType, col string, value interface
 			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type received for field %s in collection %s", fieldValue.FieldName, col), nil, nil)
 		}
 
-		return SchemaValidator(ctx, dbAlias, dbType, col, fieldValue.NestedObject, v)
+		return Validate(ctx, dbAlias, dbType, col, fieldValue.NestedObject, v)
 
 	case []interface{}:
 		if !fieldValue.IsList {
