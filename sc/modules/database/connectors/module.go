@@ -9,15 +9,20 @@ import (
 
 	"github.com/graph-gophers/dataloader"
 	"github.com/spaceuptech/helpers"
+	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/config"
 	"github.com/spacecloud-io/space-cloud/model"
+	"github.com/spacecloud-io/space-cloud/modules/database/connectors/schema"
 	"github.com/spacecloud-io/space-cloud/modules/database/connectors/sql"
 )
 
 // Module is the root block providing convenient wrappers
 type Module struct {
 	lock sync.RWMutex
+
+	// Logger
+	logger *zap.Logger
 
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
@@ -37,13 +42,17 @@ type Module struct {
 	// TODO: Fix secrets
 	//getSecrets utils.GetSecrets
 
-	// Schema module
-	// schemaDoc model.Type
+	// Schema object
+	schemaDoc model.Schemas
+
+	// Error state
+	errState error
 }
 
 // New create a new instance of the Module object
-func New(projectID string, dbConfig *config.DatabaseConfig, dbSchemas config.DatabaseSchemas, dbPreparedQueries config.DatabasePreparedQueries) (*Module, error) {
+func New(logger *zap.Logger, projectID string, dbConfig *config.DatabaseConfig, dbSchemas config.DatabaseSchemas, dbPreparedQueries config.DatabasePreparedQueries) (*Module, error) {
 	m := &Module{
+		logger:              logger,
 		batchMapTableToChan: make(batchMap),
 		project:             projectID,
 		dbConfig:            dbConfig,
@@ -74,20 +83,24 @@ func New(projectID string, dbConfig *config.DatabaseConfig, dbSchemas config.Dat
 	// Create a new connector object
 	c, err := m.initConnector(model.DBType(dbConfig.Type), connectionString, dbConfig.DBName, dbConfig.DriverConf)
 	if err != nil {
-		return nil, err
+		m.logger.Error("Unable to intialise database connector", zap.Error(err))
+		m.errState = err
+		return m, nil
 	}
 	m.connector = c
 
 	// Update changable config
-	m.UpdateConfig(dbConfig, dbSchemas, dbPreparedQueries)
-
+	m.UpdateConfig(m.logger, dbConfig, dbSchemas, dbPreparedQueries)
 	return m, nil
 }
 
 // UpdateConfig updates a connectors config
-func (m *Module) UpdateConfig(dbConfig *config.DatabaseConfig, dbSchemas config.DatabaseSchemas, dbPreparedQueries config.DatabasePreparedQueries) {
+func (m *Module) UpdateConfig(logger *zap.Logger, dbConfig *config.DatabaseConfig, dbSchemas config.DatabaseSchemas, dbPreparedQueries config.DatabasePreparedQueries) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
+	// Set the logger since it may change during the lifecycle of a connector
+	m.logger = logger
 
 	// Set the limit if not provided by end user
 	if dbConfig.Limit == 0 {
@@ -112,6 +125,14 @@ func (m *Module) UpdateConfig(dbConfig *config.DatabaseConfig, dbSchemas config.
 	m.dbConfig = dbConfig
 	m.dbSchemas = dbSchemas
 	m.dbPreparedQueries = dbPreparedQueries
+
+	// Attempt parsing the schemas
+	schemaDoc, err := schema.Parser(dbSchemas)
+	if err != nil {
+		m.logger.Error("Unable to parse database schema", zap.Error(err))
+		m.errState = err
+	}
+	m.schemaDoc = schemaDoc
 }
 
 func (m *Module) initConnector(dbType model.DBType, connection, dbName string, driverConf config.DriverConfig) (Connector, error) {

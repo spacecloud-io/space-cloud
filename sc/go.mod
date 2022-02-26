@@ -8,11 +8,14 @@ require (
 	github.com/doug-martin/goqu/v8 v8.6.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/go-test/deep v1.0.8
 	github.com/google/go-cmp v0.5.7
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
+	github.com/graphql-go/graphql v0.8.0
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lib/pq v1.10.4
 	github.com/mitchellh/mapstructure v1.4.3
+	github.com/segmentio/ksuid v1.0.3
 	github.com/spaceuptech/helpers v0.2.2
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
@@ -57,7 +60,6 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
-	github.com/segmentio/ksuid v1.0.3 // indirect
 	github.com/spaceuptech/space-api-go v0.18.1 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
