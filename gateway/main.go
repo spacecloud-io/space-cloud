@@ -165,6 +165,7 @@ func actionRun(c *cli.Context) error {
 	// Load cli flags
 	nodeID := c.String("id")
 	isDev := c.Bool("dev")
+	profiler := c.Bool("profiler")
 	logLevel := c.String("log-level")
 	logFormat := c.String("log-format")
 
@@ -228,13 +229,13 @@ func actionRun(c *cli.Context) error {
 	staticPath := ""
 	if !disableUI {
 		// Download and host mission control
-		staticPath, err = initMissionContol(utils.BuildVersion)
+		staticPath, err = initMissionControl(utils.BuildVersion)
 		if err != nil {
 			return err
 		}
 	}
 
-	return s.Start(false, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
+	return s.Start(profiler, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
 }
 
 func actionHealthCheck(c *cli.Context) error {
@@ -262,7 +263,7 @@ func actionHealthCheck(c *cli.Context) error {
 	return nil
 }
 
-func initMissionContol(version string) (string, error) {
+func initMissionControl(version string) (string, error) {
 	homeDir := utils.UserHomeDir()
 	uiPath := homeDir + "/.space-cloud/mission-control-v" + version
 	_, err := os.Stat(uiPath)
