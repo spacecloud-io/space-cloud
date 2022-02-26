@@ -49,12 +49,12 @@ func (c *Cache) SetCachingConfig(ctx context.Context, cacheConfig *config.CacheC
 	}
 
 	if cacheConfig.Enabled {
+		opt, err := redis.ParseURL(cacheConfig.Conn)
+		if err != nil {
+			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Cannot parse redis connection", err, map[string]interface{}{"conn": cacheConfig.Conn, "ttl": cacheConfig.DefaultTTL, "isEnable": cacheConfig.Enabled})
+		}
 		// Create a new redis client
-		redisClient := redis.NewClient(&redis.Options{
-			Addr:     cacheConfig.Conn,
-			Password: "", // no password set
-			DB:       0,
-		})
+		redisClient := redis.NewClient(opt)
 		if err := redisClient.Ping(ctx).Err(); err != nil {
 			return helpers.Logger.LogError(helpers.GetRequestID(ctx), "Cannot connect to redis cache", err, map[string]interface{}{"conn": cacheConfig.Conn, "ttl": cacheConfig.DefaultTTL, "isEnable": cacheConfig.Enabled})
 		}
