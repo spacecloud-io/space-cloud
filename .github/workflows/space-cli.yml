@@ -31,7 +31,7 @@ jobs:
       - name: Test
         run: cd space-cli && go test ./...
       - name: Lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          working-directory: space-cli
-          args: --exclude-use-default=false --timeout 600s
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.44.2
+          sudo cp ./bin/golangci-lint $GOPATH/bin/
+          cd space-cli && golangci-lint run -E revive --exclude-use-default=false --timeout 180s ./...
