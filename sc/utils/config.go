@@ -13,8 +13,15 @@ import (
 // and logging portion of the configuration. The config loaders will be responsible to load the
 // configuration of the applications.
 func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
-	interval := viper.GetInt64("loading-interval")
-	loadingInterval := caddy.Duration(time.Second) * caddy.Duration(interval)
+	logLevel := viper.GetString("log-level")
+	loadTime := viper.GetString("loading-interval")
+
+	interval, err := time.ParseDuration(loadTime)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse config loading interval (%s), error: %v", loadTime, err)
+	}
+
+	loadingInterval := caddy.Duration(interval)
 	if isInitialLoad {
 		loadingInterval = 0
 	}
@@ -39,7 +46,7 @@ func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
 		Logging: &caddy.Logging{
 			Logs: map[string]*caddy.CustomLog{
 				"default": {
-					Level: viper.GetString("log-level"),
+					Level: logLevel,
 				},
 			},
 		},
@@ -47,9 +54,11 @@ func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
 }
 
 func prepareFileLoaderConfig() json.RawMessage {
+	path := viper.GetString("config-path")
+
 	config := map[string]interface{}{
 		"module": "file",
-		"path":   viper.GetString("config-path"),
+		"path":   path,
 	}
 
 	raw, _ := json.Marshal(config)
