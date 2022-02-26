@@ -63,14 +63,14 @@ func LoadStringIfExists(value string, state map[string]interface{}) (string, err
 // LoadValue loads a value from the state
 func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 	if key == "" {
-		return nil, errors.New("Invalid key")
+		return nil, errors.New("invalid key")
 	}
 
 	tempArray := splitVariable(key, '.')
 	length := len(tempArray) - 1
 
 	if length == 0 {
-		return nil, errors.New("The variable does not map to internal state")
+		return nil, errors.New("the variable does not map to internal state")
 	}
 
 	if tempArray[0] == "utils" {
@@ -217,7 +217,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			return timeDate.Format(time.RFC3339Nano), nil
 		}
 
-		return nil, errors.New("Invalid utils operation")
+		return nil, errors.New("invalid utils operation")
 	}
 
 	scope, present := state[tempArray[0]]
@@ -274,7 +274,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 		}
 	}
 
-	return nil, errors.New("Key not found")
+	return nil, errors.New("key not found")
 }
 
 func getValue(key string, obj interface{}) (interface{}, error) {
@@ -343,7 +343,7 @@ func LoadNumber(ctx context.Context, key interface{}, args map[string]interface{
 		return v, nil
 	}
 
-	return 0, errors.New("Store: Cloud not load value")
+	return 0, errors.New("store: Cloud not load value")
 }
 
 // LoadBool loads a key as a float. Throws error
@@ -364,7 +364,7 @@ func LoadBool(ctx context.Context, key interface{}, args map[string]interface{})
 		return v, nil
 	}
 
-	return false, errors.New("Store: Cloud not load value")
+	return false, errors.New("store: Cloud not load value")
 }
 
 func splitVariable(key string, delimiter rune) []string {
@@ -405,12 +405,12 @@ func StoreValue(ctx context.Context, key string, value interface{}, state map[st
 	length := len(keyArray) - 1
 	if length == 0 {
 		// return errors.New(ErrorInvalidVariable)
-		return errors.New("Invalid Variable Error")
+		return errors.New("invalid Variable Error")
 	}
 
 	scope, present := state[keyArray[0]]
 	if !present {
-		return errors.New("Scope not present for given variable")
+		return errors.New("scope not present for given variable")
 	}
 
 	obj, ok := scope.(map[string]interface{})
@@ -440,7 +440,7 @@ func StoreValue(ctx context.Context, key string, value interface{}, state map[st
 				}
 				subKey, ok := subVal.(string)
 				if !ok {
-					return errors.New("Key not of type string")
+					return errors.New("key not of type string")
 				}
 
 				obj[subKey] = value
@@ -465,7 +465,7 @@ func StoreValue(ctx context.Context, key string, value interface{}, state map[st
 			}
 			subKey, ok := subVal.(string)
 			if !ok {
-				return errors.New("Key not of type string")
+				return errors.New("key not of type string")
 			}
 
 			obj, err = convertOrCreate(subKey, obj)
@@ -510,7 +510,7 @@ func DeleteValue(ctx context.Context, key string, state map[string]interface{}) 
 
 	scope, present := state[keyArray[0]]
 	if !present {
-		return errors.New("Scope not present for given variable")
+		return errors.New("scope not present for given variable")
 	}
 
 	obj, ok := scope.(map[string]interface{})
@@ -536,7 +536,7 @@ func DeleteValue(ctx context.Context, key string, state map[string]interface{}) 
 		var ok bool
 		obj, ok = tempObj.(map[string]interface{})
 		if !ok {
-			return errors.New("The variable cannot be mapped")
+			return errors.New("the variable cannot be mapped")
 		}
 	}
 
@@ -565,7 +565,7 @@ func StoreValueInObject(key string, value interface{}, obj map[string]interface{
 		var ok bool
 		obj, ok = tempObj.(map[string]interface{})
 		if !ok {
-			return errors.New("The variable cannot be mapped")
+			return errors.New("the variable cannot be mapped")
 		}
 	}
 
