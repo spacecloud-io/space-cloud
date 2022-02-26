@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spacecloud-io/space-cloud/model"
+	"github.com/spacecloud-io/space-cloud/modules/database/connectors/schema"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
@@ -15,10 +16,10 @@ func (m *Module) Create(ctx context.Context, col string, req *model.CreateReques
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	// TODO: move schema validation step to some place else
-	// if err := schemaHelpers.ValidateCreateOperation(ctx, dbAlias, dbType, col, m.schemaDoc, req); err != nil {
-	// 	return err
-	// }
+	// Validate the documents to be inserted
+	if err := schema.ValidateCreateOperation(ctx, m.dbConfig.DbAlias, m.dbConfig.Type, col, m.schemaDoc, req); err != nil {
+		return err
+	}
 
 	// TODO: fix integration hooks logic
 	// params.Payload = req
@@ -51,7 +52,7 @@ func (m *Module) Create(ctx context.Context, col string, req *model.CreateReques
 	// TODO: Fix the metric hook logic
 	// // Invoke the metric hook if the operation was successful
 	// if err == nil {
-	// 	m.metricHook(m.project, dbAlias, col, n, model.Create)
+	// 	m.metricHook(m.project, m.dbConfig.DbAlias, col, n, model.Create)
 	// }
 
 	return err
@@ -62,11 +63,10 @@ func (m *Module) Read(ctx context.Context, col string, req *model.ReadRequest, p
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	// TODO: fix this logic
-	// // Adjust where clause
-	// if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
-	// 	return nil, nil, err
-	// }
+	// Adjust where clause
+	if err := schema.AdjustWhereClause(ctx, m.dbConfig.DbAlias, model.DBType(m.dbConfig.Type), col, m.schemaDoc, req.Find); err != nil {
+		return nil, nil, err
+	}
 
 	if err := m.connector.IsClientSafe(ctx); err != nil {
 		return nil, nil, err
@@ -105,7 +105,7 @@ func (m *Module) Read(ctx context.Context, col string, req *model.ReadRequest, p
 	}
 
 	// TODO: Fix caching logic
-	// dbCacheOptions, err := m.caching.GetDatabaseKey(ctx, m.project, dbAlias, col, req)
+	// dbCacheOptions, err := m.caching.GetDatabaseKey(ctx, m.project, m.dbConfig.DbAlias, col, req)
 	// if err != nil {
 	// 	return nil, nil, err
 	// }
@@ -123,11 +123,11 @@ func (m *Module) Read(ctx context.Context, col string, req *model.ReadRequest, p
 
 	// // Set result in cache & invoke the metric hook if the operation was successful
 	// if err == nil {
-	// 	if err := m.caching.SetDatabaseKey(ctx, m.project, dbAlias, col, &model.CacheDatabaseResult{MetricCount: n, Result: result}, dbCacheOptions, req.Cache, cacheJoinInfo); err != nil {
+	// 	if err := m.caching.SetDatabaseKey(ctx, m.project, m.dbConfig.DbAlias, col, &model.CacheDatabaseResult{MetricCount: n, Result: result}, dbCacheOptions, req.Cache, cacheJoinInfo); err != nil {
 	// 		return nil, nil, err
 	// 	}
 
-	// 	m.metricHook(m.project, dbAlias, col, n, model.Read)
+	// 	m.metricHook(m.project, m.dbConfig.DbAlias, col, n, model.Read)
 	// }
 	// } else {
 	// 	// Make a metadata object for cached results
@@ -135,14 +135,13 @@ func (m *Module) Read(ctx context.Context, col string, req *model.ReadRequest, p
 
 	// 	cacheResult := dbCacheOptions.GetDatabaseResult()
 	// 	result = cacheResult.Result
-	// 	m.metricHook(m.project, dbAlias, col, cacheResult.MetricCount, model.Read)
+	// 	m.metricHook(m.project, m.dbConfig.DbAlias, col, cacheResult.MetricCount, model.Read)
 	// }
 
-	// TODO: Fix post schema processing
-	// // Process the response
-	// if err := schemaHelpers.CrudPostProcess(ctx, dbAlias, dbType, col, m.schemaDoc, result); err != nil {
-	// 	return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col), err, nil)
-	// }
+	// Process the response
+	if err := schema.CrudPostProcess(ctx, m.dbConfig.DbAlias, m.dbConfig.Type, col, m.schemaDoc, result); err != nil {
+		return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col), err, nil)
+	}
 
 	if metaData != nil {
 		metaData.DbAlias = m.dbConfig.DbAlias
@@ -153,14 +152,14 @@ func (m *Module) Read(ctx context.Context, col string, req *model.ReadRequest, p
 }
 
 // Update updates the documents(s) which match a query from the database based on dbType
-func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.UpdateRequest, params model.RequestParams) error {
+func (m *Module) Update(ctx context.Context, col string, req *model.UpdateRequest, params model.RequestParams) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	// TODO: fix schema validation
-	// if err := schemaHelpers.ValidateUpdateOperation(ctx, dbAlias, dbType, col, req.Operation, req.Update, req.Find, m.schemaDoc); err != nil {
-	// 	return err
-	// }
+	// Validate the update operation that needs to be performed
+	if err := schema.ValidateUpdateOperation(ctx, m.dbConfig.DbAlias, m.dbConfig.Type, col, req.Operation, req.Update, req.Find, m.schemaDoc); err != nil {
+		return err
+	}
 
 	// TODO: Fix integration hooks logic
 	// params.Payload = req
@@ -179,11 +178,10 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 		return err
 	}
 
-	// TODO: Fix adjust where clause logic
-	// // Adjust where clause
-	// if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, model.DBType(dbType), col, m.schemaDoc, req.Find); err != nil {
-	// 	return err
-	// }
+	// Adjust where clause
+	if err := schema.AdjustWhereClause(ctx, m.dbConfig.DbAlias, model.DBType(m.dbConfig.Type), col, m.schemaDoc, req.Find); err != nil {
+		return err
+	}
 
 	// Perform the update operation
 	_, err := m.connector.Update(ctx, col, req)
@@ -191,14 +189,14 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 	// TODO: Fix metric hook logic
 	// // Invoke the metric hook if the operation was successful
 	// if err == nil {
-	// 	m.metricHook(m.project, dbAlias, col, n, model.Update)
+	// 	m.metricHook(m.project, m.dbConfig.DbAlias, col, n, model.Update)
 	// }
 
 	return err
 }
 
 // Delete removes the documents(s) which match a query from the database based on dbType
-func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.DeleteRequest, params model.RequestParams) error {
+func (m *Module) Delete(ctx context.Context, col string, req *model.DeleteRequest, params model.RequestParams) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -206,11 +204,10 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 		return err
 	}
 
-	// TODO: Fix adjust where clause logic
 	// Adjust where clause
-	// if err := schemaHelpers.AdjustWhereClause(ctx, dbAlias, model.DBType(m.databaseConfig.Type), col, m.schemaDoc, req.Find); err != nil {
-	// 	return err
-	// }
+	if err := schema.AdjustWhereClause(ctx, m.dbConfig.DbAlias, model.DBType(m.dbConfig.Type), col, m.schemaDoc, req.Find); err != nil {
+		return err
+	}
 
 	// TODO: Fix integration hook logic
 	// params.Payload = req
@@ -231,14 +228,14 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 	// TODO: Fix metric hook logic
 	// // Invoke the metric hook if the operation was successful
 	// if err == nil {
-	// 	m.metricHook(m.project, dbAlias, col, n, model.Delete)
+	// 	m.metricHook(m.project, m.dbConfig.DbAlias, col, n, model.Delete)
 	// }
 
 	return err
 }
 
 // ExecPreparedQuery executes PreparedQueries request
-func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
+func (m *Module) ExecPreparedQuery(ctx context.Context, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -278,14 +275,14 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 	// Fire the query and return the result
 	_, b, metaData, err := m.connector.RawQuery(ctx, preparedQuery.SQL, req.Debug, args)
 	if metaData != nil {
-		metaData.DbAlias = dbAlias
+		metaData.DbAlias = m.dbConfig.DbAlias
 		metaData.Col = id
 	}
 	return b, metaData, err
 }
 
 // Aggregate performs an aggregation defined via the pipeline
-func (m *Module) Aggregate(ctx context.Context, dbAlias, col string, req *model.AggregateRequest, params model.RequestParams) (interface{}, error) {
+func (m *Module) Aggregate(ctx context.Context, col string, req *model.AggregateRequest, params model.RequestParams) (interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -310,26 +307,25 @@ func (m *Module) Aggregate(ctx context.Context, dbAlias, col string, req *model.
 }
 
 // Batch performs a batch operation on the database
-func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequest, params model.RequestParams) error {
+func (m *Module) Batch(ctx context.Context, req *model.BatchRequest, params model.RequestParams) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	// TODO: Fix schema logic
-	// for _, r := range req.Requests {
-	// 	switch r.Type {
-	// 	case string(model.Create):
-	// 		v := &model.CreateRequest{Document: r.Document, Operation: r.Operation}
-	// 		if err := schemaHelpers.ValidateCreateOperation(ctx, dbAlias, dbType, r.Col, m.schemaDoc, v); err != nil {
-	// 			return err
-	// 		}
-	// 		r.Document = v.Document
-	// 		r.Operation = v.Operation
-	// 	case string(model.Update):
-	// 		if err := schemaHelpers.ValidateUpdateOperation(ctx, dbAlias, dbType, r.Col, r.Operation, r.Update, r.Find, m.schemaDoc); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }
+	for _, r := range req.Requests {
+		switch r.Type {
+		case string(model.Create):
+			v := &model.CreateRequest{Document: r.Document, Operation: r.Operation}
+			if err := schema.ValidateCreateOperation(ctx, m.dbConfig.DbAlias, m.dbConfig.Type, r.Col, m.schemaDoc, v); err != nil {
+				return err
+			}
+			r.Document = v.Document
+			r.Operation = v.Operation
+		case string(model.Update):
+			if err := schema.ValidateUpdateOperation(ctx, m.dbConfig.DbAlias, m.dbConfig.Type, r.Col, r.Operation, r.Update, r.Find, m.schemaDoc); err != nil {
+				return err
+			}
+		}
+	}
 
 	// TODO: Fix integration hooks logic
 	// params.Payload = req
@@ -354,7 +350,7 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
 		for i, r := range req.Requests {
-			m.metricHook(m.project, dbAlias, r.Col, counts[i], model.OperationType(r.Type))
+			m.metricHook(m.project, m.dbConfig.DbAlias, r.Col, counts[i], model.OperationType(r.Type))
 		}
 	}
 
@@ -362,7 +358,7 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 }
 
 // DescribeTable performs a db operation for describing a table
-func (m *Module) DescribeTable(ctx context.Context, dbAlias, col string) ([]model.InspectorFieldType, []model.IndexType, error) {
+func (m *Module) DescribeTable(ctx context.Context, col string) ([]model.InspectorFieldType, []model.IndexType, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -374,7 +370,7 @@ func (m *Module) DescribeTable(ctx context.Context, dbAlias, col string) ([]mode
 }
 
 // RawBatch performs a db operation for schema creation
-func (m *Module) RawBatch(ctx context.Context, dbAlias string, batchedQueries []string) error {
+func (m *Module) RawBatch(ctx context.Context, batchedQueries []string) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -386,7 +382,7 @@ func (m *Module) RawBatch(ctx context.Context, dbAlias string, batchedQueries []
 }
 
 // GetCollections returns collection / tables name of specified database
-func (m *Module) GetCollections(ctx context.Context, dbAlias string) ([]model.DatabaseCollections, error) {
+func (m *Module) GetCollections(ctx context.Context) ([]model.DatabaseCollections, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -398,7 +394,7 @@ func (m *Module) GetCollections(ctx context.Context, dbAlias string) ([]model.Da
 }
 
 // GetConnectionState gets the current state of client
-func (m *Module) GetConnectionState(ctx context.Context, dbAlias string) bool {
+func (m *Module) GetConnectionState(ctx context.Context) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -410,7 +406,7 @@ func (m *Module) GetConnectionState(ctx context.Context, dbAlias string) bool {
 }
 
 // DeleteTable drop specified table from database
-func (m *Module) DeleteTable(ctx context.Context, dbAlias, col string) error {
+func (m *Module) DeleteTable(ctx context.Context, col string) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 

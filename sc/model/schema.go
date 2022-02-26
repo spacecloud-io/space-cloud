@@ -2,8 +2,8 @@ package model
 
 type (
 
-	// Type is the data structure for storing the parsed values of schema string
-	Type map[string]Collection // key is database name
+	// Schemas is the data structure for storing the parsed values of schema string
+	Schemas map[string]Collection // key is database name
 	// Collection is a data structure for storing fields of schema
 	Collection map[string]Fields // key is collection name
 	// Fields is a data structure for storing the type of field

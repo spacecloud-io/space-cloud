@@ -61,7 +61,7 @@ func (l *App) Start() error {
 		// connector instance and destroy the old one.
 		poolKey := generateUniqueDBKey(projectID, dbConfig.Connector)
 		val, loaded, err := connectorPool.LoadOrNew(poolKey, func() (caddy.Destructor, error) {
-			return connectors.New(projectID, dbConfig.Connector, dbConfig.Schemas, dbConfig.PreparedQueries)
+			return connectors.New(l.logger, projectID, dbConfig.Connector, dbConfig.Schemas, dbConfig.PreparedQueries)
 		})
 		if err != nil {
 			l.logger.Error("Unable to open database connector",
@@ -72,7 +72,7 @@ func (l *App) Start() error {
 
 		// Update config if it was already present
 		if loaded {
-			module.UpdateConfig(dbConfig.Connector, dbConfig.Schemas, dbConfig.PreparedQueries)
+			module.UpdateConfig(l.logger, dbConfig.Connector, dbConfig.Schemas, dbConfig.PreparedQueries)
 		}
 
 		// Store the connector in the map for future reference
