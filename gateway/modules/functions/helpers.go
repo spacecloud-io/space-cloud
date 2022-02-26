@@ -215,9 +215,8 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 	}
 
 	var requestHeader config.Headers
-	for _, header := range endpoint.Headers {
-		requestHeader = append(requestHeader, header)
-	}
+	requestHeader = append(requestHeader, endpoint.Headers...)
+
 	var requestBody io.Reader
 	switch endpoint.ReqPayloadFormat {
 	case "", config.EndpointRequestPayloadFormatJSON:
