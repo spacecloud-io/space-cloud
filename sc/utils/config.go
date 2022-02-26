@@ -16,6 +16,9 @@ func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
 	logLevel := viper.GetString("log-level")
 	loadTime := viper.GetString("loading-interval")
 
+	storeType := viper.GetString("store-type")
+	configPath := viper.GetString("config-path")
+
 	interval, err := time.ParseDuration(loadTime)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse config loading interval (%s), error: %v", loadTime, err)
@@ -28,13 +31,13 @@ func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
 
 	// Selecting store-type
 	var loader json.RawMessage
-	switch v := viper.GetString("store-type"); v {
+	switch storeType {
 	case "file":
-		loader = prepareFileLoaderConfig()
+		loader = prepareFileLoaderConfig(configPath)
 	case "kube":
 		loader = prepareKubeLoaderConfig()
 	default:
-		return nil, fmt.Errorf("store-type (%s) is not suppoerted", v)
+		return nil, fmt.Errorf("store-type (%s) is not suppoerted", storeType)
 	}
 
 	return &caddy.Config{
@@ -55,9 +58,7 @@ func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
 	}, nil
 }
 
-func prepareFileLoaderConfig() json.RawMessage {
-	path := viper.GetString("config-path")
-
+func prepareFileLoaderConfig(path string) json.RawMessage {
 	config := map[string]interface{}{
 		"module": "file",
 		"path":   path,
