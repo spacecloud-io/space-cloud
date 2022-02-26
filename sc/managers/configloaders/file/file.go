@@ -1,4 +1,4 @@
-package configloaders
+package file
 
 import (
 	"encoding/json"
@@ -12,11 +12,11 @@ import (
 )
 
 func init() {
-	caddy.RegisterModule(FileLoader{})
+	caddy.RegisterModule(Loader{})
 }
 
-// FileLoader loads the sc configuration from a YAML/JSON file
-type FileLoader struct {
+// Loader loads the sc configuration from a YAML/JSON file
+type Loader struct {
 	Module string `json:"module"`
 	Path   string `json:"path"`
 
@@ -24,21 +24,21 @@ type FileLoader struct {
 }
 
 // CaddyModule returns the Caddy module information.
-func (FileLoader) CaddyModule() caddy.ModuleInfo {
+func (Loader) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "caddy.config_loaders.file",
-		New: func() caddy.Module { return new(FileLoader) },
+		New: func() caddy.Module { return new(Loader) },
 	}
 }
 
 // Provision sets up the file loader module.
-func (l *FileLoader) Provision(ctx caddy.Context) error {
+func (l *Loader) Provision(ctx caddy.Context) error {
 	l.logger = ctx.Logger(l)
 	return nil
 }
 
 // LoadConfig returns the final caddy config from the store.
-func (l *FileLoader) LoadConfig(ctx caddy.Context) ([]byte, error) {
+func (l *Loader) LoadConfig(ctx caddy.Context) ([]byte, error) {
 	// Load SC config file from file system
 	scConfig := new(config.Config)
 	if err := utils.LoadFile(l.Path, scConfig); err != nil {
@@ -47,11 +47,17 @@ func (l *FileLoader) LoadConfig(ctx caddy.Context) ([]byte, error) {
 	}
 
 	// Load the new caddy config
-	return json.Marshal(common.PrepareConfig(scConfig))
+	config, err := common.PrepareConfig(scConfig)
+	if err != nil {
+		l.logger.Error("Unable to prepare caddy config", zap.Error(err))
+		return nil, err
+	}
+
+	return json.Marshal(config)
 }
 
 // Interface guards
 var (
-	_ caddy.Provisioner  = (*FileLoader)(nil)
-	_ caddy.ConfigLoader = (*FileLoader)(nil)
+	_ caddy.Provisioner  = (*Loader)(nil)
+	_ caddy.ConfigLoader = (*Loader)(nil)
 )

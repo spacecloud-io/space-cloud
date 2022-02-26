@@ -9,6 +9,7 @@ import (
 	"github.com/ghodss/yaml"
 )
 
+// LoadFile loads a yaml or json file
 func LoadFile(path string, ptr interface{}) error {
 	format := "yaml"
 	if strings.HasSuffix(path, "json") {
