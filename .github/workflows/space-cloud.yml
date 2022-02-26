@@ -8,7 +8,7 @@ on:
       - 'v**'
 jobs:
   sc:
-    name: Build and test space-cloud
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.15
