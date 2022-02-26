@@ -97,7 +97,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	/***************** Set the request body *****************/
 
-	newParams, err := m.adjustReqBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, params)
+	newHeaders, newParams, err := m.adjustReqBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, params)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -133,7 +133,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		Params: newParams,
 		Method: method, URL: url,
 		Token: token, SCToken: scToken,
-		Headers: prepareHeaders(ctx, endpoint.Headers, state),
+		Headers: prepareHeaders(ctx, newHeaders, state),
 	}
 	status, err := utils.MakeHTTPRequest(ctx, req, &res)
 	if err != nil {
@@ -175,7 +175,7 @@ func prepareHeaders(ctx context.Context, headers config.Headers, state map[strin
 	return out
 }
 
-func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (io.Reader, error) {
+func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (config.Headers, io.Reader, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -187,13 +187,13 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 		if tmpl, p := m.templates[getGoTemplateKey("request", serviceID, endpointID)]; p {
 			req, err = tmpl2.GoTemplate(ctx, tmpl, endpoint.OpFormat, token, auth, params)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		}
 		if tmpl, p := m.templates[getGoTemplateKey("graph", serviceID, endpointID)]; p {
 			graph, err = tmpl2.GoTemplate(ctx, tmpl, "string", token, auth, params)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		}
 	default:
@@ -211,8 +211,11 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 	case config.EndpointKindPrepared:
 		body = map[string]interface{}{"query": graph, "variables": req}
 	default:
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
+		return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
 	}
+
+	var requestHeader config.Headers
+	requestHeader = append(requestHeader, endpoint.Headers...)
 
 	var requestBody io.Reader
 	switch endpoint.ReqPayloadFormat {
@@ -220,10 +223,10 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 		// Marshal json into byte array
 		data, err := json.Marshal(body)
 		if err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot marshal provided data for graphQL API endpoint (%s)", endpointID), err, map[string]interface{}{"serviceId": serviceID})
+			return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot marshal provided data for graphQL API endpoint (%s)", endpointID), err, map[string]interface{}{"serviceId": serviceID})
 		}
 		requestBody = bytes.NewReader(data)
-		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: "application/json", Op: "set"})
+		requestHeader = append(requestHeader, config.Header{Key: "Content-Type", Value: "application/json", Op: "set"})
 	case config.EndpointRequestPayloadFormatFormData:
 		buff := new(bytes.Buffer)
 		writer := multipart.NewWriter(buff)
@@ -231,18 +234,18 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 		for key, val := range body.(map[string]interface{}) {
 			value, ok := val.(string)
 			if !ok {
-				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type of value provided for arg (%s) expecting string as endpoint (%s) has request payload of (form-data) type ", endpointID, key), err, map[string]interface{}{"serviceId": serviceID})
+				return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type of value provided for arg (%s) expecting string as endpoint (%s) has request payload of (form-data) type ", endpointID, key), err, map[string]interface{}{"serviceId": serviceID})
 			}
 			_ = writer.WriteField(key, value)
 		}
 		err = writer.Close()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		requestBody = bytes.NewReader(buff.Bytes())
-		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: writer.FormDataContentType(), Op: "set"})
+		requestHeader = append(requestHeader, config.Header{Key: "Content-Type", Value: writer.FormDataContentType(), Op: "set"})
 	}
-	return requestBody, err
+	return requestHeader, requestBody, err
 }
 
 func (m *Module) adjustResBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
