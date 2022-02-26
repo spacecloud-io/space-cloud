@@ -22,7 +22,6 @@ func NewCommand() *cobra.Command {
 			_ = viper.BindPFlag("store-type", cmd.Flags().Lookup("store-type"))
 			_ = viper.BindPFlag("config-path", cmd.Flags().Lookup("config-path"))
 			_ = viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
-
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := utils.LoadAdminConfig(true)
@@ -37,7 +36,7 @@ func NewCommand() *cobra.Command {
 			select {}
 		},
 	}
-
+  
 	cmd.Flags().IntP("loading-interval", "", 60, "The interval to pull config")
 	cmd.Flags().StringP("log-level", "", "DEBUG", "Set the log level [DEBUG | INFO | WARN | ERROR | PANIC | FATAL]")
 	cmd.Flags().StringP("store-type", "", "file", "The config store to use for storing project configs and other meta data eg. file, kube, db")
