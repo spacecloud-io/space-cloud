@@ -24,10 +24,9 @@ type Module struct {
 	lock sync.RWMutex
 
 	// Configurable variables
-	nodeID    string
-	project   string
-	clusterID string
-	config    *config.Eventing
+	nodeID  string
+	project string
+	config  *config.Eventing
 
 	// Atomic maps to handle events being processed
 	processingEvents               sync.Map
