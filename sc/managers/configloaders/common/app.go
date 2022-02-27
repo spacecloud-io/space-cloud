@@ -18,5 +18,7 @@ func PrepareConfig(scConfig *config.Config) (*caddy.Config, error) {
 	// Load all the apps. Each app will have data for all the projects combined
 	c.AppsRaw["database"] = prepareDatabaseApp(scConfig)
 
+	c.AppsRaw["http"] = prepareHTTPHanndlerApp()
+
 	return c, nil
 }
