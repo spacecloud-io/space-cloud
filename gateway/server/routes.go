@@ -19,6 +19,16 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodGet).Path("/v1/config/credentials").HandlerFunc(handlers.HandleGetCredentials(s.managers.Admin()))
 	router.Methods(http.MethodGet).Path("/v1/config/permissions").HandlerFunc(handlers.HandleGetPermissions(s.managers.Admin()))
 
+	router.Methods(http.MethodPost).Path("/v1/config/generate-token").HandlerFunc(handlers.HandleGenerateAdminToken(s.managers.Admin()))
+
+	router.Methods(http.MethodPost).Path("/v1/config/integrations").HandlerFunc(handlers.HandlePostIntegration(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodGet).Path("/v1/config/integrations").HandlerFunc(handlers.HandleGetIntegrations(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodDelete).Path("/v1/config/integrations/{name}").HandlerFunc(handlers.HandleDeleteIntegration(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/integrations/tokens").HandlerFunc(handlers.HandleGetIntegrationTokens(s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/integrations/{name}/hooks").HandlerFunc(handlers.HandleAddIntegrationHook(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodGet).Path("/v1/config/integrations/{name}/hooks").HandlerFunc(handlers.HandleGetIntegrationHooks(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodDelete).Path("/v1/config/integrations/{name}/hooks/{id}").HandlerFunc(handlers.HandleDeleteIntegrationHook(s.managers.Admin(), s.managers.Sync()))
+
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.managers.Admin()))
@@ -30,8 +40,6 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodGet).Path("/v1/config/cluster").HandlerFunc(handlers.HandleGetClusterConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/cluster").HandlerFunc(handlers.HandleSetClusterConfig(s.managers.Admin(), s.managers.Sync()))
 
-	router.Methods(http.MethodGet).Path("/v1/config/integrations").HandlerFunc(handlers.HandleGetIntegrations(s.managers.Admin(), s.managers.Sync()))
-
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/remote-service/service").HandlerFunc(handlers.HandleGetService(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/remote-service/service/{id}").HandlerFunc(handlers.HandleAddService(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/remote-service/service/{id}").HandlerFunc(handlers.HandleDeleteService(s.managers.Admin(), s.managers.Sync()))
@@ -40,9 +48,11 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/user-management/provider/{id}").HandlerFunc(handlers.HandleSetUserManagement(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/user-management/provider/{id}").HandlerFunc(handlers.HandleDeleteUserManagement(s.managers.Admin(), s.managers.Sync()))
 
-	router.Methods(http.MethodGet).Path("/v1/config/caching/config").HandlerFunc(handlers.HandleGetCacheConfig())
-	router.Methods(http.MethodPost).Path("/v1/config/caching/config/{id}").HandlerFunc(handlers.HandleSetCacheConfig())
-	router.Methods(http.MethodGet).Path("/v1/external/caching/connection-state").HandlerFunc(handlers.HandleGetCacheConnectionState())
+	router.Methods(http.MethodGet).Path("/v1/config/caching/config").HandlerFunc(handlers.HandleGetCacheConfig(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodPost).Path("/v1/config/caching/config/{id}").HandlerFunc(handlers.HandleSetCacheConfig(s.managers.Admin(), s.managers.Sync()))
+	router.Methods(http.MethodGet).Path("/v1/external/caching/connection-state").HandlerFunc(handlers.HandleGetCacheConnectionState(s.managers.Admin(), s.modules.Caching()))
+	router.Methods(http.MethodDelete).Path("/v1/external/projects/{project}/caching/purge-cache").HandlerFunc(handlers.HandlePurgeCache(s.managers.Admin(), s.modules.Caching()))
+	router.Methods(http.MethodPost).Path("/v1/external/caching/{project}/instant-invalidate").HandlerFunc(handlers.HandleInstantInvalidate(s.modules))
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/config").HandlerFunc(handlers.HandleGetEventingConfig(s.managers.Admin(), s.managers.Sync()))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/config/{id}").HandlerFunc(handlers.HandleSetEventingConfig(s.managers.Admin(), s.managers.Sync()))

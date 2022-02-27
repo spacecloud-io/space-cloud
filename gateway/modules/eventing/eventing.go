@@ -24,9 +24,10 @@ type Module struct {
 	lock sync.RWMutex
 
 	// Configurable variables
-	nodeID  string
-	project string
-	config  *config.Eventing
+	nodeID    string
+	project   string
+	clusterID string
+	config    *config.Eventing
 
 	// Atomic maps to handle events being processed
 	processingEvents               sync.Map
@@ -69,7 +70,7 @@ type eventResponse struct {
 }
 
 // New creates a new instance of the eventing module
-func New(projectID, nodeID string, auth model.AuthEventingInterface, crud model.CrudEventingInterface, syncMan *syncman.Manager, file model.FilestoreEventingInterface, hook model.MetricEventingHook) (*Module, error) {
+func New(clusterID, projectID, nodeID string, auth model.AuthEventingInterface, crud model.CrudEventingInterface, syncMan *syncman.Manager, file model.FilestoreEventingInterface, hook model.MetricEventingHook) (*Module, error) {
 	// Create a pub sub client
 	pubsubClient, err := pubsub.New(projectID, os.Getenv("REDIS_CONN"))
 	if err != nil {
@@ -206,6 +207,9 @@ func (m *Module) SetTriggerConfig(triggers config.EventingTriggers) error {
 
 // SetSecurityRuleConfig set security rule config of eventing module
 func (m *Module) SetSecurityRuleConfig(rules map[string]*config.Rule) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	m.config.SecurityRules = rules
 	if m.config.SecurityRules == nil {
 		m.config.SecurityRules = map[string]*config.Rule{}

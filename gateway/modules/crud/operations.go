@@ -24,6 +24,18 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 		return err
 	}
 
+	params.Payload = req
+	hookResponse := m.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return err
+		}
+
+		// Gracefully return
+		return nil
+	}
+
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
@@ -73,6 +85,18 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		return nil, nil, err
 	}
 
+	params.Payload = req
+	hookResponse := m.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return nil, nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Result(), nil, nil
+	}
+
 	if req.IsBatch {
 		dbType, err := m.getDBType(dbAlias)
 		if err != nil {
@@ -95,20 +119,48 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 		return res.doc, res.metaData, err
 	}
 
-	n, result, _, metaData, err := crud.Read(ctx, col, req)
+	dbCacheOptions, err := m.caching.GetDatabaseKey(ctx, m.project, dbAlias, col, req)
+	if err != nil {
+		return nil, nil, err
+	}
+	// TODO: Add metric hook for cache
+
+	// See if result is present in cache
+	var metaData *model.SQLMetaData
+	var result interface{}
+	if !dbCacheOptions.IsCacheHit() {
+		// Perform the read operation
+		var n int64
+		var cacheJoinInfo map[string]map[string]string
+		n, result, cacheJoinInfo, metaData, err = crud.Read(ctx, col, req)
+
+		// Set result in cache & invoke the metric hook if the operation was successful
+		if err == nil {
+			if err := m.caching.SetDatabaseKey(ctx, m.project, dbAlias, col, &model.CacheDatabaseResult{MetricCount: n, Result: result}, dbCacheOptions, req.Cache, cacheJoinInfo); err != nil {
+				return nil, nil, err
+			}
+
+			m.metricHook(m.project, dbAlias, col, n, model.Read)
+		}
+	} else {
+		// Make a metadata object for cached results
+		metaData = &model.SQLMetaData{QueryTime: "0s", SQL: "fetched from cache"}
+
+		cacheResult := dbCacheOptions.GetDatabaseResult()
+		result = cacheResult.Result
+		m.metricHook(m.project, dbAlias, col, cacheResult.MetricCount, model.Read)
+	}
 
 	// Process the response
 	if err := schemaHelpers.CrudPostProcess(ctx, dbAlias, dbType, col, m.schemaDoc, result); err != nil {
 		return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", m.project, col), err, nil)
 	}
 
-	// Invoke the metric hook
-	m.metricHook(m.project, dbAlias, col, n, model.Read)
-
 	if metaData != nil {
 		metaData.DbAlias = dbAlias
 		metaData.Col = col
 	}
+
 	return result, metaData, err
 }
 
@@ -123,6 +175,18 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 	}
 	if err := schemaHelpers.ValidateUpdateOperation(ctx, dbAlias, dbType, col, req.Operation, req.Update, req.Find, m.schemaDoc); err != nil {
 		return err
+	}
+
+	params.Payload = req
+	hookResponse := m.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return err
+		}
+
+		// Gracefully return
+		return nil
 	}
 
 	crud, err := m.getCrudBlock(dbAlias)
@@ -173,6 +237,18 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 		return err
 	}
 
+	params.Payload = req
+	hookResponse := m.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return err
+		}
+
+		// Gracefully return
+		return nil
+	}
+
 	// Perform the delete operation
 	n, err := crud.Delete(ctx, col, req)
 
@@ -188,6 +264,18 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, *model.SQLMetaData, error) {
 	m.RLock()
 	defer m.RUnlock()
+
+	params.Payload = req
+	hookResponse := m.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return nil, nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Result(), nil, nil
+	}
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
@@ -227,6 +315,18 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 func (m *Module) Aggregate(ctx context.Context, dbAlias, col string, req *model.AggregateRequest, params model.RequestParams) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
+
+	params.Payload = req
+	hookResponse := m.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Result(), nil
+	}
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
@@ -270,6 +370,18 @@ func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequ
 		}
 	}
 
+	params.Payload = req
+	hookResponse := m.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return err
+		}
+
+		// Gracefully return
+		return nil
+	}
+
 	if err := crud.IsClientSafe(ctx); err != nil {
 		return err
 	}
@@ -304,7 +416,7 @@ func (m *Module) DescribeTable(ctx context.Context, dbAlias, col string) ([]mode
 	return crud.DescribeTable(ctx, col)
 }
 
-// RawBatch performs a db operaion for schema creation
+// RawBatch performs a db operation for schema creation
 func (m *Module) RawBatch(ctx context.Context, dbAlias string, batchedQueries []string) error {
 	m.RLock()
 	defer m.RUnlock()

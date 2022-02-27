@@ -7,6 +7,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_GetEventSource(t *testing.T) {
@@ -59,12 +60,12 @@ func TestManager_GetNodesInCluster(t *testing.T) {
 	}{
 		{
 			name: "length of services is 0",
-			s:    &Manager{services: []*service{}},
+			s:    &Manager{services: []*model.Service{}},
 			want: 1,
 		},
 		{
 			name: "length of services is returned",
-			s:    &Manager{services: []*service{{id: "1"}, {id: "2"}}},
+			s:    &Manager{services: []*model.Service{{ID: "1"}, {ID: "2"}}},
 			want: 2,
 		},
 	}
@@ -93,7 +94,7 @@ func TestManager_GetAssignedSpaceCloudID(t *testing.T) {
 	}{
 		{
 			name: "got assigned space cloud id",
-			s:    &Manager{storeType: "kube", services: []*service{{id: "1"}}},
+			s:    &Manager{storeType: "kube", services: []*model.Service{{ID: "1"}}},
 			args: args{ctx: context.Background(), project: "project", token: 0},
 			want: "1",
 		},
@@ -124,7 +125,7 @@ func TestManager_GetSpaceCloudNodeIDs(t *testing.T) {
 	}{
 		{
 			name: "got space cloud urls",
-			s:    &Manager{services: []*service{{id: "1"}}},
+			s:    &Manager{services: []*model.Service{{ID: "1"}}},
 			args: args{project: "project"},
 			want: []string{"1"},
 		},
@@ -173,7 +174,7 @@ func TestManager_GetAssignedTokens(t *testing.T) {
 	}{
 		{
 			name:      "got assigned tokens",
-			s:         &Manager{storeType: "kube", services: []*service{{id: "1"}, {id: "2"}}},
+			s:         &Manager{storeType: "kube", services: []*model.Service{{ID: "1"}, {ID: "2"}}},
 			wantStart: 0,
 			wantEnd:   49,
 		},

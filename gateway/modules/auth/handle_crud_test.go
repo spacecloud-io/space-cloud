@@ -61,7 +61,7 @@ func TestIsCreateOpAuthorised(t *testing.T) {
 	dbRules := config.DatabaseRules{
 		"chicago--project--db-rule--mongo-tweet-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{"create": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}},
 	}
-	auth := Init("chicago", "1", &crud.Module{}, nil)
+	auth := Init("chicago", "1", &crud.Module{}, nil, nil)
 	if er := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: project, Secrets: []*config.Secret{}}, dbRules, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -127,7 +127,7 @@ func TestIsAggregateOpAuthorised(t *testing.T) {
 		"chicago--project--db-rule--mongo-tweet-rule":   &config.DatabaseRule{Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}},
 		"chicago--project--db-rule--mongo-default-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{"aggr": {Rule: "allow"}, "read": {Rule: "allow"}, "update": {Rule: "allow"}, "delete": {Rule: "allow"}}},
 	}
-	auth := Init("chicago", "1", &crud.Module{}, nil)
+	auth := Init("chicago", "1", &crud.Module{}, nil, nil)
 	if er := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: project, Secrets: []*config.Secret{}}, dbRules, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -183,7 +183,7 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	dbRules := config.DatabaseRules{
 		"chicago--project--db-rule--mongo-tweet-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{"read": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}},
 	}
-	auth := Init("chicago", "1", &crud.Module{}, nil)
+	auth := Init("chicago", "1", &crud.Module{}, nil, nil)
 	if er := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: project, Secrets: []*config.Secret{}}, dbRules, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -239,7 +239,7 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 	dbRules := config.DatabaseRules{
 		"chicago--project--db-rule--mongo-tweet-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{"delete": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}},
 	}
-	auth := Init("chicago", "1", &crud.Module{}, nil)
+	auth := Init("chicago", "1", &crud.Module{}, nil, nil)
 	if er := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: project, Secrets: []*config.Secret{}}, dbRules, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -295,7 +295,7 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 	dbRules := config.DatabaseRules{
 		"chicago--project--db-rule--mongo-tweet-rule": &config.DatabaseRule{Rules: map[string]*config.Rule{"update": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}},
 	}
-	auth := Init("chicago", "1", &crud.Module{}, nil)
+	auth := Init("chicago", "1", &crud.Module{}, nil, nil)
 	if er := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: project, Secrets: []*config.Secret{}}, dbRules, config.DatabasePreparedQueries{}, config.FileStoreRules{}, config.Services{}, config.EventingRules{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -348,7 +348,7 @@ func TestIsPreparedQueryAuthorised(t *testing.T) {
 	dbPrepRules := config.DatabasePreparedQueries{
 		config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatbasePreparedQuery{Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
 	}
-	auth := Init("chicago", "1", &crud.Module{}, nil)
+	auth := Init("chicago", "1", &crud.Module{}, nil, nil)
 	if er := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: project, Secrets: []*config.Secret{}}, config.DatabaseRules{}, dbPrepRules, config.FileStoreRules{}, config.Services{}, config.EventingRules{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}

@@ -117,7 +117,7 @@ var essentialFlags = []cli.Flag{
 	// Flags for the metrics module
 	cli.BoolFlag{
 		Name:   "disable-metrics",
-		Usage:  "Disable anonymous metric collection",
+		Usage:  "Delete anonymous metric collection",
 		EnvVar: "DISABLE_METRICS",
 	},
 
@@ -132,7 +132,7 @@ var essentialFlags = []cli.Flag{
 func main() {
 	app := cli.NewApp()
 	app.Version = utils.BuildVersion
-	app.Name = "space-cloud"
+	app.Name = "space-cloud-ee"
 	app.Usage = "core binary to run space cloud"
 
 	app.Commands = []cli.Command{
@@ -199,7 +199,7 @@ func actionRun(c *cli.Context) error {
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
-		nodeID = "auto-" + ksuid.New().String()
+		nodeID = fmt.Sprintf("auto-%s", ksuid.New().String())
 	}
 
 	helpers.Logger.LogInfo("start", fmt.Sprintf("Starting node with id - %s", nodeID), nil)
@@ -229,7 +229,7 @@ func actionRun(c *cli.Context) error {
 	staticPath := ""
 	if !disableUI {
 		// Download and host mission control
-		staticPath, err = initMissionContol(utils.BuildVersion)
+		staticPath, err = initMissionControl(utils.BuildVersion)
 		if err != nil {
 			return err
 		}
@@ -263,7 +263,7 @@ func actionHealthCheck(c *cli.Context) error {
 	return nil
 }
 
-func initMissionContol(version string) (string, error) {
+func initMissionControl(version string) (string, error) {
 	homeDir := utils.UserHomeDir()
 	uiPath := homeDir + "/.space-cloud/mission-control-v" + version
 	_, err := os.Stat(uiPath)

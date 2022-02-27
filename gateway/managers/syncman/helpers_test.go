@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func Test_calcTokens(t *testing.T) {
@@ -95,12 +96,12 @@ func TestManager_delete(t *testing.T) {
 func Test_scServices_Len(t *testing.T) {
 	tests := []struct {
 		name string
-		a    scServices
+		a    model.ScServices
 		want int
 	}{
 		{
 			name: "length is returned",
-			a:    scServices{{id: "id1"}, {id: "id2"}},
+			a:    model.ScServices{{ID: "id1"}, {ID: "id2"}},
 			want: 2,
 		},
 	}
@@ -120,15 +121,15 @@ func Test_scServices_Swap(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		a    scServices
+		a    model.ScServices
 		args args
-		want scServices
+		want model.ScServices
 	}{
 		{
 			name: "swap successful",
-			a:    scServices{{id: "id1"}, {id: "id2"}},
+			a:    model.ScServices{{ID: "id1"}, {ID: "id2"}},
 			args: args{0, 1},
-			want: scServices{{id: "id2"}, {id: "id1"}},
+			want: model.ScServices{{ID: "id2"}, {ID: "id1"}},
 		},
 	}
 	for _, tt := range tests {
@@ -148,19 +149,19 @@ func Test_scServices_Less(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		a    scServices
+		a    model.ScServices
 		args args
 		want bool
 	}{
 		{
 			name: "true condition",
-			a:    scServices{{id: "1"}, {id: "2"}},
+			a:    model.ScServices{{ID: "1"}, {ID: "2"}},
 			args: args{0, 1},
 			want: true,
 		},
 		{
 			name: "false condition",
-			a:    scServices{{id: "2"}, {id: "1"}},
+			a:    model.ScServices{{ID: "2"}, {ID: "1"}},
 			args: args{0, 1},
 			want: false,
 		},
@@ -208,17 +209,17 @@ func TestManager_GetGatewayIndex(t *testing.T) {
 	}{
 		{
 			name: "services is empty",
-			s:    &Manager{services: []*service{}},
+			s:    &Manager{services: []*model.Service{}},
 			want: 0,
 		},
 		{
 			name: "service id does not match node id",
-			s:    &Manager{services: []*service{{id: "1"}}, nodeID: "not1"},
+			s:    &Manager{services: []*model.Service{{ID: "1"}}, nodeID: "not1"},
 			want: 0,
 		},
 		{
 			name: "got gateway index",
-			s:    &Manager{services: []*service{{id: "0"}, {id: "1"}}, nodeID: "1"},
+			s:    &Manager{services: []*model.Service{{ID: "0"}, {ID: "1"}}, nodeID: "1"},
 			want: 1,
 		},
 	}

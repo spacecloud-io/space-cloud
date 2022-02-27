@@ -48,7 +48,7 @@ func TestNew(t *testing.T) {
 				isProd:           false,
 				clusterID:        "clusterID",
 				nodeID:           "nodeID",
-				isMetricDisabled: false,
+				isMetricDisabled: true,
 				adminMan:         &admin.Manager{},
 				syncMan:          &syncman.Manager{},
 				sink:             api.New("spacecloud", "localhost:4123", false).DB("db"),

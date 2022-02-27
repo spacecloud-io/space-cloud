@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/spaceuptech/helpers"
 
@@ -206,7 +206,19 @@ func (j *JWT) fetchJWKRoutine(t time.Time) {
 				_ = helpers.Logger.LogError("", fmt.Sprintf("Unable to refresh jwk keys having kid (%s) and url (%s)", kid, secret.url), err, nil)
 				continue
 			}
+			jwkSecretInfo.audience = secret.audience
+			jwkSecretInfo.issuer = secret.issuer
 			j.jwkSecrets[kid] = jwkSecretInfo
+			// Delete kids of existing JWK url
+			for key, value := range j.mapJwkKidToSecretKid {
+				if value == kid {
+					delete(j.mapJwkKidToSecretKid, key)
+				}
+			}
+			// Add new kids to existing JWK url
+			for _, key := range jwkSecretInfo.set.Keys {
+				j.mapJwkKidToSecretKid[key.KeyID()] = kid
+			}
 		}
 	}
 }

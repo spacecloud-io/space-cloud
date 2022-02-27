@@ -91,12 +91,11 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 func HandleGetFileState(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-
-		// get project id from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
 
 		defer utils.CloseTheCloser(r.Body)
 
@@ -110,7 +109,14 @@ func HandleGetFileState(adminMan *admin.Manager, modules *modules.Modules) http.
 			return
 		}
 
-		file := modules.File()
+		file, err := modules.File(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		if err := file.GetState(ctx); err != nil {
 			_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, model.Response{Result: false, Error: err.Error()})
 			return

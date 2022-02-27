@@ -58,9 +58,9 @@ type Matcher struct {
 
 // HTTPMatcher is matcher type
 type HTTPMatcher struct {
-	Key          string             `json:"key,omitempty" yaml:"key,omitempty"`
-	Value        string             `json:"value,omitempty" yaml:"value,omitempty"`
-	Type         RouteHTTPMatchType `json:"type,omitempty" yaml:"type,omitempty"`
+	Key        string             `json:"key,omitempty" yaml:"key,omitempty"`
+	Value      string             `json:"value,omitempty" yaml:"value,omitempty"`
+	Type       RouteHTTPMatchType `json:"type,omitempty" yaml:"type,omitempty"`
 	IgnoreCase bool               `json:"ignoreCase,omitempty" yaml:"ignoreCase,omitempty"`
 }
 

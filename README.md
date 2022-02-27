@@ -1,4 +1,4 @@
-<p align="center"><a href="https://www.spaceuptech.com"><img src="https://spaceuptech.com/icons/space-cloud-block-diagram1.png" alt="Space Cloud"></a></p>
+<p align="center"><a href="https://space-cloud.io"><img src="https://space-cloud.io/images/kit/logo_full.svg" alt="Space Cloud"></a></p>
 
 <h3 align="center">
   Develop, Deploy and Secure Serverless Apps on Kubernetes.
@@ -6,9 +6,9 @@
 
 <p align="center">
   <strong>
-    <a href="https://spaceuptech.com/">Website</a>
+    <a href="https://space-cloud.io/">Website</a>
     •
-    <a href="https://docs.spaceuptech.com/">Docs</a>
+    <a href="https://docs.space-cloud.io/">Docs</a>
     •
     <a href="https://discord.gg/RkGjW93">Support</a>
   </strong>
@@ -22,10 +22,10 @@
     <a href="https://opensource.org/licenses/Apache-2.0"><img
     alt="Apache License"
     src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"></a>
-    <a href="https://twitter.com/intent/follow?screen_name=spaceuptech"><img src="https://img.shields.io/badge/                 Follow-spaceuptech-blue.svg?style=flat&logo=twitter"></a>
+    <a href="https://twitter.com/intent/follow?screen_name=spacecloudio"><img src="https://img.shields.io/badge/Follow-spacecloudio-blue.svg?style=flat&logo=twitter"></a>
 </p>
 
-Space Cloud is a Kubernetes based serverless platform that provides **instant, realtime APIs on any database**, with [event triggers](https://docs.spaceuptech.com/microservices/eventing) and unified APIs for your [custom business logic](https://docs.spaceuptech.com/microservices/graphql).
+Space Cloud is a Kubernetes based serverless platform that provides **instant, realtime APIs on any database**, with [event triggers](https://docs.space-cloud.io/microservices/eventing) and unified APIs for your [custom business logic](https://docs.space-cloud.io/microservices/graphql).
 
 Space Cloud helps you build modern applications without having to write any backend code in most cases.
 
@@ -87,23 +87,23 @@ Space Cloud is meant to replace any backend php, nodejs, java code you may write
 
 However, it's important to note that **the client does not send database (SQL) queries** to Space Cloud. Instead, it sends an object describing the query to be executed. This object is first **validated** by Space Cloud (using security rules). Once the client is authorized to make the request, **a database query is dynamically generated and executed**. The results are sent directly to the concerned client.
 
-We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud allows you to access your **custom HTTP servers** via the same consistent APIs of Space Cloud.  In this scenario, Space Cloud acts merely as an API gateway between your `services` and the client. However, the cool part is that you can even perform **joins on your microservices and database** via the GraphQL API of Space Cloud
+We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud allows you to access your **custom HTTP servers** via the same consistent APIs of Space Cloud.  In this scenario, Space Cloud acts merely as an API gateway between your `services` and the client. However, the cool part is that you can even perform **joins on your microservices and database** via the GraphQL API of Space Cloud.
 
 <div style="text-align: center">
-<img src="https://spaceuptech.com/icons/space-cloud-detailed.png"  style="max-width: 80%" alt="Detailed Space Cloud architecture" />
+<img src="https://space-cloud.io/images/graphQL-diagram.svg"  style="max-width: 80%" alt="Detailed Space Cloud architecture" />
 </div>
 
 Space Cloud integrates with [Kubernetes](https://kubernetes.io) and [Istio](https://istio.io) natively to bring to you a highly scalable Serverless Platform. It encrypts all traffic by default and lets you describe communication policies to protect your microservices.
 
-With that, it also provides **autoscaling functionality** out of the box including **scaling down to zero**
+With that, it also provides **autoscaling functionality** out of the box including **scaling down to zero**.
 
 ## Support & Troubleshooting
 
 The documentation and community should help you troubleshoot most issues. If you have encountered a bug or need to get in touch with us, you can contact us using one of the following channels:
 
 - Support & feedback: [Discord](https://discord.gg/RkGjW93)
-- Issue & bug tracking: [GitHub issues](https://github.com/spaceuptech/space-cloud/issues)
-- Follow product updates: [@spaceuptech](https://twitter.com/spaceuptech)
+- Issue & bug tracking: [GitHub issues](https://github.com/spacecloud-io/space-cloud/issues)
+- Follow product updates: [@spaceupcloudio](https://twitter.com/spacecloudio)
 
 ## Contributing
 
@@ -117,4 +117,4 @@ Space Cloud is a young project. We'd love to have you onboard if you wish to con
 
 ## License
 
-Space Cloud is [Apache 2.0 licensed](https://github.com/spaceuptech/space-cloud/blob/master/LICENSE).
+Space Cloud is [Apache 2.0 licensed](https://github.com/spacecloud-io/space-cloud/blob/master/LICENSE).

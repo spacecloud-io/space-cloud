@@ -63,6 +63,16 @@ func ExtractRequestParams(r *http.Request, reqParams model.RequestParams, body i
 	return reqParams
 }
 
+// ExtractJoinInfoForInstantInvalidate extracts join info
+func ExtractJoinInfoForInstantInvalidate(join []*model.JoinOption, joinKeysMapping map[string]map[string]string) {
+	for _, j := range join {
+		GenerateJoinKeysForInstantInvalidate(j.Table, j.On, joinKeysMapping)
+		if j.Join != nil {
+			ExtractJoinInfoForInstantInvalidate(j.Join, joinKeysMapping)
+		}
+	}
+}
+
 // GenerateJoinKeys generates join keys
 func GenerateJoinKeys(joinTable string, joinOn map[string]interface{}, databaseRow map[string]interface{}, joinKeysMapping map[string]map[string]string) {
 	isValidJoin, columnName := IsValidJoin(joinOn, joinTable)
@@ -76,6 +86,20 @@ func GenerateJoinKeys(joinTable string, joinOn map[string]interface{}, databaseR
 		} else {
 			joinKeysMapping[outerKey][rowValue] = ""
 		}
+	} else {
+		outerKey := fmt.Sprintf("%s::%s::%s", joinTable, "always", "none")
+		joinKeysMapping[outerKey] = map[string]string{"none": ""}
+	}
+}
+
+// GenerateJoinKeysForInstantInvalidate generates join keys
+func GenerateJoinKeysForInstantInvalidate(joinTable string, joinOn map[string]interface{}, joinKeysMapping map[string]map[string]string) {
+	isValidJoin, columnName := IsValidJoin(joinOn, joinTable)
+	if isValidJoin {
+		outerKey := fmt.Sprintf("%s::%s::%s", joinTable, "join", columnName)
+		joinKeysMapping[outerKey] = map[string]string{}
+		outerKey = fmt.Sprintf("%s::%s::%s", joinTable, "always", "none")
+		joinKeysMapping[outerKey] = map[string]string{"none": ""}
 	} else {
 		outerKey := fmt.Sprintf("%s::%s::%s", joinTable, "always", "none")
 		joinKeysMapping[outerKey] = map[string]string{"none": ""}

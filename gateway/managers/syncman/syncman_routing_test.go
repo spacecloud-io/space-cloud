@@ -157,6 +157,7 @@ func TestManager_GetIngressRouting(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetIngressRouting(tt.args.ctx, tt.args.project, tt.args.routeID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetIngressRouting() error = %v, wantErr %v", err, tt.wantErr)

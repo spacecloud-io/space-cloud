@@ -3,7 +3,7 @@ package auth
 import (
 	"errors"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 )
 
 // VerifyToken checks if the token is valid and returns the token claims

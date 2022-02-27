@@ -127,6 +127,7 @@ func TestBolt_Read(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("Read() got = %v, want %v", got, tt.want)
 			}
+			removeTs(got1)
 			if !reflect.DeepEqual(got1, tt.want1) {
 				t.Log(reflect.TypeOf(got1), reflect.TypeOf(tt.want1))
 				t.Errorf("Read() got1 = %v, want %v", got1, tt.want1)
@@ -136,5 +137,20 @@ func TestBolt_Read(t *testing.T) {
 	utils.CloseTheCloser(b)
 	if err := os.Remove("read.db"); err != nil {
 		t.Error("error removing database file")
+	}
+}
+
+func removeTs(result interface{}) {
+	var docs []interface{}
+	switch v := result.(type) {
+	case []interface{}:
+		docs = v
+	case map[string]interface{}:
+		docs = []interface{}{v}
+	}
+
+	for _, doc := range docs {
+		obj := doc.(map[string]interface{})
+		delete(obj, "_dbFetchTs")
 	}
 }

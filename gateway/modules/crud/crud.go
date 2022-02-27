@@ -10,6 +10,7 @@ import (
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/bolt"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -21,20 +22,23 @@ import (
 // Module is the root block providing convenient wrappers
 type Module struct {
 	sync.RWMutex
-	block   Crud
-	dbType  string
-	alias   string
+
 	project string
 	queries config.DatabasePreparedQueries
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
 
-	config *config.DatabaseConfig
+	databaseConfigs config.DatabaseConfigs // here key is the db alias
 
 	dataLoader loader
 	// Variables to store the hooks
 	metricHook model.MetricCrudHook
 
+	// Extra variables for enterprise
+	blocks         map[string]Crud
+	admin          *admin.Manager
+	integrationMan integrationManagerInterface
+	caching        cachingInterface
 	// function to get secrets from runner
 	getSecrets utils.GetSecrets
 
@@ -72,7 +76,7 @@ type Crud interface {
 
 // Init create a new instance of the Module object
 func Init() *Module {
-	return &Module{batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
+	return &Module{batchMapTableToChan: make(batchMap), databaseConfigs: config.DatabaseConfigs{}, blocks: map[string]Crud{}, dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
 func (m *Module) initBlock(dbType model.DBType, enabled bool, connection, dbName string, driverConf config.DriverConfig) (Crud, error) {
@@ -120,8 +124,8 @@ func (m *Module) CloseConfig() error {
 		delete(m.dataLoader.loaderMap, k)
 	}
 
-	if m.block != nil {
-		err := m.block.Close()
+	for _, block := range m.blocks {
+		err := block.Close()
 		if err != nil {
 			return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to close database connection", err, map[string]interface{}{})
 		}

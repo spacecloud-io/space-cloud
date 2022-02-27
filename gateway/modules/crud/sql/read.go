@@ -39,16 +39,16 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 
 	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getColName(col)).Prepared(true)
-	var regexArr []string
+
 	// Get the where clause from query object
-	query, regexArr = s.generateWhereClause(ctx, query, req.Find, req.MatchWhere)
+	query = s.generateWhereClause(ctx, query, req.Find, req.MatchWhere)
 
 	selArray := make([]interface{}, 0)
 	if req.Options != nil {
 
 		isJoin := len(req.Options.Join) > 0
 
-		// Throw error if select is not provided during joins
+		// Throw error if both select and aggregate is not provided during joins
 		if isJoin && len(req.Options.Select) == 0 && len(req.Aggregate) == 0 {
 			return "", nil, errors.New("select cannot be nil when using joins")
 		}
@@ -154,20 +154,6 @@ func (s *SQL) generateReadQuery(ctx context.Context, col string, req *model.Read
 		if err != nil {
 			return "", nil, err
 		}
-	}
-
-	for _, v := range regexArr {
-		switch s.dbType {
-		case "mysql":
-			vReplaced := strings.Replace(v, "=", "REGEXP", -1)
-			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
-		case "postgres":
-			vReplaced := strings.Replace(v, "=", "~", -1)
-			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
-		case "sqlserver":
-			return "", nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), "SQL server doesn't support regex operation", nil, nil)
-		}
-
 	}
 
 	if s.dbType == string(model.SQLServer) {
@@ -279,34 +265,7 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 
 		return 0, nil, nil, nil, errors.New("unknown error occurred")
 
-	case utils.One:
-		mapping := make(map[string]interface{})
-		if !rows.Next() {
-			return 0, nil, nil, nil, errors.New("SQL: No response from db")
-		}
-
-		err := rows.MapScan(mapping)
-		if err != nil {
-			return 0, nil, nil, nil, err
-		}
-
-		switch s.GetDBType() {
-		case model.MySQL, model.Postgres, model.SQLServer:
-			mysqlTypeCheck(ctx, s.GetDBType(), rowTypes, mapping)
-		}
-
-		processAggregate(mapping, mapping, col, isAggregate)
-		if req.PostProcess != nil {
-			_ = authHelpers.PostProcessMethod(ctx, s.aesKey, req.PostProcess[col], mapping)
-		}
-
-		if req.Options.Debug {
-			mapping["_dbFetchTs"] = time.Now().Format(time.RFC3339Nano)
-		}
-
-		return 1, mapping, make(map[string]map[string]string), metaData, nil
-
-	case utils.All, utils.Distinct:
+	case utils.All, utils.Distinct, utils.One:
 		array := make([]interface{}, 0)
 		mapping := make(map[string]map[string]interface{})
 		jointMapping := make(map[string]map[string]string)
@@ -339,6 +298,13 @@ func (s *SQL) readExec(ctx context.Context, col, sqlString string, args []interf
 			}
 
 			s.processRows(ctx, req.Options.Debug, []string{col}, isAggregate, row, req.Options.Join, mapping, &array, req.PostProcess, jointMapping)
+		}
+
+		if operation == utils.One {
+			if count == 0 {
+				return 0, nil, nil, nil, errors.New("SQL: No response from db")
+			}
+			return 1, array[0], jointMapping, metaData, nil
 		}
 
 		return count, array, jointMapping, metaData, nil
@@ -439,7 +405,6 @@ func (s *SQL) processRows(ctx context.Context, isDebug bool, table []string, isA
 		return
 	}
 
-	// Process joint tables for rows
 	for _, j := range join {
 		var arr []interface{}
 		utils.GenerateJoinKeys(j.Table, j.On, row, joinMapping)

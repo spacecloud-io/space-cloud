@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -91,10 +90,32 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Give negative acknowledgement
-		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusInternalServerError, errors.New("Operation not supported"))
+		// Check if the request is authorised
+		reqParams, err := adminMan.IsTokenValid(r.Context(), token, "project", "modify", map[string]string{"project": projectID})
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, err)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		reqParams.Method = r.Method
+		reqParams.Path = r.URL.Path
+		reqParams.Headers = r.Header
+		status, err := syncMan.DeleteProjectConfig(ctx, projectID, reqParams)
+		if err != nil {
+			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
+			return
+		}
+
+		_ = helpers.Response.SendOkayResponse(ctx, status, w)
 	}
 }
 

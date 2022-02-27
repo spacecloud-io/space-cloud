@@ -22,7 +22,7 @@ func TestCreateToken(t *testing.T) {
 		{testName: "Test Case-Invalid Token", IsTokenInvalid: true, IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, object: map[string]interface{}{"id": "internal-scuser"}},
 		{testName: "Invalid Test Case-Empty Object", IsTokenInvalid: true, IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}},
 	}
-	authModule := Init("chicago", "1", &crud.Module{}, nil)
+	authModule := Init("chicago", "1", &crud.Module{}, nil, nil)
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			_ = authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{Secrets: test.secretKeys}, nil, nil, nil, nil, config.EventingRules{})
@@ -45,7 +45,7 @@ func TestIsTokenInternal(t *testing.T) {
 		{testName: "Successful Test Case", IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
 	}
 
-	authModule := Init("chicago", "1", &crud.Module{}, nil)
+	authModule := Init("chicago", "1", &crud.Module{}, nil, nil)
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			_ = authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{Secrets: test.secretKeys}, nil, nil, nil, nil, config.EventingRules{})
@@ -158,7 +158,7 @@ ASagEwagcvqKhYXbDyc4s2iechFqKq50Au5e9DlwWzgTCeG7dWupvtb29TBJhkOd
 			token:         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
 		},
 	}
-	authModule := Init("chicago", "1", &crud.Module{}, nil)
+	authModule := Init("chicago", "1", &crud.Module{}, nil, nil)
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			if err := authModule.SetConfig(context.TODO(), "local", &config.ProjectConfig{Secrets: test.secretKeys}, nil, nil, nil, nil, nil); err != nil {

@@ -18,6 +18,18 @@ import (
 
 // SetDeleteCollection deletes a collection from the database
 func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col string, module *crud.Module, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -45,7 +57,7 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 	dbRulesResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
 	delete(projectConfig.DatabaseRules, dbRulesResourceID)
 
-	if err := s.modules.SetDatabaseRulesConfig(ctx, projectConfig.DatabaseRules); err != nil {
+	if err := s.modules.SetDatabaseRulesConfig(ctx, project, projectConfig.DatabaseRules); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
@@ -62,6 +74,18 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 
 // SetDatabaseConnection sets the database connection
 func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias string, v *config.DatabaseConfig, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -92,6 +116,18 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 
 // RemoveDatabaseConfig removes the database config
 func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -146,6 +182,8 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 		}
 	}
 
+	_ = s.modules.Caching().PurgeCache(ctx, project, &model.CachePurgeRequest{Resource: config.ResourceDatabaseSchema, DbAlias: dbAlias, ID: "*"})
+
 	return http.StatusOK, nil
 }
 
@@ -166,6 +204,18 @@ func (s *Manager) GetLogicalDatabaseName(ctx context.Context, project, dbAlias s
 
 // GetPreparedQuery gets preparedQuery from config
 func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -205,6 +255,18 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 
 // SetPreparedQueries sets database preparedqueries
 func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id string, v *config.DatbasePreparedQuery, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -227,7 +289,7 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 		projectConfig.DatabasePreparedQueries[resourceID] = v
 	}
 
-	if err := s.modules.SetDatabasePreparedQueryConfig(ctx, projectConfig.DatabasePreparedQueries); err != nil {
+	if err := s.modules.SetDatabasePreparedQueryConfig(ctx, project, projectConfig.DatabasePreparedQueries); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set database prepared query config", err, nil)
 	}
 
@@ -240,6 +302,18 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 
 // RemovePreparedQueries removes the database PreparedQueries
 func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, id string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -257,7 +331,7 @@ func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, i
 	resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabasePreparedQuery, dbAlias, id)
 	delete(projectConfig.DatabasePreparedQueries, resourceID)
 
-	if err := s.modules.SetDatabasePreparedQueryConfig(ctx, projectConfig.DatabasePreparedQueries); err != nil {
+	if err := s.modules.SetDatabasePreparedQueryConfig(ctx, project, projectConfig.DatabasePreparedQueries); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set database prepared query config", err, nil)
 	}
 
@@ -270,6 +344,18 @@ func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, i
 
 // SetModifySchema modifies the schema of table
 func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col string, v *config.DatabaseSchema, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -289,7 +375,7 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col str
 	v.Table = col
 
 	// Modify the schema
-	schemaMod := s.modules.GetSchemaModuleForSyncMan()
+	schemaMod, _ := s.modules.GetSchemaModuleForSyncMan(project)
 	if err := schemaMod.SchemaModifyAll(ctx, dbAlias, projectConfig.DatabaseConfigs[config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseConfig, dbAlias)].DBName, config.DatabaseSchemas{resourceID: v}); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -313,6 +399,18 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col str
 
 // SetCollectionRules sets the collection rules of the database
 func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col string, v *config.DatabaseRule, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -340,7 +438,7 @@ func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.
 		projectConfig.DatabaseRules[resourceID] = v
 	}
 
-	if err := s.modules.SetDatabaseRulesConfig(ctx, projectConfig.DatabaseRules); err != nil {
+	if err := s.modules.SetDatabaseRulesConfig(ctx, project, projectConfig.DatabaseRules); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set database rule config", err, nil)
 	}
 
@@ -353,6 +451,18 @@ func (s *Manager) setCollectionRules(ctx context.Context, projectConfig *config.
 
 // DeleteCollectionRules deletes the collection rules of the database
 func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, col string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -374,7 +484,7 @@ func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, c
 
 	delete(projectConfig.DatabaseRules, resourceID)
 
-	if err := s.modules.SetDatabaseRulesConfig(ctx, projectConfig.DatabaseRules); err != nil {
+	if err := s.modules.SetDatabaseRulesConfig(ctx, project, projectConfig.DatabaseRules); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set database rules config", err, nil)
 	}
 
@@ -387,17 +497,28 @@ func (s *Manager) DeleteCollectionRules(ctx context.Context, project, dbAlias, c
 
 // SetReloadSchema reloads of the schema
 func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
-
-	// Get the schema module
-	schemaMod := s.modules.GetSchemaModuleForSyncMan()
 
 	projectConfig, err := s.getConfigWithoutLock(ctx, project)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
+	// Get the schema module
+	schemaMod, _ := s.modules.GetSchemaModuleForSyncMan(project)
 
 	if _, p := s.checkIfDbAliasExists(projectConfig.DatabaseConfigs, dbAlias); !p {
 		return http.StatusBadRequest, errors.New("specified database not present in config")
@@ -432,6 +553,18 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 
 // SetSchemaInspection inspects the schema
 func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -446,7 +579,7 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 	}
 
 	// Get the schema module
-	schemaMod := s.modules.GetSchemaModuleForSyncMan()
+	schemaMod, _ := s.modules.GetSchemaModuleForSyncMan(project)
 	parsedSchema, _ := helpers2.Parser(projectConfig.DatabaseSchemas)
 
 	result, err := schemaMod.SchemaInspection(ctx, dbAlias, projectConfig.DatabaseConfigs[config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseConfig, dbAlias)].DBName, col, parsedSchema[dbAlias])
@@ -474,6 +607,18 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 
 // RemoveCollection removed the collection from the database collection schema in config
 func (s *Manager) RemoveCollection(ctx context.Context, project, dbAlias, col string, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -498,7 +643,7 @@ func (s *Manager) RemoveCollection(ctx context.Context, project, dbAlias, col st
 	dbRulesResourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
 	delete(projectConfig.DatabaseRules, dbRulesResourceID)
 
-	if err := s.modules.SetDatabaseRulesConfig(ctx, projectConfig.DatabaseRules); err != nil {
+	if err := s.modules.SetDatabaseRulesConfig(ctx, project, projectConfig.DatabaseRules); err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), "Unable to set crud config", err, nil)
 	}
 
@@ -515,6 +660,18 @@ func (s *Manager) RemoveCollection(ctx context.Context, project, dbAlias, col st
 
 // SetModifyAllSchema modifies schema of all tables
 func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, v config.CrudStub, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -549,7 +706,12 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 		projectConfig.DatabaseSchemas[resourceID] = &config.DatabaseSchema{Table: colName, DbAlias: dbAlias, Schema: colValue.Schema}
 	}
 
-	if err := s.modules.GetSchemaModuleForSyncMan().SchemaModifyAll(ctx, dbAlias, v.DBName, dbSchemas); err != nil {
+	schemaEventing, err := s.modules.GetSchemaModuleForSyncMan(project)
+	if err != nil {
+		return err
+	}
+
+	if err := schemaEventing.SchemaModifyAll(ctx, dbAlias, v.DBName, dbSchemas); err != nil {
 		return err
 	}
 
@@ -568,6 +730,18 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 
 // GetDatabaseConfig gets database config
 func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -576,6 +750,7 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
+
 	if dbAlias != "*" {
 		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseConfig, dbAlias)
 		dbConfig, ok := projectConfig.DatabaseConfigs[resourceID]
@@ -594,6 +769,18 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 
 // GetCollectionRules gets collection rules
 func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -601,6 +788,7 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
+
 	if dbAlias != "*" && col != "*" {
 		resourceID := config.GenerateResourceID(s.clusterID, project, config.ResourceDatabaseRule, dbAlias, col, "rule")
 		collectionInfo, ok := projectConfig.DatabaseRules[resourceID]
@@ -626,6 +814,18 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 
 // GetSchemas gets schemas from config
 func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format string, params model.RequestParams) (int, []interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result().([]interface{}), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -635,7 +835,7 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col, format 
 		return http.StatusBadRequest, nil, err
 	}
 
-	a := s.modules.GetSchemaModuleForSyncMan()
+	a, _ := s.modules.GetSchemaModuleForSyncMan(project)
 	arr, err := a.GetSchemaForDB(ctx, dbAlias, col, format)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err

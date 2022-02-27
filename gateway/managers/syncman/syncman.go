@@ -3,13 +3,16 @@ package syncman
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/spaceuptech/helpers"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
+	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils/leader"
+	"github.com/spaceuptech/space-cloud/gateway/utils/pubsub"
 )
 
 // Manager syncs the project config between folders
@@ -26,28 +29,27 @@ type Manager struct {
 	runnerAddr string
 	port       int
 
+	leader       *leader.Module
+	pubsubClient *pubsub.Module
 	// Configuration for clustering
 	storeType string
 	store     Store
-	services  []*service
+	services  model.ScServices
 
 	// For authentication
-	adminMan AdminSyncmanInterface
+	adminMan       AdminSyncmanInterface
+	integrationMan integrationInterface
 
 	// Modules
 	modules       ModulesInterface
 	globalModules GlobalModulesInterface
 }
 
-type service struct {
-	id string
-}
-
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, storeType, runnerAddr string, adminMan *admin.Manager, ssl *config.SSL) (*Manager, error) {
+func New(nodeID, clusterID, storeType, runnerAddr string, adminMan AdminSyncmanInterface, integrationMan integrationInterface, ssl *config.SSL) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan, integrationMan: integrationMan}
 
 	// Initialise the consul client if enabled
 	var s Store
@@ -67,11 +69,43 @@ func New(nodeID, clusterID, storeType, runnerAddr string, adminMan *admin.Manage
 	m.store = s
 	m.store.Register()
 
+	pubsubClient, err := pubsub.New("license-manager", os.Getenv("REDIS_CONN"))
+	if err != nil {
+		return nil, helpers.Logger.LogError("syncman-new", "Unable to initialize pub sub client required for sync module, ensure that redis database is running", err, nil)
+	}
+	m.pubsubClient = pubsubClient
+	m.leader = leader.New(nodeID, pubsubClient)
+
 	return m, nil
 }
 
 // Start begins the sync manager operations
 func (s *Manager) Start(port int) error {
+
+	// Start routine to observe space cloud projects
+	if err := s.store.WatchServices(func(eventType, serviceID string, services model.ScServices) {
+		s.lockServices.Lock()
+		defer s.lockServices.Unlock()
+		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services, "eventType": eventType, "id": serviceID})
+
+		s.adminMan.SetServices(eventType, services)
+		s.services = services
+	}); err != nil {
+		return err
+	}
+
+	count := 1
+	maxRetryCount := 6
+	incrementBy := 10
+	for len(s.services) == 0 {
+		helpers.Logger.LogDebug("syncman-start", fmt.Sprintf("Waiting for gateway services to register - retry count (%d)", count), nil)
+		time.Sleep(time.Duration(count*incrementBy) * time.Second)
+		if count == maxRetryCount {
+			return helpers.Logger.LogError("syncman-start", "Cannot start gateway, gateway service not registered", nil, nil)
+		}
+		count++
+	}
+
 	// Save the ports
 	s.port = port
 	// NOTE: SSL is not set in config
@@ -81,6 +115,21 @@ func (s *Manager) Start(port int) error {
 	globalConfig, err := s.store.GetGlobalConfig()
 	if err != nil {
 		return err
+	}
+
+	s.adminMan.SetServices(config.ResourceAddEvent, s.services)
+	s.adminMan.SetIntegrationConfig(globalConfig.Integrations)
+	_ = s.integrationMan.SetConfig(globalConfig.Integrations, globalConfig.IntegrationHooks)
+
+	s.leader.AddCallBack("admin-set-service", func() {
+		s.lockServices.RLock()
+		s.adminMan.SetServices(config.ResourceDeleteEvent, s.services)
+		s.lockServices.RUnlock()
+	})
+
+	// Set caching config
+	if err := s.modules.Caching().SetCachingConfig(context.TODO(), globalConfig.CacheConfig); err != nil {
+		_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to set config of caching module, ensure redis instance is running", err, nil)
 	}
 
 	// Set metric config
@@ -130,6 +179,10 @@ func (s *Manager) Start(port int) error {
 
 		switch resourceType {
 		case config.ResourceProject:
+			if eventType == config.ResourceDeleteEvent {
+				s.modules.Delete(projectID)
+				return
+			}
 			_ = s.modules.SetProjectConfig(ctx, s.projectConfig.Projects[projectID].ProjectConfig)
 
 		case config.ResourceAuthProvider:
@@ -143,29 +196,29 @@ func (s *Manager) Start(port int) error {
 			_ = s.modules.SetDatabaseSchemaConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabaseSchemas)
 
 		case config.ResourceDatabaseRule:
-			_ = s.modules.SetDatabaseRulesConfig(ctx, s.projectConfig.Projects[projectID].DatabaseRules)
+			_ = s.modules.SetDatabaseRulesConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabaseRules)
 
 		case config.ResourceDatabasePreparedQuery:
-			_ = s.modules.SetDatabasePreparedQueryConfig(ctx, s.projectConfig.Projects[projectID].DatabasePreparedQueries)
+			_ = s.modules.SetDatabasePreparedQueryConfig(ctx, projectID, s.projectConfig.Projects[projectID].DatabasePreparedQueries)
 
 		case config.ResourceEventingConfig:
 			p := s.projectConfig.Projects[projectID]
 			_ = s.modules.SetEventingConfig(ctx, projectID, p.EventingConfig, p.EventingRules, p.EventingSchemas, p.EventingTriggers)
 
 		case config.ResourceEventingSchema:
-			_ = s.modules.SetEventingSchemaConfig(ctx, s.projectConfig.Projects[projectID].EventingSchemas)
+			_ = s.modules.SetEventingSchemaConfig(ctx, projectID, s.projectConfig.Projects[projectID].EventingSchemas)
 
 		case config.ResourceEventingRule:
-			_ = s.modules.SetEventingRuleConfig(ctx, s.projectConfig.Projects[projectID].EventingRules)
+			_ = s.modules.SetEventingRuleConfig(ctx, projectID, s.projectConfig.Projects[projectID].EventingRules)
 
 		case config.ResourceEventingTrigger:
-			_ = s.modules.SetEventingTriggerConfig(ctx, s.projectConfig.Projects[projectID].EventingTriggers)
+			_ = s.modules.SetEventingTriggerConfig(ctx, projectID, s.projectConfig.Projects[projectID].EventingTriggers)
 
 		case config.ResourceFileStoreConfig:
 			_ = s.modules.SetFileStoreConfig(ctx, projectID, s.projectConfig.Projects[projectID].FileStoreConfig)
 
 		case config.ResourceFileStoreRule:
-			s.modules.SetFileStoreSecurityRuleConfig(ctx, projectID, s.projectConfig.Projects[projectID].FileStoreRules)
+			_ = s.modules.SetFileStoreSecurityRuleConfig(ctx, projectID, s.projectConfig.Projects[projectID].FileStoreRules)
 
 		case config.ResourceProjectLetsEncrypt:
 			_ = s.modules.SetLetsencryptConfig(ctx, projectID, s.projectConfig.Projects[projectID].LetsEncrypt)
@@ -184,8 +237,20 @@ func (s *Manager) Start(port int) error {
 			s.modules.LetsEncrypt().SetLetsEncryptEmail(s.projectConfig.ClusterConfig.LetsEncryptEmail)
 
 		case config.ResourceIntegration:
-		case config.ResourceIntegrationHook:
+			if err := s.integrationMan.SetIntegrations(s.projectConfig.Integrations); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply integration config", err, nil)
+				return
+			}
+			s.adminMan.SetIntegrationConfig(s.projectConfig.Integrations)
 
+		case config.ResourceIntegrationHook:
+			s.integrationMan.SetIntegrationHooks(s.projectConfig.IntegrationHooks)
+
+		case config.ResourceCacheConfig:
+			if err := s.modules.Caching().SetCachingConfig(ctx, s.projectConfig.CacheConfig); err != nil {
+				_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to apply admin config provided by other space cloud service", err, map[string]interface{}{})
+				return
+			}
 		default:
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unknown resource type provided", err, map[string]interface{}{"resourceType": resourceType})
 			return
@@ -194,17 +259,7 @@ func (s *Manager) Start(port int) error {
 		return err
 	}
 
-	// Start routine to observe active space-cloud services
-	if err := s.store.WatchServices(func(services scServices) {
-		s.lockServices.Lock()
-		defer s.lockServices.Unlock()
-		helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Updating services", map[string]interface{}{"services": services})
-
-		s.services = services
-	}); err != nil {
-		return err
-	}
-
+	helpers.Logger.LogDebug(helpers.GetRequestID(context.TODO()), "Exiting syncman start", nil)
 	return nil
 }
 

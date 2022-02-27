@@ -11,6 +11,11 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
+// GetSpaceCloudPort returns the port sc is running on
+func (s *Manager) GetSpaceCloudPort() int {
+	return s.port
+}
+
 // GetEventSource returns the source id for the space cloud instance
 func (s *Manager) GetEventSource() string {
 	return fmt.Sprintf("sc-%s", s.nodeID)
@@ -44,7 +49,7 @@ func (s *Manager) GetAssignedSpaceCloudID(ctx context.Context, project string, t
 
 	index := calcIndex(token, utils.MaxEventTokens, len(s.services))
 
-	return s.services[index].id, nil
+	return s.services[index].ID, nil
 }
 
 // GetSpaceCloudNodeIDs returns the array of space cloud ids
@@ -55,7 +60,7 @@ func (s *Manager) GetSpaceCloudNodeIDs(project string) []string {
 	ids := make([]string, len(s.services))
 
 	for i, svc := range s.services {
-		ids[i] = svc.id
+		ids[i] = svc.ID
 	}
 
 	return ids
@@ -86,11 +91,23 @@ func (s *Manager) GetGatewayIndex() int {
 
 // SetClusterConfig applies the set cluster config
 func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfig, params model.RequestParams) (int, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), nil
+	}
+
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.projectConfig.ClusterConfig = req
-	resourceID := config.GenerateResourceID(s.clusterID, "", config.ResourceCluster, "cluster")
+	resourceID := config.GenerateResourceID(s.clusterID, "noProject", config.ResourceCluster, "cluster")
 	if err := s.store.SetResource(ctx, resourceID, s.projectConfig.ClusterConfig); err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -102,7 +119,19 @@ func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfi
 }
 
 // GetClusterConfig returns cluster config
-func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestParams) (int, *config.ClusterConfig, error) {
+func (s *Manager) GetClusterConfig(ctx context.Context, params model.RequestParams) (int, interface{}, error) {
+	// Check if the request has been hijacked
+	hookResponse := s.integrationMan.InvokeHook(ctx, params)
+	if hookResponse.CheckResponse() {
+		// Check if an error occurred
+		if err := hookResponse.Error(); err != nil {
+			return hookResponse.Status(), nil, err
+		}
+
+		// Gracefully return
+		return hookResponse.Status(), hookResponse.Result(), nil
+	}
+
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return http.StatusOK, s.projectConfig.ClusterConfig, nil

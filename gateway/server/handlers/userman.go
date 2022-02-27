@@ -16,20 +16,24 @@ import (
 // HandleProfile returns the handler for fetching single user profile
 func HandleProfile(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		userManagement := modules.User()
-
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
-		defer cancel()
-
-		defer utils.CloseTheCloser(r.Body)
-
 		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		dbAlias := vars["dbAlias"]
 		id := vars["id"]
+
+		userManagement, err := modules.User(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -47,17 +51,22 @@ func HandleProfile(modules *modules.Modules) http.HandlerFunc {
 // HandleProfiles returns the handler for fetching all user profiles
 func HandleProfiles(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		userManagement := modules.User()
-
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
-		defer cancel()
-
 		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		dbAlias := vars["dbAlias"]
+
+		userManagement, err := modules.User(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -76,18 +85,22 @@ func HandleProfiles(modules *modules.Modules) http.HandlerFunc {
 // HandleEmailSignIn returns the handler for email sign in
 func HandleEmailSignIn(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbAlias := vars["dbAlias"]
 
-		userManagement := modules.User()
+		userManagement, err := modules.User(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Create a context of execution
 
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
 		defer cancel()
-
-		// Get the path parameters
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		dbAlias := vars["dbAlias"]
 
 		// Load the request from the body
 		req := map[string]interface{}{}
@@ -107,17 +120,22 @@ func HandleEmailSignIn(modules *modules.Modules) http.HandlerFunc {
 // HandleEmailSignUp returns the handler for email sign up
 func HandleEmailSignUp(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		userManagement := modules.User()
-
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
-		defer cancel()
-
 		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		dbAlias := vars["dbAlias"]
+
+		userManagement, err := modules.User(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
 
 		// Load the request from the body
 		req := map[string]interface{}{}
@@ -125,7 +143,6 @@ func HandleEmailSignUp(modules *modules.Modules) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		status, result, err := userManagement.EmailSignUp(ctx, dbAlias, projectID, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
-
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
@@ -137,18 +154,23 @@ func HandleEmailSignUp(modules *modules.Modules) http.HandlerFunc {
 // HandleEmailEditProfile returns the handler for edit profile
 func HandleEmailEditProfile(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		userManagement := modules.User()
-
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
-		defer cancel()
-
 		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		dbAlias := vars["dbAlias"]
 		id := vars["id"]
+
+		userManagement, err := modules.User(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(utils.DefaultContextTime)*time.Second)
+		defer cancel()
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)

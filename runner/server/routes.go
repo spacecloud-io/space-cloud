@@ -1,6 +1,8 @@
 package server
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func (s *Server) routes() {
 	s.router.Methods(http.MethodGet).Path("/v1/runner/cluster-type").HandlerFunc(s.handleGetClusterType())

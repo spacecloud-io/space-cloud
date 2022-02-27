@@ -7,6 +7,11 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// SyncManAdminInterface is an interface consisting of functions of synman module used by auth admin module
+type SyncManAdminInterface interface {
+	CheckIfLeaderGateway(nodeID string) (bool, error)
+}
+
 // SchemaCrudInterface is an interface consisting of functions of schema module used by auth module
 type SchemaCrudInterface interface {
 	SetDatabaseSchema(dbSchemas config.DatabaseSchemas, project string) error
@@ -120,6 +125,7 @@ type SyncmanEventingInterface interface {
 	GetAssignedSpaceCloudID(ctx context.Context, project string, token int) (string, error)
 	GetAssignedTokens() (start, end int)
 	GetEventSource() string
+	GetSpaceCloudPort() int
 	GetNodeID() string
 	MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
 }
@@ -162,3 +168,15 @@ type ReturnWhereStub struct {
 	Col           string
 	PrefixColName bool
 }
+
+// Service stores id of the service
+type Service struct {
+	ID string
+}
+
+// ScServices stores array of gateway services
+type ScServices []*Service
+
+func (a ScServices) Len() int           { return len(a) }
+func (a ScServices) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ScServices) Less(i, j int) bool { return a[i].ID < a[j].ID }

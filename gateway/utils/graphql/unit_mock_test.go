@@ -87,8 +87,8 @@ type mockGraphQLFunctionInterface struct {
 	mock.Mock
 }
 
-func (m *mockGraphQLFunctionInterface) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, params interface{}) (int, interface{}, error) {
-	args := m.Called(ctx, service, function, token, reqParams, params)
+func (m *mockGraphQLFunctionInterface) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, req *model.FunctionsRequest) (int, interface{}, error) {
+	args := m.Called(ctx, service, function, token, reqParams, req)
 	return 0, args.Get(0).(interface{}), args.Error(1)
 }
 

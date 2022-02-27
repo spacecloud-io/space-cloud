@@ -54,7 +54,7 @@ spec:
       serviceAccountName: dbevents
       containers:
         - name: dbevents
-          image: "spaceuptech/dbevents:0.2.0"
+          image: "spacecloudio/dbevents:0.2.0"
           imagePullPolicy: "IfNotPresent"
           env:
             - name: "SC_ADMIN_SECRET"

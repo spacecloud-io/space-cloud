@@ -31,6 +31,7 @@ func TestManager_SetUserManagement(t *testing.T) {
 		args            args
 		modulesMockArgs []mockArgs
 		storeMockArgs   []mockArgs
+		integrationArgs []mockArgs
 		wantErr         bool
 	}{
 		{
@@ -57,6 +58,13 @@ func TestManager_SetUserManagement(t *testing.T) {
 					paramsReturned: []interface{}{errors.New("unable to get db config")},
 				},
 			},
+			integrationArgs: []mockArgs{
+				{
+					method:         "InvokeHook",
+					args:           []interface{}{mock.Anything},
+					paramsReturned: []interface{}{mockHookResponse{}},
+				},
+			},
 			wantErr: true,
 		},
 		{
@@ -77,6 +85,13 @@ func TestManager_SetUserManagement(t *testing.T) {
 					paramsReturned: []interface{}{nil},
 				},
 			},
+			integrationArgs: []mockArgs{
+				{
+					method:         "InvokeHook",
+					args:           []interface{}{mock.Anything},
+					paramsReturned: []interface{}{mockHookResponse{}},
+				},
+			},
 		},
 	}
 
@@ -95,6 +110,7 @@ func TestManager_SetUserManagement(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetUserManagement(context.Background(), tt.args.project, tt.args.provider, tt.args.value, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetUserManagement() error = %v, wantErr %v", err, tt.wantErr)
@@ -107,6 +123,7 @@ func TestManager_SetUserManagement(t *testing.T) {
 }
 
 func TestManager_GetUserManagement(t *testing.T) {
+
 	type args struct {
 		ctx        context.Context
 		project    string
@@ -146,6 +163,9 @@ func TestManager_GetUserManagement(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
+
 			_, got, err := tt.s.GetUserManagement(context.Background(), tt.args.project, tt.args.providerID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetUserManagement() error = %v, wantErr %v", err, tt.wantErr)
@@ -335,6 +355,7 @@ func TestManager_DeleteUserManagement(t *testing.T) {
 
 			mockModules := mockModulesInterface{}
 			mockStore := mockStoreInterface{}
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			for _, m := range tt.modulesMockArgs {
 				mockModules.On(m.method, m.args...).Return(m.paramsReturned...)

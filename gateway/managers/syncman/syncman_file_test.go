@@ -113,6 +113,7 @@ func TestManager_SetFileStore(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetFileStore(tt.args.ctx, tt.args.project, tt.args.value, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetFileStore() error = %v, wantErr %v", err, tt.wantErr)
@@ -151,6 +152,7 @@ func TestManager_GetFileStoreConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetFileStoreConfig(tt.args.ctx, tt.args.project, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetFileStoreConfig() error = %v, wantErr %v", err, tt.wantErr)
@@ -263,6 +265,7 @@ func TestManager_SetFileRule(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetFileRule(tt.args.ctx, tt.args.project, tt.args.id, tt.args.value, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetFileRule() error = %v, wantErr %v", err, tt.wantErr)
@@ -354,6 +357,7 @@ func TestManager_SetDeleteFileRule(t *testing.T) {
 
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 
 			if _, err := tt.s.SetDeleteFileRule(tt.args.ctx, tt.args.project, tt.args.filename, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetDeleteFileRule() error = %v, wantErr %v", err, tt.wantErr)
@@ -405,6 +409,7 @@ func TestManager_GetFileStoreRules(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.s.integrationMan = &mockIntegrationManager{skip: true}
 			_, got, err := tt.s.GetFileStoreRules(tt.args.ctx, tt.args.project, tt.args.ruleID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetFileStoreRules() error = %v, wantErr %v", err, tt.wantErr)

@@ -15,13 +15,14 @@ import (
 
 	"github.com/spaceuptech/helpers"
 
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/caching"
 	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token string, auth, params interface{}) (int, interface{}, error) {
+func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token string, auth, params interface{}, cacheInfo *config.ReadCacheOptions) (int, interface{}, error) {
 	var url string
 	var method string
 	var ogToken string
@@ -58,6 +59,34 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
 	}
 
+	var redisKey string
+	var cacheResponse *caching.CacheResult
+	if endpoint.Method == http.MethodGet && cacheInfo != nil {
+		// First step is to load all the options
+		cacheOptionsArray := make([]interface{}, len(endpoint.CacheOptions))
+		for index, key := range endpoint.CacheOptions {
+			value, err := utils.LoadValue(key, map[string]interface{}{"args": map[string]interface{}{"auth": auth, "token": ogToken, "url": url}})
+			if err != nil {
+				return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to extract value for cache option key (%s)", key), err, nil)
+			}
+			cacheOptionsArray[index] = value
+		}
+
+		// Check if response is present in the cache
+		cacheResponse, err = m.caching.GetRemoteService(ctx, m.project, serviceID, endpointID, cacheInfo, cacheOptionsArray)
+		if err != nil {
+			return http.StatusInternalServerError, nil, err
+		}
+
+		// Return if cache is present in response
+		if cacheResponse.IsCacheHit() {
+			return http.StatusOK, cacheResponse.GetResult(), nil
+		}
+
+		// Store the redis key for future use
+		redisKey = cacheResponse.Key()
+	}
+
 	/***************** Set the request method ***************/
 
 	// Set the default method
@@ -68,7 +97,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	/***************** Set the request body *****************/
 
-	newParams, err := m.adjustReqBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, params)
+	newHeaders, newParams, err := m.adjustReqBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, params)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
@@ -104,7 +133,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		Params: newParams,
 		Method: method, URL: url,
 		Token: token, SCToken: scToken,
-		Headers: prepareHeaders(ctx, endpoint.Headers, state),
+		Headers: prepareHeaders(ctx, newHeaders, state),
 	}
 	status, err := utils.MakeHTTPRequest(ctx, req, &res)
 	if err != nil {
@@ -114,6 +143,13 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	/**************** Return the response body ****************/
 
 	res, err = m.adjustResBody(ctx, serviceID, endpointID, ogToken, endpoint, auth, res)
+
+	if cacheInfo != nil && redisKey != "" {
+		// Store the adjusted body in cache for future use
+		if err := m.caching.SetRemoteServiceKey(ctx, redisKey, cacheResponse, cacheInfo, res); err != nil {
+			return 0, nil, err
+		}
+	}
 	return status, res, err
 }
 
@@ -139,7 +175,7 @@ func prepareHeaders(ctx context.Context, headers config.Headers, state map[strin
 	return out
 }
 
-func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (io.Reader, error) {
+func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (config.Headers, io.Reader, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -151,13 +187,13 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 		if tmpl, p := m.templates[getGoTemplateKey("request", serviceID, endpointID)]; p {
 			req, err = tmpl2.GoTemplate(ctx, tmpl, endpoint.OpFormat, token, auth, params)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		}
 		if tmpl, p := m.templates[getGoTemplateKey("graph", serviceID, endpointID)]; p {
 			graph, err = tmpl2.GoTemplate(ctx, tmpl, "string", token, auth, params)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		}
 	default:
@@ -175,8 +211,11 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 	case config.EndpointKindPrepared:
 		body = map[string]interface{}{"query": graph, "variables": req}
 	default:
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
+		return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), nil, nil)
 	}
+
+	var requestHeader config.Headers
+	requestHeader = append(requestHeader, endpoint.Headers...)
 
 	var requestBody io.Reader
 	switch endpoint.ReqPayloadFormat {
@@ -184,10 +223,10 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 		// Marshal json into byte array
 		data, err := json.Marshal(body)
 		if err != nil {
-			return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot marshal provided data for graphQL API endpoint (%s)", endpointID), err, map[string]interface{}{"serviceId": serviceID})
+			return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Cannot marshal provided data for graphQL API endpoint (%s)", endpointID), err, map[string]interface{}{"serviceId": serviceID})
 		}
 		requestBody = bytes.NewReader(data)
-		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: "application/json", Op: "set"})
+		requestHeader = append(requestHeader, config.Header{Key: "Content-Type", Value: "application/json", Op: "set"})
 	case config.EndpointRequestPayloadFormatFormData:
 		buff := new(bytes.Buffer)
 		writer := multipart.NewWriter(buff)
@@ -195,18 +234,18 @@ func (m *Module) adjustReqBody(ctx context.Context, serviceID, endpointID, token
 		for key, val := range body.(map[string]interface{}) {
 			value, ok := val.(string)
 			if !ok {
-				return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type of value provided for arg (%s) expecting string as endpoint (%s) has request payload of (form-data) type ", endpointID, key), err, map[string]interface{}{"serviceId": serviceID})
+				return nil, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Invalid type of value provided for arg (%s) expecting string as endpoint (%s) has request payload of (form-data) type ", endpointID, key), err, map[string]interface{}{"serviceId": serviceID})
 			}
 			_ = writer.WriteField(key, value)
 		}
 		err = writer.Close()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		requestBody = bytes.NewReader(buff.Bytes())
-		endpoint.Headers = append(endpoint.Headers, config.Header{Key: "Content-Type", Value: writer.FormDataContentType(), Op: "set"})
+		requestHeader = append(requestHeader, config.Header{Key: "Content-Type", Value: writer.FormDataContentType(), Op: "set"})
 	}
-	return requestBody, err
+	return requestHeader, requestBody, err
 }
 
 func (m *Module) adjustResBody(ctx context.Context, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {

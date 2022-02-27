@@ -5,13 +5,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_GetClusterID(t *testing.T) {
 	type fields struct {
-		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
 		clusterID string
@@ -30,7 +30,6 @@ func TestManager_GetClusterID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
 				isProd:    tt.fields.isProd,
 				clusterID: tt.fields.clusterID,
@@ -44,7 +43,6 @@ func TestManager_GetClusterID(t *testing.T) {
 
 func TestManager_GetCredentials(t *testing.T) {
 	type fields struct {
-		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
 		clusterID string
@@ -63,7 +61,6 @@ func TestManager_GetCredentials(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
 				isProd:    tt.fields.isProd,
 				clusterID: tt.fields.clusterID,
@@ -85,7 +82,7 @@ func TestManager_GetInternalAccessToken(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	m := New("", "", false, &config.AdminUser{})
+	m := New("", "", true, &config.AdminUser{})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := m.GetInternalAccessToken()
@@ -97,42 +94,13 @@ func TestManager_GetInternalAccessToken(t *testing.T) {
 	}
 }
 
-func TestManager_GetQuotas(t *testing.T) {
-	type fields struct {
-		quotas    model.UsageQuotas
-		user      *config.AdminUser
-		isProd    bool
-		clusterID string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   *model.UsageQuotas
-	}{
-		{
-			name:   "Valid case",
-			fields: fields{quotas: model.UsageQuotas{MaxDatabases: 1, MaxProjects: 1}},
-			want:   &model.UsageQuotas{MaxProjects: 1, MaxDatabases: 1},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &Manager{
-				quotas:    tt.fields.quotas,
-				user:      tt.fields.user,
-				isProd:    tt.fields.isProd,
-				clusterID: tt.fields.clusterID,
-			}
-			if got := m.GetQuotas(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetQuotas() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestManager_IsTokenValid(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
 	type fields struct {
-		quotas    model.UsageQuotas
 		user      *config.AdminUser
 		isProd    bool
 		clusterID string
@@ -143,6 +111,7 @@ func TestManager_IsTokenValid(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
+		mockI   []mockArgs
 		args    args
 		wantErr bool
 	}{
@@ -153,22 +122,66 @@ func TestManager_IsTokenValid(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid token",
-			fields:  fields{isProd: true, user: &config.AdminUser{Secret: "some-secret"}},
-			args:    args{token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIn0.N4aa9nBNQHsvnWPUfzmKjMG3YD474ChIyOM5FEUuVm4"},
+			name:   "valid token and no integration",
+			fields: fields{isProd: true, user: &config.AdminUser{Secret: "some-secret"}},
+			args:   args{token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIn0.N4aa9nBNQHsvnWPUfzmKjMG3YD474ChIyOM5FEUuVm4"},
+			mockI: []mockArgs{
+				{
+					method:         "HandleConfigAuth",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{mockIntegrationResponse{checkResponse: false}},
+				},
+			},
 			wantErr: false,
+		},
+		{
+			name:   "valid token with integration",
+			fields: fields{isProd: true, user: &config.AdminUser{Secret: "some-secret"}},
+			args:   args{token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIn0.N4aa9nBNQHsvnWPUfzmKjMG3YD474ChIyOM5FEUuVm4"},
+			mockI: []mockArgs{
+				{
+					method:         "HandleConfigAuth",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{mockIntegrationResponse{checkResponse: true}},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:   "valid token with integration error",
+			fields: fields{isProd: true, user: &config.AdminUser{Secret: "some-secret"}},
+			args:   args{token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIn0.N4aa9nBNQHsvnWPUfzmKjMG3YD474ChIyOM5FEUuVm4"},
+			mockI: []mockArgs{
+				{
+					method:         "HandleConfigAuth",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{mockIntegrationResponse{checkResponse: true, err: "some-eror"}},
+				},
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			i := &mockIntegrationManager{}
+
+			for _, v := range tt.mockI {
+				i.On(v.method, v.args...).Return(v.paramsReturned...)
+			}
+
 			m := &Manager{
-				quotas:    tt.fields.quotas,
-				user:      tt.fields.user,
-				isProd:    tt.fields.isProd,
-				clusterID: tt.fields.clusterID,
+				user:           tt.fields.user,
+				isProd:         tt.fields.isProd,
+				clusterID:      tt.fields.clusterID,
+				integrationMan: i,
 			}
 			if _, err := m.IsTokenValid(context.Background(), tt.args.token, "", "", nil); (err != nil) != tt.wantErr {
 				t.Errorf("IsTokenValid() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !i.AssertExpectations(t) {
+				t.Error("Integration expections failed")
 			}
 		})
 	}
@@ -230,16 +243,9 @@ func TestManager_ValidateSyncOperation(t *testing.T) {
 			},
 			want: true,
 		},
-		{
-			name: "project max projects creation limit reached",
-			args: args{
-				c:       &config.Config{Projects: config.Projects{"projectID": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "projectID"}}}},
-				project: &config.Project{ProjectConfig: &config.ProjectConfig{ID: "project2"}},
-			},
-			want: false,
-		},
 	}
-	m := New("", "clusterID", false, &config.AdminUser{})
+
+	m := New("nodeID", "clusterID", true, &config.AdminUser{})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := m.ValidateProjectSyncOperation(tt.args.c, tt.args.project.ProjectConfig); got != tt.want {

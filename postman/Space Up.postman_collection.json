@@ -459,7 +459,7 @@
                         "header": [],
                         "body": {
                           "mode": "raw",
-                          "raw": "{\n    \"enabled\":true,\n    \"conn\": \"localhost:6379\",\n    \"defaultTTL\": 600\n}",
+                          "raw": "{\n    \"enabled\":true,\n    \"conn\": \"redis://localhost:6379\",\n    \"defaultTTL\": 600\n}",
                           "options": {
                             "raw": {
                               "language": "json"
