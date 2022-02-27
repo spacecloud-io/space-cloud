@@ -232,11 +232,11 @@ func TestModule_processStagedEvent(t *testing.T) {
 		syncmanMockArgs []mockArgs
 		authMockArgs    []mockArgs
 	}{
-		{
-			name: "event is already being processed",
-			m:    &Module{},
-			args: args{eventDoc: &model.EventDocument{ID: "loadedID"}},
-		},
+		// {
+		// 	name: "event is already being processed",
+		// 	m:    &Module{},
+		// 	args: args{eventDoc: &model.EventDocument{ID: "loadedID"}},
+		// },
 		{
 			name: "error selecting rule",
 			m:    &Module{config: &config.Eventing{Rules: map[string]*config.EventingTrigger{"notSomeRule": {}}, InternalRules: map[string]*config.EventingTrigger{"notSomeRule": {}}}},
