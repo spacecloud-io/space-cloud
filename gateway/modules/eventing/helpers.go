@@ -169,6 +169,19 @@ func (m *Module) generateProcessedEventRequest(eventID string) *model.UpdateRequ
 	}
 }
 
+func (m *Module) generateInOperatorUpdateRequest(arr []*queueUpdateEvent) ([]string, *queueUpdateEvent) {
+	eventsIDS := make([]string, 0)
+	for _, event := range arr {
+		eventsIDS = append(eventsIDS, event.req.Find["_id"].(string))
+	}
+	obj := new(queueUpdateEvent)
+	if len(arr) > 0 {
+		obj = arr[0]
+		obj.req.Find = map[string]interface{}{"_id": map[string]interface{}{"$in": eventsIDS}}
+	}
+	return eventsIDS, obj
+}
+
 func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocument) error {
 	req := &model.QueueEventRequest{
 		Type: fmt.Sprintf("%s%s", utils.DLQEventTriggerPrefix, eventDoc.RuleName),
@@ -376,4 +389,16 @@ func getEventingTopic(nodeID string) string {
 
 func getEventResponseTopic(nodeID string) string {
 	return fmt.Sprintf("event-response-%s", nodeID)
+}
+
+func (m *Module) stageBufferedEvent(eventDoc *model.EventDocument) {
+	// Return if the event is already being processed
+	if _, loaded := m.processingEvents.LoadOrStore(eventDoc.ID, true); loaded {
+		return
+	}
+
+	select {
+	case m.bufferedEventProcessingChannel <- eventDoc:
+	default:
+	}
 }

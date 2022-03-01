@@ -24,13 +24,13 @@ type Module struct {
 	lock sync.RWMutex
 
 	// Configurable variables
-	nodeID    string
-	project   string
-	clusterID string
-	config    *config.Eventing
+	nodeID  string
+	project string
+	config  *config.Eventing
 
 	// Atomic maps to handle events being processed
-	processingEvents sync.Map
+	processingEvents               sync.Map
+	bufferedEventProcessingChannel chan *model.EventDocument
 
 	// Variables defined during initialisation
 	auth model.AuthEventingInterface
@@ -43,8 +43,6 @@ type Module struct {
 	metricHook model.MetricEventingHook
 	// stores mapping of batchID w.r.t channel for sending synchronous event response
 	eventChanMap sync.Map // key here is batchID
-	tickerIntent *time.Ticker
-	tickerStaged *time.Ticker
 
 	// Templates for body transformation
 	templates map[string]*template.Template
@@ -52,8 +50,16 @@ type Module struct {
 	// Pub sub network
 	pubsubClient *pubsub.Module
 
-	// Channel for queuing eventing updates
-	updateEventC chan *queueUpdateEvent
+	// Channels for queuing eventing updates
+	updateEventC                    chan *queueUpdateEvent
+	updateFailedEventInDBChannel    chan *queueUpdateEvent
+	updateProcessedEventInDBChannel chan *queueUpdateEvent
+
+	// Channel for removing the event ids from the processingEvents sync map
+	deleteEventFromProcessingEventsMapChannel chan []string
+
+	// Channel for closing all the go routines
+	globalCloserChannel chan struct{}
 }
 
 // synchronous event response
@@ -69,20 +75,23 @@ func New(clusterID, projectID, nodeID string, auth model.AuthEventingInterface, 
 	if err != nil {
 		return nil, err
 	}
-
 	m := &Module{
-		clusterID:    clusterID,
-		project:      projectID,
-		nodeID:       nodeID,
-		auth:         auth,
-		crud:         crud,
-		syncMan:      syncMan,
-		schemas:      map[string]model.Fields{},
-		fileStore:    file,
-		metricHook:   hook,
-		config:       &config.Eventing{Enabled: false, InternalRules: make(config.EventingTriggers)},
-		templates:    map[string]*template.Template{},
-		pubsubClient: pubsubClient,
+		project:                         projectID,
+		nodeID:                          nodeID,
+		auth:                            auth,
+		crud:                            crud,
+		syncMan:                         syncMan,
+		schemas:                         map[string]model.Fields{},
+		fileStore:                       file,
+		metricHook:                      hook,
+		config:                          &config.Eventing{Enabled: false, InternalRules: make(config.EventingTriggers)},
+		templates:                       map[string]*template.Template{},
+		pubsubClient:                    pubsubClient,
+		updateFailedEventInDBChannel:    make(chan *queueUpdateEvent, 100),
+		updateProcessedEventInDBChannel: make(chan *queueUpdateEvent, 100),
+		bufferedEventProcessingChannel:  make(chan *model.EventDocument, 250),
+		deleteEventFromProcessingEventsMapChannel: make(chan []string, 100),
+		globalCloserChannel:                       make(chan struct{}),
 	}
 
 	// Start the internal processes
@@ -90,6 +99,10 @@ func New(clusterID, projectID, nodeID string, auth model.AuthEventingInterface, 
 	go m.routineProcessStaged()
 	go m.routineHandleMessages()
 	go m.routineHandleEventResponseMessages()
+	go m.routineProcessEventsWithBuffering()
+	go m.routineUpdateEventsStatusInDB(m.updateFailedEventInDBChannel)
+	go m.routineUpdateEventsStatusInDB(m.updateProcessedEventInDBChannel)
+	go m.routineDeleteEventsFromSyncMap()
 	m.createProcessUpdateEventsRoutine()
 
 	return m, nil
@@ -117,7 +130,6 @@ func (m *Module) SetConfig(projectID string, eventing *config.EventingConfig) er
 	if m.config.InternalRules == nil {
 		m.config.InternalRules = make(config.EventingTriggers)
 	}
-
 	return nil
 }
 
@@ -234,7 +246,13 @@ func (m *Module) CloseConfig() error {
 	for k := range m.config.Schemas {
 		delete(m.config.Schemas, k)
 	}
-	m.tickerIntent.Stop()
-	m.tickerStaged.Stop()
+
+	close(m.updateEventC)
+	close(m.updateFailedEventInDBChannel)
+	close(m.updateProcessedEventInDBChannel)
+
+	// Closing the global close will stop all the goroutines
+	close(m.globalCloserChannel)
+
 	return nil
 }
