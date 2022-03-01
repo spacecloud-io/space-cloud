@@ -27,24 +27,11 @@ func prepareHTTPHanndlerApp() []byte {
 		Servers: map[string]*caddyhttp.Server{
 			"default": {
 				Listen: listen,
-				Routes: caddyhttp.RouteList{
-					caddyhttp.Route{
-						HandlersRaw: []json.RawMessage{getHandler()},
-					},
-				},
+				Routes: getRootRoutes(),
 			},
 		},
 	}
 
 	data, _ := json.Marshal(httpConfig)
-	return data
-}
-
-func getHandler() []byte {
-	handler := make(map[string]string)
-
-	handler["handler"] = "sc_handler"
-
-	data, _ := json.Marshal(handler)
 	return data
 }

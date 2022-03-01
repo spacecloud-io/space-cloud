@@ -50,7 +50,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("store-type", "", "file", "The config store to use for storing project configs and other meta data eg. file, kube, db")
 	cmd.Flags().StringP("config-path", "", "", "The path to config file")
 	cmd.Flags().StringP("cluster-id", "", "", "The cluster id to start space-cloud with")
-	cmd.Flags().IntP("port", "p", 4122, "run xlr8s server")
+	cmd.Flags().IntP("port", "p", 4122, "Port to start space cloud server on")
 	cmd.Flags().StringP("ssl-cert", "", "none", "Load ssl certificate from `FILE`")
 	cmd.Flags().StringP("ssl-key", "", "none", "Load ssl key from `FILE`")
 
