@@ -31,11 +31,11 @@ func (a primaryKeyStore) Less(i, j int) bool {
 	return a[i].PrimaryKeyInfo.Order < a[j].PrimaryKeyInfo.Order
 }
 
-type dbSchemaResponse struct {
-	DbAlias   string             `json:"dbAlias"`
-	Col       string             `json:"col"`
-	Schema    string             `json:"schema,omitempty"`
-	SchemaObj model.FieldSchemas `json:"schemaObj,omitempty"`
-}
+// type dbSchemaResponse struct {
+// 	DbAlias   string             `json:"dbAlias"`
+// 	Col       string             `json:"col"`
+// 	Schema    string             `json:"schema,omitempty"`
+// 	SchemaObj model.FieldSchemas `json:"schemaObj,omitempty"`
+// }
 
 type createSchemaFunc func(ctx context.Context, tableName string, newSchema model.CollectionSchemas) error
