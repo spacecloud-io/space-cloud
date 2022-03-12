@@ -2,12 +2,12 @@ package model
 
 type (
 
-	// Schemas is the data structure for storing the parsed values of schema string
-	Schemas map[string]Collection // key is database name
-	// Collection is a data structure for storing fields of schema
-	Collection map[string]Fields // key is collection name
-	// Fields is a data structure for storing the type of field
-	Fields map[string]*FieldType // key is field name
+	// DBSchemas is the data structure for storing the parsed values of schema string
+	DBSchemas map[string]CollectionSchemas // key is database name
+	// CollectionSchemas is a data structure for storing fields of schema
+	CollectionSchemas map[string]FieldSchemas // key is collection name
+	// FieldSchemas is a data structure for storing the type of field
+	FieldSchemas map[string]*FieldType // key is field name
 
 	// FieldType stores information about a particular column in table
 	FieldType struct {
@@ -17,8 +17,8 @@ type (
 		Kind                string     `json:"kind"`
 		Args                *FieldArgs `json:"args"`
 		// Directive           string
-		NestedObject Fields `json:"nestedObject"`
-		IsPrimary    bool   `json:"isPrimary"`
+		NestedObject FieldSchemas `json:"nestedObject"`
+		IsPrimary    bool         `json:"isPrimary"`
 		// For directives
 		IsCreatedAt     bool `json:"isCreatedAt"`
 		IsUpdatedAt     bool `json:"isUpdatedAt"`

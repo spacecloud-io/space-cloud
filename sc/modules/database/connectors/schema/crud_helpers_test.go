@@ -32,7 +32,7 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 		dbAlias   string
 		dbType    string
 		col       string
-		schemaDoc model.Schemas
+		schemaDoc model.DBSchemas
 		result    interface{}
 	}
 	tests := []struct {
@@ -69,7 +69,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 	type args struct {
 		dbAlias   string
 		dbType    model.DBType
-		schemaDoc model.Schemas
+		schemaDoc model.DBSchemas
 		col       string
 		find      map[string]interface{}
 	}
@@ -86,7 +86,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    "sql",
 				col:       "table1",
 				find:      map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
 			},
 			want:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			wantErr: false,
@@ -109,7 +109,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    "mongo",
 				col:       "table1",
 				find:      map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
-				schemaDoc: model.Schemas{"mysql": model.Collection{}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{}},
 			},
 			want:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			wantErr: false,
@@ -121,7 +121,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    "mongo",
 				col:       "table1",
 				find:      map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{}}},
 			},
 			want:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			wantErr: false,
@@ -133,7 +133,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    "mongo",
 				col:       "table1",
 				find:      map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
 			},
 			want:    map[string]interface{}{"col2": returntime("2014-11-12T11:45:26.371Z")},
 			wantErr: false,
@@ -145,7 +145,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    "mongo",
 				col:       "table1",
 				find:      map[string]interface{}{"col2": "2014-11-12"},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
 			},
 			want:    map[string]interface{}{"col2": "2014-11-12"},
 			wantErr: true,
@@ -157,7 +157,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    "mongo",
 				col:       "table1",
 				find:      map[string]interface{}{"col2": map[string]interface{}{"time": "2014-11-12T11:45:26.371Z"}},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
 			},
 			want:    map[string]interface{}{"col2": map[string]interface{}{"time": returntime("2014-11-12T11:45:26.371Z")}},
 			wantErr: false,
@@ -169,7 +169,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    "mongo",
 				col:       "table1",
 				find:      map[string]interface{}{"col2": map[string]interface{}{"time": time.Now().Round(time.Second)}},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
 			},
 			want:    map[string]interface{}{"col2": map[string]interface{}{"time": primitive.NewDateTimeFromTime(time.Now().Round(time.Second))}},
 			wantErr: false,
@@ -181,7 +181,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    "mongo",
 				col:       "table1",
 				find:      map[string]interface{}{"col2": map[string]interface{}{"time": "string"}},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
 			},
 			want:    map[string]interface{}{"col2": map[string]interface{}{"time": "string"}},
 			wantErr: true,
@@ -193,7 +193,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    "mongo",
 				col:       "table1",
 				find:      map[string]interface{}{"col2": time.Now().Round(time.Second)},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
 			},
 			want:    map[string]interface{}{"col2": time.Now().Round(time.Second)},
 			wantErr: false,
@@ -205,7 +205,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    "mongo",
 				col:       "table1",
 				find:      map[string]interface{}{"col2": 10},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}},
 			},
 			want:    map[string]interface{}{"col2": 10},
 			wantErr: true,
@@ -217,7 +217,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    model.SQLServer,
 				col:       "table1",
 				find:      map[string]interface{}{"col2": true},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}},
 			},
 			want:    map[string]interface{}{"col2": 1},
 			wantErr: false,
@@ -229,7 +229,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    model.SQLServer,
 				col:       "table1",
 				find:      map[string]interface{}{"col2": map[string]interface{}{"time": false}},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}},
 			},
 			want:    map[string]interface{}{"col2": map[string]interface{}{"time": 0}},
 			wantErr: false,
@@ -241,7 +241,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbType:    model.SQLServer,
 				col:       "table1",
 				find:      map[string]interface{}{"col2": map[string]interface{}{"time": "string"}},
-				schemaDoc: model.Schemas{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}},
+				schemaDoc: model.DBSchemas{"mysql": model.CollectionSchemas{"table1": model.FieldSchemas{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}},
 			},
 			want:    map[string]interface{}{"col2": map[string]interface{}{"time": "string"}},
 			wantErr: true,
@@ -953,7 +953,7 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 
 	testCases := []struct {
 		dbAlias, dbType, coll, name string
-		schemaDoc                   model.Schemas
+		schemaDoc                   model.DBSchemas
 		value                       model.CreateRequest
 		IsErrExpected               bool
 	}{
