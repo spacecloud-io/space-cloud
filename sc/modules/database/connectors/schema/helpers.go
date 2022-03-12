@@ -107,7 +107,7 @@ func checkType(ctx context.Context, dbAlias, dbType, col string, value interface
 	}
 }
 
-func validateArrayOperations(ctx context.Context, dbAlias, dbType, col string, doc interface{}, SchemaDoc model.Fields) error {
+func validateArrayOperations(ctx context.Context, dbAlias, dbType, col string, doc interface{}, SchemaDoc model.FieldSchemas) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -144,7 +144,7 @@ func validateArrayOperations(ctx context.Context, dbAlias, dbType, col string, d
 	return nil
 }
 
-func validateMathOperations(ctx context.Context, col string, doc interface{}, SchemaDoc model.Fields) error {
+func validateMathOperations(ctx context.Context, col string, doc interface{}, SchemaDoc model.FieldSchemas) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -178,7 +178,7 @@ func validateMathOperations(ctx context.Context, col string, doc interface{}, Sc
 	return nil
 }
 
-func validateDateOperations(ctx context.Context, col string, doc interface{}, SchemaDoc model.Fields) error {
+func validateDateOperations(ctx context.Context, col string, doc interface{}, SchemaDoc model.FieldSchemas) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -200,7 +200,7 @@ func validateDateOperations(ctx context.Context, col string, doc interface{}, Sc
 	return nil
 }
 
-func validateUnsetOperation(ctx context.Context, dbType, col string, doc interface{}, schemaDoc model.Fields) error {
+func validateUnsetOperation(ctx context.Context, dbType, col string, doc interface{}, schemaDoc model.FieldSchemas) error {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
 		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Document not of type object in collection (%s)", col), nil, nil)
@@ -234,7 +234,7 @@ func validateUnsetOperation(ctx context.Context, dbType, col string, doc interfa
 	return nil
 }
 
-func validateSetOperation(ctx context.Context, dbAlias, dbType, col string, doc interface{}, SchemaDoc model.Fields) (interface{}, error) {
+func validateSetOperation(ctx context.Context, dbAlias, dbType, col string, doc interface{}, SchemaDoc model.FieldSchemas) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
 		return nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Document not of type object in collection (%s)", col), nil, nil)
@@ -276,10 +276,10 @@ func isFieldPresentInUpdate(field string, updateDoc map[string]interface{}) bool
 	return false
 }
 
-func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (model.Fields, error) {
+func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (model.FieldSchemas, error) {
 	var isCollectionFound bool
 
-	fieldMap := model.Fields{}
+	fieldMap := model.FieldSchemas{}
 	for _, v := range doc.Definitions {
 		colName := v.(*ast.ObjectDefinition).Name.Value
 

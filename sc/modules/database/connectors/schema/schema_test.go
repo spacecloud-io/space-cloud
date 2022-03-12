@@ -15,7 +15,7 @@ func TestParseSchema(t *testing.T) {
 	var testCases = []struct {
 		name          string
 		IsErrExpected bool
-		schema        model.Schemas
+		schema        model.DBSchemas
 		Data          config.DatabaseSchemas
 	}{
 		{
@@ -167,9 +167,9 @@ func TestParseSchema(t *testing.T) {
 		},
 		{
 			name: "OnDelete with NO ACTION",
-			schema: model.Schemas{
-				"mongo": model.Collection{
-					"tweet": model.Fields{
+			schema: model.DBSchemas{
+				"mongo": model.CollectionSchemas{
+					"tweet": model.FieldSchemas{
 						"ID": &model.FieldType{
 							FieldName:      "ID",
 							Kind:           model.TypeID,
@@ -217,9 +217,9 @@ func TestParseSchema(t *testing.T) {
 		},
 		{
 			name: "valid schema",
-			schema: model.Schemas{
-				"mongo": model.Collection{
-					"tweet": model.Fields{
+			schema: model.DBSchemas{
+				"mongo": model.CollectionSchemas{
+					"tweet": model.FieldSchemas{
 						"ID": &model.FieldType{
 							FieldName:      "ID",
 							Kind:           model.TypeID,

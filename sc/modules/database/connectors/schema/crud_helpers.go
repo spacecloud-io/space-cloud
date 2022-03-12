@@ -15,7 +15,7 @@ import (
 )
 
 // ValidateCreateOperation validates req body against provided schema
-func ValidateCreateOperation(ctx context.Context, dbAlias, dbType, col string, schemaDoc model.Schemas, req *model.CreateRequest) error {
+func ValidateCreateOperation(ctx context.Context, dbAlias, dbType, col string, schemaDoc model.DBSchemas, req *model.CreateRequest) error {
 	if schemaDoc == nil {
 		return errors.New("schema not initialized")
 	}
@@ -58,7 +58,7 @@ func ValidateCreateOperation(ctx context.Context, dbAlias, dbType, col string, s
 }
 
 // ValidateUpdateOperation validates the types of schema during a update request
-func ValidateUpdateOperation(ctx context.Context, dbAlias, dbType, col, op string, updateDoc, find map[string]interface{}, schemaDoc model.Schemas) error {
+func ValidateUpdateOperation(ctx context.Context, dbAlias, dbType, col, op string, updateDoc, find map[string]interface{}, schemaDoc model.DBSchemas) error {
 	if len(updateDoc) == 0 {
 		return nil
 	}
@@ -115,7 +115,7 @@ func ValidateUpdateOperation(ctx context.Context, dbAlias, dbType, col, op strin
 }
 
 // CrudPostProcess unmarshalls the json field in read request
-func CrudPostProcess(ctx context.Context, dbAlias, dbType, col string, schemaDoc model.Schemas, result interface{}) error {
+func CrudPostProcess(ctx context.Context, dbAlias, dbType, col string, schemaDoc model.DBSchemas, result interface{}) error {
 	if dbAlias != string(model.Mongo) {
 		return nil
 	}
@@ -204,7 +204,7 @@ func CrudPostProcess(ctx context.Context, dbAlias, dbType, col string, schemaDoc
 }
 
 // AdjustWhereClause adjusts where clause to take care of types
-func AdjustWhereClause(ctx context.Context, dbAlias string, dbType model.DBType, col string, schemaDoc model.Schemas, find map[string]interface{}) error {
+func AdjustWhereClause(ctx context.Context, dbAlias string, dbType model.DBType, col string, schemaDoc model.DBSchemas, find map[string]interface{}) error {
 	colInfo, ok := schemaDoc[dbAlias]
 	if !ok {
 		// Gracefully return if the schema isn't provided

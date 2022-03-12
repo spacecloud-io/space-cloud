@@ -17,7 +17,7 @@ import (
 )
 
 // Validate validates provided doc object against it's schema
-func Validate(ctx context.Context, dbAlias, dbType, col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+func Validate(ctx context.Context, dbAlias, dbType, col string, collectionFields model.FieldSchemas, doc map[string]interface{}) (map[string]interface{}, error) {
 	for schemaKey := range doc {
 		if _, p := collectionFields[schemaKey]; !p {
 			return nil, errors.New("The field " + schemaKey + " is not present in schema of " + col)
@@ -77,8 +77,8 @@ func Validate(ctx context.Context, dbAlias, dbType, col string, collectionFields
 }
 
 // Parser function parses the schema im module
-func Parser(dbSchemas config.DatabaseSchemas) (model.Schemas, error) {
-	schema := make(model.Schemas)
+func Parser(dbSchemas config.DatabaseSchemas) (model.DBSchemas, error) {
+	schema := make(model.DBSchemas)
 	for _, dbSchema := range dbSchemas {
 		// Skip if no schema is provided
 		if dbSchema.Schema == "" {
@@ -106,7 +106,7 @@ func Parser(dbSchemas config.DatabaseSchemas) (model.Schemas, error) {
 		}
 		_, ok := schema[dbSchema.DbAlias]
 		if !ok {
-			schema[dbSchema.DbAlias] = model.Collection{dbSchema.Table: value}
+			schema[dbSchema.DbAlias] = model.CollectionSchemas{dbSchema.Table: value}
 		} else {
 			schema[dbSchema.DbAlias][dbSchema.Table] = value
 		}

@@ -357,18 +357,6 @@ func (m *Module) Batch(ctx context.Context, req *model.BatchRequest, params mode
 	return err
 }
 
-// DescribeTable performs a db operation for describing a table
-func (m *Module) DescribeTable(ctx context.Context, col string) ([]model.InspectorFieldType, []model.IndexType, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	if err := m.connector.IsClientSafe(ctx); err != nil {
-		return nil, nil, err
-	}
-
-	return m.connector.DescribeTable(ctx, col)
-}
-
 // RawBatch performs a db operation for schema creation
 func (m *Module) RawBatch(ctx context.Context, batchedQueries []string) error {
 	m.lock.RLock()

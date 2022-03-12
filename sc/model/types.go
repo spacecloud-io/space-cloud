@@ -29,8 +29,8 @@ type CrudAuthInterface interface {
 // SchemaEventingInterface is an interface consisting of functions of schema module used by eventing module
 type SchemaEventingInterface interface {
 	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, dbSchemas config.DatabaseSchemas) error
-	SchemaInspection(ctx context.Context, dbAlias, project, col string, realSchema Collection) (string, error)
-	GetSchema(dbAlias, col string) (Fields, bool)
+	SchemaInspection(ctx context.Context, dbAlias, project, col string, realSchema CollectionSchemas) (string, error)
+	GetSchema(dbAlias, col string) (FieldSchemas, bool)
 	GetSchemaForDB(ctx context.Context, dbAlias, col, format string) ([]interface{}, error)
 }
 
@@ -40,7 +40,7 @@ type CrudEventingInterface interface {
 	InternalUpdate(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
 	Read(ctx context.Context, dbAlias, col string, req *ReadRequest, params RequestParams) (interface{}, *SQLMetaData, error)
 	GetDBType(dbAlias string) (string, error)
-	GetSchema(dbAlias, col string) (Fields, bool)
+	GetSchema(dbAlias, col string) (FieldSchemas, bool)
 }
 
 // AuthEventingInterface is an interface consisting of functions of auth module used by Eventing module
