@@ -647,9 +647,9 @@ func getIndexMap(ctx context.Context, tableInfo model.FieldSchemas) (map[string]
 // 	return nil
 // }
 
-func getKeyName(dbName, key string) string {
-	return fmt.Sprintf("%s-%s", dbName, key)
-}
+// func getKeyName(dbName, key string) string {
+// 	return fmt.Sprintf("%s-%s", dbName, key)
+// }
 
 func cleanIndexMap(v []*model.TableProperties) []*model.TableProperties {
 	for _, indexInfo := range v {

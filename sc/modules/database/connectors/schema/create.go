@@ -11,6 +11,8 @@ import (
 	"github.com/spacecloud-io/space-cloud/model"
 )
 
+// PrepareCreationQueries generates a set of SQL queries that need to be run in order to apply the changes made in the schema
+// to the database.
 func PrepareCreationQueries(ctx context.Context, dbType, tableName, dbName string, newSchema, currentSchema model.CollectionSchemas, fn createSchemaFunc) ([]string, error) {
 	// Return nil, if no tables are present in schema
 	if len(newSchema) == 0 {
