@@ -15,7 +15,7 @@ import (
 )
 
 // ValidateCreateOperation validates req body against provided schema
-func ValidateCreateOperation(ctx context.Context, dbAlias, dbType, col string, schemaDoc model.DBSchemas, req *model.CreateRequest) error {
+func ValidateCreateOperation(ctx context.Context, dbAlias, dbType, col string, schemaDoc model.CollectionSchemas, req *model.CreateRequest) error {
 	if schemaDoc == nil {
 		return errors.New("schema not initialized")
 	}
@@ -29,11 +29,7 @@ func ValidateCreateOperation(ctx context.Context, dbAlias, dbType, col string, s
 		v = append(v, t)
 	}
 
-	collection, ok := schemaDoc[dbAlias]
-	if !ok {
-		return errors.New("No db was found named " + dbAlias)
-	}
-	collectionFields, ok := collection[col]
+	collectionFields, ok := schemaDoc[col]
 	if !ok {
 		return nil
 	}
@@ -58,15 +54,11 @@ func ValidateCreateOperation(ctx context.Context, dbAlias, dbType, col string, s
 }
 
 // ValidateUpdateOperation validates the types of schema during a update request
-func ValidateUpdateOperation(ctx context.Context, dbAlias, dbType, col, op string, updateDoc, find map[string]interface{}, schemaDoc model.DBSchemas) error {
+func ValidateUpdateOperation(ctx context.Context, dbAlias, dbType, col, op string, updateDoc, find map[string]interface{}, schemaDoc model.CollectionSchemas) error {
 	if len(updateDoc) == 0 {
 		return nil
 	}
-	schemaDb, ok := schemaDoc[dbAlias]
-	if !ok {
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to validate update operation in schema module dbAlias (%s) not found in schema module", dbAlias), nil, nil)
-	}
-	SchemaDoc, ok := schemaDb[col]
+	SchemaDoc, ok := schemaDoc[col]
 	if !ok {
 		helpers.Logger.LogInfo(helpers.GetRequestID(ctx), fmt.Sprintf("Validating update operation in schema module collection (%s) not found in schemaDoc where dbAlias (%s)", col, dbAlias), nil)
 		return nil
@@ -115,19 +107,12 @@ func ValidateUpdateOperation(ctx context.Context, dbAlias, dbType, col, op strin
 }
 
 // CrudPostProcess unmarshalls the json field in read request
-func CrudPostProcess(ctx context.Context, dbAlias, dbType, col string, schemaDoc model.DBSchemas, result interface{}) error {
+func CrudPostProcess(ctx context.Context, dbAlias, dbType, col string, schemaDoc model.CollectionSchemas, result interface{}) error {
 	if dbAlias != string(model.Mongo) {
 		return nil
 	}
 
-	colInfo, ok := schemaDoc[dbAlias]
-	if !ok {
-		if model.DBType(dbType) == model.Mongo {
-			return nil
-		}
-		return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unkown db alias (%s) provided to schema module", dbAlias), nil, nil)
-	}
-	tableInfo, ok := colInfo[col]
+	tableInfo, ok := schemaDoc[col]
 	if !ok {
 		// Gracefully return if the schema isn't provided
 		return nil
@@ -204,14 +189,8 @@ func CrudPostProcess(ctx context.Context, dbAlias, dbType, col string, schemaDoc
 }
 
 // AdjustWhereClause adjusts where clause to take care of types
-func AdjustWhereClause(ctx context.Context, dbAlias string, dbType model.DBType, col string, schemaDoc model.DBSchemas, find map[string]interface{}) error {
-	colInfo, ok := schemaDoc[dbAlias]
-	if !ok {
-		// Gracefully return if the schema isn't provided
-		return nil
-	}
-
-	tableInfo, ok := colInfo[col]
+func AdjustWhereClause(ctx context.Context, dbAlias string, dbType model.DBType, col string, schemaDoc model.CollectionSchemas, find map[string]interface{}) error {
+	tableInfo, ok := schemaDoc[col]
 	if !ok {
 		// Gracefully return if the schema isn't provided
 		return nil

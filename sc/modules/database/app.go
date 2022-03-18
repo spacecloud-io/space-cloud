@@ -4,11 +4,13 @@ import (
 	"github.com/caddyserver/caddy/v2"
 	"go.uber.org/zap"
 
+	"github.com/spacecloud-io/space-cloud/managers/configman"
 	"github.com/spacecloud-io/space-cloud/modules/database/connectors"
 )
 
 func init() {
 	caddy.RegisterModule(App{})
+	_ = configman.AddControllerApp("database", getTypeDefinitions())
 }
 
 var connectorPool = caddy.NewUsagePool()
@@ -103,6 +105,7 @@ func (l *App) Stop() error {
 
 // Interface guards
 var (
-	_ caddy.Provisioner = (*App)(nil)
-	_ caddy.App         = (*App)(nil)
+	_ configman.HookImpl = (*App)(nil)
+	_ caddy.Provisioner  = (*App)(nil)
+	_ caddy.App          = (*App)(nil)
 )

@@ -34,10 +34,13 @@ type (
 
 	// TypeDefinition describes the definition of a particular resource type
 	TypeDefinition struct {
-		JSONSchema      interface{}            `json:"jsonSchema" yaml:"jsonSchema"`
-		Hooks           map[HookPhase]struct{} `json:"hooks" yaml:"hooks"`
-		RequiredParents []string               `json:"requiredParents" yaml:"requiredParents"`
+		JSONSchema      interface{} `json:"jsonSchema" yaml:"jsonSchema"`
+		Hooks           Hooks       `json:"hooks" yaml:"hooks"`
+		RequiredParents []string    `json:"requiredParents" yaml:"requiredParents"`
 	}
+
+	// Hooks describes the hooks to be invoked on the module
+	Hooks map[HookPhase]struct{}
 
 	// HookPhase describes the various phases where hooks can be invoked.
 	HookPhase string

@@ -15,7 +15,7 @@ func TestParseSchema(t *testing.T) {
 	var testCases = []struct {
 		name          string
 		IsErrExpected bool
-		schema        model.DBSchemas
+		schema        model.CollectionSchemas
 		Data          config.DatabaseSchemas
 	}{
 		{
@@ -167,36 +167,34 @@ func TestParseSchema(t *testing.T) {
 		},
 		{
 			name: "OnDelete with NO ACTION",
-			schema: model.DBSchemas{
-				"mongo": model.CollectionSchemas{
-					"tweet": model.FieldSchemas{
-						"ID": &model.FieldType{
-							FieldName:      "ID",
-							Kind:           model.TypeID,
-							TypeIDSize:     model.DefaultCharacterSize,
-							IsPrimary:      true,
-							PrimaryKeyInfo: &model.TableProperties{},
-						},
-						"age": &model.FieldType{
-							FieldName: "age",
-							Kind:      model.TypeFloat,
-						},
-						"spec": &model.FieldType{
-							FieldName: "spec",
-							Kind:      model.TypeJSON,
-						},
-						"customer_id": &model.FieldType{
-							FieldName:           "customer_id",
-							IsFieldTypeRequired: true,
-							Kind:                model.TypeID,
-							TypeIDSize:          model.DefaultCharacterSize,
-							IsForeign:           true,
-							JointTable: &model.TableProperties{
-								To:             "id",
-								Table:          "customer",
-								OnDelete:       "NO ACTION",
-								ConstraintName: "c_tweet_customer_id",
-							},
+			schema: model.CollectionSchemas{
+				"tweet": model.FieldSchemas{
+					"ID": &model.FieldType{
+						FieldName:      "ID",
+						Kind:           model.TypeID,
+						TypeIDSize:     model.DefaultCharacterSize,
+						IsPrimary:      true,
+						PrimaryKeyInfo: &model.TableProperties{},
+					},
+					"age": &model.FieldType{
+						FieldName: "age",
+						Kind:      model.TypeFloat,
+					},
+					"spec": &model.FieldType{
+						FieldName: "spec",
+						Kind:      model.TypeJSON,
+					},
+					"customer_id": &model.FieldType{
+						FieldName:           "customer_id",
+						IsFieldTypeRequired: true,
+						Kind:                model.TypeID,
+						TypeIDSize:          model.DefaultCharacterSize,
+						IsForeign:           true,
+						JointTable: &model.TableProperties{
+							To:             "id",
+							Table:          "customer",
+							OnDelete:       "NO ACTION",
+							ConstraintName: "c_tweet_customer_id",
 						},
 					},
 				},
@@ -217,115 +215,113 @@ func TestParseSchema(t *testing.T) {
 		},
 		{
 			name: "valid schema",
-			schema: model.DBSchemas{
-				"mongo": model.CollectionSchemas{
-					"tweet": model.FieldSchemas{
-						"ID": &model.FieldType{
-							FieldName:      "ID",
-							Kind:           model.TypeID,
-							TypeIDSize:     model.DefaultCharacterSize,
-							IsPrimary:      true,
-							PrimaryKeyInfo: &model.TableProperties{},
+			schema: model.CollectionSchemas{
+				"tweet": model.FieldSchemas{
+					"ID": &model.FieldType{
+						FieldName:      "ID",
+						Kind:           model.TypeID,
+						TypeIDSize:     model.DefaultCharacterSize,
+						IsPrimary:      true,
+						PrimaryKeyInfo: &model.TableProperties{},
+					},
+					"age": &model.FieldType{
+						FieldName: "age",
+						Kind:      model.TypeFloat,
+					},
+					"amount": &model.FieldType{
+						FieldName:           "amount",
+						Kind:                model.TypeDecimal,
+						IsFieldTypeRequired: true,
+						Args: &model.FieldArgs{
+							Scale:     5,
+							Precision: 10,
 						},
-						"age": &model.FieldType{
-							FieldName: "age",
-							Kind:      model.TypeFloat,
+					},
+					"role": &model.FieldType{
+						FieldName:           "role",
+						IsFieldTypeRequired: true,
+						Kind:                model.TypeID,
+						TypeIDSize:          model.DefaultCharacterSize,
+						IsDefault:           true,
+						Default:             "user",
+					},
+					"spec": &model.FieldType{
+						FieldName: "spec",
+						Kind:      model.TypeJSON,
+					},
+					"createdAt": &model.FieldType{
+						FieldName:   "createdAt",
+						Kind:        model.TypeDateTime,
+						IsCreatedAt: true,
+						Args: &model.FieldArgs{
+							Precision: model.DefaultDateTimePrecision,
 						},
-						"amount": &model.FieldType{
-							FieldName:           "amount",
-							Kind:                model.TypeDecimal,
-							IsFieldTypeRequired: true,
-							Args: &model.FieldArgs{
-								Scale:     5,
-								Precision: 10,
+					},
+					"updatedAt": &model.FieldType{
+						FieldName:   "updatedAt",
+						Kind:        model.TypeDateTime,
+						IsUpdatedAt: true,
+						Args: &model.FieldArgs{
+							Precision: model.DefaultDateTimePrecision,
+						},
+					},
+					"first_name": &model.FieldType{
+						FieldName:           "first_name",
+						IsFieldTypeRequired: true,
+						Kind:                model.TypeID,
+						TypeIDSize:          model.DefaultCharacterSize,
+						IndexInfo: []*model.TableProperties{
+							{
+								IsIndex: true,
+								Group:   "user_name",
+								Order:   1,
+								Sort:    "asc",
+								Field:   "first_name",
 							},
 						},
-						"role": &model.FieldType{
-							FieldName:           "role",
-							IsFieldTypeRequired: true,
-							Kind:                model.TypeID,
-							TypeIDSize:          model.DefaultCharacterSize,
-							IsDefault:           true,
-							Default:             "user",
-						},
-						"spec": &model.FieldType{
-							FieldName: "spec",
-							Kind:      model.TypeJSON,
-						},
-						"createdAt": &model.FieldType{
-							FieldName:   "createdAt",
-							Kind:        model.TypeDateTime,
-							IsCreatedAt: true,
-							Args: &model.FieldArgs{
-								Precision: model.DefaultDateTimePrecision,
+					},
+					"name": &model.FieldType{
+						FieldName:           "name",
+						IsFieldTypeRequired: true,
+						Kind:                model.TypeID,
+						TypeIDSize:          model.DefaultCharacterSize,
+						IndexInfo: []*model.TableProperties{
+							{
+								IsUnique: true,
+								Group:    "user_name",
+								Order:    1,
+								Sort:     "asc",
+								Field:    "name",
 							},
 						},
-						"updatedAt": &model.FieldType{
-							FieldName:   "updatedAt",
-							Kind:        model.TypeDateTime,
-							IsUpdatedAt: true,
-							Args: &model.FieldArgs{
-								Precision: model.DefaultDateTimePrecision,
-							},
+					},
+					"customer_id": &model.FieldType{
+						FieldName:           "customer_id",
+						IsFieldTypeRequired: true,
+						Kind:                model.TypeID,
+						TypeIDSize:          model.DefaultCharacterSize,
+						IsForeign:           true,
+						JointTable: &model.TableProperties{
+							To:             "id",
+							Table:          "customer",
+							OnDelete:       "CASCADE",
+							ConstraintName: "c_tweet_customer_id",
 						},
-						"first_name": &model.FieldType{
-							FieldName:           "first_name",
-							IsFieldTypeRequired: true,
-							Kind:                model.TypeID,
-							TypeIDSize:          model.DefaultCharacterSize,
-							IndexInfo: []*model.TableProperties{
-								{
-									IsIndex: true,
-									Group:   "user_name",
-									Order:   1,
-									Sort:    "asc",
-									Field:   "first_name",
-								},
-							},
+					},
+					"order_dates": &model.FieldType{
+						FieldName: "order_dates",
+						IsList:    true,
+						Kind:      model.TypeDateTime,
+						IsLinked:  true,
+						Args: &model.FieldArgs{
+							Precision: model.DefaultDateTimePrecision,
 						},
-						"name": &model.FieldType{
-							FieldName:           "name",
-							IsFieldTypeRequired: true,
-							Kind:                model.TypeID,
-							TypeIDSize:          model.DefaultCharacterSize,
-							IndexInfo: []*model.TableProperties{
-								{
-									IsUnique: true,
-									Group:    "user_name",
-									Order:    1,
-									Sort:     "asc",
-									Field:    "name",
-								},
-							},
-						},
-						"customer_id": &model.FieldType{
-							FieldName:           "customer_id",
-							IsFieldTypeRequired: true,
-							Kind:                model.TypeID,
-							TypeIDSize:          model.DefaultCharacterSize,
-							IsForeign:           true,
-							JointTable: &model.TableProperties{
-								To:             "id",
-								Table:          "customer",
-								OnDelete:       "CASCADE",
-								ConstraintName: "c_tweet_customer_id",
-							},
-						},
-						"order_dates": &model.FieldType{
-							FieldName: "order_dates",
-							IsList:    true,
-							Kind:      model.TypeDateTime,
-							IsLinked:  true,
-							Args: &model.FieldArgs{
-								Precision: model.DefaultDateTimePrecision,
-							},
-							LinkedTable: &model.TableProperties{
-								Table:  "order",
-								From:   "id",
-								To:     "customer_id",
-								Field:  "order_date",
-								DBType: "mongo",
-							},
+						LinkedTable: &model.TableProperties{
+							Table:  "order",
+							From:   "id",
+							To:     "customer_id",
+							Field:  "order_date",
+							DBType: "mongo",
 						},
 					},
 				},
@@ -444,7 +440,7 @@ func TestSchema_SchemaValidate(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			result, err := Validate(context.Background(), testCase.dbAlias, testCase.dbType, testCase.coll, schemaDoc["mongo"][testCase.coll], testCase.Document)
+			result, err := Validate(context.Background(), testCase.dbAlias, testCase.dbType, testCase.coll, schemaDoc[testCase.coll], testCase.Document)
 			if (err != nil) != testCase.IsErrExpected {
 				t.Errorf("\n SchemaValidateOperation() error : expected error-%v, got-%v)", testCase.IsErrExpected, err)
 			}
@@ -717,7 +713,7 @@ func TestSchema_CheckType(t *testing.T) {
 		t.Errorf("Unable to genereate test data - (%v)", err)
 		return
 	}
-	r := schemaDoc["mongo"]["tweet"]
+	r := schemaDoc["tweet"]
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {

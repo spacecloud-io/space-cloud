@@ -10,23 +10,19 @@ import (
 var (
 	controllerLock sync.RWMutex
 
-	// Controller apps stores the controllers baked into the binary
-	controllerApps map[string]string // moduleName -> appName
-
 	controllerDefinitions map[string]Types // Key = moduleName
 )
 
 // AddControllerApp adds a controller for the specified module
-func AddControllerApp(module, appName string, types Types) error {
+func AddControllerApp(module string, types Types) error {
 	controllerLock.Lock()
 	defer controllerLock.Unlock()
 
 	// Check if controller is already present
-	if _, p := controllerApps[module]; !p {
+	if _, p := controllerDefinitions[module]; !p {
 		return fmt.Errorf("the controller for module '%s' is already present", module)
 	}
 
-	controllerApps[module] = appName
 	controllerDefinitions[module] = types
 	return nil
 }

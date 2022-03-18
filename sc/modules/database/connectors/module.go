@@ -43,7 +43,7 @@ type Module struct {
 	//getSecrets utils.GetSecrets
 
 	// Schema object
-	schemaDoc model.DBSchemas
+	schemaDoc model.CollectionSchemas
 
 	// Error state
 	errState error

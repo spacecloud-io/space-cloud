@@ -21,22 +21,6 @@ func loadTypeDefinition(module, typeName string) (*TypeDefinition, error) {
 	return typeDef, nil
 }
 
-func unsyncLoadController(module string, appLoader loadApp) (interface{}, error) {
-	// First check if a internal controller exists for the module
-	appName, p := controllerApps[module]
-	if p {
-		// Try loading the app
-		app, err := appLoader(appName)
-		if err != nil {
-			return nil, err
-		}
-
-		return app, nil
-	}
-
-	return nil, fmt.Errorf("no controller exists for provided module '%s'", module)
-}
-
 func loadHook(module string, typeDef *TypeDefinition, phase HookPhase, loadApp loadApp) (HookImpl, error) {
 	controllerLock.RLock()
 	defer controllerLock.RUnlock()
@@ -49,7 +33,7 @@ func loadHook(module string, typeDef *TypeDefinition, phase HookPhase, loadApp l
 		return nil, nil
 	}
 
-	ctrl, err := unsyncLoadController(module, loadApp)
+	ctrl, err := loadApp(module)
 	if err != nil {
 		return nil, err
 	}

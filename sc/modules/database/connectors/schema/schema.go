@@ -77,8 +77,8 @@ func Validate(ctx context.Context, dbAlias, dbType, col string, collectionFields
 }
 
 // Parser function parses the schema im module
-func Parser(dbSchemas config.DatabaseSchemas) (model.DBSchemas, error) {
-	schema := make(model.DBSchemas)
+func Parser(dbSchemas config.DatabaseSchemas) (model.CollectionSchemas, error) {
+	schema := make(model.CollectionSchemas)
 	for _, dbSchema := range dbSchemas {
 		// Skip if no schema is provided
 		if dbSchema.Schema == "" {
@@ -104,12 +104,8 @@ func Parser(dbSchemas config.DatabaseSchemas) (model.DBSchemas, error) {
 		if len(value) <= 1 { // schema might have an id by default
 			continue
 		}
-		_, ok := schema[dbSchema.DbAlias]
-		if !ok {
-			schema[dbSchema.DbAlias] = model.CollectionSchemas{dbSchema.Table: value}
-		} else {
-			schema[dbSchema.DbAlias][dbSchema.Table] = value
-		}
+
+		schema[dbSchema.Table] = value
 	}
 	return schema, nil
 }

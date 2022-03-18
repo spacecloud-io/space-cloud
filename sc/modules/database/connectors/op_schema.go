@@ -22,7 +22,7 @@ func (m *Module) InspectCollectionSchema(ctx context.Context, col string) (model
 	if err != nil {
 		return nil, err
 	}
-	return schema.ParseCollectionDescription(m.dbConfig.Type, col, fields, indexes, m.schemaDoc[m.dbConfig.DbAlias])
+	return schema.ParseCollectionDescription(m.dbConfig.Type, col, fields, indexes, m.schemaDoc)
 }
 
 // ApplyCollectionSchema creates or alters tables of a sql database.
