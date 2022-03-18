@@ -33,14 +33,14 @@ func (h *ConfigApplyHandler) Provision(ctx caddy.Context) error {
 
 func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	// Get meta information
-	_, group, module, typeName, _, err := extractPathParams(r.URL.Path)
+	_, module, typeName, _, err := extractPathParams(r.URL.Path)
 	if err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
 	}
 
 	// Get the type definition
-	typeDef, err := loadTypeDefinition(group, module, typeName)
+	typeDef, err := loadTypeDefinition(module, typeName)
 	if err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
@@ -52,9 +52,8 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
 	}
-	configObject.Group = group
-	configObject.Module = module
-	configObject.Type = typeName
+	configObject.Meta.Module = module
+	configObject.Meta.Type = typeName
 
 	// Verify config object
 	if schemaErrors, err := typeDef.VerifyObject(configObject); err != nil {
@@ -63,7 +62,7 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 	}
 
 	// Invoke pre-apply hooks if any
-	hook, err := loadHook(group, module, typeDef, PhasePreApply, h.appLoader)
+	hook, err := loadHook(module, typeDef, PhasePreApply, h.appLoader)
 	if err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil

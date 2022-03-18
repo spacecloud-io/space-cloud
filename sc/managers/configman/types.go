@@ -15,14 +15,18 @@ type (
 )
 
 type (
-	// ResourceObject describes the configuration for a single resource
-	ResourceObject struct {
-		Group   string            `json:"group" yaml:"group"`
+	// ResourceMeta contains the meta information about a resource
+	ResourceMeta struct {
 		Module  string            `json:"module" yaml:"module"`
 		Type    string            `json:"type" yaml:"type"`
 		Name    string            `json:"name" yaml:"name"`
 		Parents map[string]string `json:"parent" yaml:"parent"`
-		Spec    interface{}       `json:"spec" yaml:"spec"`
+	}
+
+	// ResourceObject describes the configuration for a single resource
+	ResourceObject struct {
+		Meta ResourceMeta `json:"meta" yaml:"meta"`
+		Spec interface{}  `json:"spec" yaml:"spec"`
 	}
 
 	// Types describes all the types which belong to a particular module
@@ -47,21 +51,18 @@ const (
 // VerifyObject verifies if the config object is valid
 func (typeDef *TypeDefinition) VerifyObject(configObject *ResourceObject) ([]string, error) {
 	// Check if all required fields are present
-	if configObject.Name == "" {
+	if configObject.Meta.Name == "" {
 		return nil, errors.New("resource name is missing")
 	}
-	if configObject.Group == "" {
-		return nil, errors.New("resource group is missing")
-	}
-	if configObject.Module == "" {
+	if configObject.Meta.Module == "" {
 		return nil, errors.New("resource module is missing")
 	}
-	if configObject.Type == "" {
+	if configObject.Meta.Type == "" {
 		return nil, errors.New("resource type is missing")
 	}
 
 	// Check if all required parents are present in object
-	if err := verifyConfigParents(typeDef, configObject.Parents); err != nil {
+	if err := verifyConfigParents(typeDef, configObject.Meta.Parents); err != nil {
 		return nil, err
 	}
 

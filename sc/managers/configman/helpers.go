@@ -8,27 +8,26 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
-func extractPathParams(urlPath string) (op, group, module, typeName, resourceName string, err error) {
+func extractPathParams(urlPath string) (op, module, typeName, resourceName string, err error) {
 	// Set the default operation to single
 	op = "single"
 
 	// Check if url has proper length
 	arr := strings.Split(urlPath[1:], "/")
-	if len(arr) > 6 || len(arr) < 5 {
+	if len(arr) > 5 || len(arr) < 4 {
 		err = fmt.Errorf("invalid config url provided - %s", urlPath)
 		return
 	}
 
 	// Check the operation type
-	if len(arr) == 6 {
+	if len(arr) == 5 {
 		op = "list"
 	}
 
 	// Set the other parameters
-	group = arr[2]
-	module = arr[3]
-	typeName = arr[4]
-	resourceName = arr[5]
+	module = arr[2]
+	typeName = arr[3]
+	resourceName = arr[4]
 	return
 }
 

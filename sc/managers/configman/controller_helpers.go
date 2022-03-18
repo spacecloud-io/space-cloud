@@ -4,11 +4,11 @@ import (
 	"fmt"
 )
 
-func loadTypeDefinition(group, module, typeName string) (*TypeDefinition, error) {
+func loadTypeDefinition(module, typeName string) (*TypeDefinition, error) {
 	controllerLock.RLock()
 	defer controllerLock.RUnlock()
 
-	defs, p := controllerDefinitions[moduleKey(group, module)]
+	defs, p := controllerDefinitions[module]
 	if !p {
 		return nil, fmt.Errorf("provided module '%s' does not exist", module)
 	}
@@ -21,10 +21,9 @@ func loadTypeDefinition(group, module, typeName string) (*TypeDefinition, error)
 	return typeDef, nil
 }
 
-func unsyncLoadController(group, module string, appLoader loadApp) (interface{}, error) {
+func unsyncLoadController(module string, appLoader loadApp) (interface{}, error) {
 	// First check if a internal controller exists for the module
-	key := moduleKey(group, module)
-	appName, p := controllerApps[key]
+	appName, p := controllerApps[module]
 	if p {
 		// Try loading the app
 		app, err := appLoader(appName)
@@ -35,14 +34,10 @@ func unsyncLoadController(group, module string, appLoader loadApp) (interface{},
 		return app, nil
 	}
 
-	return nil, fmt.Errorf("no controller exists for provided module '%s'", key)
+	return nil, fmt.Errorf("no controller exists for provided module '%s'", module)
 }
 
-func moduleKey(group, module string) string {
-	return fmt.Sprintf("%s/%s", group, module)
-}
-
-func loadHook(group, module string, typeDef *TypeDefinition, phase HookPhase, loadApp loadApp) (HookImpl, error) {
+func loadHook(module string, typeDef *TypeDefinition, phase HookPhase, loadApp loadApp) (HookImpl, error) {
 	controllerLock.RLock()
 	defer controllerLock.RUnlock()
 
@@ -54,14 +49,14 @@ func loadHook(group, module string, typeDef *TypeDefinition, phase HookPhase, lo
 		return nil, nil
 	}
 
-	ctrl, err := unsyncLoadController(group, module, loadApp)
+	ctrl, err := unsyncLoadController(module, loadApp)
 	if err != nil {
 		return nil, err
 	}
 
 	hookImpl, ok := ctrl.(HookImpl)
 	if !ok {
-		return nil, fmt.Errorf("controller '%s' doesn't implement hook functionality", moduleKey(group, module))
+		return nil, fmt.Errorf("controller '%s' doesn't implement hook functionality", module)
 	}
 
 	return hookImpl, nil
