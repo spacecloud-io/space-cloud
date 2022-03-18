@@ -6,11 +6,13 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"go.uber.org/zap"
 )
 
 // ConfigDeleteHandler is a module to create config Delete handlers
 type ConfigDeleteHandler struct {
-	Operation string `json:"operation,omitempty"`
+	logger    *zap.Logger
+	appLoader loadApp
 }
 
 // CaddyModule returns the Caddy module information.
@@ -21,12 +23,19 @@ func (ConfigDeleteHandler) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
-func (rb ConfigDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+func (h *ConfigDeleteHandler) Provision(ctx caddy.Context) error {
+	h.logger = ctx.Logger(h)
+	h.appLoader = ctx.App
+	return nil
+}
 
-	_, _ = w.Write([]byte(fmt.Sprintf("Method: %s, Path: %s,  Operation: %s \n", r.Method, r.URL, rb.Operation)))
+func (h *ConfigDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+
+	_, _ = w.Write([]byte(fmt.Sprintf("Method: %s, Path: %s", r.Method, r.URL)))
 
 	return nil
 }
 
 // Interface guard
+var _ caddy.Provisioner = (*ConfigDeleteHandler)(nil)
 var _ caddyhttp.MiddlewareHandler = (*ConfigDeleteHandler)(nil)

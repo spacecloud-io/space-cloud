@@ -72,7 +72,7 @@ func New() (*Connector, error) {
 // getSCConfig gets sc config from config map using shared informers
 func (c *Connector) getSCConfig() error {
 	// Start routine to observe space cloud project level resources
-	if err := watchResources(c.kube, c.clusterID, c.stopper, func(eventType, resourceID string, resourceType config.Resource, resource interface{}) {
+	return watchResources(c.kube, c.clusterID, c.stopper, func(eventType, resourceID string, resourceType config.Resource, resource interface{}) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancel()
 
@@ -90,11 +90,7 @@ func (c *Connector) getSCConfig() error {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Unable to update resources", err, nil)
 			return
 		}
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 // Destruct destroys the kube store module

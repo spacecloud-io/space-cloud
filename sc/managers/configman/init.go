@@ -6,7 +6,7 @@ func init() {
 	// config modules
 	caddy.RegisterModule(ConfigGetHandler{})
 	caddy.RegisterModule(ConfigDeleteHandler{})
-	caddy.RegisterModule(ConfigPostHandler{})
+	caddy.RegisterModule(ConfigApplyHandler{})
 
 	// operation modules
 	caddy.RegisterModule(OperationGetHandler{})

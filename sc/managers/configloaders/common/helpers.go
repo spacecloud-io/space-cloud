@@ -22,11 +22,10 @@ func getByteStringArray(val string) []byte {
 	return data
 }
 
-func getHandler(handlerName, operation string) []byte {
+func getHandler(handlerName string) []byte {
 	handler := make(map[string]string)
 
 	handler["handler"] = fmt.Sprintf("sc_%s_handler", handlerName)
-	handler["operation"] = operation
 
 	data, _ := json.Marshal(handler)
 	return data
