@@ -6,6 +6,7 @@ require (
 	github.com/caddyserver/caddy/v2 v2.4.6
 	github.com/denisenkom/go-mssqldb v0.12.0
 	github.com/doug-martin/goqu/v8 v8.6.0
+	github.com/getkin/kin-openapi v0.92.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/go-test/deep v1.0.8
@@ -19,6 +20,7 @@ require (
 	github.com/spaceuptech/helpers v0.2.2
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
+	github.com/xeipuuv/gojsonschema v1.2.0
 	go.mongodb.org/mongo-driver v1.8.3
 	go.uber.org/zap v1.20.0
 	k8s.io/api v0.23.4
@@ -52,6 +54,8 @@ require (
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
+	github.com/go-openapi/jsonpointer v0.19.5 // indirect
+	github.com/go-openapi/swag v0.19.5 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
@@ -75,6 +79,7 @@ require (
 	github.com/lucas-clemente/quic-go v0.23.0 // indirect
 	github.com/lunixbochs/vtclean v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
+	github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e // indirect
 	github.com/manifoldco/promptui v0.8.0 // indirect
 	github.com/marten-seemann/qpack v0.2.1 // indirect
 	github.com/marten-seemann/qtls-go1-16 v0.1.4 // indirect
@@ -119,7 +124,6 @@ require (
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	github.com/xeipuuv/gojsonschema v1.2.0
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	go.step.sm/cli-utils v0.6.0 // indirect

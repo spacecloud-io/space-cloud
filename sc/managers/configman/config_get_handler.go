@@ -23,12 +23,14 @@ func (ConfigGetHandler) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision runs as a prehook to the handler operation
 func (h *ConfigGetHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 	h.appLoader = ctx.App
 	return nil
 }
 
+// ServeHTTP handles the http request
 func (h *ConfigGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	_, _ = w.Write([]byte(fmt.Sprintf("Method: %s, Path: %s", r.Method, r.URL)))
 	return nil

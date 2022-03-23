@@ -1,9 +1,10 @@
 package common
 
 import (
-	"encoding/json"
+	"net/http"
 
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"github.com/spacecloud-io/space-cloud/utils"
 )
 
 func getRootRoutes() caddyhttp.RouteList {
@@ -11,35 +12,42 @@ func getRootRoutes() caddyhttp.RouteList {
 		// Config routes
 		caddyhttp.Route{
 			Group:          "config",
-			MatcherSetsRaw: getMatcherSet("GET", "/v1/config/*"),
-			HandlersRaw:    []json.RawMessage{getHandler("config_get")},
+			MatcherSetsRaw: utils.GetCaddyMatcherSet("/v1/config/*", []string{http.MethodGet}),
+			HandlersRaw:    utils.GetCaddyHandler("config_get", nil),
 		},
 		caddyhttp.Route{
 			Group:          "config",
-			MatcherSetsRaw: getMatcherSet("DELETE", "/v1/config/*"),
-			HandlersRaw:    []json.RawMessage{getHandler("config_delete")},
+			MatcherSetsRaw: utils.GetCaddyMatcherSet("/v1/config/*", []string{http.MethodDelete}),
+			HandlersRaw:    utils.GetCaddyHandler("config_delete", nil),
 		},
 		caddyhttp.Route{
 			Group:          "config",
-			MatcherSetsRaw: getMatcherSet("POST", "/v1/config/*"),
-			HandlersRaw:    []json.RawMessage{getHandler("config_apply")},
+			MatcherSetsRaw: utils.GetCaddyMatcherSet("/v1/config/*", []string{http.MethodPost}),
+			HandlersRaw:    utils.GetCaddyHandler("config_apply", nil),
 		},
 
 		// Operation routes
 		caddyhttp.Route{
 			Group:          "operation",
-			MatcherSetsRaw: getMatcherSet("GET", "/v1/operation/*"),
-			HandlersRaw:    []json.RawMessage{getHandler("operation_get")},
+			MatcherSetsRaw: utils.GetCaddyMatcherSet("/v1/operation/*", []string{http.MethodGet}),
+			HandlersRaw:    utils.GetCaddyHandler("operation_get", nil),
 		},
 		caddyhttp.Route{
 			Group:          "operation",
-			MatcherSetsRaw: getMatcherSet("DELETE", "/v1/operation/*"),
-			HandlersRaw:    []json.RawMessage{getHandler("operation_delete")},
+			MatcherSetsRaw: utils.GetCaddyMatcherSet("/v1/operation/*", []string{http.MethodDelete}),
+			HandlersRaw:    utils.GetCaddyHandler("operation_delete", nil),
 		},
 		caddyhttp.Route{
 			Group:          "operation",
-			MatcherSetsRaw: getMatcherSet("POST", "/v1/operation/*"),
-			HandlersRaw:    []json.RawMessage{getHandler("operation_apply")},
+			MatcherSetsRaw: utils.GetCaddyMatcherSet("/v1/operation/*", []string{http.MethodPost}),
+			HandlersRaw:    utils.GetCaddyHandler("operation_apply", nil),
+		},
+
+		// API route handler
+		caddyhttp.Route{
+			Group:          "api",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet("/*", nil),
+			HandlersRaw:    utils.GetCaddyHandler("root_api", nil),
 		},
 	}
 }

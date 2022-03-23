@@ -21,6 +21,7 @@ func (OperationGetHandler) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// ServeHTTP handles the http request
 func (rb OperationGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 
 	_, _ = w.Write([]byte(fmt.Sprintf("Method: %s, Path: %s,  Operation: %s \n", r.Method, r.URL, rb.Operation)))

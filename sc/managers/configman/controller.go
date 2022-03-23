@@ -6,7 +6,6 @@ import (
 )
 
 // The necesary global objects to hold all the controllers
-
 var (
 	controllerLock sync.RWMutex
 

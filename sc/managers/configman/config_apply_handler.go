@@ -24,6 +24,7 @@ func (ConfigApplyHandler) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+// Provision runs as a prehook to the handler operation
 func (h *ConfigApplyHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 	h.appLoader = ctx.App
@@ -31,6 +32,7 @@ func (h *ConfigApplyHandler) Provision(ctx caddy.Context) error {
 	return nil
 }
 
+// ServeHTTP handles the http request
 func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	// Get meta information
 	_, module, typeName, _, err := extractPathParams(r.URL.Path)
