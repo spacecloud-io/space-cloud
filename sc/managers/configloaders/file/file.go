@@ -53,7 +53,7 @@ func (l *Loader) LoadConfig(ctx caddy.Context) ([]byte, error) {
 		return nil, err
 	}
 
-	return json.Marshal(config)
+	return json.MarshalIndent(config, "", "  ")
 }
 
 // Interface guards

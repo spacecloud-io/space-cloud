@@ -37,11 +37,6 @@ func (App) CaddyModule() caddy.ModuleInfo {
 func (l *App) Provision(ctx caddy.Context) error {
 	l.logger = ctx.Logger(l)
 
-	return nil
-}
-
-// Start begins the database app operations
-func (l *App) Start() error {
 	// Create an empty connectors map
 	if l.connectors == nil {
 		l.connectors = make(map[string]*connectors.Module)
@@ -80,11 +75,21 @@ func (l *App) Start() error {
 		// Store the connector in the map for future reference
 		l.connectors[k] = module
 	}
+
+	return nil
+}
+
+// Start begins the database app operations
+func (l *App) Start() error {
 	return nil
 }
 
 // Stop ends the database app operations
 func (l *App) Stop() error {
+	return nil
+}
+
+func (l *App) Cleanup() error {
 	// Iterate over all database configs
 	for k, dbConfig := range l.DBConfigs {
 		// Split the config key
@@ -107,5 +112,6 @@ func (l *App) Stop() error {
 var (
 	_ configman.HookImpl = (*App)(nil)
 	_ caddy.Provisioner  = (*App)(nil)
+	_ caddy.CleanerUpper = (*App)(nil)
 	_ caddy.App          = (*App)(nil)
 )

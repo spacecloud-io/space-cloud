@@ -16,6 +16,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lib/pq v1.10.4
 	github.com/mitchellh/mapstructure v1.4.3
+	github.com/rs/cors v1.8.2
 	github.com/segmentio/ksuid v1.0.3
 	github.com/spaceuptech/helpers v0.2.2
 	github.com/spf13/cobra v1.3.0

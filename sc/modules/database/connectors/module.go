@@ -186,5 +186,8 @@ func (m *Module) Destruct() error {
 	m.closeBatchOperation()
 
 	// Close the connector
-	return m.connector.Close()
+	if m.connector != nil {
+		return m.connector.Close()
+	}
+	return nil
 }

@@ -18,8 +18,8 @@ type APIHandler struct {
 	Indexes map[string]string `json:"indexes"`
 
 	// For internal use
-	logger  *zap.Logger
-	handler http.HandlerFunc
+	logger      *zap.Logger
+	handlerFunc HandlerFunc
 }
 
 // CaddyModule returns the Caddy module information.
@@ -44,17 +44,23 @@ func (h *APIHandler) Provision(ctx caddy.Context) error {
 
 	// Store the app for future use. We don't need to check success of type assertion since its already done
 	// in the root handler
-	h.handler, err = appTemp.(App).GetHandler(h.Op)
+	handler, err := appTemp.(App).GetHandler(h.Op)
 	if err != nil {
-		h.logger.Error("Unable to load handler from app to serve SpaceCloud APIs", zap.String("app", h.App), zap.String("op", h.Op))
+		h.logger.Error("Unable to load handler for specified operation", zap.String("app", h.App), zap.String("op", h.Op), zap.Error(err))
 		return err
 	}
+
+	h.handlerFunc = handler
 	return nil
 }
 
 // ServeHTTP handles the http request
 func (h *APIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	h.handler(w, r)
+	// Get the path params
+	pathParams := getPathParams(h.Path, r.URL.Path, h.Indexes)
+
+	// Call the handler
+	h.handlerFunc(w, r, pathParams)
 	return nil
 }
 

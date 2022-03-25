@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/caddyserver/caddy/v2"
@@ -60,8 +61,13 @@ func (h *RootAPIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next 
 	// Check if request was to send the OpenAPI document
 	// TODO: Make this endoint optional
 	if r.Method == http.MethodGet && r.URL.Path == "/v1/openapi.json" {
-		_ = helpers.Response.SendResponse(r.Context(), w, http.StatusOK, h.openapiDoc)
-		return nil
+		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		helpers.Logger.LogInfo(helpers.GetRequestID(r.Context()), "Response", map[string]interface{}{"statusCode": http.StatusOK})
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(h.openapiDoc)
 	}
 
 	// Invoke the handler

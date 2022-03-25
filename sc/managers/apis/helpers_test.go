@@ -130,3 +130,51 @@ func Test_sanitizeUrl(t *testing.T) {
 		})
 	}
 }
+
+func Test_getPathParams(t *testing.T) {
+	type args struct {
+		ogURL       string
+		receivedURL string
+		indexes     map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]string
+	}{
+		{
+			name: "no path params",
+			args: args{
+				ogURL:       "/a/b/c",
+				receivedURL: "/a/b/c",
+				indexes:     map[string]string{},
+			},
+			want: map[string]string{},
+		},
+		{
+			name: "single path params",
+			args: args{
+				ogURL:       "/a/*/c",
+				receivedURL: "/a/b/c",
+				indexes:     map[string]string{"0": "project"},
+			},
+			want: map[string]string{"project": "b"},
+		},
+		{
+			name: "multiple path params",
+			args: args{
+				ogURL:       "/a/*/c/*",
+				receivedURL: "/a/b/c/d",
+				indexes:     map[string]string{"0": "project", "1": "env"},
+			},
+			want: map[string]string{"project": "b", "env": "d"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getPathParams(tt.args.ogURL, tt.args.receivedURL, tt.args.indexes); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getPathParams() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

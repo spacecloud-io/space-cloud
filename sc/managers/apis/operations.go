@@ -46,7 +46,7 @@ func generateOpenAPIDocAndAPIs(ctx caddy.Context) (*openapi3.T, []*API, error) {
 
 		// Merge the paths returned by the app
 		for _, api := range app.GetRoutes() {
-			paths[api.Path] = api.PathDef
+			mergePaths(paths, api.Path, api.PathDef)
 
 			api.app = a.name
 			allAPIs = append(allAPIs, api)

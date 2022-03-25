@@ -12,5 +12,4 @@ func init() {
 	caddy.RegisterModule(OperationGetHandler{})
 	caddy.RegisterModule(OperationDeleteHandler{})
 	caddy.RegisterModule(OperationPostHandler{})
-
 }

@@ -40,12 +40,14 @@ func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
 		return nil, fmt.Errorf("store-type (%s) is not suppoerted", storeType)
 	}
 
+	b := false
 	return &caddy.Config{
 		Admin: &caddy.AdminConfig{
 			Disabled: true,
 			Config: &caddy.ConfigSettings{
 				LoadInterval: loadingInterval,
 				LoadRaw:      loader,
+				Persist:      &b,
 			},
 		},
 		Logging: &caddy.Logging{

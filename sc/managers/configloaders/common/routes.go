@@ -9,6 +9,12 @@ import (
 
 func getRootRoutes() caddyhttp.RouteList {
 	return caddyhttp.RouteList{
+		// Routes for CORS
+		caddyhttp.Route{
+			Group:       "cors",
+			HandlersRaw: utils.GetCaddyHandler("cors", nil),
+		},
+
 		// Config routes
 		caddyhttp.Route{
 			Group:          "config",

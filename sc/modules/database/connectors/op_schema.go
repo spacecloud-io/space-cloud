@@ -46,3 +46,11 @@ func (m *Module) ApplyCollectionSchema(ctx context.Context, tableName string, ne
 
 	return m.RawBatch(ctx, queries)
 }
+
+// GetParsedSchemas returns the parsed schema for this database
+func (m *Module) GetParsedSchemas() model.CollectionSchemas {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	return m.schemaDoc
+}

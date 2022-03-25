@@ -16,7 +16,7 @@ type OperationPostHandler struct {
 // CaddyModule returns the Caddy module information.
 func (OperationPostHandler) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.sc_operation_post_handler",
+		ID:  "http.handlers.sc_operation_apply_handler",
 		New: func() caddy.Module { return new(OperationPostHandler) },
 	}
 }

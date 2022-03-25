@@ -6,8 +6,10 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/spacecloud-io/space-cloud/config"
 	"github.com/spacecloud-io/space-cloud/managers/configman"
+	"github.com/spacecloud-io/space-cloud/modules/database/connectors"
 	"github.com/spacecloud-io/space-cloud/modules/database/connectors/schema"
 )
 
@@ -67,4 +69,13 @@ func processConfig(obj *configman.ResourceObject) error {
 	m["dbAlias"] = obj.Meta.Name
 
 	return nil
+}
+
+func (l *App) getConnector(project, db string) (*connectors.Module, error) {
+	conn, p := l.connectors[CombineDBConfigKey(project, db)]
+	if !p {
+		return nil, fmt.Errorf("database '%s' does not exist in project '%s'", db, project)
+	}
+
+	return conn, nil
 }
