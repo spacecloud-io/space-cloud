@@ -29,15 +29,21 @@ func (a *App) getTableFields(project, db string, schemas model.CollectionSchemas
 		tableFields := make(graphql.Fields, len(tableSchema))
 
 		for fieldName, fieldSchema := range tableSchema {
-			tableFields[fieldName] = a.getArbitaryField(fieldSchema)
+			tableFields[fieldName] = &graphql.Field{
+				Type:    scToGraphQLType(fieldSchema.Kind),
+				Resolve: graphql.DefaultResolveFn,
+			}
 		}
 
-		fields[fmt.Sprintf("%s_many%s", db, strings.Title(tableName))] = &graphql.Field{
+		fields[fmt.Sprintf("%s_findAll%s", db, strings.Title(tableName))] = &graphql.Field{
 			Type: graphql.NewList(graphql.NewObject(graphql.ObjectConfig{
 				Name:        fmt.Sprintf("%s_%s", strings.Title(db), strings.Title(tableName)),
 				Description: fmt.Sprintf("Get multiple records from %s", tableName),
 				Fields:      tableFields,
 			})),
+			Args: graphql.FieldConfigArgument{
+				"where": getDBWhereClause(db, tableName, tableSchema),
+			},
 			Resolve: a.dbReadResolveFn(project, db, tableName),
 		}
 
@@ -50,34 +56,21 @@ func (a *App) getTableFields(project, db string, schemas model.CollectionSchemas
 	return fields
 }
 
-func (a *App) getArbitaryField(fieldType *model.FieldType) *graphql.Field {
-	switch fieldType.Kind {
+func scToGraphQLType(kind string) graphql.Output {
+	switch kind {
 	case model.TypeDateTimeWithZone, model.TypeDateTime, model.TypeDate, model.TypeTime, model.TypeUUID, model.TypeChar, model.TypeVarChar, model.TypeString, model.TypeID, model.TypeEnum:
-		return &graphql.Field{
-			Type:    graphql.String,
-			Resolve: graphql.DefaultResolveFn,
-		}
+		return graphql.String
 	case model.TypeInteger, model.TypeSmallInteger, model.TypeBigInteger:
-		return &graphql.Field{
-			Type:    graphql.Int,
-			Resolve: graphql.DefaultResolveFn,
-		}
+		return graphql.Int
 	case model.TypeDecimal, model.TypeFloat:
-		return &graphql.Field{
-			Type:    graphql.Float,
-			Resolve: graphql.DefaultResolveFn,
-		}
+		return graphql.Float
 	case model.TypeBoolean:
-		return &graphql.Field{
-			Type:    graphql.Boolean,
-			Resolve: graphql.DefaultResolveFn,
-		}
+		return graphql.Boolean
+
 	// TODO: Add a case for JSON types
 	default:
 		// TODO: Return an `any` scaler type
-		return &graphql.Field{
-			Type:    graphql.String,
-			Resolve: graphql.DefaultResolveFn,
-		}
+		return graphql.String
+
 	}
 }
