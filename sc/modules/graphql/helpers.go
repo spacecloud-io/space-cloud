@@ -6,6 +6,7 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/spacecloud-io/space-cloud/model"
+	"github.com/spacecloud-io/space-cloud/utils"
 )
 
 func (a *App) getQueryType(project string) *graphql.Object {
@@ -35,16 +36,24 @@ func (a *App) getTableFields(project, db string, schemas model.CollectionSchemas
 			}
 		}
 
+		// Create a record object for the table
+		graphqlObject := graphql.NewObject(graphql.ObjectConfig{
+			Name:        fmt.Sprintf("%s_%s", strings.Title(db), strings.Title(tableName)),
+			Description: fmt.Sprintf("Record object from %s", tableName),
+			Fields:      tableFields,
+		})
+		graphqlWhereClause := getDBWhereClause(db, tableName, tableSchema)
+
+		// Create the queries that can be performed to read from table
 		fields[fmt.Sprintf("%s_findAll%s", db, strings.Title(tableName))] = &graphql.Field{
-			Type: graphql.NewList(graphql.NewObject(graphql.ObjectConfig{
-				Name:        fmt.Sprintf("%s_%s", strings.Title(db), strings.Title(tableName)),
-				Description: fmt.Sprintf("Get multiple records from %s", tableName),
-				Fields:      tableFields,
-			})),
-			Args: graphql.FieldConfigArgument{
-				"where": getDBWhereClause(db, tableName, tableSchema),
-			},
-			Resolve: a.dbReadResolveFn(project, db, tableName),
+			Type:    graphql.NewList(graphqlObject),
+			Args:    graphql.FieldConfigArgument{"where": graphqlWhereClause},
+			Resolve: a.dbReadResolveFn(project, db, tableName, utils.All),
+		}
+		fields[fmt.Sprintf("%s_findOne%s", db, strings.Title(tableName))] = &graphql.Field{
+			Type:    graphqlObject,
+			Args:    graphql.FieldConfigArgument{"where": graphqlWhereClause},
+			Resolve: a.dbReadResolveFn(project, db, tableName, utils.One),
 		}
 
 		// tableFields["_join"] = &graphql.Field{
