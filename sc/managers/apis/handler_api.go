@@ -10,9 +10,8 @@ import (
 
 // APIHandler is responsible to call the appropriate module to process an incoming API request
 type APIHandler struct {
-	App    string                 `json:"app"`
-	Op     string                 `json:"op"`
-	Params map[string]interface{} `json:"params"`
+	App string `json:"app"`
+	Op  string `json:"op"`
 
 	Path    string            `json:"path"`
 	Indexes map[string]string `json:"indexes"`

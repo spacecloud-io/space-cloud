@@ -33,12 +33,12 @@ func extractPathParams(urlPath string) (op, module, typeName, resourceName strin
 
 func verifySpecSchema(typeDef *TypeDefinition, spec interface{}) ([]string, error) {
 	// Skip verification if no json schema is supplied
-	if typeDef.JSONSchema == nil {
+	if typeDef.Schema == nil {
 		return nil, nil
 	}
 
 	// Perform JSON schema validation
-	schemaLoader := gojsonschema.NewGoLoader(typeDef.JSONSchema)
+	schemaLoader := gojsonschema.NewGoLoader(typeDef.Schema)
 	documentLoader := gojsonschema.NewGoLoader(spec)
 	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 	if err != nil {

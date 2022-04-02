@@ -34,7 +34,7 @@ type (
 
 	// TypeDefinition describes the definition of a particular resource type
 	TypeDefinition struct {
-		JSONSchema      interface{} `json:"jsonSchema" yaml:"jsonSchema"`
+		Schema          interface{} `json:"schema" yaml:"schema"`
 		Hooks           Hooks       `json:"hooks" yaml:"hooks"`
 		RequiredParents []string    `json:"requiredParents" yaml:"requiredParents"`
 	}

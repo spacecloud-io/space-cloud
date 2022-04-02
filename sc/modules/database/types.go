@@ -15,7 +15,7 @@ type Config struct {
 func getTypeDefinitions() configman.Types {
 	return configman.Types{
 		"config": &configman.TypeDefinition{
-			JSONSchema: m{
+			Schema: m{
 				"type": "object",
 				"properties": m{
 					"dbAlias": m{
@@ -70,7 +70,7 @@ func getTypeDefinitions() configman.Types {
 			RequiredParents: []string{"project"},
 		},
 		"schema": &configman.TypeDefinition{
-			JSONSchema: m{
+			Schema: m{
 				"type": "object",
 				"properties": m{
 					"col": m{
@@ -89,7 +89,7 @@ func getTypeDefinitions() configman.Types {
 			RequiredParents: []string{"project", "db"},
 		},
 		"prepared-query": &configman.TypeDefinition{
-			JSONSchema: m{
+			Schema: m{
 				"type": "object",
 				"properties": m{
 					"id": m{

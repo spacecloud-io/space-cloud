@@ -48,17 +48,17 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 		return nil
 	}
 
-	// Extract the configObject object
-	configObject := new(ResourceObject)
-	if err := json.NewDecoder(r.Body).Decode(configObject); err != nil {
+	// Extract the resourceObject object
+	resourceObject := new(ResourceObject)
+	if err := json.NewDecoder(r.Body).Decode(resourceObject); err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
 	}
-	configObject.Meta.Module = module
-	configObject.Meta.Type = typeName
+	resourceObject.Meta.Module = module
+	resourceObject.Meta.Type = typeName
 
 	// Verify config object
-	if schemaErrors, err := typeDef.VerifyObject(configObject); err != nil {
+	if schemaErrors, err := typeDef.VerifyObject(resourceObject); err != nil {
 		_ = helpers.Response.SendResponse(r.Context(), w, http.StatusBadRequest, prepareErrorResponseBody(err, schemaErrors))
 		return nil
 	}
@@ -72,7 +72,7 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 
 	// Invoke hook if exists
 	if hook != nil {
-		if err := hook.Hook(r.Context(), configObject); err != nil {
+		if err := hook.Hook(r.Context(), resourceObject); err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return nil
 		}
