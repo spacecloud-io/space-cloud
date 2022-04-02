@@ -53,11 +53,6 @@ func Init(dbType model.DBType, connection string, dbName string, driverConf conf
 		return nil, fmt.Errorf("%s db not supported", dbType)
 	}
 
-	// Attempt connection with the database
-	if err := s.connect(); err != nil {
-		return nil, err
-	}
-
 	// Start a background routine to health check the database
 	closer := make(chan struct{}, 1)
 	s.connRetryCloserChan = closer
@@ -81,7 +76,9 @@ func Init(dbType model.DBType, connection string, dbName string, driverConf conf
 		}
 	}()
 
-	return s, nil
+	// Attempt connection with the database
+	err := s.connect()
+	return s, err
 }
 
 // IsSame checks if we've got the same connection string

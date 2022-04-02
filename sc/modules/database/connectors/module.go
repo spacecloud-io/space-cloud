@@ -85,7 +85,6 @@ func New(logger *zap.Logger, projectID string, dbConfig *config.DatabaseConfig, 
 	if err != nil {
 		m.logger.Error("Unable to intialise database connector", zap.Error(err))
 		m.errState = err
-		return m, nil
 	}
 	m.connector = c
 
@@ -108,9 +107,11 @@ func (m *Module) UpdateConfig(logger *zap.Logger, dbConfig *config.DatabaseConfi
 	}
 
 	// Update the connectors config
-	m.connector.SetQueryFetchLimit(dbConfig.Limit)
 	m.dbConfig.BatchTime = dbConfig.BatchTime
 	m.dbConfig.BatchRecords = dbConfig.BatchRecords
+	if m.connector != nil {
+		m.connector.SetQueryFetchLimit(dbConfig.Limit)
+	}
 
 	// Restart the batching operations if the configured tables have changed
 	if !areSchemasSimilar(m.dbSchemas, dbSchemas) {
@@ -146,7 +147,7 @@ func (m *Module) initConnector(dbType model.DBType, connection, dbName string, d
 		// Attempt to initialse the sql connector
 		c, err := sql.Init(dbType, connection, dbName, driverConf)
 		if err != nil {
-			return nil, err
+			return c, err
 		}
 
 		// Create a database for the user is it doesn't already exists
@@ -154,7 +155,7 @@ func (m *Module) initConnector(dbType model.DBType, connection, dbName string, d
 		defer cancel()
 		if err := c.CreateDatabaseIfNotExist(ctx, dbName); err != nil {
 			_ = c.Close()
-			return nil, err
+			return c, err
 		}
 
 		// For mysql database, create a new dbname specific connection string

@@ -15,6 +15,13 @@ func getRootRoutes() caddyhttp.RouteList {
 			HandlersRaw: utils.GetCaddyHandler("cors", nil),
 		},
 
+		// Open API for the config and operation endpoints
+		caddyhttp.Route{
+			Group:          "config",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet("/v1/config/openapi.json", []string{http.MethodGet}),
+			HandlersRaw:    utils.GetCaddyHandler("config_openapi", nil),
+		},
+
 		// Config routes
 		caddyhttp.Route{
 			Group:          "config",

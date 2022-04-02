@@ -45,7 +45,7 @@ func (a *App) getTableFields(project, db string, schemas model.CollectionSchemas
 		graphqlWhereClause := getDBWhereClause(db, tableName, tableSchema)
 
 		// Create the queries that can be performed to read from table
-		fields[fmt.Sprintf("%s_findAll%s", db, strings.Title(tableName))] = &graphql.Field{
+		fields[fmt.Sprintf("%s_findMultiple%s", db, strings.Title(tableName))] = &graphql.Field{
 			Type:    graphql.NewList(graphqlObject),
 			Args:    graphql.FieldConfigArgument{"where": graphqlWhereClause},
 			Resolve: a.dbReadResolveFn(project, db, tableName, utils.All),
