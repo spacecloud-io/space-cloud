@@ -10,7 +10,7 @@ import (
 
 func init() {
 	caddy.RegisterModule(App{})
-	_ = configman.AddControllerApp("database", getTypeDefinitions())
+	_ = configman.RegisterConfigController("database", getTypeDefinitions())
 }
 
 var connectorPool = caddy.NewUsagePool()

@@ -24,8 +24,8 @@ var (
 	}
 )
 
-// AddControllerApp adds a controller for the specified module
-func AddControllerApp(module string, types Types) error {
+// RegisterConfigController adds a controller for the specified module
+func RegisterConfigController(module string, types Types) error {
 	controllerLock.Lock()
 	defer controllerLock.Unlock()
 

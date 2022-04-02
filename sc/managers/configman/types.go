@@ -36,6 +36,7 @@ type (
 
 	// TypeDefinition describes the definition of a particular resource type
 	TypeDefinition struct {
+		IsSecure        bool        `json:"isSecure" yaml:"isSecure"`
 		Schema          interface{} `json:"schema" yaml:"schema"`
 		Hooks           Hooks       `json:"hooks" yaml:"hooks"`
 		RequiredParents []string    `json:"requiredParents" yaml:"requiredParents"`
