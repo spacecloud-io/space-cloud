@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/spacecloud-io/space-cloud/managers/configman"
 	"github.com/spacecloud-io/space-cloud/model"
 )
 
 // Hook implements the configman hook functionality
-func (l *App) Hook(ctx context.Context, obj *configman.ResourceObject) error {
+func (l *App) Hook(ctx context.Context, obj *model.ResourceObject) error {
 	// Check if the resource belongs to this app
 	if obj.Meta.Module != "database" {
 		return fmt.Errorf("hook invoked for invalid resource type '%s/%s'", obj.Meta.Module, obj.Meta.Type)

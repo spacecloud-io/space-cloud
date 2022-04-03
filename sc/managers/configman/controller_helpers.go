@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+
+	"github.com/spacecloud-io/space-cloud/model"
 )
 
-func loadTypeDefinition(module, typeName string) (*TypeDefinition, error) {
+func loadTypeDefinition(module, typeName string) (*model.TypeDefinition, error) {
 	controllerLock.RLock()
 	defer controllerLock.RUnlock()
 
@@ -25,7 +27,7 @@ func loadTypeDefinition(module, typeName string) (*TypeDefinition, error) {
 	return typeDef, nil
 }
 
-func loadHook(module string, typeDef *TypeDefinition, phase HookPhase, loadApp loadApp) (HookImpl, error) {
+func loadHook(module string, typeDef *model.TypeDefinition, phase model.HookPhase, loadApp loadApp) (HookImpl, error) {
 	controllerLock.RLock()
 	defer controllerLock.RUnlock()
 
@@ -50,7 +52,7 @@ func loadHook(module string, typeDef *TypeDefinition, phase HookPhase, loadApp l
 	return hookImpl, nil
 }
 
-func addOpenAPIPath(app string, types Types) {
+func addOpenAPIPath(app string, types model.Types) {
 	for typeName, typeDef := range types {
 		// Get the schema ref
 		data, _ := json.Marshal(typeDef.Schema)

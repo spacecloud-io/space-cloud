@@ -15,4 +15,8 @@ func init() {
 	caddy.RegisterModule(OperationGetHandler{})
 	caddy.RegisterModule(OperationDeleteHandler{})
 	caddy.RegisterModule(OperationPostHandler{})
+
+	// store module
+	caddy.RegisterModule(ConfigMan{})
+
 }

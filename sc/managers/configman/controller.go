@@ -5,12 +5,13 @@ import (
 	"sync"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/spacecloud-io/space-cloud/model"
 )
 
 // The necesary global objects to hold all the controllers
 var (
 	controllerLock        sync.RWMutex
-	controllerDefinitions = map[string]Types{} // Key = moduleName
+	controllerDefinitions = map[string]model.Types{} // Key = moduleName
 
 	openapiDoc = openapi3.T{
 		OpenAPI: "3.0.0",
@@ -25,7 +26,7 @@ var (
 )
 
 // RegisterConfigController adds a controller for the specified module
-func RegisterConfigController(module string, types Types) error {
+func RegisterConfigController(module string, types model.Types) error {
 	controllerLock.Lock()
 	defer controllerLock.Unlock()
 

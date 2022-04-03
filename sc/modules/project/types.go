@@ -3,16 +3,16 @@ package project
 import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/spacecloud-io/space-cloud/config"
-	"github.com/spacecloud-io/space-cloud/managers/configman"
+	"github.com/spacecloud-io/space-cloud/model"
 )
 
 type (
 	m map[string]interface{}
 )
 
-func getTypeDefinitions() configman.Types {
-	return configman.Types{
-		"config": &configman.TypeDefinition{
+func getTypeDefinitions() model.Types {
+	return model.Types{
+		"config": &model.TypeDefinition{
 			Schema: m{
 				"type": "object",
 				"properties": m{
@@ -30,10 +30,10 @@ func getTypeDefinitions() configman.Types {
 					},
 				},
 			},
-			Hooks:           configman.Hooks{},
+			Hooks:           model.Hooks{},
 			RequiredParents: []string{},
 		},
-		"aes-key": &configman.TypeDefinition{
+		"aes-key": &model.TypeDefinition{
 			IsSecure: true,
 			Schema: m{
 				"type": "object",
@@ -43,10 +43,10 @@ func getTypeDefinitions() configman.Types {
 					},
 				},
 			},
-			Hooks:           configman.Hooks{configman.PhasePreApply: struct{}{}},
+			Hooks:           model.Hooks{model.PhasePreApply: struct{}{}},
 			RequiredParents: []string{"project"},
 		},
-		"jwt-secret": &configman.TypeDefinition{
+		"jwt-secret": &model.TypeDefinition{
 			IsSecure: true,
 			Schema: m{
 				"type": "object",
@@ -83,7 +83,7 @@ func getTypeDefinitions() configman.Types {
 					},
 				},
 			},
-			Hooks:           configman.Hooks{},
+			Hooks:           model.Hooks{},
 			RequiredParents: []string{"project"},
 		},
 	}

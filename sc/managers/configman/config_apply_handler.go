@@ -6,6 +6,7 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spaceuptech/helpers"
 	"go.uber.org/zap"
 )
@@ -14,6 +15,7 @@ import (
 type ConfigApplyHandler struct {
 	logger    *zap.Logger
 	appLoader loadApp
+	store     *ConfigMan
 }
 
 // CaddyModule returns the Caddy module information.
@@ -28,6 +30,13 @@ func (ConfigApplyHandler) CaddyModule() caddy.ModuleInfo {
 func (h *ConfigApplyHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 	h.appLoader = ctx.App
+
+	store, err := ctx.App("configman")
+	if err != nil {
+		return err
+	}
+
+	h.store = store.(*ConfigMan)
 
 	return nil
 }
@@ -49,7 +58,7 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 	}
 
 	// Extract the resourceObject object
-	resourceObject := new(ResourceObject)
+	resourceObject := new(model.ResourceObject)
 	if err := json.NewDecoder(r.Body).Decode(resourceObject); err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
@@ -64,7 +73,7 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 	}
 
 	// Invoke pre-apply hooks if any
-	hook, err := loadHook(module, typeDef, PhasePreApply, h.appLoader)
+	hook, err := loadHook(module, typeDef, model.PhasePreApply, h.appLoader)
 	if err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
@@ -79,6 +88,24 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 	}
 
 	// TODO: Put object in store
+	if err := h.store.Connectors.ApplyResource(r.Context(), resourceObject); err != nil {
+		return err
+	}
+
+	// Invoke post-apply hooks if any
+	hook, err = loadHook(module, typeDef, model.PhasePostApply, h.appLoader)
+	if err != nil {
+		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
+		return nil
+	}
+
+	// Invoke hook if exists
+	if hook != nil {
+		if err := hook.Hook(r.Context(), resourceObject); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
+			return nil
+		}
+	}
 
 	// Send ok response to client
 	_ = helpers.Response.SendOkayResponse(r.Context(), http.StatusOK, w)
