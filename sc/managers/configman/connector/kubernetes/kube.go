@@ -34,8 +34,3 @@ func (f Kube) DeleteResource(ctx context.Context, meta *model.ResourceMeta) erro
 func (f Kube) DeleteResources(ctx context.Context, meta *model.ResourceMeta) error {
 	return nil
 }
-
-// Destruct closes the store
-func (f Kube) Destruct() error {
-	return nil
-}

@@ -34,21 +34,19 @@ func (f File) ApplyResource(ctx context.Context, resourceObj *model.ResourceObje
 	}
 
 	module, ok := scConfig.Config[resourceObj.Meta.Module]
-	if ok {
-		moduleType, ok1 := module.ModuleType[resourceObj.Meta.Type]
-		if ok1 {
-			moduleType = addResource(moduleType, resourceObj)
-		} else {
-			moduleType = []*model.ResourceObject{resourceObj}
-		}
-		module.ModuleType[resourceObj.Meta.Type] = moduleType
-	} else {
-		moduleType := map[string][]*model.ResourceObject{
-			resourceObj.Meta.Type: {resourceObj},
-		}
-		module = &configModule{ModuleType: moduleType}
-		scConfig.Config[resourceObj.Meta.Module] = module
+	if !ok {
+		module.ModuleType = make(map[string][]*model.ResourceObject)
+		module.ModuleType[resourceObj.Meta.Type] = make([]*model.ResourceObject, 0)
 	}
+
+	moduleType, ok := module.ModuleType[resourceObj.Meta.Type]
+	if !ok {
+		moduleType = make([]*model.ResourceObject, 0)
+	}
+
+	moduleType = addResource(moduleType, resourceObj)
+	module.ModuleType[resourceObj.Meta.Type] = moduleType
+	scConfig.Config[resourceObj.Meta.Module] = module
 
 	return utils.StoreFile(f.Path, scConfig)
 }
@@ -67,7 +65,6 @@ func addResource(moduleType []*model.ResourceObject, resourceObj *model.Resource
 
 // GetResource gets resource from the store
 func (f File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*model.ResourceObject, error) {
-
 	scConfig := new(config)
 	if err := utils.LoadFile(f.Path, scConfig); err != nil {
 		return nil, err
@@ -75,12 +72,12 @@ func (f File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*model
 
 	module, ok := scConfig.Config[meta.Module]
 	if !ok {
-		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Name, meta.Type, meta.Name)
+		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
 	moduleType, ok := module.ModuleType[meta.Type]
 	if !ok {
-		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Name, meta.Type, meta.Name)
+		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
 	for _, resourceObj := range moduleType {
@@ -89,7 +86,7 @@ func (f File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*model
 		}
 	}
 
-	return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Name, meta.Type, meta.Name)
+	return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 }
 
 // GetResources gets resources from the store
@@ -101,12 +98,12 @@ func (f File) GetResources(ctx context.Context, meta *model.ResourceMeta) (*mode
 
 	module, ok := scConfig.Config[meta.Module]
 	if !ok {
-		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Name, meta.Type, meta.Name)
+		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
 	moduleType, ok := module.ModuleType[meta.Type]
 	if !ok {
-		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Name, meta.Type, meta.Name)
+		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
 	return &model.ListResourceObjects{List: moduleType}, nil
@@ -114,7 +111,6 @@ func (f File) GetResources(ctx context.Context, meta *model.ResourceMeta) (*mode
 
 // DeleteResource delete resource from the store
 func (f File) DeleteResource(ctx context.Context, meta *model.ResourceMeta) error {
-
 	scConfig := new(config)
 	if err := utils.LoadFile(f.Path, scConfig); err != nil {
 		return err
@@ -122,12 +118,12 @@ func (f File) DeleteResource(ctx context.Context, meta *model.ResourceMeta) erro
 
 	module, ok := scConfig.Config[meta.Module]
 	if !ok {
-		return fmt.Errorf("no resource found for %s - %s - %s", meta.Name, meta.Type, meta.Name)
+		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
 	moduleType, ok := module.ModuleType[meta.Type]
 	if !ok {
-		return fmt.Errorf("no resource found for %s - %s - %s", meta.Name, meta.Type, meta.Name)
+		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
 	index := -1
@@ -138,7 +134,7 @@ func (f File) DeleteResource(ctx context.Context, meta *model.ResourceMeta) erro
 	}
 
 	if index == -1 {
-		return fmt.Errorf("no resource found for %s - %s - %s", meta.Name, meta.Type, meta.Name)
+		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
 	moduleType = append(moduleType[:index], moduleType[index+1:]...)
@@ -157,22 +153,31 @@ func (f File) DeleteResources(ctx context.Context, meta *model.ResourceMeta) err
 
 	module, ok := scConfig.Config[meta.Module]
 	if !ok {
-		return fmt.Errorf("no resource found for %s - %s - %s", meta.Name, meta.Type, meta.Name)
+		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
-	_, ok = module.ModuleType[meta.Type]
+	moduleType, ok := module.ModuleType[meta.Type]
 	if !ok {
-		return fmt.Errorf("no resource found for %s - %s - %s", meta.Name, meta.Type, meta.Name)
+		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
-	delete(module.ModuleType, meta.Type)
-
+	tempModuleType := deleteResources(moduleType, meta)
+	if len(tempModuleType) == len(moduleType) {
+		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
+	}
+	module.ModuleType[meta.Type] = tempModuleType
 	scConfig.Config[meta.Module] = module
 
 	return utils.StoreFile(f.Path, scConfig)
 }
 
-// Destruct closes the store
-func (f File) Destruct() error {
-	return nil
+func deleteResources(moduleType []*model.ResourceObject, meta *model.ResourceMeta) []*model.ResourceObject {
+	tempModuleType := make([]*model.ResourceObject, 0)
+
+	for _, resourceObj := range moduleType {
+		if !reflect.DeepEqual(meta.Parents, resourceObj.Meta.Parents) {
+			tempModuleType = append(tempModuleType, resourceObj)
+		}
+	}
+	return tempModuleType
 }

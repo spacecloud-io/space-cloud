@@ -18,17 +18,15 @@ type ConfigManConnector interface {
 	GetResources(ctx context.Context, meta *model.ResourceMeta) (*model.ListResourceObjects, error)
 	DeleteResource(ctx context.Context, meta *model.ResourceMeta) error
 	DeleteResources(ctx context.Context, meta *model.ResourceMeta) error
-	Destruct() error
 }
 
-// ConfigManConnector connects stores
+// Connector connects stores
 type Connector struct {
 	Connector ConfigManConnector
 }
 
 // New returns a new store connector
 func New(logger *zap.Logger, storeType, path string) (*Connector, error) {
-
 	var connector Connector
 
 	switch storeType {

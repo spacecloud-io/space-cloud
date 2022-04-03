@@ -89,6 +89,7 @@ func (l *App) Stop() error {
 	return nil
 }
 
+// Cleanup clean up the app
 func (l *App) Cleanup() error {
 	// Iterate over all database configs
 	for k, dbConfig := range l.DBConfigs {

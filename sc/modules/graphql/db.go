@@ -9,7 +9,7 @@ import (
 )
 
 func getDBWhereClause(db, tableName string, fieldSchemas model.FieldSchemas) *graphql.ArgumentConfig {
-	fields := make(graphql.InputObjectConfigFieldMap, 0)
+	fields := make(graphql.InputObjectConfigFieldMap)
 	for fieldName, schema := range fieldSchemas {
 		fieldType := dbWhereClauseLiteralFilters[scToGraphQLType(schema.Kind).String()]
 		fields[fieldName] = &graphql.InputObjectFieldConfig{Type: fieldType}

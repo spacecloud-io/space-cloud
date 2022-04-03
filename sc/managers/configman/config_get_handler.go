@@ -5,6 +5,7 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"github.com/spacecloud-io/space-cloud/managers/configman/connector"
 	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spacecloud-io/space-cloud/utils"
 	"github.com/spaceuptech/helpers"
@@ -15,8 +16,7 @@ import (
 type ConfigGetHandler struct {
 	logger    *zap.Logger
 	appLoader loadApp
-
-	store *ConfigMan
+	store     connector.ConfigManConnector
 }
 
 // CaddyModule returns the Caddy module information.
@@ -37,8 +37,7 @@ func (h *ConfigGetHandler) Provision(ctx caddy.Context) error {
 		return err
 	}
 
-	h.store = store.(*ConfigMan)
-
+	h.store = store.(*ConfigMan).Connectors
 	return nil
 }
 
@@ -58,75 +57,49 @@ func (h *ConfigGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, nex
 		return nil
 	}
 
-	// Extract the resourceMeta object
-	resourceMeta := new(model.ResourceMeta)
-
-	resourceMeta.Module = module
-	resourceMeta.Type = typeName
-	resourceMeta.Name = resourceName
-	resourceMeta.Parents = utils.GetQueryParams(r.URL.Query())
+	resourceObj := new(model.ResourceObject)
+	resourceObj.Meta.Module = module
+	resourceObj.Meta.Type = typeName
+	resourceObj.Meta.Name = resourceName
+	resourceObj.Meta.Parents = utils.GetQueryParams(r.URL.Query())
 
 	// Verify config object
-	if schemaErrors, err := typeDef.VerifyObject(&model.ResourceObject{Meta: *resourceMeta}); err != nil {
+	if schemaErrors, err := typeDef.VerifyObject(resourceObj); err != nil {
 		_ = helpers.Response.SendResponse(r.Context(), w, http.StatusBadRequest, prepareErrorResponseBody(err, schemaErrors))
 		return nil
 	}
 
-	// Invoke pre-apply hooks if any
-	hook, err := loadHook(module, typeDef, model.PhasePreGet, h.appLoader)
-	if err != nil {
+	// Invoke pre-get hooks if any
+	if err := applyHooks(r.Context(), module, typeDef, model.PhasePreGet, h.appLoader, resourceObj); err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
 	}
 
-	// Invoke hook if exists
-	if hook != nil {
-		if err := hook.Hook(r.Context(), &model.ResourceObject{Meta: *resourceMeta}); err != nil {
-			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
-			return nil
-		}
-	}
-
-	// TODO: Put object in store
+	// Put object in store
 	if op == "single" {
-		resources, err := h.store.Connectors.GetResource(r.Context(), resourceMeta)
-		if err != nil {
-			return err
-		}
-
-		// Invoke post-apply hooks if any
-		hook, err = loadHook(module, typeDef, model.PhasePostGet, h.appLoader)
+		resources, err := h.store.GetResource(r.Context(), &resourceObj.Meta)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return nil
 		}
 
-		// Invoke hook if exists
-		if hook != nil {
-			if err := hook.Hook(r.Context(), &model.ResourceObject{Meta: *resourceMeta}); err != nil {
-				_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
-				return nil
-			}
+		// Invoke post-get hooks if any
+		if err := applyHooks(r.Context(), module, typeDef, model.PhasePostGet, h.appLoader, resources); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
+			return nil
 		}
 
 		_ = helpers.Response.SendResponse(r.Context(), w, http.StatusOK, resources)
 		return nil
 	}
-	resources, err := h.store.Connectors.GetResources(r.Context(), resourceMeta)
+	resources, err := h.store.GetResources(r.Context(), &resourceObj.Meta)
 	if err != nil {
 		return err
 	}
 
-	// Invoke post-apply hooks if any
-	hook, err = loadHook(module, typeDef, model.PhasePostGet, h.appLoader)
-	if err != nil {
-		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
-		return nil
-	}
-
-	// Invoke hook if exists
-	if hook != nil {
-		if err := hook.Hook(r.Context(), &model.ResourceObject{Meta: *resourceMeta}); err != nil {
+	for _, resource := range resources.List {
+		// Invoke post-get hooks if any
+		if err := applyHooks(r.Context(), module, typeDef, model.PhasePostGet, h.appLoader, resource); err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return nil
 		}

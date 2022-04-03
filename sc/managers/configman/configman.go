@@ -40,17 +40,14 @@ func (l *ConfigMan) Provision(ctx caddy.Context) error {
 
 // Start begins the configman app operations
 func (l *ConfigMan) Start() error {
-
 	val, _, err := connectorPool.LoadOrNew(poolKey, func() (caddy.Destructor, error) {
 		return connector.New(l.logger, l.StoreType, l.Path)
 	})
 	if err != nil {
 		l.logger.Error("Unable to open configman connector", zap.String("store-type", l.StoreType), zap.String("path", l.Path), zap.Error(err))
-
+		return nil
 	}
-	connector := val.(*connector.Connector)
-	l.Connectors = connector.Connector
-
+	l.Connectors = val.(*connector.Connector).Connector
 	return nil
 }
 

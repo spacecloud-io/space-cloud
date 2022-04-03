@@ -36,7 +36,7 @@ func (l *App) processDBSchemaHook(ctx context.Context, obj *model.ResourceObject
 	}
 
 	// Check if database exists
-	db, p := l.connectors[obj.Meta.Parents["db"]]
+	db, p := l.connectors[CombineDBConfigKey(obj.Meta.Parents["project"], obj.Meta.Parents["db"])]
 	if !p {
 		return fmt.Errorf("unknown database alias '%s' provided", obj.Meta.Parents["db"])
 	}
