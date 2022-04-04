@@ -4,10 +4,12 @@ import (
 	"context"
 
 	"github.com/spacecloud-io/space-cloud/model"
+	"go.uber.org/zap"
 )
 
 // Kube implements kube store
 type Kube struct {
+	logger *zap.Logger
 }
 
 // ApplyResource applies resource in the store
@@ -33,4 +35,8 @@ func (f Kube) DeleteResource(ctx context.Context, meta *model.ResourceMeta) erro
 // DeleteResources delete resources from the store
 func (f Kube) DeleteResources(ctx context.Context, meta *model.ResourceMeta) error {
 	return nil
+}
+
+func (f Kube) SetLogger(logger *zap.Logger) {
+	f.logger = logger
 }

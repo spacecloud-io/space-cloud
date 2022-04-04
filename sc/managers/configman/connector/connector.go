@@ -18,6 +18,7 @@ type ConfigManConnector interface {
 	GetResources(ctx context.Context, meta *model.ResourceMeta) (*model.ListResourceObjects, error)
 	DeleteResource(ctx context.Context, meta *model.ResourceMeta) error
 	DeleteResources(ctx context.Context, meta *model.ResourceMeta) error
+	SetLogger(logger *zap.Logger)
 }
 
 // Connector connects stores

@@ -5,7 +5,6 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/spacecloud-io/space-cloud/managers/configman/connector"
 	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spacecloud-io/space-cloud/utils"
 	"github.com/spaceuptech/helpers"
@@ -16,7 +15,7 @@ import (
 type ConfigDeleteHandler struct {
 	logger    *zap.Logger
 	appLoader loadApp
-	store     connector.ConfigManConnector
+	store     *ConfigMan
 }
 
 // CaddyModule returns the Caddy module information.
@@ -37,7 +36,7 @@ func (h *ConfigDeleteHandler) Provision(ctx caddy.Context) error {
 		return err
 	}
 
-	h.store = store.(*ConfigMan).Connectors
+	h.store = store.(*ConfigMan)
 	return nil
 }
 
@@ -77,12 +76,12 @@ func (h *ConfigDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, 
 
 	// Remove object from store
 	if op == "single" {
-		if err := h.store.DeleteResource(r.Context(), &resourceObj.Meta); err != nil {
+		if err := h.store.connector.DeleteResource(r.Context(), &resourceObj.Meta); err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return nil
 		}
 	} else {
-		if err := h.store.DeleteResources(r.Context(), &resourceObj.Meta); err != nil {
+		if err := h.store.connector.DeleteResources(r.Context(), &resourceObj.Meta); err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return nil
 		}

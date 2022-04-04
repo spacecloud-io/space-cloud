@@ -19,8 +19,8 @@ type ConfigMan struct {
 	Path      string `json:"path,omitempty"`
 
 	// For internal usage
-	logger     *zap.Logger
-	Connectors connector.ConfigManConnector
+	logger    *zap.Logger
+	connector connector.ConfigManConnector
 }
 
 // CaddyModule returns the Caddy module information.
@@ -47,37 +47,41 @@ func (l *ConfigMan) Start() error {
 		l.logger.Error("Unable to open configman connector", zap.String("store-type", l.StoreType), zap.String("path", l.Path), zap.Error(err))
 		return nil
 	}
-	l.Connectors = val.(*connector.Connector).Connector
+	l.connector = val.(*connector.Connector).Connector
 	return nil
 }
 
 // ApplyResource applies resource in the store
 func (l *ConfigMan) ApplyResource(ctx context.Context, resourceObj *model.ResourceObject) error {
-	return l.Connectors.ApplyResource(ctx, resourceObj)
+	return l.connector.ApplyResource(ctx, resourceObj)
 }
 
 // GetResource gets resource from the store
 func (l *ConfigMan) GetResource(ctx context.Context, resourceMeta *model.ResourceMeta) (*model.ResourceObject, error) {
-	return l.Connectors.GetResource(ctx, resourceMeta)
+	return l.connector.GetResource(ctx, resourceMeta)
 }
 
 // GetResources gets resources from the store
 func (l *ConfigMan) GetResources(ctx context.Context, resourceMeta *model.ResourceMeta) (*model.ListResourceObjects, error) {
-	return l.Connectors.GetResources(ctx, resourceMeta)
+	return l.connector.GetResources(ctx, resourceMeta)
 }
 
 // DeleteResource delete resource from the store
 func (l *ConfigMan) DeleteResource(ctx context.Context, resourceMeta *model.ResourceMeta) error {
-	return l.Connectors.DeleteResource(ctx, resourceMeta)
+	return l.connector.DeleteResource(ctx, resourceMeta)
 }
 
 // DeleteResources delete resources from the store
 func (l *ConfigMan) DeleteResources(ctx context.Context, resourceMeta *model.ResourceMeta) error {
-	return l.Connectors.DeleteResource(ctx, resourceMeta)
+	return l.connector.DeleteResource(ctx, resourceMeta)
 }
 
 // Stop ends the app operations
 func (l *ConfigMan) Stop() error {
+	_, err := connectorPool.Delete(poolKey)
+	if err != nil {
+		l.logger.Error("Unable to gracefully close store connector", zap.Error(err))
+	}
 	return nil
 }
 

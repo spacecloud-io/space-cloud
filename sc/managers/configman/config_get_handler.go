@@ -5,7 +5,6 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/spacecloud-io/space-cloud/managers/configman/connector"
 	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spacecloud-io/space-cloud/utils"
 	"github.com/spaceuptech/helpers"
@@ -16,7 +15,7 @@ import (
 type ConfigGetHandler struct {
 	logger    *zap.Logger
 	appLoader loadApp
-	store     connector.ConfigManConnector
+	store     *ConfigMan
 }
 
 // CaddyModule returns the Caddy module information.
@@ -37,7 +36,7 @@ func (h *ConfigGetHandler) Provision(ctx caddy.Context) error {
 		return err
 	}
 
-	h.store = store.(*ConfigMan).Connectors
+	h.store = store.(*ConfigMan)
 	return nil
 }
 
@@ -77,7 +76,7 @@ func (h *ConfigGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, nex
 
 	// Put object in store
 	if op == "single" {
-		resources, err := h.store.GetResource(r.Context(), &resourceObj.Meta)
+		resources, err := h.store.connector.GetResource(r.Context(), &resourceObj.Meta)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return nil
@@ -92,7 +91,7 @@ func (h *ConfigGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, nex
 		_ = helpers.Response.SendResponse(r.Context(), w, http.StatusOK, resources)
 		return nil
 	}
-	resources, err := h.store.GetResources(r.Context(), &resourceObj.Meta)
+	resources, err := h.store.connector.GetResources(r.Context(), &resourceObj.Meta)
 	if err != nil {
 		return err
 	}

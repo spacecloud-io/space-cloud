@@ -6,7 +6,6 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/spacecloud-io/space-cloud/managers/configman/connector"
 	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spaceuptech/helpers"
 	"go.uber.org/zap"
@@ -16,7 +15,7 @@ import (
 type ConfigApplyHandler struct {
 	logger    *zap.Logger
 	appLoader loadApp
-	store     connector.ConfigManConnector
+	store     *ConfigMan
 }
 
 // CaddyModule returns the Caddy module information.
@@ -37,7 +36,7 @@ func (h *ConfigApplyHandler) Provision(ctx caddy.Context) error {
 		return err
 	}
 
-	h.store = store.(*ConfigMan).Connectors
+	h.store = store.(*ConfigMan)
 	return nil
 }
 
@@ -79,7 +78,7 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 	}
 
 	// Put object in store
-	if err := h.store.ApplyResource(r.Context(), resourceObject); err != nil {
+	if err := h.store.connector.ApplyResource(r.Context(), resourceObject); err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
 	}

@@ -3,24 +3,24 @@ package file
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spacecloud-io/space-cloud/utils"
+	"go.uber.org/zap"
 )
 
 // File implements file store
 type File struct {
 	Path string `json:"path,omitempty"`
+
+	logger *zap.Logger
 }
 
 type config struct {
-	Config map[string]*configModule `json:"config" yaml:"config" mapstructure:"config"`
+	Config map[string]configModule `json:"config" yaml:"config" mapstructure:"config"`
 }
 
-type configModule struct {
-	ModuleType map[string][]*model.ResourceObject `json:"type" yaml:"type" mapstructure:"type"`
-}
+type configModule map[string][]*model.ResourceObject
 
 // ApplyResource applies resource in the store
 func (f File) ApplyResource(ctx context.Context, resourceObj *model.ResourceObject) error {
@@ -30,22 +30,21 @@ func (f File) ApplyResource(ctx context.Context, resourceObj *model.ResourceObje
 	}
 
 	if scConfig.Config == nil {
-		scConfig.Config = make(map[string]*configModule)
+		scConfig.Config = make(map[string]configModule)
 	}
 
 	module, ok := scConfig.Config[resourceObj.Meta.Module]
 	if !ok {
-		module.ModuleType = make(map[string][]*model.ResourceObject)
-		module.ModuleType[resourceObj.Meta.Type] = make([]*model.ResourceObject, 0)
+		module = make(configModule)
 	}
 
-	moduleType, ok := module.ModuleType[resourceObj.Meta.Type]
+	moduleType, ok := module[resourceObj.Meta.Type]
 	if !ok {
 		moduleType = make([]*model.ResourceObject, 0)
 	}
 
 	moduleType = addResource(moduleType, resourceObj)
-	module.ModuleType[resourceObj.Meta.Type] = moduleType
+	module[resourceObj.Meta.Type] = moduleType
 	scConfig.Config[resourceObj.Meta.Module] = module
 
 	return utils.StoreFile(f.Path, scConfig)
@@ -53,7 +52,7 @@ func (f File) ApplyResource(ctx context.Context, resourceObj *model.ResourceObje
 
 func addResource(moduleType []*model.ResourceObject, resourceObj *model.ResourceObject) []*model.ResourceObject {
 	for index, resource := range moduleType {
-		if resource.Meta.Name == resourceObj.Meta.Name && reflect.DeepEqual(resource.Meta.Parents, resourceObj.Meta.Parents) {
+		if resource.Meta.Name == resourceObj.Meta.Name && matchParent(resource.Meta.Parents, resourceObj.Meta.Parents) {
 			moduleType[index] = resourceObj
 			return moduleType
 		}
@@ -75,13 +74,13 @@ func (f File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*model
 		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
-	moduleType, ok := module.ModuleType[meta.Type]
+	moduleType, ok := module[meta.Type]
 	if !ok {
 		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
 	for _, resourceObj := range moduleType {
-		if meta.Name == resourceObj.Meta.Name && reflect.DeepEqual(meta.Parents, resourceObj.Meta.Parents) {
+		if meta.Name == resourceObj.Meta.Name && matchParent(meta.Parents, resourceObj.Meta.Parents) {
 			return resourceObj, nil
 		}
 	}
@@ -101,12 +100,19 @@ func (f File) GetResources(ctx context.Context, meta *model.ResourceMeta) (*mode
 		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
-	moduleType, ok := module.ModuleType[meta.Type]
+	moduleType, ok := module[meta.Type]
 	if !ok {
 		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
-	return &model.ListResourceObjects{List: moduleType}, nil
+	resourceList := make([]*model.ResourceObject, 0)
+	for _, resourceObj := range moduleType {
+		if matchParent(meta.Parents, resourceObj.Meta.Parents) {
+			resourceList = append(resourceList, resourceObj)
+		}
+	}
+
+	return &model.ListResourceObjects{List: resourceList}, nil
 }
 
 // DeleteResource delete resource from the store
@@ -121,26 +127,19 @@ func (f File) DeleteResource(ctx context.Context, meta *model.ResourceMeta) erro
 		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
-	moduleType, ok := module.ModuleType[meta.Type]
+	moduleType, ok := module[meta.Type]
 	if !ok {
 		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
-	index := -1
 	for i, resourceObj := range moduleType {
-		if meta.Name == resourceObj.Meta.Name && reflect.DeepEqual(meta.Parents, resourceObj.Meta.Parents) {
-			index = i
+		if meta.Name == resourceObj.Meta.Name && matchParent(meta.Parents, resourceObj.Meta.Parents) {
+			moduleType = append(moduleType[:i], moduleType[i+1:]...)
+			module[meta.Type] = moduleType
+			scConfig.Config[meta.Module] = module
+			break
 		}
 	}
-
-	if index == -1 {
-		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
-	}
-
-	moduleType = append(moduleType[:index], moduleType[index+1:]...)
-	module.ModuleType[meta.Type] = moduleType
-	scConfig.Config[meta.Module] = module
-
 	return utils.StoreFile(f.Path, scConfig)
 }
 
@@ -156,26 +155,38 @@ func (f File) DeleteResources(ctx context.Context, meta *model.ResourceMeta) err
 		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
-	moduleType, ok := module.ModuleType[meta.Type]
+	moduleType, ok := module[meta.Type]
 	if !ok {
 		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
 	}
 
-	tempModuleType := deleteResources(moduleType, meta)
-	if len(tempModuleType) == len(moduleType) {
-		return fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
-	}
-	module.ModuleType[meta.Type] = tempModuleType
+	moduleType = deleteResources(moduleType, meta)
+	module[meta.Type] = moduleType
 	scConfig.Config[meta.Module] = module
 
 	return utils.StoreFile(f.Path, scConfig)
+}
+
+func (f File) SetLogger(logger *zap.Logger) {
+	f.logger = logger
+}
+
+func matchParent(a, b map[string]string) bool {
+	for k, v := range b {
+		v1, ok := a[k]
+		if !ok || v1 != v {
+			return false
+		}
+	}
+
+	return true
 }
 
 func deleteResources(moduleType []*model.ResourceObject, meta *model.ResourceMeta) []*model.ResourceObject {
 	tempModuleType := make([]*model.ResourceObject, 0)
 
 	for _, resourceObj := range moduleType {
-		if !reflect.DeepEqual(meta.Parents, resourceObj.Meta.Parents) {
+		if !matchParent(resourceObj.Meta.Parents, meta.Parents) {
 			tempModuleType = append(tempModuleType, resourceObj)
 		}
 	}
