@@ -42,17 +42,22 @@ func (a *App) getTableFields(project, db string, schemas model.CollectionSchemas
 			Description: fmt.Sprintf("Record object from %s", tableName),
 			Fields:      tableFields,
 		})
-		graphqlWhereClause := getDBWhereClause(db, tableName, tableSchema)
+		graphqlArguments := graphql.FieldConfigArgument{
+			"where": getDBWhereClause(db, tableName, tableSchema),
+			"sort":  getDBSort(db, tableName, tableSchema),
+			"limit": &graphql.ArgumentConfig{Type: graphql.Int},
+			"skip":  &graphql.ArgumentConfig{Type: graphql.Int},
+		}
 
 		// Create the queries that can be performed to read from table
 		fields[fmt.Sprintf("%s_findMultiple%s", db, strings.Title(tableName))] = &graphql.Field{
 			Type:    graphql.NewList(graphqlObject),
-			Args:    graphql.FieldConfigArgument{"where": graphqlWhereClause},
+			Args:    graphqlArguments,
 			Resolve: a.dbReadResolveFn(project, db, tableName, utils.All),
 		}
 		fields[fmt.Sprintf("%s_findOne%s", db, strings.Title(tableName))] = &graphql.Field{
 			Type:    graphqlObject,
-			Args:    graphql.FieldConfigArgument{"where": graphqlWhereClause},
+			Args:    graphqlArguments,
 			Resolve: a.dbReadResolveFn(project, db, tableName, utils.One),
 		}
 
