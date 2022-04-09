@@ -78,7 +78,7 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 	}
 
 	// Put object in store
-	if err := h.store.connector.ApplyResource(r.Context(), resourceObject); err != nil {
+	if err := h.store.ApplyResource(r.Context(), resourceObject); err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
 	}

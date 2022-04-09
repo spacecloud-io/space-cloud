@@ -11,21 +11,19 @@ import (
 
 // File implements file store
 type File struct {
-	Path string `json:"path,omitempty"`
+	path string `json:"path,omitempty"`
 
 	logger *zap.Logger
 }
 
-type config struct {
-	Config map[string]configModule `json:"config" yaml:"config" mapstructure:"config"`
+func New(logger *zap.Logger, path string) (*File, error) {
+	return &File{logger: logger, path: path}, nil
 }
 
-type configModule map[string][]*model.ResourceObject
-
 // ApplyResource applies resource in the store
-func (f File) ApplyResource(ctx context.Context, resourceObj *model.ResourceObject) error {
+func (f *File) ApplyResource(ctx context.Context, resourceObj *model.ResourceObject) error {
 	scConfig := new(config)
-	if err := utils.LoadFile(f.Path, scConfig); err != nil {
+	if err := utils.LoadFile(f.path, scConfig); err != nil {
 		return err
 	}
 
@@ -47,25 +45,13 @@ func (f File) ApplyResource(ctx context.Context, resourceObj *model.ResourceObje
 	module[resourceObj.Meta.Type] = moduleType
 	scConfig.Config[resourceObj.Meta.Module] = module
 
-	return utils.StoreFile(f.Path, scConfig)
-}
-
-func addResource(moduleType []*model.ResourceObject, resourceObj *model.ResourceObject) []*model.ResourceObject {
-	for index, resource := range moduleType {
-		if resource.Meta.Name == resourceObj.Meta.Name && matchParent(resource.Meta.Parents, resourceObj.Meta.Parents) {
-			moduleType[index] = resourceObj
-			return moduleType
-		}
-	}
-
-	moduleType = append(moduleType, resourceObj)
-	return moduleType
+	return utils.StoreFile(f.path, scConfig)
 }
 
 // GetResource gets resource from the store
-func (f File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*model.ResourceObject, error) {
+func (f *File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*model.ResourceObject, error) {
 	scConfig := new(config)
-	if err := utils.LoadFile(f.Path, scConfig); err != nil {
+	if err := utils.LoadFile(f.path, scConfig); err != nil {
 		return nil, err
 	}
 
@@ -80,7 +66,7 @@ func (f File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*model
 	}
 
 	for _, resourceObj := range moduleType {
-		if meta.Name == resourceObj.Meta.Name && matchParent(meta.Parents, resourceObj.Meta.Parents) {
+		if meta.Name == resourceObj.Meta.Name && matchParent(resourceObj.Meta.Parents, meta.Parents) {
 			return resourceObj, nil
 		}
 	}
@@ -89,9 +75,9 @@ func (f File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*model
 }
 
 // GetResources gets resources from the store
-func (f File) GetResources(ctx context.Context, meta *model.ResourceMeta) (*model.ListResourceObjects, error) {
+func (f *File) GetResources(ctx context.Context, meta *model.ResourceMeta) (*model.ListResourceObjects, error) {
 	scConfig := new(config)
-	if err := utils.LoadFile(f.Path, scConfig); err != nil {
+	if err := utils.LoadFile(f.path, scConfig); err != nil {
 		return nil, err
 	}
 
@@ -107,7 +93,7 @@ func (f File) GetResources(ctx context.Context, meta *model.ResourceMeta) (*mode
 
 	resourceList := make([]*model.ResourceObject, 0)
 	for _, resourceObj := range moduleType {
-		if matchParent(meta.Parents, resourceObj.Meta.Parents) {
+		if matchParent(resourceObj.Meta.Parents, meta.Parents) {
 			resourceList = append(resourceList, resourceObj)
 		}
 	}
@@ -116,9 +102,9 @@ func (f File) GetResources(ctx context.Context, meta *model.ResourceMeta) (*mode
 }
 
 // DeleteResource delete resource from the store
-func (f File) DeleteResource(ctx context.Context, meta *model.ResourceMeta) error {
+func (f *File) DeleteResource(ctx context.Context, meta *model.ResourceMeta) error {
 	scConfig := new(config)
-	if err := utils.LoadFile(f.Path, scConfig); err != nil {
+	if err := utils.LoadFile(f.path, scConfig); err != nil {
 		return err
 	}
 
@@ -133,20 +119,20 @@ func (f File) DeleteResource(ctx context.Context, meta *model.ResourceMeta) erro
 	}
 
 	for i, resourceObj := range moduleType {
-		if meta.Name == resourceObj.Meta.Name && matchParent(meta.Parents, resourceObj.Meta.Parents) {
+		if meta.Name == resourceObj.Meta.Name && matchParent(resourceObj.Meta.Parents, meta.Parents) {
 			moduleType = append(moduleType[:i], moduleType[i+1:]...)
 			module[meta.Type] = moduleType
 			scConfig.Config[meta.Module] = module
 			break
 		}
 	}
-	return utils.StoreFile(f.Path, scConfig)
+	return utils.StoreFile(f.path, scConfig)
 }
 
 // DeleteResources delete resources from the store
-func (f File) DeleteResources(ctx context.Context, meta *model.ResourceMeta) error {
+func (f *File) DeleteResources(ctx context.Context, meta *model.ResourceMeta) error {
 	scConfig := new(config)
-	if err := utils.LoadFile(f.Path, scConfig); err != nil {
+	if err := utils.LoadFile(f.path, scConfig); err != nil {
 		return err
 	}
 
@@ -164,31 +150,13 @@ func (f File) DeleteResources(ctx context.Context, meta *model.ResourceMeta) err
 	module[meta.Type] = moduleType
 	scConfig.Config[meta.Module] = module
 
-	return utils.StoreFile(f.Path, scConfig)
+	return utils.StoreFile(f.path, scConfig)
 }
 
-func (f File) SetLogger(logger *zap.Logger) {
+func (f *File) SetLogger(logger *zap.Logger) {
 	f.logger = logger
 }
 
-func matchParent(a, b map[string]string) bool {
-	for k, v := range b {
-		v1, ok := a[k]
-		if !ok || v1 != v {
-			return false
-		}
-	}
-
-	return true
-}
-
-func deleteResources(moduleType []*model.ResourceObject, meta *model.ResourceMeta) []*model.ResourceObject {
-	tempModuleType := make([]*model.ResourceObject, 0)
-
-	for _, resourceObj := range moduleType {
-		if !matchParent(resourceObj.Meta.Parents, meta.Parents) {
-			tempModuleType = append(tempModuleType, resourceObj)
-		}
-	}
-	return tempModuleType
+func (f *File) Destruct() error {
+	return nil
 }

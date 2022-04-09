@@ -35,11 +35,6 @@ func (ConfigMan) CaddyModule() caddy.ModuleInfo {
 func (l *ConfigMan) Provision(ctx caddy.Context) error {
 	l.logger = ctx.Logger(l)
 
-	return nil
-}
-
-// Start begins the configman app operations
-func (l *ConfigMan) Start() error {
 	val, _, err := connectorPool.LoadOrNew(poolKey, func() (caddy.Destructor, error) {
 		return connector.New(l.logger, l.StoreType, l.Path)
 	})
@@ -47,7 +42,13 @@ func (l *ConfigMan) Start() error {
 		l.logger.Error("Unable to open configman connector", zap.String("store-type", l.StoreType), zap.String("path", l.Path), zap.Error(err))
 		return nil
 	}
-	l.connector = val.(*connector.Connector).Connector
+	l.connector = val.(connector.ConfigManConnector)
+	l.connector.SetLogger(l.logger)
+	return nil
+}
+
+// Start begins the configman app operations
+func (l *ConfigMan) Start() error {
 	return nil
 }
 
@@ -78,15 +79,20 @@ func (l *ConfigMan) DeleteResources(ctx context.Context, resourceMeta *model.Res
 
 // Stop ends the app operations
 func (l *ConfigMan) Stop() error {
+	return nil
+}
+
+func (l *ConfigMan) Cleanup() error {
 	_, err := connectorPool.Delete(poolKey)
 	if err != nil {
 		l.logger.Error("Unable to gracefully close store connector", zap.Error(err))
 	}
-	return nil
+	return err
 }
 
 // Interface guards
 var (
-	_ caddy.Provisioner = (*ConfigMan)(nil)
-	_ caddy.App         = (*ConfigMan)(nil)
+	_ caddy.Provisioner  = (*ConfigMan)(nil)
+	_ caddy.CleanerUpper = (*ConfigMan)(nil)
+	_ caddy.App          = (*ConfigMan)(nil)
 )

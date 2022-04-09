@@ -76,7 +76,7 @@ func (h *ConfigGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, nex
 
 	// Put object in store
 	if op == "single" {
-		resources, err := h.store.connector.GetResource(r.Context(), &resourceObj.Meta)
+		resources, err := h.store.GetResource(r.Context(), &resourceObj.Meta)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return nil
@@ -91,7 +91,7 @@ func (h *ConfigGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, nex
 		_ = helpers.Response.SendResponse(r.Context(), w, http.StatusOK, resources)
 		return nil
 	}
-	resources, err := h.store.connector.GetResources(r.Context(), &resourceObj.Meta)
+	resources, err := h.store.GetResources(r.Context(), &resourceObj.Meta)
 	if err != nil {
 		return err
 	}

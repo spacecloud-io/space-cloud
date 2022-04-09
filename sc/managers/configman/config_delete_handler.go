@@ -76,12 +76,12 @@ func (h *ConfigDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, 
 
 	// Remove object from store
 	if op == "single" {
-		if err := h.store.connector.DeleteResource(r.Context(), &resourceObj.Meta); err != nil {
+		if err := h.store.DeleteResource(r.Context(), &resourceObj.Meta); err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return nil
 		}
 	} else {
-		if err := h.store.connector.DeleteResources(r.Context(), &resourceObj.Meta); err != nil {
+		if err := h.store.DeleteResources(r.Context(), &resourceObj.Meta); err != nil {
 			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 			return nil
 		}

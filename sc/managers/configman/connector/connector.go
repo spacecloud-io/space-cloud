@@ -19,30 +19,17 @@ type ConfigManConnector interface {
 	DeleteResource(ctx context.Context, meta *model.ResourceMeta) error
 	DeleteResources(ctx context.Context, meta *model.ResourceMeta) error
 	SetLogger(logger *zap.Logger)
-}
-
-// Connector connects stores
-type Connector struct {
-	Connector ConfigManConnector
+	Destruct() error
 }
 
 // New returns a new store connector
-func New(logger *zap.Logger, storeType, path string) (*Connector, error) {
-	var connector Connector
-
+func New(logger *zap.Logger, storeType, path string) (ConfigManConnector, error) {
 	switch storeType {
 	case "file":
-		connector.Connector = file.File{Path: path}
+		return file.New(logger, path)
 	case "kube":
-		connector.Connector = kubernetes.Kube{}
+		return kubernetes.New(logger)
 	default:
 		return nil, fmt.Errorf("store-type: %s not supported", storeType)
 	}
-
-	return &connector, nil
-}
-
-// Destruct closes a store
-func (c *Connector) Destruct() error {
-	return nil
 }
