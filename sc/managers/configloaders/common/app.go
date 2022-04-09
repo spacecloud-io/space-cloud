@@ -19,6 +19,7 @@ func PrepareConfig(scConfig *config.Config) (*caddy.Config, error) {
 	c.AppsRaw["database"] = prepareDatabaseApp(scConfig)
 	c.AppsRaw["graphql"] = prepareGraphQLApp()
 	c.AppsRaw["http"] = prepareHTTPHanndlerApp()
+	c.AppsRaw["configman"] = prepareStoreApp()
 
 	return c, nil
 }

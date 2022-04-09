@@ -8,7 +8,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/spacecloud-io/space-cloud/config"
-	"github.com/spacecloud-io/space-cloud/managers/configman"
+	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spacecloud-io/space-cloud/modules/database/connectors"
 	"github.com/spacecloud-io/space-cloud/modules/database/connectors/schema"
 )
@@ -28,7 +28,7 @@ func generateUniqueDBKey(projectID string, c *config.DatabaseConfig) string {
 	return fmt.Sprintf("%s---%s--%v", CombineDBConfigKey(projectID, c.DbAlias), c.DBName, c.DriverConf)
 }
 
-func (l *App) processDBSchemaHook(ctx context.Context, obj *configman.ResourceObject) error {
+func (l *App) processDBSchemaHook(ctx context.Context, obj *model.ResourceObject) error {
 	// Convert object to a known type
 	dbSchema := new(config.DatabaseSchema)
 	if err := mapstructure.Decode(obj.Spec, dbSchema); err != nil {
@@ -36,7 +36,7 @@ func (l *App) processDBSchemaHook(ctx context.Context, obj *configman.ResourceOb
 	}
 
 	// Check if database exists
-	db, p := l.connectors[obj.Meta.Parents["db"]]
+	db, p := l.connectors[CombineDBConfigKey(obj.Meta.Parents["project"], obj.Meta.Parents["db"])]
 	if !p {
 		return fmt.Errorf("unknown database alias '%s' provided", obj.Meta.Parents["db"])
 	}
@@ -54,7 +54,7 @@ func (l *App) processDBSchemaHook(ctx context.Context, obj *configman.ResourceOb
 	return db.ApplyCollectionSchema(ctx, obj.Meta.Name, newSchema)
 }
 
-func processPreparedQuery(obj *configman.ResourceObject) error {
+func processPreparedQuery(obj *model.ResourceObject) error {
 	// Set some spec values which may be absent
 	m := obj.Spec.(map[string]interface{})
 	m["id"] = obj.Meta.Name
@@ -63,7 +63,7 @@ func processPreparedQuery(obj *configman.ResourceObject) error {
 	return nil
 }
 
-func processConfig(obj *configman.ResourceObject) error {
+func processConfig(obj *model.ResourceObject) error {
 	// Set some spec values which may be absent
 	m := obj.Spec.(map[string]interface{})
 	m["dbAlias"] = obj.Meta.Name

@@ -2,7 +2,7 @@ package database
 
 import (
 	"github.com/spacecloud-io/space-cloud/config"
-	"github.com/spacecloud-io/space-cloud/managers/configman"
+	"github.com/spacecloud-io/space-cloud/model"
 )
 
 // Config describes the configuration required by a single database
@@ -12,9 +12,9 @@ type Config struct {
 	PreparedQueries config.DatabasePreparedQueries `json:"preparedQueries"`
 }
 
-func getTypeDefinitions() configman.Types {
-	return configman.Types{
-		"config": &configman.TypeDefinition{
+func getTypeDefinitions() model.Types {
+	return model.Types{
+		"config": &model.TypeDefinition{
 			Schema: m{
 				"type": "object",
 				"properties": m{
@@ -66,10 +66,10 @@ func getTypeDefinitions() configman.Types {
 				},
 				"required": t{"type", "name", "conn"},
 			},
-			Hooks:           configman.Hooks{configman.PhasePreApply: struct{}{}},
+			Hooks:           model.Hooks{model.PhasePreApply: struct{}{}},
 			RequiredParents: []string{"project"},
 		},
-		"schema": &configman.TypeDefinition{
+		"schema": &model.TypeDefinition{
 			Schema: m{
 				"type": "object",
 				"properties": m{
@@ -85,10 +85,10 @@ func getTypeDefinitions() configman.Types {
 				},
 				"required": t{"schema"},
 			},
-			Hooks:           configman.Hooks{configman.PhasePreApply: struct{}{}},
+			Hooks:           model.Hooks{model.PhasePreApply: struct{}{}},
 			RequiredParents: []string{"project", "db"},
 		},
-		"prepared-query": &configman.TypeDefinition{
+		"prepared-query": &model.TypeDefinition{
 			Schema: m{
 				"type": "object",
 				"properties": m{
@@ -114,7 +114,7 @@ func getTypeDefinitions() configman.Types {
 				},
 				"required": t{"sql"},
 			},
-			Hooks:           configman.Hooks{configman.PhasePreApply: struct{}{}},
+			Hooks:           model.Hooks{model.PhasePreApply: struct{}{}},
 			RequiredParents: []string{"project", "db"},
 		},
 	}
