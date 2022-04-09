@@ -11,11 +11,12 @@ import (
 
 // File implements file store
 type File struct {
-	path string `json:"path,omitempty"`
+	path string
 
 	logger *zap.Logger
 }
 
+// New returns a new file store
 func New(logger *zap.Logger, path string) (*File, error) {
 	return &File{logger: logger, path: path}, nil
 }
@@ -153,10 +154,12 @@ func (f *File) DeleteResources(ctx context.Context, meta *model.ResourceMeta) er
 	return utils.StoreFile(f.path, scConfig)
 }
 
+// SetLogger sets logger for file store
 func (f *File) SetLogger(logger *zap.Logger) {
 	f.logger = logger
 }
 
+// Destruct destroys the file struct
 func (f *File) Destruct() error {
 	return nil
 }

@@ -12,6 +12,7 @@ type Kube struct {
 	logger *zap.Logger
 }
 
+// New returns a kube store
 func New(logger *zap.Logger) (*Kube, error) {
 	return &Kube{logger: logger}, nil
 }
@@ -41,10 +42,12 @@ func (f *Kube) DeleteResources(ctx context.Context, meta *model.ResourceMeta) er
 	return nil
 }
 
+// SetLogger sets logger for kube store
 func (f *Kube) SetLogger(logger *zap.Logger) {
 	f.logger = logger
 }
 
+// Destruct destroys the kube struct
 func (f *Kube) Destruct() error {
 	return nil
 }

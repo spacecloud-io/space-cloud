@@ -46,7 +46,7 @@ func adjustSortArgument(sort map[string]interface{}) []string {
 func getDBWhereClause(db, tableName string, fieldSchemas model.FieldSchemas) *graphql.ArgumentConfig {
 	whereClauseType := graphql.NewInputObject(graphql.InputObjectConfig{
 		Name:        fmt.Sprintf("%s_%s_WhereClause", strings.Title(db), strings.Title(tableName)),
-		Fields:      make(graphql.InputObjectConfigFieldMap, 0),
+		Fields:      make(graphql.InputObjectConfigFieldMap),
 		Description: fmt.Sprintf("Where clause type for %s", strings.Title(tableName)),
 	})
 

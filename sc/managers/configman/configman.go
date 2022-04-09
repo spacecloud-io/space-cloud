@@ -12,7 +12,7 @@ import (
 var connectorPool = caddy.NewUsagePool()
 var poolKey = "configman-poolkey"
 
-// ConfigMan manages all the database modules
+// ConfigMan manages all the store modules
 type ConfigMan struct {
 	// The config this app needs
 	StoreType string `json:"type,omitempty"`
@@ -31,7 +31,7 @@ func (ConfigMan) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
-// Provision sets up the file loader module.
+// Provision sets up the store module.
 func (l *ConfigMan) Provision(ctx caddy.Context) error {
 	l.logger = ctx.Logger(l)
 
@@ -82,6 +82,7 @@ func (l *ConfigMan) Stop() error {
 	return nil
 }
 
+// Cleanup destroys the configman app
 func (l *ConfigMan) Cleanup() error {
 	_, err := connectorPool.Delete(poolKey)
 	if err != nil {
