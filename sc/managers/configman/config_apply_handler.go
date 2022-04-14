@@ -7,6 +7,7 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spaceuptech/helpers"
 	"go.uber.org/zap"
 

@@ -1,11 +1,28 @@
 package configman
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/spacecloud-io/space-cloud/model"
 )
+
+func applyHooks(ctx context.Context, module string, typeDef *model.TypeDefinition, phase model.HookPhase, loadApp loadApp, resourceObj *model.ResourceObject) error {
+	// Invoke hooks if any
+	hook, err := loadHook(module, typeDef, model.PhasePostApply, loadApp)
+	if err != nil {
+		return err
+	}
+
+	// Invoke hook if exists
+	if hook != nil {
+		if err := hook.Hook(ctx, resourceObj); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func extractPathParams(urlPath string) (op, module, typeName, resourceName string, err error) {
 	// Set the default operation to single
