@@ -151,7 +151,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 	ctx, cancel := context.WithCancel(c)
 	defer cancel()
 
-	var dbAlias, col string
+	var col string
 
 	// Return if there are no keys
 	if len(keys) == 0 {
@@ -166,7 +166,6 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 	for index, key := range keys {
 		req := key.(model.ReadRequestKey)
 
-		dbAlias = req.DBAlias
 		col = req.Col
 
 		// Execute query immediately if it has options
@@ -212,7 +211,8 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 		// Prepare a merged request
 		req := model.ReadRequest{Find: map[string]interface{}{"$or": clauses}, Operation: utils.All, Options: &model.ReadOptions{}}
 		// Fire the merged request
-		res, metaData, err := m.Read(ctx, col, &req, model.RequestParams{Resource: "db-read", Op: "access", Attributes: map[string]string{"project": m.project, "db": dbAlias, "col": col}})
+		// TODO: Generate a proper request params
+		res, metaData, err := m.Read(ctx, col, &req, model.RequestParams{})
 		if err != nil {
 			holder.fillErrorMessage(err)
 		} else {

@@ -5,12 +5,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/managers/configman"
+	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spacecloud-io/space-cloud/modules/database/connectors"
 )
 
 func init() {
 	caddy.RegisterModule(App{})
-	_ = configman.RegisterConfigController("database", getTypeDefinitions())
+	configman.RegisterConfigController("database")
 }
 
 var connectorPool = caddy.NewUsagePool()
@@ -89,6 +90,7 @@ func (l *App) Stop() error {
 	return nil
 }
 
+// Cleanup clean up the app
 func (l *App) Cleanup() error {
 	// Iterate over all database configs
 	for k, dbConfig := range l.DBConfigs {
@@ -110,8 +112,8 @@ func (l *App) Cleanup() error {
 
 // Interface guards
 var (
-	_ configman.HookImpl = (*App)(nil)
 	_ caddy.Provisioner  = (*App)(nil)
 	_ caddy.CleanerUpper = (*App)(nil)
 	_ caddy.App          = (*App)(nil)
+	_ model.ConfigCtrl   = (*App)(nil)
 )

@@ -16,9 +16,12 @@ func PrepareConfig(scConfig *config.Config) (*caddy.Config, error) {
 	c.AppsRaw = make(caddy.ModuleMap)
 
 	// Load all the apps. Each app will have data for all the projects combined
+	c.AppsRaw["http"] = prepareHTTPHanndlerApp()
+	c.AppsRaw["configman"] = prepareConfigManApp()
+	c.AppsRaw["config_store"] = prepareStoreApp()
 	c.AppsRaw["database"] = prepareDatabaseApp(scConfig)
 	c.AppsRaw["graphql"] = prepareGraphQLApp()
-	c.AppsRaw["http"] = prepareHTTPHanndlerApp()
+	c.AppsRaw["admin"] = prepareAdminApp()
 
 	return c, nil
 }

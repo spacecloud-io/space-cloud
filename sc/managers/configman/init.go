@@ -12,7 +12,10 @@ func init() {
 	caddy.RegisterModule(ConfigApplyHandler{})
 
 	// operation modules
-	caddy.RegisterModule(OperationGetHandler{})
-	caddy.RegisterModule(OperationDeleteHandler{})
-	caddy.RegisterModule(OperationPostHandler{})
+	caddy.RegisterModule(OperationHandler{})
+
+	// All apps
+	caddy.RegisterModule(ConfigMan{})
+	caddy.RegisterModule(Store{})
+
 }

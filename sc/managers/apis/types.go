@@ -37,6 +37,7 @@ var (
 )
 
 type (
+	// HandlerFunc stores a handler
 	HandlerFunc func(w http.ResponseWriter, r *http.Request, pathParams map[string]string)
 	// App returns the paths it intends to expose
 	App interface {

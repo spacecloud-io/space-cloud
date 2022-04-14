@@ -53,14 +53,16 @@ func ArrayContains(array []interface{}, value interface{}) bool {
 	return false
 }
 
-// ExtractRequestParams extract request info from http request & stores it in reqParam variable
-func ExtractRequestParams(r *http.Request, reqParams model.RequestParams, body interface{}) model.RequestParams {
-	reqParams.RequestID = r.Header.Get(helpers.HeaderRequestID)
-	reqParams.Method = r.Method
-	reqParams.Path = r.URL.Path
-	reqParams.Headers = r.Header
-	reqParams.Payload = body
-	return reqParams
+// GenerateRequestParams extract request info from http request & stores it in reqParam variable
+func GenerateRequestParams(r *http.Request) *model.RequestParams {
+	return &model.RequestParams{
+		RequestID: r.Header.Get(helpers.HeaderRequestID),
+		HTTPParams: model.HTTPParams{
+			Method:  r.Method,
+			Path:    r.URL.Path,
+			Headers: r.Header,
+		},
+	}
 }
 
 // ExtractJoinInfoForInstantInvalidate extracts join info

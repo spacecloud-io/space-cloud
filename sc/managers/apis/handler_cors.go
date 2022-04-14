@@ -8,7 +8,7 @@ import (
 	"github.com/rs/cors"
 )
 
-// APIHandler is responsible to call the appropriate module to process an incoming API request
+// CorsHandler is responsible to handler cors
 type CorsHandler struct {
 }
 

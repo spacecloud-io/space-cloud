@@ -6,13 +6,14 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/spaceuptech/helpers"
+	"github.com/getkin/kin-openapi/openapi3"
 	"go.uber.org/zap"
 )
 
 // OpenAPIHandler is a module to create config Delete handlers
 type OpenAPIHandler struct {
-	logger *zap.Logger
+	logger    *zap.Logger
+	configMan *ConfigMan
 }
 
 // CaddyModule returns the Caddy module information.
@@ -26,12 +27,43 @@ func (OpenAPIHandler) CaddyModule() caddy.ModuleInfo {
 // Provision runs as a prehook to the handler operation
 func (h *OpenAPIHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
+
+	// Get the configman app
+	app, _ := ctx.App("configman")
+	h.configMan = app.(*ConfigMan)
 	return nil
 }
 
 // ServeHTTP handles the http request
 func (h *OpenAPIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	helpers.Logger.LogInfo(helpers.GetRequestID(r.Context()), "Response", map[string]interface{}{"statusCode": http.StatusOK})
+	controllerLock.RLock()
+	defer controllerLock.RUnlock()
+
+	// Load all the type definitions
+	operationTypeDefs := h.configMan.GetOperationTypes()
+	configTypeDefs := h.configMan.GetConfigTypes()
+
+	// Create the open api doc
+	openapiDoc := openapi3.T{
+		OpenAPI: "3.0.0",
+		Info: &openapi3.Info{
+			Title:       "SpaceCloud config and operation APIs",
+			Description: "Specification of all the config and operation APIs exposed by SpaceCloud",
+			Version:     "v0.22.0",
+		},
+		Components: openapi3.NewComponents(),
+		Paths:      make(openapi3.Paths),
+	}
+
+	// Add operation paths to openapi doc
+	for module, types := range operationTypeDefs {
+		addOperationToOpenAPIDoc(openapiDoc, module, types)
+	}
+
+	// Add config paths to openapi doc
+	for module, types := range configTypeDefs {
+		addConfigToOpenAPIDoc(openapiDoc, module, types)
+	}
 
 	// Set the headers and status code
 	w.Header().Set("Cache-Control", "no-store")
