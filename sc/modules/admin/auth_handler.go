@@ -51,7 +51,7 @@ func (h *AdminAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, nex
 		claims, err := h.admin.Auth().Verify(token)
 		if err != nil {
 			h.logger.Error("Unable to parse admin token", zap.Error(err))
-			helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, errors.New("invalid admin token provided"))
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, errors.New("invalid admin token provided"))
 			return nil
 		}
 

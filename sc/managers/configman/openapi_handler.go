@@ -57,7 +57,7 @@ func (h *OpenAPIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next 
 
 	// Add operation paths to openapi doc
 	for module, types := range operationTypeDefs {
-		addOperationToOpenAPIDoc(openapiDoc, module, types)
+		_ = addOperationToOpenAPIDoc(openapiDoc, module, types)
 	}
 
 	// Add config paths to openapi doc
