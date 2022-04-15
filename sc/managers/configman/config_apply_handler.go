@@ -2,20 +2,25 @@ package configman
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spaceuptech/helpers"
 	"go.uber.org/zap"
+
+	"github.com/spacecloud-io/space-cloud/model"
+	"github.com/spacecloud-io/space-cloud/modules/middlewares"
 )
 
 // ConfigApplyHandler is a module to create config POST handlers
 type ConfigApplyHandler struct {
-	logger    *zap.Logger
-	appLoader loadApp
-	store     *ConfigMan
+	// Internal stuff
+	logger      *zap.Logger
+	appLoader   loadApp
+	store       *Store
+	configTypes map[string]model.ConfigTypes
 }
 
 // CaddyModule returns the Caddy module information.
@@ -31,12 +36,16 @@ func (h *ConfigApplyHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 	h.appLoader = ctx.App
 
-	store, err := ctx.App("configman")
+	store, err := ctx.App("config_store")
 	if err != nil {
 		return err
 	}
 
-	h.store = store.(*ConfigMan)
+	h.store = store.(*Store)
+
+	// Load all the configuration types
+	app, _ := ctx.App("configman")
+	h.configTypes = app.(*ConfigMan).GetConfigTypes()
 	return nil
 }
 
@@ -49,8 +58,15 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 		return nil
 	}
 
+	// Check if request is authenticated
+	reqParams := middlewares.GetRequestParams(r)
+	if !middlewares.IsRequestAuthenticated(reqParams, true) {
+		h.logger.Error("Request has not been authenticated")
+		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, errors.New("user is not authenticated to make this request"))
+	}
+
 	// Get the type definition
-	typeDef, err := loadTypeDefinition(module, typeName)
+	typeDef, err := loadConfigTypeDefinition(h.configTypes, module, typeName)
 	if err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
@@ -72,9 +88,11 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 	}
 
 	// Invoke pre-apply hooks if any
-	if err := applyHooks(r.Context(), module, typeDef, model.PhasePreApply, h.appLoader, resourceObject); err != nil {
-		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
-		return nil
+	if typeDef.Controller.PreApply != nil {
+		if err := typeDef.Controller.PreApply(r.Context(), resourceObject, h.store); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
+			return nil
+		}
 	}
 
 	// Put object in store
@@ -84,9 +102,11 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 	}
 
 	// Invoke post-apply hooks if any
-	if err := applyHooks(r.Context(), module, typeDef, model.PhasePostApply, h.appLoader, resourceObject); err != nil {
-		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
-		return nil
+	if typeDef.Controller.PostApply != nil {
+		if err := typeDef.Controller.PostApply(r.Context(), resourceObject, h.store); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
+			return nil
+		}
 	}
 
 	// Send ok response to client

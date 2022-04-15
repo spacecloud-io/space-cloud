@@ -13,6 +13,7 @@ require (
 	github.com/google/go-cmp v0.5.7
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
 	github.com/graphql-go/graphql v0.8.0
+	github.com/invopop/jsonschema v0.4.0
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lib/pq v1.10.4
 	github.com/mitchellh/mapstructure v1.4.3
@@ -59,6 +60,7 @@ require (
 	github.com/go-openapi/swag v0.19.5 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.4.1 // indirect
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
 	github.com/golang-sql/sqlexp v0.0.0-20170517235910-f1bb20e5a188 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -70,6 +72,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

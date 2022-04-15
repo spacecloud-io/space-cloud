@@ -1,20 +1,11 @@
 package configman
 
 import (
-	"context"
-
 	"github.com/getkin/kin-openapi/openapi3"
-
-	"github.com/spacecloud-io/space-cloud/model"
 )
 
 type (
 	loadApp func(appName string) (interface{}, error)
-
-	// HookImpl is a controller which implements the hook interface
-	HookImpl interface {
-		Hook(ctx context.Context, obj *model.ResourceObject) error
-	}
 )
 
 var (

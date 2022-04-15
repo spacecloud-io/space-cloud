@@ -1,13 +1,24 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/xeipuuv/gojsonschema"
 )
 
 type (
+	// StoreMan implemments store
+	StoreMan interface {
+		ApplyResource(ctx context.Context, resourceObj *ResourceObject) error
+		GetResource(ctx context.Context, meta *ResourceMeta) (*ResourceObject, error)
+		GetResources(ctx context.Context, meta *ResourceMeta) (*ListResourceObjects, error)
+		DeleteResource(ctx context.Context, meta *ResourceMeta) error
+		DeleteResources(ctx context.Context, meta *ResourceMeta) error
+	}
+
 	// ResourceMeta contains the meta information about a resource
 	ResourceMeta struct {
 		Module  string            `json:"module" yaml:"module"`
@@ -27,74 +38,128 @@ type (
 		List []*ResourceObject `json:"list" yaml:"list"`
 	}
 
-	// Types describes all the types which belong to a particular module
-	Types map[string]*TypeDefinition
+	// OperationTypes describes all the types which belong to a particular module
+	OperationTypes map[string]*OperationTypeDefinition
 
-	// TypeDefinition describes the definition of a particular resource type
-	TypeDefinition struct {
+	// OperationTypeDefinition describes the definition of a particular operation type
+	OperationTypeDefinition struct {
+		IsProtected     bool           `json:"isProtected" yaml:"isProtected"`
+		Method          string         `json:"isSecure" yaml:"isSecure"`
+		RequestSchema   interface{}    `json:"requestSchema" yaml:"requestSchema"`
+		ResponseSchema  interface{}    `json:"responseSchema" yaml:"responseSchema"`
+		RequiredParents []string       `json:"requiredParents" yaml:"requiredParents"`
+		Controller      OperationHooks `json:"-" yaml:"-"`
+	}
+
+	// ConfigTypes describes all the types which belong to a particular module
+	ConfigTypes map[string]*ConfigTypeDefinition
+
+	// ConfigTypeDefinition describes the definition of a particular resource type
+	ConfigTypeDefinition struct {
 		IsSecure        bool        `json:"isSecure" yaml:"isSecure"`
 		Schema          interface{} `json:"schema" yaml:"schema"`
-		Hooks           Hooks       `json:"hooks" yaml:"hooks"`
 		RequiredParents []string    `json:"requiredParents" yaml:"requiredParents"`
+		Controller      ConfigHooks `json:"-" yaml:"-"`
 	}
 
-	// Hooks describes the hooks to be invoked on the module
-	Hooks map[HookPhase]struct{}
+	// OperationHooks is used for processing an operation
+	OperationHooks struct {
+		DecodePayload func(ctx context.Context, reader io.ReadCloser) (interface{}, error)
+		Handle        func(ctx context.Context, obj *ResourceObject, reqParams *RequestParams) (status int, payload interface{}, err error)
+	}
 
-	// HookPhase describes the various phases where hooks can be invoked.
-	HookPhase string
+	// ConfigHooks is used for processing config hooks
+	ConfigHooks struct {
+		PreApply   func(ctx context.Context, obj *ResourceObject, store StoreMan) error
+		PostApply  func(ctx context.Context, obj *ResourceObject, store StoreMan) error
+		PreGet     func(ctx context.Context, obj ResourceMeta, store StoreMan) error
+		PostGet    func(ctx context.Context, obj *ListResourceObjects, store StoreMan) error
+		PreDelete  func(ctx context.Context, obj ResourceMeta, store StoreMan) error
+		PostDelete func(ctx context.Context, obj ResourceMeta, store StoreMan) error
+	}
+
+	// OperationCtrl are modules which expose operations
+	OperationCtrl interface {
+		GetOperationTypes() OperationTypes
+	}
+
+	// ConfigCtrl are modules which expose configs
+	ConfigCtrl interface {
+		GetConfigTypes() ConfigTypes
+	}
 )
 
-const (
-	// PhasePreApply is invoked before the configuration is put in the store.
-	PhasePreApply HookPhase = "pre-apply"
+// const (
+// 	// PhasePreApply is invoked before the configuration is put in the store.
+// 	PhasePreApply HookPhase = "pre-apply"
 
-	// PhasePostApply is invoked after the configuration is put in the store.
-	PhasePostApply HookPhase = "post-apply"
+// 	// PhasePostApply is invoked after the configuration is put in the store.
+// 	PhasePostApply HookPhase = "post-apply"
 
-	// PhasePreGet is invoked before the configuration is get from the store.
-	PhasePreGet HookPhase = "pre-get"
+// 	// PhasePreGet is invoked before the configuration is get from the store.
+// 	PhasePreGet HookPhase = "pre-get"
 
-	// PhasePostGet is invoked after the configuration is get from the store.
-	PhasePostGet HookPhase = "post-get"
+// 	// PhasePostGet is invoked after the configuration is get from the store.
+// 	PhasePostGet HookPhase = "post-get"
 
-	// PhasePreDelete is invoked before the configuration is delete from the store.
-	PhasePreDelete HookPhase = "pre-apply"
+// 	// PhasePreDelete is invoked before the configuration is delete from the store.
+// 	PhasePreDelete HookPhase = "pre-apply"
 
-	// PhasePostDelete is invoked after the configuration is delete from the store.
-	PhasePostDelete HookPhase = "post-apply"
-)
+// 	// PhasePostDelete is invoked after the configuration is delete from the store.
+// 	PhasePostDelete HookPhase = "post-apply"
+// )
 
 // VerifyObject verifies if the config object is valid
-func (typeDef *TypeDefinition) VerifyObject(configObject *ResourceObject) ([]string, error) {
+func (typeDef *OperationTypeDefinition) VerifyObject(configObject *ResourceObject) ([]string, error) {
 	// Check if all required fields are present
-	if configObject.Meta.Name == "" {
-		return nil, errors.New("resource name is missing")
+	if err := verifyMeta(configObject.Meta); err != nil {
+		return nil, err
 	}
-	if configObject.Meta.Module == "" {
-		return nil, errors.New("resource module is missing")
-	}
-	if configObject.Meta.Type == "" {
-		return nil, errors.New("resource type is missing")
-	}
-
 	// Check if all required parents are present in object
-	if err := verifyConfigParents(typeDef, configObject.Meta.Parents); err != nil {
+	if err := verifyConfigParents(typeDef.RequiredParents, configObject.Meta.Parents); err != nil {
 		return nil, err
 	}
 
 	// Very specification schema
-	return verifySpecSchema(typeDef, configObject.Spec)
+	return verifySpecSchema(typeDef.RequestSchema, configObject.Spec)
 }
 
-func verifySpecSchema(typeDef *TypeDefinition, spec interface{}) ([]string, error) {
+// VerifyObject verifies if the config object is valid
+func (typeDef *ConfigTypeDefinition) VerifyObject(configObject *ResourceObject) ([]string, error) {
+	// Check if all required fields are present
+	if err := verifyMeta(configObject.Meta); err != nil {
+		return nil, err
+	}
+	// Check if all required parents are present in object
+	if err := verifyConfigParents(typeDef.RequiredParents, configObject.Meta.Parents); err != nil {
+		return nil, err
+	}
+
+	// Very specification schema
+	return verifySpecSchema(typeDef.Schema, configObject.Spec)
+}
+
+func verifyMeta(meta ResourceMeta) error {
+	if meta.Name == "" {
+		return errors.New("resource name is missing")
+	}
+	if meta.Module == "" {
+		return errors.New("resource module is missing")
+	}
+	if meta.Type == "" {
+		return errors.New("resource type is missing")
+	}
+	return nil
+}
+
+func verifySpecSchema(schema, spec interface{}) ([]string, error) {
 	// Skip verification if no json schema is supplied
-	if typeDef.Schema == nil {
+	if schema == nil {
 		return nil, nil
 	}
 
 	// Perform JSON schema validation
-	schemaLoader := gojsonschema.NewGoLoader(typeDef.Schema)
+	schemaLoader := gojsonschema.NewGoLoader(schema)
 	documentLoader := gojsonschema.NewGoLoader(spec)
 	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 	if err != nil {
@@ -115,9 +180,9 @@ func verifySpecSchema(typeDef *TypeDefinition, spec interface{}) ([]string, erro
 	return arr, fmt.Errorf("json schema validation failed")
 }
 
-func verifyConfigParents(typeDef *TypeDefinition, parents map[string]string) error {
+func verifyConfigParents(requiredParents []string, parents map[string]string) error {
 	// Simply return if object has no required parents
-	if len(typeDef.RequiredParents) == 0 {
+	if len(requiredParents) == 0 {
 		return nil
 	}
 
@@ -127,7 +192,7 @@ func verifyConfigParents(typeDef *TypeDefinition, parents map[string]string) err
 	}
 
 	// Check if all required parents are available
-	for _, parent := range typeDef.RequiredParents {
+	for _, parent := range requiredParents {
 		if _, p := parents[parent]; !p {
 			return fmt.Errorf("parent '%s' not present in resource", parent)
 		}

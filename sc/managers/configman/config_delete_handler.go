@@ -1,11 +1,13 @@
 package configman
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/spacecloud-io/space-cloud/model"
+	"github.com/spacecloud-io/space-cloud/modules/middlewares"
 	"github.com/spacecloud-io/space-cloud/utils"
 	"github.com/spaceuptech/helpers"
 	"go.uber.org/zap"
@@ -13,9 +15,10 @@ import (
 
 // ConfigDeleteHandler is a module to create config Delete handlers
 type ConfigDeleteHandler struct {
-	logger    *zap.Logger
-	appLoader loadApp
-	store     *ConfigMan
+	logger      *zap.Logger
+	appLoader   loadApp
+	store       *Store
+	configTypes map[string]model.ConfigTypes
 }
 
 // CaddyModule returns the Caddy module information.
@@ -31,12 +34,16 @@ func (h *ConfigDeleteHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 	h.appLoader = ctx.App
 
-	store, err := ctx.App("configman")
+	store, err := ctx.App("config_store")
 	if err != nil {
 		return err
 	}
 
-	h.store = store.(*ConfigMan)
+	h.store = store.(*Store)
+
+	// Load all the configuration types
+	app, _ := ctx.App("configman")
+	h.configTypes = app.(*ConfigMan).GetConfigTypes()
 	return nil
 }
 
@@ -49,8 +56,15 @@ func (h *ConfigDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, 
 		return nil
 	}
 
+	// Check if request is authenticated
+	reqParams := middlewares.GetRequestParams(r)
+	if !middlewares.IsRequestAuthenticated(reqParams, true) {
+		h.logger.Error("Request has not been authenticated")
+		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusUnauthorized, errors.New("user is not authenticated to make this request"))
+	}
+
 	// Get the type definition
-	typeDef, err := loadTypeDefinition(module, typeName)
+	typeDef, err := loadConfigTypeDefinition(h.configTypes, module, typeName)
 	if err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
@@ -69,9 +83,11 @@ func (h *ConfigDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, 
 	}
 
 	// Invoke pre-delete hooks if any
-	if err := applyHooks(r.Context(), module, typeDef, model.PhasePreDelete, h.appLoader, resourceObj); err != nil {
-		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
-		return nil
+	if typeDef.Controller.PreDelete != nil {
+		if err := typeDef.Controller.PreDelete(r.Context(), resourceObj.Meta, h.store); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
+			return nil
+		}
 	}
 
 	// Remove object from store
@@ -87,10 +103,12 @@ func (h *ConfigDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, 
 		}
 	}
 
-	// Invoke pre-delete hooks if any
-	if err := applyHooks(r.Context(), module, typeDef, model.PhasePostDelete, h.appLoader, resourceObj); err != nil {
-		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
-		return nil
+	// Invoke post-delete hooks if any
+	if typeDef.Controller.PostDelete != nil {
+		if err := typeDef.Controller.PostDelete(r.Context(), resourceObj.Meta, h.store); err != nil {
+			_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
+			return nil
+		}
 	}
 
 	_ = helpers.Response.SendOkayResponse(r.Context(), http.StatusOK, w)

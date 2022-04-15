@@ -77,7 +77,7 @@ func makeSubRouter(ctx caddy.Context, allAPIs []*API) (caddyhttp.Handler, error)
 
 		handlerObj := caddyhttp.Route{
 			Group:          api.app,
-			MatcherSetsRaw: utils.GetCaddyMatcherSet(path, methods),
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, methods),
 			HandlersRaw: utils.GetCaddyHandler("api", map[string]interface{}{
 				"path":    path,
 				"indexes": indexes,

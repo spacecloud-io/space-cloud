@@ -1,5 +1,8 @@
 package utils
 
+// InternalUserID is the auth.id used for internal requests
+const InternalUserID string = "internal-sc-user"
+
 // GraphQLGroupByArgument is used by graphql group clause
 const GraphQLGroupByArgument = "group"
 

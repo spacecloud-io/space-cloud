@@ -8,10 +8,10 @@ import (
 )
 
 // GetCaddyMatcherSet returns a caddy matcher set
-func GetCaddyMatcherSet(path string, methods []string) []caddy.ModuleMap {
+func GetCaddyMatcherSet(path []string, methods []string) []caddy.ModuleMap {
 	// We will always need to match based on the path
 	set := map[string]json.RawMessage{
-		"path": GetByteStringArray(path),
+		"path": GetByteStringArray(path...),
 	}
 
 	// Match on method if provided

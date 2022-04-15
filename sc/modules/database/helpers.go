@@ -28,7 +28,7 @@ func generateUniqueDBKey(projectID string, c *config.DatabaseConfig) string {
 	return fmt.Sprintf("%s---%s--%v", CombineDBConfigKey(projectID, c.DbAlias), c.DBName, c.DriverConf)
 }
 
-func (l *App) processDBSchemaHook(ctx context.Context, obj *model.ResourceObject) error {
+func (l *App) processDBSchemaHook(ctx context.Context, obj *model.ResourceObject, store model.StoreMan) error {
 	// Convert object to a known type
 	dbSchema := new(config.DatabaseSchema)
 	if err := mapstructure.Decode(obj.Spec, dbSchema); err != nil {
@@ -54,7 +54,7 @@ func (l *App) processDBSchemaHook(ctx context.Context, obj *model.ResourceObject
 	return db.ApplyCollectionSchema(ctx, obj.Meta.Name, newSchema)
 }
 
-func processPreparedQuery(obj *model.ResourceObject) error {
+func processPreparedQuery(ctx context.Context, obj *model.ResourceObject, store model.StoreMan) error {
 	// Set some spec values which may be absent
 	m := obj.Spec.(map[string]interface{})
 	m["id"] = obj.Meta.Name
@@ -63,11 +63,12 @@ func processPreparedQuery(obj *model.ResourceObject) error {
 	return nil
 }
 
-func processConfig(obj *model.ResourceObject) error {
+func processConfigHook(ctx context.Context, obj *model.ResourceObject, store model.StoreMan) error {
 	// Set some spec values which may be absent
 	m := obj.Spec.(map[string]interface{})
 	m["dbAlias"] = obj.Meta.Name
 
+	// TODO: Check if we can connect
 	return nil
 }
 
