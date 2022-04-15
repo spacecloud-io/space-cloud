@@ -13,22 +13,22 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-// AdminAuthHandler is a module to create admin auth handler
-type AdminAuthHandler struct {
+// AuthHandler is a module to create admin auth handler
+type AuthHandler struct {
 	logger *zap.Logger
 	admin  *App
 }
 
 // CaddyModule returns the Caddy module information.
-func (AdminAuthHandler) CaddyModule() caddy.ModuleInfo {
+func (AuthHandler) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "http.handlers.sc_admin_auth_handler",
-		New: func() caddy.Module { return new(AdminAuthHandler) },
+		New: func() caddy.Module { return new(AuthHandler) },
 	}
 }
 
 // Provision sets up the handler
-func (h *AdminAuthHandler) Provision(ctx caddy.Context) error {
+func (h *AuthHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 
 	// Get the admin auth
@@ -42,7 +42,7 @@ func (h *AdminAuthHandler) Provision(ctx caddy.Context) error {
 }
 
 // ServeHTTP handles the http request
-func (h *AdminAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+func (h *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	// Get the admin token
 	token := utils.GetTokenFromHeader(r)
 
@@ -64,5 +64,5 @@ func (h *AdminAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, nex
 }
 
 // Interface guard
-var _ caddy.Provisioner = (*AdminAuthHandler)(nil)
-var _ caddyhttp.MiddlewareHandler = (*AdminAuthHandler)(nil)
+var _ caddy.Provisioner = (*AuthHandler)(nil)
+var _ caddyhttp.MiddlewareHandler = (*AuthHandler)(nil)
