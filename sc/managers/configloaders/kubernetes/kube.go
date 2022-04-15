@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 
 	"github.com/caddyserver/caddy/v2"
-	"go.uber.org/zap"
-
 	"github.com/spacecloud-io/space-cloud/managers/configloaders/common"
+	"github.com/spacecloud-io/space-cloud/model"
+	"go.uber.org/zap"
 )
 
 var connectorPool = caddy.NewUsagePool()
@@ -67,7 +67,9 @@ func (k *Loader) LoadConfig(ctx caddy.Context) ([]byte, error) {
 	// Load the new caddy config
 	kubeConnector.Lock.Lock()
 	defer kubeConnector.Lock.Unlock()
-	config, err := common.PrepareConfig(kubeConnector.ProjectsConfig)
+
+	// TODO: pass SC config to this function
+	config, err := common.PrepareConfig(&model.SCConfig{})
 	if err != nil {
 		k.logger.Error("Unable to prepare caddy config", zap.Error(err))
 		return nil, err
