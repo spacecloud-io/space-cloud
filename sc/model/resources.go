@@ -10,6 +10,14 @@ import (
 )
 
 type (
+	// SCConfig is use to store sc config in a file
+	SCConfig struct {
+		Config map[string]ConfigModule `json:"config" yaml:"config" mapstructure:"config"`
+	}
+
+	// ConfigModule store module wise sc config
+	ConfigModule map[string][]*ResourceObject
+
 	// StoreMan implemments store
 	StoreMan interface {
 		ApplyResource(ctx context.Context, resourceObj *ResourceObject) error

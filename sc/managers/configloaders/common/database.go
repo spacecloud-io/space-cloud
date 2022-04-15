@@ -3,41 +3,70 @@ package common
 import (
 	"encoding/json"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/spacecloud-io/space-cloud/config"
+	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spacecloud-io/space-cloud/modules/database"
 )
 
-func prepareDatabaseApp(scConfig *config.Config) []byte {
+func prepareDatabaseApp(fileConfig *model.SCConfig) []byte {
 	dbConfigs := map[string]*database.Config{}
-	for projectID, project := range scConfig.Projects {
-		for _, dbConfig := range project.DatabaseConfigs {
-			// Pick the db schemas and prepared queries specified for this database
-			dbSchemas := make(config.DatabaseSchemas)
-			dbPreparedQueries := make(config.DatabasePreparedQueries)
 
-			// We are only interested in the schemas that belong to this database
-			for _, schema := range project.DatabaseSchemas {
-				if schema.DbAlias == dbConfig.DbAlias {
-					dbSchemas[schema.Table] = schema
-				}
-			}
+	module, ok := fileConfig.Config["database"]
+	if !ok {
+		return prepareReturn(dbConfigs)
+	}
+	resourceObjects, ok := module["config"]
+	if !ok {
+		return prepareReturn(dbConfigs)
+	}
 
-			// We are only interested in the prepared queries that belong to this database
-			for _, query := range project.DatabasePreparedQueries {
-				if query.DbAlias == dbConfig.DbAlias {
-					dbPreparedQueries[query.ID] = query
-				}
-			}
+	for _, resourceObject := range resourceObjects {
+		dbConfig := new(config.DatabaseConfig)
+		if err := mapstructure.Decode(resourceObject.Spec, dbConfig); err != nil {
+			return prepareReturn(map[string]*database.Config{})
+		}
 
-			// We prefix the alias with project id to make sure we face no conflicts when too projects have the same dbAlias
-			dbConfigs[database.CombineDBConfigKey(projectID, dbConfig.DbAlias)] = &database.Config{
-				Connector:       dbConfig,
-				Schemas:         dbSchemas,
-				PreparedQueries: dbPreparedQueries,
-			}
+		projectID := resourceObject.Meta.Parents["project"]
+		key := database.CombineDBConfigKey(projectID, dbConfig.DbAlias)
+		dbConfigs[key] = &database.Config{
+			Connector:       dbConfig,
+			Schemas:         make(config.DatabaseSchemas),
+			PreparedQueries: make(config.DatabasePreparedQueries),
 		}
 	}
 
+	resourceObjects, ok = module["schema"]
+	if ok {
+		for _, resourceObject := range resourceObjects {
+			schema := new(config.DatabaseSchema)
+			if err := mapstructure.Decode(resourceObject.Spec, schema); err != nil {
+				return prepareReturn(map[string]*database.Config{})
+			}
+
+			projectID := resourceObject.Meta.Parents["project"]
+			key := database.CombineDBConfigKey(projectID, schema.DbAlias)
+			dbConfigs[key].Schemas[schema.Table] = schema
+		}
+	}
+
+	resourceObjects, ok = module["prepared-query"]
+	if ok {
+		for _, resourceObject := range resourceObjects {
+			query := new(config.DatbasePreparedQuery)
+			if err := mapstructure.Decode(resourceObject.Spec, query); err != nil {
+				return prepareReturn(map[string]*database.Config{})
+			}
+
+			projectID := resourceObject.Meta.Parents["project"]
+			key := database.CombineDBConfigKey(projectID, query.DbAlias)
+			dbConfigs[key].PreparedQueries[query.ID] = query
+		}
+	}
+	return prepareReturn(dbConfigs)
+}
+
+func prepareReturn(dbConfigs map[string]*database.Config) []byte {
 	data, _ := json.Marshal(map[string]interface{}{"dbConfigs": dbConfigs})
 	return data
 }

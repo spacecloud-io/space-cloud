@@ -23,18 +23,18 @@ func New(logger *zap.Logger, path string) (*File, error) {
 
 // ApplyResource applies resource in the store
 func (f *File) ApplyResource(ctx context.Context, resourceObj *model.ResourceObject) error {
-	scConfig := new(config)
+	scConfig := new(model.SCConfig)
 	if err := utils.LoadFile(f.path, scConfig); err != nil {
 		return err
 	}
 
 	if scConfig.Config == nil {
-		scConfig.Config = make(map[string]configModule)
+		scConfig.Config = make(map[string]model.ConfigModule)
 	}
 
 	module, ok := scConfig.Config[resourceObj.Meta.Module]
 	if !ok {
-		module = make(configModule)
+		module = make(model.ConfigModule)
 	}
 
 	moduleType, ok := module[resourceObj.Meta.Type]
@@ -51,7 +51,7 @@ func (f *File) ApplyResource(ctx context.Context, resourceObj *model.ResourceObj
 
 // GetResource gets resource from the store
 func (f *File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*model.ResourceObject, error) {
-	scConfig := new(config)
+	scConfig := new(model.SCConfig)
 	if err := utils.LoadFile(f.path, scConfig); err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (f *File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*mode
 
 // GetResources gets resources from the store
 func (f *File) GetResources(ctx context.Context, meta *model.ResourceMeta) (*model.ListResourceObjects, error) {
-	scConfig := new(config)
+	scConfig := new(model.SCConfig)
 	if err := utils.LoadFile(f.path, scConfig); err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (f *File) GetResources(ctx context.Context, meta *model.ResourceMeta) (*mod
 
 // DeleteResource delete resource from the store
 func (f *File) DeleteResource(ctx context.Context, meta *model.ResourceMeta) error {
-	scConfig := new(config)
+	scConfig := new(model.SCConfig)
 	if err := utils.LoadFile(f.path, scConfig); err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (f *File) DeleteResource(ctx context.Context, meta *model.ResourceMeta) err
 
 // DeleteResources delete resources from the store
 func (f *File) DeleteResources(ctx context.Context, meta *model.ResourceMeta) error {
-	scConfig := new(config)
+	scConfig := new(model.SCConfig)
 	if err := utils.LoadFile(f.path, scConfig); err != nil {
 		return err
 	}
