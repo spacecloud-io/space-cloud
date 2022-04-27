@@ -36,15 +36,15 @@ func (l *App) processDBSchemaHook(ctx context.Context, obj *model.ResourceObject
 	}
 
 	// Check if database exists
-	db, p := l.connectors[CombineDBConfigKey(obj.Meta.Parents["project"], obj.Meta.Parents["db"])]
+	db, p := l.connectors[CombineDBConfigKey(obj.Meta.Parents["project"], obj.Meta.Parents["database"])]
 	if !p {
-		return fmt.Errorf("unknown database alias '%s' provided", obj.Meta.Parents["db"])
+		return fmt.Errorf("unknown database alias '%s' provided", obj.Meta.Parents["database"])
 	}
 
 	// Set some spec values which may be absent
 	m := obj.Spec.(map[string]interface{})
 	m["col"] = obj.Meta.Name
-	m["dbAlias"] = obj.Meta.Parents["db"]
+	m["dbAlias"] = obj.Meta.Parents["database"]
 
 	// Try to create the table in the database
 	newSchema, err := schema.Parser(config.DatabaseSchemas{obj.Meta.Name: dbSchema})
@@ -58,7 +58,7 @@ func processPreparedQuery(ctx context.Context, obj *model.ResourceObject, store 
 	// Set some spec values which may be absent
 	m := obj.Spec.(map[string]interface{})
 	m["id"] = obj.Meta.Name
-	m["dbAlias"] = obj.Meta.Parents["db"]
+	m["dbAlias"] = obj.Meta.Parents["database"]
 
 	return nil
 }

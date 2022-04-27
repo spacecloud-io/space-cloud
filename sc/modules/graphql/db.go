@@ -74,20 +74,20 @@ func getDBWhereClause(db, tableName string, fieldSchemas model.FieldSchemas) *gr
 func getDBFilter(graphqlType graphql.Output) *graphql.InputObject {
 	// Add the default operators for all types first
 	whereClauseOperators := graphql.InputObjectConfigFieldMap{
-		"_eq":  &graphql.InputObjectFieldConfig{Type: graphqlType},
-		"_ne":  &graphql.InputObjectFieldConfig{Type: graphqlType},
-		"_gt":  &graphql.InputObjectFieldConfig{Type: graphqlType},
-		"_gte": &graphql.InputObjectFieldConfig{Type: graphqlType},
-		"_lt":  &graphql.InputObjectFieldConfig{Type: graphqlType},
-		"_lte": &graphql.InputObjectFieldConfig{Type: graphqlType},
-		"_in":  &graphql.InputObjectFieldConfig{Type: graphql.NewList(graphqlType)},
-		"_nin": &graphql.InputObjectFieldConfig{Type: graphql.NewList(graphqlType)},
+		"_eq":  &graphql.InputObjectFieldConfig{Type: anyType},
+		"_ne":  &graphql.InputObjectFieldConfig{Type: anyType},
+		"_gt":  &graphql.InputObjectFieldConfig{Type: anyType},
+		"_gte": &graphql.InputObjectFieldConfig{Type: anyType},
+		"_lt":  &graphql.InputObjectFieldConfig{Type: anyType},
+		"_lte": &graphql.InputObjectFieldConfig{Type: anyType},
+		"_in":  &graphql.InputObjectFieldConfig{Type: graphql.NewList(anyType)},
+		"_nin": &graphql.InputObjectFieldConfig{Type: graphql.NewList(anyType)},
 	}
 
 	// Specific operators for string type
 	if graphqlType == graphql.String {
-		whereClauseOperators["_regex"] = &graphql.InputObjectFieldConfig{Type: graphqlType}
-		whereClauseOperators["_like"] = &graphql.InputObjectFieldConfig{Type: graphqlType}
+		whereClauseOperators["_regex"] = &graphql.InputObjectFieldConfig{Type: anyType}
+		whereClauseOperators["_like"] = &graphql.InputObjectFieldConfig{Type: anyType}
 	}
 
 	// TODO: Specific operators for json type
@@ -98,13 +98,13 @@ func getDBFilter(graphqlType graphql.Output) *graphql.InputObject {
 	})
 }
 
-func adjustWhereClause(where map[string]interface{}) map[string]interface{} {
+func adjustWhereClause(where map[string]interface{}, s *store, path *graphql.ResponsePath) map[string]interface{} {
 	newWhereClause := make(map[string]interface{}, len(where))
 	for fieldName, val := range where {
 		if fieldName == "_or" {
 			arr := val.([]interface{})
 			for i, item := range arr {
-				arr[i] = adjustWhereClause(item.(map[string]interface{}))
+				arr[i] = adjustWhereClause(item.(map[string]interface{}), s, path)
 			}
 			newWhereClause["$or"] = arr
 			continue
@@ -119,6 +119,9 @@ func adjustWhereClause(where map[string]interface{}) map[string]interface{} {
 		// Replace the '_' with a '$'
 		newOperatorMap := make(map[string]interface{}, len(operatorMap))
 		for k, v := range operatorMap {
+			if temp, p := s.load(v, path); p {
+				v = temp
+			}
 			newOperatorMap["$"+k[1:]] = v
 		}
 

@@ -155,6 +155,7 @@ func (a *App) GetHandler(op string) (apis.HandlerFunc, error) {
 			AST:           rawAst,
 			OperationName: req.OperationName,
 			Args:          req.Variables,
+			Root:          newStore(),
 		})
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, result)
 	}

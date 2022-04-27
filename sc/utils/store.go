@@ -222,7 +222,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 
 	scope, present := state[tempArray[0]]
 	if !present {
-		return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Scope (%s) not present", tempArray[0]), nil, nil)
+		return nil, fmt.Errorf("scope (%s) not present", tempArray[0])
 	}
 
 	// obj, ok := scope.(map[string]interface{})

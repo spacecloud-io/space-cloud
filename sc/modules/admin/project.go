@@ -14,7 +14,7 @@ import (
 func getProjectConfigTypes() model.ConfigTypes {
 	reflector := utils.GetJSONSchemaReflector()
 	return model.ConfigTypes{
-		"config": &model.ConfigTypeDefinition{
+		"project": &model.ConfigTypeDefinition{
 			Schema:          reflector.Reflect(&projectConfig{}),
 			RequiredParents: []string{},
 		},

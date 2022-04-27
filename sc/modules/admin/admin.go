@@ -12,8 +12,9 @@ import (
 
 func init() {
 	caddy.RegisterModule(App{})
-	configman.RegisterOperationController("admin")
-	configman.RegisterConfigController("admin")
+	caddy.RegisterModule(AuthHandler{})
+	configman.RegisterOperationController("adminman")
+	configman.RegisterConfigController("adminman")
 }
 
 // App manages all the admin actions
@@ -37,7 +38,7 @@ type App struct {
 // CaddyModule returns the Caddy module information.
 func (App) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "admin",
+		ID:  "adminman",
 		New: func() caddy.Module { return new(App) },
 	}
 }

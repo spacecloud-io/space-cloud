@@ -32,7 +32,7 @@ func (h *AuthHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 
 	// Get the admin auth
-	app, err := ctx.App("admin")
+	app, err := ctx.App("adminman")
 	if err != nil {
 		h.logger.Error("Unable to load admin module", zap.Error(err))
 		return err

@@ -25,6 +25,9 @@ type App struct {
 
 	// GraphQL schema
 	schemas map[string]*graphql.Schema // Key: projectid
+
+	// Registered queries
+	registeredQueries map[string]struct{}
 }
 
 // CaddyModule returns the Caddy module information.
@@ -54,10 +57,12 @@ func (a *App) Provision(ctx caddy.Context) error {
 // Start begins the graphql app operations
 func (a *App) Start() error {
 	// Prepare schema for each project
+	a.registeredQueries = map[string]struct{}{}
 	a.schemas = make(map[string]*graphql.Schema, len(a.dbSchemas))
 	for project := range a.dbSchemas {
 		schema, err := graphql.NewSchema(graphql.SchemaConfig{
-			Query: a.getQueryType(project),
+			Query:      a.getQueryType(project),
+			Directives: getDirectors(),
 		})
 		if err != nil {
 			a.logger.Error("Unable to prepare graphql schema", zap.Error(err), zap.String("project", project))

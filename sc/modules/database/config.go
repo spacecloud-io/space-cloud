@@ -80,7 +80,7 @@ func (a *App) getTypeDefinitions() model.ConfigTypes {
 				},
 				"required": t{"schema"},
 			},
-			RequiredParents: []string{"project", "db"},
+			RequiredParents: []string{"project", "database"},
 			Controller:      model.ConfigHooks{PreApply: a.processDBSchemaHook},
 		},
 		"prepared-query": &model.ConfigTypeDefinition{
@@ -109,7 +109,7 @@ func (a *App) getTypeDefinitions() model.ConfigTypes {
 				},
 				"required": t{"sql"},
 			},
-			RequiredParents: []string{"project", "db"},
+			RequiredParents: []string{"project", "database"},
 			Controller: model.ConfigHooks{
 				PreApply: processPreparedQuery,
 			},
