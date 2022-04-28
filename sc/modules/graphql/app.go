@@ -20,8 +20,9 @@ type App struct {
 	database *database.App
 
 	// For internal usage
-	logger    *zap.Logger
-	dbSchemas map[string]model.DBSchemas
+	logger           *zap.Logger
+	dbSchemas        map[string]model.DBSchemas
+	rootGraphQLTypes map[string]map[string]*graphql.Object // projectid -> roottype -> graphql object
 
 	// GraphQL schema
 	schemas map[string]*graphql.Schema // Key: projectid
@@ -58,6 +59,8 @@ func (a *App) Provision(ctx caddy.Context) error {
 func (a *App) Start() error {
 	// Prepare schema for each project
 	a.registeredQueries = map[string]struct{}{}
+	a.rootGraphQLTypes = map[string]map[string]*graphql.Object{}
+
 	a.schemas = make(map[string]*graphql.Schema, len(a.dbSchemas))
 	for project := range a.dbSchemas {
 		schema, err := graphql.NewSchema(graphql.SchemaConfig{

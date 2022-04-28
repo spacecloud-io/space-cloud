@@ -276,7 +276,7 @@ func isFieldPresentInUpdate(field string, updateDoc map[string]interface{}) bool
 	return false
 }
 
-func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (model.FieldSchemas, error) {
+func getCollectionSchema(doc *ast.Document, dbAlias, collectionName string) (model.FieldSchemas, error) {
 	var isCollectionFound bool
 
 	fieldMap := model.FieldSchemas{}
@@ -430,8 +430,8 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 
 					case model.DirectiveLink:
 						fieldTypeStuct.IsLinked = true
-						fieldTypeStuct.LinkedTable = &model.TableProperties{DBType: dbName}
-						kind, err := getFieldType(dbName, field.Type, &fieldTypeStuct, doc)
+						fieldTypeStuct.LinkedTable = &model.LinkProperties{DB: dbAlias}
+						kind, err := getFieldType(dbAlias, field.Type, &fieldTypeStuct, doc)
 						if err != nil {
 							return nil, err
 						}
@@ -454,13 +454,13 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								fieldTypeStuct.LinkedTable.Field = val.(string)
 							case "db":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
-								fieldTypeStuct.LinkedTable.DBType = val.(string)
+								fieldTypeStuct.LinkedTable.DB = val.(string)
 							}
 						}
 
-						// Throw an error if from and to are unavailable
+						// Throw an error if 'from' and 'to' aren't provided
 						if fieldTypeStuct.LinkedTable.From == "" || fieldTypeStuct.LinkedTable.To == "" {
-							return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Link directive must be accompanied with (to) and (from) arguments", nil, nil)
+							return nil, helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), "Link directive must be accompanied with the 'from' and 'to' arguments", nil, nil)
 						}
 
 					case model.DirectiveForeign:
@@ -498,7 +498,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 				}
 			}
 
-			kind, err := getFieldType(dbName, field.Type, &fieldTypeStuct, doc)
+			kind, err := getFieldType(dbAlias, field.Type, &fieldTypeStuct, doc)
 			if err != nil {
 				return nil, err
 			}

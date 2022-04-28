@@ -114,3 +114,47 @@ func Parser(dbSchemas config.DatabaseSchemas) (model.CollectionSchemas, error) {
 func GetConstraintName(tableName, columnName string) string {
 	return fmt.Sprintf("c_%s_%s", tableName, columnName)
 }
+
+// Adds the internal links based on the foreign keys
+func AddInternalLinks(dbAlias string, schemas model.CollectionSchemas) {
+	for tableName, fieldSchemas := range schemas {
+		for _, fieldSchema := range fieldSchemas {
+			if fieldSchema.IsForeign {
+				// Add a linked field in this table
+				fieldSchemas[fieldSchema.JointTable.Table] = &model.FieldType{
+					FieldName: fieldSchema.JointTable.Table,
+					IsLinked:  true,
+					IsList:    false,
+					Kind:      fieldSchema.JointTable.Table,
+					LinkedTable: &model.LinkProperties{
+						DB:    dbAlias,
+						Table: fieldSchema.JointTable.Table,
+						From:  fieldSchema.FieldName,
+						To:    fieldSchema.JointTable.To,
+					},
+				}
+
+				// Add a linked field in the joint table
+				jointTableFieldsSchemas, p := schemas[fieldSchema.JointTable.Table]
+				if !p {
+					continue
+				}
+
+				jointTableFieldsSchemas[tableName] = &model.FieldType{
+					FieldName: tableName,
+					IsLinked:  true,
+					IsList:    true,
+					Kind:      tableName,
+					LinkedTable: &model.LinkProperties{
+						DB:    dbAlias,
+						Table: tableName,
+						From:  fieldSchema.JointTable.To,
+						To:    fieldSchema.FieldName,
+					},
+				}
+
+				// TODO: Add support for automatic many to many joins
+			}
+		}
+	}
+}

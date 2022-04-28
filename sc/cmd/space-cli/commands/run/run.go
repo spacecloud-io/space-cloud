@@ -7,6 +7,7 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/spacecloud-io/space-cloud/utils"
+	"github.com/spaceuptech/helpers"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -35,6 +36,7 @@ func NewCommand() *cobra.Command {
 
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			helpers.InitLogger("debug", "text", true)
 			c, err := utils.LoadAdminConfig(true)
 			if err != nil {
 				fmt.Println("Unable to load admin config:", err)

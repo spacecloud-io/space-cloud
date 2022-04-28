@@ -907,12 +907,12 @@ var testQueries = `
 	exp:Integer
 	spec: JSON
 	event: event_logs
-	person : sharad @link(table:sharad, from:Name, to:isMale)
+	person : sharad @link(table:sharad, from: "Name", to: "isMale")
    }
 
    type test {
 	id : ID @primary
-	person : sharad @link(table:sharad, from:Name, to:isMale)
+	person : sharad @link(table:sharad, from: "Name", to: "isMale")
    }
 
    type location {

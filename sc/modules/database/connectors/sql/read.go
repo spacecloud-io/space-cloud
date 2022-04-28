@@ -367,7 +367,7 @@ func (s *SQL) processRows(ctx context.Context, isDebug bool, table []string, isA
 			}
 		}
 		if utils.StringExists(table, a[0]) {
-			keyMap[a[1]] = v
+			keyMap[k] = v
 		}
 		if table[length] == a[0] {
 			m[a[1]] = v

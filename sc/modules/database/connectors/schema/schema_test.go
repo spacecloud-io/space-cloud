@@ -49,7 +49,7 @@ func TestParseSchema(t *testing.T) {
 					DbAlias: "mongo",
 					Schema: `type test {
 						 id : ID @id
-						 person : sharad @link(table:sharad, from:Name, to:isMale)
+						 person : sharad @link(table:sharad, from: "Name", to: "isMale")
 						}`,
 				},
 			},
@@ -316,12 +316,12 @@ func TestParseSchema(t *testing.T) {
 						Args: &model.FieldArgs{
 							Precision: model.DefaultDateTimePrecision,
 						},
-						LinkedTable: &model.TableProperties{
-							Table:  "order",
-							From:   "id",
-							To:     "customer_id",
-							Field:  "order_date",
-							DBType: "mongo",
+						LinkedTable: &model.LinkProperties{
+							Table: "order",
+							From:  "id",
+							To:    "customer_id",
+							Field: "order_date",
+							DB:    "mongo",
 						},
 					},
 				},

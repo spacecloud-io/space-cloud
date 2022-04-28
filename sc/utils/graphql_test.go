@@ -137,7 +137,7 @@ func TestParseGraphqlValue(t *testing.T) {
 					{Name: &ast.Name{Value: "_op1"}, Value: &ast.StringValue{Kind: kinds.StringValue, Value: "a.b.c"}},
 				}},
 			},
-			want: map[string]interface{}{"$op1": "a.b.c"},
+			want: map[string]interface{}{"_op1": "a.b.c"},
 		},
 	}
 	for _, tt := range tests {

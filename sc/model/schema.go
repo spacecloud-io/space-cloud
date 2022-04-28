@@ -28,7 +28,7 @@ type (
 		IsAutoIncrement bool
 		PrimaryKeyInfo  *TableProperties   `json:"primaryKeyInfo"`
 		IndexInfo       []*TableProperties `json:"indexInfo"`
-		LinkedTable     *TableProperties   `json:"linkedTable"`
+		LinkedTable     *LinkProperties    `json:"linkedTable"`
 		JointTable      *TableProperties   `json:"jointTable"`
 		Default         interface{}        `json:"default"`
 		TypeIDSize      int                `json:"size"`
@@ -44,6 +44,14 @@ type (
 		Scale int `json:"scale"`
 	}
 
+	// LinkProperties describes the properties of a link
+	LinkProperties struct {
+		DB       string
+		Table    string
+		Field    string // Used for modeling many to many relationships
+		From, To string
+	}
+
 	// TableProperties are properties of the table
 	TableProperties struct {
 		// IsIndex tells us if this is an indexed column
@@ -52,6 +60,7 @@ type (
 		IsUnique       bool `json:"isUnique"`
 		From           string
 		To             string
+		On             map[string]interface{}
 		Table          string
 		Field          string
 		OnDelete       string

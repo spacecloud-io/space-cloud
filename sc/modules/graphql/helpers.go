@@ -10,7 +10,24 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
+func (a *App) createRootTypes(project string) {
+	a.rootGraphQLTypes[project] = map[string]*graphql.Object{}
+
+	for dbAlias, parsedSchema := range a.dbSchemas[project] {
+		for tableName := range parsedSchema {
+			a.rootGraphQLTypes[project][getTableFieldName(dbAlias, tableName)] = graphql.NewObject(graphql.ObjectConfig{
+				Name:        getTableFieldName(dbAlias, tableName),
+				Description: fmt.Sprintf("Record object from %s", tableName),
+				Fields:      graphql.Fields{},
+			})
+		}
+	}
+}
+
 func (a *App) getQueryType(project string) *graphql.Object {
+	// Create root graphql types
+	a.createRootTypes(project)
+
 	// Create the root query
 	queryType := graphql.NewObject(graphql.ObjectConfig{Name: "Query", Fields: graphql.Fields{}})
 
@@ -18,7 +35,7 @@ func (a *App) getQueryType(project string) *graphql.Object {
 	joinRetObj := map[string]string{}
 	// Populate all the fields in the root query
 	for dbAlias, parsedSchema := range a.dbSchemas[project] {
-		for k, v := range a.getTableFields(project, dbAlias, parsedSchema, queryType, joinRetObj) {
+		for k, v := range a.getDatabaseFields(project, dbAlias, parsedSchema, queryType, joinRetObj) {
 			queryType.AddFieldConfig(k, v)
 		}
 	}
@@ -26,25 +43,36 @@ func (a *App) getQueryType(project string) *graphql.Object {
 	return queryType
 }
 
-func (a *App) getTableFields(project, db string, schemas model.CollectionSchemas, queryType *graphql.Object, joinRetObj map[string]string) graphql.Fields {
+func (a *App) getDatabaseFields(project, db string, schemas model.CollectionSchemas, queryType *graphql.Object, joinRetObj map[string]string) graphql.Fields {
 	fields := make(graphql.Fields, len(schemas))
 
 	for tableName, tableSchema := range schemas {
-		tableFields := make(graphql.Fields, len(tableSchema))
-
+		// Add the fields for this table
 		for fieldName, fieldSchema := range tableSchema {
-			tableFields[fieldName] = &graphql.Field{
-				Type:    scToGraphQLType(fieldSchema.Kind),
-				Resolve: a.literalResolveFn,
+			if !fieldSchema.IsLinked {
+				a.rootGraphQLTypes[project][getTableFieldName(db, tableName)].AddFieldConfig(fieldName, &graphql.Field{
+					Type:    scToGraphQLType(fieldSchema.Kind),
+					Resolve: a.literalResolveFn,
+				})
+				continue
+			}
+
+			if fieldSchema.IsLinked {
+				// TODO: Accept where clause on linked fields as well
+				var graphqlType graphql.Output = a.rootGraphQLTypes[project][getTableFieldName(db, fieldSchema.LinkedTable.Table)]
+				if fieldSchema.IsList {
+					graphqlType = graphql.NewList(graphqlType)
+				}
+				a.rootGraphQLTypes[project][getTableFieldName(db, tableName)].AddFieldConfig(fieldName, &graphql.Field{
+					Type:    graphqlType,
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) { return a.literalResolveFn(p) },
+				})
+				continue
 			}
 		}
 
 		// Create a record object for the table
-		graphqlObject := graphql.NewObject(graphql.ObjectConfig{
-			Name:        fmt.Sprintf("%s_%s", strings.Title(db), strings.Title(tableName)),
-			Description: fmt.Sprintf("Record object from %s", tableName),
-			Fields:      tableFields,
-		})
+		graphqlObject := a.rootGraphQLTypes[project][getTableFieldName(db, tableName)]
 		graphqlArguments := graphql.FieldConfigArgument{
 			"where": getDBWhereClause(db, tableName, tableSchema),
 			"sort":  getDBSort(db, tableName, tableSchema),
@@ -58,12 +86,12 @@ func (a *App) getTableFields(project, db string, schemas model.CollectionSchemas
 		fields[fieldKeyMultiple] = &graphql.Field{
 			Type:    graphql.NewList(graphqlObject),
 			Args:    graphqlArguments,
-			Resolve: a.dbReadResolveFn(project, db, tableName, utils.All),
+			Resolve: a.dbReadResolveFn(project, db, tableName, utils.All, schemas),
 		}
 		fields[fieldKeySingle] = &graphql.Field{
 			Type:    graphqlObject,
 			Args:    graphqlArguments,
-			Resolve: a.dbReadResolveFn(project, db, tableName, utils.One),
+			Resolve: a.dbReadResolveFn(project, db, tableName, utils.One, schemas),
 		}
 
 		// Add to join return objects
@@ -72,14 +100,15 @@ func (a *App) getTableFields(project, db string, schemas model.CollectionSchemas
 		a.registeredQueries[fieldKeyMultiple] = struct{}{}
 		a.registeredQueries[fieldKeySingle] = struct{}{}
 
-		tableFields["_join"] = &graphql.Field{
+		// Add the join field
+		a.rootGraphQLTypes[project][getTableFieldName(db, tableName)].AddFieldConfig("_join", &graphql.Field{
 			Type: queryType,
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 				return func() (interface{}, error) {
 					return joinRetObj, nil
 				}, nil
 			},
-		}
+		})
 	}
 
 	return fields
@@ -128,4 +157,8 @@ func containsExportDirective(field *ast.Field) (string, bool) {
 	}
 
 	return "", false
+}
+
+func getTableFieldName(db, table string) string {
+	return fmt.Sprintf("%s_%s", strings.Title(db), strings.Title(table))
 }

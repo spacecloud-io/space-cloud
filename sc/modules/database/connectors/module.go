@@ -134,6 +134,9 @@ func (m *Module) UpdateConfig(logger *zap.Logger, dbConfig *config.DatabaseConfi
 		m.errState = err
 	}
 	m.schemaDoc = schemaDoc
+
+	// Add the links
+	schema.AddInternalLinks(dbConfig.DbAlias, schemaDoc)
 }
 
 func (m *Module) initConnector(dbType model.DBType, connection, dbName string, driverConf config.DriverConfig) (Connector, error) {
