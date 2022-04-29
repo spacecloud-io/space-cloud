@@ -10,8 +10,9 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-func (a *App) createRootTypes(project string) {
+func (a *App) createRootGraphQLTypes(project string) {
 	a.rootGraphQLTypes[project] = map[string]*graphql.Object{}
+	a.rootDBWhereTypes[project] = map[string]*graphql.InputObject{}
 
 	for dbAlias, parsedSchema := range a.dbSchemas[project] {
 		for tableName := range parsedSchema {
@@ -20,13 +21,18 @@ func (a *App) createRootTypes(project string) {
 				Description: fmt.Sprintf("Record object from %s", tableName),
 				Fields:      graphql.Fields{},
 			})
+			a.rootDBWhereTypes[project][getTableWhereClauseName(dbAlias, tableName)] = graphql.NewInputObject(graphql.InputObjectConfig{
+				Name:        getTableWhereClauseName(dbAlias, tableName),
+				Fields:      make(graphql.InputObjectConfigFieldMap),
+				Description: fmt.Sprintf("Where clause type for %s", strings.Title(tableName)),
+			})
 		}
 	}
 }
 
 func (a *App) getQueryType(project string) *graphql.Object {
 	// Create root graphql types
-	a.createRootTypes(project)
+	a.createRootGraphQLTypes(project)
 
 	// Create the root query
 	queryType := graphql.NewObject(graphql.ObjectConfig{Name: "Query", Fields: graphql.Fields{}})
@@ -58,7 +64,6 @@ func (a *App) getDatabaseFields(project, db string, schemas model.CollectionSche
 			}
 
 			if fieldSchema.IsLinked {
-				// TODO: Accept where clause on linked fields as well
 				var graphqlType graphql.Output = a.rootGraphQLTypes[project][getTableFieldName(db, fieldSchema.LinkedTable.Table)]
 				if fieldSchema.IsList {
 					graphqlType = graphql.NewList(graphqlType)
@@ -66,6 +71,12 @@ func (a *App) getDatabaseFields(project, db string, schemas model.CollectionSche
 				a.rootGraphQLTypes[project][getTableFieldName(db, tableName)].AddFieldConfig(fieldName, &graphql.Field{
 					Type:    graphqlType,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) { return a.literalResolveFn(p) },
+					Args: graphql.FieldConfigArgument{
+						"where": &graphql.ArgumentConfig{
+							Type:         a.rootDBWhereTypes[project][getTableWhereClauseName(db, fieldSchema.LinkedTable.Table)],
+							DefaultValue: map[string]interface{}{},
+						},
+					},
 				})
 				continue
 			}
@@ -74,7 +85,7 @@ func (a *App) getDatabaseFields(project, db string, schemas model.CollectionSche
 		// Create a record object for the table
 		graphqlObject := a.rootGraphQLTypes[project][getTableFieldName(db, tableName)]
 		graphqlArguments := graphql.FieldConfigArgument{
-			"where": getDBWhereClause(db, tableName, tableSchema),
+			"where": a.getDBWhereClause(project, db, tableName, tableSchema),
 			"sort":  getDBSort(db, tableName, tableSchema),
 			"limit": &graphql.ArgumentConfig{Type: graphql.Int},
 			"skip":  &graphql.ArgumentConfig{Type: graphql.Int},
@@ -109,6 +120,15 @@ func (a *App) getDatabaseFields(project, db string, schemas model.CollectionSche
 				}, nil
 			},
 		})
+
+		// // Add the agg field
+		// a.rootGraphQLTypes[project][getTableFieldName(db, tableName)].AddFieldConfig("_aggregate", &graphql.Field{
+		// 	Type: graphql.Float,
+		// 	Args: graphql.FieldConfigArgument{
+		// 		"field": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
+		// 		"op":    &graphql.ArgumentConfig{Type: graphql.NewNonNull(aggregateOperationType)},
+		// 	},
+		// })
 	}
 
 	return fields
@@ -127,8 +147,7 @@ func scToGraphQLType(kind string) graphql.Output {
 
 	// TODO: Add a case for JSON types
 	default:
-		// TODO: Return an `any` scaler type
-		return graphql.String
+		return anyType
 
 	}
 }
@@ -161,4 +180,8 @@ func containsExportDirective(field *ast.Field) (string, bool) {
 
 func getTableFieldName(db, table string) string {
 	return fmt.Sprintf("%s_%s", strings.Title(db), strings.Title(table))
+}
+
+func getTableWhereClauseName(db, table string) string {
+	return fmt.Sprintf("%s_%s_WhereClause", strings.Title(db), strings.Title(table))
 }

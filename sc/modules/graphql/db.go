@@ -43,17 +43,12 @@ func adjustSortArgument(sort map[string]interface{}) []string {
 	return arr
 }
 
-func getDBWhereClause(db, tableName string, fieldSchemas model.FieldSchemas) *graphql.ArgumentConfig {
-	whereClauseType := graphql.NewInputObject(graphql.InputObjectConfig{
-		Name:        fmt.Sprintf("%s_%s_WhereClause", strings.Title(db), strings.Title(tableName)),
-		Fields:      make(graphql.InputObjectConfigFieldMap),
-		Description: fmt.Sprintf("Where clause type for %s", strings.Title(tableName)),
-	})
+func (a *App) getDBWhereClause(project, db, tableName string, fieldSchemas model.FieldSchemas) *graphql.ArgumentConfig {
+	whereClauseType := a.rootDBWhereTypes[project][getTableWhereClauseName(db, tableName)]
 
 	// Add one field for each column
 	for fieldName, schema := range fieldSchemas {
 		// Ignore the linked field. We cannot put where clauses on that
-		// TODO: Allow where clause to be in the argument of linked field collection set
 		if schema.IsLinked {
 			continue
 		}
@@ -98,13 +93,13 @@ func getDBFilter(graphqlType graphql.Output) *graphql.InputObject {
 	})
 }
 
-func adjustWhereClause(where map[string]interface{}, s *store, path *graphql.ResponsePath) map[string]interface{} {
+func adjustWhereClause(tableName string, where map[string]interface{}, s *store, path *graphql.ResponsePath) map[string]interface{} {
 	newWhereClause := make(map[string]interface{}, len(where))
 	for fieldName, val := range where {
 		if fieldName == "_or" {
 			arr := val.([]interface{})
 			for i, item := range arr {
-				arr[i] = adjustWhereClause(item.(map[string]interface{}), s, path)
+				arr[i] = adjustWhereClause(tableName, item.(map[string]interface{}), s, path)
 			}
 			newWhereClause["$or"] = arr
 			continue
@@ -125,7 +120,11 @@ func adjustWhereClause(where map[string]interface{}, s *store, path *graphql.Res
 			newOperatorMap["$"+k[1:]] = v
 		}
 
-		newWhereClause[fieldName] = newOperatorMap
+		key := fieldName
+		if tableName != "" {
+			key = fmt.Sprintf("%s.%s", tableName, fieldName)
+		}
+		newWhereClause[key] = newOperatorMap
 	}
 
 	return newWhereClause
@@ -161,3 +160,41 @@ var enumSort = graphql.NewEnum(graphql.EnumConfig{
 		"desc": &graphql.EnumValueConfig{Value: "desc"},
 	},
 })
+
+// func modifyTheAggregateField(tableName string, fieldAST *ast.Field, aggregate map[string][]string) bool {
+// 	if fieldAST.Name.Value != "_aggregate" {
+// 		return false
+// 	}
+
+// 	var operation, field string
+// 	for _, arg := range fieldAST.Arguments {
+// 		switch arg.Name.Value {
+// 		case "field":
+// 			t, _ := utils.ParseGraphqlValue(arg.Value, nil)
+// 			field = t.(string)
+// 		case "op":
+// 			t, _ := utils.ParseGraphqlValue(arg.Value, nil)
+// 			operation = t.(string)
+// 		}
+// 	}
+
+// 	// Add aggregate for this operation
+// 	alias := field
+// 	if fieldAST.Alias != nil {
+// 		alias = fieldAST.Alias.Value
+// 	}
+// 	aggregate[operation] = append(aggregate[operation], fmt.Sprintf("%s:%s.%s", alias, tableName, field))
+// 	return true
+// }
+
+// var aggregateOperationType = graphql.NewEnum(graphql.EnumConfig{
+// 	Name:        "DB_AggregateOpEnum",
+// 	Description: "Enum to choose the operations allowed for aggregations",
+// 	Values: graphql.EnumValueConfigMap{
+// 		"sum":   &graphql.EnumValueConfig{Value: "sum"},
+// 		"max":   &graphql.EnumValueConfig{Value: "max"},
+// 		"min":   &graphql.EnumValueConfig{Value: "min"},
+// 		"avg":   &graphql.EnumValueConfig{Value: "avg"},
+// 		"count": &graphql.EnumValueConfig{Value: "count"},
+// 	},
+// })

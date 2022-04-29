@@ -22,7 +22,8 @@ type App struct {
 	// For internal usage
 	logger           *zap.Logger
 	dbSchemas        map[string]model.DBSchemas
-	rootGraphQLTypes map[string]map[string]*graphql.Object // projectid -> roottype -> graphql object
+	rootGraphQLTypes map[string]map[string]*graphql.Object      // projectid -> roottype -> graphql object
+	rootDBWhereTypes map[string]map[string]*graphql.InputObject // projectid -> db_table -> graphql object
 
 	// GraphQL schema
 	schemas map[string]*graphql.Schema // Key: projectid
@@ -60,6 +61,7 @@ func (a *App) Start() error {
 	// Prepare schema for each project
 	a.registeredQueries = map[string]struct{}{}
 	a.rootGraphQLTypes = map[string]map[string]*graphql.Object{}
+	a.rootDBWhereTypes = map[string]map[string]*graphql.InputObject{}
 
 	a.schemas = make(map[string]*graphql.Schema, len(a.dbSchemas))
 	for project := range a.dbSchemas {

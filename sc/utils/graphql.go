@@ -47,9 +47,11 @@ func ParseGraphqlValue(value ast.Value, store map[string]interface{}) (interface
 		if strings.Contains(v, "__") {
 			v = strings.ReplaceAll(v, "__", ".")
 		}
-		val, err := LoadValue(v, store)
-		if err == nil {
-			return val, nil
+		if store != nil {
+			val, err := LoadValue(v, store)
+			if err == nil {
+				return val, nil
+			}
 		}
 
 		return v, nil
@@ -59,9 +61,11 @@ func ParseGraphqlValue(value ast.Value, store map[string]interface{}) (interface
 		if strings.Contains(v, "__") {
 			v = strings.ReplaceAll(v, "__", ".")
 		}
-		val, err := LoadValue(v, store)
-		if err == nil {
-			return val, nil
+		if store != nil {
+			val, err := LoadValue(v, store)
+			if err == nil {
+				return val, nil
+			}
 		}
 
 		return v, nil
@@ -93,8 +97,11 @@ func ParseGraphqlValue(value ast.Value, store map[string]interface{}) (interface
 		return boolValue.Value, nil
 
 	case kinds.Variable:
-		t := value.(*ast.Variable)
-		return LoadValue("vars."+t.Name.Value, store)
+		if store != nil {
+			t := value.(*ast.Variable)
+			return LoadValue("vars."+t.Name.Value, store)
+		}
+		return nil, errors.New("store not provided")
 
 	default:
 		return nil, errors.New("Invalid data type `" + value.GetKind() + "` for value " + string(value.GetLoc().Source.Body)[value.GetLoc().Start:value.GetLoc().End])
