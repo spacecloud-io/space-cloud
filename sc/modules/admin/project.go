@@ -15,12 +15,12 @@ func getProjectConfigTypes() model.ConfigTypes {
 	reflector := utils.GetJSONSchemaReflector()
 	return model.ConfigTypes{
 		"project": &model.ConfigTypeDefinition{
-			Schema:          reflector.Reflect(&projectConfig{}),
+			Schema:          reflector.Reflect(&config.AdminProjectConfig{}),
 			RequiredParents: []string{},
 		},
 		"aes-key": &model.ConfigTypeDefinition{
 			IsSecure:        true,
-			Schema:          reflector.Reflect(&projectAesKey{}),
+			Schema:          reflector.Reflect(&config.AdminProjectAesKey{}),
 			RequiredParents: []string{"project"},
 			Controller: model.ConfigHooks{
 				PreApply: func(ctx context.Context, obj *model.ResourceObject, store model.StoreMan) error {
@@ -58,13 +58,13 @@ func (a *App) getProjectOperationTypes() model.OperationTypes {
 				Handle: func(ctx context.Context, obj *model.ResourceObject, reqParams *model.RequestParams) (int, interface{}, error) {
 					// Check if the project exists
 					projectID := obj.Meta.Parents["project"]
-					project, p := a.Projects[projectID]
+					auth, p := a.projectAuth[projectID]
 					if !p {
 						return http.StatusBadRequest, model.ErrorResponse{Error: fmt.Sprintf("Provided project '%s' does not exist", projectID)}, nil
 					}
 
 					// Generate a internal token for the project
-					token, err := project.auth.Sign(map[string]interface{}{"id": utils.InternalUserID, "claims": reqParams.Claims})
+					token, err := auth.Sign(map[string]interface{}{"id": utils.InternalUserID, "claims": reqParams.Claims})
 					if err != nil {
 						return http.StatusInternalServerError, nil, err
 					}

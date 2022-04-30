@@ -36,7 +36,7 @@ func NewCommand() *cobra.Command {
 
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			helpers.InitLogger("debug", "text", true)
+			_ = helpers.InitLogger("debug", "text", true)
 			c, err := utils.LoadAdminConfig(true)
 			if err != nil {
 				fmt.Println("Unable to load admin config:", err)

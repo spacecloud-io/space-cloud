@@ -28,7 +28,9 @@ type App struct {
 	IsDev bool `json:"isDev"`
 
 	// Project config
-	Projects map[string]*Project `json:"projects"` // Key is project id
+	Projects map[string]*config.AdminProject `json:"projects"` // Key is project id
+
+	projectAuth map[string]*auth.Module
 
 	// Internal stuff
 	logger *zap.Logger
@@ -55,8 +57,8 @@ func (a *App) Provision(ctx caddy.Context) error {
 // Start begins the app's operation
 func (a *App) Start() error {
 	// Initialise the auth module for each project
-	for _, p := range a.Projects {
-		p.auth = auth.New(p.Secrets)
+	for projectID, p := range a.Projects {
+		a.projectAuth[projectID] = auth.New(p.Secrets)
 	}
 	return nil
 }
