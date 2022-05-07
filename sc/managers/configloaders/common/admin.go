@@ -33,7 +33,7 @@ func prepareAdminProjects(fileConfig *model.SCConfig) map[string]*config.AdminPr
 	if !ok {
 		return adminProjects
 	}
-	resourceObjects, ok := module["config"]
+	resourceObjects, ok := module["project"]
 	if !ok {
 		return adminProjects
 	}
@@ -51,7 +51,7 @@ func prepareAdminProjects(fileConfig *model.SCConfig) map[string]*config.AdminPr
 		}
 	}
 
-	resourceObjects, ok = module["aes"]
+	resourceObjects, ok = module["aes-key"]
 	if ok {
 		for _, resourceObject := range resourceObjects {
 			aes := new(config.AdminProjectAesKey)
@@ -62,11 +62,10 @@ func prepareAdminProjects(fileConfig *model.SCConfig) map[string]*config.AdminPr
 			projectID := resourceObject.Meta.Parents["project"]
 			adminProject := adminProjects[projectID]
 			adminProject.AesKey = *aes
-			adminProjects[projectID] = adminProject
 		}
 	}
 
-	resourceObjects, ok = module["secrets"]
+	resourceObjects, ok = module["jwt-secret"]
 	if ok {
 		for _, resourceObject := range resourceObjects {
 			schema := new(config.Secret)
@@ -77,7 +76,6 @@ func prepareAdminProjects(fileConfig *model.SCConfig) map[string]*config.AdminPr
 			projectID := resourceObject.Meta.Parents["project"]
 			adminProject := adminProjects[projectID]
 			adminProject.Secrets = append(adminProject.Secrets, schema)
-			adminProjects[projectID] = adminProject
 		}
 	}
 
