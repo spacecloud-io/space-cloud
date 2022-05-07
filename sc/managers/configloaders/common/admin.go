@@ -44,7 +44,7 @@ func prepareAdminProjects(fileConfig *model.SCConfig) map[string]*config.AdminPr
 			return map[string]*config.AdminProject{}
 		}
 
-		projectID := resourceObject.Meta.Parents["project"]
+		projectID := resourceObject.Meta.Name
 		adminProjects[projectID] = &config.AdminProject{
 			Config:  *adminConfig,
 			Secrets: make([]*config.Secret, 0),
