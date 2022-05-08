@@ -115,7 +115,7 @@ func GetConstraintName(tableName, columnName string) string {
 	return fmt.Sprintf("c_%s_%s", tableName, columnName)
 }
 
-// Adds the internal links based on the foreign keys
+// AddInternalLinks links the internal links based on the foreign keys
 func AddInternalLinks(dbAlias string, schemas model.CollectionSchemas) {
 	for tableName, fieldSchemas := range schemas {
 		for _, fieldSchema := range fieldSchemas {
