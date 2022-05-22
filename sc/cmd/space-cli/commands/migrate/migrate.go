@@ -23,7 +23,7 @@ func NewCommand() *cobra.Command {
 			_ = viper.BindPFlag("output-config-path", cmd.Flags().Lookup("output-config-path"))
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			helpers.InitLogger("debug", "text", true)
+			_ = helpers.InitLogger("debug", "text", true)
 			configPath := viper.GetString("input-config-path")
 			outConfigPath := viper.GetString("output-config-path")
 
