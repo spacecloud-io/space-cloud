@@ -1,11 +1,12 @@
+---
 apiVersion: v3
 name: space-cloud
-version: 0.21.5 # Chart version
-appVersion: 0.21.5 # Space Cloud version
+version: 0.21.6  # Chart version
+appVersion: 0.21.5  # Space Cloud version
 description: Helm Chart to install Space Cloud
 type: application
 keywords:
-- baaS
+  - baaS
 home: https://spaceuptech.com/
 sources:
   - https://github.com/spaceuptech/space-cloud/tree/master/install-manifests/helm/space-cloud

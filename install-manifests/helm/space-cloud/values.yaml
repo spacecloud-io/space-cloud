@@ -5,6 +5,7 @@
 clusterId: "default"
 devMode: "true" # Turn this to false for production mode
 isKedaEnabled: true # Set this to false to skip installing keda
+createNamespace: true
 
 admin:
   username: "admin" # Log in username
