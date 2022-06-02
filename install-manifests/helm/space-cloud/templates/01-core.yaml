@@ -1,6 +1,15 @@
 #############################################################################################
 ################################ Set some global parameters  ################################
 #############################################################################################
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: space-cloud
+  labels:
+{{ if .Values.istio.enabled }}
+    istio-injection: enabled
+---
 apiVersion: "security.istio.io/v1beta1"
 kind: "PeerAuthentication"
 metadata:
@@ -10,13 +19,6 @@ spec:
   mtls:
     mode: STRICT
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: space-cloud
-  labels:
-    istio-injection: enabled
----
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -24,4 +26,4 @@ metadata:
   namespace: default
 spec:
   {}
----
+{{ end }}
