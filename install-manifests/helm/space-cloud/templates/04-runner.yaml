@@ -178,7 +178,7 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: "{{ .Values.runner.image.name }}:{{ .Chart.Version }}"
+          image: "{{ .Values.runner.image.name }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.runner.image.pullPolicy }}
           env:
             - name: "LOG_LEVEL"

@@ -187,7 +187,7 @@ spec:
       containers:
         - name: gateway
           command: [ "./app", "run" ]
-          image: "{{ .Values.gateway.image.name }}:{{ .Chart.Version }}"
+          image: "{{ .Values.gateway.image.name }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
           livenessProbe:
             exec:
