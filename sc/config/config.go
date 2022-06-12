@@ -312,26 +312,60 @@ type Service struct {
 
 // Endpoint holds the config of a endpoint
 type Endpoint struct {
-	Kind EndpointKind     `json:"kind" yaml:"kind" mapstructure:"kind"`
-	Tmpl TemplatingEngine `json:"template,omitempty" yaml:"template,omitempty" mapstructure:"template"`
+	Kind   EndpointKind `json:"kind" yaml:"kind" mapstructure:"kind"`
+	Method string       `json:"method" yaml:"method" mapstructure:"method"`
 	// ReqPayloadFormat specifies the payload format
 	// depending upon the payload format, the graphQL request that
 	// gets converted to http request will use that format as it's payload
 	// currently supported formats are application/json,multipart/form-data
-	ReqPayloadFormat string   `json:"requestPayloadFormat" yaml:"requestPayloadFormat" mapstructure:"requestPayloadFormat"`
-	ReqTmpl          string   `json:"requestTemplate" yaml:"requestTemplate" mapstructure:"requestTemplate"`
-	GraphTmpl        string   `json:"graphTemplate" yaml:"graphTemplate" mapstructure:"graphTemplate"`
-	ResTmpl          string   `json:"responseTemplate" yaml:"responseTemplate" mapstructure:"responseTemplate"`
-	OpFormat         string   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty" mapstructure:"outputFormat"`
-	Token            string   `json:"token,omitempty" yaml:"token,omitempty" mapstructure:"token"`
-	Claims           string   `json:"claims,omitempty" yaml:"claims,omitempty" mapstructure:"claims"`
-	Method           string   `json:"method" yaml:"method" mapstructure:"method"`
-	Path             string   `json:"path" yaml:"path" mapstructure:"path"`
-	Rule             *Rule    `json:"rule,omitempty" yaml:"rule,omitempty" mapstructure:"rule"`
-	Headers          Headers  `json:"headers,omitempty" yaml:"headers,omitempty" mapstructure:"headers"`
-	Timeout          int      `json:"timeout,omitempty" yaml:"timeout,omitempty" mapstructure:"timeout"` // Timeout is in seconds
-	CacheOptions     []string `json:"cacheOptions" yaml:"cacheOptions" mapstructure:"cacheOptions"`
+	ReqPayloadFormat string            `json:"requestPayloadFormat" yaml:"requestPayloadFormat" mapstructure:"requestPayloadFormat"`
+	Path             string            `json:"path" yaml:"path" mapstructure:"path"`
+	Plugins          []*EndpointPlugin `json:"plugins" yaml:"plugins" mapstructure:"plugins"`
 }
+
+// EndpointPlugin holds the config of an endpoint plugin
+type EndpointPlugin struct {
+	Type   EndpointPluginType `json:"type" yaml:"type" mapstructure:"type"`
+	Params interface{}        `json:"params" yaml:"params" mapstructure:"params"`
+}
+
+// EndpointPluginType describes the type of endpoint plugin type
+type EndpointPluginType string
+
+const (
+	// PluginTimeout describes timeout plugin
+	PluginTimeout EndpointPluginType = "timeout"
+
+	// PluginTmpl describes template plugin
+	PluginTmpl EndpointPluginType = "template"
+
+	// PluginOutputFormat describes output format plugin
+	PluginOutputFormat EndpointPluginType = "outputFormat"
+
+	// PluginHeaders describes headers plugin
+	PluginHeaders EndpointPluginType = "headers"
+
+	// PluginToken describes token plugin
+	PluginToken EndpointPluginType = "token"
+
+	// PluginClaims describes claims plugin
+	PluginClaims EndpointPluginType = "claims"
+
+	// PluginRequestTemplate describes request template plugin
+	PluginRequestTemplate EndpointPluginType = "requestTemplate"
+
+	// PluginResponseTemplate describes response template plugin
+	PluginResponseTemplate EndpointPluginType = "responseTemplate"
+
+	// PluginGraphTemplate describes graph template plugin
+	PluginGraphTemplate EndpointPluginType = "graphTemplate"
+
+	// PluginRule describes rule plugin
+	PluginRule EndpointPluginType = "rule"
+
+	// PluginCacheOptions describes cache options plugin
+	PluginCacheOptions EndpointPluginType = "cacheOptions"
+)
 
 // EndpointKind describes the type of endpoint. Default value - internal
 type EndpointKind string

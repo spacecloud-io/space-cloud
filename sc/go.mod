@@ -3,6 +3,7 @@ module github.com/spacecloud-io/space-cloud
 go 1.17
 
 require (
+	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/caddyserver/caddy/v2 v2.4.6
 	github.com/denisenkom/go-mssqldb v0.12.0
 	github.com/doug-martin/goqu/v8 v8.6.0
@@ -19,7 +20,7 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/mitchellh/mapstructure v1.4.3
 	github.com/rs/cors v1.8.2
-	github.com/segmentio/ksuid v1.0.3
+	github.com/segmentio/ksuid v1.0.4
 	github.com/spaceuptech/helpers v0.2.2
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
@@ -30,6 +31,8 @@ require (
 	k8s.io/apimachinery v0.23.4
 	k8s.io/client-go v0.23.4
 )
+
+require github.com/Masterminds/semver v1.5.0 // indirect
 
 require (
 	cloud.google.com/go/kms v1.3.0 // indirect
@@ -54,6 +57,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1-0.20200219035652-afde56e7acac // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
