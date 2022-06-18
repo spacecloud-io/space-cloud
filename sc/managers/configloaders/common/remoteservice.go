@@ -2,11 +2,11 @@ package common
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/spacecloud-io/space-cloud/config"
 	"github.com/spacecloud-io/space-cloud/model"
+	"github.com/spacecloud-io/space-cloud/modules/remoteservice"
 )
 
 func prepareRemoteServiceApp(fileConfig *model.SCConfig) json.RawMessage {
@@ -37,7 +37,7 @@ func prepareRemoteServices(fileConfig *model.SCConfig) map[string]*config.Servic
 
 		projectID := resourceObject.Meta.Parents["project"]
 		serviceName := resourceObject.Meta.Name
-		name := fmt.Sprintf("%s---%s", projectID, serviceName)
+		name := remoteservice.CombineProjectRemoteServiceName(projectID, serviceName)
 		remoteServices[name] = serviceConfig
 	}
 

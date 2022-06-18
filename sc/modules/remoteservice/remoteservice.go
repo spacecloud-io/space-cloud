@@ -1,9 +1,8 @@
-package functions
+package remoteservice
 
 import (
 	"context"
 	"fmt"
-	"strings"
 	"text/template"
 
 	"github.com/caddyserver/caddy/v2"
@@ -18,8 +17,8 @@ import (
 
 func init() {
 	caddy.RegisterModule(App{})
-	configman.RegisterConfigController("remote_service")
-	apis.RegisterApp("remote_service", 1)
+	configman.RegisterConfigController("remote-service")
+	apis.RegisterApp("remote-service", 1)
 }
 
 // App manages all the admin actions
@@ -35,7 +34,7 @@ type App struct {
 // CaddyModule returns the Caddy module information.
 func (App) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "remote_service",
+		ID:  "remote-service",
 		New: func() caddy.Module { return new(App) },
 	}
 }
@@ -46,36 +45,35 @@ func (a *App) Provision(ctx caddy.Context) error {
 	// Set the go templates
 	a.templates = map[string]*template.Template{}
 	for name, service := range a.Services {
-		projectID := strings.Split(name, "---")[0]
-		serviceName := strings.Split(name, "---")[1]
+		projectID, serviceName := SplitPojectRemoteServiceName(name)
 		for endpointID, endpoint := range service.Endpoints {
 			tmpl, err := a.getStringOutputFromPlugins(endpoint, config.PluginTmpl)
 			if err != nil {
-				a.logger.Error("Unable to load plugins app", zap.Error(err), zap.String("app", "remote_service"))
+				a.logger.Error("Unable to load plugins app", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
 			reqTmpl, err := a.getStringOutputFromPlugins(endpoint, config.PluginRequestTemplate)
 			if err != nil {
-				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote_service"))
+				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
 			resTmpl, err := a.getStringOutputFromPlugins(endpoint, config.PluginResponseTemplate)
 			if err != nil {
-				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote_service"))
+				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
 			graphTmpl, err := a.getStringOutputFromPlugins(endpoint, config.PluginGraphTemplate)
 			if err != nil {
-				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote_service"))
+				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
 			claims, err := a.getStringOutputFromPlugins(endpoint, config.PluginClaims)
 			if err != nil {
-				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote_service"))
+				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
@@ -83,25 +81,25 @@ func (a *App) Provision(ctx caddy.Context) error {
 			case string(config.TemplatingEngineGo):
 				if reqTmpl != "" {
 					if err := a.createGoTemplate("request", projectID, serviceName, endpointID, reqTmpl); err != nil {
-						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote_service"))
+						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote-service"))
 						return err
 					}
 				}
 				if resTmpl != "" {
 					if err := a.createGoTemplate("response", projectID, serviceName, endpointID, resTmpl); err != nil {
-						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote_service"))
+						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote-service"))
 						return err
 					}
 				}
 				if graphTmpl != "" {
 					if err := a.createGoTemplate("graph", projectID, serviceName, endpointID, graphTmpl); err != nil {
-						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote_service"))
+						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote-service"))
 						return err
 					}
 				}
 				if claims != "" {
 					if err := a.createGoTemplate("claim", projectID, serviceName, endpointID, claims); err != nil {
-						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote_service"))
+						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote-service"))
 						return err
 					}
 				}
@@ -126,12 +124,7 @@ func (a *App) Stop() error {
 
 // GetConfigTypes returns all the operation types returned by this model.
 func (a *App) GetConfigTypes() model.ConfigTypes {
-	types := model.ConfigTypes{}
-	for k, v := range getServiceConfigTypes() {
-		types[k] = v
-	}
-
-	return types
+	return getServiceConfigTypes()
 }
 
 // Interface guards

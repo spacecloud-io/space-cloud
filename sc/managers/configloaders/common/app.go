@@ -22,7 +22,7 @@ func PrepareConfig(fileConfig *model.SCConfig) (*caddy.Config, error) {
 	c.AppsRaw["database"] = prepareDatabaseApp(fileConfig)
 	c.AppsRaw["graphql"] = prepareGraphQLApp()
 	c.AppsRaw["adminman"] = prepareAdminApp(fileConfig)
-	c.AppsRaw["remote_service"] = prepareRemoteServiceApp(fileConfig)
+	c.AppsRaw["remote-service"] = prepareRemoteServiceApp(fileConfig)
 
 	return c, nil
 }

@@ -1,4 +1,4 @@
-package functions
+package remoteservice
 
 type (
 	m map[string]interface{}

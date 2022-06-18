@@ -1,4 +1,4 @@
-package functions
+package remoteservice
 
 import (
 	"bytes"
@@ -51,6 +51,11 @@ func (a *App) adjustReqBody(ctx context.Context, projectID, serviceID, endpointI
 		return nil, nil, err
 	}
 
+	reqPayloadFormat, err := a.getStringOutputFromPlugins(endpoint, config.PluginReqPayloadFormat)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	switch tmpl {
 	case string(config.TemplatingEngineGo):
 		if tmpl, p := a.templates[getGoTemplateKey("request", projectID, serviceID, endpointID)]; p {
@@ -87,7 +92,7 @@ func (a *App) adjustReqBody(ctx context.Context, projectID, serviceID, endpointI
 	requestHeader = append(requestHeader, *headers...)
 
 	var requestBody io.Reader
-	switch endpoint.ReqPayloadFormat {
+	switch reqPayloadFormat {
 	case "", config.EndpointRequestPayloadFormatJSON:
 		// Marshal json into byte array
 		data, err := json.Marshal(body)
@@ -165,6 +170,22 @@ func (a *App) createGoTemplate(kind, projectID, serviceID, endpointID, tmpl stri
 	return nil
 }
 
+// CombineProjectRemoteServiceName joins project id and service name
+func CombineProjectRemoteServiceName(projectID, serviceName string) string {
+	return fmt.Sprintf("%s---%s", projectID, serviceName)
+}
+
+// SplitPojectRemoteServiceName return project id and service name
+func SplitPojectRemoteServiceName(name string) (projectID, serviceName string) {
+	projectID = strings.Split(name, "---")[0]
+	serviceName = strings.Split(name, "---")[1]
+	return
+}
+
+func combineProjectServiceEndpointName(projectID, serviceName, endpointName string) string {
+	return fmt.Sprintf("%s-%s-%s", projectID, serviceName, endpointName)
+}
+
 func adjustPath(ctx context.Context, path string, claims, params interface{}) (string, error) {
 	newPath := path
 	for {
@@ -226,4 +247,12 @@ func prepareHeaders(ctx context.Context, headers config.Headers, state map[strin
 		out[i] = h
 	}
 	return out
+}
+
+func getRequestParamsFromURL(url string) (project, service, endpoint string) {
+	url = strings.TrimPrefix(url, "/v1/api/")
+	project = strings.Split(url, "/")[0]
+	service = strings.Split(url, "/")[2]
+	endpoint = strings.Split(url, "/")[3]
+	return
 }

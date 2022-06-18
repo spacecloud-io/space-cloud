@@ -318,9 +318,8 @@ type Endpoint struct {
 	// depending upon the payload format, the graphQL request that
 	// gets converted to http request will use that format as it's payload
 	// currently supported formats are application/json,multipart/form-data
-	ReqPayloadFormat string            `json:"requestPayloadFormat" yaml:"requestPayloadFormat" mapstructure:"requestPayloadFormat"`
-	Path             string            `json:"path" yaml:"path" mapstructure:"path"`
-	Plugins          []*EndpointPlugin `json:"plugins" yaml:"plugins" mapstructure:"plugins"`
+	Path    string            `json:"path" yaml:"path" mapstructure:"path"`
+	Plugins []*EndpointPlugin `json:"plugins" yaml:"plugins" mapstructure:"plugins"`
 }
 
 // EndpointPlugin holds the config of an endpoint plugin
@@ -333,6 +332,9 @@ type EndpointPlugin struct {
 type EndpointPluginType string
 
 const (
+	// PluginReqPayloadFormat describes request payload plugin
+	PluginReqPayloadFormat EndpointPluginType = "requestPayloadFormat"
+
 	// PluginTimeout describes timeout plugin
 	PluginTimeout EndpointPluginType = "timeout"
 

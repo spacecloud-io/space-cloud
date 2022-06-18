@@ -2,10 +2,9 @@ package model
 
 // RequestParams describes the params passed down in every request
 type RequestParams struct {
-	RequestID    string                 `json:"requestId"`
-	ResourceMeta *ResourceMeta          `json:"resourceMeta"`
-	Claims       map[string]interface{} `json:"claims"`
-	HTTPParams   HTTPParams             `json:"http"`
+	RequestID  string                 `json:"requestId"`
+	Claims     map[string]interface{} `json:"claims"`
+	HTTPParams HTTPParams             `json:"http"`
 }
 
 // SpecObject describes the basic structure of config specifications

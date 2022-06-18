@@ -1,4 +1,4 @@
-package functions
+package remoteservice
 
 import (
 	"github.com/spacecloud-io/space-cloud/config"

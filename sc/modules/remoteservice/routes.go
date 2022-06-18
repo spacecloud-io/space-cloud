@@ -1,4 +1,4 @@
-package functions
+package remoteservice
 
 import (
 	"context"
@@ -29,11 +29,17 @@ func (a *App) GetRoutes() []*apis.API {
 			requestSchemaJSON, _ := json.Marshal(m{
 				"type": openapi3.TypeObject,
 				"properties": m{
-					"operationName": m{"type": openapi3.TypeString},
-					"query":         m{"type": openapi3.TypeString},
-					"variables":     m{"type": openapi3.TypeObject, "additionalProperties": true},
+					"params":  m{"type": openapi3.TypeObject, "additionalProperties": true},
+					"timeout": m{"type": openapi3.TypeInteger},
+					"cache": m{
+						"type": openapi3.TypeObject,
+						"properties": m{
+							"ttl":               m{"type": openapi3.TypeInteger},
+							"instantInvalidate": m{"type": openapi3.TypeBoolean},
+						},
+					},
 				},
-				"required": t{"query"},
+				"required": t{},
 			})
 			requestSchema := new(openapi3.SchemaRef)
 			if err := requestSchema.UnmarshalJSON(requestSchemaJSON); err != nil {
@@ -42,14 +48,8 @@ func (a *App) GetRoutes() []*apis.API {
 
 			// Prepare schema for graphql response
 			responseSchemaJSON, _ := json.Marshal(m{
-				"type": openapi3.TypeObject,
-				"properties": m{
-					"data": m{"type": openapi3.TypeObject, "additionalProperites": true},
-					"errors": m{
-						"type":  openapi3.TypeArray,
-						"items": m{"type": openapi3.TypeObject, "additionalProperites": true},
-					},
-				},
+				"type":                 openapi3.TypeObject,
+				"additionalProperties": true,
 			})
 			responseSchema := new(openapi3.SchemaRef)
 			if err := responseSchema.UnmarshalJSON(responseSchemaJSON); err != nil {
@@ -89,7 +89,7 @@ func (a *App) GetRoutes() []*apis.API {
 				},
 			}
 			url := fmt.Sprintf("/v1/api/%s/services/%s/%s", projectID, serviceName, endpointName)
-			op := fmt.Sprintf("%s-%s-%s", projectID, serviceName, endpointName)
+			op := combineProjectServiceEndpointName(projectID, serviceName, endpointName)
 			api := apis.API{Path: url, PathDef: pathDef, Op: op}
 			resAPIs = append(resAPIs, &api)
 		}
@@ -112,18 +112,23 @@ func (a *App) GetHandler(op string) (apis.HandlerFunc, error) {
 			return
 		}
 
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Get path params
 		projectID, serviceName, endpoint := getRequestParamsFromURL(r.URL.Path)
+
+		// Get request timeout
 		_, endpointObj, err := a.getEndpoint(projectID, serviceName, endpoint)
 		if err != nil {
-			a.logger.Error("Invalid function request payload provided", zap.Error(err))
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, errors.New("invalid request payload received"))
+			a.logger.Error("Unable to get endpoint", zap.Error(err))
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, errors.New("unable to get endpoint"))
 			return
 		}
-
 		timeout, err := a.getIntOutputFromPlugins(endpointObj, config.PluginTimeout)
 		if err != nil {
-			a.logger.Error("Invalid function request payload provided", zap.Error(err))
-			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, errors.New("invalid request payload received"))
+			a.logger.Error("Unable to get endpoint timeout", zap.Error(err))
+			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, errors.New("unable to get endpoint timeout"))
 			return
 		}
 
@@ -132,20 +137,59 @@ func (a *App) GetHandler(op string) (apis.HandlerFunc, error) {
 		defer cancel()
 
 		// TODO: Check if function call is authorised
-		// TODO: Implement caching
+		// actions, reqParams, err := auth.IsFuncCallAuthorised(ctx, projectID, serviceName, endpoint, token, req.Params)
+		// if err != nil {
+		// 	_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusForbidden, err)
+		// 	return
+		// }
 
-		reqParams := model.RequestParams{}
-		status, result, err := a.handleCall(ctx, projectID, serviceName, endpoint, "", nil, reqParams, nil)
+		reqParams := utils.ExtractRequestParams(r, model.RequestParams{}, req)
+		status, result, err := a.CallWithContext(ctx, projectID, serviceName, endpoint, token, reqParams, req)
 		if err != nil {
 			_ = helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Receieved error from service call (%s:%s)", serviceName, endpoint), err, nil)
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return
 		}
 
+		// TODO: Implement post process method
+		// _ = authHelpers.PostProcessMethod(ctx, auth.GetAESKey(), actions, result)
+
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, result)
 	}
 
 	return h, nil
+}
+
+// CallWithContext handles remote service request
+func (a *App) CallWithContext(ctx context.Context, projectID, serviceID, endpointID, token string, reqParams model.RequestParams, req *model.FunctionsRequest) (int, interface{}, error) {
+	reqParams.HTTPParams.Payload = map[string]interface{}{
+		"service":  serviceID,
+		"endpoint": endpointID,
+		"params":   req.Params,
+	}
+
+	// TODO: Implement integration hooks
+	// hookResponse := m.integrationMan.InvokeHook(ctx, reqParams)
+	// if hookResponse.CheckResponse() {
+	// 	// Check if an error occurred
+	// 	if err := hookResponse.Error(); err != nil {
+	// 		return hookResponse.Status(), nil, err
+	// 	}
+
+	// 	// Gracefully return
+	// 	return hookResponse.Status(), hookResponse.Result(), nil
+	// }
+
+	// TODO: Add metric hook for cache
+	status, result, err := a.handleCall(ctx, projectID, serviceID, endpointID, token, reqParams.Claims, req.Params, req.Cache)
+	if err != nil {
+		return status, result, err
+	}
+
+	// TODO: Implement metric hook
+	// m.metricHook(m.project, service, function)
+
+	return status, result, nil
 }
 
 func (a *App) handleCall(ctx context.Context, projectID, serviceID, endpointID, token string, auth, params interface{}, cacheInfo *config.ReadCacheOptions) (int, interface{}, error) {
@@ -184,6 +228,33 @@ func (a *App) handleCall(ctx context.Context, projectID, serviceID, endpointID, 
 	}
 
 	// TODO: Implement caching logic
+	// var redisKey string
+	// var cacheResponse *caching.CacheResult
+	// if endpoint.Method == http.MethodGet && cacheInfo != nil {
+	// 	// First step is to load all the options
+	// 	cacheOptionsArray := make([]interface{}, len(endpoint.CacheOptions))
+	// 	for index, key := range endpoint.CacheOptions {
+	// 		value, err := utils.LoadValue(key, map[string]interface{}{"args": map[string]interface{}{"auth": auth, "token": ogToken, "url": url}})
+	// 		if err != nil {
+	// 			return http.StatusBadRequest, nil, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to extract value for cache option key (%s)", key), err, nil)
+	// 		}
+	// 		cacheOptionsArray[index] = value
+	// 	}
+
+	// 	// Check if response is present in the cache
+	// 	cacheResponse, err = m.caching.GetRemoteService(ctx, m.project, serviceID, endpointID, cacheInfo, cacheOptionsArray)
+	// 	if err != nil {
+	// 		return http.StatusInternalServerError, nil, err
+	// 	}
+
+	// 	// Return if cache is present in response
+	// 	if cacheResponse.IsCacheHit() {
+	// 		return http.StatusOK, cacheResponse.GetResult(), nil
+	// 	}
+
+	// 	// Store the redis key for future use
+	// 	redisKey = cacheResponse.Key()
+	// }
 
 	/***************** Set the request method ***************/
 	// Set the default method
@@ -208,9 +279,29 @@ func (a *App) handleCall(ctx context.Context, projectID, serviceID, endpointID, 
 		token = endPointToken
 	}
 
+	// Create a new token if claims are provided
+	// claims, err := a.getStringOutputFromPlugins(endpoint, config.PluginClaims)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, nil, err
+	// }
+	// if claims != "" {
+	// TODO: Implement generate webhook token
+	// newToken, err := m.generateWebhookToken(ctx, serviceID, endpointID, token, endpoint, auth, params)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, nil, err
+	// }
+	// token = newToken
+	// }
+
 	/******** Fire the request and get the response ********/
 
 	scToken := ""
+	// TODO: Implement get sc access token
+	// scToken, err := m.auth.GetSCAccessToken(ctx)
+	// if err != nil {
+	// 	return http.StatusInternalServerError, nil, err
+	// }
+
 	// Prepare the state object
 	state := map[string]interface{}{"args": params, "auth": auth, "token": ogToken}
 
@@ -229,12 +320,4 @@ func (a *App) handleCall(ctx context.Context, projectID, serviceID, endpointID, 
 	/**************** Return the response body ****************/
 	res, err = a.adjustResBody(ctx, projectID, serviceID, endpointID, ogToken, endpoint, auth, res)
 	return status, res, err
-}
-
-func getRequestParamsFromURL(url string) (project, service, endpoint string) {
-	url = strings.TrimPrefix(url, "/v1/api/")
-	project = strings.Split(url, "/")[0]
-	service = strings.Split(url, "/")[2]
-	endpoint = strings.Split(url, "/")[3]
-	return
 }

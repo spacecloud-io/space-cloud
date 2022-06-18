@@ -65,6 +65,16 @@ func GenerateRequestParams(r *http.Request) *model.RequestParams {
 	}
 }
 
+// ExtractRequestParams extract request info from http request & stores it in reqParam variable
+func ExtractRequestParams(r *http.Request, reqParams model.RequestParams, body interface{}) model.RequestParams {
+	reqParams.RequestID = r.Header.Get(helpers.HeaderRequestID)
+	reqParams.HTTPParams.Method = r.Method
+	reqParams.HTTPParams.Path = r.URL.Path
+	reqParams.HTTPParams.Headers = r.Header
+	reqParams.HTTPParams.Payload = body
+	return reqParams
+}
+
 // ExtractJoinInfoForInstantInvalidate extracts join info
 func ExtractJoinInfoForInstantInvalidate(join []*model.JoinOption, joinKeysMapping map[string]map[string]string) {
 	for _, j := range join {
