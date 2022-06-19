@@ -26,11 +26,6 @@ type headers interface {
 
 // MakeHTTPRequest fires an http request and returns a response
 func MakeHTTPRequest(ctx context.Context, request *HTTPRequest, vPtr interface{}) (int, error) {
-	// Make a request object
-	if request.Method == http.MethodGet || request.Method == http.MethodDelete {
-		request.Params = nil
-	}
-
 	req, err := http.NewRequestWithContext(ctx, request.Method, request.URL, request.Params)
 	if err != nil {
 		return http.StatusInternalServerError, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("Unable to create http request for url (%s)", request.URL), err, nil)

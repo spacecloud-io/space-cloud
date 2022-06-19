@@ -335,9 +335,6 @@ const (
 	// PluginTimeout describes timeout plugin
 	PluginTimeout EndpointPluginType = "timeout"
 
-	// PluginTmpl describes template plugin
-	PluginTmpl EndpointPluginType = "template"
-
 	// PluginHeaders describes headers plugin
 	PluginHeaders EndpointPluginType = "headers"
 

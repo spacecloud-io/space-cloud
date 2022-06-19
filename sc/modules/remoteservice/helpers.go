@@ -19,7 +19,7 @@ import (
 )
 
 func (a *App) getEndpoint(projectID, serviceName, endpoint string) (*config.Service, *config.Endpoint, error) {
-	alias := fmt.Sprintf("%s---%s", projectID, serviceName)
+	alias := CombineProjectRemoteServiceName(projectID, serviceName)
 	serviceObj, ok := a.Services[alias]
 	if !ok {
 		return nil, nil, fmt.Errorf("could not find endpoint (%s) for service (%s) in project (%s)", endpoint, serviceName, projectID)
@@ -32,21 +32,16 @@ func (a *App) getEndpoint(projectID, serviceName, endpoint string) (*config.Serv
 	return serviceObj, endpointObj, nil
 }
 
-func (a *App) adjustReqBody(ctx context.Context, projectID, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (config.Headers, io.Reader, error) {
+func (a *App) applyRequestBodyPlugin(ctx context.Context, projectID, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (config.Headers, io.Reader, error) {
 	var req, graph interface{}
 	var err error
-
-	tmpl, err := a.getStringOutputFromPlugins(endpoint, config.PluginTmpl)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	headers, err := a.getHeadersFromPlugins(endpoint)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	_, reqPayloadFormat, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginRequestTemplate)
+	_, reqPayloadFormat, tmpl, err := a.getRequestTemplatePlugin(endpoint)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -117,16 +112,11 @@ func (a *App) adjustReqBody(ctx context.Context, projectID, serviceID, endpointI
 	return requestHeader, requestBody, err
 }
 
-func (a *App) adjustResBody(ctx context.Context, projectID, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
+func (a *App) applyResponseTemplatePlugin(ctx context.Context, projectID, serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
 	var res interface{}
 	var err error
 
-	tmpl, err := a.getStringOutputFromPlugins(endpoint, config.PluginTmpl)
-	if err != nil {
-		return nil, err
-	}
-
-	_, opFormat, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginResponseTemplate)
+	_, opFormat, tmpl, err := a.getResponseTemplatePlugin(endpoint)
 	if err != nil {
 		return nil, err
 	}

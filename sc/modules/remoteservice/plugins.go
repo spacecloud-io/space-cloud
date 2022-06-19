@@ -16,47 +16,121 @@ func (a *App) getEndpointPluginsParams(plugins []*config.EndpointPlugin, name co
 	return nil, fmt.Errorf("plugin (%s) not present in endpoint configuration", name)
 }
 
-func (a *App) getStringOutputFromPlugins(endpoint *config.Endpoint, pluginType config.EndpointPluginType) (string, error) {
-	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, pluginType)
+func (a *App) getRequestTemplatePlugin(endpoint *config.Endpoint) (string, string, string, error) {
+	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, config.PluginRequestTemplate)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	template, ok := plugin.Params.(map[string]interface{})["template"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s template value for endpoint", string(config.PluginRequestTemplate))
+	}
+
+	format, ok := plugin.Params.(map[string]interface{})["format"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s format value for endpoint", string(config.PluginRequestTemplate))
+	}
+
+	templateEngine, ok := plugin.Params.(map[string]interface{})["templateEngine"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s template value for endpoint", string(config.PluginRequestTemplate))
+	}
+
+	return template.(string), format.(string), templateEngine.(string), err
+}
+
+func (a *App) getResponseTemplatePlugin(endpoint *config.Endpoint) (string, string, string, error) {
+	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, config.PluginResponseTemplate)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	template, ok := plugin.Params.(map[string]interface{})["template"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s template value for endpoint", string(config.PluginResponseTemplate))
+	}
+
+	format, ok := plugin.Params.(map[string]interface{})["format"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s format value for endpoint", string(config.PluginResponseTemplate))
+	}
+
+	templateEngine, ok := plugin.Params.(map[string]interface{})["templateEngine"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s template value for endpoint", string(config.PluginRequestTemplate))
+	}
+	return template.(string), format.(string), templateEngine.(string), err
+}
+
+func (a *App) getGraphTemplatePlugin(endpoint *config.Endpoint) (string, string, string, error) {
+	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, config.PluginGraphTemplate)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	template, ok := plugin.Params.(map[string]interface{})["template"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s template value for endpoint", string(config.PluginGraphTemplate))
+	}
+
+	format, ok := plugin.Params.(map[string]interface{})["format"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s format value for endpoint", string(config.PluginGraphTemplate))
+	}
+
+	templateEngine, ok := plugin.Params.(map[string]interface{})["templateEngine"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s template value for endpoint", string(config.PluginRequestTemplate))
+	}
+	return template.(string), format.(string), templateEngine.(string), err
+}
+
+func (a *App) getClaimsPlugin(endpoint *config.Endpoint) (string, string, string, error) {
+	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, config.PluginClaims)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	template, ok := plugin.Params.(map[string]interface{})["template"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s template value for endpoint", string(config.PluginClaims))
+	}
+
+	format, ok := plugin.Params.(map[string]interface{})["format"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s format value for endpoint", string(config.PluginClaims))
+	}
+
+	templateEngine, ok := plugin.Params.(map[string]interface{})["templateEngine"]
+	if !ok {
+		return "", "", "", fmt.Errorf("unable to get %s template value for endpoint", string(config.PluginRequestTemplate))
+	}
+	return template.(string), format.(string), templateEngine.(string), err
+}
+
+func (a *App) getTokenPlugin(endpoint *config.Endpoint) (string, error) {
+	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, config.PluginToken)
 	if err != nil {
 		return "", err
 	}
 
 	res, ok := plugin.Params.(string)
 	if !ok {
-		return "", fmt.Errorf("unable to get %s value for endpoint", string(pluginType))
+		return "", fmt.Errorf("unable to get %s value for endpoint", string(config.PluginToken))
 	}
 	return res, err
 }
 
-func (a *App) getTemplateOutputFromPlugins(endpoint *config.Endpoint, pluginType config.EndpointPluginType) (string, string, error) {
-	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, pluginType)
-	if err != nil {
-		return "", "", err
-	}
-
-	template, ok := plugin.Params.(map[string]interface{})["template"]
-	if !ok {
-		return "", "", fmt.Errorf("unable to get %s template value for endpoint", string(pluginType))
-	}
-
-	format, ok := plugin.Params.(map[string]interface{})["format"]
-	if !ok {
-		return "", "", fmt.Errorf("unable to get %s format value for endpoint", string(pluginType))
-	}
-
-	return template.(string), format.(string), err
-}
-
-func (a *App) getIntOutputFromPlugins(endpoint *config.Endpoint, pluginType config.EndpointPluginType) (int, error) {
-	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, pluginType)
+func (a *App) getTimeoutPlugins(endpoint *config.Endpoint) (int, error) {
+	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, config.PluginTimeout)
 	if err != nil {
 		return 0, err
 	}
 
 	res, ok := plugin.Params.(float64)
 	if !ok {
-		return 0, fmt.Errorf("unable to get %s value for endpoint", pluginType)
+		return 0, fmt.Errorf("unable to get %s value for endpoint", config.PluginTimeout)
 	}
 	return int(res), nil
 }

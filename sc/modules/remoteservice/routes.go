@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -22,8 +23,7 @@ import (
 func (a *App) GetRoutes() []*apis.API {
 	resAPIs := make([]*apis.API, 0)
 	for name, service := range a.Services {
-		projectID := strings.Split(name, "---")[0]
-		serviceName := strings.Split(name, "---")[1]
+		projectID, serviceName := SplitPojectRemoteServiceName(name)
 		for endpointName := range service.Endpoints {
 			// Prepare schema for request body
 			requestSchemaJSON, _ := json.Marshal(m{
@@ -125,7 +125,7 @@ func (a *App) GetHandler(op string) (apis.HandlerFunc, error) {
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, errors.New("unable to get endpoint"))
 			return
 		}
-		timeout, err := a.getIntOutputFromPlugins(endpointObj, config.PluginTimeout)
+		timeout, err := a.getTimeoutPlugins(endpointObj)
 		if err != nil {
 			a.logger.Error("Unable to get endpoint timeout", zap.Error(err))
 			_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, errors.New("unable to get endpoint timeout"))
@@ -264,13 +264,18 @@ func (a *App) handleCall(ctx context.Context, projectID, serviceID, endpointID, 
 	method = endpoint.Method
 
 	/***************** Set the request body *****************/
-	newHeaders, newParams, err := a.adjustReqBody(ctx, projectID, serviceID, endpointID, ogToken, endpoint, auth, params)
-	if err != nil {
-		return http.StatusBadRequest, nil, err
+	var newParams io.Reader
+	var newHeaders config.Headers
+	// Make a request object
+	if !(method == http.MethodGet || method == http.MethodDelete) {
+		newHeaders, newParams, err = a.applyRequestBodyPlugin(ctx, projectID, serviceID, endpointID, ogToken, endpoint, auth, params)
+		if err != nil {
+			return http.StatusBadRequest, nil, err
+		}
 	}
 
 	/***************** Set the request token ****************/
-	endPointToken, err := a.getStringOutputFromPlugins(endpoint, config.PluginToken)
+	endPointToken, err := a.getTokenPlugin(endpoint)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
@@ -318,6 +323,6 @@ func (a *App) handleCall(ctx context.Context, projectID, serviceID, endpointID, 
 	}
 
 	/**************** Return the response body ****************/
-	res, err = a.adjustResBody(ctx, projectID, serviceID, endpointID, ogToken, endpoint, auth, res)
+	res, err = a.applyResponseTemplatePlugin(ctx, projectID, serviceID, endpointID, ogToken, endpoint, auth, res)
 	return status, res, err
 }

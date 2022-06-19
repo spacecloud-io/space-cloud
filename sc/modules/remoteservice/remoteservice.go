@@ -47,37 +47,32 @@ func (a *App) Provision(ctx caddy.Context) error {
 	for name, service := range a.Services {
 		projectID, serviceName := SplitPojectRemoteServiceName(name)
 		for endpointID, endpoint := range service.Endpoints {
-			tmpl, err := a.getStringOutputFromPlugins(endpoint, config.PluginTmpl)
-			if err != nil {
-				a.logger.Error("Unable to load plugins app", zap.Error(err), zap.String("app", "remote-service"))
-				return err
-			}
 
-			reqTmpl, _, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginRequestTemplate)
+			reqTmpl, _, reqTmplEngine, err := a.getRequestTemplatePlugin(endpoint)
 			if err != nil {
 				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
-			resTmpl, _, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginResponseTemplate)
+			resTmpl, _, resTmplEngine, err := a.getResponseTemplatePlugin(endpoint)
 			if err != nil {
 				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
-			graphTmpl, _, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginGraphTemplate)
+			graphTmpl, _, graphTmplEngine, err := a.getGraphTemplatePlugin(endpoint)
 			if err != nil {
 				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
-			claims, _, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginClaims)
+			claims, _, claimsTmplEngine, err := a.getClaimsPlugin(endpoint)
 			if err != nil {
 				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
-			switch tmpl {
+			switch reqTmplEngine {
 			case string(config.TemplatingEngineGo):
 				if reqTmpl != "" {
 					if err := a.createGoTemplate("request", projectID, serviceName, endpointID, reqTmpl); err != nil {
@@ -85,18 +80,36 @@ func (a *App) Provision(ctx caddy.Context) error {
 						return err
 					}
 				}
+			default:
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided", reqTmplEngine), nil, nil)
+			}
+
+			switch resTmplEngine {
+			case string(config.TemplatingEngineGo):
 				if resTmpl != "" {
 					if err := a.createGoTemplate("response", projectID, serviceName, endpointID, resTmpl); err != nil {
 						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote-service"))
 						return err
 					}
 				}
+			default:
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided", resTmplEngine), nil, nil)
+			}
+
+			switch graphTmplEngine {
+			case string(config.TemplatingEngineGo):
 				if graphTmpl != "" {
 					if err := a.createGoTemplate("graph", projectID, serviceName, endpointID, graphTmpl); err != nil {
 						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote-service"))
 						return err
 					}
 				}
+			default:
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided", graphTmplEngine), nil, nil)
+			}
+
+			switch claimsTmplEngine {
+			case string(config.TemplatingEngineGo):
 				if claims != "" {
 					if err := a.createGoTemplate("claim", projectID, serviceName, endpointID, claims); err != nil {
 						a.logger.Error("Unable to load create go template", zap.Error(err), zap.String("app", "remote-service"))
@@ -104,7 +117,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 					}
 				}
 			default:
-				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided", tmpl), nil, nil)
+				return helpers.Logger.LogError(helpers.GetRequestID(context.TODO()), fmt.Sprintf("Invalid templating engine (%s) provided", claimsTmplEngine), nil, nil)
 			}
 		}
 	}
