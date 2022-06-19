@@ -32,6 +32,11 @@ require (
 )
 
 require (
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/stretchr/objx v0.2.0 // indirect
+)
+
+require (
 	cloud.google.com/go/kms v1.3.0 // indirect
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
 	github.com/DATA-DOG/go-sqlmock v1.5.0 // indirect
@@ -113,7 +118,7 @@ require (
 	github.com/samfoo/ansi v0.0.0-20160124022901-b6bd2ded7189 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
-	github.com/sirupsen/logrus v1.7.0 // indirect
+	github.com/sirupsen/logrus v1.7.0
 	github.com/smallstep/certificates v0.17.5-0.20211008195551-04fe3126bebf // indirect
 	github.com/smallstep/cli v0.17.6 // indirect
 	github.com/smallstep/nosql v0.3.8 // indirect
@@ -124,6 +129,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
+	github.com/stretchr/testify v1.7.1
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
