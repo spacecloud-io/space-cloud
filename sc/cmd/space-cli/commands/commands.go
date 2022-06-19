@@ -3,6 +3,7 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/spacecloud-io/space-cloud/cmd/space-cli/commands/migrate"
 	"github.com/spacecloud-io/space-cloud/cmd/space-cli/commands/run"
 )
 
@@ -18,6 +19,7 @@ func NewRootCommand() *cobra.Command {
 
 	// Add all sub commands
 	cmd.AddCommand(run.NewCommand())
+	cmd.AddCommand(migrate.NewCommand())
 
 	return cmd
 }
