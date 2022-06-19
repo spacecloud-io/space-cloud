@@ -280,7 +280,7 @@ func (a *App) handleCall(ctx context.Context, projectID, serviceID, endpointID, 
 	}
 
 	// Create a new token if claims are provided
-	// claims, err := a.getStringOutputFromPlugins(endpoint, config.PluginClaims)
+	// claims, _, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginClaims)
 	// if err != nil {
 	// 	return http.StatusInternalServerError, nil, err
 	// }

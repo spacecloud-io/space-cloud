@@ -29,6 +29,25 @@ func (a *App) getStringOutputFromPlugins(endpoint *config.Endpoint, pluginType c
 	return res, err
 }
 
+func (a *App) getTemplateOutputFromPlugins(endpoint *config.Endpoint, pluginType config.EndpointPluginType) (string, string, error) {
+	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, pluginType)
+	if err != nil {
+		return "", "", err
+	}
+
+	template, ok := plugin.Params.(map[string]interface{})["template"]
+	if !ok {
+		return "", "", fmt.Errorf("unable to get %s template value for endpoint", string(pluginType))
+	}
+
+	format, ok := plugin.Params.(map[string]interface{})["format"]
+	if !ok {
+		return "", "", fmt.Errorf("unable to get %s format value for endpoint", string(pluginType))
+	}
+
+	return template.(string), format.(string), err
+}
+
 func (a *App) getIntOutputFromPlugins(endpoint *config.Endpoint, pluginType config.EndpointPluginType) (int, error) {
 	plugin, err := a.getEndpointPluginsParams(endpoint.Plugins, pluginType)
 	if err != nil {

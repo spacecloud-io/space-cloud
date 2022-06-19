@@ -41,17 +41,12 @@ func (a *App) adjustReqBody(ctx context.Context, projectID, serviceID, endpointI
 		return nil, nil, err
 	}
 
-	opFormat, err := a.getStringOutputFromPlugins(endpoint, config.PluginOutputFormat)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	headers, err := a.getHeadersFromPlugins(endpoint)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	reqPayloadFormat, err := a.getStringOutputFromPlugins(endpoint, config.PluginReqPayloadFormat)
+	_, reqPayloadFormat, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginRequestTemplate)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -59,7 +54,7 @@ func (a *App) adjustReqBody(ctx context.Context, projectID, serviceID, endpointI
 	switch tmpl {
 	case string(config.TemplatingEngineGo):
 		if tmpl, p := a.templates[getGoTemplateKey("request", projectID, serviceID, endpointID)]; p {
-			req, err = tmpl2.GoTemplate(ctx, tmpl, opFormat, token, auth, params)
+			req, err = tmpl2.GoTemplate(ctx, tmpl, reqPayloadFormat, token, auth, params)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -131,7 +126,7 @@ func (a *App) adjustResBody(ctx context.Context, projectID, serviceID, endpointI
 		return nil, err
 	}
 
-	opFormat, err := a.getStringOutputFromPlugins(endpoint, config.PluginOutputFormat)
+	_, opFormat, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginResponseTemplate)
 	if err != nil {
 		return nil, err
 	}

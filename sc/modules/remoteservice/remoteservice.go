@@ -53,25 +53,25 @@ func (a *App) Provision(ctx caddy.Context) error {
 				return err
 			}
 
-			reqTmpl, err := a.getStringOutputFromPlugins(endpoint, config.PluginRequestTemplate)
+			reqTmpl, _, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginRequestTemplate)
 			if err != nil {
 				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
-			resTmpl, err := a.getStringOutputFromPlugins(endpoint, config.PluginResponseTemplate)
+			resTmpl, _, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginResponseTemplate)
 			if err != nil {
 				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
-			graphTmpl, err := a.getStringOutputFromPlugins(endpoint, config.PluginGraphTemplate)
+			graphTmpl, _, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginGraphTemplate)
 			if err != nil {
 				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err
 			}
 
-			claims, err := a.getStringOutputFromPlugins(endpoint, config.PluginClaims)
+			claims, _, err := a.getTemplateOutputFromPlugins(endpoint, config.PluginClaims)
 			if err != nil {
 				a.logger.Error("Unable to load plugins", zap.Error(err), zap.String("app", "remote-service"))
 				return err

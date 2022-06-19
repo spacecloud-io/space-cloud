@@ -332,17 +332,11 @@ type EndpointPlugin struct {
 type EndpointPluginType string
 
 const (
-	// PluginReqPayloadFormat describes request payload plugin
-	PluginReqPayloadFormat EndpointPluginType = "requestPayloadFormat"
-
 	// PluginTimeout describes timeout plugin
 	PluginTimeout EndpointPluginType = "timeout"
 
 	// PluginTmpl describes template plugin
 	PluginTmpl EndpointPluginType = "template"
-
-	// PluginOutputFormat describes output format plugin
-	PluginOutputFormat EndpointPluginType = "outputFormat"
 
 	// PluginHeaders describes headers plugin
 	PluginHeaders EndpointPluginType = "headers"
