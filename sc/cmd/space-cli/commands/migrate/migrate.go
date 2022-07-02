@@ -72,5 +72,9 @@ func migrate(configPath string) (*model.SCConfig, error) {
 		return nil, err
 	}
 
+	if err := getRemoteServices(resource, configPath); err != nil {
+		return nil, err
+	}
+
 	return resource, nil
 }

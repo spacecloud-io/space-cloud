@@ -128,7 +128,7 @@ func addConfigToOpenAPIDoc(openapiDoc openapi3.T, app string, types model.Config
 						Content: openapi3.Content{
 							"application/json": &openapi3.MediaType{Schema: &openapi3.SchemaRef{
 								Value: &openapi3.Schema{
-									Type: model.TypeObject,
+									Type: openapi3.TypeObject,
 									Properties: openapi3.Schemas{
 										"list": &openapi3.SchemaRef{Value: &openapi3.Schema{
 											Type:  openapi3.TypeArray,
@@ -218,17 +218,17 @@ func prepareParams(requiredParents []string, includePathParam bool) openapi3.Par
 
 func getResourceObjectSchema(spec *openapi3.SchemaRef) *openapi3.SchemaRef {
 	return &openapi3.SchemaRef{Value: &openapi3.Schema{
-		Type: model.TypeObject,
+		Type: openapi3.TypeObject,
 		Properties: openapi3.Schemas{
 			"meta": &openapi3.SchemaRef{Value: &openapi3.Schema{
-				Type: model.TypeObject,
+				Type: openapi3.TypeObject,
 				Properties: openapi3.Schemas{
-					"module": &openapi3.SchemaRef{Value: &openapi3.Schema{Type: model.TypeString}},
-					"type":   &openapi3.SchemaRef{Value: &openapi3.Schema{Type: model.TypeString}},
-					"name":   &openapi3.SchemaRef{Value: &openapi3.Schema{Type: model.TypeString}},
+					"module": &openapi3.SchemaRef{Value: &openapi3.Schema{Type: openapi3.TypeString}},
+					"type":   &openapi3.SchemaRef{Value: &openapi3.Schema{Type: openapi3.TypeString}},
+					"name":   &openapi3.SchemaRef{Value: &openapi3.Schema{Type: openapi3.TypeString}},
 					"parents": &openapi3.SchemaRef{Value: &openapi3.Schema{
-						Type:                 model.TypeObject,
-						AdditionalProperties: &openapi3.SchemaRef{Value: &openapi3.Schema{Type: model.TypeString}},
+						Type:                 openapi3.TypeObject,
+						AdditionalProperties: &openapi3.SchemaRef{Value: &openapi3.Schema{Type: openapi3.TypeString}},
 					}},
 				},
 			}},
