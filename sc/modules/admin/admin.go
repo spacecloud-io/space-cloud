@@ -48,6 +48,9 @@ func (App) CaddyModule() caddy.ModuleInfo {
 // Provision sets up the app.
 func (a *App) Provision(ctx caddy.Context) error {
 	a.logger = ctx.Logger(a)
+	if a.projectAuth == nil {
+		a.projectAuth = make(map[string]*auth.Module)
+	}
 	a.auth = auth.New([]*config.Secret{
 		{IsPrimary: true, Alg: config.HS256, KID: "sc-admin", Secret: a.Secret},
 	})

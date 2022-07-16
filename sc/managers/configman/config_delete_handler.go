@@ -50,7 +50,7 @@ func (h *ConfigDeleteHandler) Provision(ctx caddy.Context) error {
 // ServeHTTP handles the http request
 func (h *ConfigDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	// Get meta information
-	op, module, typeName, resourceName, err := extractPathParams(r.URL.Path)
+	op, module, typeName, resourceName, err := extractPathParams(r.URL.Path, r.Method)
 	if err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
@@ -77,7 +77,7 @@ func (h *ConfigDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, 
 	resourceObj.Meta.Parents = utils.GetQueryParams(r.URL.Query())
 
 	// Verify config object
-	if schemaErrors, err := typeDef.VerifyObject(resourceObj); err != nil {
+	if schemaErrors, err := typeDef.VerifyObject(resourceObj, op, false); err != nil {
 		_ = helpers.Response.SendResponse(r.Context(), w, http.StatusBadRequest, prepareErrorResponseBody(err, schemaErrors))
 		return nil
 	}

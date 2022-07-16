@@ -118,9 +118,9 @@ type (
 // )
 
 // VerifyObject verifies if the config object is valid
-func (typeDef *OperationTypeDefinition) VerifyObject(configObject *ResourceObject) ([]string, error) {
+func (typeDef *OperationTypeDefinition) VerifyObject(configObject *ResourceObject, op string, checkSpec bool) ([]string, error) {
 	// Check if all required fields are present
-	if err := verifyMeta(configObject.Meta); err != nil {
+	if err := verifyMeta(configObject.Meta, op); err != nil {
 		return nil, err
 	}
 	// Check if all required parents are present in object
@@ -129,13 +129,13 @@ func (typeDef *OperationTypeDefinition) VerifyObject(configObject *ResourceObjec
 	}
 
 	// Very specification schema
-	return verifySpecSchema(typeDef.RequestSchema, configObject.Spec)
+	return verifySpecSchema(typeDef.RequestSchema, configObject.Spec, checkSpec)
 }
 
 // VerifyObject verifies if the config object is valid
-func (typeDef *ConfigTypeDefinition) VerifyObject(configObject *ResourceObject) ([]string, error) {
+func (typeDef *ConfigTypeDefinition) VerifyObject(configObject *ResourceObject, op string, checkSpec bool) ([]string, error) {
 	// Check if all required fields are present
-	if err := verifyMeta(configObject.Meta); err != nil {
+	if err := verifyMeta(configObject.Meta, op); err != nil {
 		return nil, err
 	}
 	// Check if all required parents are present in object
@@ -144,11 +144,11 @@ func (typeDef *ConfigTypeDefinition) VerifyObject(configObject *ResourceObject) 
 	}
 
 	// Very specification schema
-	return verifySpecSchema(typeDef.Schema, configObject.Spec)
+	return verifySpecSchema(typeDef.Schema, configObject.Spec, checkSpec)
 }
 
-func verifyMeta(meta ResourceMeta) error {
-	if meta.Name == "" {
+func verifyMeta(meta ResourceMeta, op string) error {
+	if meta.Name == "" && op == "single" {
 		return errors.New("resource name is missing")
 	}
 	if meta.Module == "" {
@@ -160,9 +160,9 @@ func verifyMeta(meta ResourceMeta) error {
 	return nil
 }
 
-func verifySpecSchema(schema, spec interface{}) ([]string, error) {
+func verifySpecSchema(schema, spec interface{}, checkSpec bool) ([]string, error) {
 	// Skip verification if no json schema is supplied
-	if schema == nil {
+	if schema == nil || !checkSpec {
 		return nil, nil
 	}
 

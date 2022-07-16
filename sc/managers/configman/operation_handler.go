@@ -54,7 +54,7 @@ func (h *OperationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, nex
 	defer cancel()
 
 	// Get meta information
-	_, module, typeName, _, err := extractPathParams(r.URL.Path)
+	op, module, typeName, _, err := extractPathParams(r.URL.Path, r.Method)
 	if err != nil {
 		_ = helpers.Response.SendErrorResponse(ctx, w, http.StatusBadRequest, err)
 		return nil
@@ -97,7 +97,7 @@ func (h *OperationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, nex
 	}
 
 	// Verify config object
-	if schemaErrors, err := typeDef.VerifyObject(resourceObject); err != nil {
+	if schemaErrors, err := typeDef.VerifyObject(resourceObject, op, true); err != nil {
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusBadRequest, prepareErrorResponseBody(err, schemaErrors))
 		return nil
 	}

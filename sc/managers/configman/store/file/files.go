@@ -58,12 +58,12 @@ func (f *File) GetResource(ctx context.Context, meta *model.ResourceMeta) (*mode
 
 	module, ok := scConfig.Config[meta.Module]
 	if !ok {
-		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
+		return &model.ResourceObject{}, nil
 	}
 
 	moduleType, ok := module[meta.Type]
 	if !ok {
-		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
+		return &model.ResourceObject{}, nil
 	}
 
 	for _, resourceObj := range moduleType {
@@ -84,12 +84,12 @@ func (f *File) GetResources(ctx context.Context, meta *model.ResourceMeta) (*mod
 
 	module, ok := scConfig.Config[meta.Module]
 	if !ok {
-		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
+		return &model.ListResourceObjects{}, nil
 	}
 
 	moduleType, ok := module[meta.Type]
 	if !ok {
-		return nil, fmt.Errorf("no resource found for %s - %s - %s", meta.Module, meta.Type, meta.Name)
+		return &model.ListResourceObjects{}, nil
 	}
 
 	resourceList := make([]*model.ResourceObject, 0)

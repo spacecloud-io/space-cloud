@@ -74,7 +74,7 @@ func (s *Store) DeleteResource(ctx context.Context, resourceMeta *model.Resource
 
 // DeleteResources delete resources from the store
 func (s *Store) DeleteResources(ctx context.Context, resourceMeta *model.ResourceMeta) error {
-	return s.connector.DeleteResource(ctx, resourceMeta)
+	return s.connector.DeleteResources(ctx, resourceMeta)
 }
 
 // Stop ends the app operations

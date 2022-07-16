@@ -52,24 +52,24 @@ func getConfigRoutes() caddyhttp.Route {
 
 		// Config routes
 		caddyhttp.Route{
-			Group:          "config",
+			Group:          "config-api",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/v1/config/*"}, []string{http.MethodGet}),
 			HandlersRaw:    utils.GetCaddyHandler("config_get", nil),
 		},
 		caddyhttp.Route{
-			Group:          "config",
+			Group:          "config-api",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/v1/config/*"}, []string{http.MethodDelete}),
 			HandlersRaw:    utils.GetCaddyHandler("config_delete", nil),
 		},
 		caddyhttp.Route{
-			Group:          "config",
+			Group:          "config-api",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/v1/config/*"}, []string{http.MethodPost}),
 			HandlersRaw:    utils.GetCaddyHandler("config_apply", nil),
 		},
 
 		// Operation routes
 		caddyhttp.Route{
-			Group:          "operation",
+			Group:          "operation-api",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/v1/operation/*"}, []string{}),
 			HandlersRaw:    utils.GetCaddyHandler("operation", nil),
 		},

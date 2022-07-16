@@ -12,6 +12,7 @@ import (
 
 	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spacecloud-io/space-cloud/modules/middlewares"
+	"github.com/spacecloud-io/space-cloud/utils"
 )
 
 // ConfigApplyHandler is a module to create config POST handlers
@@ -52,7 +53,7 @@ func (h *ConfigApplyHandler) Provision(ctx caddy.Context) error {
 // ServeHTTP handles the http request
 func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	// Get meta information
-	_, module, typeName, _, err := extractPathParams(r.URL.Path)
+	op, module, typeName, _, err := extractPathParams(r.URL.Path, r.Method)
 	if err != nil {
 		_ = helpers.Response.SendErrorResponse(r.Context(), w, http.StatusBadRequest, err)
 		return nil
@@ -80,9 +81,10 @@ func (h *ConfigApplyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 	}
 	resourceObject.Meta.Module = module
 	resourceObject.Meta.Type = typeName
+	resourceObject.Meta.Parents = utils.GetQueryParams(r.URL.Query())
 
 	// Verify config object
-	if schemaErrors, err := typeDef.VerifyObject(resourceObject); err != nil {
+	if schemaErrors, err := typeDef.VerifyObject(resourceObject, op, true); err != nil {
 		_ = helpers.Response.SendResponse(r.Context(), w, http.StatusBadRequest, prepareErrorResponseBody(err, schemaErrors))
 		return nil
 	}

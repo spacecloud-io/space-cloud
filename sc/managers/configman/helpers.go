@@ -2,14 +2,18 @@ package configman
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/spacecloud-io/space-cloud/model"
 )
 
-func extractPathParams(urlPath string) (op, module, typeName, resourceName string, err error) {
+func extractPathParams(urlPath, method string) (op, module, typeName, resourceName string, err error) {
 	// Set the default operation to single
-	op = "single"
+	op = "list"
+	if method == http.MethodPost {
+		op = "single"
+	}
 
 	// Check if url has proper length
 	arr := strings.Split(urlPath[1:], "/")
@@ -20,7 +24,7 @@ func extractPathParams(urlPath string) (op, module, typeName, resourceName strin
 
 	// Check the operation type
 	if len(arr) == 5 {
-		op = "list"
+		op = "single"
 		resourceName = arr[4]
 	}
 

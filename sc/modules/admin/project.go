@@ -32,7 +32,7 @@ func getProjectConfigTypes() model.ConfigTypes {
 
 					// Check if an aes key already exists in this project. We want to allow just
 					// one aes key per project
-					if len(l.List) > 0 && l.List[0].Meta.Name == obj.Meta.Name {
+					if len(l.List) > 0 && l.List[0].Meta.Name != obj.Meta.Name {
 						return errors.New("only one aes key allowed per project")
 					}
 					return nil
