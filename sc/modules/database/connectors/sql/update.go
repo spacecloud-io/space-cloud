@@ -260,6 +260,8 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+val, -1)
 			}
 
+			// TODO: test this with scenarios where there can be multiple arguments and
+			// currentDate value isn't the first one. We might end up removing the wrong argument
 			args = args[1:]
 
 		}

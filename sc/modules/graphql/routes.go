@@ -149,13 +149,21 @@ func (a *App) GetHandler(op string) (apis.HandlerFunc, error) {
 		}
 
 		// Execute the query
+		store, err := newStore(rawAst)
+		if err != nil {
+			_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, &graphql.Result{
+				Errors: []gqlerrors.FormattedError{{Message: err.Error()}},
+			})
+			return
+		}
+
 		result := graphql.Execute(graphql.ExecuteParams{
 			Context:       ctx,
 			Schema:        *schema,
 			AST:           rawAst,
 			OperationName: req.OperationName,
 			Args:          req.Variables,
-			Root:          newStore(),
+			Root:          store,
 		})
 		_ = helpers.Response.SendResponse(ctx, w, http.StatusOK, result)
 	}

@@ -10,15 +10,35 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-func (a *App) createRootGraphQLTypes(project string) {
-	a.rootGraphQLTypes[project] = map[string]*graphql.Object{}
+func (a *App) createRootMutationGraphQLTypes(project string) {
+	a.rootGraphQLMutationTypes[project] = map[string]*graphql.Object{}
+	a.rootDBDocsTypes[project] = map[string]*graphql.InputObject{}
+
+	for dbAlias, parsedSchema := range a.dbSchemas[project] {
+		for tableName := range parsedSchema {
+			a.rootGraphQLMutationTypes[project][getInsertResponseTypeName(dbAlias, tableName)] = graphql.NewObject(graphql.ObjectConfig{
+				Name:        fmt.Sprintf("%s_%s_Returning", strings.Title(dbAlias), strings.Title(tableName)),
+				Description: fmt.Sprintf("Mutation record object for %s", tableName),
+				Fields:      graphql.Fields{},
+			})
+			a.rootDBDocsTypes[project][getInsertDocsName(dbAlias, tableName)] = graphql.NewInputObject(graphql.InputObjectConfig{
+				Name:        getInsertDocsName(dbAlias, tableName),
+				Description: fmt.Sprintf("Record to be inserted for %s", tableName),
+				Fields:      make(graphql.InputObjectConfigFieldMap),
+			})
+		}
+	}
+}
+
+func (a *App) createRootQueryGraphQLTypes(project string) {
+	a.rootGraphQLQueryTypes[project] = map[string]*graphql.Object{}
 	a.rootDBWhereTypes[project] = map[string]*graphql.InputObject{}
 
 	for dbAlias, parsedSchema := range a.dbSchemas[project] {
 		for tableName := range parsedSchema {
-			a.rootGraphQLTypes[project][getTableFieldName(dbAlias, tableName)] = graphql.NewObject(graphql.ObjectConfig{
+			a.rootGraphQLQueryTypes[project][getTableFieldName(dbAlias, tableName)] = graphql.NewObject(graphql.ObjectConfig{
 				Name:        getTableFieldName(dbAlias, tableName),
-				Description: fmt.Sprintf("Record object from %s", tableName),
+				Description: fmt.Sprintf("Record object for %s", tableName),
 				Fields:      graphql.Fields{},
 			})
 			a.rootDBWhereTypes[project][getTableWhereClauseName(dbAlias, tableName)] = graphql.NewInputObject(graphql.InputObjectConfig{
@@ -30,11 +50,113 @@ func (a *App) createRootGraphQLTypes(project string) {
 	}
 }
 
-func (a *App) getQueryType(project string) *graphql.Object {
-	// Create root graphql types
-	a.createRootGraphQLTypes(project)
+func (a *App) getMutationType(project string) *graphql.Object {
+	// Create root mutation graphql types
+	a.createRootMutationGraphQLTypes(project)
 
-	// Create the root query
+	// Create the root mutation type
+	mutationType := graphql.NewObject(graphql.ObjectConfig{Name: "Mutation", Fields: graphql.Fields{}})
+
+	// Populate all the fields in the root query
+	for dbAlias, parsedSchema := range a.dbSchemas[project] {
+		for tableName, tableSchema := range parsedSchema {
+			tableReturningType := a.rootGraphQLMutationTypes[project][getInsertResponseTypeName(dbAlias, tableName)]
+			tableDocsType := a.rootDBDocsTypes[project][getInsertDocsName(dbAlias, tableName)]
+			updateSetObjectType := graphql.NewInputObject(graphql.InputObjectConfig{Name: fmt.Sprintf("%s_%sSetObject", strings.Title(dbAlias), strings.Title(tableName)), Fields: make(graphql.InputObjectConfigFieldMap)})
+			updateNumericOpType := graphql.NewInputObject(graphql.InputObjectConfig{Name: fmt.Sprintf("%s_%sNumericOpObject", strings.Title(dbAlias), strings.Title(tableName)), Fields: make(graphql.InputObjectConfigFieldMap)})
+			updateCurrentDateOpType := graphql.NewInputObject(graphql.InputObjectConfig{Name: fmt.Sprintf("%s_%sCurrentDateOpObject", strings.Title(dbAlias), strings.Title(tableName)), Fields: make(graphql.InputObjectConfigFieldMap)})
+			for fieldName, fieldSchema := range tableSchema {
+				if !fieldSchema.IsLinked {
+					graphqlType := scToGraphQLType(fieldSchema.Kind)
+					tableReturningType.AddFieldConfig(fieldName, &graphql.Field{Type: graphqlType, Resolve: a.literalResolveFn})
+					tableDocsType.AddFieldConfig(fieldName, &graphql.InputObjectFieldConfig{Type: graphqlType})
+					updateSetObjectType.AddFieldConfig(fieldName, &graphql.InputObjectFieldConfig{Type: graphqlType})
+					if graphqlType == graphql.Int || graphqlType == graphql.Float {
+						updateNumericOpType.AddFieldConfig(fieldName, &graphql.InputObjectFieldConfig{Type: graphqlType})
+					}
+					if graphqlType == graphql.DateTime {
+						updateCurrentDateOpType.AddFieldConfig(fieldName, &graphql.InputObjectFieldConfig{Type: graphqlType})
+					}
+					continue
+				}
+				if fieldSchema.IsLinked {
+					var graphqlOutputType graphql.Output = a.rootGraphQLMutationTypes[project][getInsertResponseTypeName(dbAlias, fieldSchema.LinkedTable.Table)]
+					if fieldSchema.IsList {
+						graphqlOutputType = graphql.NewList(graphqlOutputType)
+					}
+					tableReturningType.AddFieldConfig(fieldName, &graphql.Field{Type: graphqlOutputType, Resolve: a.literalResolveFn})
+
+					var graphqlInputType graphql.Input = a.rootDBDocsTypes[project][getInsertDocsName(dbAlias, fieldSchema.LinkedTable.Table)]
+					if fieldSchema.IsList {
+						graphqlInputType = graphql.NewList(a.rootDBDocsTypes[project][getInsertDocsName(dbAlias, fieldSchema.LinkedTable.Table)])
+					}
+					tableDocsType.AddFieldConfig(fieldName, &graphql.InputObjectFieldConfig{Type: graphqlInputType})
+					continue
+				}
+			}
+
+			// Add the insert query to the root mutation type
+			mutationType.AddFieldConfig(fmt.Sprintf("%s_insert%s", dbAlias, strings.Title(tableName)), &graphql.Field{
+				Type: graphql.NewObject(graphql.ObjectConfig{
+					Name:   getInsertResponseTypeName(dbAlias, tableName),
+					Fields: graphql.Fields{"returning": &graphql.Field{Name: fmt.Sprintf("%s_%s_ReturningList", strings.Title(dbAlias), strings.Title(tableName)), Type: graphql.NewList(tableReturningType)}},
+				}),
+				Args: graphql.FieldConfigArgument{
+					"docs": &graphql.ArgumentConfig{Type: graphql.NewList(tableDocsType), DefaultValue: []interface{}{}},
+				},
+				Resolve: a.dbInsertResolveFn(project, dbAlias, tableName, parsedSchema),
+			})
+
+			// Add the delete query to the root mutation type
+			mutationType.AddFieldConfig(fmt.Sprintf("%s_delete%s", dbAlias, strings.Title(tableName)), &graphql.Field{
+				Type: graphql.NewObject(graphql.ObjectConfig{
+					Name:   getDeleteResponseTypeName(dbAlias, tableName),
+					Fields: graphql.Fields{"status": &graphql.Field{Type: graphql.Int}},
+				}),
+				Args: graphql.FieldConfigArgument{
+					"where": &graphql.ArgumentConfig{
+						Type:         a.rootDBWhereTypes[project][getTableWhereClauseName(dbAlias, tableName)],
+						DefaultValue: map[string]interface{}{},
+					},
+				},
+				Resolve: a.dbDeleteResolveFn(project, dbAlias, tableName),
+			})
+
+			fmt.Println("Locs:", len(updateNumericOpType.Fields()), len(updateSetObjectType.Fields()), len(updateCurrentDateOpType.Fields()))
+
+			// Prepare the update operation args
+			updateArgs := graphql.FieldConfigArgument{
+				"set": &graphql.ArgumentConfig{Type: updateSetObjectType, DefaultValue: map[string]interface{}{}},
+			}
+			if len(updateNumericOpType.Fields()) > 0 {
+				updateArgs["inc"] = &graphql.ArgumentConfig{Type: updateNumericOpType, DefaultValue: map[string]interface{}{}}
+				updateArgs["mul"] = &graphql.ArgumentConfig{Type: updateNumericOpType, DefaultValue: map[string]interface{}{}}
+				updateArgs["min"] = &graphql.ArgumentConfig{Type: updateNumericOpType, DefaultValue: map[string]interface{}{}}
+				updateArgs["max"] = &graphql.ArgumentConfig{Type: updateNumericOpType, DefaultValue: map[string]interface{}{}}
+			}
+			if len(updateCurrentDateOpType.Fields()) > 0 {
+				updateArgs["curentDate"] = &graphql.ArgumentConfig{Type: updateCurrentDateOpType, DefaultValue: map[string]interface{}{}}
+			}
+
+			// Add update query to the root mutation type
+			mutationType.AddFieldConfig(fmt.Sprintf("%s_delete%s", dbAlias, strings.Title(tableName)), &graphql.Field{
+				Type: graphql.NewObject(graphql.ObjectConfig{
+					Name:   getUpdateResponseTypeName(dbAlias, tableName),
+					Fields: graphql.Fields{"status": &graphql.Field{Type: graphql.Int}},
+				}),
+				Args: updateArgs,
+			})
+		}
+	}
+
+	return mutationType
+}
+
+func (a *App) getQueryType(project string) *graphql.Object {
+	// Create root query graphql types
+	a.createRootQueryGraphQLTypes(project)
+
+	// Create the root query type
 	queryType := graphql.NewObject(graphql.ObjectConfig{Name: "Query", Fields: graphql.Fields{}})
 
 	// Create the join object
@@ -56,7 +178,7 @@ func (a *App) getDatabaseFields(project, db string, schemas model.CollectionSche
 		// Add the fields for this table
 		for fieldName, fieldSchema := range tableSchema {
 			if !fieldSchema.IsLinked {
-				a.rootGraphQLTypes[project][getTableFieldName(db, tableName)].AddFieldConfig(fieldName, &graphql.Field{
+				a.rootGraphQLQueryTypes[project][getTableFieldName(db, tableName)].AddFieldConfig(fieldName, &graphql.Field{
 					Type:    scToGraphQLType(fieldSchema.Kind),
 					Resolve: a.literalResolveFn,
 				})
@@ -64,11 +186,11 @@ func (a *App) getDatabaseFields(project, db string, schemas model.CollectionSche
 			}
 
 			if fieldSchema.IsLinked {
-				var graphqlType graphql.Output = a.rootGraphQLTypes[project][getTableFieldName(db, fieldSchema.LinkedTable.Table)]
+				var graphqlType graphql.Output = a.rootGraphQLQueryTypes[project][getTableFieldName(db, fieldSchema.LinkedTable.Table)]
 				if fieldSchema.IsList {
 					graphqlType = graphql.NewList(graphqlType)
 				}
-				a.rootGraphQLTypes[project][getTableFieldName(db, tableName)].AddFieldConfig(fieldName, &graphql.Field{
+				a.rootGraphQLQueryTypes[project][getTableFieldName(db, tableName)].AddFieldConfig(fieldName, &graphql.Field{
 					Type:    graphqlType,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) { return a.literalResolveFn(p) },
 					Args: graphql.FieldConfigArgument{
@@ -83,7 +205,7 @@ func (a *App) getDatabaseFields(project, db string, schemas model.CollectionSche
 		}
 
 		// Create a record object for the table
-		graphqlObject := a.rootGraphQLTypes[project][getTableFieldName(db, tableName)]
+		graphqlObject := a.rootGraphQLQueryTypes[project][getTableFieldName(db, tableName)]
 		graphqlArguments := graphql.FieldConfigArgument{
 			"where": a.getDBWhereClause(project, db, tableName, tableSchema),
 			"sort":  getDBSort(db, tableName, tableSchema),
@@ -112,7 +234,7 @@ func (a *App) getDatabaseFields(project, db string, schemas model.CollectionSche
 		a.registeredQueries[fieldKeySingle] = struct{}{}
 
 		// Add the join field
-		a.rootGraphQLTypes[project][getTableFieldName(db, tableName)].AddFieldConfig("_join", &graphql.Field{
+		a.rootGraphQLQueryTypes[project][getTableFieldName(db, tableName)].AddFieldConfig("_join", &graphql.Field{
 			Type: queryType,
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 				return func() (interface{}, error) {
@@ -136,7 +258,9 @@ func (a *App) getDatabaseFields(project, db string, schemas model.CollectionSche
 
 func scToGraphQLType(kind string) graphql.Output {
 	switch kind {
-	case model.TypeDateTimeWithZone, model.TypeDateTime, model.TypeDate, model.TypeTime, model.TypeUUID, model.TypeChar, model.TypeVarChar, model.TypeString, model.TypeID, model.TypeEnum:
+	case model.TypeDateTimeWithZone, model.TypeDateTime, model.TypeDate, model.TypeTime:
+		return graphql.DateTime
+	case model.TypeUUID, model.TypeChar, model.TypeVarChar, model.TypeString, model.TypeID, model.TypeEnum:
 		return graphql.String
 	case model.TypeInteger, model.TypeSmallInteger, model.TypeBigInteger:
 		return graphql.Int
@@ -179,7 +303,23 @@ func containsExportDirective(field *ast.Field) (string, bool) {
 }
 
 func getTableFieldName(db, table string) string {
-	return fmt.Sprintf("%s_%s", strings.Title(db), strings.Title(table))
+	return fmt.Sprintf("%s_%s_Query", strings.Title(db), strings.Title(table))
+}
+
+func getInsertResponseTypeName(db, table string) string {
+	return fmt.Sprintf("%s_%s_InsertResponse", strings.Title(db), strings.Title(table))
+}
+
+func getDeleteResponseTypeName(db, table string) string {
+	return fmt.Sprintf("%s_%s_DeleteResponse", strings.Title(db), strings.Title(table))
+}
+
+func getUpdateResponseTypeName(db, table string) string {
+	return fmt.Sprintf("%s_%s_UpdateResponse", strings.Title(db), strings.Title(table))
+}
+
+func getInsertDocsName(db, table string) string {
+	return fmt.Sprintf("%s_%s_InsertDocs", strings.Title(db), strings.Title(table))
 }
 
 func getTableWhereClauseName(db, table string) string {

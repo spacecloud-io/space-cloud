@@ -33,3 +33,13 @@ func (l *App) Read(ctx context.Context, project, db, col string, req *model.Read
 
 	return conn.Read(ctx, col, req, params)
 }
+
+// Batch performs a db transaction
+func (l *App) Batch(ctx context.Context, project, db, col string, req *model.BatchRequest, params model.RequestParams) error {
+	conn, err := l.getConnector(project, db)
+	if err != nil {
+		return err
+	}
+
+	return conn.Batch(ctx, req, params)
+}

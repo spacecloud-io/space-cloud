@@ -45,9 +45,9 @@ func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
 		Admin: &caddy.AdminConfig{
 			Disabled: true,
 			Config: &caddy.ConfigSettings{
-				LoadInterval: loadingInterval,
-				LoadRaw:      loader,
-				Persist:      &b,
+				LoadDelay: loadingInterval,
+				LoadRaw:   loader,
+				Persist:   &b,
 			},
 		},
 		Logging: &caddy.Logging{

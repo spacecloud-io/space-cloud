@@ -345,14 +345,15 @@ func (m *Module) Batch(ctx context.Context, req *model.BatchRequest, params mode
 	}
 
 	// Perform the batch operation
-	counts, err := m.connector.Batch(ctx, req)
+	_, err := m.connector.Batch(ctx, req)
 
-	// Invoke the metric hook if the operation was successful
-	if err == nil {
-		for i, r := range req.Requests {
-			m.metricHook(m.project, m.dbConfig.DbAlias, r.Col, counts[i], model.OperationType(r.Type))
-		}
-	}
+	// TODO: Fix metric hook logic
+	// // Invoke the metric hook if the operation was successful
+	// if err == nil {
+	// 	for i, r := range req.Requests {
+	// 		m.metricHook(m.project, m.dbConfig.DbAlias, r.Col, counts[i], model.OperationType(r.Type))
+	// 	}
+	// }
 
 	return err
 }

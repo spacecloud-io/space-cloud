@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -10,6 +11,68 @@ import (
 	"github.com/spacecloud-io/space-cloud/model"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
+
+func (a *App) dbDeleteResolveFn(project, db, tableName string) graphql.FieldResolveFn {
+	return func(p graphql.ResolveParams) (interface{}, error) {
+		s := p.Info.RootValue.(*store)
+		where := p.Args["where"].(map[string]interface{})
+
+		_, allReq, err := generateDeleteRequest(p.Context, db, tableName, "", where)
+		if err != nil {
+			return nil, err
+		}
+
+		// We launch the mutation operation in a separate goroutine
+		isLast := s.addMutationRequest([]*model.AllRequest{allReq})
+		go func() {
+			// Perform the database operation if this was the last mutation query in the request
+			if isLast {
+				s.err = a.database.Batch(p.Context, project, db, tableName, &model.BatchRequest{Requests: s.allReq}, model.RequestParams{})
+			}
+			s.done()
+		}()
+
+		return func() (interface{}, error) {
+			// Wait for the mutation to complete
+			s.wait()
+			return map[string]interface{}{"status": 200}, s.err
+		}, nil
+	}
+}
+
+func (a *App) dbInsertResolveFn(project, db, tableName string, tableSchemas model.CollectionSchemas) graphql.FieldResolveFn {
+	return func(p graphql.ResolveParams) (interface{}, error) {
+		s := p.Info.RootValue.(*store)
+		docs := p.Args["docs"].([]interface{})
+
+		// Throw error if empty docs is provided
+		if len(docs) == 0 {
+			return nil, errors.New("need to provided atleast one document")
+		}
+
+		// Prepare the requests for this mutation query
+		_, allReqs, returningDocs, err := generateWriteReq(p.Context, db, tableName, "", docs, tableSchemas)
+		if err != nil {
+			return nil, err
+		}
+
+		// We launch the mutation operation in a separate goroutine
+		isLast := s.addMutationRequest(allReqs)
+		go func() {
+			// Perform the database operation if this was the last mutation query in the request
+			if isLast {
+				s.err = a.database.Batch(p.Context, project, db, tableName, &model.BatchRequest{Requests: s.allReq}, model.RequestParams{})
+			}
+			s.done()
+		}()
+
+		return func() (interface{}, error) {
+			// Wait for the mutation to complete
+			s.wait()
+			return map[string]interface{}{"returning": returningDocs}, s.err
+		}, nil
+	}
+}
 
 func (a *App) dbReadResolveFn(project, db, tableName, op string, dbSchema model.CollectionSchemas) graphql.FieldResolveFn {
 	return func(p graphql.ResolveParams) (interface{}, error) {
@@ -32,6 +95,7 @@ func (a *App) dbReadResolveFn(project, db, tableName, op string, dbSchema model.
 
 		// We return a thunk function since we want to execute this resolver concurrently
 		return func() (interface{}, error) {
+			// TODO: do this in a seperate go routine
 			r, _, err := a.database.Read(p.Context, project, db, tableName, &model.ReadRequest{Operation: op, Find: where, Options: options}, model.RequestParams{})
 			// d, _ := json.MarshalIndent(r, "", " ")
 			// fmt.Println("result:", string(d))

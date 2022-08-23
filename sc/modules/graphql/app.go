@@ -20,10 +20,14 @@ type App struct {
 	database *database.App
 
 	// For internal usage
-	logger           *zap.Logger
-	dbSchemas        map[string]model.DBSchemas
-	rootGraphQLTypes map[string]map[string]*graphql.Object      // projectid -> roottype -> graphql object
-	rootDBWhereTypes map[string]map[string]*graphql.InputObject // projectid -> db_table -> graphql object
+	logger    *zap.Logger
+	dbSchemas map[string]model.DBSchemas
+
+	// GLobal graphql types for the database module
+	rootGraphQLQueryTypes    map[string]map[string]*graphql.Object      // projectid -> roottype -> graphql object
+	rootGraphQLMutationTypes map[string]map[string]*graphql.Object      // projectid -> roottype -> graphql object
+	rootDBDocsTypes          map[string]map[string]*graphql.InputObject // projectid -> db_table -> graphql object
+	rootDBWhereTypes         map[string]map[string]*graphql.InputObject // projectid -> db_table -> graphql object
 
 	// GraphQL schema
 	schemas map[string]*graphql.Schema // Key: projectid
@@ -60,13 +64,18 @@ func (a *App) Provision(ctx caddy.Context) error {
 func (a *App) Start() error {
 	// Prepare schema for each project
 	a.registeredQueries = map[string]struct{}{}
-	a.rootGraphQLTypes = map[string]map[string]*graphql.Object{}
+
+	// Initialise the global graphql types for the database module
+	a.rootGraphQLQueryTypes = map[string]map[string]*graphql.Object{}
+	a.rootGraphQLMutationTypes = map[string]map[string]*graphql.Object{}
+	a.rootDBDocsTypes = map[string]map[string]*graphql.InputObject{}
 	a.rootDBWhereTypes = map[string]map[string]*graphql.InputObject{}
 
 	a.schemas = make(map[string]*graphql.Schema, len(a.dbSchemas))
 	for project := range a.dbSchemas {
 		schema, err := graphql.NewSchema(graphql.SchemaConfig{
 			Query:      a.getQueryType(project),
+			Mutation:   a.getMutationType(project),
 			Directives: getDirectors(),
 		})
 		if err != nil {

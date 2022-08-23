@@ -161,6 +161,23 @@ var enumSort = graphql.NewEnum(graphql.EnumConfig{
 	},
 })
 
+var currentDateOperator = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name:        "DB_CurrentDateOperator",
+	Description: "Object to specify the $currentDate update operation",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"_type": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewEnum(graphql.EnumConfig{
+				Name:        "DB_CurrentDateOperator",
+				Description: "Enum to choose between timestamp and date operators",
+				Values: graphql.EnumValueConfigMap{
+					"timestamp": &graphql.EnumValueConfig{Value: "timestamp"},
+					"date":      &graphql.EnumValueConfig{Value: "date"},
+				},
+			}),
+		},
+	},
+})
+
 // func modifyTheAggregateField(tableName string, fieldAST *ast.Field, aggregate map[string][]string) bool {
 // 	if fieldAST.Name.Value != "_aggregate" {
 // 		return false
