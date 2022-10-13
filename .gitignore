@@ -33,7 +33,7 @@ runner/runner
 metric-proxy/metric-proxy
 space-cli/space-cli
 sc/cmd/space-cli/space-cli
-
+*/cmd/spacectl/spacectl
 # Ignore the vendor folders
 metric-proxy/vendor
 runner/vendor
