@@ -11,6 +11,7 @@ import (
 	"github.com/graphql-go/graphql"
 
 	"github.com/spacecloud-io/space-cloud/modules/graphql/types"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
 // GraphqlLoaderKey describes a key used by the graphql dataloader
@@ -32,7 +33,7 @@ func (k *GraphqlLoaderKey) Raw() interface{} {
 }
 
 // CreateRemoteGraphqlLoader creates a new dataloader for graphql sources
-func (root *RootValue) CreateRemoteGraphqlLoader(sources []*types.Source, source *types.Source, vars map[string]interface{}) *dataloader.Loader {
+func (root *RootValue) CreateRemoteGraphqlLoader(sources []*v1alpha1.GraphqlSource, source *v1alpha1.GraphqlSource, vars map[string]interface{}) *dataloader.Loader {
 	root.dlMutex.Lock()
 	defer root.dlMutex.Unlock()
 
@@ -45,7 +46,7 @@ func (root *RootValue) CreateRemoteGraphqlLoader(sources []*types.Source, source
 	return loader
 }
 
-func (root *RootValue) grapqhlLoaderBatchFn(sources []*types.Source, source *types.Source, graphqlVars map[string]interface{}) dataloader.BatchFunc {
+func (root *RootValue) grapqhlLoaderBatchFn(sources []*v1alpha1.GraphqlSource, source *v1alpha1.GraphqlSource, graphqlVars map[string]interface{}) dataloader.BatchFunc {
 	return func(ctx context.Context, keys dataloader.Keys) (results []*dataloader.Result) {
 		// Make a result object
 		results = make([]*dataloader.Result, len(keys))
@@ -96,7 +97,7 @@ func (root *RootValue) grapqhlLoaderBatchFn(sources []*types.Source, source *typ
 			"query":     query,
 			"variables": newGraphqlVars,
 		})
-		resp, err := http.Post(source.URL, "application/json", bytes.NewBuffer(reqBody))
+		resp, err := http.Post(source.Spec.Source.URL, "application/json", bytes.NewBuffer(reqBody))
 		if err != nil {
 			for i := range keys {
 				results[i] = &dataloader.Result{Error: err}

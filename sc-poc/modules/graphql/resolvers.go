@@ -9,6 +9,7 @@ import (
 
 	"github.com/spacecloud-io/space-cloud/modules/graphql/rootvalue"
 	"github.com/spacecloud-io/space-cloud/modules/graphql/types"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
@@ -22,7 +23,7 @@ func (a *App) resolveJoin() graphql.FieldResolveFn {
 	}
 }
 
-func (a *App) resolveMiscField(source *types.Source) graphql.FieldResolveFn {
+func (a *App) resolveMiscField(source *v1alpha1.GraphqlSource) graphql.FieldResolveFn {
 	return func(p graphql.ResolveParams) (interface{}, error) {
 		fieldAST := p.Info.FieldASTs[0]
 		fieldValue := p.Source.(map[string]interface{})[p.Info.FieldName]
@@ -41,7 +42,7 @@ func (a *App) resolveMiscField(source *types.Source) graphql.FieldResolveFn {
 	}
 }
 
-func (a *App) resolveRemoteGraphqlQuery(source *types.Source) graphql.FieldResolveFn {
+func (a *App) resolveRemoteGraphqlQuery(source *v1alpha1.GraphqlSource) graphql.FieldResolveFn {
 	type channelMsg struct {
 		data interface{}
 		err  error
@@ -49,7 +50,7 @@ func (a *App) resolveRemoteGraphqlQuery(source *types.Source) graphql.FieldResol
 
 	return func(p graphql.ResolveParams) (interface{}, error) {
 		root := p.Info.RootValue.(*rootvalue.RootValue)
-		loader := root.CreateRemoteGraphqlLoader(a.sources, source, p.Info.VariableValues)
+		loader := root.CreateRemoteGraphqlLoader(a.GraphqlSources, source, p.Info.VariableValues)
 
 		fieldAst := p.Info.FieldASTs[0]
 
@@ -88,7 +89,7 @@ func (a *App) resolveRemoteGraphqlQuery(source *types.Source) graphql.FieldResol
 	}
 }
 
-func extractFieldQuery(root *rootvalue.RootValue, source *types.Source, fieldAst *ast.Field, allowedVars map[string]struct{}, path *graphql.ResponsePath, allowExportingOfVars bool) (string, string, map[string]*types.StoreValue) {
+func extractFieldQuery(root *rootvalue.RootValue, source *v1alpha1.GraphqlSource, fieldAst *ast.Field, allowedVars map[string]struct{}, path *graphql.ResponsePath, allowExportingOfVars bool) (string, string, map[string]*types.StoreValue) {
 	query := ""
 
 	// Add the arguments if any

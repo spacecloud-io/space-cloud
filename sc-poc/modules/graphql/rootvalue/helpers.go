@@ -5,10 +5,12 @@ import (
 	"strings"
 
 	"github.com/graphql-go/graphql/language/ast"
+
 	"github.com/spacecloud-io/space-cloud/modules/graphql/types"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
-func extractQueryPrefixSuffix(sources []*types.Source, operation *ast.OperationDefinition, allowedVars map[string]struct{}, exportedVars map[string]*types.StoreValue) (prefix, suffix string) {
+func extractQueryPrefixSuffix(sources []*v1alpha1.GraphqlSource, operation *ast.OperationDefinition, allowedVars map[string]struct{}, exportedVars map[string]*types.StoreValue) (prefix, suffix string) {
 
 	// Add the operation and its value
 	prefix = fmt.Sprintf("%s %s ", operation.Operation, operation.Name.Value)

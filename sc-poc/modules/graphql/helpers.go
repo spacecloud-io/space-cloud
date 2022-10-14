@@ -5,11 +5,12 @@ import (
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/language/ast"
-	"github.com/spacecloud-io/space-cloud/modules/graphql/types"
 	"go.uber.org/zap"
+
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
-func (a *App) addToRootType(src *types.Source, rootType string, rootGraphqlType *graphql.Object) {
+func (a *App) addToRootType(src *v1alpha1.GraphqlSource, rootType string, rootGraphqlType *graphql.Object) {
 	a.logger.Debug("Attempting to load root type fields", zap.String("source", src.Name), zap.String("root_type", rootType))
 	if t, p := a.graphqlTypes[fmt.Sprintf("%s_%s", src.Name, rootType)]; p {
 		q := t.(*graphql.Object)

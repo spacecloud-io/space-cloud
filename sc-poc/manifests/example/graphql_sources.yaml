@@ -1,0 +1,9 @@
+apiVersion: core.space-cloud.io/v1alpha1
+kind: GraphqlSource
+metadata:
+  name: hasura
+  namespace: space-cloud
+spec:
+  source:
+    url: http://localhost:8080/v1/graphql
+---

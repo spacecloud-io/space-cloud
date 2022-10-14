@@ -43,9 +43,13 @@ func (l *Loader) LoadConfig(ctx caddy.Context) ([]byte, error) {
 	// 	l.logger.Error("Unable to load SpaceCloud config file", zap.Error(err))
 	// 	return nil, err
 	// }
+	configuration, err := l.loadConfiguration()
+	if err != nil {
+		return nil, err
+	}
 
 	// Load the new caddy config
-	config, err := common.PrepareConfig()
+	config, err := common.PrepareConfig(configuration)
 	if err != nil {
 		l.logger.Error("Unable to prepare caddy config", zap.Error(err))
 		return nil, err

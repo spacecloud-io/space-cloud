@@ -3,10 +3,11 @@ package common
 import (
 	"github.com/caddyserver/caddy/v2"
 	"github.com/spacecloud-io/space-cloud/utils"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // PrepareConfig prepares a new caddy config based on the configuration provided
-func PrepareConfig() (*caddy.Config, error) {
+func PrepareConfig(configuration map[string][]*unstructured.Unstructured) (*caddy.Config, error) {
 	// First load the admin config
 	c, err := utils.LoadAdminConfig(false)
 	if err != nil {
@@ -15,7 +16,7 @@ func PrepareConfig() (*caddy.Config, error) {
 
 	// Load all the apps.
 	c.AppsRaw = make(caddy.ModuleMap)
-	c.AppsRaw["graphql"] = prepareGraphQLApp()
+	c.AppsRaw["graphql"] = prepareGraphQLApp(configuration)
 	c.AppsRaw["http"] = prepareHTTPHanndlerApp()
 
 	return c, nil

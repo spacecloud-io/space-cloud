@@ -32,7 +32,7 @@ func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
 			Disabled: true,
 			Config: &caddy.ConfigSettings{
 				LoadDelay: loadingDelay,
-				LoadRaw:   prepareFileLoaderConfig(""),
+				LoadRaw:   prepareFileLoaderConfig(viper.GetString("config.path")),
 				Persist:   &persist,
 			},
 		},

@@ -9,11 +9,12 @@ import (
 	"github.com/graphql-go/graphql"
 
 	"github.com/spacecloud-io/space-cloud/modules/graphql/types"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
-func (a *App) getSchemaFromUrl(src *types.Source) (queryRoot, mutationRoot string, err error) {
+func (a *App) getSchemaFromUrl(src *v1alpha1.GraphqlSource) (queryRoot, mutationRoot string, err error) {
 	data, _ := json.Marshal(map[string]string{"query": getIntrospectionQuery()})
-	resp, err := http.Post(src.URL, "application/json", bytes.NewBuffer(data))
+	resp, err := http.Post(src.Spec.Source.URL, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return "", "", err
 	}
@@ -30,7 +31,7 @@ func (a *App) getSchemaFromUrl(src *types.Source) (queryRoot, mutationRoot strin
 	return rawSchema.Data.Schema.QueryType.Name, rawSchema.Data.Schema.MutationType.Name, nil
 }
 
-func (a *App) getTypes(source *types.Source, types []*introspectionResponseType) {
+func (a *App) getTypes(source *v1alpha1.GraphqlSource, types []*introspectionResponseType) {
 	// First we populate all the types
 	for _, t := range types {
 		name := getGraphqlTypeName(source.Name, t)
@@ -107,7 +108,7 @@ func (a *App) getGraphqlType(srcName string, t *introspectionResponseType) graph
 	return nil
 }
 
-func (a *App) populateGraphqlFields(source *types.Source, t *introspectionResponseType) {
+func (a *App) populateGraphqlFields(source *v1alpha1.GraphqlSource, t *introspectionResponseType) {
 	switch t.Kind {
 	case graphql.TypeKindInputObject:
 		// Get the stored type

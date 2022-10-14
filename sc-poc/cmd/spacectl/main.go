@@ -9,6 +9,8 @@ import (
 	// Import all apps, modules & managers
 	_ "github.com/spacecloud-io/space-cloud/managers"
 	_ "github.com/spacecloud-io/space-cloud/modules"
+
+	_ "github.com/spacecloud-io/space-cloud/pkg/client/clientset/versioned"
 )
 
 func main() {

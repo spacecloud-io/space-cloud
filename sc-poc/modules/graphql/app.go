@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/managers/apis"
-	"github.com/spacecloud-io/space-cloud/modules/graphql/types"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
 func init() {
@@ -15,11 +15,13 @@ func init() {
 }
 
 type App struct {
+	// GraphqlSources contains the graphql sources to integrate with
+	GraphqlSources []*v1alpha1.GraphqlSource `json:"graphqlSources"`
+
 	// For internal use
 	logger *zap.Logger
 
 	// For graphql engine
-	sources      []*types.Source
 	schema       graphql.Schema
 	graphqlTypes map[string]graphql.Type
 
@@ -66,10 +68,8 @@ func (a *App) Start() error {
 		graphql.DateTime.Name(): graphql.DateTime,
 	}
 
-	a.sources = append(a.sources, &types.Source{Name: "hasura", URL: "http://localhost:8080/v1/graphql"})
-
 	// Lets load the schemas for all sources
-	for _, source := range a.sources {
+	for _, source := range a.GraphqlSources {
 		queryRoot, mutationRoot, err := a.getSchemaFromUrl(source)
 		if err != nil {
 			a.logger.Error("Unable to get remote graphql schema", zap.String("source", source.Name), zap.Error(err))
