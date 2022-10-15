@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: GraphqlSourceSpec defines the desired state of  GraphqlSpec
+            description: GraphqlSourceSpec defines the desired state of GraphqlSourceSpec
             properties:
               source:
                 description: Sources descrives the remote graphql endpoints that we
@@ -55,3 +55,5 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}

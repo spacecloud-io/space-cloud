@@ -32,7 +32,7 @@ func (a *App) resolveMiscField(source *v1alpha1.GraphqlSource) graphql.FieldReso
 
 		// Check if field value is to be exported
 		for _, d := range fieldAST.Directives {
-			if d.Name.Value == "exportVar" {
+			if d.Name.Value == "export" {
 				as := d.Arguments[0].Value.(*ast.StringValue).Value
 				root.StoreExportedValue(as, fieldValue, strings.TrimPrefix(p.Info.ReturnType.Name(), source.Name), p.Info.Path)
 			}
@@ -162,7 +162,7 @@ func extractFieldQuery(root *rootvalue.RootValue, source *v1alpha1.GraphqlSource
 		for _, d := range fieldAst.Directives {
 			// TODO: Only remove those directives which are not allowed by that particular source or
 			// we can remove all directives used by space cloud itself
-			if d.Name.Value == "exportVar" {
+			if utils.StringExists(d.Name.Value, "export", "injectClaim") {
 				continue
 			}
 

@@ -6,6 +6,8 @@ import (
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // GraphqlSource is the schema for the graphqlsource API
 type GraphqlSource struct {
@@ -16,7 +18,7 @@ type GraphqlSource struct {
 	Status GraphqlSourceStatus `json:"status,omitempty"`
 }
 
-// GraphqlSourceSpec defines the desired state of  GraphqlSpec
+// GraphqlSourceSpec defines the desired state of GraphqlSourceSpec
 type GraphqlSourceSpec struct {
 	// Sources descrives the remote graphql endpoints that we want to federate
 	Source *HTTPSource `json:"source"`
@@ -36,6 +38,7 @@ type HTTPSource struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // GraphqlSourceList contains a list of GraphqlSource
 type GraphqlSourceList struct {

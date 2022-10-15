@@ -25,3 +25,11 @@ type GraphqlSourceListerExpansion interface{}
 // GraphqlSourceNamespaceListerExpansion allows custom methods to be added to
 // GraphqlSourceNamespaceLister.
 type GraphqlSourceNamespaceListerExpansion interface{}
+
+// HSASecretListerExpansion allows custom methods to be added to
+// HSASecretLister.
+type HSASecretListerExpansion interface{}
+
+// HSASecretNamespaceListerExpansion allows custom methods to be added to
+// HSASecretNamespaceLister.
+type HSASecretNamespaceListerExpansion interface{}

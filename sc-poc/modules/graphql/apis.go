@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/managers/apis"
+	"github.com/spacecloud-io/space-cloud/modules/auth"
 	"github.com/spacecloud-io/space-cloud/modules/graphql/rootvalue"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
@@ -99,8 +101,13 @@ func (a *App) GetAPIRoutes() apis.APIs {
 			req := new(request)
 			if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 				a.logger.Error("Invalid graphql request payload provided", zap.Error(err))
-				_ = utils.SendErrorResponse(ctx, w, http.StatusBadRequest, errors.New("invalid request payload received"))
+				_ = utils.SendErrorResponse(w, http.StatusBadRequest, errors.New("invalid request payload received"))
 				return
+			}
+
+			// Put an empty variable map if it isn't already defined
+			if req.Variables == nil {
+				req.Variables = make(map[string]interface{})
 			}
 
 			// Parse the graphql request
@@ -111,9 +118,35 @@ func (a *App) GetAPIRoutes() apis.APIs {
 			rawAst, err := parser.Parse(parser.ParseParams{Source: source})
 			if err != nil {
 				gErrs := gqlerrors.FormatErrors(err)
-				a.logger.Error("Invalid graphql query provided", zap.String("query", req.Query), zap.Any("error", gErrs))
-				_ = utils.SendResponse(ctx, w, http.StatusOK, map[string]interface{}{"errors": gErrs})
+				a.logger.Error("Invalid graphql query provided", zap.String("query", req.Query), zap.Error(err))
+				_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"errors": gErrs})
 				return
+			}
+
+			// Preprocess request for auth
+			isAuthRequired, injectedClaims := preprocessForAuth(rawAst)
+			if isAuthRequired {
+				authResult, p := auth.GetAuthenticationResult(r)
+				if !p || !authResult.IsAuthenticated {
+					// Send an error if request is unauthenticated
+					auth.SendUnauthenticatedResponse(w, r, a.logger, nil)
+					return
+				}
+
+				// Inject the claims in the variables
+				for claim, variable := range injectedClaims {
+					v, p := authResult.Claims[claim]
+					if !p {
+						// We need to throw an error if requested claim is not present in token
+						gErrs := gqlerrors.FormatErrors(fmt.Errorf("token does not contain required claim '%s'", claim))
+						a.logger.Error("Token does not contain required claim",
+							zap.String("query", req.Query), zap.String("claim", claim))
+						_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"errors": gErrs})
+						return
+					}
+
+					_ = utils.StoreValue(variable, v, req.Variables)
+				}
 			}
 
 			// Execute the query
@@ -133,7 +166,7 @@ func (a *App) GetAPIRoutes() apis.APIs {
 			}
 
 			// Send response to client
-			_ = utils.SendResponse(ctx, w, http.StatusOK, result)
+			_ = utils.SendResponse(w, http.StatusOK, result)
 		},
 	}}
 }

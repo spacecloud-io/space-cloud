@@ -16,6 +16,7 @@ func PrepareConfig(configuration map[string][]*unstructured.Unstructured) (*cadd
 
 	// Load all the apps.
 	c.AppsRaw = make(caddy.ModuleMap)
+	c.AppsRaw["auth"] = prepareAuthApp(configuration)
 	c.AppsRaw["graphql"] = prepareGraphQLApp(configuration)
 	c.AppsRaw["http"] = prepareHTTPHanndlerApp()
 

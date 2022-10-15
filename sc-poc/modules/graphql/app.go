@@ -93,10 +93,20 @@ func (a *App) Start() error {
 	// Add directives
 	schemaConfig.Directives = []*graphql.Directive{
 		{
-			Name:      "exportVar",
+			Name:      "export",
 			Locations: []string{graphql.DirectiveLocationField},
 			Args: []*graphql.Argument{
 				{PrivateName: "as", Type: graphql.NewNonNull(graphql.String)},
+			},
+		}, {
+			Name:      "auth",
+			Locations: []string{graphql.DirectiveLocationSchema},
+		}, {
+			Name:      "injectClaim",
+			Locations: []string{graphql.DirectiveLocationSchema, graphql.DirectiveLocationField},
+			Args: []*graphql.Argument{
+				{PrivateName: "key", Type: graphql.NewNonNull(graphql.String)},
+				{PrivateName: "var", Type: graphql.String},
 			},
 		},
 	}

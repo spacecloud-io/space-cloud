@@ -55,6 +55,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=core.space-cloud.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("graphqlsources"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().GraphqlSources().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("hsasecrets"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().HSASecrets().Informer()}, nil
 
 	}
 

@@ -1,4 +1,4 @@
-.PHONY: pre-hook generate manifest build
+.PHONY: pre-hook test-all generate manifest build
 
 pre-hook:
 	go mod tidy
@@ -13,6 +13,10 @@ gen-all: manifest gen
 
 manifest: pre-hook
 	controller-gen crd paths="./..." output:crd:artifacts:config=manifests/crds
+
+test-all: build
+	go test ./...
+	./hack/verify-codegen.sh
 
 build:
 	cd cmd/spacectl && go build .

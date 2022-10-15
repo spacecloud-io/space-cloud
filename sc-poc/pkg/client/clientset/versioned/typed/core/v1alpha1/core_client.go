@@ -29,6 +29,7 @@ import (
 type CoreV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	GraphqlSourcesGetter
+	HSASecretsGetter
 }
 
 // CoreV1alpha1Client is used to interact with features provided by the core.space-cloud.io group.
@@ -38,6 +39,10 @@ type CoreV1alpha1Client struct {
 
 func (c *CoreV1alpha1Client) GraphqlSources(namespace string) GraphqlSourceInterface {
 	return newGraphqlSources(c, namespace)
+}
+
+func (c *CoreV1alpha1Client) HSASecrets(namespace string) HSASecretInterface {
+	return newHSASecrets(c, namespace)
 }
 
 // NewForConfig creates a new CoreV1alpha1Client for the given config.

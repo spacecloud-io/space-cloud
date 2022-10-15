@@ -2,7 +2,6 @@ package common
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -14,8 +13,6 @@ import (
 
 func prepareHTTPHanndlerApp() []byte {
 	port := viper.GetInt("caddy.port")
-
-	fmt.Println("port", port)
 
 	httpsPort := 0
 	listen := []string{":" + strconv.Itoa(port)}
@@ -60,11 +57,33 @@ func getRootRoutes() caddyhttp.RouteList {
 		// getConfigRoutes(),
 
 		// API route handler
+		getAPIRoutes(),
+	}
+}
+
+func getAPIRoutes() caddyhttp.Route {
+	// Make route list for the sub router
+	routeList := caddyhttp.RouteList{
 		caddyhttp.Route{
-			Group:          "api",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/*"}, nil),
-			HandlersRaw:    utils.GetCaddyHandler("root_api", nil),
+			Group:       "api_auth",
+			HandlersRaw: utils.GetCaddyHandler("auth", nil),
 		},
+		caddyhttp.Route{
+			Group:       "api_route",
+			HandlersRaw: utils.GetCaddyHandler("root_api", nil),
+		},
+	}
+
+	// Create matcher and handler for subroute
+	handler := map[string]interface{}{
+		"handler": "subroute",
+		"routes":  routeList,
+	}
+	handlerRaw, _ := json.Marshal(handler)
+
+	return caddyhttp.Route{
+		Group:       "api",
+		HandlersRaw: []json.RawMessage{handlerRaw},
 	}
 }
 

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -18,7 +18,7 @@ func ReadSpecObjectsFromFile(fileName string) ([]*unstructured.Unstructured, err
 	var err error
 
 	// Read the file first
-	data, err = ioutil.ReadFile(fileName)
+	data, err = os.ReadFile(fileName)
 	if err != nil {
 		return nil, err
 	}

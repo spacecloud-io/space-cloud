@@ -26,6 +26,8 @@ import (
 type Interface interface {
 	// GraphqlSources returns a GraphqlSourceInformer.
 	GraphqlSources() GraphqlSourceInformer
+	// HSASecrets returns a HSASecretInformer.
+	HSASecrets() HSASecretInformer
 }
 
 type version struct {
@@ -42,4 +44,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // GraphqlSources returns a GraphqlSourceInformer.
 func (v *version) GraphqlSources() GraphqlSourceInformer {
 	return &graphqlSourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// HSASecrets returns a HSASecretInformer.
+func (v *version) HSASecrets() HSASecretInformer {
+	return &hSASecretInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

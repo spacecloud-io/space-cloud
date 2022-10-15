@@ -73,6 +73,11 @@ func extractQueryPrefixSuffix(sources []*v1alpha1.GraphqlSource, operation *ast.
 	}
 
 	for _, d := range operation.Directives {
+		// TODO: Skip all sc directives
+		if d.Name.Value == "auth" {
+			continue
+		}
+
 		prefix += string(d.Loc.Source.Body[d.Loc.Start:d.Loc.End])
 		prefix += " "
 	}

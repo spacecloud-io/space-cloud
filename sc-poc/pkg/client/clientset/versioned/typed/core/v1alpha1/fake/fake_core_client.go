@@ -32,6 +32,10 @@ func (c *FakeCoreV1alpha1) GraphqlSources(namespace string) v1alpha1.GraphqlSour
 	return &FakeGraphqlSources{c, namespace}
 }
 
+func (c *FakeCoreV1alpha1) HSASecrets(namespace string) v1alpha1.HSASecretInterface {
+	return &FakeHSASecrets{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeCoreV1alpha1) RESTClient() rest.Interface {
