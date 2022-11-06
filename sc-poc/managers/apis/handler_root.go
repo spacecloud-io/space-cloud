@@ -38,6 +38,10 @@ func (h *RootAPIHandler) Provision(ctx caddy.Context) error {
 	}
 
 	// Validate the openapi doc
+	if err := openapi3.NewLoader().ResolveRefsIn(doc, nil); err != nil {
+		h.logger.Error("Invalid OpenAPI doc generated for SpaceCloud APIs", zap.Error(err))
+		return err
+	}
 	if err := doc.Validate(ctx.Context); err != nil {
 		h.logger.Error("Invalid OpenAPI doc generated for SpaceCloud APIs", zap.Error(err))
 		return err

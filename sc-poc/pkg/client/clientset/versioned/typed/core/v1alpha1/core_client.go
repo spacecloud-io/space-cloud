@@ -28,8 +28,10 @@ import (
 
 type CoreV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	CompiledGraphqlSourcesGetter
 	GraphqlSourcesGetter
-	HSASecretsGetter
+	JwtHSASecretsGetter
+	OPAPoliciesGetter
 }
 
 // CoreV1alpha1Client is used to interact with features provided by the core.space-cloud.io group.
@@ -37,12 +39,20 @@ type CoreV1alpha1Client struct {
 	restClient rest.Interface
 }
 
+func (c *CoreV1alpha1Client) CompiledGraphqlSources(namespace string) CompiledGraphqlSourceInterface {
+	return newCompiledGraphqlSources(c, namespace)
+}
+
 func (c *CoreV1alpha1Client) GraphqlSources(namespace string) GraphqlSourceInterface {
 	return newGraphqlSources(c, namespace)
 }
 
-func (c *CoreV1alpha1Client) HSASecrets(namespace string) HSASecretInterface {
-	return newHSASecrets(c, namespace)
+func (c *CoreV1alpha1Client) JwtHSASecrets(namespace string) JwtHSASecretInterface {
+	return newJwtHSASecrets(c, namespace)
+}
+
+func (c *CoreV1alpha1Client) OPAPolicies(namespace string) OPAPolicyInterface {
+	return newOPAPolicies(c, namespace)
 }
 
 // NewForConfig creates a new CoreV1alpha1Client for the given config.

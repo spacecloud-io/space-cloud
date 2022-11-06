@@ -14,6 +14,7 @@ import (
 
 func generateOpenAPIDocAndAPIs(ctx caddy.Context) (*openapi3.T, []*API, error) {
 	var allAPIs []*API
+	schemas := openapi3.Schemas{}
 
 	// Load the paths of each app
 	paths := make(openapi3.Paths)
@@ -32,10 +33,17 @@ func generateOpenAPIDocAndAPIs(ctx caddy.Context) (*openapi3.T, []*API, error) {
 
 		// Merge the paths returned by the app
 		for _, api := range app.GetAPIRoutes() {
-			mergePaths(paths, api.Path, api.PathDef)
-
 			api.app = a.name
 			allAPIs = append(allAPIs, api)
+
+			if api.OpenAPI != nil {
+				mergePaths(paths, api.Path, api.OpenAPI.PathDef)
+
+				// Check if any schemas were exposed
+				for k, v := range api.OpenAPI.Schemas {
+					schemas[k] = v
+				}
+			}
 		}
 	}
 
@@ -46,8 +54,19 @@ func generateOpenAPIDocAndAPIs(ctx caddy.Context) (*openapi3.T, []*API, error) {
 			Description: "Specification of all the APIs exposed by the various modules of SpaceCloud",
 			Version:     "v0.22.0",
 		},
-		Paths:      paths,
-		Components: openapi3.NewComponents(),
+		Paths: paths,
+		Components: openapi3.Components{
+			Schemas: schemas,
+			SecuritySchemes: openapi3.SecuritySchemes{
+				"bearerAuth": &openapi3.SecuritySchemeRef{
+					Value: &openapi3.SecurityScheme{
+						Type:         "http",
+						Scheme:       "bearer",
+						BearerFormat: "JWT",
+					},
+				},
+			},
+		},
 	}, allAPIs, nil
 }
 
@@ -85,27 +104,27 @@ func makeSubRouter(ctx caddy.Context, allAPIs []*API) (caddyhttp.Handler, error)
 func getMethods(api *API) []string {
 	var methods []string
 
-	if api.PathDef.Post != nil {
+	if api.OpenAPI.PathDef.Post != nil {
 		methods = append(methods, http.MethodPost)
 	}
 
-	if api.PathDef.Put != nil {
+	if api.OpenAPI.PathDef.Put != nil {
 		methods = append(methods, http.MethodPut)
 	}
 
-	if api.PathDef.Patch != nil {
+	if api.OpenAPI.PathDef.Patch != nil {
 		methods = append(methods, http.MethodPatch)
 	}
 
-	if api.PathDef.Get != nil {
+	if api.OpenAPI.PathDef.Get != nil {
 		methods = append(methods, http.MethodGet)
 	}
 
-	if api.PathDef.Options != nil {
+	if api.OpenAPI.PathDef.Options != nil {
 		methods = append(methods, http.MethodOptions)
 	}
 
-	if api.PathDef.Delete != nil {
+	if api.OpenAPI.PathDef.Delete != nil {
 		methods = append(methods, http.MethodDelete)
 	}
 
@@ -113,13 +132,18 @@ func getMethods(api *API) []string {
 }
 
 func sanitizeURL(api *API) (string, []string) {
+	// Simply return if openapi definition isn't provided
+	if api.OpenAPI == nil {
+		return api.Path, []string{}
+	}
+
 	path := api.Path
 
 	// Make an index map. A map is used since we replace one param at a time in a random order.
 	indexMap := make(map[string]string)
 
 	// Loop over each path param and replace them with an `*` one by one
-	for _, param := range api.PathDef.Parameters {
+	for _, param := range api.OpenAPI.PathDef.Parameters {
 		if param.Value.In == "path" {
 			path, indexMap = replacePathParam(path, param.Value.Name, indexMap)
 		}
@@ -185,7 +209,10 @@ func getPathParams(configuredURL, receivedURL string, indexes []string) map[stri
 func mergePaths(paths openapi3.Paths, url string, pathDef *openapi3.PathItem) {
 	existingPathDef, p := paths[url]
 	if !p {
-		paths[url] = pathDef
+		newPathDef := new(openapi3.PathItem)
+		d, _ := pathDef.MarshalJSON()
+		_ = newPathDef.UnmarshalJSON(d)
+		paths[url] = newPathDef
 		return
 	}
 

@@ -1,0 +1,101 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.10.0
+  creationTimestamp: null
+  name: compiledgraphqlsources.core.space-cloud.io
+spec:
+  group: core.space-cloud.io
+  names:
+    kind: CompiledGraphqlSource
+    listKind: CompiledGraphqlSourceList
+    plural: compiledgraphqlsources
+    singular: compiledgraphqlsource
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: CompiledGraphqlSource is the schema for the compiledgraphqlsource
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CompiledGraphqlSourceSpec defines the desired state of CompiledGraphqlSourceSpec
+            properties:
+              graphql:
+                description: Graphql describes the graphql query to be compiled
+                properties:
+                  defaultVariables:
+                    description: DefaultVariables defines the default variables we
+                      want to apply to the graphql query
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  operationName:
+                    description: OperationName is the name of the operation to execute
+                    type: string
+                  query:
+                    description: Query is the string query to be compiled
+                    type: string
+                required:
+                - query
+                type: object
+              http:
+                description: HTTP describes the http properties we want to override
+                properties:
+                  method:
+                    description: Method describes the http method we want to use for
+                      the rest api
+                    type: string
+                  url:
+                    description: Urk describes the http url we want to use for the
+                      rest api
+                    type: string
+                type: object
+              plugins:
+                description: Plugins describes the plugins to be used for this endpoint
+                items:
+                  description: HTTPPlugin describes a plugin to be used in an HTTP
+                    endpoint
+                  properties:
+                    driver:
+                      description: Driver describes the driver to use for the plugin
+                      type: string
+                    name:
+                      description: Name describes a name of the plugin
+                      type: string
+                    params:
+                      description: Params describes the additional properties which
+                        are required by the driver
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                  required:
+                  - driver
+                  - name
+                  type: object
+                type: array
+            required:
+            - graphql
+            type: object
+          status:
+            description: CompiledGraphqlSourceStatus defines the observed state of
+              CompiledGraphqlSource
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

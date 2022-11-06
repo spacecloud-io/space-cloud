@@ -19,7 +19,6 @@ func (a *App) resolveJoin() graphql.FieldResolveFn {
 		return func() (interface{}, error) {
 			return a.rootJoinObj, nil
 		}, nil
-
 	}
 }
 
@@ -162,7 +161,7 @@ func extractFieldQuery(root *rootvalue.RootValue, source *v1alpha1.GraphqlSource
 		for _, d := range fieldAst.Directives {
 			// TODO: Only remove those directives which are not allowed by that particular source or
 			// we can remove all directives used by space cloud itself
-			if utils.StringExists(d.Name.Value, "export", "injectClaim") {
+			if utils.StringExists(d.Name.Value, "export", "injectClaim", "tag") {
 				continue
 			}
 

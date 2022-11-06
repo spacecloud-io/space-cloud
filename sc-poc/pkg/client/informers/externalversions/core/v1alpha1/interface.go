@@ -24,10 +24,14 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// CompiledGraphqlSources returns a CompiledGraphqlSourceInformer.
+	CompiledGraphqlSources() CompiledGraphqlSourceInformer
 	// GraphqlSources returns a GraphqlSourceInformer.
 	GraphqlSources() GraphqlSourceInformer
-	// HSASecrets returns a HSASecretInformer.
-	HSASecrets() HSASecretInformer
+	// JwtHSASecrets returns a JwtHSASecretInformer.
+	JwtHSASecrets() JwtHSASecretInformer
+	// OPAPolicies returns a OPAPolicyInformer.
+	OPAPolicies() OPAPolicyInformer
 }
 
 type version struct {
@@ -41,12 +45,22 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
+// CompiledGraphqlSources returns a CompiledGraphqlSourceInformer.
+func (v *version) CompiledGraphqlSources() CompiledGraphqlSourceInformer {
+	return &compiledGraphqlSourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
 // GraphqlSources returns a GraphqlSourceInformer.
 func (v *version) GraphqlSources() GraphqlSourceInformer {
 	return &graphqlSourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// HSASecrets returns a HSASecretInformer.
-func (v *version) HSASecrets() HSASecretInformer {
-	return &hSASecretInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// JwtHSASecrets returns a JwtHSASecretInformer.
+func (v *version) JwtHSASecrets() JwtHSASecretInformer {
+	return &jwtHSASecretInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// OPAPolicies returns a OPAPolicyInformer.
+func (v *version) OPAPolicies() OPAPolicyInformer {
+	return &oPAPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

@@ -7,17 +7,17 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// HSASecret is the schema for the hsasecret api
-type HSASecret struct {
+// JwtHSASecret is the schema for the hsasecret api
+type JwtHSASecret struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   HSASecretSpec   `json:"spec,omitempty"`
-	Status HSASecretStatus `json:"status,omitempty"`
+	Spec   JwtHSASecretSpec   `json:"spec,omitempty"`
+	Status JwtHSASecretStatus `json:"status,omitempty"`
 }
 
-// HSASecretSpec defines the desired state of HSASecretSpec
-type HSASecretSpec struct {
+// JwtHSASecretSpec defines the desired state of JwtHSASecretSpec
+type JwtHSASecretSpec struct {
 	AuthSecret `json:",inline"`
 
 	// Value holds the content of the secret or jwk url
@@ -29,16 +29,16 @@ type HSASecretSpec struct {
 	ValueFrom *SecretSource `json:"valueFrom,omitempty"`
 }
 
-// HSASecretStatus defines the observed state of HSASecret
-type HSASecretStatus struct {
+// JwtHSASecretStatus defines the observed state of HSASecret
+type JwtHSASecretStatus struct {
 	// TODO: Add state to show if sync succeeded or if there was an error
 }
 
 // +kubebuilder:object:root=true
 
-// HSASecretList contains a list of HSASecret
-type HSASecretList struct {
+// JwtHSASecretList contains a list of JwtHSASecret
+type JwtHSASecretList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []HSASecret `json:"items"`
+	Items           []JwtHSASecret `json:"items"`
 }

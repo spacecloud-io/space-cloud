@@ -6,9 +6,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func prepareAuthApp(configuration map[string][]*unstructured.Unstructured) []byte {
+func prepareRestApp(configuration map[string][]*unstructured.Unstructured) []byte {
 	data, _ := json.Marshal(map[string]interface{}{
-		"hsaSecrets": configuration["JwtHSASecret"],
+		"compiledGraphqlQueries": configuration["CompiledGraphqlSource"],
 	})
 	return data
 }

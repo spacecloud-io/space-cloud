@@ -6,12 +6,13 @@ import (
 	"strings"
 
 	"github.com/caddyserver/caddy/v2"
-	"github.com/spacecloud-io/space-cloud/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-// NewCommand get space-cli run command
+// NewCommand get spacectl run command
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "run",

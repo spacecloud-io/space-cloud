@@ -18,6 +18,10 @@ limitations under the License.
 
 package v1alpha1
 
+type CompiledGraphqlSourceExpansion interface{}
+
 type GraphqlSourceExpansion interface{}
 
-type HSASecretExpansion interface{}
+type JwtHSASecretExpansion interface{}
+
+type OPAPolicyExpansion interface{}

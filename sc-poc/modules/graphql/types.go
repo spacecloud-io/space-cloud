@@ -1,9 +1,33 @@
 package graphql
 
+import (
+	"github.com/graphql-go/graphql/language/ast"
+	"github.com/invopop/jsonschema"
+)
+
 type (
 	m map[string]interface{}
 	t []interface{}
 )
+
+// CompiledQuery stores the result of a compiled graphql query
+type CompiledQuery struct {
+	// Fields related to authentication
+	IsAuthRequired bool
+	InjectedClaims map[string]string
+
+	// Variable & response type defs
+	VariableSchema *jsonschema.Schema
+	ResponseSchema *jsonschema.Schema
+	Extensions     map[string]interface{}
+
+	// Graphql ast
+	Query         string
+	OperationName string
+	OperationType string
+	DefaultValues map[string]interface{}
+	Doc           *ast.Document
+}
 
 type request struct {
 	OperationName string                 `json:"operationName"`

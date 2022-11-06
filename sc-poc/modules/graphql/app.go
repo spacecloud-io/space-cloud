@@ -15,8 +15,9 @@ func init() {
 }
 
 type App struct {
-	// GraphqlSources contains the graphql sources to integrate with
 	GraphqlSources []*v1alpha1.GraphqlSource `json:"graphqlSources"`
+
+	// TODO: Add support for CompiledGraphqlSources
 
 	// For internal use
 	logger *zap.Logger
@@ -40,11 +41,7 @@ func (App) CaddyModule() caddy.ModuleInfo {
 // Provision sets up the graphql module.
 func (a *App) Provision(ctx caddy.Context) error {
 	a.logger = ctx.Logger(a)
-	return nil
-}
 
-// Start begins the graphql app operations
-func (a *App) Start() error {
 	// Create the root types
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name:   "Query",
@@ -108,16 +105,29 @@ func (a *App) Start() error {
 				{PrivateName: "key", Type: graphql.NewNonNull(graphql.String)},
 				{PrivateName: "var", Type: graphql.String},
 			},
+		}, {
+			Name:      "tag",
+			Locations: []string{graphql.DirectiveLocationSchema, graphql.DirectiveLocationField},
+			Args: []*graphql.Argument{
+				{PrivateName: "type", Type: graphql.NewNonNull(graphql.String)},
+				{PrivateName: "key", Type: graphql.String},
+			},
 		},
 	}
 
 	// Finally compile the graphql schema
-	schmea, err := graphql.NewSchema(schemaConfig)
+	schema, err := graphql.NewSchema(schemaConfig)
 	if err != nil {
 		a.logger.Error("Unable to build schema object", zap.Error(err))
 		return err
 	}
-	a.schema = schmea
+	a.schema = schema
+	return nil
+}
+
+// Start begins the graphql app operations
+func (a *App) Start() error {
+
 	return nil
 }
 

@@ -53,10 +53,14 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=core.space-cloud.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("compiledgraphqlsources"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().CompiledGraphqlSources().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("graphqlsources"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().GraphqlSources().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("hsasecrets"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().HSASecrets().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("jwthsasecrets"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().JwtHSASecrets().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("opapolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().OPAPolicies().Informer()}, nil
 
 	}
 

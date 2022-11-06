@@ -18,6 +18,14 @@ limitations under the License.
 
 package v1alpha1
 
+// CompiledGraphqlSourceListerExpansion allows custom methods to be added to
+// CompiledGraphqlSourceLister.
+type CompiledGraphqlSourceListerExpansion interface{}
+
+// CompiledGraphqlSourceNamespaceListerExpansion allows custom methods to be added to
+// CompiledGraphqlSourceNamespaceLister.
+type CompiledGraphqlSourceNamespaceListerExpansion interface{}
+
 // GraphqlSourceListerExpansion allows custom methods to be added to
 // GraphqlSourceLister.
 type GraphqlSourceListerExpansion interface{}
@@ -26,10 +34,18 @@ type GraphqlSourceListerExpansion interface{}
 // GraphqlSourceNamespaceLister.
 type GraphqlSourceNamespaceListerExpansion interface{}
 
-// HSASecretListerExpansion allows custom methods to be added to
-// HSASecretLister.
-type HSASecretListerExpansion interface{}
+// JwtHSASecretListerExpansion allows custom methods to be added to
+// JwtHSASecretLister.
+type JwtHSASecretListerExpansion interface{}
 
-// HSASecretNamespaceListerExpansion allows custom methods to be added to
-// HSASecretNamespaceLister.
-type HSASecretNamespaceListerExpansion interface{}
+// JwtHSASecretNamespaceListerExpansion allows custom methods to be added to
+// JwtHSASecretNamespaceLister.
+type JwtHSASecretNamespaceListerExpansion interface{}
+
+// OPAPolicyListerExpansion allows custom methods to be added to
+// OPAPolicyLister.
+type OPAPolicyListerExpansion interface{}
+
+// OPAPolicyNamespaceListerExpansion allows custom methods to be added to
+// OPAPolicyNamespaceLister.
+type OPAPolicyNamespaceListerExpansion interface{}

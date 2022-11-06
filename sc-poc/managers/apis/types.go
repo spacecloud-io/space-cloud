@@ -46,10 +46,15 @@ type (
 	API struct {
 		Name    string
 		Path    string
-		PathDef *openapi3.PathItem
+		OpenAPI *OpenAPI
 		Handler http.HandlerFunc
 
 		app string
+	}
+
+	OpenAPI struct {
+		PathDef *openapi3.PathItem
+		Schemas openapi3.Schemas
 	}
 
 	// APIs is a collection of APIs

@@ -28,12 +28,20 @@ type FakeCoreV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeCoreV1alpha1) CompiledGraphqlSources(namespace string) v1alpha1.CompiledGraphqlSourceInterface {
+	return &FakeCompiledGraphqlSources{c, namespace}
+}
+
 func (c *FakeCoreV1alpha1) GraphqlSources(namespace string) v1alpha1.GraphqlSourceInterface {
 	return &FakeGraphqlSources{c, namespace}
 }
 
-func (c *FakeCoreV1alpha1) HSASecrets(namespace string) v1alpha1.HSASecretInterface {
-	return &FakeHSASecrets{c, namespace}
+func (c *FakeCoreV1alpha1) JwtHSASecrets(namespace string) v1alpha1.JwtHSASecretInterface {
+	return &FakeJwtHSASecrets{c, namespace}
+}
+
+func (c *FakeCoreV1alpha1) OPAPolicies(namespace string) v1alpha1.OPAPolicyInterface {
+	return &FakeOPAPolicies{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

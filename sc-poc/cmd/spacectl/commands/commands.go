@@ -3,10 +3,11 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client"
 	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/run"
 )
 
-// NewRootCommand returns space-cli command
+// NewRootCommand returns spacectl command
 func NewRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "spacectl",
@@ -18,7 +19,7 @@ func NewRootCommand() *cobra.Command {
 
 	// Add all sub commands
 	cmd.AddCommand(run.NewCommand())
-	// cmd.AddCommand(migrate.NewCommand())
+	cmd.AddCommand(client.NewCommand())
 
 	return cmd
 }

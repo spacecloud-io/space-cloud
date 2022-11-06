@@ -1,5 +1,7 @@
 package v1alpha1
 
+import "k8s.io/apimachinery/pkg/runtime"
+
 // SecretSource represents a source for a confidential value.
 // Taken from apiv1.EnvVarSource.
 type SecretSource struct {
@@ -45,4 +47,16 @@ type AuthSecret struct {
 	// AllowedIssuers describes the allowed values in the "iss" field of the jwt token.
 	// +kubebuilder:validation:Optional
 	AllowedIssuers []string `json:"allowedIssuers,omitempty"`
+}
+
+// HTTPPlugin describes a plugin to be used in an HTTP endpoint
+type HTTPPlugin struct {
+	// Name describes a name of the plugin
+	Name string `json:"name"`
+
+	// Driver describes the driver to use for the plugin
+	Driver string `json:"driver"`
+
+	// Params describes the additional properties which are required by the driver
+	Params runtime.RawExtension `json:"params,omitempty"`
 }

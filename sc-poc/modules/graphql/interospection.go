@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/graphql-go/graphql"
+	"github.com/graphql-go/graphql/language/ast"
 
 	"github.com/spacecloud-io/space-cloud/modules/graphql/types"
 	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
@@ -54,12 +55,8 @@ func (a *App) getGraphqlType(srcName string, t *introspectionResponseType) graph
 	switch t.Kind {
 	case graphql.TypeKindScalar:
 		switch t.Name {
-		case graphql.Boolean.Name():
-		case graphql.String.Name():
-		case graphql.Int.Name():
-		case graphql.Float.Name():
-		case graphql.ID.Name():
-		case graphql.DateTime.Name():
+		case graphql.ID.Name(), graphql.Float.Name(), graphql.Int.Name(),
+			graphql.String.Name(), graphql.Boolean.Name(), graphql.DateTime.Name():
 			return nil
 		}
 
@@ -182,6 +179,19 @@ func getGraphqlTypeName(srcName string, gt types.GraphqlType) string {
 
 	// Return the final name
 	return name
+}
+
+func getGraphqlTypeNameFromAST(t ast.Type) string {
+	switch v := t.(type) {
+	case *ast.NonNull:
+		return getGraphqlTypeNameFromAST(v.Type)
+	case *ast.List:
+		return getGraphqlTypeNameFromAST(v.Type)
+	case *ast.Named:
+		return v.Name.Value
+	}
+
+	return ""
 }
 
 func getIntrospectionQuery() string {

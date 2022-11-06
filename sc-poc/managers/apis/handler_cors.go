@@ -27,7 +27,7 @@ func (h *CorsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cad
 		AllowOriginFunc: func(s string) bool {
 			return true
 		},
-		Debug: true,
+		Debug: false,
 		AllowOriginRequestFunc: func(r *http.Request, origin string) bool {
 			return true
 		},

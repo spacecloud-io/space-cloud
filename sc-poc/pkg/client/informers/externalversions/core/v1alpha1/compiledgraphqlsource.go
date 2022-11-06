@@ -32,59 +32,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// HSASecretInformer provides access to a shared informer and lister for
-// HSASecrets.
-type HSASecretInformer interface {
+// CompiledGraphqlSourceInformer provides access to a shared informer and lister for
+// CompiledGraphqlSources.
+type CompiledGraphqlSourceInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.HSASecretLister
+	Lister() v1alpha1.CompiledGraphqlSourceLister
 }
 
-type hSASecretInformer struct {
+type compiledGraphqlSourceInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewHSASecretInformer constructs a new informer for HSASecret type.
+// NewCompiledGraphqlSourceInformer constructs a new informer for CompiledGraphqlSource type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewHSASecretInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredHSASecretInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewCompiledGraphqlSourceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredCompiledGraphqlSourceInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredHSASecretInformer constructs a new informer for HSASecret type.
+// NewFilteredCompiledGraphqlSourceInformer constructs a new informer for CompiledGraphqlSource type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredHSASecretInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredCompiledGraphqlSourceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.CoreV1alpha1().HSASecrets(namespace).List(context.TODO(), options)
+				return client.CoreV1alpha1().CompiledGraphqlSources(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.CoreV1alpha1().HSASecrets(namespace).Watch(context.TODO(), options)
+				return client.CoreV1alpha1().CompiledGraphqlSources(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&corev1alpha1.HSASecret{},
+		&corev1alpha1.CompiledGraphqlSource{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *hSASecretInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredHSASecretInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *compiledGraphqlSourceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredCompiledGraphqlSourceInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *hSASecretInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&corev1alpha1.HSASecret{}, f.defaultInformer)
+func (f *compiledGraphqlSourceInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&corev1alpha1.CompiledGraphqlSource{}, f.defaultInformer)
 }
 
-func (f *hSASecretInformer) Lister() v1alpha1.HSASecretLister {
-	return v1alpha1.NewHSASecretLister(f.Informer().GetIndexer())
+func (f *compiledGraphqlSourceInformer) Lister() v1alpha1.CompiledGraphqlSourceLister {
+	return v1alpha1.NewCompiledGraphqlSourceLister(f.Informer().GetIndexer())
 }

@@ -12,8 +12,10 @@ func init() {
 	caddy.RegisterModule(AuthHandler{})
 }
 
+// App describes the state of the auth app
 type App struct {
-	HSASecrets []*v1alpha1.HSASecret
+	HSASecrets  []*v1alpha1.JwtHSASecret
+	OPAPolicies []*v1alpha1.OPAPolicy
 
 	// For internal use
 	logger  *zap.Logger
@@ -28,13 +30,13 @@ func (App) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
-// Provision sets up the graphql module.
+// Provision sets up the auth module.
 func (a *App) Provision(ctx caddy.Context) error {
 	a.logger = ctx.Logger(a)
 	return nil
 }
 
-// Start begins the graphql app operations
+// Start begins the auth app operations
 func (a *App) Start() error {
 	// TODO: add support of rsa secrets
 	// TODO: add support for jwk urls
@@ -52,7 +54,7 @@ func (a *App) Start() error {
 	return nil
 }
 
-// Stop ends the graphql app operations
+// Stop ends the auth app operations
 func (a *App) Stop() error {
 	return nil
 }

@@ -96,7 +96,12 @@ func Test_sanitizeUrl(t *testing.T) {
 		{
 			name: "No path params",
 			args: args{
-				api: &API{Path: "/a/b/c", PathDef: &openapi3.PathItem{Parameters: openapi3.NewParameters()}},
+				api: &API{
+					Path: "/a/b/c",
+					OpenAPI: &OpenAPI{
+						PathDef: &openapi3.PathItem{Parameters: openapi3.NewParameters()},
+					},
+				},
 			},
 			want:  "/a/b/c",
 			want1: []string{},
@@ -106,13 +111,15 @@ func Test_sanitizeUrl(t *testing.T) {
 			args: args{
 				api: &API{
 					Path: "/a/{b}/{c}/d/{b}/{e}",
-					PathDef: &openapi3.PathItem{Parameters: openapi3.Parameters{{
-						Value: &openapi3.Parameter{In: "path", Name: "b"},
-					}, {
-						Value: &openapi3.Parameter{In: "path", Name: "c"},
-					}, {
-						Value: &openapi3.Parameter{In: "path", Name: "e"},
-					}}}},
+					OpenAPI: &OpenAPI{
+						PathDef: &openapi3.PathItem{Parameters: openapi3.Parameters{{
+							Value: &openapi3.Parameter{In: "path", Name: "b"},
+						}, {
+							Value: &openapi3.Parameter{In: "path", Name: "c"},
+						}, {
+							Value: &openapi3.Parameter{In: "path", Name: "e"},
+						}}}},
+				},
 			},
 			want:  "/a/*/*/d/*/*",
 			want1: []string{"b", "c", "b", "e"},
