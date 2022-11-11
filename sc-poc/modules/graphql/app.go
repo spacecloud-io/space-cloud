@@ -15,8 +15,8 @@ func init() {
 }
 
 type App struct {
-	GraphqlSources []*v1alpha1.GraphqlSource `json:"graphqlSources"`
-
+	GraphqlSources  []*v1alpha1.GraphqlSource         `json:"graphqlSources"`
+	CompiledQueries []*v1alpha1.CompiledGraphqlSource `json:"compiledQueries"`
 	// TODO: Add support for CompiledGraphqlSources
 
 	// For internal use
@@ -25,6 +25,8 @@ type App struct {
 	// For graphql engine
 	schema       graphql.Schema
 	graphqlTypes map[string]graphql.Type
+
+	compiledQueries map[string]*CompiledQuery
 
 	rootQueryType *graphql.Object
 	rootJoinObj   map[string]string
@@ -122,6 +124,13 @@ func (a *App) Provision(ctx caddy.Context) error {
 		return err
 	}
 	a.schema = schema
+
+	// Load the compiled queries
+	if err := a.compileQueries(); err != nil {
+		a.logger.Error("Unable to compile the queries", zap.Error(err))
+		return err
+	}
+
 	return nil
 }
 

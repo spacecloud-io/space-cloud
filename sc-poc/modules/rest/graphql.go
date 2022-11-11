@@ -12,15 +12,20 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/invopop/jsonschema"
+	"go.uber.org/zap"
+
 	"github.com/spacecloud-io/space-cloud/managers/apis"
 	"github.com/spacecloud-io/space-cloud/modules/graphql"
 	"github.com/spacecloud-io/space-cloud/utils"
-	"go.uber.org/zap"
 )
 
 func (a *App) prepareCompilesGraphqlEndpoints() error {
-	arr := make(apis.APIs, len(a.CompiledGraphqlQueries))
-	for i, q := range a.CompiledGraphqlQueries {
+	for _, q := range a.CompiledGraphqlQueries {
+		// Skip if compiled query isn't meant to be exposed
+		if q.Spec.InternalOnly {
+			continue
+		}
+
 		// Prepare the path & method
 		path := fmt.Sprintf("/v1/api/complied-query/%s", q.Name)
 		method := http.MethodPost
@@ -35,15 +40,9 @@ func (a *App) prepareCompilesGraphqlEndpoints() error {
 		}
 
 		// Get the compiled graphql query
-		var defaultVariables map[string]interface{}
-		if len(q.Spec.Graphql.DefaultVariables.Raw) > 0 {
-			if err := json.Unmarshal(q.Spec.Graphql.DefaultVariables.Raw, &defaultVariables); err != nil {
-				return err
-			}
-		}
-		compiledQuery, err := a.graphqlApp.Compile(q.Spec.Graphql.Query, q.Spec.Graphql.OperationName, defaultVariables, true)
-		if err != nil {
-			return err
+		compiledQuery, p := a.graphqlApp.GetCompiledQuery(q.Name)
+		if !p {
+			return fmt.Errorf("no compiled query found for %s", q.Name)
 		}
 
 		// Create an open api path definition
@@ -143,18 +142,18 @@ func (a *App) prepareCompilesGraphqlEndpoints() error {
 			schemas[propertyName] = schemaRef
 		}
 
-		arr[i] = &apis.API{
+		a.apis = append(a.apis, &apis.API{
 			Name: fmt.Sprintf("complied_query_%s", q.Name),
 			Path: path,
 			OpenAPI: &apis.OpenAPI{
 				PathDef: pathItem,
 				Schemas: schemas,
 			},
+			Plugins: q.Spec.Plugins,
 			Handler: a.handleGraphqlRequest(method, compiledQuery, operation),
-		}
+		})
 	}
 
-	a.apis = append(a.apis, arr...)
 	return nil
 }
 
@@ -233,7 +232,7 @@ func (a *App) handleGraphqlRequest(method string, compiledQuery *graphql.Compile
 		}
 
 		// We need to throw an error if the request is not authenticated
-		if err := graphql.AuthenticateRequest(r, compiledQuery, variables); err != nil {
+		if err := compiledQuery.AuthenticateRequest(r, variables); err != nil {
 			// We need to throw an error if requested claim is not present in token
 			a.logger.Error("Unable to authenticate request",
 				zap.String("query", compiledQuery.Query), zap.Error(err))
@@ -242,7 +241,7 @@ func (a *App) handleGraphqlRequest(method string, compiledQuery *graphql.Compile
 		}
 
 		// Execute the query
-		result := a.graphqlApp.Execute(ctx, compiledQuery, variables)
+		result := compiledQuery.Execute(ctx, variables)
 		if result.HasErrors() {
 			a.logger.Error("Unable to execute request",
 				zap.String("query", compiledQuery.Query), zap.Reflect("errors", result.Errors))

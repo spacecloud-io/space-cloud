@@ -2,24 +2,27 @@ package auth
 
 import (
 	"github.com/caddyserver/caddy/v2"
+	"github.com/open-policy-agent/opa/rego"
 	"go.uber.org/zap"
 
+	"github.com/spacecloud-io/space-cloud/modules/auth/types"
+	"github.com/spacecloud-io/space-cloud/modules/graphql"
 	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
-func init() {
-	caddy.RegisterModule(App{})
-	caddy.RegisterModule(AuthHandler{})
-}
-
 // App describes the state of the auth app
 type App struct {
-	HSASecrets  []*v1alpha1.JwtHSASecret
-	OPAPolicies []*v1alpha1.OPAPolicy
+	HSASecrets             []*v1alpha1.JwtHSASecret          `json:"hsaSecrets"`
+	OPAPolicies            []*v1alpha1.OPAPolicy             `json:"opaPolicies"`
+	CompiledGraphqlSources []*v1alpha1.CompiledGraphqlSource `json:"compiledGraphqlSources"`
 
 	// For internal use
-	logger  *zap.Logger
-	secrets []*AuthSecret
+	logger       *zap.Logger
+	secrets      []*types.AuthSecret
+	regoPolicies map[string]rego.PreparedEvalQuery
+
+	// Dependant apps
+	graphqlApp *graphql.App
 }
 
 // CaddyModule returns the Caddy module information.
@@ -30,9 +33,24 @@ func (App) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
-// Provision sets up the auth module.
+// Provision sets up the auth module.W
 func (a *App) Provision(ctx caddy.Context) error {
 	a.logger = ctx.Logger(a)
+
+	// Load the dependent apps
+	graphqlTemp, err := ctx.App("graphql")
+	if err != nil {
+		a.logger.Error("Unable to load the graphql application", zap.Error(err))
+		return err
+	}
+	a.graphqlApp = graphqlTemp.(*graphql.App)
+
+	// Compile the rego policies
+	if err := a.compileRegoPolicies(); err != nil {
+		a.logger.Error("Unable to compile rego policies", zap.Error(err))
+		return err
+	}
+
 	return nil
 }
 
@@ -41,11 +59,11 @@ func (a *App) Start() error {
 	// TODO: add support of rsa secrets
 	// TODO: add support for jwk urls
 
-	secrets := make([]*AuthSecret, 0, len(a.HSASecrets))
+	secrets := make([]*types.AuthSecret, 0, len(a.HSASecrets))
 	for _, s := range a.HSASecrets {
-		secrets = append(secrets, &AuthSecret{
+		secrets = append(secrets, &types.AuthSecret{
 			AuthSecret: s.Spec.AuthSecret,
-			Alg:        HS256,
+			Alg:        types.HS256,
 			Value:      s.Spec.Value,
 		})
 	}

@@ -1,14 +1,8 @@
-package auth
+package types
 
 import "github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 
 type (
-	// AuthResult describes whether or not the request is authenticated
-	AuthResult struct {
-		IsAuthenticated bool
-		Claims          map[string]interface{}
-	}
-
 	// AuthSecret exposes a custom type made to manage authentication
 	AuthSecret struct {
 		v1alpha1.AuthSecret
@@ -16,11 +10,9 @@ type (
 		Value string
 	}
 
-	contextKey int
+	// JWTAlg is type of method used for signing token
+	JWTAlg string
 )
-
-// JWTAlg is type of method used for signing token
-type JWTAlg string
 
 const (
 	// HS256 is method used for signing token
@@ -34,8 +26,4 @@ const (
 
 	// RS256Public is the method for identifying a secret that has to be validated against with a public key
 	RS256Public JWTAlg = "RS256_PUBLIC"
-)
-
-const (
-	authenticationResultKey contextKey = iota
 )

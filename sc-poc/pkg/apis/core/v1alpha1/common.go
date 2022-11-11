@@ -32,6 +32,12 @@ type EnvRef struct {
 	Name string `json:"name"`
 }
 
+// ResourceRef describes a reference to a resource object
+type ResourceRef struct {
+	// Name of the resource
+	Name string `json:"name"`
+}
+
 // AuthSecret describes the state of common properties required in every auth secret
 type AuthSecret struct {
 	// IsPrimary denotes if this secret is to be used as the default secret

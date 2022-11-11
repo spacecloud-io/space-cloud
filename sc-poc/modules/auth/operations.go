@@ -6,19 +6,10 @@ import (
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/spacecloud-io/space-cloud/utils"
 	"go.uber.org/zap"
+
+	"github.com/spacecloud-io/space-cloud/utils"
 )
-
-// GetAuthenticationResult returns the result of the authentication middleware
-func GetAuthenticationResult(r *http.Request) (*AuthResult, bool) {
-	result := r.Context().Value(authenticationResultKey)
-	if result == nil {
-		return nil, false
-	}
-
-	return result.(*AuthResult), true
-}
 
 // SendUnauthenticatedResponse sends a unauthenticated response to the user
 func SendUnauthenticatedResponse(w http.ResponseWriter, r *http.Request, logger *zap.Logger, err error) {

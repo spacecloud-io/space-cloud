@@ -8,7 +8,8 @@ import (
 
 func prepareGraphQLApp(configuration map[string][]*unstructured.Unstructured) []byte {
 	data, _ := json.Marshal(map[string]interface{}{
-		"graphqlSources": configuration["GraphqlSource"],
+		"graphqlSources":  configuration["GraphqlSource"],
+		"compiledQueries": configuration["CompiledGraphqlSource"],
 	})
 	return data
 }

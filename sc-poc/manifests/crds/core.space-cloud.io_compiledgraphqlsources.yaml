@@ -65,6 +65,10 @@ spec:
                       rest api
                     type: string
                 type: object
+              internalOnly:
+                description: InternalOnly describes whether or not the query needs
+                  to be exposed as a rest api
+                type: boolean
               plugins:
                 description: Plugins describes the plugins to be used for this endpoint
                 items:

@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
 var (
@@ -48,6 +49,7 @@ type (
 		Path    string
 		OpenAPI *OpenAPI
 		Handler http.HandlerFunc
+		Plugins []v1alpha1.HTTPPlugin
 
 		app string
 	}

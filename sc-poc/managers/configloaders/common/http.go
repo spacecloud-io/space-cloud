@@ -66,7 +66,7 @@ func getAPIRoutes() caddyhttp.Route {
 	routeList := caddyhttp.RouteList{
 		caddyhttp.Route{
 			Group:       "api_auth",
-			HandlersRaw: utils.GetCaddyHandler("auth", nil),
+			HandlersRaw: utils.GetCaddyHandler("auth_verify", nil),
 		},
 		caddyhttp.Route{
 			Group:       "api_route",

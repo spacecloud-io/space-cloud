@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/caddyserver/caddy/v2"
+	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/spf13/viper"
 )
 
@@ -78,6 +79,17 @@ func GetCaddyHandler(handlerName string, params map[string]interface{}) []json.R
 	// Add the params the handler needs
 	for k, v := range params {
 		handler[k] = v
+	}
+
+	data, _ := json.Marshal(handler)
+	return []json.RawMessage{data}
+}
+
+// GetCaddySubrouter returns a marshaled caddy subrouter
+func GetCaddySubrouter(routes ...caddyhttp.Route) []json.RawMessage {
+	handler := map[string]interface{}{
+		"handler": "subroute",
+		"routes":  routes,
 	}
 
 	data, _ := json.Marshal(handler)

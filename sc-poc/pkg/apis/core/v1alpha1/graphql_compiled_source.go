@@ -21,6 +21,10 @@ type CompiledGraphqlSource struct {
 
 // CompiledGraphqlSourceSpec defines the desired state of CompiledGraphqlSourceSpec
 type CompiledGraphqlSourceSpec struct {
+	// InternalOnly describes whether or not the query needs to be exposed as a rest api
+	// +kubebuilder:validation:Optional
+	InternalOnly bool `json:"internalOnly,omitempty"`
+
 	// Graphql describes the graphql query to be compiled
 	Graphql GraphqlQuery `json:"graphql"`
 
@@ -30,7 +34,7 @@ type CompiledGraphqlSourceSpec struct {
 
 	// Plugins describes the plugins to be used for this endpoint
 	// +kubebuilder:validation:Optional
-	Plugins []*HTTPPlugin `json:"plugins,omitempty"`
+	Plugins []HTTPPlugin `json:"plugins,omitempty"`
 }
 
 // GraphqlQuery describes the graphql query to be compiled

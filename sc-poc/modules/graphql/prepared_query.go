@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,10 +13,37 @@ import (
 	"github.com/graphql-go/graphql/language/source"
 	"github.com/invopop/jsonschema"
 
-	"github.com/spacecloud-io/space-cloud/modules/auth"
 	"github.com/spacecloud-io/space-cloud/modules/graphql/rootvalue"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
+
+// CompiledQuery stores the result of a compiled graphql query
+type CompiledQuery struct {
+	// Fields related to authentication
+	IsAuthRequired bool
+	InjectedClaims map[string]string
+
+	// Variable & response type defs
+	VariableSchema *jsonschema.Schema
+	ResponseSchema *jsonschema.Schema
+	Extensions     map[string]interface{}
+
+	// Graphql ast
+	Query         string
+	OperationName string
+	OperationType string
+	DefaultValues map[string]interface{}
+	Doc           *ast.Document
+
+	// Internal types
+	schema graphql.Schema
+}
+
+// GetCompiledQuery returns a compiled query
+func (a *App) GetCompiledQuery(name string) (q *CompiledQuery, p bool) {
+	q, p = a.compiledQueries[name]
+	return
+}
 
 // Compile compiles the graphql request for processing
 func (a *App) Compile(query, operationName string, defaultValues map[string]interface{}, enableExtraction bool) (*CompiledQuery, error) {
@@ -64,12 +92,14 @@ func (a *App) Compile(query, operationName string, defaultValues map[string]inte
 		OperationName: operationName,
 		OperationType: operationAST.Operation,
 		DefaultValues: defaultValues,
+
+		schema: a.schema,
 	}, nil
 }
 
-func AuthenticateRequest(r *http.Request, compiledQuery *CompiledQuery, vars map[string]interface{}) error {
+func (compiledQuery *CompiledQuery) AuthenticateRequest(r *http.Request, vars map[string]interface{}) error {
 	if compiledQuery.IsAuthRequired {
-		authResult, p := auth.GetAuthenticationResult(r)
+		authResult, p := utils.GetAuthenticationResult(r)
 		if !p || !authResult.IsAuthenticated {
 			// Send an error if request is unauthenticated
 			return errors.New("unable to authenticate request")
@@ -90,7 +120,7 @@ func AuthenticateRequest(r *http.Request, compiledQuery *CompiledQuery, vars map
 }
 
 // Execute executes the compiled graphql query
-func (a *App) Execute(ctx context.Context, compiledQuery *CompiledQuery, vars map[string]interface{}) *graphql.Result {
+func (compiledQuery *CompiledQuery) Execute(ctx context.Context, vars map[string]interface{}) *graphql.Result {
 
 	newVars := utils.MergeMaps(compiledQuery.DefaultValues, vars)
 
@@ -98,7 +128,7 @@ func (a *App) Execute(ctx context.Context, compiledQuery *CompiledQuery, vars ma
 	rootValue := rootvalue.New(compiledQuery.Doc)
 	result := graphql.Execute(graphql.ExecuteParams{
 		Context:       ctx,
-		Schema:        a.schema,
+		Schema:        compiledQuery.schema,
 		AST:           compiledQuery.Doc,
 		OperationName: compiledQuery.OperationName,
 		Args:          newVars,
@@ -110,4 +140,28 @@ func (a *App) Execute(ctx context.Context, compiledQuery *CompiledQuery, vars ma
 	}
 
 	return result
+}
+
+func (a *App) compileQueries() error {
+	queries := make(map[string]*CompiledQuery, len(a.CompiledQueries))
+
+	for _, q := range a.CompiledQueries {
+
+		// Get the compiled graphql query
+		var defaultVariables map[string]interface{}
+		if len(q.Spec.Graphql.DefaultVariables.Raw) > 0 {
+			if err := json.Unmarshal(q.Spec.Graphql.DefaultVariables.Raw, &defaultVariables); err != nil {
+				return err
+			}
+		}
+		compiledQuery, err := a.Compile(q.Spec.Graphql.Query, q.Spec.Graphql.OperationName, defaultVariables, true)
+		if err != nil {
+			return err
+		}
+
+		queries[q.Name] = compiledQuery
+	}
+
+	a.compiledQueries = queries
+	return nil
 }

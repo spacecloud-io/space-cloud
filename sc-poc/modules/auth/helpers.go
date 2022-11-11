@@ -6,21 +6,23 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
+
+	"github.com/spacecloud-io/space-cloud/modules/auth/types"
 )
 
-func getSigninMethod(alg JWTAlg) jwt.SigningMethod {
+func getSigninMethod(alg types.JWTAlg) jwt.SigningMethod {
 	switch alg {
-	case HS256:
+	case types.HS256:
 		return jwt.SigningMethodHS256
-	case RS256, RS256Public, JwkURL:
+	case types.RS256, types.RS256Public, types.JwkURL:
 		return jwt.SigningMethodRS256
 	}
 
 	return jwt.SigningMethodHS256
 }
 
-func getSigningSecret(secret *AuthSecret) interface{} {
-	if secret.Alg == HS256 {
+func getSigningSecret(secret *types.AuthSecret) interface{} {
+	if secret.Alg == types.HS256 {
 		return []byte(secret.Value)
 	}
 
@@ -28,8 +30,8 @@ func getSigningSecret(secret *AuthSecret) interface{} {
 	return nil
 }
 
-func getVerifyingSecret(secret *AuthSecret) interface{} {
-	if secret.Alg == HS256 {
+func getVerifyingSecret(secret *types.AuthSecret) interface{} {
+	if secret.Alg == types.HS256 {
 		return []byte(secret.Value)
 	}
 
@@ -37,7 +39,7 @@ func getVerifyingSecret(secret *AuthSecret) interface{} {
 	return nil
 }
 
-func (a *App) getPrimarySecret() *AuthSecret {
+func (a *App) getPrimarySecret() *types.AuthSecret {
 	for _, s := range a.secrets {
 		if s.IsPrimary {
 			return s
@@ -47,7 +49,7 @@ func (a *App) getPrimarySecret() *AuthSecret {
 	return a.secrets[0]
 }
 
-func (a *App) getSecretFromKID(kid string) (*AuthSecret, bool) {
+func (a *App) getSecretFromKID(kid string) (*types.AuthSecret, bool) {
 	for _, s := range a.secrets {
 		if s.KID == kid {
 			return s, true

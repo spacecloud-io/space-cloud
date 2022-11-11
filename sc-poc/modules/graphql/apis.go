@@ -116,7 +116,7 @@ func (a *App) GetAPIRoutes() apis.APIs {
 			}
 
 			// We need to throw an error if the request is not authenticated
-			if err := AuthenticateRequest(r, compiledQuery, req.Variables); err != nil {
+			if err := compiledQuery.AuthenticateRequest(r, req.Variables); err != nil {
 				// We need to throw an error if requested claim is not present in token
 				gErrs := gqlerrors.FormatErrors(err)
 				a.logger.Error("Unable to authenticate request",
@@ -126,7 +126,7 @@ func (a *App) GetAPIRoutes() apis.APIs {
 			}
 
 			// Execute the query
-			result := a.Execute(ctx, compiledQuery, req.Variables)
+			result := compiledQuery.Execute(ctx, req.Variables)
 
 			// Send response to client
 			_ = utils.SendResponse(w, http.StatusOK, result)

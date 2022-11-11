@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -80,16 +81,7 @@ func makeSubRouter(ctx caddy.Context, allAPIs []*API) (caddyhttp.Handler, error)
 		// Get the methods to be used
 		methods := getMethods(api)
 
-		handlerObj := caddyhttp.Route{
-			Group:          api.app,
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, methods),
-			HandlersRaw: utils.GetCaddyHandler("api", map[string]interface{}{
-				"path":    path,
-				"indexes": indexes,
-				"app":     api.app,
-				"name":    api.Name,
-			}),
-		}
+		handlerObj := prepareRoute(api, path, methods, indexes)
 		routeList = append(routeList, handlerObj)
 	}
 
@@ -99,6 +91,35 @@ func makeSubRouter(ctx caddy.Context, allAPIs []*API) (caddyhttp.Handler, error)
 	}
 
 	return routeList.Compile(emptyHandler), nil
+}
+
+func prepareRoute(api *API, path string, methods, indexes []string) caddyhttp.Route {
+	// Create the route for this api
+	apiRoute := caddyhttp.Route{
+		Group:          api.app,
+		MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, methods),
+		HandlersRaw:    make([]json.RawMessage, 0, len(api.Plugins)+1),
+	}
+
+	// First we add the handlers for all the plugins
+	for _, p := range api.Plugins {
+		var params map[string]interface{}
+		if len(p.Params.Raw) > 0 {
+			_ = json.Unmarshal(p.Params.Raw, &params)
+		}
+		apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, utils.GetCaddyHandler(p.Driver, params)...)
+	}
+
+	// Finally comes the main api route
+	apiHandler := utils.GetCaddyHandler("api", map[string]interface{}{
+		"path":    path,
+		"indexes": indexes,
+		"app":     api.app,
+		"name":    api.Name,
+	})
+	apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, apiHandler...)
+
+	return apiRoute
 }
 
 func getMethods(api *API) []string {
