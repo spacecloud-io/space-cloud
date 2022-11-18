@@ -181,17 +181,19 @@ func getGraphqlTypeName(srcName string, gt types.GraphqlType) string {
 	return name
 }
 
-func getGraphqlTypeNameFromAST(t ast.Type) string {
+func getGraphqlTypeNameFromAST(t ast.Type) (typeName string, isList, isRequired bool) {
 	switch v := t.(type) {
 	case *ast.NonNull:
-		return getGraphqlTypeNameFromAST(v.Type)
+		typeName, isList, _ = getGraphqlTypeNameFromAST(v.Type)
+		return typeName, isList, true
 	case *ast.List:
-		return getGraphqlTypeNameFromAST(v.Type)
+		typeName, _, isRequired = getGraphqlTypeNameFromAST(v.Type)
+		return typeName, true, isRequired
 	case *ast.Named:
-		return v.Name.Value
+		return v.Name.Value, false, false
 	}
 
-	return ""
+	return "", false, false
 }
 
 func getIntrospectionQuery() string {

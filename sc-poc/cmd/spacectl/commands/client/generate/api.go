@@ -78,10 +78,13 @@ func getQueryFromOperation(path, method string, operation *openapi3.Operation) s
 		getQueryType(operation), getAPITypes(operation))
 	s += fmt.Sprintf("      query: helpers.prepareQuery(\"%s\", \"%s\"),\n", path, method)
 
-	if getQueryType(operation) == "query" {
-		s += fmt.Sprintf("      providesTags: helpers.getTags(%s),\n", operation.Extensions["x-tags"].(json.RawMessage))
-	} else {
-		s += fmt.Sprintf("      invalidatesTags: helpers.getTags(%s),\n", operation.Extensions["x-tags"].(json.RawMessage))
+	// Check if caching tags are provided
+	if tags, p := operation.Extensions["x-tags"]; p {
+		if getQueryType(operation) == "query" {
+			s += fmt.Sprintf("      providesTags: helpers.getTags(%s),\n", tags.(json.RawMessage))
+		} else {
+			s += fmt.Sprintf("      invalidatesTags: helpers.getTags(%s),\n", tags.(json.RawMessage))
+		}
 	}
 	s += "    }),\n"
 	return s

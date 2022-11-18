@@ -63,11 +63,22 @@ func (a *App) Compile(query, operationName string, defaultValues map[string]inte
 		defaultValues = make(map[string]interface{})
 	}
 
+	isAuthRequired, injectedClaims, exportedVars := preprocessForAuth(graphqlDoc)
+
 	var variableSchema, responseSchema *jsonschema.Schema
 	var extensions map[string]interface{}
 	if enableExtraction {
-		// TODO: This should not contain exported or injected fields
-		variableSchema, err = a.convertVariablesToJSONSchema(operationAST)
+
+		// Prepare map of fields to be ignored
+		ignoredFields := make(map[string]struct{}, len(injectedClaims)+len(exportedVars))
+		for _, variable := range injectedClaims {
+			ignoredFields[variable] = struct{}{}
+		}
+		for variable, v := range exportedVars {
+			ignoredFields[variable] = v
+		}
+
+		variableSchema, err = a.convertVariablesToJSONSchema(operationAST, ignoredFields)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +89,6 @@ func (a *App) Compile(query, operationName string, defaultValues map[string]inte
 		}
 	}
 
-	isAuthRequired, injectedClaims := preprocessForAuth(graphqlDoc)
 	return &CompiledQuery{
 		IsAuthRequired: isAuthRequired,
 		InjectedClaims: injectedClaims,

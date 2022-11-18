@@ -69,13 +69,23 @@ func (a *App) prepareCompilesGraphqlEndpoints() error {
 				schemajSON, _ := schema.MarshalJSON()
 				_ = schemaRef.UnmarshalJSON([]byte(strings.ReplaceAll(string(schemajSON), "#/$defs/", "#/components/schemas/")))
 
-				parameters[i] = &openapi3.ParameterRef{
-					Value: &openapi3.Parameter{
-						In:     "query",
-						Name:   propertyKey,
-						Schema: schemaRef,
-					},
+				parameter := &openapi3.Parameter{
+					In:       "query",
+					Name:     propertyKey,
+					Required: utils.StringExists(propertyKey, compiledQuery.VariableSchema.Required...),
 				}
+
+				if utils.StringExists(schema.Type, "object", "array") {
+					parameter.Content = openapi3.Content{
+						"application/json": &openapi3.MediaType{
+							Schema: schemaRef,
+						},
+					}
+				} else {
+					parameter.Schema = schemaRef
+				}
+
+				parameters[i] = &openapi3.ParameterRef{Value: parameter}
 			}
 
 			operation.Parameters = parameters
@@ -181,8 +191,7 @@ func (a *App) handleGraphqlRequest(method string, compiledQuery *graphql.Compile
 					// return
 				}
 
-				switch param.Value.Schema.Value.Type {
-				case "object", "array":
+				if len(param.Value.Content) > 0 {
 					var data interface{}
 					if err := json.Unmarshal([]byte(stringData[0]), &data); err != nil {
 						a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
@@ -191,36 +200,40 @@ func (a *App) handleGraphqlRequest(method string, compiledQuery *graphql.Compile
 					}
 
 					variables[param.Value.Name] = data
-				case "string":
-					variables[param.Value.Name] = stringData[0]
+				} else {
+					switch param.Value.Schema.Value.Type {
+					case "string":
+						variables[param.Value.Name] = stringData[0]
 
-				case "integer":
-					num, err := strconv.Atoi(stringData[0])
-					if err != nil {
-						a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
-						_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request payload received for param '%s'", param.Value.Name))
-						return
-					}
-					variables[param.Value.Name] = num
+					case "integer":
+						num, err := strconv.Atoi(stringData[0])
+						if err != nil {
+							a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
+							_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request payload received for param '%s'", param.Value.Name))
+							return
+						}
+						variables[param.Value.Name] = num
 
-				case "number":
-					num, err := strconv.ParseFloat(stringData[0], 64)
-					if err != nil {
-						a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
-						_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request payload received for param '%s'", param.Value.Name))
-						return
-					}
-					variables[param.Value.Name] = num
+					case "number":
+						num, err := strconv.ParseFloat(stringData[0], 64)
+						if err != nil {
+							a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
+							_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request payload received for param '%s'", param.Value.Name))
+							return
+						}
+						variables[param.Value.Name] = num
 
-				case "boolean":
-					b, err := strconv.ParseBool(stringData[0])
-					if err != nil {
-						a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
-						_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request payload received for param '%s'", param.Value.Name))
-						return
+					case "boolean":
+						b, err := strconv.ParseBool(stringData[0])
+						if err != nil {
+							a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
+							_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request payload received for param '%s'", param.Value.Name))
+							return
+						}
+						variables[param.Value.Name] = b
 					}
-					variables[param.Value.Name] = b
 				}
+
 			}
 		} else {
 			// For all other methods

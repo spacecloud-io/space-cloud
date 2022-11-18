@@ -1,4 +1,4 @@
-.PHONY: pre-hook test-all generate manifest build
+.PHONY: pre-hook test-all generate manifest build run install
 
 pre-hook:
 	go mod tidy
@@ -20,6 +20,9 @@ test-all: build
 
 build:
 	cd cmd/spacectl && go build .
+
+install:
+	cd cmd/spacectl && go install
 
 run: build
 	cd cmd/spacectl && ./spacectl run

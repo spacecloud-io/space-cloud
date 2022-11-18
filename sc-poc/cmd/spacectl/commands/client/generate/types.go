@@ -53,7 +53,15 @@ func generateTypesFromOperation(operation *openapi3.Operation) string {
 		requestSchema = operation.RequestBody.Value.Content["application/json"].Schema
 	}
 	for _, param := range operation.Parameters {
-		requestSchema.Value.Properties[param.Value.Name] = param.Value.Schema
+		if len(param.Value.Content) > 0 {
+			requestSchema.Value.Properties[param.Value.Name] = param.Value.Content["application/json"].Schema
+		} else {
+			requestSchema.Value.Properties[param.Value.Name] = param.Value.Schema
+		}
+
+		if param.Value.Required {
+			requestSchema.Value.Required = append(requestSchema.Value.Required, param.Value.Name)
+		}
 	}
 
 	// Prepare the response schema

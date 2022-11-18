@@ -144,22 +144,36 @@ func (a *App) convertFieldTypeToJSONSchema(path string, t graphql.Type, fieldAST
 	return nil, false
 }
 
-func (a *App) convertVariablesToJSONSchema(operationAST *ast.OperationDefinition) (*jsonschema.Schema, error) {
+func (a *App) convertVariablesToJSONSchema(operationAST *ast.OperationDefinition, ignoredFields map[string]struct{}) (*jsonschema.Schema, error) {
 	required := []string{}
 	properties := orderedmap.New()
 	// Iterate over all the variables
 	for _, v := range operationAST.VariableDefinitions {
 		varName := v.Variable.Name.Value
-		varType := getGraphqlTypeNameFromAST(v.Type)
+
+		// Skip the field if it's to be ignored
+		if _, p := ignoredFields[varName]; p {
+			continue
+		}
+
+		varType, isList, isRequired := getGraphqlTypeNameFromAST(v.Type)
 		graphqlType, p := a.graphqlTypes[varType]
 		if !p {
 			return nil, fmt.Errorf("invalid graphql type '%s' provided for variable '%s'", varType, varName)
 		}
 
-		js, isRequired := a.convertGraphqlTypeToJSONSchema(varType, graphqlType, map[string]struct{}{})
+		js, _ := a.convertGraphqlTypeToJSONSchema(varType, graphqlType, map[string]struct{}{})
+
+		// Check if field is required
 		if isRequired {
 			required = append(required, varName)
 		}
+
+		// Check if field is an array
+		if isList {
+			js = &jsonschema.Schema{Type: "array", Items: js}
+		}
+
 		properties.Set(varName, js)
 	}
 
