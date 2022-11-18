@@ -37,10 +37,6 @@ func New(graphqlDoc *ast.Document) *RootValue {
 	root := new(RootValue)
 	root.operationAST = graphqlDoc.Definitions[0].(*ast.OperationDefinition)
 
-	// First extract the query prefix and suffix
-	// TODO: Remove
-	// root.queryPrefix, root.querySuffix = extractQueryPrefixSuffix(a.sources, root.operationAST, []kv{})
-
 	// Create a new map for data loader
 	root.graphqlLoaders = make(map[string]*dataloader.Loader)
 

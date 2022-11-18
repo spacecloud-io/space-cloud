@@ -52,6 +52,8 @@ func (h *AuthOPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next 
 	}
 
 	// Extract the body
+	// TODO: Optimize this by extracting all request parameters in some handler and storing it in the request context.
+	// All handlers can then ready the request parameters from the context instead of parsing it again and again from the body.
 	body := map[string]interface{}{}
 	if !utils.StringExists(r.Method, http.MethodGet, http.MethodDelete) {
 		buffer := bytes.NewBuffer([]byte{})

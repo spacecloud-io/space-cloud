@@ -101,6 +101,9 @@ func prepareRoute(api *API, path string, methods, indexes []string) caddyhttp.Ro
 		HandlersRaw:    make([]json.RawMessage, 0, len(api.Plugins)+1),
 	}
 
+	// TODO: add a handler to extract all the variables
+	// TODO: add a handler to validate json schema of extracted variables
+
 	// First we add the handlers for all the plugins
 	for _, p := range api.Plugins {
 		var params map[string]interface{}
