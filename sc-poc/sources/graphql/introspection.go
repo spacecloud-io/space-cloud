@@ -7,17 +7,15 @@ import (
 	"net/http"
 
 	"github.com/graphql-go/graphql"
-	"github.com/graphql-go/graphql/language/ast"
 
 	"github.com/spacecloud-io/space-cloud/modules/graphql/types"
-	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
-func (a *App) getSchemaFromUrl(src *v1alpha1.GraphqlSource) (queryRoot, mutationRoot string, err error) {
+func (s *GraphqlSource) getSchemaFromSource() (err error) {
 	data, _ := json.Marshal(map[string]string{"query": getIntrospectionQuery()})
-	resp, err := http.Post(src.Spec.Source.URL, "application/json", bytes.NewBuffer(data))
+	resp, err := http.Post(s.Spec.Source.URL, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -25,33 +23,36 @@ func (a *App) getSchemaFromUrl(src *v1alpha1.GraphqlSource) (queryRoot, mutation
 	var rawSchema introspectionResponse
 	_ = json.NewDecoder(resp.Body).Decode(&rawSchema)
 
-	a.getTypes(src, rawSchema.Data.Schema.Types)
+	s.getTypes(rawSchema.Data.Schema.Types)
 
 	// TODO: Also accomodate the directives
 
-	return rawSchema.Data.Schema.QueryType.Name, rawSchema.Data.Schema.MutationType.Name, nil
+	s.addToRootType(rawSchema.Data.Schema.QueryType.Name, s.queryRootType)
+	s.addToRootType(rawSchema.Data.Schema.MutationType.Name, s.mutationRootType)
+
+	return nil
 }
 
-func (a *App) getTypes(source *v1alpha1.GraphqlSource, types []*introspectionResponseType) {
+func (s *GraphqlSource) getTypes(types []*introspectionResponseType) {
 	// First we populate all the types
 	for _, t := range types {
-		name := getGraphqlTypeName(source.Name, t)
-		if _, p := a.graphqlTypes[name]; p {
+		name := getGraphqlTypeName(s.Name, t)
+		if _, p := s.graphqlTypes[name]; p {
 			continue
 		}
 
-		if v := a.getGraphqlType(source.Name, t); v != nil {
-			a.graphqlTypes[name] = v
+		if v := s.getGraphqlType(s.Name, t); v != nil {
+			s.graphqlTypes[name] = v
 		}
 	}
 
 	// We now have to populate the fields for types `OBJECT` & `INPUT_OBJECT`
 	for _, t := range types {
-		a.populateGraphqlFields(source, t)
+		s.populateGraphqlFields(t)
 	}
 }
 
-func (a *App) getGraphqlType(srcName string, t *introspectionResponseType) graphql.Type {
+func (s *GraphqlSource) getGraphqlType(srcName string, t *introspectionResponseType) graphql.Type {
 	switch t.Kind {
 	case graphql.TypeKindScalar:
 		switch t.Name {
@@ -105,30 +106,31 @@ func (a *App) getGraphqlType(srcName string, t *introspectionResponseType) graph
 	return nil
 }
 
-func (a *App) populateGraphqlFields(source *v1alpha1.GraphqlSource, t *introspectionResponseType) {
+func (s *GraphqlSource) populateGraphqlFields(t *introspectionResponseType) {
 	switch t.Kind {
 	case graphql.TypeKindInputObject:
 		// Get the stored type
-		storedType := a.graphqlTypes[getGraphqlTypeName(source.Name, t)].(*graphql.InputObject)
+		storedType := s.graphqlTypes[getGraphqlTypeName(s.Name, t)].(*graphql.InputObject)
 
 		// Add the fields to our type
 		for _, field := range t.InputFields {
 			storedType.AddFieldConfig(field.Name, &graphql.InputObjectFieldConfig{
-				Type:         a.evaluateTypeRef(source.Name, field.TypeRef),
+				Type:         s.evaluateTypeRef(s.Name, field.TypeRef),
 				Description:  field.Description,
 				DefaultValue: field.DefaultValue,
 			})
 		}
 	case graphql.TypeKindObject:
 		// Get the stored type
-		storedType := a.graphqlTypes[getGraphqlTypeName(source.Name, t)].(*graphql.Object)
+		storedType := s.graphqlTypes[getGraphqlTypeName(s.Name, t)].(*graphql.Object)
 		// Add the fields to our type
 		for _, field := range t.Fields {
+
 			// Prepare the arguments
 			args := make(graphql.FieldConfigArgument, len(field.Args))
 			for _, arg := range field.Args {
 				args[arg.Name] = &graphql.ArgumentConfig{
-					Type:         a.evaluateTypeRef(source.Name, arg.TypeRef),
+					Type:         s.evaluateTypeRef(s.Name, arg.TypeRef),
 					Description:  arg.Description,
 					DefaultValue: arg.DefaultValue,
 				}
@@ -136,35 +138,27 @@ func (a *App) populateGraphqlFields(source *v1alpha1.GraphqlSource, t *introspec
 
 			// Add the field
 			storedType.AddFieldConfig(field.Name, &graphql.Field{
-				Type:              a.evaluateTypeRef(source.Name, field.TypeRef),
+				Type:              s.evaluateTypeRef(s.Name, field.TypeRef),
 				Args:              args,
 				Description:       field.Description,
 				DeprecationReason: field.DeprecationReason,
-				Resolve:           a.resolveMiscField(source),
 			})
 		}
-
-		// Add an extra field to support on the fly joins
-		storedType.AddFieldConfig("_join", &graphql.Field{
-			Type:        a.rootQueryType,
-			Description: "Field injected to support on-the-fly joins",
-			Resolve:     a.resolveJoin(),
-		})
 	}
 }
 
-func (a *App) evaluateTypeRef(srcName string, gt *introspectionResponseTypeRef) graphql.Type {
+func (s *GraphqlSource) evaluateTypeRef(srcName string, gt *introspectionResponseTypeRef) graphql.Type {
 	switch gt.Kind {
 	case graphql.TypeKindList:
-		t := a.evaluateTypeRef(srcName, gt.OfType)
+		t := s.evaluateTypeRef(srcName, gt.OfType)
 		return graphql.NewList(t)
 
 	case graphql.TypeKindNonNull:
-		t := a.evaluateTypeRef(srcName, gt.OfType)
+		t := s.evaluateTypeRef(srcName, gt.OfType)
 		return graphql.NewNonNull(t)
 
 	default:
-		return a.graphqlTypes[getGraphqlTypeName(srcName, gt)]
+		return s.graphqlTypes[getGraphqlTypeName(srcName, gt)]
 	}
 }
 
@@ -179,21 +173,6 @@ func getGraphqlTypeName(srcName string, gt types.GraphqlType) string {
 
 	// Return the final name
 	return name
-}
-
-func getGraphqlTypeNameFromAST(t ast.Type) (typeName string, isList, isRequired bool) {
-	switch v := t.(type) {
-	case *ast.NonNull:
-		typeName, isList, _ = getGraphqlTypeNameFromAST(v.Type)
-		return typeName, isList, true
-	case *ast.List:
-		typeName, _, isRequired = getGraphqlTypeNameFromAST(v.Type)
-		return typeName, true, isRequired
-	case *ast.Named:
-		return v.Name.Value, false, false
-	}
-
-	return "", false, false
 }
 
 func getIntrospectionQuery() string {

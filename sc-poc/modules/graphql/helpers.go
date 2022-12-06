@@ -7,64 +7,63 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/iancoleman/orderedmap"
 	"github.com/invopop/jsonschema"
-	"go.uber.org/zap"
 
-	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-func (a *App) addToRootType(src *v1alpha1.GraphqlSource, rootType string, rootGraphqlType *graphql.Object) {
-	a.logger.Debug("Attempting to load root type fields", zap.String("source", src.Name), zap.String("root_type", rootType))
-	if t, p := a.graphqlTypes[fmt.Sprintf("%s_%s", src.Name, rootType)]; p {
-		q := t.(*graphql.Object)
-		for fieldName, field := range q.Fields() {
-			// Skip _join fields
-			if fieldName == "_join" {
-				continue
-			}
-
-			// Prepare args
-			args := make(graphql.FieldConfigArgument, len(field.Args))
-			for _, arg := range field.Args {
-				args[arg.Name()] = &graphql.ArgumentConfig{
-					Type:         arg.Type,
-					Description:  arg.Description(),
-					DefaultValue: arg.DefaultValue,
-				}
-			}
-
-			// We need to change the field name to prevent conflicts with other fields
-			newFieldName := fmt.Sprintf("%s_%s", src.Name, fieldName)
-
-			// Now lets merge the field with our root type
-			rootGraphqlType.AddFieldConfig(newFieldName, &graphql.Field{
-				Type:              field.Type,
-				Args:              args,
-				Description:       field.Description,
-				DeprecationReason: field.DeprecationReason,
-				Resolve:           a.resolveRemoteGraphqlQuery(src),
-			})
-			a.rootJoinObj[newFieldName] = ""
+func (a *App) addToRootType(srcName string, rootGraphqlType *graphql.Object, graphqlType graphql.Fields, injectJoin bool) {
+	for fieldName, field := range graphqlType {
+		// Skip _join fields
+		if fieldName == "_join" {
+			continue
 		}
-		a.logger.Debug("Loaded root type fields", zap.String("source", src.Name), zap.String("root_type", rootType), zap.Int("# of field", len(q.Fields())), zap.Error(q.Error()))
+
+		// Add the missing resolvers
+		a.addResolvers(srcName, field.Type, injectJoin)
+
+		// Add the field to the root graphql type
+		rootGraphqlType.AddFieldConfig(fieldName, field)
+
+		// Add the field to the root join object
+		if injectJoin {
+			a.rootJoinObj[fieldName] = ""
+		}
 	}
 }
 
-func checkForVariablesInValue(value ast.Value, allowedVars map[string]struct{}) {
-	switch v := value.(type) {
-	case *ast.ObjectValue:
-		for _, f := range v.Fields {
-			checkForVariablesInValue(f.Value, allowedVars)
-		}
-
-	case *ast.ListValue:
-		for _, f := range v.Values {
-			checkForVariablesInValue(f, allowedVars)
-		}
-
-	case *ast.Variable:
-		allowedVars[v.Name.Value] = struct{}{}
+func (a *App) addResolvers(srcName string, graphqlType graphql.Output, injectJoin bool) {
+	graphqlObject, ok := graphqlType.(*graphql.Object)
+	if !ok {
+		return
 	}
+
+	// Get all the fields of this type
+	fields := graphqlObject.Fields()
+
+	// Skip if join field is already present
+	if _, p := fields["_join"]; p {
+		return
+	}
+
+	for _, field := range fields {
+		nestedGraphqlObject, ok := field.Type.(*graphql.Object)
+		if ok {
+			a.addResolvers(srcName, nestedGraphqlObject, injectJoin)
+			continue
+		}
+
+		if field.Resolve == nil {
+			field.Resolve = a.resolveMiscField(srcName)
+			graphqlObject.AddFieldConfig(field.Name, utils.GraphqlFieldDefinitionToField(field.Name, field))
+		}
+	}
+
+	// Add an extra field to support on the fly joins
+	graphqlObject.AddFieldConfig("_join", &graphql.Field{
+		Type:        a.rootQueryType,
+		Description: "Field injected to support on-the-fly joins",
+		Resolve:     a.resolveJoin(),
+	})
 }
 
 func (a *App) convertGraphqlOutputToJSONSchema(operationAST *ast.OperationDefinition) (*jsonschema.Schema, map[string]interface{}, error) {
@@ -356,4 +355,19 @@ func insertTagInExtensions(path string, fieldAST *ast.Field, extensions map[stri
 		extensions["x-tags"] = append(arr, map[string]interface{}{"type": t, "key": k})
 		break
 	}
+}
+
+func getGraphqlTypeNameFromAST(t ast.Type) (typeName string, isList, isRequired bool) {
+	switch v := t.(type) {
+	case *ast.NonNull:
+		typeName, isList, _ = getGraphqlTypeNameFromAST(v.Type)
+		return typeName, isList, true
+	case *ast.List:
+		typeName, _, isRequired = getGraphqlTypeNameFromAST(v.Type)
+		return typeName, true, isRequired
+	case *ast.Named:
+		return v.Name.Value, false, false
+	}
+
+	return "", false, false
 }

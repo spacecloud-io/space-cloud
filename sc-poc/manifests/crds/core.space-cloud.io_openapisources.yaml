@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: graphqlsources.core.space-cloud.io
+  name: openapisources.core.space-cloud.io
 spec:
   group: core.space-cloud.io
   names:
-    kind: GraphqlSource
-    listKind: GraphqlSourceList
-    plural: graphqlsources
-    singular: graphqlsource
+    kind: OpenAPISource
+    listKind: OpenAPISourceList
+    plural: openapisources
+    singular: openapisource
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: GraphqlSource is the schema for the graphqlsource API
+        description: OpenAPISource is the schema for the openapisource API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,10 +33,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: GraphqlSourceSpec defines the desired state of GraphqlSourceSpec
+            description: OpenAPISourceSpec defines the desired state of OpenAPISourceSpec
             properties:
               source:
-                description: Sources descrives the remote graphql endpoints that we
+                description: Sources descrives the remote OpenAPI endpoints that we
                   want to federate
                 properties:
                   url:
@@ -50,7 +50,7 @@ spec:
             - source
             type: object
           status:
-            description: GraphqlSourceStatus defines the observed state of GraphqlSource
+            description: OpenAPISourceStatus defines the observed state of OpenAPISource
             type: object
         type: object
     served: true

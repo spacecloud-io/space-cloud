@@ -30,7 +30,7 @@ type CompiledGraphqlSourceSpec struct {
 
 	// HTTP describes the http properties we want to override
 	// +kubebuilder:validation:Optional
-	HTTP *HTTPProperties `json:"http,omitempty"`
+	HTTP *HTTPOptions `json:"http,omitempty"`
 
 	// Plugins describes the plugins to be used for this endpoint
 	// +kubebuilder:validation:Optional
@@ -52,8 +52,8 @@ type GraphqlQuery struct {
 	DefaultVariables runtime.RawExtension `json:"defaultVariables,omitempty"`
 }
 
-// HTTPProperties describes the rest api properties we want to attach to the source
-type HTTPProperties struct {
+// HTTPOptions describes the rest api properties we want to attach to the source
+type HTTPOptions struct {
 	// Method describes the http method we want to use for the rest api
 	// +kubebuilder:validation:Optional
 	Method string `json:"method,omitempty"`

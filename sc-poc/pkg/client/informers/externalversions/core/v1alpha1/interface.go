@@ -32,6 +32,8 @@ type Interface interface {
 	JwtHSASecrets() JwtHSASecretInformer
 	// OPAPolicies returns a OPAPolicyInformer.
 	OPAPolicies() OPAPolicyInformer
+	// OpenAPISources returns a OpenAPISourceInformer.
+	OpenAPISources() OpenAPISourceInformer
 }
 
 type version struct {
@@ -63,4 +65,9 @@ func (v *version) JwtHSASecrets() JwtHSASecretInformer {
 // OPAPolicies returns a OPAPolicyInformer.
 func (v *version) OPAPolicies() OPAPolicyInformer {
 	return &oPAPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// OpenAPISources returns a OpenAPISourceInformer.
+func (v *version) OpenAPISources() OpenAPISourceInformer {
+	return &openAPISourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

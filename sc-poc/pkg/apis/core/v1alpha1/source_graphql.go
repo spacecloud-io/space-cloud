@@ -29,14 +29,6 @@ type GraphqlSourceStatus struct {
 	// TODO: Add state to show if sync succeeded or if there was an error
 }
 
-// HTTPSource defines the parameters to connect to the remote http source
-type HTTPSource struct {
-	// URL describes the full http url to communicate with remote
-	URL string `json:"url"`
-
-	// TODO: Add support for authentication with remote
-}
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
 

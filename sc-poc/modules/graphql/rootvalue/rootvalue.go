@@ -21,6 +21,7 @@ type (
 		operationAST *ast.OperationDefinition
 
 		// Data loaders
+		dataloaders    map[string]*dataloader.Loader
 		graphqlLoaders map[string]*dataloader.Loader
 
 		// Error handling
@@ -38,6 +39,7 @@ func New(graphqlDoc *ast.Document) *RootValue {
 	root.operationAST = graphqlDoc.Definitions[0].(*ast.OperationDefinition)
 
 	// Create a new map for data loader
+	root.dataloaders = make(map[string]*dataloader.Loader)
 	root.graphqlLoaders = make(map[string]*dataloader.Loader)
 
 	// Create new maps for store management

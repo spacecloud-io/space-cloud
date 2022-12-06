@@ -32,6 +32,7 @@ type CoreV1alpha1Interface interface {
 	GraphqlSourcesGetter
 	JwtHSASecretsGetter
 	OPAPoliciesGetter
+	OpenAPISourcesGetter
 }
 
 // CoreV1alpha1Client is used to interact with features provided by the core.space-cloud.io group.
@@ -53,6 +54,10 @@ func (c *CoreV1alpha1Client) JwtHSASecrets(namespace string) JwtHSASecretInterfa
 
 func (c *CoreV1alpha1Client) OPAPolicies(namespace string) OPAPolicyInterface {
 	return newOPAPolicies(c, namespace)
+}
+
+func (c *CoreV1alpha1Client) OpenAPISources(namespace string) OpenAPISourceInterface {
+	return newOpenAPISources(c, namespace)
 }
 
 // NewForConfig creates a new CoreV1alpha1Client for the given config.

@@ -31,7 +31,12 @@ func (h *AuthVerifyHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 
 	// Get the auth app
-	app, _ := ctx.App("auth")
+	app, err := ctx.App("auth")
+	if err != nil {
+		h.logger.Error("Unable to load the auth provider", zap.Error(err))
+		return err
+	}
+
 	h.authApp = app.(*App)
 	return nil
 }

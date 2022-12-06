@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/managers/apis"
-	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
+	"github.com/spacecloud-io/space-cloud/managers/source"
 )
 
 func init() {
@@ -15,10 +15,6 @@ func init() {
 }
 
 type App struct {
-	GraphqlSources  []*v1alpha1.GraphqlSource         `json:"graphqlSources"`
-	CompiledQueries []*v1alpha1.CompiledGraphqlSource `json:"compiledQueries"`
-	// TODO: Add support for CompiledGraphqlSources
-
 	// For internal use
 	logger *zap.Logger
 
@@ -26,10 +22,10 @@ type App struct {
 	schema       graphql.Schema
 	graphqlTypes map[string]graphql.Type
 
-	compiledQueries map[string]*CompiledQuery
-
 	rootQueryType *graphql.Object
 	rootJoinObj   map[string]string
+
+	compiledQueries map[string]*CompiledQuery
 }
 
 // CaddyModule returns the Caddy module information.
@@ -56,6 +52,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 
 	a.rootQueryType = queryType
 	a.rootJoinObj = map[string]string{}
+	a.compiledQueries = make(map[string]*CompiledQuery)
 
 	// Create a new type map with preloaded types
 	a.graphqlTypes = map[string]graphql.Type{
@@ -67,24 +64,47 @@ func (a *App) Provision(ctx caddy.Context) error {
 		graphql.DateTime.Name(): graphql.DateTime,
 	}
 
-	// Lets load the schemas for all sources
-	for _, source := range a.GraphqlSources {
-		queryRoot, mutationRoot, err := a.getSchemaFromUrl(source)
-		if err != nil {
-			a.logger.Error("Unable to get remote graphql schema", zap.String("source", source.Name), zap.Error(err))
+	sourceManT, err := ctx.App("source")
+	if err != nil {
+		a.logger.Error("Unable to load the source manager", zap.Error(err))
+	}
+	sourceMan := sourceManT.(*source.App)
+
+	// Get all relevant sources
+	sources := sourceMan.GetSources("graphql")
+
+	// Iterate over all the sources to add them to the app
+	for _, src := range sources {
+		name := src.GetName()
+
+		// First resolve the source's dependencies
+		if err := source.ResolveDependencies(ctx, "graphql", src); err != nil {
+			a.logger.Error("Unable to resolve source's dependency", zap.String("source", src.GetName()), zap.Error(err))
 			return err
 		}
 
-		// Extract the root types if provided
-		a.addToRootType(source, queryRoot, queryType)
-		a.addToRootType(source, mutationRoot, mutationType)
+		// Extract graphql types from the source
+		graphqlSource, ok := src.(Source)
+		if ok {
+			queryFields, mutationFields := graphqlSource.GetTypes()
+			a.addToRootType(name, queryType, queryFields, true)
+			a.addToRootType(name, mutationType, mutationFields, false)
+
+			// Extract all the types in this source's type system
+			for k, v := range graphqlSource.GetAllTypes() {
+				// Skip if we already have a types by this key
+				if _, p := a.graphqlTypes[k]; p {
+					continue
+				}
+
+				a.graphqlTypes[k] = v
+			}
+		}
 	}
 
 	// Merge root types with schema if they are not empty
 	schemaConfig := graphql.SchemaConfig{}
-	if len(queryType.Fields()) > 0 {
-		schemaConfig.Query = queryType
-	}
+	schemaConfig.Query = queryType
 	if len(mutationType.Fields()) > 0 {
 		schemaConfig.Mutation = mutationType
 	}
@@ -125,10 +145,26 @@ func (a *App) Provision(ctx caddy.Context) error {
 	}
 	a.schema = schema
 
-	// Load the compiled queries
-	if err := a.compileQueries(); err != nil {
-		a.logger.Error("Unable to compile the queries", zap.Error(err))
-		return err
+	// Time to process the dependant sources
+	for _, src := range sources {
+		name := src.GetName()
+
+		// First resolve the source's dependencies
+		if err := source.ResolveDependencies(ctx, "graphql", src); err != nil {
+			a.logger.Error("Unable to resolve source's dependency", zap.String("source", src.GetName()), zap.Error(err))
+			return err
+		}
+
+		dependantSource, ok := src.(Compiler)
+		if ok {
+			if err := dependantSource.GraphqlCompiler(a.Compile); err != nil {
+				a.logger.Error("Unable to resolve dependencies for source", zap.String("name", name), zap.Error(err))
+				return err
+			}
+
+			a.compiledQueries[name] = dependantSource.GetCompiledQuery()
+		}
+
 	}
 
 	return nil

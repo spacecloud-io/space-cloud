@@ -44,6 +44,10 @@ func (c *FakeCoreV1alpha1) OPAPolicies(namespace string) v1alpha1.OPAPolicyInter
 	return &FakeOPAPolicies{c, namespace}
 }
 
+func (c *FakeCoreV1alpha1) OpenAPISources(namespace string) v1alpha1.OpenAPISourceInterface {
+	return &FakeOpenAPISources{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeCoreV1alpha1) RESTClient() rest.Interface {

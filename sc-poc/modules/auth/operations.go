@@ -51,6 +51,7 @@ func (a *App) Verify(token string) (map[string]interface{}, error) {
 	}
 
 	// Find the right secret to use
+	// TODO: Handle situation where kid isn't present
 	kid, isKIDPresent := parsedToken.Header["kid"]
 	if isKIDPresent {
 		// Find the secret based on the kid

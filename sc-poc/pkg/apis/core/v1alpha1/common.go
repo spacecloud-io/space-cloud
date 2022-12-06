@@ -55,6 +55,14 @@ type AuthSecret struct {
 	AllowedIssuers []string `json:"allowedIssuers,omitempty"`
 }
 
+// HTTPSource defines the parameters to connect to the remote http source
+type HTTPSource struct {
+	// URL describes the full http url to communicate with a remote http server
+	URL string `json:"url"`
+
+	// TODO: Add support for authentication with remote
+}
+
 // HTTPPlugin describes a plugin to be used in an HTTP endpoint
 type HTTPPlugin struct {
 	// Name describes a name of the plugin

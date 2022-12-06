@@ -13,8 +13,8 @@ func StoreAuthenticationResult(r *http.Request, result *types.AuthResult) *http.
 }
 
 // GetAuthenticationResult returns the result of the authentication middleware
-func GetAuthenticationResult(r *http.Request) (*types.AuthResult, bool) {
-	result := r.Context().Value(authenticationResultKey)
+func GetAuthenticationResult(ctx context.Context) (*types.AuthResult, bool) {
+	result := ctx.Value(authenticationResultKey)
 	if result == nil {
 		return nil, false
 	}

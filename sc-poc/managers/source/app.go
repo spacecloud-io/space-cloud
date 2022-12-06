@@ -1,0 +1,85 @@
+package source
+
+import (
+	"encoding/json"
+
+	"github.com/caddyserver/caddy/v2"
+	"go.uber.org/zap"
+)
+
+func init() {
+	caddy.RegisterModule(App{})
+}
+
+// App describes the source manager app
+type App struct {
+	Config map[string][]json.RawMessage `json:"config"`
+
+	// Internal stuff
+	logger    *zap.Logger
+	sourceMap map[string]Sources
+}
+
+// CaddyModule returns the Caddy module information.
+func (App) CaddyModule() caddy.ModuleInfo {
+	return caddy.ModuleInfo{
+		ID:  "source",
+		New: func() caddy.Module { return new(App) },
+	}
+}
+
+// Provision sets up the source manager.
+func (a *App) Provision(ctx caddy.Context) error {
+	a.logger = ctx.Logger(a)
+
+	// Create a map of sources
+	a.sourceMap = make(map[string]Sources, len(a.Config))
+	for key, list := range a.Config {
+		apiVersion, kind := GetResourceGVK(key)
+
+		// Make one module for each source
+		for _, c := range list {
+			// LoadModuleByID will automatically call provision and validate for us. We can safely assume that the source
+			// module is ready to be used if no error is returned
+			t, err := ctx.LoadModuleByID(key, c)
+			if err != nil {
+				a.logger.Warn("Unable to load module for source", zap.String("apiVersion", apiVersion), zap.String("kind", kind))
+				continue
+			}
+
+			source, ok := t.(Source)
+			if !ok {
+				a.logger.Error("Loaded source is not of a valid type", zap.String("apiVersion", apiVersion), zap.String("kind", kind))
+				continue
+			}
+
+			// Add the provider for all supported providers
+			for _, provider := range source.GetProviders() {
+				a.sourceMap[provider] = append(a.sourceMap[provider], source)
+			}
+		}
+	}
+
+	// Sort the sources for each provider
+	for _, s := range a.sourceMap {
+		s.Sort()
+	}
+
+	return nil
+}
+
+// Start begins the source manager operations
+func (a *App) Start() error {
+	return nil
+}
+
+// Stop ends the source manager operations
+func (a *App) Stop() error {
+	return nil
+}
+
+// Interface guards
+var (
+	_ caddy.Provisioner = (*App)(nil)
+	_ caddy.App         = (*App)(nil)
+)

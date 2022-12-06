@@ -106,7 +106,7 @@ func (a *App) GetAPIRoutes() apis.APIs {
 				req.Variables = make(map[string]interface{})
 			}
 
-			// Compile he graphql query
+			// Compile the graphql query
 			compiledQuery, err := a.Compile(req.Query, req.OperationName, nil, false)
 			if err != nil {
 				gErrs := gqlerrors.FormatErrors(err)
@@ -116,7 +116,7 @@ func (a *App) GetAPIRoutes() apis.APIs {
 			}
 
 			// We need to throw an error if the request is not authenticated
-			if err := compiledQuery.AuthenticateRequest(r, req.Variables); err != nil {
+			if err := compiledQuery.AuthenticateRequest(ctx, req.Variables); err != nil {
 				// We need to throw an error if requested claim is not present in token
 				gErrs := gqlerrors.FormatErrors(err)
 				a.logger.Error("Unable to authenticate request",

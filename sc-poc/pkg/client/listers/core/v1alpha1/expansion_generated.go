@@ -49,3 +49,11 @@ type OPAPolicyListerExpansion interface{}
 // OPAPolicyNamespaceListerExpansion allows custom methods to be added to
 // OPAPolicyNamespaceLister.
 type OPAPolicyNamespaceListerExpansion interface{}
+
+// OpenAPISourceListerExpansion allows custom methods to be added to
+// OpenAPISourceLister.
+type OpenAPISourceListerExpansion interface{}
+
+// OpenAPISourceNamespaceListerExpansion allows custom methods to be added to
+// OpenAPISourceNamespaceLister.
+type OpenAPISourceNamespaceListerExpansion interface{}

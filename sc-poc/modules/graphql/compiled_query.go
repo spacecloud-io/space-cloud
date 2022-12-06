@@ -2,10 +2,8 @@ package graphql
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/language/ast"
@@ -46,7 +44,7 @@ func (a *App) GetCompiledQuery(name string) (q *CompiledQuery, p bool) {
 }
 
 // Compile compiles the graphql request for processing
-func (a *App) Compile(query, operationName string, defaultValues map[string]interface{}, enableExtraction bool) (*CompiledQuery, error) {
+func (a *App) Compile(query, operationName string, defaultValues map[string]any, enableExtraction bool) (*CompiledQuery, error) {
 	source := source.NewSource(&source.Source{
 		Body: []byte(query),
 		Name: "GraphQL request",
@@ -107,9 +105,9 @@ func (a *App) Compile(query, operationName string, defaultValues map[string]inte
 	}, nil
 }
 
-func (compiledQuery *CompiledQuery) AuthenticateRequest(r *http.Request, vars map[string]interface{}) error {
+func (compiledQuery *CompiledQuery) AuthenticateRequest(ctx context.Context, vars map[string]interface{}) error {
 	if compiledQuery.IsAuthRequired {
-		authResult, p := utils.GetAuthenticationResult(r)
+		authResult, p := utils.GetAuthenticationResult(ctx)
 		if !p || !authResult.IsAuthenticated {
 			// Send an error if request is unauthenticated
 			return errors.New("unable to authenticate request")
@@ -150,28 +148,4 @@ func (compiledQuery *CompiledQuery) Execute(ctx context.Context, vars map[string
 	}
 
 	return result
-}
-
-func (a *App) compileQueries() error {
-	queries := make(map[string]*CompiledQuery, len(a.CompiledQueries))
-
-	for _, q := range a.CompiledQueries {
-
-		// Get the compiled graphql query
-		var defaultVariables map[string]interface{}
-		if len(q.Spec.Graphql.DefaultVariables.Raw) > 0 {
-			if err := json.Unmarshal(q.Spec.Graphql.DefaultVariables.Raw, &defaultVariables); err != nil {
-				return err
-			}
-		}
-		compiledQuery, err := a.Compile(q.Spec.Graphql.Query, q.Spec.Graphql.OperationName, defaultVariables, true)
-		if err != nil {
-			return err
-		}
-
-		queries[q.Name] = compiledQuery
-	}
-
-	a.compiledQueries = queries
-	return nil
 }

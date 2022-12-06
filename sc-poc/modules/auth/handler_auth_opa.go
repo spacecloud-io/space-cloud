@@ -44,7 +44,7 @@ func (h *AuthOPAHandler) Provision(ctx caddy.Context) error {
 
 // ServeHTTP handles the http request
 func (h *AuthOPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	authResult, p := utils.GetAuthenticationResult(r)
+	authResult, p := utils.GetAuthenticationResult(r.Context())
 	if !p {
 		h.logger.Error("Unable to load authentication result")
 		_ = utils.SendErrorResponse(w, http.StatusUnauthorized, errors.New("unable to authenticate request"))
