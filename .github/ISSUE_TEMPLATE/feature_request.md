@@ -1,8 +1,8 @@
 ---
-name: 🚀 Feature request
+name: "\U0001F680 Feature request"
 about: Suggest an idea for improving SpaceCloud
-title: ''
-labels: 'enhancement'
+title: "[Feature] "
+labels: enhancement
 assignees: ''
 
 ---
@@ -21,4 +21,4 @@ assignees: ''
 
 
 >If you want this feature to be implemented, give it a thumbs up reaction, so that we can determine which features are important to you.
->👍 
+>👍
