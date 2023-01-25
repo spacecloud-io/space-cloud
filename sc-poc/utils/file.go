@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/sirupsen/logrus"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -24,7 +23,6 @@ func ReadSpecObjectsFromFile(fileName string) ([]*unstructured.Unstructured, err
 	}
 
 	if len(data) == 0 {
-		logrus.Infoln("empty file provided")
 		return nil, nil
 	}
 

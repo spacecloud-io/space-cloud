@@ -11,7 +11,7 @@ import (
 // TODO: Remove the previous configuration object
 func PrepareConfig(configuration, newConfig map[string][]*unstructured.Unstructured) (*caddy.Config, error) {
 	// First load the admin config
-	c, err := utils.LoadAdminConfig(false)
+	c, err := utils.LoadAdminConfig()
 	if err != nil {
 		return nil, err
 	}
