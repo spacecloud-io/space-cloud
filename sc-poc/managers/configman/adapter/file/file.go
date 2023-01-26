@@ -47,7 +47,6 @@ func (file *File) Run(ctx context.Context) (chan []byte, error) {
 	cfgChan := make(chan []byte)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		ctx.Done()
 		return cfgChan, err
 	}
 
@@ -55,7 +54,6 @@ func (file *File) Run(ctx context.Context) (chan []byte, error) {
 
 	err = watcher.Add(file.Path)
 	if err != nil {
-		ctx.Done()
 		return cfgChan, err
 	}
 
