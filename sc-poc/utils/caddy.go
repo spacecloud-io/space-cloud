@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
@@ -11,30 +10,16 @@ import (
 )
 
 // LoadAdminConfig creates a caddy config from the viper config provided. This only contains the admin
-// and logging portion of the configuration. The config loaders (`manager/configloaders`) will be responsible to load the
+// and logging portion of the configuration. The config loaders (`manager/configman`) will be responsible to load the
 // configuration of the applications.
-func LoadAdminConfig(isInitialLoad bool) (*caddy.Config, error) {
+func LoadAdminConfig() (*caddy.Config, error) {
 	logLevel := viper.GetString("caddy.log-level")
-	loadTime := viper.GetString("caddy.loading-interval")
-
-	interval, err := time.ParseDuration(loadTime)
-	if err != nil {
-		return nil, fmt.Errorf("cannot parse config loading interval (%s), error: %v", loadTime, err)
-	}
-
-	loadingDelay := caddy.Duration(interval)
-	if isInitialLoad {
-		loadingDelay = 0
-	}
-
 	persist := false
 	return &caddy.Config{
 		Admin: &caddy.AdminConfig{
 			Disabled: true,
 			Config: &caddy.ConfigSettings{
-				LoadDelay: loadingDelay,
-				LoadRaw:   prepareFileLoaderConfig(viper.GetString("config.path")),
-				Persist:   &persist,
+				Persist: &persist,
 			},
 		},
 		Logging: &caddy.Logging{
@@ -94,14 +79,4 @@ func GetCaddySubrouter(routes ...caddyhttp.Route) []json.RawMessage {
 
 	data, _ := json.Marshal(handler)
 	return []json.RawMessage{data}
-}
-
-func prepareFileLoaderConfig(path string) json.RawMessage {
-	config := map[string]interface{}{
-		"module": "file",
-		"path":   path,
-	}
-
-	raw, _ := json.Marshal(config)
-	return raw
 }

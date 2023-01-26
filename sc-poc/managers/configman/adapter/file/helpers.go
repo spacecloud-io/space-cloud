@@ -11,7 +11,7 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-func (l *Loader) loadConfiguration() (map[string][]*unstructured.Unstructured, map[string][]*unstructured.Unstructured, error) {
+func (l *File) loadConfiguration() (map[string][]*unstructured.Unstructured, map[string][]*unstructured.Unstructured, error) {
 	files, err := ioutil.ReadDir(l.Path)
 	if err != nil {
 		l.logger.Error("Unable to read config files from directory", zap.String("dir", l.Path), zap.Error(err))
