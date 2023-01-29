@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -51,7 +50,7 @@ func MakeK8sAdapter() (adapter.Adapter, error) {
 		return nil, err
 	}
 
-	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dc, 5*time.Minute, v1.NamespaceAll, nil)
+	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dc, 5*time.Minute, namespace, nil)
 
 	informers := []k8sCache.SharedIndexInformer{}
 	informers = append(informers,
@@ -80,7 +79,7 @@ func (k *K8s) GetRawConfig() ([]byte, error) {
 	}
 
 	// Load the new caddy config
-	return k.toRaw()
+	return k.getCaddyConfig()
 }
 
 func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
@@ -91,35 +90,9 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 			AddFunc: func(obj interface{}) {
 				u := obj.(*unstructured.Unstructured)
 
-				// new configuration
-				key := source.GetModuleName(u.GetAPIVersion(), u.GetKind())
-				found := false
-				for i, spec := range k.configurationN[key] {
-					if spec.GetName() == u.GetName() {
-						k.configurationN[key][i] = u
-						found = true
-						break
-					}
-				}
-				if !found {
-					k.configurationN[key] = append(k.configurationN[key], u)
-				}
+				k.addOrUpdateConfig(u)
 
-				// old configuration
-				kind := u.GetKind()
-				found = false
-				for i, spec := range k.configuration[kind] {
-					if spec.GetName() == u.GetName() {
-						k.configuration[kind][i] = u
-						found = true
-						break
-					}
-				}
-				if !found {
-					k.configuration[kind] = append(k.configuration[kind], u)
-				}
-
-				resp, err := k.toRaw()
+				resp, err := k.getCaddyConfig()
 				if err != nil {
 					k.logger.Error("error reloading config: ", zap.Error(err))
 					return
@@ -130,25 +103,9 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 			UpdateFunc: func(_ interface{}, newObj interface{}) {
 				u := newObj.(*unstructured.Unstructured)
 
-				// new configuration
-				key := source.GetModuleName(u.GetAPIVersion(), u.GetKind())
-				for i, spec := range k.configurationN[key] {
-					if spec.GetName() == u.GetName() {
-						k.configurationN[key][i] = u
-						break
-					}
-				}
+				k.addOrUpdateConfig(u)
 
-				// old configuration
-				kind := u.GetKind()
-				for i, spec := range k.configuration[kind] {
-					if spec.GetName() == u.GetName() {
-						k.configuration[kind][i] = u
-						break
-					}
-				}
-
-				resp, err := k.toRaw()
+				resp, err := k.getCaddyConfig()
 				if err != nil {
 					k.logger.Error("error reloading config: ", zap.Error(err))
 					return
@@ -181,7 +138,7 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 				}
 				k.configuration[kind] = s
 
-				resp, err := k.toRaw()
+				resp, err := k.getCaddyConfig()
 				if err != nil {
 					k.logger.Error("error reloading config: ", zap.Error(err))
 					return
@@ -197,7 +154,7 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 	return cfgChan, nil
 }
 
-func (k *K8s) toRaw() ([]byte, error) {
+func (k *K8s) getCaddyConfig() ([]byte, error) {
 	// Load the new caddy config
 	config, err := common.PrepareConfig(k.configuration, k.configurationN)
 	if err != nil {
@@ -205,6 +162,36 @@ func (k *K8s) toRaw() ([]byte, error) {
 	}
 
 	return json.MarshalIndent(config, "", "  ")
+}
+
+func (k *K8s) addOrUpdateConfig(u *unstructured.Unstructured) {
+	// new configuration
+	key := source.GetModuleName(u.GetAPIVersion(), u.GetKind())
+	found := false
+	for i, spec := range k.configurationN[key] {
+		if spec.GetName() == u.GetName() {
+			k.configurationN[key][i] = u
+			found = true
+			break
+		}
+	}
+	if !found {
+		k.configurationN[key] = append(k.configurationN[key], u)
+	}
+
+	// old configuration
+	kind := u.GetKind()
+	found = false
+	for i, spec := range k.configuration[kind] {
+		if spec.GetName() == u.GetName() {
+			k.configuration[kind][i] = u
+			found = true
+			break
+		}
+	}
+	if !found {
+		k.configuration[kind] = append(k.configuration[kind], u)
+	}
 }
 
 // Interface guard
