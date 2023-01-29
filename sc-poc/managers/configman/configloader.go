@@ -10,6 +10,7 @@ import (
 	"github.com/caddyserver/caddy/v2"
 	"github.com/spacecloud-io/space-cloud/managers/configman/adapter"
 	"github.com/spacecloud-io/space-cloud/managers/configman/adapter/file"
+	"github.com/spacecloud-io/space-cloud/managers/configman/adapter/k8s"
 	"github.com/spf13/viper"
 )
 
@@ -34,6 +35,11 @@ func InitializeConfigLoader() (*ConfigLoader, error) {
 	switch configAdapter {
 	case "file":
 		configloader.adapter = file.MakeFileAdapter(path)
+	case "k8s":
+		configloader.adapter, err = k8s.MakeK8sAdapter()
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("invalid adapter specified")
 	}

@@ -31,16 +31,16 @@ func NewCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			configloader, err := configman.InitializeConfigLoader()
 			if err != nil {
-				log.Fatal("Unable to initialize config loader", err)
+				log.Fatal("Unable to initialize config loader: ", err)
 			}
 
 			c, err := configloader.GetCaddyConfig()
 			if err != nil {
-				log.Fatal("Unable to load caddy config", err)
+				log.Fatal("Unable to load caddy config: ", err)
 			}
 
 			if err := caddy.Run(c); err != nil {
-				log.Fatal("Unable to start caddy:", err)
+				log.Fatal("Unable to start caddy: ", err)
 			}
 
 			ctx := context.Background()
