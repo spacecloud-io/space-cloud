@@ -5,7 +5,24 @@ import (
 	"strings"
 
 	"github.com/caddyserver/caddy/v2"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+var sourcesGVR []schema.GroupVersionResource
+
+// RegisterSource takes a source and registers it with caddy.
+// Additionally, it populates the global GVR map for configman
+// to provision its configurations
+func RegisterSource(src caddy.Module, gvr schema.GroupVersionResource) {
+	caddy.RegisterModule(src)
+	sourcesGVR = append(sourcesGVR, gvr)
+}
+
+// GetSourcesGVR returns the global variable sourcesGVR which stores
+// a slice of all registered sources' GVR
+func GetSourcesGVR() []schema.GroupVersionResource {
+	return sourcesGVR
+}
 
 // GetSources returns an array of sources applicable for that provider
 func (a *App) GetSources(provider string) []Source {
@@ -13,8 +30,8 @@ func (a *App) GetSources(provider string) []Source {
 }
 
 // GetModuleName returns a caddy compatible module name
-func GetModuleName(apiVersion, kind string) string {
-	moduleName := fmt.Sprintf("%s--%s", apiVersion, kind)
+func GetModuleName(gvr schema.GroupVersionResource) string {
+	moduleName := fmt.Sprintf("%s--%s--%s", gvr.Group, gvr.Version, gvr.Resource)
 
 	// Replace the periods with `---`
 	moduleName = strings.Join(strings.Split(moduleName, "."), "---")
@@ -26,11 +43,11 @@ func GetModuleName(apiVersion, kind string) string {
 }
 
 // GetResourceGVK returns the api version and kind of the resource
-func GetResourceGVK(moduleName string) (apiVersion, kind string) {
+func GetResourceGVR(moduleName string) schema.GroupVersionResource {
 	moduleName = strings.Join(strings.Split(moduleName, "----"), "/")
 	moduleName = strings.Join(strings.Split(moduleName, "---"), ".")
 	arr := strings.Split(moduleName, "--")
-	return arr[0], arr[1]
+	return schema.GroupVersionResource{Group: arr[0], Version: arr[1], Resource: arr[2]}
 }
 
 // ResolveDependencies helpers providers resolve a sources dependency

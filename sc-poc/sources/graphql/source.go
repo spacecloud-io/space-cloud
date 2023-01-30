@@ -1,19 +1,19 @@
 package graphql
 
 import (
-	"fmt"
-
 	"github.com/caddyserver/caddy/v2"
 	"github.com/graphql-go/graphql"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	graphqlProvider "github.com/spacecloud-io/space-cloud/modules/graphql"
-	"github.com/spacecloud-io/space-cloud/pkg/apis/core"
 	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
+var graphqlsourcesResource = schema.GroupVersionResource{Group: "core.space-cloud.io", Version: "v1alpha1", Resource: "graphqlsources"}
+
 func init() {
-	caddy.RegisterModule(GraphqlSource{})
+	source.RegisterSource(GraphqlSource{}, graphqlsourcesResource)
 }
 
 // GraphqlSource describes a graphql source
@@ -30,7 +30,7 @@ type GraphqlSource struct {
 // CaddyModule returns the Caddy module information.
 func (GraphqlSource) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  caddy.ModuleID(source.GetModuleName(fmt.Sprintf("%s/v1alpha1", core.GroupName), "GraphqlSource")),
+		ID:  caddy.ModuleID(source.GetModuleName(graphqlsourcesResource)),
 		New: func() caddy.Module { return new(GraphqlSource) },
 	}
 }

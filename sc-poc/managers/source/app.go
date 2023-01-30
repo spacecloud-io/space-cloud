@@ -35,7 +35,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 	// Create a map of sources
 	a.sourceMap = make(map[string]Sources, len(a.Config))
 	for key, list := range a.Config {
-		apiVersion, kind := GetResourceGVK(key)
+		gvr := GetResourceGVR(key)
 
 		// Make one module for each source
 		for _, c := range list {
@@ -43,13 +43,13 @@ func (a *App) Provision(ctx caddy.Context) error {
 			// module is ready to be used if no error is returned
 			t, err := ctx.LoadModuleByID(key, c)
 			if err != nil {
-				a.logger.Warn("Unable to load module for source", zap.String("apiVersion", apiVersion), zap.String("kind", kind))
+				a.logger.Warn("Unable to load module for source", zap.String("group", gvr.Group), zap.String("version", gvr.Version), zap.String("resource", gvr.Resource))
 				continue
 			}
 
 			source, ok := t.(Source)
 			if !ok {
-				a.logger.Error("Loaded source is not of a valid type", zap.String("apiVersion", apiVersion), zap.String("kind", kind))
+				a.logger.Error("Loaded source is not of a valid type", zap.String("group", gvr.Group), zap.String("version", gvr.Version), zap.String("resource", gvr.Resource))
 				continue
 			}
 

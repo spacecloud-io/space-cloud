@@ -1,20 +1,21 @@
 package compiledgraphql
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/caddyserver/caddy/v2"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/modules/graphql"
 	"github.com/spacecloud-io/space-cloud/modules/rpc"
-	"github.com/spacecloud-io/space-cloud/pkg/apis/core"
 	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
+var compiledgraphqlsourcesResource = schema.GroupVersionResource{Group: "core.space-cloud.io", Version: "v1alpha1", Resource: "compiledgraphqlsources"}
+
 func init() {
-	caddy.RegisterModule(Source{})
+	source.RegisterSource(Source{}, compiledgraphqlsourcesResource)
 }
 
 // Source describes the compiled graphql query source
@@ -29,7 +30,7 @@ type Source struct {
 // CaddyModule returns the Caddy module information.
 func (Source) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  caddy.ModuleID(source.GetModuleName(fmt.Sprintf("%s/v1alpha1", core.GroupName), "CompiledGraphqlSource")),
+		ID:  caddy.ModuleID(source.GetModuleName(compiledgraphqlsourcesResource)),
 		New: func() caddy.Module { return new(Source) },
 	}
 }

@@ -9,56 +9,20 @@ import (
 
 func (k *K8s) loadConfiguration() error {
 
-	// CompiledGraphQLSource
-	compiledGraphqlSourceList, err := k.dc.Resource(compiledgraphqlsourcesResource).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, obj := range compiledGraphqlSourceList.Items {
-		kind := obj.GetKind()
-		key := source.GetModuleName(obj.GetAPIVersion(), obj.GetKind())
+	sourcesGVR := source.GetSourcesGVR()
+	for _, srcGVR := range sourcesGVR {
+		srcList, err := k.dc.Resource(srcGVR).List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
 
-		k.configuration[kind] = append(k.configuration[kind], &obj)
-		k.configurationN[key] = append(k.configurationN[key], &obj)
-	}
+		for _, obj := range srcList.Items {
+			kind := obj.GetKind()
+			key := source.GetModuleName(srcGVR)
 
-	// GraphQLSource
-	graphqlSourceList, err := k.dc.Resource(graphqlsourcesResource).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, obj := range graphqlSourceList.Items {
-		kind := obj.GetKind()
-		key := source.GetModuleName(obj.GetAPIVersion(), obj.GetKind())
-
-		k.configuration[kind] = append(k.configuration[kind], &obj)
-		k.configurationN[key] = append(k.configurationN[key], &obj)
-	}
-
-	// JWTHSASecrets
-	jwtHSASecretsList, err := k.dc.Resource(jwthsasecretsResource).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, obj := range jwtHSASecretsList.Items {
-		kind := obj.GetKind()
-		key := source.GetModuleName(obj.GetAPIVersion(), obj.GetKind())
-
-		k.configuration[kind] = append(k.configuration[kind], &obj)
-		k.configurationN[key] = append(k.configurationN[key], &obj)
-	}
-
-	// OPAPolicies
-	opaPoliciesList, err := k.dc.Resource(opapoliciesResource).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, obj := range opaPoliciesList.Items {
-		kind := obj.GetKind()
-		key := source.GetModuleName(obj.GetAPIVersion(), obj.GetKind())
-
-		k.configuration[kind] = append(k.configuration[kind], &obj)
-		k.configurationN[key] = append(k.configurationN[key], &obj)
+			k.configuration[kind] = append(k.configuration[kind], &obj)
+			k.configurationN[key] = append(k.configurationN[key], &obj)
+		}
 	}
 
 	return nil
