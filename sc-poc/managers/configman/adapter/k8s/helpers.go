@@ -9,7 +9,7 @@ import (
 
 func (k *K8s) loadConfiguration() error {
 
-	sourcesGVR := source.GetSourcesGVR()
+	sourcesGVR := source.GetRegisteredSources()
 	for _, srcGVR := range sourcesGVR {
 		srcList, err := k.dc.Resource(srcGVR).List(context.Background(), metav1.ListOptions{})
 		if err != nil {

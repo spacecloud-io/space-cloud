@@ -50,7 +50,7 @@ func MakeK8sAdapter() (adapter.Adapter, error) {
 
 	informers := []k8sCache.SharedIndexInformer{}
 
-	sourcesGVR := source.GetSourcesGVR()
+	sourcesGVR := source.GetRegisteredSources()
 	for _, srcGVR := range sourcesGVR {
 		informers = append(informers, factory.ForResource(srcGVR).Informer())
 	}

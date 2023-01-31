@@ -3,24 +3,30 @@ package source
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/caddyserver/caddy/v2"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var sourcesGVR []schema.GroupVersionResource
+var (
+	sourcesGVR  []schema.GroupVersionResource
+	sourcesLock sync.Mutex
+)
 
 // RegisterSource takes a source and registers it with caddy.
 // Additionally, it populates the global GVR map for configman
 // to provision its configurations
 func RegisterSource(src caddy.Module, gvr schema.GroupVersionResource) {
+	sourcesLock.Lock()
+	defer sourcesLock.Unlock()
 	caddy.RegisterModule(src)
 	sourcesGVR = append(sourcesGVR, gvr)
 }
 
-// GetSourcesGVR returns the global variable sourcesGVR which stores
+// GetRegisteredSources returns the global variable sourcesGVR which stores
 // a slice of all registered sources' GVR
-func GetSourcesGVR() []schema.GroupVersionResource {
+func GetRegisteredSources() []schema.GroupVersionResource {
 	return sourcesGVR
 }
 

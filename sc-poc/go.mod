@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/bep/debounce v1.2.1
 	github.com/caddyserver/caddy/v2 v2.6.2
+	github.com/gertd/go-pluralize v0.2.1
 	github.com/getkin/kin-openapi v0.104.0
 	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/ghodss/yaml v1.0.0
