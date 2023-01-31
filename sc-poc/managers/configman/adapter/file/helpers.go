@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/utils"
@@ -30,7 +31,11 @@ func (l *File) loadConfiguration() (map[string][]*unstructured.Unstructured, map
 
 		for _, spec := range arr {
 			kind := spec.GetKind()
-			key := source.GetModuleName(spec.GetAPIVersion(), spec.GetKind())
+			gvr := schema.GroupVersionResource{
+				Group:    spec.GroupVersionKind().Group,
+				Version:  spec.GroupVersionKind().Version,
+				Resource: utils.Pluralize(spec.GetKind())}
+			key := source.GetModuleName(gvr)
 			configuration[kind] = append(configuration[kind], spec)
 			configurationN[key] = append(configurationN[key], spec)
 		}

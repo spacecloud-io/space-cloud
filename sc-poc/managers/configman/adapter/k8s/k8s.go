@@ -17,12 +17,8 @@ import (
 	"github.com/spacecloud-io/space-cloud/managers/configman/adapter"
 	"github.com/spacecloud-io/space-cloud/managers/configman/common"
 	"github.com/spacecloud-io/space-cloud/managers/source"
+	"github.com/spacecloud-io/space-cloud/utils"
 )
-
-var compiledgraphqlsourcesResource = schema.GroupVersionResource{Group: "core.space-cloud.io", Version: "v1alpha1", Resource: "compiledgraphqlsources"}
-var graphqlsourcesResource = schema.GroupVersionResource{Group: "core.space-cloud.io", Version: "v1alpha1", Resource: "graphqlsources"}
-var jwthsasecretsResource = schema.GroupVersionResource{Group: "core.space-cloud.io", Version: "v1alpha1", Resource: "jwthsasecrets"}
-var opapoliciesResource = schema.GroupVersionResource{Group: "core.space-cloud.io", Version: "v1alpha1", Resource: "opapolicies"}
 
 type K8s struct {
 	dc             *dynamic.DynamicClient
@@ -53,11 +49,11 @@ func MakeK8sAdapter() (adapter.Adapter, error) {
 	factory := dynamicinformer.NewFilteredDynamicSharedInformerFactory(dc, 5*time.Minute, namespace, nil)
 
 	informers := []k8sCache.SharedIndexInformer{}
-	informers = append(informers,
-		factory.ForResource(compiledgraphqlsourcesResource).Informer(),
-		factory.ForResource(graphqlsourcesResource).Informer(),
-		factory.ForResource(jwthsasecretsResource).Informer(),
-		factory.ForResource(opapoliciesResource).Informer())
+
+	sourcesGVR := source.GetRegisteredSources()
+	for _, srcGVR := range sourcesGVR {
+		informers = append(informers, factory.ForResource(srcGVR).Informer())
+	}
 
 	k := &K8s{
 		dc:             dc,
@@ -117,7 +113,11 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 				u := obj.(*unstructured.Unstructured)
 
 				// new configuration
-				key := source.GetModuleName(u.GetAPIVersion(), u.GetKind())
+				gvr := schema.GroupVersionResource{
+					Group:    u.GroupVersionKind().Group,
+					Version:  u.GroupVersionKind().Version,
+					Resource: utils.Pluralize(u.GetKind())}
+				key := source.GetModuleName(gvr)
 				s := []*unstructured.Unstructured{}
 				for _, spec := range k.configurationN[key] {
 					if spec.GetName() == u.GetName() {
@@ -166,7 +166,11 @@ func (k *K8s) getCaddyConfig() ([]byte, error) {
 
 func (k *K8s) addOrUpdateConfig(u *unstructured.Unstructured) {
 	// new configuration
-	key := source.GetModuleName(u.GetAPIVersion(), u.GetKind())
+	gvr := schema.GroupVersionResource{
+		Group:    u.GroupVersionKind().Group,
+		Version:  u.GroupVersionKind().Version,
+		Resource: utils.Pluralize(u.GetKind())}
+	key := source.GetModuleName(gvr)
 	found := false
 	for i, spec := range k.configurationN[key] {
 		if spec.GetName() == u.GetName() {
