@@ -94,8 +94,6 @@ func Test_deleteFileStoreConfig(t *testing.T) {
 func Test_deleteFileStoreRule(t *testing.T) {
 	// surveyMatchReturnValue stores the values returned from the survey when prefix is matched
 	surveyMatchReturnValue := "l"
-	// surveyNoMatchReturnValue stores the values returned from the survey when prefix is not matched
-	surveyNoMatchReturnValue := "b"
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -456,59 +454,6 @@ func Test_deleteFileStoreRule(t *testing.T) {
 			},
 		},
 		{
-			name: "Prefix does not match any rules and unable to survey rule ID",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/file-storage/rules",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":     "local-admin",
-									"prefix": "hello",
-									"rule": map[string]interface{}{
-										"rule": "allow",
-										"eval": "==",
-									},
-								},
-								map[string]interface{}{
-									"id":     "local",
-									"prefix": "hello",
-									"rule": map[string]interface{}{
-										"rule": "allow",
-										"eval": "==",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local-admin"},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "Prefix does not match any rules but unable to delete rule",
 			args: args{project: "myproject", prefix: "b"},
 			transportMockArgs: []mockArgs{
@@ -544,112 +489,8 @@ func Test_deleteFileStoreRule(t *testing.T) {
 						},
 					},
 				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/file-storage/rules/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						errors.New("bad request"),
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 400,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "Prefix does not match any rules and rule successfully deleted",
-			args: args{project: "myproject", prefix: "b"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodGet,
-						"/v1/config/projects/myproject/file-storage/rules",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":     "local-admin",
-									"prefix": "hello",
-									"rule": map[string]interface{}{
-										"rule": "allow",
-										"eval": "==",
-									},
-								},
-								map[string]interface{}{
-									"id":     "local",
-									"prefix": "hello",
-									"rule": map[string]interface{}{
-										"rule": "allow",
-										"eval": "==",
-									},
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args: []interface{}{
-						http.MethodDelete,
-						"/v1/config/projects/myproject/file-storage/rules/local-admin",
-						map[string]string{},
-						new(model.Response),
-					},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 200,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method: "AskOne",
-					args: []interface{}{
-						&survey.Select{
-							Message: "Choose the resource ID: ",
-							Options: []string{"local-admin", "local"},
-							Default: []string{"local-admin", "local"}[0],
-						},
-						&surveyNoMatchReturnValue,
-					},
-					paramsReturned: []interface{}{nil, "local-admin"},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {

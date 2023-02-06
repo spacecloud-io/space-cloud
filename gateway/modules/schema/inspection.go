@@ -373,7 +373,6 @@ func (s *Schema) GetCollectionSchema(ctx context.Context, project, dbAlias strin
 	for _, dbSchema := range s.dbSchemas {
 		if dbSchema.DbAlias == dbAlias {
 			collections = append(collections, dbSchema.Table)
-			break
 		}
 	}
 

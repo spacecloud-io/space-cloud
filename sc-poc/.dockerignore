@@ -1,0 +1,73 @@
+.idea
+.vscode
+
+test
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.zip
+*.dylib
+*.db
+# Test binary, build with `go test -c`
+*.test
+
+# sh file for bash completion
+*.sh
+!install-manifests/cli/install.sh
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+build/
+node_modules
+css
+.sass-cache
+
+# Ignore the binaries
+space-cloud
+gateway/gateway
+runner/runner
+metric-proxy/metric-proxy
+space-cli/space-cli
+sc/cmd/space-cli/space-cli
+*/cmd/spacectl/spacectl
+# Ignore the vendor folders
+metric-proxy/vendor
+runner/vendor
+gateway/vendor
+space-cli/vendor
+
+space-cli/cmd/cmd
+
+raft-store
+publish.sh
+runner/runner.db
+
+test_config.yaml
+config.yaml
+config.yaml.bk
+
+# Helper scripts
+kube
+scripts
+runner/scripts
+gateway/scripts
+metric-proxy/scripts
+docker-build.sh
+
+scripts/*
+#IDEs
+
+yarn.lock
+
+#boltdatabase
+gateway/testbolt.db
+
+
+npm-debug.log
+
+# ignore space-cloud helm chart
+!install-manifests/helm/space-cloud

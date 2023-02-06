@@ -15,7 +15,7 @@ services:
       - LOG_FORMAT=json                  # other values text
       - DISABLE_UI=false
       - LETSENCRYPT_STORE=local
-      - REDIS_CONN=redis:6379
+      - REDIS_CONN=redis://redis:6379
       - SSL_ENABLE=false
       - SSL_CERT=""
       - SSL_KEY=""

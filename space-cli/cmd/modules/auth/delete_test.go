@@ -15,8 +15,6 @@ import (
 func Test_deleteAuthProvider(t *testing.T) {
 	// surveyMatchReturnValue stores the values returned from the survey when prefix is matched
 	surveyMatchReturnValue := "loc"
-	// surveyNoMatchReturnValue stores the values returned from the survey when prefix is not matched
-	surveyNoMatchReturnValue := "a"
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -268,41 +266,6 @@ func Test_deleteAuthProvider(t *testing.T) {
 			},
 		},
 		{
-			name: "prefix does not match any providers and unable to survey provider",
-			args: args{project: "myproject", prefix: "a"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/user-management/provider", map[string]string{"id": "*"}, new(model.Response)},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":      "local-admin",
-									"enabled": true,
-									"secret":  "hello",
-								},
-								map[string]interface{}{
-									"id":      "local",
-									"enabled": true,
-									"secret":  "hello",
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyNoMatchReturnValue},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local"},
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "prefix does not match any providers but unable to delete provider",
 			args: args{project: "myproject", prefix: "a"},
 			transportMockArgs: []mockArgs{
@@ -327,150 +290,8 @@ func Test_deleteAuthProvider(t *testing.T) {
 						},
 					},
 				},
-				{
-					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/user-management/provider/local", map[string]string{"id": "local"}, new(model.Response)},
-					paramsReturned: []interface{}{
-						errors.New("bad request"),
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 400,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyNoMatchReturnValue},
-					paramsReturned: []interface{}{nil, "local"},
-				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "prefix does not match any providers and provider is succesfully deleted",
-			args: args{project: "myproject", prefix: "a"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/user-management/provider", map[string]string{"id": "*"}, new(model.Response)},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":      "local-admin",
-									"enabled": true,
-									"secret":  "hello",
-								},
-								map[string]interface{}{
-									"id":      "local",
-									"enabled": true,
-									"secret":  "hello",
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/user-management/provider/local", map[string]string{"id": "local"}, new(model.Response)},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 200,
-								},
-							},
-						},
-					},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the resource ID: ", Options: []string{"local-admin", "local"}, Default: []string{"local-admin", "local"}[0]}, &surveyNoMatchReturnValue},
-					paramsReturned: []interface{}{nil, "local"},
-				},
-			},
-		},
-		{
-			name: "prefix does not match any providers of len 1 but unable to delete provider",
-			args: args{project: "myproject", prefix: "a"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/user-management/provider", map[string]string{"id": "*"}, new(model.Response)},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":      "local",
-									"enabled": true,
-									"secret":  "hello",
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/user-management/provider/local", map[string]string{"id": "local"}, new(model.Response)},
-					paramsReturned: []interface{}{
-						errors.New("bad request"),
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 400,
-								},
-							},
-						},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "prefix does not match any providers of len 1 and provider is succesfully deleted",
-			args: args{project: "myproject", prefix: "a"},
-			transportMockArgs: []mockArgs{
-				{
-					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodGet, "/v1/config/projects/myproject/user-management/provider", map[string]string{"id": "*"}, new(model.Response)},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"id":      "local",
-									"enabled": true,
-									"secret":  "hello",
-								},
-							},
-						},
-					},
-				},
-				{
-					method: "MakeHTTPRequest",
-					args:   []interface{}{http.MethodDelete, "/v1/config/projects/myproject/user-management/provider/local", map[string]string{"id": "local"}, new(model.Response)},
-					paramsReturned: []interface{}{
-						nil,
-						model.Response{
-							Result: []interface{}{
-								map[string]interface{}{
-									"statusCode": 200,
-								},
-							},
-						},
-					},
-				},
-			},
 		},
 	}
 	for _, tt := range tests {

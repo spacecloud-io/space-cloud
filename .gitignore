@@ -32,21 +32,25 @@ gateway/gateway
 runner/runner
 metric-proxy/metric-proxy
 space-cli/space-cli
-
+sc/cmd/space-cli/space-cli
+*/cmd/spacectl/spacectl
 # Ignore the vendor folders
 metric-proxy/vendor
 runner/vendor
 gateway/vendor
 space-cli/vendor
-
+sc-poc/vendor
 space-cli/cmd/cmd
 
 raft-store
 publish.sh
 runner/runner.db
 
+# Ignore configuration files
 test_config.yaml
 config.yaml
+config.yaml.bk
+sc-config
 
 # Helper scripts
 kube

@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -161,7 +160,6 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 
 		reqParams = utils.ExtractRequestParams(r, reqParams, v)
 		status, err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, &v, reqParams)
-		fmt.Println("ABCDEF", err == nil)
 		if err != nil {
 			_ = helpers.Response.SendErrorResponse(ctx, w, status, err)
 			return

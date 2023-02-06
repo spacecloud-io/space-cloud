@@ -131,7 +131,7 @@ func (c *Cache) InvalidateDatabaseCache(ctx context.Context, projectID, dbAlias,
 	// Generate pattern to iterate over cache
 	pattern := c.generateDatabaseTablePrefixKey(projectID, dbAlias, rootTable) + "::" + keyTypeInvalidate + "*"
 
-	var nextCursor uint64 = 0
+	var nextCursor uint64
 	var keysArr []string
 	var err error
 	for {

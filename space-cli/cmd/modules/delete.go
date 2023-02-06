@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/letsencrypt"
 	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/project"
 	remoteservices "github.com/spaceuptech/space-cloud/space-cli/cmd/modules/remote-services"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/services"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +28,7 @@ func FetchDeleteSubCommands() *cobra.Command {
 	deleteCmd.AddCommand(letsencrypt.DeleteSubCommands()...)
 	deleteCmd.AddCommand(project.DeleteSubCommands()...)
 	deleteCmd.AddCommand(remoteservices.DeleteSubCommands()...)
+	deleteCmd.AddCommand(services.DeleteSubCommands()...)
 
 	return deleteCmd
 }
