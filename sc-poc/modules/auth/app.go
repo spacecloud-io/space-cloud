@@ -1,28 +1,21 @@
 package auth
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/caddyserver/caddy/v2"
-	"github.com/open-policy-agent/opa/rego"
 	"go.uber.org/zap"
 
-	"github.com/spacecloud-io/space-cloud/modules/auth/types"
-	"github.com/spacecloud-io/space-cloud/modules/graphql"
-	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
+	"github.com/spacecloud-io/space-cloud/managers/source"
 )
 
 // App describes the state of the auth app
 type App struct {
-	HSASecrets             []*v1alpha1.JwtHSASecret          `json:"hsaSecrets"`
-	OPAPolicies            []*v1alpha1.OPAPolicy             `json:"opaPolicies"`
-	CompiledGraphqlSources []*v1alpha1.CompiledGraphqlSource `json:"compiledGraphqlSources"`
-
 	// For internal use
-	logger       *zap.Logger
-	secrets      []*types.AuthSecret
-	regoPolicies map[string]rego.PreparedEvalQuery
-
-	// Dependant apps
-	graphqlApp *graphql.App
+	logger   *zap.Logger
+	secrets  []SecretSource
+	policies map[string]PolicySource
 }
 
 // CaddyModule returns the Caddy module information.
@@ -33,42 +26,53 @@ func (App) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
-// Provision sets up the auth module.W
 func (a *App) Provision(ctx caddy.Context) error {
 	a.logger = ctx.Logger(a)
-
-	// Load the dependent apps
-	graphqlTemp, err := ctx.App("graphql")
+	sourceManT, err := ctx.App("source")
 	if err != nil {
-		a.logger.Error("Unable to load the graphql application", zap.Error(err))
-		return err
+		a.logger.Error("Unable to load the source manager", zap.Error(err))
 	}
-	a.graphqlApp = graphqlTemp.(*graphql.App)
+	sourceMan := sourceManT.(*source.App)
 
-	// Compile the rego policies
-	if err := a.compileRegoPolicies(); err != nil {
-		a.logger.Error("Unable to compile rego policies", zap.Error(err))
-		return err
+	// Get all relevant sources
+	sources := sourceMan.GetSources("auth")
+	a.secrets = []SecretSource{}
+	a.policies = make(map[string]PolicySource)
+	for _, src := range sources {
+		name := src.GetName()
+
+		// First resolve the source's dependencies
+		if err := source.ResolveDependencies(ctx, "auth", src); err != nil {
+			a.logger.Error("Unable to resolve source's dependency", zap.String("source", src.GetName()), zap.Error(err))
+			return err
+		}
+
+		// Get sources with secret
+		s, ok := src.(SecretSource)
+		if ok {
+			a.secrets = append(a.secrets, s)
+		}
+
+		// Get sources with policy
+		p, ok := src.(PolicySource)
+		if ok {
+			a.policies[name] = p
+		}
 	}
 
 	return nil
 }
 
-// Start begins the auth app operations
-func (a *App) Start() error {
-	// TODO: add support of rsa secrets
-	// TODO: add support for jwk urls
-
-	secrets := make([]*types.AuthSecret, 0, len(a.HSASecrets))
-	for _, s := range a.HSASecrets {
-		secrets = append(secrets, &types.AuthSecret{
-			AuthSecret: s.Spec.AuthSecret,
-			Alg:        types.HS256,
-			Value:      s.Spec.Value,
-		})
+func (a *App) EvaluatePolicy(ctx context.Context, name string, input interface{}) (bool, string, error) {
+	if policy, ok := a.policies[name]; ok {
+		return policy.Evaluate(ctx, input)
 	}
 
-	a.secrets = secrets
+	return false, "", fmt.Errorf("policy with name %s not found", name)
+}
+
+// Start begins the auth app operations
+func (a *App) Start() error {
 	return nil
 }
 

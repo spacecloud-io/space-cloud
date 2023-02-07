@@ -41,18 +41,20 @@ func getVerifyingSecret(secret *types.AuthSecret) interface{} {
 
 func (a *App) getPrimarySecret() *types.AuthSecret {
 	for _, s := range a.secrets {
-		if s.IsPrimary {
-			return s
+		info := s.GetSecretInfo()
+		if info.IsPrimary {
+			return info
 		}
 	}
 
-	return a.secrets[0]
+	return a.secrets[0].GetSecretInfo()
 }
 
 func (a *App) getSecretFromKID(kid string) (*types.AuthSecret, bool) {
 	for _, s := range a.secrets {
-		if s.KID == kid {
-			return s, true
+		info := s.GetSecretInfo()
+		if info.KID == kid {
+			return info, true
 		}
 	}
 
