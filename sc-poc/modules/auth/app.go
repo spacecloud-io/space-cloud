@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/caddyserver/caddy/v2"
 	"go.uber.org/zap"
@@ -63,7 +64,11 @@ func (a *App) Provision(ctx caddy.Context) error {
 }
 
 func (a *App) EvaluatePolicy(ctx context.Context, name string, input interface{}) (bool, string, error) {
-	return a.policies[name].Evaluate(ctx, input)
+	if policy, ok := a.policies[name]; ok {
+		return policy.Evaluate(ctx, input)
+	}
+
+	return false, "", fmt.Errorf("policy with name %s not found", name)
 }
 
 // Start begins the auth app operations

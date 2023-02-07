@@ -46,6 +46,11 @@ func (OPAPolicySource) CaddyModule() caddy.ModuleInfo {
 func (s *OPAPolicySource) Provision(ctx caddy.Context) error {
 	s.logger = ctx.Logger(s)
 
+	// Compile the rego policies
+	if err := s.compileRegoPolicy(); err != nil {
+		s.logger.Error("Unable to compile rego policies", zap.Error(err))
+		return err
+	}
 	return nil
 }
 
@@ -98,10 +103,6 @@ func (s *OPAPolicySource) Evaluate(ctx context.Context, input interface{}) (bool
 // SetCompiledQueries receives the compiledQueries from graphql app
 func (s *OPAPolicySource) SetCompiledQueries(compiledQueries map[string]*graphql.CompiledQuery) {
 	s.compiledGraphQLQueries = compiledQueries
-	// Compile the rego policies
-	if err := s.compileRegoPolicy(); err != nil {
-		s.logger.Error("Unable to compile rego policies", zap.Error(err))
-	}
 }
 
 // Interface guard
