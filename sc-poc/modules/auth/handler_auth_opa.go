@@ -84,7 +84,7 @@ func (h *AuthOPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next 
 		policyName = utils.Hash(h.Rego)
 	}
 
-	allowed, reason, err := h.authApp.EvaluateOPAPolicy(r.Context(), policyName, input)
+	allowed, reason, err := h.authApp.policies[policyName].Evaluate(r.Context(), input)
 	if err != nil {
 		h.logger.Error("Unable to run opa policy", zap.Error(err))
 		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err)

@@ -18,13 +18,13 @@ func PrepareConfig(configuration, newConfig map[string][]*unstructured.Unstructu
 
 	// Load all the managers
 	c.AppsRaw = make(caddy.ModuleMap)
-	c.AppsRaw["auth"] = prepareAuthApp(configuration)
-	c.AppsRaw["http"] = prepareHTTPHanndlerApp()
+	c.AppsRaw["http"] = prepareHTTPHandlerApp()
 	c.AppsRaw["source"] = prepareSourceManagerApp(newConfig)
 
 	// Load our providers
 	c.AppsRaw["graphql"] = prepareEmptyApp()
 	c.AppsRaw["rpc"] = prepareEmptyApp()
+	c.AppsRaw["auth"] = prepareEmptyApp()
 
 	return c, nil
 }
