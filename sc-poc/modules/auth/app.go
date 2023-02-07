@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"context"
+
 	"github.com/caddyserver/caddy/v2"
 	"go.uber.org/zap"
 
@@ -36,6 +38,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 	a.secrets = []SecretSource{}
 	a.policies = make(map[string]PolicySource)
 	for _, src := range sources {
+		name := src.GetName()
 
 		// First resolve the source's dependencies
 		if err := source.ResolveDependencies(ctx, "auth", src); err != nil {
@@ -52,11 +55,15 @@ func (a *App) Provision(ctx caddy.Context) error {
 		// Get sources with policy
 		p, ok := src.(PolicySource)
 		if ok {
-			a.policies[p.GetName()] = p
+			a.policies[name] = p
 		}
 	}
 
 	return nil
+}
+
+func (a *App) EvaluatePolicy(ctx context.Context, name string, input interface{}) (bool, string, error) {
+	return a.policies[name].Evaluate(ctx, input)
 }
 
 // Start begins the auth app operations

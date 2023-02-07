@@ -5,21 +5,21 @@ import (
 	"path/filepath"
 
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/spacecloud-io/space-cloud/managers/configman/common"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-func (l *File) loadConfiguration() (map[string][]*unstructured.Unstructured, error) {
+func (l *File) loadConfiguration() (common.ConfigType, error) {
 	files, err := ioutil.ReadDir(l.Path)
 	if err != nil {
 		l.logger.Error("Unable to read config files from directory", zap.String("dir", l.Path), zap.Error(err))
 		return nil, err
 	}
 
-	configuration := map[string][]*unstructured.Unstructured{}
+	configuration := common.ConfigType{}
 
 	for _, file := range files {
 		arr, err := utils.ReadSpecObjectsFromFile(filepath.Join(l.Path, file.Name()))

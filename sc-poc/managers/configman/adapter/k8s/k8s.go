@@ -2,7 +2,6 @@ package k8s
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"time"
 
@@ -25,7 +24,7 @@ type K8s struct {
 	namespace     string
 	logger        *zap.Logger
 	informers     []k8sCache.SharedIndexInformer
-	configuration map[string][]*unstructured.Unstructured
+	configuration common.ConfigType
 }
 
 func MakeK8sAdapter() (adapter.Adapter, error) {
@@ -59,13 +58,13 @@ func MakeK8sAdapter() (adapter.Adapter, error) {
 		namespace:     namespace,
 		logger:        logger,
 		informers:     informers,
-		configuration: make(map[string][]*unstructured.Unstructured),
+		configuration: make(common.ConfigType),
 	}
 
 	return k, nil
 }
 
-func (k *K8s) GetRawConfig() ([]byte, error) {
+func (k *K8s) GetRawConfig() (common.ConfigType, error) {
 	// Load SC config file from cluster
 	err := k.loadConfiguration()
 	if err != nil {
@@ -73,11 +72,11 @@ func (k *K8s) GetRawConfig() ([]byte, error) {
 	}
 
 	// Load the new caddy config
-	return k.getCaddyConfig()
+	return k.configuration, nil
 }
 
-func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
-	cfgChan := make(chan []byte)
+func (k *K8s) Run(ctx context.Context) (chan common.ConfigType, error) {
+	cfgChan := make(chan common.ConfigType)
 
 	for _, informer := range k.informers {
 		informer.AddEventHandler(k8sCache.ResourceEventHandlerFuncs{
@@ -86,26 +85,14 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 
 				k.addOrUpdateConfig(u)
 
-				resp, err := k.getCaddyConfig()
-				if err != nil {
-					k.logger.Error("error reloading config: ", zap.Error(err))
-					return
-				}
-
-				cfgChan <- resp
+				cfgChan <- k.configuration
 			},
 			UpdateFunc: func(_ interface{}, newObj interface{}) {
 				u := newObj.(*unstructured.Unstructured)
 
 				k.addOrUpdateConfig(u)
 
-				resp, err := k.getCaddyConfig()
-				if err != nil {
-					k.logger.Error("error reloading config: ", zap.Error(err))
-					return
-				}
-
-				cfgChan <- resp
+				cfgChan <- k.configuration
 			},
 			DeleteFunc: func(obj interface{}) {
 				u := obj.(*unstructured.Unstructured)
@@ -124,13 +111,7 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 				}
 				k.configuration[key] = s
 
-				resp, err := k.getCaddyConfig()
-				if err != nil {
-					k.logger.Error("error reloading config: ", zap.Error(err))
-					return
-				}
-
-				cfgChan <- resp
+				cfgChan <- k.configuration
 			},
 		})
 
@@ -138,16 +119,6 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 	}
 
 	return cfgChan, nil
-}
-
-func (k *K8s) getCaddyConfig() ([]byte, error) {
-	// Load the new caddy config
-	config, err := common.PrepareConfig(k.configuration)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.MarshalIndent(config, "", "  ")
 }
 
 func (k *K8s) addOrUpdateConfig(u *unstructured.Unstructured) {

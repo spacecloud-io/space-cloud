@@ -14,7 +14,6 @@ type (
 
 	// PolicySource describes the implementation of a policy source
 	PolicySource interface {
-		GetName() string
 		Evaluate(context.Context, interface{}) (bool, string, error)
 	}
 )

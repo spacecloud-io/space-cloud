@@ -7,9 +7,14 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
+type (
+	// ConfigType describes the configuration of space-cloud
+	ConfigType map[string][]*unstructured.Unstructured
+)
+
 // PrepareConfig prepares a new caddy config based on the configuration provided
 // TODO: Remove the previous configuration object
-func PrepareConfig(configuration map[string][]*unstructured.Unstructured) (*caddy.Config, error) {
+func PrepareConfig(configuration ConfigType) (*caddy.Config, error) {
 	// First load the admin config
 	c, err := utils.LoadAdminConfig()
 	if err != nil {

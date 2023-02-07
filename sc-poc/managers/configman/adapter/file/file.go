@@ -2,7 +2,6 @@ package file
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spacecloud-io/space-cloud/managers/configman/adapter"
@@ -25,26 +24,20 @@ func MakeFileAdapter(path string) adapter.Adapter {
 	return file
 }
 
-// GetRawConfig returns the final caddy config in bytes.
-func (f *File) GetRawConfig() ([]byte, error) {
+// GetRawConfig returns the final config.
+func (f *File) GetRawConfig() (common.ConfigType, error) {
 	// Load SC config file from file system
 	configuration, err := f.loadConfiguration()
 	if err != nil {
 		return nil, err
 	}
 
-	// Load the new caddy config
-	config, err := common.PrepareConfig(configuration)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.MarshalIndent(config, "", "  ")
+	return configuration, nil
 }
 
 // Run watches the files indefinitely.
-func (file *File) Run(ctx context.Context) (chan []byte, error) {
-	cfgChan := make(chan []byte)
+func (file *File) Run(ctx context.Context) (chan common.ConfigType, error) {
+	cfgChan := make(chan common.ConfigType)
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return cfgChan, err
@@ -60,7 +53,7 @@ func (file *File) Run(ctx context.Context) (chan []byte, error) {
 	return cfgChan, nil
 }
 
-func (f *File) watchEvents(watcher *fsnotify.Watcher, cfgChan chan []byte) {
+func (f *File) watchEvents(watcher *fsnotify.Watcher, cfgChan chan common.ConfigType) {
 	for {
 		select {
 		case _, ok := <-watcher.Events:
