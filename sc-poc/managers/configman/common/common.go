@@ -9,7 +9,7 @@ import (
 
 // PrepareConfig prepares a new caddy config based on the configuration provided
 // TODO: Remove the previous configuration object
-func PrepareConfig(configuration, newConfig map[string][]*unstructured.Unstructured) (*caddy.Config, error) {
+func PrepareConfig(configuration map[string][]*unstructured.Unstructured) (*caddy.Config, error) {
 	// First load the admin config
 	c, err := utils.LoadAdminConfig()
 	if err != nil {
@@ -19,7 +19,7 @@ func PrepareConfig(configuration, newConfig map[string][]*unstructured.Unstructu
 	// Load all the managers
 	c.AppsRaw = make(caddy.ModuleMap)
 	c.AppsRaw["http"] = prepareHTTPHandlerApp()
-	c.AppsRaw["source"] = prepareSourceManagerApp(newConfig)
+	c.AppsRaw["source"] = prepareSourceManagerApp(configuration)
 
 	// Load our providers
 	c.AppsRaw["graphql"] = prepareEmptyApp()

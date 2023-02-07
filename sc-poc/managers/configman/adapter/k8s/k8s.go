@@ -21,12 +21,11 @@ import (
 )
 
 type K8s struct {
-	dc             *dynamic.DynamicClient
-	namespace      string
-	logger         *zap.Logger
-	informers      []k8sCache.SharedIndexInformer
-	configuration  map[string][]*unstructured.Unstructured
-	configurationN map[string][]*unstructured.Unstructured
+	dc            *dynamic.DynamicClient
+	namespace     string
+	logger        *zap.Logger
+	informers     []k8sCache.SharedIndexInformer
+	configuration map[string][]*unstructured.Unstructured
 }
 
 func MakeK8sAdapter() (adapter.Adapter, error) {
@@ -56,12 +55,11 @@ func MakeK8sAdapter() (adapter.Adapter, error) {
 	}
 
 	k := &K8s{
-		dc:             dc,
-		namespace:      namespace,
-		logger:         logger,
-		informers:      informers,
-		configuration:  make(map[string][]*unstructured.Unstructured),
-		configurationN: make(map[string][]*unstructured.Unstructured),
+		dc:            dc,
+		namespace:     namespace,
+		logger:        logger,
+		informers:     informers,
+		configuration: make(map[string][]*unstructured.Unstructured),
 	}
 
 	return k, nil
@@ -112,31 +110,19 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 			DeleteFunc: func(obj interface{}) {
 				u := obj.(*unstructured.Unstructured)
 
-				// new configuration
 				gvr := schema.GroupVersionResource{
 					Group:    u.GroupVersionKind().Group,
 					Version:  u.GroupVersionKind().Version,
 					Resource: utils.Pluralize(u.GetKind())}
 				key := source.GetModuleName(gvr)
 				s := []*unstructured.Unstructured{}
-				for _, spec := range k.configurationN[key] {
+				for _, spec := range k.configuration[key] {
 					if spec.GetName() == u.GetName() {
 						continue
 					}
 					s = append(s, spec)
 				}
-				k.configurationN[key] = s
-
-				// old configuration
-				kind := u.GetKind()
-				s = []*unstructured.Unstructured{}
-				for _, spec := range k.configuration[kind] {
-					if spec.GetName() == u.GetName() {
-						continue
-					}
-					s = append(s, spec)
-				}
-				k.configuration[kind] = s
+				k.configuration[key] = s
 
 				resp, err := k.getCaddyConfig()
 				if err != nil {
@@ -156,7 +142,7 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 
 func (k *K8s) getCaddyConfig() ([]byte, error) {
 	// Load the new caddy config
-	config, err := common.PrepareConfig(k.configuration, k.configurationN)
+	config, err := common.PrepareConfig(k.configuration)
 	if err != nil {
 		return nil, err
 	}
@@ -165,36 +151,21 @@ func (k *K8s) getCaddyConfig() ([]byte, error) {
 }
 
 func (k *K8s) addOrUpdateConfig(u *unstructured.Unstructured) {
-	// new configuration
 	gvr := schema.GroupVersionResource{
 		Group:    u.GroupVersionKind().Group,
 		Version:  u.GroupVersionKind().Version,
 		Resource: utils.Pluralize(u.GetKind())}
 	key := source.GetModuleName(gvr)
 	found := false
-	for i, spec := range k.configurationN[key] {
+	for i, spec := range k.configuration[key] {
 		if spec.GetName() == u.GetName() {
-			k.configurationN[key][i] = u
+			k.configuration[key][i] = u
 			found = true
 			break
 		}
 	}
 	if !found {
-		k.configurationN[key] = append(k.configurationN[key], u)
-	}
-
-	// old configuration
-	kind := u.GetKind()
-	found = false
-	for i, spec := range k.configuration[kind] {
-		if spec.GetName() == u.GetName() {
-			k.configuration[kind][i] = u
-			found = true
-			break
-		}
-	}
-	if !found {
-		k.configuration[kind] = append(k.configuration[kind], u)
+		k.configuration[key] = append(k.configuration[key], u)
 	}
 }
 

@@ -28,13 +28,13 @@ func MakeFileAdapter(path string) adapter.Adapter {
 // GetRawConfig returns the final caddy config in bytes.
 func (f *File) GetRawConfig() ([]byte, error) {
 	// Load SC config file from file system
-	configuration, configurationN, err := f.loadConfiguration()
+	configuration, err := f.loadConfiguration()
 	if err != nil {
 		return nil, err
 	}
 
 	// Load the new caddy config
-	config, err := common.PrepareConfig(configuration, configurationN)
+	config, err := common.PrepareConfig(configuration)
 	if err != nil {
 		return nil, err
 	}

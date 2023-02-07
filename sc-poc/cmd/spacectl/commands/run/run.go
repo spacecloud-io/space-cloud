@@ -55,7 +55,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().IntP("port", "", 4122, "The port to start SpaceCloud on")
 
 	// Config loader
-	cmd.Flags().StringP("config-adapter", "", "file", "Set the configuration loader to be used [file | k8s]")
+	cmd.Flags().StringP("config-adapter", "", "k8s", "Set the configuration loader to be used [file | k8s]")
 	cmd.Flags().StringP("config-path", "", "./sc-config", "Directory to use to manage SpaceCloud configuration")
 	cmd.Flags().StringP("debounce-interval", "", "500ms", "Debounce interval in milliseconds")
 
