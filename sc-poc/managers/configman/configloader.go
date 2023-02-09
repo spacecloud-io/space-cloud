@@ -11,6 +11,7 @@ import (
 	"github.com/spacecloud-io/space-cloud/managers/configman/adapter"
 	"github.com/spacecloud-io/space-cloud/managers/configman/adapter/file"
 	"github.com/spacecloud-io/space-cloud/managers/configman/adapter/k8s"
+	"github.com/spacecloud-io/space-cloud/managers/configman/common"
 	"github.com/spf13/viper"
 )
 
@@ -49,14 +50,12 @@ func InitializeConfigLoader() (*ConfigLoader, error) {
 // GetCaddyConfig reads the config from the adapter and
 // converts from bytes to caddy Config.
 func (configloader *ConfigLoader) GetCaddyConfig() (*caddy.Config, error) {
-	raw, err := configloader.adapter.GetRawConfig()
+	cfg, err := configloader.adapter.GetRawConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	c := &caddy.Config{}
-	err = json.Unmarshal(raw, c)
-	return c, err
+	return common.PrepareConfig(cfg)
 }
 
 // WatchChanges continuously watches the config objects and reloads caddy
@@ -68,11 +67,22 @@ func (configloader *ConfigLoader) WatchChanges(ctx context.Context) {
 		fmt.Println("Error watching changes: ", err)
 		return
 	}
-	for cfgJSON := range cfgChan {
-		debounced(func() { loadConfig(cfgJSON) })
+	for cfg := range cfgChan {
+		debounced(func() { loadConfig(cfg) })
 	}
 }
 
-func loadConfig(cfgJSON []byte) {
-	_ = caddy.Load(cfgJSON, false)
+func loadConfig(cfg common.ConfigType) {
+	caddyCfg, err := common.PrepareConfig(cfg)
+	if err != nil {
+		fmt.Println("Error watching changes: ", err)
+		return
+	}
+
+	raw, err := json.MarshalIndent(caddyCfg, "", "  ")
+	if err != nil {
+		fmt.Println("Error watching changes: ", err)
+		return
+	}
+	_ = caddy.Load(raw, false)
 }

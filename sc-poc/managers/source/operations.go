@@ -48,7 +48,7 @@ func GetModuleName(gvr schema.GroupVersionResource) string {
 	return strings.ToLower(fmt.Sprintf("source.%s", moduleName))
 }
 
-// GetResourceGVK returns the api version and kind of the resource
+// GetResourceGVR returns the api version and kind of the resource
 func GetResourceGVR(moduleName string) schema.GroupVersionResource {
 	moduleName = strings.Join(strings.Split(moduleName, "----"), "/")
 	moduleName = strings.Join(strings.Split(moduleName, "---"), ".")

@@ -11,7 +11,7 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-func prepareHTTPHanndlerApp() []byte {
+func prepareHTTPHandlerApp() []byte {
 	port := viper.GetInt("caddy.port")
 
 	httpsPort := 0
