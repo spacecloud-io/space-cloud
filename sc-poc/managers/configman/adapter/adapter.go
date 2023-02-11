@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/spacecloud-io/space-cloud/managers/configman/common"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type Adapter interface {
@@ -12,4 +14,7 @@ type Adapter interface {
 
 	// GetRawConfig returns the config in bytes.
 	GetRawConfig() (common.ConfigType, error)
+
+	// List returns all registered sources of a specific source type
+	List(schema.GroupVersionResource) ([]*unstructured.Unstructured, error)
 }

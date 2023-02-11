@@ -2,16 +2,19 @@ package common
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/spf13/viper"
-
+	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/utils"
+
+	"github.com/spf13/viper"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func prepareHTTPHandlerApp() []byte {
+func prepareHTTPHandlerApp(config ConfigType) []byte {
 	port := viper.GetInt("caddy.port")
 
 	httpsPort := 0
@@ -28,7 +31,7 @@ func prepareHTTPHandlerApp() []byte {
 		Servers: map[string]*caddyhttp.Server{
 			"default": {
 				Listen: listen,
-				Routes: getRootRoutes(),
+				Routes: getRootRoutes(config),
 			},
 		},
 	}
@@ -37,7 +40,7 @@ func prepareHTTPHandlerApp() []byte {
 	return data
 }
 
-func getRootRoutes() caddyhttp.RouteList {
+func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 	return caddyhttp.RouteList{
 		// Routes for CORS
 		caddyhttp.Route{
@@ -52,9 +55,8 @@ func getRootRoutes() caddyhttp.RouteList {
 		// 	HandlersRaw: utils.GetCaddyHandler("req_params", nil),
 		// },
 
-		// TODO: Fix this
-		// Config & Operation handlers
-		// getConfigRoutes(),
+		// Config route handlers
+		getConfigRoutes(config),
 
 		// API route handler
 		getAPIRoutes(),
@@ -87,48 +89,23 @@ func getAPIRoutes() caddyhttp.Route {
 	}
 }
 
-func getConfigRoutes() caddyhttp.Route {
+func getConfigRoutes(config ConfigType) caddyhttp.Route {
 	// Make route list for the sub router
-	routeList := caddyhttp.RouteList{
-		// Open API for the config and operation endpoints
-		caddyhttp.Route{
-			Group:          "openapi",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/v1/config/openapi.json"}, []string{http.MethodGet}),
-			HandlersRaw:    utils.GetCaddyHandler("config_openapi", nil),
-		},
+	routeList := caddyhttp.RouteList{}
+	for k := range config {
+		gvr := source.GetResourceGVR(k)
 
-		// Admin auth middleware
-		caddyhttp.Route{
-			Group:       "auth",
-			HandlersRaw: utils.GetCaddyHandler("admin_auth", nil),
-		},
+		path := createConfigPath(gvr)
+		data := make(map[string]interface{})
+		data["gvr"] = gvr
+		route := caddyhttp.Route{
+			Group:          "config_list",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodGet}),
+			HandlersRaw:    utils.GetCaddyHandler("config_list", data),
+		}
 
-		// Config routes
-		caddyhttp.Route{
-			Group:          "config",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/v1/config/*"}, []string{http.MethodGet}),
-			HandlersRaw:    utils.GetCaddyHandler("config_get", nil),
-		},
-		caddyhttp.Route{
-			Group:          "config",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/v1/config/*"}, []string{http.MethodDelete}),
-			HandlersRaw:    utils.GetCaddyHandler("config_delete", nil),
-		},
-		caddyhttp.Route{
-			Group:          "config",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/v1/config/*"}, []string{http.MethodPost}),
-			HandlersRaw:    utils.GetCaddyHandler("config_apply", nil),
-		},
-
-		// Operation routes
-		caddyhttp.Route{
-			Group:          "operation",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/v1/operation/*"}, []string{}),
-			HandlersRaw:    utils.GetCaddyHandler("operation", nil),
-		},
+		routeList = append(routeList, route)
 	}
-
-	// Create matcher for subroute
 
 	// Make handler for subroute
 	handler := map[string]interface{}{
@@ -138,8 +115,15 @@ func getConfigRoutes() caddyhttp.Route {
 	handlerRaw, _ := json.Marshal(handler)
 
 	return caddyhttp.Route{
-		Group:          "config",
-		MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/v1/config/*", "/v1/operation/*"}, nil),
-		HandlersRaw:    []json.RawMessage{handlerRaw},
+		Group:       "config",
+		HandlersRaw: []json.RawMessage{handlerRaw},
 	}
+}
+
+func createConfigPath(gvr schema.GroupVersionResource) string {
+	group := gvr.Group
+	version := gvr.Version
+	resource := gvr.Resource
+
+	return fmt.Sprintf("/v1/config/%s/%s/%s", group, version, resource)
 }

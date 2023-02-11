@@ -3,6 +3,7 @@ package k8s
 import (
 	"context"
 	"os"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -25,6 +26,7 @@ type K8s struct {
 	logger        *zap.Logger
 	informers     []k8sCache.SharedIndexInformer
 	configuration common.ConfigType
+	lock          sync.RWMutex
 }
 
 func MakeK8sAdapter() (adapter.Adapter, error) {

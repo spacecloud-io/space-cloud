@@ -71,7 +71,6 @@ func (f *File) watchEvents(watcher *fsnotify.Watcher, cfgChan chan common.Config
 			cfgChan <- resp
 		case err := <-watcher.Errors:
 			f.logger.Error("issue with file watcher", zap.Error(err))
-			break
 		}
 	}
 }
