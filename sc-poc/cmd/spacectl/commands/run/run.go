@@ -29,8 +29,7 @@ func NewCommand() *cobra.Command {
 
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := configman.InitializeConfigLoader()
-			if err != nil {
+			if err := configman.InitializeConfigLoader(); err != nil {
 				log.Fatal("Unable to initialize config loader: ", err)
 			}
 

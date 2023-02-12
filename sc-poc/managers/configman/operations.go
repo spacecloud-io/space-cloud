@@ -6,6 +6,11 @@ import (
 )
 
 // List returns all the registered sources of a particular source type
-func List(gvr schema.GroupVersionResource) ([]*unstructured.Unstructured, error) {
+func List(gvr schema.GroupVersionResource) (*unstructured.UnstructuredList, error) {
 	return configLoader.adapter.List(gvr)
+}
+
+// Get returns a registered source
+func Get(gvr schema.GroupVersionResource, name string) (*unstructured.Unstructured, error) {
+	return configLoader.adapter.Get(gvr, name)
 }

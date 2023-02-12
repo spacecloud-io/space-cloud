@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/utils"
 
+	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -91,26 +91,49 @@ func getAPIRoutes() caddyhttp.Route {
 
 func getConfigRoutes(config ConfigType) caddyhttp.Route {
 	// Make route list for the sub router
-	routeList := caddyhttp.RouteList{}
-	for k := range config {
+	configRoutes := caddyhttp.RouteList{}
+	for k, v := range config {
 		gvr := source.GetResourceGVR(k)
 
-		path := createConfigPath(gvr)
+		// Create route of GVR for List operation
+		gvrPath := createConfigGVRPath(gvr)
 		data := make(map[string]interface{})
 		data["gvr"] = gvr
-		route := caddyhttp.Route{
+
+		// Route for List operation
+		listRoute := caddyhttp.Route{
 			Group:          "config_list",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodGet}),
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{gvrPath}, []string{http.MethodGet}),
 			HandlersRaw:    utils.GetCaddyHandler("config_list", data),
 		}
 
-		routeList = append(routeList, route)
+		configRoutes = append(configRoutes, listRoute)
+
+		// Create route of each instances of GVR for Get, Apply and Delete operations
+		for _, unstr := range v {
+			name := unstr.GetName()
+			namePath := createConfigNamePath(gvrPath, name)
+			data["name"] = name
+
+			// Route for Get operation
+			getRoute := caddyhttp.Route{
+				Group:          "config_get",
+				MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{namePath}, []string{http.MethodGet}),
+				HandlersRaw:    utils.GetCaddyHandler("config_get", data),
+			}
+
+			// Route for Apply operation
+
+			// Route for Delete operation
+
+			configRoutes = append(configRoutes, getRoute)
+		}
 	}
 
 	// Make handler for subroute
 	handler := map[string]interface{}{
 		"handler": "subroute",
-		"routes":  routeList,
+		"routes":  configRoutes,
 	}
 	handlerRaw, _ := json.Marshal(handler)
 
@@ -120,10 +143,14 @@ func getConfigRoutes(config ConfigType) caddyhttp.Route {
 	}
 }
 
-func createConfigPath(gvr schema.GroupVersionResource) string {
+func createConfigGVRPath(gvr schema.GroupVersionResource) string {
 	group := gvr.Group
 	version := gvr.Version
 	resource := gvr.Resource
 
 	return fmt.Sprintf("/v1/config/%s/%s/%s", group, version, resource)
+}
+
+func createConfigNamePath(gvrPath string, name string) string {
+	return fmt.Sprintf("%s/%s", gvrPath, name)
 }
