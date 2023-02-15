@@ -13,15 +13,15 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/kedacore/keda v1.5.1-0.20201104115818-50bec808f8b4
 	github.com/mitchellh/mapstructure v1.3.3
-	github.com/prometheus/client_golang v1.8.0
-	github.com/prometheus/common v0.14.0
+	github.com/prometheus/client_golang v1.11.1
+	github.com/prometheus/common v0.26.0
 	github.com/rs/cors v1.7.0
 	github.com/segmentio/ksuid v1.0.2
 	github.com/spaceuptech/helpers v0.2.1
 	github.com/spaceuptech/space-api-go v0.17.3
 	github.com/urfave/cli v1.22.2
 	google.golang.org/grpc v1.31.1
-	google.golang.org/protobuf v1.25.0
+	google.golang.org/protobuf v1.26.0-rc.1
 	istio.io/api v0.0.0-20200518203817-6d29a38039bd
 	istio.io/client-go v0.0.0-20200521172153-8555211db875
 	k8s.io/api v0.18.8
