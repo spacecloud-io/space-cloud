@@ -2,6 +2,7 @@ package file
 
 import (
 	"context"
+	"sync"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spacecloud-io/space-cloud/managers/configman/adapter"
@@ -10,16 +11,19 @@ import (
 )
 
 type File struct {
-	Path   string
-	logger *zap.Logger
+	Path          string
+	logger        *zap.Logger
+	lock          sync.RWMutex
+	configuration common.ConfigType
 }
 
 // MakeFileAdapter returns the File adapter object.
 func MakeFileAdapter(path string) adapter.Adapter {
 	logger, _ := zap.NewDevelopment()
 	file := &File{
-		Path:   path,
-		logger: logger,
+		Path:          path,
+		logger:        logger,
+		configuration: make(common.ConfigType),
 	}
 	return file
 }
@@ -27,12 +31,11 @@ func MakeFileAdapter(path string) adapter.Adapter {
 // GetRawConfig returns the final config.
 func (f *File) GetRawConfig() (common.ConfigType, error) {
 	// Load SC config file from file system
-	configuration, err := f.loadConfiguration()
-	if err != nil {
+	if err := f.loadConfiguration(); err != nil {
 		return nil, err
 	}
 
-	return configuration, nil
+	return f.getConfig(), nil
 }
 
 // Run watches the files indefinitely.

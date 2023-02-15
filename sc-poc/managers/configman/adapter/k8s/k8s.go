@@ -68,8 +68,7 @@ func MakeK8sAdapter() (adapter.Adapter, error) {
 
 func (k *K8s) GetRawConfig() (common.ConfigType, error) {
 	// Load SC config file from cluster
-	err := k.loadConfiguration()
-	if err != nil {
+	if err := k.loadConfiguration(); err != nil {
 		return nil, err
 	}
 

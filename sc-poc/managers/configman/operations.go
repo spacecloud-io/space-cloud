@@ -14,3 +14,13 @@ func List(gvr schema.GroupVersionResource) (*unstructured.UnstructuredList, erro
 func Get(gvr schema.GroupVersionResource, name string) (*unstructured.Unstructured, error) {
 	return configLoader.adapter.Get(gvr, name)
 }
+
+// Apply creates/updates a source
+func Apply(gvr schema.GroupVersionResource, spec *unstructured.Unstructured) error {
+	return configLoader.adapter.Apply(gvr, spec)
+}
+
+// Delete deletes a source
+func Delete(gvr schema.GroupVersionResource, name string) error {
+	return configLoader.adapter.Delete(gvr, name)
+}

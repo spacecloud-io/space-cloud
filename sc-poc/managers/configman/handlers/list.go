@@ -28,10 +28,10 @@ func (List) CaddyModule() caddy.ModuleInfo {
 func (h *List) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	resp, err := configman.List(h.GVR)
 	if err != nil {
-		_ = utils.SendErrorResponse(w, 500, err)
+		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err)
 	}
 
-	utils.SendResponse(w, 200, resp)
+	utils.SendResponse(w, http.StatusOK, resp)
 	return nil
 }
 

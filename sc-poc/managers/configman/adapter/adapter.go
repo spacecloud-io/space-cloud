@@ -21,4 +21,10 @@ type Adapter interface {
 
 	// Get returns a registered source
 	Get(schema.GroupVersionResource, string) (*unstructured.Unstructured, error)
+
+	// Apply creates/updates a source
+	Apply(schema.GroupVersionResource, *unstructured.Unstructured) error
+
+	// Delete deletes a source
+	Delete(schema.GroupVersionResource, string) error
 }

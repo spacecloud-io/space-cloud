@@ -13,7 +13,7 @@ func (k *K8s) loadConfiguration() error {
 	sourcesGVR := source.GetRegisteredSources()
 	config := make(common.ConfigType)
 	for _, srcGVR := range sourcesGVR {
-		srcList, err := k.dc.Resource(srcGVR).List(context.Background(), metav1.ListOptions{})
+		srcList, err := k.dc.Resource(srcGVR).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return err
 		}

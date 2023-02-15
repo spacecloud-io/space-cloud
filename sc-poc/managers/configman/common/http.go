@@ -107,7 +107,14 @@ func getConfigRoutes(config ConfigType) caddyhttp.Route {
 			HandlersRaw:    utils.GetCaddyHandler("config_list", data),
 		}
 
-		configRoutes = append(configRoutes, listRoute)
+		// Route for Apply operation
+		applyRoute := caddyhttp.Route{
+			Group:          "config_apply",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{gvrPath}, []string{http.MethodPut}),
+			HandlersRaw:    utils.GetCaddyHandler("config_apply", data),
+		}
+
+		configRoutes = append(configRoutes, listRoute, applyRoute)
 
 		// Create route of each instances of GVR for Get, Apply and Delete operations
 		for _, unstr := range v {
@@ -122,11 +129,14 @@ func getConfigRoutes(config ConfigType) caddyhttp.Route {
 				HandlersRaw:    utils.GetCaddyHandler("config_get", data),
 			}
 
-			// Route for Apply operation
-
 			// Route for Delete operation
+			deleteRoute := caddyhttp.Route{
+				Group:          "config_delete",
+				MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{namePath}, []string{http.MethodDelete}),
+				HandlersRaw:    utils.GetCaddyHandler("config_delete", data),
+			}
 
-			configRoutes = append(configRoutes, getRoute)
+			configRoutes = append(configRoutes, getRoute, deleteRoute)
 		}
 	}
 
