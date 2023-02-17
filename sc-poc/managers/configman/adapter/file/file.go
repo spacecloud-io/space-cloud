@@ -11,9 +11,9 @@ import (
 )
 
 type File struct {
+	lock          sync.RWMutex
 	Path          string
 	logger        *zap.Logger
-	lock          sync.RWMutex
 	configuration common.ConfigType
 }
 
@@ -35,7 +35,7 @@ func (f *File) GetRawConfig() (common.ConfigType, error) {
 		return nil, err
 	}
 
-	return f.getConfig(), nil
+	return f.configuration, nil
 }
 
 // Run watches the files indefinitely.

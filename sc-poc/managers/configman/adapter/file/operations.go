@@ -15,11 +15,12 @@ import (
 
 // List returns all registered sources of a specific source type
 func (f *File) List(gvr schema.GroupVersionResource) (*unstructured.UnstructuredList, error) {
-	list := &unstructured.UnstructuredList{}
-	config := f.getConfig()
+	f.lock.RLock()
+	defer f.lock.RUnlock()
 
+	list := &unstructured.UnstructuredList{}
 	key := source.GetModuleName(gvr)
-	sources, ok := config[key]
+	sources, ok := f.configuration[key]
 	if !ok {
 		return list, nil
 	}
@@ -30,10 +31,11 @@ func (f *File) List(gvr schema.GroupVersionResource) (*unstructured.Unstructured
 
 // Get returns a registered source
 func (f *File) Get(gvr schema.GroupVersionResource, name string) (*unstructured.Unstructured, error) {
-	config := f.getConfig()
+	f.lock.RLock()
+	defer f.lock.RUnlock()
 
 	key := source.GetModuleName(gvr)
-	sources, ok := config[key]
+	sources, ok := f.configuration[key]
 	if !ok {
 		return nil, fmt.Errorf("source with name: %s not found", name)
 	}
@@ -59,24 +61,7 @@ func (f *File) Apply(gvr schema.GroupVersionResource, spec *unstructured.Unstruc
 		return err
 	}
 
-	fileName := gvr.Resource + ".yaml"
-	// Check if the source file exists
-	_, err = os.Stat(filepath.Join(f.Path, fileName))
-	// If source file does not exists create a new one and
-	// write this spec into this file
-	if os.IsNotExist(err) {
-		err := os.WriteFile(filepath.Join(f.Path, fileName), data, 0777)
-		if err != nil {
-			return err
-		}
-	} else {
-		// If source file exists append the spec.
-		err := utils.AppendToFile(filepath.Join(f.Path, fileName), data)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return f.persistConfig(gvr, data)
 }
 
 // Delete deletes a source
@@ -85,7 +70,7 @@ func (f *File) Delete(gvr schema.GroupVersionResource, name string) error {
 		return err
 	}
 
-	fileName := gvr.Resource + ".yaml"
+	fileName := generateYAMLFileName(gvr.Group, gvr.Resource)
 	// Parse the config file
 	arr, err := utils.ReadSpecObjectsFromFile(filepath.Join(f.Path, fileName))
 	if err != nil {

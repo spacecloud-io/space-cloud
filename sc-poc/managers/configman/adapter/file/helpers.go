@@ -52,7 +52,7 @@ func (f *File) reorganizeFileStructure() error {
 	registeredSources := source.GetRegisteredSources()
 	sourceFileNames := make(map[string]struct{})
 	for _, src := range registeredSources {
-		fileName := src.Resource + ".yaml"
+		fileName := generateYAMLFileName(src.Group, src.Resource)
 		sourceFileNames[fileName] = struct{}{}
 	}
 
@@ -82,7 +82,7 @@ func (f *File) reorganizeFileStructure() error {
 				}
 
 				// source file
-				fileName := utils.Pluralize(spec.GetKind()) + ".yaml"
+				fileName := generateYAMLFileName(spec.GroupVersionKind().Group, utils.Pluralize(spec.GetKind()))
 
 				// Check if the source file exists
 				_, err = os.Stat(filepath.Join(f.Path, fileName))
@@ -111,16 +111,35 @@ func (f *File) reorganizeFileStructure() error {
 	return nil
 }
 
-func (f *File) getConfig() common.ConfigType {
-	f.lock.RLock()
-	defer f.lock.RUnlock()
-
-	return f.configuration
-}
-
 func (f *File) setConfig(newConfig common.ConfigType) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
 	f.configuration = newConfig
+}
+
+func generateYAMLFileName(group, resource string) string {
+	fileName := group + "." + resource + ".yaml"
+	return fileName
+}
+
+func (f *File) persistConfig(gvr schema.GroupVersionResource, data []byte) error {
+	fileName := generateYAMLFileName(gvr.Group, gvr.Resource)
+	// Check if the source file exists
+	_, err := os.Stat(filepath.Join(f.Path, fileName))
+	// If source file does not exists create a new one and
+	// write this spec into this file
+	if os.IsNotExist(err) {
+		err := os.WriteFile(filepath.Join(f.Path, fileName), data, 0777)
+		if err != nil {
+			return err
+		}
+	} else {
+		// If source file exists append the spec.
+		err := utils.AppendToFile(filepath.Join(f.Path, fileName), data)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -3,10 +3,10 @@ package adapter
 import (
 	"context"
 
-	"github.com/spacecloud-io/space-cloud/managers/configman/common"
-
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"github.com/spacecloud-io/space-cloud/managers/configman/common"
 )
 
 type Adapter interface {

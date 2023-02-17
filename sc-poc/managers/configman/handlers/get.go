@@ -12,8 +12,7 @@ import (
 
 // Get is a handler module to return a source registered in space-cloud
 type Get struct {
-	GVR  schema.GroupVersionResource `json:"gvr"`
-	Name string                      `json:"name"`
+	GVR schema.GroupVersionResource `json:"gvr"`
 }
 
 // CaddyModule returns the Caddy module information.
@@ -26,13 +25,23 @@ func (Get) CaddyModule() caddy.ModuleInfo {
 
 // ServeHTTP handles the http request
 func (h *Get) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	resp, err := configman.Get(h.GVR, h.Name)
-	if err != nil {
-		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err)
+	// Get the path params
+	name := getName(r.URL.Path)
+	if name == "" {
+		resp, err := configman.List(h.GVR)
+		if err != nil {
+			return utils.SendErrorResponse(w, http.StatusInternalServerError, err)
+		}
+
+		return utils.SendResponse(w, http.StatusOK, resp)
 	}
 
-	utils.SendResponse(w, http.StatusOK, resp)
-	return nil
+	resp, err := configman.Get(h.GVR, name)
+	if err != nil {
+		return utils.SendErrorResponse(w, http.StatusInternalServerError, err)
+	}
+
+	return utils.SendResponse(w, http.StatusOK, resp)
 }
 
 // Interface guard

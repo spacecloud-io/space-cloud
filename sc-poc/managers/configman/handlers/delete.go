@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/caddyserver/caddy/v2"
@@ -12,8 +13,7 @@ import (
 
 // Delete is a handler module to delete a registered source
 type Delete struct {
-	GVR  schema.GroupVersionResource `json:"gvr"`
-	Name string                      `json:"name"`
+	GVR schema.GroupVersionResource `json:"gvr"`
 }
 
 // CaddyModule returns the Caddy module information.
@@ -26,13 +26,18 @@ func (Delete) CaddyModule() caddy.ModuleInfo {
 
 // ServeHTTP handles the http request
 func (h *Delete) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	err := configman.Delete(h.GVR, h.Name)
-	if err != nil {
-		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err)
+	name := getName(r.URL.Path)
+	if name == "" {
+		errMsg := fmt.Errorf("route not found")
+		return utils.SendErrorResponse(w, http.StatusNotFound, errMsg)
 	}
 
-	utils.SendOkayResponse(w, http.StatusOK)
-	return nil
+	err := configman.Delete(h.GVR, name)
+	if err != nil {
+		return utils.SendErrorResponse(w, http.StatusInternalServerError, err)
+	}
+
+	return utils.SendOkayResponse(w, http.StatusOK)
 }
 
 // Interface guard
