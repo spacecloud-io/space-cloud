@@ -21,12 +21,12 @@ import (
 )
 
 type K8s struct {
+	lock          sync.RWMutex
 	dc            *dynamic.DynamicClient
 	namespace     string
 	logger        *zap.Logger
 	informers     []k8sCache.SharedIndexInformer
 	configuration common.ConfigType
-	lock          sync.RWMutex
 }
 
 func MakeK8sAdapter() (adapter.Adapter, error) {
