@@ -1,4 +1,4 @@
-package generate
+package rtk
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-func generateTypes(doc *openapi3.T) string {
+func GenerateTypes(doc *openapi3.T) string {
 	var b strings.Builder
 	for _, pathDef := range doc.Paths {
 		if isOperationValidForTypeGen(pathDef.Get) {
