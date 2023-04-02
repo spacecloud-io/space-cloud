@@ -30,6 +30,7 @@ func PrepareConfig(configuration ConfigType) (*caddy.Config, error) {
 	c.AppsRaw["graphql"] = prepareEmptyApp()
 	c.AppsRaw["rpc"] = prepareEmptyApp()
 	c.AppsRaw["auth"] = prepareEmptyApp()
+	c.AppsRaw["pubsub"] = prepareEmptyApp()
 
 	return c, nil
 }
