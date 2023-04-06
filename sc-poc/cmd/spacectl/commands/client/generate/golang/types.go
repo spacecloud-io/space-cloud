@@ -90,6 +90,7 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string, method string, opN
 	var s string
 	pendingTypes := make(map[string]*openapi3.SchemaRef)
 
+	s += fmt.Sprintf("// %s\n", name)
 	s += fmt.Sprintf("type %s struct {\n", name)
 	for k, nestedSchema := range schema.Value.Properties {
 		typeName := getTypeName(k, false)

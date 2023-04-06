@@ -43,7 +43,7 @@ func generateImports(pkgName string) string {
 
 func generateClient(doc *openapi3.T) string {
 	s := `
-// Client which conforms to the OpenAPI3 specification for this service.
+// Client which conforms to the OpenAPI3 specification for SpaceCloud.
 type Client struct {
 	// The endpoint of the server. All the paths in
 	// the swagger spec will be appended to the server.
@@ -53,7 +53,7 @@ type Client struct {
 	Client *http.Client
 }
 
-// Creates a new Client, with reasonable defaults
+// Creates a new SpaceCloud Client
 func NewClient(server string) (*Client, error) {
 	// create a client with sane default values
 	client := Client{
@@ -91,6 +91,7 @@ func getFuncFromOperation(path, method string, operation *openapi3.Operation) st
 		paramsArg = "params " + opName + "Request"
 	}
 	var s string
+	s += fmt.Sprintf("// %s\n", opName)
 	switch method {
 	case "GET":
 		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, %s) (*%s, error) {\n", opName, paramsArg, opName+"Response")
