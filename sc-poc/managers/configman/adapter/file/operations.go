@@ -8,7 +8,6 @@ import (
 	"github.com/spacecloud-io/space-cloud/managers/configman/common"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/utils"
-	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -70,44 +69,42 @@ func (f *File) Delete(gvr schema.GroupVersionResource, name string) error {
 		return err
 	}
 
-	fileName := generateYAMLFileName(gvr.Group, gvr.Resource)
-	// Parse the config file
-	arr, err := utils.ReadSpecObjectsFromFile(filepath.Join(f.Path, fileName))
-	if err != nil {
-		f.logger.Error("Unable to parse config file", zap.String("file", fileName), zap.Error(err))
-		return err
-	}
-
+	key := source.GetModuleName(gvr)
+	config := f.getConfig()
 	newArr := []*unstructured.Unstructured{}
-	for _, spec := range arr {
+
+	for _, spec := range config[key] {
 		if spec.GetName() != name {
 			newArr = append(newArr, spec)
 		}
 	}
 
-	// Remove the old file
-	if err = os.Remove(filepath.Join(f.Path, fileName)); err != nil {
-		return fmt.Errorf("could not delete file: %v", err)
+	fileName := generateYAMLFileName(gvr.Group, gvr.Resource)
+	// If length of array is 0, delete the file.
+	if len(newArr) == 0 {
+		if err := os.Remove(filepath.Join(f.path, fileName)); err != nil {
+			return fmt.Errorf("could not delete file: %v", err)
+		}
+
+		return nil
 	}
 
-	// Create new file and append the new specs
-	if len(newArr) != 0 {
-		if _, err := os.Create(filepath.Join(f.Path, fileName)); err != nil {
+	// Overwrite the file with the new config
+	var newSpec []byte
+	for _, spec := range newArr {
+		// Get spec in bytes
+		data, err := utils.GetBytesFromSpec(spec)
+		if err != nil {
 			return err
 		}
 
-		for _, spec := range newArr {
-			// Get spec in bytes
-			data, err := utils.GetBytesFromSpec(spec)
-			if err != nil {
-				return err
-			}
-
-			err = utils.AppendToFile(filepath.Join(f.Path, fileName), data)
-			if err != nil {
-				return err
-			}
-		}
+		newSpec = append(newSpec, data...)
 	}
+
+	err := os.WriteFile(filepath.Join(f.path, fileName), newSpec, 0777)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

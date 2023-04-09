@@ -15,16 +15,16 @@ import (
 )
 
 func (f *File) loadConfiguration() error {
-	files, err := ioutil.ReadDir(f.Path)
+	files, err := ioutil.ReadDir(f.path)
 	if err != nil {
-		f.logger.Error("Unable to read config files from directory", zap.String("dir", f.Path), zap.Error(err))
+		f.logger.Error("Unable to read config files from directory", zap.String("dir", f.path), zap.Error(err))
 		return err
 	}
 
 	configuration := common.ConfigType{}
 
 	for _, file := range files {
-		arr, err := utils.ReadSpecObjectsFromFile(filepath.Join(f.Path, file.Name()))
+		arr, err := utils.ReadSpecObjectsFromFile(filepath.Join(f.path, file.Name()))
 		if err != nil {
 			f.logger.Error("Unable to parse config file", zap.String("file", file.Name()), zap.Error(err))
 			return err
@@ -57,9 +57,9 @@ func (f *File) reorganizeFileStructure() error {
 	}
 
 	// Get all files in the config directory.
-	files, err := ioutil.ReadDir(f.Path)
+	files, err := ioutil.ReadDir(f.path)
 	if err != nil {
-		f.logger.Error("Unable to read config files from directory", zap.String("dir", f.Path), zap.Error(err))
+		f.logger.Error("Unable to read config files from directory", zap.String("dir", f.path), zap.Error(err))
 		return err
 	}
 
@@ -68,7 +68,7 @@ func (f *File) reorganizeFileStructure() error {
 	for _, file := range files {
 		if _, ok := sourceFileNames[file.Name()]; !ok {
 			// Parse the config file
-			arr, err := utils.ReadSpecObjectsFromFile(filepath.Join(f.Path, file.Name()))
+			arr, err := utils.ReadSpecObjectsFromFile(filepath.Join(f.path, file.Name()))
 			if err != nil {
 				f.logger.Error("Unable to parse config file", zap.String("file", file.Name()), zap.Error(err))
 				return err
@@ -85,17 +85,17 @@ func (f *File) reorganizeFileStructure() error {
 				fileName := generateYAMLFileName(spec.GroupVersionKind().Group, utils.Pluralize(spec.GetKind()))
 
 				// Check if the source file exists
-				_, err = os.Stat(filepath.Join(f.Path, fileName))
+				_, err = os.Stat(filepath.Join(f.path, fileName))
 				// If source file does not exists create a new one and
 				// write this spec into this file
 				if os.IsNotExist(err) {
-					err := os.WriteFile(filepath.Join(f.Path, fileName), data, 0777)
+					err := os.WriteFile(filepath.Join(f.path, fileName), data, 0777)
 					if err != nil {
 						return err
 					}
 				} else {
 					// If source file exists append the spec.
-					err := utils.AppendToFile(filepath.Join(f.Path, fileName), data)
+					err := utils.AppendToFile(filepath.Join(f.path, fileName), data)
 					if err != nil {
 						return err
 					}
@@ -103,7 +103,7 @@ func (f *File) reorganizeFileStructure() error {
 			}
 
 			// delete the file
-			if err = os.Remove(filepath.Join(f.Path, file.Name())); err != nil {
+			if err = os.Remove(filepath.Join(f.path, file.Name())); err != nil {
 				return fmt.Errorf("could not delete file: %v", err)
 			}
 		}
@@ -118,6 +118,13 @@ func (f *File) setConfig(newConfig common.ConfigType) {
 	f.configuration = newConfig
 }
 
+func (f *File) getConfig() common.ConfigType {
+	f.lock.RLock()
+	defer f.lock.RUnlock()
+
+	return f.configuration
+}
+
 func generateYAMLFileName(group, resource string) string {
 	fileName := group + "." + resource + ".yaml"
 	return fileName
@@ -126,17 +133,17 @@ func generateYAMLFileName(group, resource string) string {
 func (f *File) persistConfig(gvr schema.GroupVersionResource, data []byte) error {
 	fileName := generateYAMLFileName(gvr.Group, gvr.Resource)
 	// Check if the source file exists
-	_, err := os.Stat(filepath.Join(f.Path, fileName))
+	_, err := os.Stat(filepath.Join(f.path, fileName))
 	// If source file does not exists create a new one and
 	// write this spec into this file
 	if os.IsNotExist(err) {
-		err := os.WriteFile(filepath.Join(f.Path, fileName), data, 0777)
+		err := os.WriteFile(filepath.Join(f.path, fileName), data, 0777)
 		if err != nil {
 			return err
 		}
 	} else {
 		// If source file exists append the spec.
-		err := utils.AppendToFile(filepath.Join(f.Path, fileName), data)
+		err := utils.AppendToFile(filepath.Join(f.path, fileName), data)
 		if err != nil {
 			return err
 		}

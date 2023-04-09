@@ -39,7 +39,7 @@ func (k *K8s) getConfig() common.ConfigType {
 	k.lock.RLock()
 	defer k.lock.RUnlock()
 
-	return k.configuration
+	return k.copyConfig()
 }
 
 func (k *K8s) copyConfig() common.ConfigType {

@@ -12,7 +12,7 @@ import (
 
 type File struct {
 	lock          sync.RWMutex
-	Path          string
+	path          string
 	logger        *zap.Logger
 	configuration common.ConfigType
 }
@@ -21,7 +21,7 @@ type File struct {
 func MakeFileAdapter(path string) adapter.Adapter {
 	logger, _ := zap.NewDevelopment()
 	file := &File{
-		Path:          path,
+		path:          path,
 		logger:        logger,
 		configuration: make(common.ConfigType),
 	}
@@ -35,7 +35,7 @@ func (f *File) GetRawConfig() (common.ConfigType, error) {
 		return nil, err
 	}
 
-	return f.configuration, nil
+	return f.getConfig(), nil
 }
 
 // Run watches the files indefinitely.
@@ -48,7 +48,7 @@ func (file *File) Run(ctx context.Context) (chan common.ConfigType, error) {
 
 	go file.watchEvents(watcher, cfgChan)
 
-	err = watcher.Add(file.Path)
+	err = watcher.Add(file.path)
 	if err != nil {
 		return cfgChan, err
 	}

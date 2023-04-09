@@ -104,7 +104,7 @@ func (k *K8s) Run(ctx context.Context) (chan common.ConfigType, error) {
 					Resource: utils.Pluralize(u.GetKind())}
 				key := source.GetModuleName(gvr)
 
-				newConfig := k.copyConfig()
+				newConfig := k.getConfig()
 				s := []*unstructured.Unstructured{}
 				for _, spec := range newConfig[key] {
 					if spec.GetName() == u.GetName() {
@@ -132,7 +132,7 @@ func (k *K8s) addOrUpdateConfig(u *unstructured.Unstructured) {
 		Resource: utils.Pluralize(u.GetKind())}
 	key := source.GetModuleName(gvr)
 
-	newConfig := k.copyConfig()
+	newConfig := k.getConfig()
 	found := false
 	for i, spec := range newConfig[key] {
 		if spec.GetName() == u.GetName() {
