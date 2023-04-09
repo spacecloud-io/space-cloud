@@ -25,13 +25,13 @@ func NewCommand() *cobra.Command {
 			_ = viper.BindPFlag("config", cmd.Flags().Lookup("config"))
 			_ = viper.BindPFlag("output", cmd.Flags().Lookup("output"))
 			_ = viper.BindPFlag("name", cmd.Flags().Lookup("name"))
-			_ = viper.BindPFlag("lan", cmd.Flags().Lookup("lan"))
+			_ = viper.BindPFlag("lang", cmd.Flags().Lookup("lang"))
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := viper.GetString("config")
 			output := viper.GetString("output")
 			name := viper.GetString("name")
-			lan := viper.GetString("lan")
+			lang := viper.GetString("lang")
 
 			doc, err := openapi3.NewLoader().LoadFromFile(config)
 			if err != nil {
@@ -39,7 +39,7 @@ func NewCommand() *cobra.Command {
 				os.Exit(1)
 			}
 
-			switch lan {
+			switch lang {
 			case "rtk":
 				_ = os.MkdirAll(output, 0777)
 				_ = os.WriteFile(filepath.Join(output, "types.ts"), []byte(rtk.GenerateTypes(doc)), 0777)
@@ -67,7 +67,7 @@ func NewCommand() *cobra.Command {
 				_ = os.WriteFile(filepath.Join(output, "api.gen.go"), []byte(api), 0777)
 				_ = os.WriteFile(filepath.Join(output, "types.gen.go"), []byte(types), 0777)
 			default:
-				fmt.Printf("Invalid language name or language %s not supported.\n", lan)
+				fmt.Printf("Invalid language name or language %s not supported.\n", lang)
 			}
 			return nil
 		},
@@ -76,7 +76,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("config", "c", "openapi.yaml", "The openapi yaml file to generate the client from.")
 	cmd.Flags().StringP("output", "o", "client", "The directory to output the client to.")
 	cmd.Flags().StringP("name", "n", "my-api", "Name for the API.")
-	cmd.Flags().StringP("lan", "l", "go", "Language in which to generate code. Supported languages are RTK, Go")
+	cmd.Flags().StringP("lang", "l", "go", "Language in which to generate code. Supported languages are 'rtk', 'Go'")
 
 	return cmd
 }
