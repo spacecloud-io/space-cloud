@@ -102,6 +102,9 @@ func (a *App) Provision(ctx caddy.Context) error {
 		}
 	}
 
+	//Added default field in graphql schema
+	addInternalScField(queryType)
+
 	// Merge root types with schema if they are not empty
 	schemaConfig := graphql.SchemaConfig{}
 	schemaConfig.Query = queryType
@@ -149,12 +152,6 @@ func (a *App) Provision(ctx caddy.Context) error {
 	for _, src := range sources {
 		name := src.GetName()
 
-		// First resolve the source's dependencies
-		if err := source.ResolveDependencies(ctx, "graphql", src); err != nil {
-			a.logger.Error("Unable to resolve source's dependency", zap.String("source", src.GetName()), zap.Error(err))
-			return err
-		}
-
 		dependantSource, ok := src.(Compiler)
 		if ok {
 			if err := dependantSource.GraphqlCompiler(a.Compile); err != nil {
@@ -165,6 +162,14 @@ func (a *App) Provision(ctx caddy.Context) error {
 			a.compiledQueries[name] = dependantSource.GetCompiledQuery()
 		}
 
+	}
+
+	// Give compiledQueries to the receiver
+	for _, src := range sources {
+		receiver, ok := src.(CompiledQueryReceiver)
+		if ok {
+			receiver.SetCompiledQueries(a.compiledQueries)
+		}
 	}
 
 	return nil

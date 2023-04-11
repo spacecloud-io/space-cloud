@@ -2,7 +2,6 @@ package k8s
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"time"
 
@@ -21,12 +20,11 @@ import (
 )
 
 type K8s struct {
-	dc             *dynamic.DynamicClient
-	namespace      string
-	logger         *zap.Logger
-	informers      []k8sCache.SharedIndexInformer
-	configuration  map[string][]*unstructured.Unstructured
-	configurationN map[string][]*unstructured.Unstructured
+	dc            *dynamic.DynamicClient
+	namespace     string
+	logger        *zap.Logger
+	informers     []k8sCache.SharedIndexInformer
+	configuration common.ConfigType
 }
 
 func MakeK8sAdapter() (adapter.Adapter, error) {
@@ -56,18 +54,17 @@ func MakeK8sAdapter() (adapter.Adapter, error) {
 	}
 
 	k := &K8s{
-		dc:             dc,
-		namespace:      namespace,
-		logger:         logger,
-		informers:      informers,
-		configuration:  make(map[string][]*unstructured.Unstructured),
-		configurationN: make(map[string][]*unstructured.Unstructured),
+		dc:            dc,
+		namespace:     namespace,
+		logger:        logger,
+		informers:     informers,
+		configuration: make(common.ConfigType),
 	}
 
 	return k, nil
 }
 
-func (k *K8s) GetRawConfig() ([]byte, error) {
+func (k *K8s) GetRawConfig() (common.ConfigType, error) {
 	// Load SC config file from cluster
 	err := k.loadConfiguration()
 	if err != nil {
@@ -75,11 +72,11 @@ func (k *K8s) GetRawConfig() ([]byte, error) {
 	}
 
 	// Load the new caddy config
-	return k.getCaddyConfig()
+	return k.configuration, nil
 }
 
-func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
-	cfgChan := make(chan []byte)
+func (k *K8s) Run(ctx context.Context) (chan common.ConfigType, error) {
+	cfgChan := make(chan common.ConfigType)
 
 	for _, informer := range k.informers {
 		informer.AddEventHandler(k8sCache.ResourceEventHandlerFuncs{
@@ -88,63 +85,33 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 
 				k.addOrUpdateConfig(u)
 
-				resp, err := k.getCaddyConfig()
-				if err != nil {
-					k.logger.Error("error reloading config: ", zap.Error(err))
-					return
-				}
-
-				cfgChan <- resp
+				cfgChan <- k.configuration
 			},
 			UpdateFunc: func(_ interface{}, newObj interface{}) {
 				u := newObj.(*unstructured.Unstructured)
 
 				k.addOrUpdateConfig(u)
 
-				resp, err := k.getCaddyConfig()
-				if err != nil {
-					k.logger.Error("error reloading config: ", zap.Error(err))
-					return
-				}
-
-				cfgChan <- resp
+				cfgChan <- k.configuration
 			},
 			DeleteFunc: func(obj interface{}) {
 				u := obj.(*unstructured.Unstructured)
 
-				// new configuration
 				gvr := schema.GroupVersionResource{
 					Group:    u.GroupVersionKind().Group,
 					Version:  u.GroupVersionKind().Version,
 					Resource: utils.Pluralize(u.GetKind())}
 				key := source.GetModuleName(gvr)
 				s := []*unstructured.Unstructured{}
-				for _, spec := range k.configurationN[key] {
+				for _, spec := range k.configuration[key] {
 					if spec.GetName() == u.GetName() {
 						continue
 					}
 					s = append(s, spec)
 				}
-				k.configurationN[key] = s
+				k.configuration[key] = s
 
-				// old configuration
-				kind := u.GetKind()
-				s = []*unstructured.Unstructured{}
-				for _, spec := range k.configuration[kind] {
-					if spec.GetName() == u.GetName() {
-						continue
-					}
-					s = append(s, spec)
-				}
-				k.configuration[kind] = s
-
-				resp, err := k.getCaddyConfig()
-				if err != nil {
-					k.logger.Error("error reloading config: ", zap.Error(err))
-					return
-				}
-
-				cfgChan <- resp
+				cfgChan <- k.configuration
 			},
 		})
 
@@ -154,47 +121,22 @@ func (k *K8s) Run(ctx context.Context) (chan []byte, error) {
 	return cfgChan, nil
 }
 
-func (k *K8s) getCaddyConfig() ([]byte, error) {
-	// Load the new caddy config
-	config, err := common.PrepareConfig(k.configuration, k.configurationN)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.MarshalIndent(config, "", "  ")
-}
-
 func (k *K8s) addOrUpdateConfig(u *unstructured.Unstructured) {
-	// new configuration
 	gvr := schema.GroupVersionResource{
 		Group:    u.GroupVersionKind().Group,
 		Version:  u.GroupVersionKind().Version,
 		Resource: utils.Pluralize(u.GetKind())}
 	key := source.GetModuleName(gvr)
 	found := false
-	for i, spec := range k.configurationN[key] {
+	for i, spec := range k.configuration[key] {
 		if spec.GetName() == u.GetName() {
-			k.configurationN[key][i] = u
+			k.configuration[key][i] = u
 			found = true
 			break
 		}
 	}
 	if !found {
-		k.configurationN[key] = append(k.configurationN[key], u)
-	}
-
-	// old configuration
-	kind := u.GetKind()
-	found = false
-	for i, spec := range k.configuration[kind] {
-		if spec.GetName() == u.GetName() {
-			k.configuration[kind][i] = u
-			found = true
-			break
-		}
-	}
-	if !found {
-		k.configuration[kind] = append(k.configuration[kind], u)
+		k.configuration[key] = append(k.configuration[key], u)
 	}
 }
 

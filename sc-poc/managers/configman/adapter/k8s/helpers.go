@@ -17,11 +17,8 @@ func (k *K8s) loadConfiguration() error {
 		}
 
 		for _, obj := range srcList.Items {
-			kind := obj.GetKind()
 			key := source.GetModuleName(srcGVR)
-
-			k.configuration[kind] = append(k.configuration[kind], &obj)
-			k.configurationN[key] = append(k.configurationN[key], &obj)
+			k.configuration[key] = append(k.configuration[key], &obj)
 		}
 	}
 

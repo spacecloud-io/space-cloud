@@ -9,7 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-func generateAPI(name, baseURL string, doc *openapi3.T) string {
+func generateAPI(name string, doc *openapi3.T) string {
 	var s string
 
 	s += apiPrefix
@@ -17,7 +17,7 @@ func generateAPI(name, baseURL string, doc *openapi3.T) string {
 	s += "// Define a service using a base URL and expected endpoints\n"
 	s += "export const api = createApi({\n"
 	s += fmt.Sprintf("  reducerPath: \"%s\",\n", name)
-	s += fmt.Sprintf("  baseQuery: fetchBaseQuery({ baseUrl: \"%s\" }),\n", baseURL)
+	s += "  baseQuery: fetchBaseQuery(config),\n"
 
 	tagsJSON, _ := json.Marshal(getAllTags(doc))
 	s += fmt.Sprintf("  tagTypes: %s,\n", string(tagsJSON))
@@ -174,4 +174,5 @@ var apiPrefix string = `
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import * as helpers from './helpers';
 import * as httpTypes from "./types";
+import config from "./http.config";
 `

@@ -23,13 +23,11 @@ func NewCommand() *cobra.Command {
 			_ = viper.BindPFlag("config", cmd.Flags().Lookup("config"))
 			_ = viper.BindPFlag("output", cmd.Flags().Lookup("output"))
 			_ = viper.BindPFlag("name", cmd.Flags().Lookup("name"))
-			_ = viper.BindPFlag("base-url", cmd.Flags().Lookup("base-url"))
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := viper.GetString("config")
 			output := viper.GetString("output")
 			name := viper.GetString("name")
-			baseURL := viper.GetString("base-url")
 
 			doc, err := openapi3.NewLoader().LoadFromFile(config)
 			if err != nil {
@@ -40,8 +38,11 @@ func NewCommand() *cobra.Command {
 			_ = os.MkdirAll(output, 0777)
 			_ = os.WriteFile(filepath.Join(output, "types.ts"), []byte(generateTypes(doc)), 0777)
 			_ = os.WriteFile(filepath.Join(output, "helpers.ts"), []byte(helperTS), 0777)
-			_ = os.WriteFile(filepath.Join(output, "api.ts"), []byte(generateAPI(name, baseURL, doc)), 0777)
+			_ = os.WriteFile(filepath.Join(output, "api.ts"), []byte(generateAPI(name, doc)), 0777)
 			_ = os.WriteFile(filepath.Join(output, "index.ts"), []byte(indexTS), 0777)
+			if _, err = os.Stat(filepath.Join(output, "http.config.ts")); os.IsNotExist(err) {
+				_ = os.WriteFile(filepath.Join(output, "http.config.ts"), []byte(configTS), 0777)
+			}
 			return nil
 		},
 	}
@@ -49,7 +50,6 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("config", "c", "openapi.yaml", "The openapi yaml file to generate the client from.")
 	cmd.Flags().StringP("output", "o", "client", "The directory to output the client to.")
 	cmd.Flags().StringP("name", "n", "my-api", "Name for the API.")
-	cmd.Flags().StringP("base-url", "b", "/", "Base path for the url.")
 
 	return cmd
 }

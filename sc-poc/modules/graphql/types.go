@@ -15,6 +15,11 @@ type (
 		GetCompiledQuery() *CompiledQuery
 	}
 
+	// CompiledQueryReceiver describes the implementation of source which requires compiledQueries
+	CompiledQueryReceiver interface {
+		SetCompiledQueries(map[string]*CompiledQuery)
+	}
+
 	CompilerFn func(query, operationName string, defaultValues map[string]any, enableExtraction bool) (*CompiledQuery, error)
 )
 
