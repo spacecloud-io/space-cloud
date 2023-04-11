@@ -54,7 +54,7 @@ func (a *App) Stop() error {
 	return nil
 }
 
-// Cleanup clean up the app
+// Cleanup cleans up the app
 func (a *App) Cleanup() error {
 	return nil
 }
