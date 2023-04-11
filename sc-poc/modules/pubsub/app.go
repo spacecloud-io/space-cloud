@@ -9,6 +9,10 @@ import (
 
 var connectorPool = caddy.NewUsagePool()
 
+func init() {
+	caddy.RegisterModule(App{})
+}
+
 // App defines struct for pubsub app
 type App struct {
 	// For pubsub engine
