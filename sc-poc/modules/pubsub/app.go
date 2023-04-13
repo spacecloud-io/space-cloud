@@ -43,7 +43,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 		return err
 	}
 	connector := val.(*connectors.Connector)
-	a.pubSub = connector.PubSubClient
+	a.pubSub = connector.GetPubsubClient()
 
 	return nil
 }
@@ -60,5 +60,10 @@ func (a *App) Stop() error {
 
 // Cleanup cleans up the app
 func (a *App) Cleanup() error {
+	_, err := connectorPool.Delete(getPoolKey())
+	if err != nil {
+		a.logger.Error("Unable to gracefully close  pubsub connector", zap.Error(err))
+		return err
+	}
 	return nil
 }

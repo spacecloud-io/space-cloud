@@ -28,11 +28,6 @@ func (a *App) Subscribe(ctx context.Context, clientID, topic string, options Sub
 	return messages, nil
 }
 
-// SendAckNack is used to send an ack/nack
-func (a *App) SendAckNack(messageID string, ack bool) error {
-	return nil
-}
-
 // Channels return channels with their schema
 func (a *App) Channels() ChannelsWithSchema {
 	return ChannelsWithSchema{
@@ -41,15 +36,17 @@ func (a *App) Channels() ChannelsWithSchema {
 				Name: "api-provision",
 				Payload: ChannelPayload{
 					Schema: map[string]string{
-						"$ref": "#/components/messages/MyPayload",
+						"$ref": "#/components/messages/APIManMsg",
 					},
 				},
 			},
 		},
 		Components: Components{
 			Messages: map[string]interface{}{
-				"type":                 "object",
-				"additionalProperties": true,
+				"APIManMsg": map[string]interface{}{
+					"type":                 "object",
+					"additionalProperties": true,
+				},
 			},
 		},
 	}
