@@ -12,7 +12,7 @@ type Connector struct {
 	lock sync.RWMutex
 
 	// For pubsub engine
-	PubSubClient *gochannel.GoChannel
+	pubSubClient *gochannel.GoChannel
 }
 
 // New intialise the pubsub connector
@@ -22,10 +22,15 @@ func New() (*Connector, error) {
 		watermill.NewStdLogger(false, false),
 	)
 
-	return &Connector{PubSubClient: pubSub}, nil
+	return &Connector{pubSubClient: pubSub}, nil
+}
+
+// GetPubsubClient returns pubsub client
+func (c *Connector) GetPubsubClient() *gochannel.GoChannel {
+	return c.pubSubClient
 }
 
 // Destruct destroys the pubsub module
 func (c *Connector) Destruct() error {
-	return c.PubSubClient.Close()
+	return c.pubSubClient.Close()
 }
