@@ -122,7 +122,15 @@ func (f *File) getConfig() common.ConfigType {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 
-	return f.configuration
+	return f.copyConfig()
+}
+
+func (f *File) copyConfig() common.ConfigType {
+	copy := make(common.ConfigType)
+	for k, v := range f.configuration {
+		copy[k] = v
+	}
+	return copy
 }
 
 func generateYAMLFileName(group, resource string) string {
