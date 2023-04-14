@@ -23,7 +23,7 @@ func PrepareConfig(configuration ConfigType) (*caddy.Config, error) {
 
 	// Load all the managers
 	c.AppsRaw = make(caddy.ModuleMap)
-	c.AppsRaw["http"] = prepareHTTPHandlerApp()
+	c.AppsRaw["http"] = prepareHTTPHandlerApp(configuration)
 	c.AppsRaw["source"] = prepareSourceManagerApp(configuration)
 
 	// Load our providers
