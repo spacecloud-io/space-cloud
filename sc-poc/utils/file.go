@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -46,6 +47,34 @@ func ReadSpecObjectsFromFile(fileName string) ([]*unstructured.Unstructured, err
 	}
 
 	return specs, nil
+}
+
+// GetBytesFromSpec converts spec of type unstructured.Unstructured into array of bytes
+func GetBytesFromSpec(spec *unstructured.Unstructured) ([]byte, error) {
+	data, err := yaml.Marshal(spec.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	tempString := string(data) + "---" + "\n"
+	return []byte(tempString), nil
+}
+
+// AppendToFile appends content to the file
+func AppendToFile(filePath string, data []byte) error {
+	// Open the file for appending
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("could not open file: %v", err)
+	}
+	defer file.Close()
+
+	// Write the text to the file
+	if _, err := file.Write(data); err != nil {
+		return fmt.Errorf("could not write to file: %v", err)
+	}
+
+	return nil
 }
 
 func makeSpecStringArray(raw string) []string {

@@ -3,6 +3,7 @@ package k8s
 import (
 	"context"
 	"os"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -20,6 +21,7 @@ import (
 )
 
 type K8s struct {
+	lock          sync.RWMutex
 	dc            *dynamic.DynamicClient
 	namespace     string
 	logger        *zap.Logger
@@ -66,13 +68,12 @@ func MakeK8sAdapter() (adapter.Adapter, error) {
 
 func (k *K8s) GetRawConfig() (common.ConfigType, error) {
 	// Load SC config file from cluster
-	err := k.loadConfiguration()
-	if err != nil {
+	if err := k.loadConfiguration(); err != nil {
 		return nil, err
 	}
 
 	// Load the new caddy config
-	return k.configuration, nil
+	return k.getConfig(), nil
 }
 
 func (k *K8s) Run(ctx context.Context) (chan common.ConfigType, error) {
@@ -85,14 +86,14 @@ func (k *K8s) Run(ctx context.Context) (chan common.ConfigType, error) {
 
 				k.addOrUpdateConfig(u)
 
-				cfgChan <- k.configuration
+				cfgChan <- k.getConfig()
 			},
 			UpdateFunc: func(_ interface{}, newObj interface{}) {
 				u := newObj.(*unstructured.Unstructured)
 
 				k.addOrUpdateConfig(u)
 
-				cfgChan <- k.configuration
+				cfgChan <- k.getConfig()
 			},
 			DeleteFunc: func(obj interface{}) {
 				u := obj.(*unstructured.Unstructured)
@@ -102,16 +103,19 @@ func (k *K8s) Run(ctx context.Context) (chan common.ConfigType, error) {
 					Version:  u.GroupVersionKind().Version,
 					Resource: utils.Pluralize(u.GetKind())}
 				key := source.GetModuleName(gvr)
+
+				newConfig := k.getConfig()
 				s := []*unstructured.Unstructured{}
-				for _, spec := range k.configuration[key] {
+				for _, spec := range newConfig[key] {
 					if spec.GetName() == u.GetName() {
 						continue
 					}
 					s = append(s, spec)
 				}
-				k.configuration[key] = s
+				newConfig[key] = s
+				k.setConfig(newConfig)
 
-				cfgChan <- k.configuration
+				cfgChan <- k.getConfig()
 			},
 		})
 
@@ -127,17 +131,21 @@ func (k *K8s) addOrUpdateConfig(u *unstructured.Unstructured) {
 		Version:  u.GroupVersionKind().Version,
 		Resource: utils.Pluralize(u.GetKind())}
 	key := source.GetModuleName(gvr)
+
+	newConfig := k.getConfig()
 	found := false
-	for i, spec := range k.configuration[key] {
+	for i, spec := range newConfig[key] {
 		if spec.GetName() == u.GetName() {
-			k.configuration[key][i] = u
+			newConfig[key][i] = u
 			found = true
 			break
 		}
 	}
 	if !found {
-		k.configuration[key] = append(k.configuration[key], u)
+		newConfig[key] = append(newConfig[key], u)
 	}
+
+	k.setConfig(newConfig)
 }
 
 // Interface guard
