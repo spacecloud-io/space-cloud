@@ -21,36 +21,37 @@ type ConfigLoader struct {
 	debounceInterval time.Duration
 }
 
+// configLoader is a globally initialized config loader.
+var configLoader ConfigLoader = ConfigLoader{}
+
 // InitializeConfigLoader initializes the config loader with the given adapter.
-func InitializeConfigLoader() (*ConfigLoader, error) {
+func InitializeConfigLoader() error {
 	configAdapter := viper.GetString("config.adapter")
 	path := viper.GetString("config.path")
 	debounceInterval, err := time.ParseDuration(viper.GetString("config.debounce-interval"))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	configloader := &ConfigLoader{
-		debounceInterval: debounceInterval,
-	}
+	configLoader.debounceInterval = debounceInterval
 	switch configAdapter {
 	case "file":
-		configloader.adapter = file.MakeFileAdapter(path)
+		configLoader.adapter = file.MakeFileAdapter(path)
 	case "k8s":
-		configloader.adapter, err = k8s.MakeK8sAdapter()
+		configLoader.adapter, err = k8s.MakeK8sAdapter()
 		if err != nil {
-			return nil, err
+			return err
 		}
 	default:
-		return nil, fmt.Errorf("invalid adapter specified")
+		return fmt.Errorf("invalid adapter specified")
 	}
-	return configloader, nil
+	return nil
 }
 
 // GetCaddyConfig reads the config from the adapter and
 // converts from bytes to caddy Config.
-func (configloader *ConfigLoader) GetCaddyConfig() (*caddy.Config, error) {
-	cfg, err := configloader.adapter.GetRawConfig()
+func GetCaddyConfig() (*caddy.Config, error) {
+	cfg, err := configLoader.adapter.GetRawConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -60,9 +61,9 @@ func (configloader *ConfigLoader) GetCaddyConfig() (*caddy.Config, error) {
 
 // WatchChanges continuously watches the config objects and reloads caddy
 // if it detects any changes
-func (configloader *ConfigLoader) WatchChanges(ctx context.Context) {
-	debounced := debounce.New(configloader.debounceInterval)
-	cfgChan, err := configloader.adapter.Run(ctx)
+func WatchChanges(ctx context.Context) {
+	debounced := debounce.New(configLoader.debounceInterval)
+	cfgChan, err := configLoader.adapter.Run(ctx)
 	if err != nil {
 		fmt.Println("Error watching changes: ", err)
 		return
