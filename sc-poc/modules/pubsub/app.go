@@ -3,8 +3,9 @@ package pubsub
 import (
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 	"github.com/caddyserver/caddy/v2"
-	"github.com/spacecloud-io/space-cloud/modules/pubsub/connectors"
 	"go.uber.org/zap"
+
+	"github.com/spacecloud-io/space-cloud/modules/pubsub/connectors"
 )
 
 var connectorPool = caddy.NewUsagePool()
