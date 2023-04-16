@@ -5,6 +5,7 @@ import (
 	"github.com/caddyserver/caddy/v2"
 	"go.uber.org/zap"
 
+	"github.com/spacecloud-io/space-cloud/managers/apis"
 	"github.com/spacecloud-io/space-cloud/modules/pubsub/connectors"
 )
 
@@ -12,6 +13,7 @@ var connectorPool = caddy.NewUsagePool()
 
 func init() {
 	caddy.RegisterModule(App{})
+	apis.RegisterApp("pubsub", 100)
 }
 
 // App defines struct for pubsub app

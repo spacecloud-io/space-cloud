@@ -48,7 +48,7 @@ type (
 		Name    string
 		Path    string
 		OpenAPI *OpenAPI
-		Handler http.HandlerFunc
+		Handler http.Handler
 		Plugins []v1alpha1.HTTPPlugin
 
 		app string

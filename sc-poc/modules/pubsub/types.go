@@ -1,5 +1,20 @@
 package pubsub
 
+type (
+	eventType string
+)
+
+const (
+	subscribeEvent eventType = "subscribe"
+	messageEvent   eventType = "message"
+)
+
+// Message defines the type of event and the associated data
+type Message struct {
+	Event eventType              `json:"event"`
+	Data  map[string]interface{} `json:"data"`
+}
+
 // PublishMessage defines the type for publishing a message
 type PublishMessage struct {
 	ID       string            `json:"id"`
@@ -14,6 +29,10 @@ type PublishOptions struct {
 
 // SubscribeOptions defines the options for subscribing a message
 type SubscribeOptions struct {
+	Mode     string `json:"mode"`
+	Capacity int    `json:"capacity"`
+	Autoack  bool   `json:"autoack"`
+	Format   string `json:"format"`
 }
 
 // ChannelsWithSchema define the channels schema and component
