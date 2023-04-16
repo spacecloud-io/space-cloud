@@ -371,3 +371,23 @@ func getGraphqlTypeNameFromAST(t ast.Type) (typeName string, isList, isRequired 
 
 	return "", false, false
 }
+
+func addInternalScField(rootGraphqlType *graphql.Object) {
+	var sc_buildInfo = graphql.NewObject(graphql.ObjectConfig{
+		Name: "sc_buildInfo",
+		Fields: graphql.Fields{
+			"version": &graphql.Field{
+				Type: graphql.String,
+			},
+		},
+	})
+	field := &graphql.Field{
+		Type: sc_buildInfo,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			return map[string]interface{}{"version": "v0.22.0"}, nil
+		},
+		Description: "describing buildinfo of SC ",
+	}
+
+	rootGraphqlType.AddFieldConfig("sc_buildInfo", field)
+}

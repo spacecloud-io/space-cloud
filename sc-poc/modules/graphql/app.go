@@ -102,6 +102,9 @@ func (a *App) Provision(ctx caddy.Context) error {
 		}
 	}
 
+	//Added default field in graphql schema
+	addInternalScField(queryType)
+
 	// Merge root types with schema if they are not empty
 	schemaConfig := graphql.SchemaConfig{}
 	schemaConfig.Query = queryType
