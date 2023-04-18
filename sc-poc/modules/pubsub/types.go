@@ -5,8 +5,9 @@ type (
 )
 
 const (
-	subscribeEvent eventType = "subscribe"
-	messageEvent   eventType = "message"
+	subscribeEvent   eventType = "subscribe"
+	unsubscribeEvent eventType = "unsubscribe"
+	messageEvent     eventType = "message"
 )
 
 // Message defines the type of event and the associated data

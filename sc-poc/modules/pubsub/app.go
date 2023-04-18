@@ -21,6 +21,9 @@ type App struct {
 	// For pubsub engine
 	pubSub *gochannel.GoChannel
 
+	// APIs
+	apis apis.APIs
+
 	// For internal usage
 	logger *zap.Logger
 }
@@ -47,6 +50,15 @@ func (a *App) Provision(ctx caddy.Context) error {
 	}
 	connector := val.(*connectors.Connector)
 	a.pubSub = connector.GetPubsubClient()
+
+	channels := a.Channels()
+	for path, channel := range channels.Channels {
+		// Get the publish and subscribe API of the channel
+		publisherAPI := a.getPublisherAPI(path, channel.Name)
+		subscriberAPI := a.getSubscriberAPI(path, channel.Name)
+
+		a.apis = append(a.apis, publisherAPI, subscriberAPI)
+	}
 
 	return nil
 }
