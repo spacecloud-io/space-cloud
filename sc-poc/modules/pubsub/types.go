@@ -1,18 +1,18 @@
 package pubsub
 
 type (
-	eventType string
+	EventType string
 )
 
 const (
-	subscribeEvent   eventType = "subscribe"
-	unsubscribeEvent eventType = "unsubscribe"
-	messageEvent     eventType = "message"
+	SubscribeEvent   EventType = "subscribe"
+	UnsubscribeEvent EventType = "unsubscribe"
+	MessageEvent     EventType = "message"
 )
 
 // Message defines the type of event and the associated data
 type Message struct {
-	Event eventType              `json:"event"`
+	Event EventType              `json:"event"`
 	Data  map[string]interface{} `json:"data"`
 }
 

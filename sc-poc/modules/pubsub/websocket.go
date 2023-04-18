@@ -52,7 +52,7 @@ func (a *App) getPublisherAPI(channelPath, channelName string) *apis.API {
 					continue
 				}
 
-				if message.Event == messageEvent {
+				if message.Event == MessageEvent {
 					var pubMsg PublishMessage
 					err = mapstructure.Decode(message.Data, &pubMsg)
 					if err != nil {
@@ -108,11 +108,11 @@ func (a *App) getSubscriberAPI(channelPath, channelName string) *apis.API {
 					}
 
 					a.logger.Debug("event received", zap.String("event", string(message.Event)))
-					if message.Event == subscribeEvent {
+					if message.Event == SubscribeEvent {
 						a.logger.Debug("subscription started", zap.String("channel", channelName))
 						subscribeStatus <- true
 					}
-					if message.Event == unsubscribeEvent {
+					if message.Event == UnsubscribeEvent {
 						a.logger.Debug("unsubscribed to the channel", zap.String("channel", channelName))
 						subscribeStatus <- false
 					}
