@@ -5,6 +5,7 @@ import (
 	"github.com/caddyserver/caddy/v2"
 	"go.uber.org/zap"
 
+	"github.com/spacecloud-io/space-cloud/managers/apis"
 	"github.com/spacecloud-io/space-cloud/modules/pubsub/connectors"
 )
 
@@ -12,12 +13,16 @@ var connectorPool = caddy.NewUsagePool()
 
 func init() {
 	caddy.RegisterModule(App{})
+	apis.RegisterApp("pubsub", 100)
 }
 
 // App defines struct for pubsub app
 type App struct {
 	// For pubsub engine
 	pubSub *gochannel.GoChannel
+
+	// APIs
+	apis apis.APIs
 
 	// For internal usage
 	logger *zap.Logger
@@ -45,6 +50,15 @@ func (a *App) Provision(ctx caddy.Context) error {
 	}
 	connector := val.(*connectors.Connector)
 	a.pubSub = connector.GetPubsubClient()
+
+	channels := a.Channels()
+	for path, channel := range channels.Channels {
+		// Get the publish and subscribe API of the channel
+		publisherAPI := a.getPublisherAPI(path, channel.Name)
+		subscriberAPI := a.getSubscriberAPI(path, channel.Name)
+
+		a.apis = append(a.apis, publisherAPI, subscriberAPI)
+	}
 
 	return nil
 }
