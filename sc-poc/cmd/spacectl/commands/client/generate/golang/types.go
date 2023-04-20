@@ -79,48 +79,76 @@ func generateTypesFromOperation(operation *openapi3.Operation, method string) st
 	opName := getTypeName(operation.OperationID, false)
 	var s string
 	if len(requestSchema.Value.Properties) > 0 {
-		s += generateTypeDef(requestSchema, opName+"Request", method, opName)
+		s += generateTypeDef(requestSchema, opName+"Request", opName)
 	}
 
-	s += generateTypeDef(responseSchema, opName+"Response", method, opName)
+	s += generateTypeDef(responseSchema, opName+"Response", opName)
 	return s
 }
 
-func generateTypeDef(schema *openapi3.SchemaRef, name string, method string, opName string) string {
+func generateTypeDef(schema *openapi3.SchemaRef, name string, parent string) string {
 	var s string
 	pendingTypes := make(map[string]*openapi3.SchemaRef)
+	parentMapping := make(map[string]string)
 
 	s += fmt.Sprintf("// %s\n", name)
 	s += fmt.Sprintf("type %s struct {\n", name)
 	for k, nestedSchema := range schema.Value.Properties {
-		typeName := getTypeName(k, false)
-		s += fmt.Sprintf("	%s ", typeName)
+		required := isRequired(schema.Value.Required, k)
+		child := getTypeName(k, false)
+		s += fmt.Sprintf("	%s ", child)
 
 		switch nestedSchema.Value.Type {
 		case "object":
-			typeName = method + "_" + typeName + "_" + opName
+			typeName := parent + "_" + child
+			if !required {
+				k += ",omitempty"
+				s += "*"
+			}
 			s += fmt.Sprintf("%s `json:%q`\n", typeName, k)
 			pendingTypes[typeName] = nestedSchema
+			parentMapping[typeName] = child
 
 		case "array":
-			typeName = method + "_" + typeName + "_" + opName
-			s += fmt.Sprintf("[]%s `json:%q`\n", typeName, k)
-			pendingTypes[typeName] = nestedSchema.Value.Items
+			typeName := parent + "_" + child
+			s += "[]"
+			if !required {
+				k += ",omitempty"
+				s += "*"
+			}
+
+			arrayType := nestedSchema.Value.Items.Value.Type
+			if arrayType == "object" {
+				s += fmt.Sprintf("%s `json:%q`\n", typeName, k)
+				pendingTypes[typeName] = nestedSchema.Value.Items
+				parentMapping[typeName] = child
+			} else {
+				s += fmt.Sprintf("%s `json:%q`\n", arrayType, k)
+			}
 
 		case "integer", "number":
+			if !required {
+				k += ",omitempty"
+			}
 			s += fmt.Sprintf("int32 `json:%q`\n", k)
 
 		case "string":
+			if !required {
+				k += ",omitempty"
+			}
 			s += fmt.Sprintf("string `json:%q`\n", k)
 
 		case "boolean":
+			if !required {
+				k += ",omitempty"
+			}
 			s += fmt.Sprintf("bool `json:%q`\n", k)
 
 		}
 	}
 	s += "}\n\n"
 	for name, schema := range pendingTypes {
-		s += generateTypeDef(schema, name, method, opName)
+		s += generateTypeDef(schema, name, parentMapping[name])
 	}
 	return s
 }
@@ -148,4 +176,13 @@ func getTypeName(name string, skipFirst bool) string {
 	}
 
 	return strings.Join(arr, "")
+}
+
+func isRequired(required []string, name string) bool {
+	for _, r := range required {
+		if r == name {
+			return true
+		}
+	}
+	return false
 }

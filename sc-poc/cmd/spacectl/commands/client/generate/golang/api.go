@@ -238,9 +238,21 @@ func getOpParams(params openapi3.Parameters) string {
 
 	s := "queryValues := url.Query()\n"
 	for _, p := range params {
-		s += fmt.Sprintf(`
-		queryValues.Add(%q, fmt.Sprint(params.%s))
-		`, p.Value.Name, getTypeName(p.Value.Name, false))
+		typeName := getTypeName(p.Value.Name, false)
+		if p.Value.Schema.Value.Type == "object" {
+			s += fmt.Sprintf(`
+			b, err := json.Marshal(params.%s)
+			if err != nil {
+				return nil, err
+			}
+
+			queryValues.Add(%q, fmt.Sprint(string(b)))
+			`, typeName, p.Value.Name)
+		} else {
+			s += fmt.Sprintf(`
+			queryValues.Add(%q, fmt.Sprint(params.%s))
+			`, p.Value.Name, typeName)
+		}
 	}
 	s += "url.RawQuery = queryValues.Encode()\n"
 	return s
