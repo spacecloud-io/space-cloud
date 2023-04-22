@@ -43,7 +43,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 			// module is ready to be used if no error is returned
 			t, err := ctx.LoadModuleByID(key, c)
 			if err != nil {
-				a.logger.Warn("Unable to load module for source", zap.String("group", gvr.Group), zap.String("version", gvr.Version), zap.String("resource", gvr.Resource), zap.Any("err", err))
+				a.logger.Warn("Unable to load module for source", zap.String("group", gvr.Group), zap.String("version", gvr.Version), zap.String("resource", gvr.Resource))
 				continue
 			}
 
