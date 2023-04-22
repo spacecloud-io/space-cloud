@@ -18,8 +18,8 @@ type APIHandler struct {
 	Indexes []string `json:"indexes"`
 
 	// For internal use
-	logger      *zap.Logger
-	handlerFunc http.HandlerFunc
+	logger  *zap.Logger
+	handler http.Handler
 }
 
 // CaddyModule returns the Caddy module information.
@@ -47,11 +47,11 @@ func (h *APIHandler) Provision(ctx caddy.Context) error {
 	apis := appTemp.(App).GetAPIRoutes()
 	for _, a := range apis {
 		if a.Name == h.Name {
-			h.handlerFunc = a.Handler
+			h.handler = a.Handler
 			break
 		}
 	}
-	if h.handlerFunc == nil {
+	if h.handler == nil {
 		h.logger.Error("Unable to load handler for specified operation", zap.String("app", h.App), zap.String("name", h.Name))
 		return err
 	}
@@ -66,7 +66,7 @@ func (h *APIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next cadd
 
 	// Call the handler
 	r = r.WithContext(context.WithValue(r.Context(), pathParamsKey, pathParams))
-	h.handlerFunc(w, r)
+	h.handler.ServeHTTP(w, r)
 	return nil
 }
 

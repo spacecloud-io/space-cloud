@@ -88,7 +88,7 @@ func (a *App) GetAPIRoutes() apis.APIs {
 		OpenAPI: &apis.OpenAPI{
 			PathDef: pathDef,
 		},
-		Handler: func(w http.ResponseWriter, r *http.Request) {
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Prepare context object
 			ctx, cancel := context.WithTimeout(r.Context(), 10*time.Minute)
 			defer cancel()
@@ -130,6 +130,6 @@ func (a *App) GetAPIRoutes() apis.APIs {
 
 			// Send response to client
 			_ = utils.SendResponse(w, http.StatusOK, result)
-		},
+		}),
 	}}
 }

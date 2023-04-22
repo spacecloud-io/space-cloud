@@ -29,12 +29,11 @@ func NewCommand() *cobra.Command {
 
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			configloader, err := configman.InitializeConfigLoader()
-			if err != nil {
+			if err := configman.InitializeConfigLoader(); err != nil {
 				log.Fatal("Unable to initialize config loader: ", err)
 			}
 
-			c, err := configloader.GetCaddyConfig()
+			c, err := configman.GetCaddyConfig()
 			if err != nil {
 				log.Fatal("Unable to load caddy config: ", err)
 			}
@@ -44,7 +43,7 @@ func NewCommand() *cobra.Command {
 			}
 
 			ctx := context.Background()
-			go configloader.WatchChanges(ctx)
+			go configman.WatchChanges(ctx)
 
 			select {}
 		},
