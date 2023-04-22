@@ -30,6 +30,8 @@ type Interface interface {
 	GraphqlSources() GraphqlSourceInformer
 	// JwtHSASecrets returns a JwtHSASecretInformer.
 	JwtHSASecrets() JwtHSASecretInformer
+	// JwtRSASecrets returns a JwtRSASecretInformer.
+	JwtRSASecrets() JwtRSASecretInformer
 	// OPAPolicies returns a OPAPolicyInformer.
 	OPAPolicies() OPAPolicyInformer
 	// OpenAPISources returns a OpenAPISourceInformer.
@@ -60,6 +62,11 @@ func (v *version) GraphqlSources() GraphqlSourceInformer {
 // JwtHSASecrets returns a JwtHSASecretInformer.
 func (v *version) JwtHSASecrets() JwtHSASecretInformer {
 	return &jwtHSASecretInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// JwtRSASecrets returns a JwtRSASecretInformer.
+func (v *version) JwtRSASecrets() JwtRSASecretInformer {
+	return &jwtRSASecretInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // OPAPolicies returns a OPAPolicyInformer.

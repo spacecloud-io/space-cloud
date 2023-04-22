@@ -7,7 +7,7 @@ type (
 	AuthSecret struct {
 		v1alpha1.AuthSecret
 		Alg   JWTAlg
-		Value string
+		Value interface{}
 	}
 
 	// JWTAlg is type of method used for signing token

@@ -31,6 +31,7 @@ type CoreV1alpha1Interface interface {
 	CompiledGraphqlSourcesGetter
 	GraphqlSourcesGetter
 	JwtHSASecretsGetter
+	JwtRSASecretsGetter
 	OPAPoliciesGetter
 	OpenAPISourcesGetter
 }
@@ -50,6 +51,10 @@ func (c *CoreV1alpha1Client) GraphqlSources(namespace string) GraphqlSourceInter
 
 func (c *CoreV1alpha1Client) JwtHSASecrets(namespace string) JwtHSASecretInterface {
 	return newJwtHSASecrets(c, namespace)
+}
+
+func (c *CoreV1alpha1Client) JwtRSASecrets(namespace string) JwtRSASecretInterface {
+	return newJwtRSASecrets(c, namespace)
 }
 
 func (c *CoreV1alpha1Client) OPAPolicies(namespace string) OPAPolicyInterface {
