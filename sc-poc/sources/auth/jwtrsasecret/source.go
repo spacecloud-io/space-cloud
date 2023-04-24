@@ -77,10 +77,8 @@ func (s *JWTRSASecretSource) GetSecretInfo() *types.AuthSecret {
 	return &types.AuthSecret{
 		AuthSecret: s.Spec.AuthSecret,
 		Alg:        types.RS256,
-		Value: map[string]interface{}{
-			"publicValue":  s.parsedPubKey,
-			"privateValue": s.parsedPriKey,
-		},
+		PublicKey:  s.parsedPubKey,
+		PrivateKey: s.parsedPriKey,
 	}
 }
 

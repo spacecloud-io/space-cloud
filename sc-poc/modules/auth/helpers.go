@@ -23,34 +23,26 @@ func getSigninMethod(alg types.JWTAlg) jwt.SigningMethod {
 
 func getSigningSecret(secret *types.AuthSecret) interface{} {
 	if secret.Alg == types.HS256 {
-		if b, ok := secret.Value.([]byte); ok {
-			return b
+		if b, ok := secret.PrivateKey.(string); ok {
+			return []byte(b)
 		}
 	}
 
-	// TODO: Return private key here
 	if secret.Alg == types.RS256 {
-		if m, ok := secret.Value.(map[string]interface{}); ok {
-			return m["privateValue"]
-
-		}
+		return secret.PrivateKey
 	}
 	return nil
 }
 
 func getVerifyingSecret(secret *types.AuthSecret) interface{} {
 	if secret.Alg == types.HS256 {
-		if b, ok := secret.Value.([]byte); ok {
-			return b
+		if b, ok := secret.PublicKey.(string); ok {
+			return []byte(b)
 		}
 	}
 
-	// TODO: Return public key here
 	if secret.Alg == types.RS256 {
-		if m, ok := secret.Value.(map[string]interface{}); ok {
-			return m["publicValue"]
-
-		}
+		return secret.PublicKey
 	}
 	return nil
 }
