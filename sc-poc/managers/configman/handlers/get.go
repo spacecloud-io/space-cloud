@@ -38,7 +38,7 @@ func (h *Get) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.H
 
 	resp, err := configman.Get(h.GVR, name)
 	if err != nil {
-		return utils.SendErrorResponse(w, http.StatusInternalServerError, err)
+		return utils.SendErrorResponse(w, http.StatusBadRequest, err)
 	}
 
 	return utils.SendResponse(w, http.StatusOK, resp)
