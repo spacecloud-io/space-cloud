@@ -60,6 +60,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 		a.apis = append(a.apis, publisherAPI, subscriberAPI)
 	}
 
+	a.apis = append(a.apis, a.generateASyncAPIDoc())
 	return nil
 }
 
