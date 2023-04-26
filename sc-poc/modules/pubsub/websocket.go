@@ -27,7 +27,7 @@ func (a *App) GetAPIRoutes() apis.APIs {
 func (a *App) getPublisherAPI(channelPath, channelName string) *apis.API {
 	return &apis.API{
 		Name: fmt.Sprintf("%s-publisher", channelName),
-		Path: fmt.Sprintf("/v1/pubsub/default%s/publisher", channelPath),
+		Path: fmt.Sprintf("/v1/pubsub/default%s/producer", channelPath),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Create the websocket connection
 			conn, _, _, err := ws.UpgradeHTTP(r, w)
@@ -78,7 +78,7 @@ func (a *App) getPublisherAPI(channelPath, channelName string) *apis.API {
 func (a *App) getSubscriberAPI(channelPath, channelName string) *apis.API {
 	return &apis.API{
 		Name: fmt.Sprintf("%s-subscriber", channelName),
-		Path: fmt.Sprintf("/v1/pubsub/default%s/subscriber", channelPath),
+		Path: fmt.Sprintf("/v1/pubsub/default%s/consumer", channelPath),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()

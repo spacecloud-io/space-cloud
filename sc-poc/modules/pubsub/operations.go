@@ -35,14 +35,14 @@ func (a *App) Channels() ChannelsWithSchema {
 			"/sc/api": {
 				Name: "api-provision",
 				Payload: ChannelPayload{
-					Schema: map[string]string{
-						"$ref": "#/components/messages/APIManMsg",
+					Schema: map[string]interface{}{
+						"$ref": "#/components/schemas/APIManMsg",
 					},
 				},
 			},
 		},
-		Components: Components{
-			Messages: map[string]interface{}{
+		Components: &Components{
+			Schemas: map[string]interface{}{
 				"APIManMsg": map[string]interface{}{
 					"type":                 "object",
 					"additionalProperties": true,

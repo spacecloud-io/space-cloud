@@ -39,7 +39,7 @@ type SubscribeOptions struct {
 // ChannelsWithSchema define the channels schema and component
 type ChannelsWithSchema struct {
 	Channels   map[string]Channel `json:"channels,omitempty"` // key is the url
-	Components Components         `json:"components,omitempty"`
+	Components *Components        `json:"components,omitempty"`
 }
 
 // Channel defines a single channel schema
@@ -50,12 +50,12 @@ type Channel struct {
 
 // ChannelPayload define channel's payload
 type ChannelPayload struct {
-	Schema   map[string]string `json:"schema,omitempty"`
-	Example  interface{}       `json:"example,omitempty"`
-	Examples []interface{}     `json:"examples,omitempty"`
+	Schema   map[string]interface{} `json:"schema,omitempty"`
+	Example  interface{}            `json:"example,omitempty"`
+	Examples []interface{}          `json:"examples,omitempty"`
 }
 
 // Components stores the components for the schema refs
 type Components struct {
-	Messages map[string]interface{} `json:"messages,omitempty"`
+	Schemas map[string]interface{} `json:"schemas,omitempty"`
 }
