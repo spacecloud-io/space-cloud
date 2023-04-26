@@ -128,6 +128,11 @@ func prepareRoute(api *API, path string, methods, indexes []string) caddyhttp.Ro
 func getMethods(api *API) []string {
 	var methods []string
 
+	if api.OpenAPI == nil {
+		methods = append(methods, http.MethodGet, http.MethodPost)
+		return methods
+	}
+
 	if api.OpenAPI.PathDef.Post != nil {
 		methods = append(methods, http.MethodPost)
 	}
