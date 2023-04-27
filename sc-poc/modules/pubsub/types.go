@@ -59,3 +59,62 @@ type ChannelPayload struct {
 type Components struct {
 	Schemas map[string]interface{} `json:"schemas,omitempty"`
 }
+
+// AsyncAPI defines the AsyncAPI 2.6.0 standard.
+type AsyncAPI struct {
+	SpecVersion string             `json:"asyncapi"` // Required
+	Info        Info               `json:"info"`     // Required
+	Channels    Channels           `json:"channels"` // Required
+	Servers     Servers            `json:"servers,omitempty"`
+	Components  AsyncAPIComponents `json:"components,omitempty"`
+}
+
+// Servers represents "servers" specified by AsyncAPI standard.
+type Servers map[string]*ServerItem
+
+// Channels represents "channels" specified by AsyncAPI standard.
+type Channels map[string]*ChannelItem
+
+// ChannelItem represents the two operations - "publish" and "subscribe"
+type ChannelItem struct {
+	Subscribe *Operation `json:"subscribe,omitempty"`
+	Publish   *Operation `json:"publish,omitempty"`
+}
+
+// Operation represents the details of each operation
+type Operation struct {
+	Message MessageOneOrMany `json:"message,omitempty"`
+	ID      string           `json:"operationId,omitempty"`
+}
+
+// OneOf consists of array of messages
+type MessageOneOrMany struct {
+	MessageEntity `json:",inline"`
+	OneOf         []MessageEntity `json:"oneOf,omitempty"`
+}
+
+// MessageEntity defines the message as specified by AsyncAPI standard.
+type MessageEntity struct {
+	Name        string                 `json:"name,omitempty"`
+	ContentType string                 `json:"contentType,omitempty"`
+	Payload     map[string]interface{} `json:"payload,omitempty"`
+}
+
+// Info defines the info as specified by AsyncAPI standard.
+type Info struct {
+	Title       string `json:"title"`   // Required
+	Version     string `json:"version"` // Required
+	Description string `json:"description,omitempty"`
+}
+
+// ServerItem defines the type of server.
+type ServerItem struct {
+	URL         string `json:"url"`      // Required.
+	Protocol    string `json:"protocol"` // Required.
+	Description string `json:"description,omitempty"`
+}
+
+// AsyncAPIComponents defines the components specified by AsyncAPI standard.
+type AsyncAPIComponents struct {
+	Schemas map[string]interface{} `json:"schemas,omitempty"`
+}

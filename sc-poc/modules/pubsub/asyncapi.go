@@ -8,54 +8,6 @@ import (
 	"github.com/spacecloud-io/space-cloud/managers/apis"
 )
 
-type AsyncAPI struct {
-	SpecVersion string             `json:"asyncapi"` // Required
-	Info        Info               `json:"info"`     // Required
-	Channels    Channels           `json:"channels"` // Required
-	Servers     Servers            `json:"servers,omitempty"`
-	Components  AsyncAPIComponents `json:"components,omitempty"`
-}
-
-type Servers map[string]*ServerItem
-type Channels map[string]*ChannelItem
-
-type ChannelItem struct {
-	Subscribe *Operation `json:"subscribe,omitempty"`
-	Publish   *Operation `json:"publish,omitempty"`
-}
-
-type Operation struct {
-	Message OneOf  `json:"message,omitempty"`
-	ID      string `json:"operationId,omitempty"`
-}
-
-type OneOf struct {
-	OneOf []MessageEntity `json:"oneOf,omitempty"`
-}
-
-type MessageEntity struct {
-	Name        string                 `json:"name"`        // Required
-	ContentType string                 `json:"contentType"` // Required
-	Payload     map[string]interface{} `json:"payload"`     // Required
-}
-
-type Info struct {
-	Title       string `json:"title"`   // Required
-	Version     string `json:"version"` // Required
-	Description string `json:"description,omitempty"`
-}
-
-// An object representing a Server.
-type ServerItem struct {
-	URL         string `json:"url"`      // Required.
-	Protocol    string `json:"protocol"` // Required.
-	Description string `json:"description,omitempty"`
-}
-
-type AsyncAPIComponents struct {
-	Schemas map[string]interface{} `json:"schemas,omitempty"`
-}
-
 func (a *AsyncAPI) AddServer(name string, srv ServerItem) {
 	if a.Servers == nil {
 		a.Servers = make(map[string]*ServerItem)
@@ -93,70 +45,72 @@ func (a *App) generateASyncAPIDoc() *apis.API {
 
 			// Add channels
 			channels := a.Channels()
-			for channelName, channelObj := range channels.Channels {
+			for channelPath, channelObj := range channels.Channels {
 				// Producer channel
-				asyncapi.AddChannel(channelName+"/producer", ChannelItem{
+				asyncapi.AddChannel(channelPath+"/producer", ChannelItem{
 					Publish: &Operation{
 						ID: "producerPublish" + getID(channelObj.Name),
-						Message: OneOf{
-							OneOf: []MessageEntity{
-								{
-									Name:        "Message",
-									ContentType: "application/json",
-									Payload: map[string]interface{}{
-										"type": "object",
-										"properties": map[string]interface{}{
-											"event": map[string]interface{}{
-												"type": "string",
-											},
-											"data": map[string]interface{}{
-												"type": "object",
-												"properties": map[string]interface{}{
-													"id": map[string]interface{}{
+						Message: MessageOneOrMany{
+							MessageEntity: MessageEntity{
+								Name:        "Message",
+								ContentType: "application/json",
+								Payload: map[string]interface{}{
+									"type": "object",
+									"properties": map[string]interface{}{
+										"event": map[string]interface{}{
+											"type": "string",
+										},
+										"data": map[string]interface{}{
+											"type": "object",
+											"properties": map[string]interface{}{
+												"id": map[string]interface{}{
+													"type": "string",
+												},
+												"metadata": map[string]interface{}{
+													"type": "object",
+													"additionalProperties": map[string]interface{}{
 														"type": "string",
 													},
-													"metadata": map[string]interface{}{
-														"type":                 "object",
-														"additionalProperties": true,
-													},
-													"requireAck": map[string]interface{}{
-														"type": "boolean",
-													},
-													"payload": channelObj.Payload.Schema,
 												},
+												"requireAck": map[string]interface{}{
+													"type": "boolean",
+												},
+												"payload": channelObj.Payload.Schema,
 											},
+											"required": []string{"id", "payload"},
 										},
 									},
+									"required": []string{"event", "data"},
 								},
 							},
 						},
 					},
 					Subscribe: &Operation{
 						ID: "producerSubscribe" + getID(channelObj.Name),
-						Message: OneOf{
-							OneOf: []MessageEntity{
-								{
-									Name:        "Acknowledgement",
-									ContentType: "application/json",
-									Payload: map[string]interface{}{
-										"type": "object",
-										"properties": map[string]interface{}{
-											"event": map[string]interface{}{
-												"type": "string",
-											},
-											"data": map[string]interface{}{
-												"type": "object",
-												"properties": map[string]interface{}{
-													"id": map[string]interface{}{
-														"type": "string",
-													},
-													"ack": map[string]interface{}{
-														"type": "boolean",
-													},
+						Message: MessageOneOrMany{
+							MessageEntity: MessageEntity{
+								Name:        "Acknowledgement",
+								ContentType: "application/json",
+								Payload: map[string]interface{}{
+									"type": "object",
+									"properties": map[string]interface{}{
+										"event": map[string]interface{}{
+											"type": "string",
+										},
+										"data": map[string]interface{}{
+											"type": "object",
+											"properties": map[string]interface{}{
+												"id": map[string]interface{}{
+													"type": "string",
+												},
+												"ack": map[string]interface{}{
+													"type": "boolean",
 												},
 											},
+											"required": []string{"id", "ack"},
 										},
 									},
+									"required": []string{"event", "data"},
 								},
 							},
 						},
@@ -164,10 +118,10 @@ func (a *App) generateASyncAPIDoc() *apis.API {
 				})
 
 				// Consumer channel
-				asyncapi.AddChannel(channelName+"/consumer", ChannelItem{
+				asyncapi.AddChannel(channelPath+"/consumer", ChannelItem{
 					Publish: &Operation{
 						ID: "consumerPublish" + getID(channelObj.Name),
-						Message: OneOf{
+						Message: MessageOneOrMany{
 							OneOf: []MessageEntity{
 								{
 									Name:        "startSubscribe",
@@ -194,8 +148,10 @@ func (a *App) generateASyncAPIDoc() *apis.API {
 														"type": "string",
 													},
 												},
+												"required": []string{"mode", "capacity", "autoack", "format"},
 											},
 										},
+										"required": []string{"event", "data"},
 									},
 								},
 								{
@@ -217,8 +173,10 @@ func (a *App) generateASyncAPIDoc() *apis.API {
 														"type": "boolean",
 													},
 												},
+												"required": []string{"id", "ack"},
 											},
 										},
+										"required": []string{"event", "data"},
 									},
 								},
 							},
@@ -226,32 +184,34 @@ func (a *App) generateASyncAPIDoc() *apis.API {
 					},
 					Subscribe: &Operation{
 						ID: "consumerSubscribe" + getID(channelObj.Name),
-						Message: OneOf{
-							OneOf: []MessageEntity{
-								{
-									Name:        "Message",
-									ContentType: "application/json",
-									Payload: map[string]interface{}{
-										"type": "object",
-										"properties": map[string]interface{}{
-											"event": map[string]interface{}{
-												"type": "string",
-											},
-											"data": map[string]interface{}{
-												"type": "object",
-												"properties": map[string]interface{}{
-													"id": map[string]interface{}{
+						Message: MessageOneOrMany{
+							MessageEntity: MessageEntity{
+								Name:        "Message",
+								ContentType: "application/json",
+								Payload: map[string]interface{}{
+									"type": "object",
+									"properties": map[string]interface{}{
+										"event": map[string]interface{}{
+											"type": "string",
+										},
+										"data": map[string]interface{}{
+											"type": "object",
+											"properties": map[string]interface{}{
+												"id": map[string]interface{}{
+													"type": "string",
+												},
+												"metadata": map[string]interface{}{
+													"type": "object",
+													"additionalProperties": map[string]interface{}{
 														"type": "string",
 													},
-													"metadata": map[string]interface{}{
-														"type":                 "object",
-														"additionalProperties": true,
-													},
-													"payload": channelObj.Payload.Schema,
 												},
+												"payload": channelObj.Payload.Schema,
 											},
+											"required": []string{"id", "payload"},
 										},
 									},
+									"required": []string{"event", "data"},
 								},
 							},
 						},
@@ -260,7 +220,10 @@ func (a *App) generateASyncAPIDoc() *apis.API {
 			}
 
 			if channels.Components != nil {
-				asyncapi.Components.Schemas = channels.Components.Schemas
+				asyncapi.Components.Schemas = make(map[string]interface{})
+				for k, v := range channels.Components.Schemas {
+					asyncapi.Components.Schemas[k] = v
+				}
 			}
 
 			enc := json.NewEncoder(w)
