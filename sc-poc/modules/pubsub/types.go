@@ -1,5 +1,9 @@
 package pubsub
 
+import (
+	v1alpha1 "github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
+)
+
 type (
 	EventType string
 )
@@ -19,7 +23,7 @@ type Message struct {
 // PublishMessage defines the type for publishing a message
 type PublishMessage struct {
 	ID       string            `json:"id"`
-	MetaData map[string]string `json:"metadata"`
+	MetaData map[string]string `json:"metadata,omitempty"`
 	Payload  interface{}       `json:"payload"`
 }
 
@@ -50,9 +54,9 @@ type Channel struct {
 
 // ChannelPayload define channel's payload
 type ChannelPayload struct {
-	Schema   map[string]interface{} `json:"schema,omitempty"`
-	Example  interface{}            `json:"example,omitempty"`
-	Examples []interface{}          `json:"examples,omitempty"`
+	Schema   map[string]*v1alpha1.ChannelSchema `json:"schema,omitempty"`
+	Example  interface{}                        `json:"example,omitempty"`
+	Examples []interface{}                      `json:"examples,omitempty"`
 }
 
 // Components stores the components for the schema refs

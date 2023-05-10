@@ -11,9 +11,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/ksuid"
+	"github.com/xeipuuv/gojsonschema"
 	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/managers/apis"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
 // TODO: channels may or may not have prefix slash
@@ -24,15 +26,27 @@ func (a *App) GetAPIRoutes() apis.APIs {
 }
 
 // getPublishAPI creates a websocket API for sending messages in the channel
-func (a *App) getPublisherAPI(channelPath, channelName string) *apis.API {
+func (a *App) getPublisherAPI(channelPath string, channel Channel) *apis.API {
+	// Create a schema validator for incoming messages
+	channelSchema := v1alpha1.ChannelSchema{
+		Type:       "object",
+		Properties: make(map[string]*v1alpha1.ChannelSchema),
+	}
+	channelSchema.Properties = channel.Payload.Schema
+	schemaLoader := gojsonschema.NewGoLoader(channelSchema)
+	schemaValidator, err := gojsonschema.NewSchema(schemaLoader)
+	if err != nil {
+		a.logger.Error("could not create schema validator for channel", zap.String("channel", channel.Name), zap.Error(err))
+	}
+
 	return &apis.API{
-		Name: fmt.Sprintf("%s-publisher", channelName),
+		Name: fmt.Sprintf("%s-publisher", channel.Name),
 		Path: fmt.Sprintf("/v1/pubsub/default%s/producer", channelPath),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Create the websocket connection
 			conn, _, _, err := ws.UpgradeHTTP(r, w)
 			if err != nil {
-				a.logger.Error("could not establish websocket connection", zap.String("channel", channelName), zap.Error(err))
+				a.logger.Error("could not establish websocket connection", zap.String("channel", channel.Name), zap.Error(err))
 				return
 			}
 			defer conn.Close()
@@ -41,32 +55,56 @@ func (a *App) getPublisherAPI(channelPath, channelName string) *apis.API {
 				// Get the message from the websocket connection
 				data, _, err := wsutil.ReadClientData(conn)
 				if err != nil {
-					a.logger.Error("could not read client data or the connection is closed", zap.String("channel", channelName), zap.Error(err))
+					a.logger.Error("could not read client data or the connection is closed", zap.String("channel", channel.Name), zap.Error(err))
 					return
 				}
 
+				// Unmarshal message
 				var message Message
 				err = json.Unmarshal(data, &message)
 				if err != nil {
-					a.logger.Error("could not unmarshal data", zap.String("channel", channelName), zap.Error(err))
+					a.logger.Error("could not unmarshal data", zap.String("channel", channel.Name), zap.Error(err))
 					continue
 				}
 
+				// Handle events of type message
 				if message.Event == MessageEvent {
 					var pubMsg PublishMessage
 					err = mapstructure.Decode(message.Data, &pubMsg)
 					if err != nil {
-						a.logger.Error("could not decode data", zap.String("channel", channelName), zap.Error(err))
+						a.logger.Error("could not decode data", zap.String("channel", channel.Name), zap.Error(err))
 						continue
 					}
 
+					// Create a ID if not ID is not already present
 					if pubMsg.ID == "" {
 						pubMsg.ID = ksuid.New().String()
 					}
 
-					err = a.Publish(channelName, pubMsg, PublishOptions{})
+					// Validate schema of the message
+					documentLoader := gojsonschema.NewGoLoader(pubMsg.Payload)
+					result, err := schemaValidator.Validate(documentLoader)
 					if err != nil {
-						a.logger.Error("could not publish client message", zap.String("channel", channelName), zap.Error(err))
+						a.logger.Error("could not validate schema for channel", zap.String("channel", channel.Name), zap.Error(err))
+					}
+
+					if !result.Valid() {
+						var errMsgs []string
+						for _, desc := range result.Errors() {
+							errMsgs = append(errMsgs, fmt.Sprint(desc))
+						}
+
+						b, _ := json.Marshal(errMsgs)
+						err = wsutil.WriteServerText(conn, b)
+						if err != nil {
+							a.logger.Error("could not send message to the websocket", zap.Error(err))
+						}
+						continue
+					}
+
+					err = a.Publish(channel.Name, pubMsg, PublishOptions{})
+					if err != nil {
+						a.logger.Error("could not publish client message", zap.String("channel", channel.Name), zap.Error(err))
 					}
 				}
 			}
