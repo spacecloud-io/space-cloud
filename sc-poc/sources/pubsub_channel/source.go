@@ -3,6 +3,7 @@ package pubsub_channel
 import (
 	"github.com/caddyserver/caddy/v2"
 	"github.com/spacecloud-io/space-cloud/managers/source"
+	"github.com/spacecloud-io/space-cloud/modules/pubsub"
 	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -36,7 +37,17 @@ func (s *PubsubChannelSource) GetProviders() []string {
 	return []string{"pubsub"}
 }
 
+func (s *PubsubChannelSource) GetChannel() pubsub.Channel {
+	return pubsub.Channel{
+		Name: s.Spec.Channel,
+		Payload: pubsub.ChannelPayload{
+			Schema: s.Spec.Payload,
+		},
+	}
+}
+
 // Interface guard
 var (
 	_ source.Source = (*PubsubChannelSource)(nil)
+	_ pubsub.Source = (*PubsubChannelSource)(nil)
 )

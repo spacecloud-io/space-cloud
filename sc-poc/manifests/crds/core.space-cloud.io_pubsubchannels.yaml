@@ -38,27 +38,28 @@ spec:
                 description: Channel describes the name of the pubsub channel
                 type: string
               payload:
-                additionalProperties:
-                  description: ChannelSchema defines the schema of the payload that
-                    the channel accepts
-                  properties:
-                    items:
-                      description: Items list the items of the array
-                    properties:
-                      additionalProperties: {}
-                      description: Properties list additional properties of the object
-                      type: object
-                    required:
-                      description: Required specifies the required properties of the
-                        object
-                      items:
-                        type: string
-                      type: array
-                    type:
-                      description: Type defines the type of the data
-                      type: string
-                  type: object
                 description: Payload describes the payload schema of the channel
+                properties:
+                  additionalProperties:
+                    description: AdditionalProperties defines if the schema accepts
+                      properties other than the ones mentioned
+                    format: byte
+                    type: string
+                  items:
+                    description: Items list the items of the array
+                  properties:
+                    additionalProperties: {}
+                    description: Properties list additional properties of the object
+                    type: object
+                  required:
+                    description: Required specifies the required properties of the
+                      object
+                    items:
+                      type: string
+                    type: array
+                  type:
+                    description: Type defines the type of the data
+                    type: string
                 type: object
             required:
             - channel

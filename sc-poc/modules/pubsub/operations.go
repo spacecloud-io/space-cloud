@@ -3,6 +3,7 @@ package pubsub
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -34,10 +35,9 @@ func (a *App) createInternalChannels() {
 	openapiProvisionChannel := Channel{
 		Name: "openapi-provision",
 		Payload: ChannelPayload{
-			Schema: map[string]*v1alpha1.ChannelSchema{
-				"doc": {
-					Type: "string",
-				},
+			Schema: &v1alpha1.ChannelSchema{
+				Type:                 "object",
+				AdditionalProperties: json.RawMessage(fmt.Sprintf(`%t`, true)),
 			},
 		},
 	}
@@ -45,19 +45,9 @@ func (a *App) createInternalChannels() {
 	asyncapiProvisionChannel := Channel{
 		Name: "asyncapi-provision",
 		Payload: ChannelPayload{
-			Schema: map[string]*v1alpha1.ChannelSchema{
-				"doc": {
-					Type: "object",
-					Properties: map[string]*v1alpha1.ChannelSchema{
-						"name": {
-							Type: "string",
-						},
-						"age": {
-							Type: "integer",
-						},
-					},
-					Required: []string{"name"},
-				},
+			Schema: &v1alpha1.ChannelSchema{
+				Type:                 "object",
+				AdditionalProperties: json.RawMessage(fmt.Sprintf(`%t`, true)),
 			},
 		},
 	}
@@ -68,14 +58,6 @@ func (a *App) createInternalChannels() {
 func (a *App) Channels() ChannelsWithSchema {
 	channels := ChannelsWithSchema{
 		Channels: make(map[string]Channel),
-		Components: &Components{
-			Schemas: map[string]interface{}{
-				"APIManMsg": map[string]interface{}{
-					"type":                 "object",
-					"additionalProperties": true,
-				},
-			},
-		},
 	}
 
 	for _, topic := range a.channels {

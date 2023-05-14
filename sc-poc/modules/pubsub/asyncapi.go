@@ -84,29 +84,51 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 			Subscribe: &Operation{
 				ID: "producerSubscribe" + getID(channelObj.Name),
 				Message: MessageOneOrMany{
-					MessageEntity: MessageEntity{
-						Name:        "Acknowledgement",
-						ContentType: "application/json",
-						Payload: map[string]interface{}{
-							"type": "object",
-							"properties": map[string]interface{}{
-								"event": map[string]interface{}{
-									"type": "string",
+					OneOf: []MessageEntity{
+						{
+							Name:        "Acknowledgement",
+							ContentType: "application/json",
+							Payload: map[string]interface{}{
+								"type": "object",
+								"properties": map[string]interface{}{
+									"event": map[string]interface{}{
+										"type": "string",
+									},
+									"data": map[string]interface{}{
+										"type": "object",
+										"properties": map[string]interface{}{
+											"id": map[string]interface{}{
+												"type": "string",
+											},
+											"ack": map[string]interface{}{
+												"type": "boolean",
+											},
+										},
+										"required": []string{"id", "ack"},
+									},
 								},
-								"data": map[string]interface{}{
-									"type": "object",
-									"properties": map[string]interface{}{
-										"id": map[string]interface{}{
+								"required": []string{"event", "data"},
+							},
+						},
+						{
+							Name:        "Error",
+							ContentType: "application/json",
+							Payload: map[string]interface{}{
+								"type": "object",
+								"properties": map[string]interface{}{
+									"message": map[string]interface{}{
+										"type": "string",
+									},
+									"errors": map[string]interface{}{
+										"type": "array",
+										"items": map[string]interface{}{
 											"type": "string",
 										},
-										"ack": map[string]interface{}{
-											"type": "boolean",
-										},
+										"required": []string{"message"},
 									},
-									"required": []string{"id", "ack"},
 								},
+								"required": []string{"event", "data"},
 							},
-							"required": []string{"event", "data"},
 						},
 					},
 				},

@@ -6,6 +6,7 @@
 package v1alpha1
 
 import (
+	"encoding/json"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -60,6 +61,11 @@ func (in *ChannelSchema) DeepCopyInto(out *ChannelSchema) {
 	if in.Required != nil {
 		in, out := &in.Required, &out.Required
 		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.AdditionalProperties != nil {
+		in, out := &in.AdditionalProperties, &out.AdditionalProperties
+		*out = make(json.RawMessage, len(*in))
 		copy(*out, *in)
 	}
 }
@@ -689,18 +695,8 @@ func (in *PubsubChannelSpec) DeepCopyInto(out *PubsubChannelSpec) {
 	*out = *in
 	if in.Payload != nil {
 		in, out := &in.Payload, &out.Payload
-		*out = make(map[string]*ChannelSchema, len(*in))
-		for key, val := range *in {
-			var outVal *ChannelSchema
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				in, out := &val, &outVal
-				*out = new(ChannelSchema)
-				(*in).DeepCopyInto(*out)
-			}
-			(*out)[key] = outVal
-		}
+		*out = new(ChannelSchema)
+		(*in).DeepCopyInto(*out)
 	}
 }
 

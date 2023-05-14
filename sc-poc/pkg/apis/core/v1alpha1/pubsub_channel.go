@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,7 +25,7 @@ type PubsubChannelSpec struct {
 	// Channel describes the name of the pubsub channel
 	Channel string `json:"channel"`
 	// Payload describes the payload schema of the channel
-	Payload map[string]*ChannelSchema `json:"payload,omitempty"`
+	Payload *ChannelSchema `json:"payload,omitempty"`
 }
 
 // ChannelSchema defines the schema of the payload that the channel accepts
@@ -38,6 +40,8 @@ type ChannelSchema struct {
 	Properties map[string]*ChannelSchema `json:"properties,omitempty"`
 	// Required specifies the required properties of the object
 	Required []string `json:"required,omitempty"`
+	// AdditionalProperties defines if the schema accepts properties other than the ones mentioned
+	AdditionalProperties json.RawMessage `json:"additionalProperties,omitempty"`
 }
 
 // PubsubChannel defines the observed state of the pubsub channel

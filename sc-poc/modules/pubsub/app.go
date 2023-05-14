@@ -8,7 +8,6 @@ import (
 	"github.com/spacecloud-io/space-cloud/managers/apis"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/modules/pubsub/connectors"
-	"github.com/spacecloud-io/space-cloud/sources/pubsub_channel"
 )
 
 var connectorPool = caddy.NewUsagePool()
@@ -66,13 +65,8 @@ func (a *App) Provision(ctx caddy.Context) error {
 	sourceMan := sourceManT.(*source.App)
 	sources := sourceMan.GetSources("pubsub")
 	for _, src := range sources {
-		channelSrc := src.(*pubsub_channel.PubsubChannelSource)
-		topic := Channel{
-			Name: channelSrc.Spec.Channel,
-			Payload: ChannelPayload{
-				Schema: channelSrc.Spec.Payload,
-			},
-		}
+		channelSrc := src.(Source)
+		topic := channelSrc.GetChannel()
 
 		a.channels = append(a.channels, topic)
 	}

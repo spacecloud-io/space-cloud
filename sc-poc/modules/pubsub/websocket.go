@@ -15,7 +15,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/managers/apis"
-	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
 // TODO: channels may or may not have prefix slash
@@ -28,11 +27,7 @@ func (a *App) GetAPIRoutes() apis.APIs {
 // getPublishAPI creates a websocket API for sending messages in the channel
 func (a *App) getPublisherAPI(channelPath string, channel Channel) *apis.API {
 	// Create a schema validator for incoming messages
-	channelSchema := v1alpha1.ChannelSchema{
-		Type:       "object",
-		Properties: make(map[string]*v1alpha1.ChannelSchema),
-	}
-	channelSchema.Properties = channel.Payload.Schema
+	channelSchema := channel.Payload.Schema
 	schemaLoader := gojsonschema.NewGoLoader(channelSchema)
 	schemaValidator, err := gojsonschema.NewSchema(schemaLoader)
 	if err != nil {
@@ -89,9 +84,10 @@ func (a *App) getPublisherAPI(channelPath string, channel Channel) *apis.API {
 					}
 
 					if !result.Valid() {
-						var errMsgs []string
+						var errMsgs WebsocketErrorMessage
+						errMsgs.Message = "Payload of invalid format provided"
 						for _, desc := range result.Errors() {
-							errMsgs = append(errMsgs, fmt.Sprint(desc))
+							errMsgs.Errors = append(errMsgs.Errors, fmt.Sprint(desc))
 						}
 
 						b, _ := json.Marshal(errMsgs)
@@ -102,8 +98,7 @@ func (a *App) getPublisherAPI(channelPath string, channel Channel) *apis.API {
 						continue
 					}
 
-					err = a.Publish(channel.Name, pubMsg, PublishOptions{})
-					if err != nil {
+					if err := a.Publish(channel.Name, pubMsg, PublishOptions{}); err != nil {
 						a.logger.Error("could not publish client message", zap.String("channel", channel.Name), zap.Error(err))
 					}
 				}

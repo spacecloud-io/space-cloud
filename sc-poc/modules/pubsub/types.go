@@ -54,9 +54,9 @@ type Channel struct {
 
 // ChannelPayload define channel's payload
 type ChannelPayload struct {
-	Schema   map[string]*v1alpha1.ChannelSchema `json:"schema,omitempty"`
-	Example  interface{}                        `json:"example,omitempty"`
-	Examples []interface{}                      `json:"examples,omitempty"`
+	Schema   *v1alpha1.ChannelSchema `json:"schema,omitempty"`
+	Example  interface{}             `json:"example,omitempty"`
+	Examples []interface{}           `json:"examples,omitempty"`
 }
 
 // Components stores the components for the schema refs
@@ -121,4 +121,14 @@ type ServerItem struct {
 // AsyncAPIComponents defines the components specified by AsyncAPI standard.
 type AsyncAPIComponents struct {
 	Schemas map[string]interface{} `json:"schemas,omitempty"`
+}
+
+// WebsocketErrorMessage defines the error message in websocket connection
+type WebsocketErrorMessage struct {
+	Message string   `json:"message"`
+	Errors  []string `json:"errors,omitempty"`
+}
+
+type Source interface {
+	GetChannel() Channel
 }
