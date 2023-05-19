@@ -25,7 +25,8 @@ type App struct {
 	apis apis.APIs
 
 	// For internal usage
-	logger *zap.Logger
+	logger      *zap.Logger
+	asyncapiDoc *AsyncAPI
 }
 
 // CaddyModule returns the Caddy module information.
@@ -60,6 +61,9 @@ func (a *App) Provision(ctx caddy.Context) error {
 		a.apis = append(a.apis, publisherAPI, subscriberAPI)
 	}
 
+	// Generate AsyncAPI Doc and expose it via an API
+	a.asyncapiDoc = a.generateASyncAPIDoc()
+	a.apis = append(a.apis, a.exposeAsyncAPIDoc())
 	return nil
 }
 
