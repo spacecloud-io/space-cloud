@@ -27,6 +27,8 @@ func NewCommand() *cobra.Command {
 			_ = viper.BindPFlag("config.path", cmd.Flags().Lookup("config-path"))
 			_ = viper.BindPFlag("config.debounce-interval", cmd.Flags().Lookup("debounce-interval"))
 
+			_ = viper.BindPFlag("kratos.enable", cmd.Flags().Lookup("kratos-enable"))
+			_ = viper.BindPFlag("kratos.endpoint", cmd.Flags().Lookup("kratos-endpoint"))
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := configman.InitializeConfigLoader(); err != nil {
@@ -57,6 +59,10 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("config-adapter", "", "file", "Set the configuration loader to be used [file | k8s]")
 	cmd.Flags().StringP("config-path", "", "./sc-config", "Directory to use to manage SpaceCloud configuration")
 	cmd.Flags().StringP("debounce-interval", "", "500ms", "Debounce interval in milliseconds")
+
+	// kratos
+	cmd.Flags().BoolP("kratos-enable", "", false, "To enable kratos for authorisation")
+	cmd.Flags().StringP("kratos-endpoint", "", "", "The endpoint to send the request to kratos server")
 
 	return cmd
 }

@@ -76,6 +76,15 @@ func getAPIRoutes() caddyhttp.Route {
 		},
 	}
 
+	if viper.GetBool("kratos.enable") {
+		kratos := caddyhttp.Route{
+			Group:       "api_auth",
+			HandlersRaw: utils.GetCaddyHandler("auth_kratos_verify", nil),
+		}
+
+		routeList = append(routeList, kratos)
+	}
+
 	// Create matcher and handler for subroute
 	handler := map[string]interface{}{
 		"handler": "subroute",
