@@ -56,7 +56,7 @@ func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 		// },
 
 		// Config route handlers
-		getConfigRoutes(config),
+		getConfigRoutes(),
 
 		// API route handler
 		getAPIRoutes(),
@@ -98,12 +98,10 @@ func getAPIRoutes() caddyhttp.Route {
 	}
 }
 
-func getConfigRoutes(config ConfigType) caddyhttp.Route {
+func getConfigRoutes() caddyhttp.Route {
 	// Make route list for the sub router
 	configRoutes := caddyhttp.RouteList{}
-	for k := range config {
-		gvr := source.GetResourceGVR(k)
-
+	for _, gvr := range source.GetRegisteredSources() {
 		// Create route of GVR for List operation
 		path := createConfigPath(gvr)
 		data := make(map[string]interface{})
