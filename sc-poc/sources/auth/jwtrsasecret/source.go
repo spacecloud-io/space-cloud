@@ -2,10 +2,9 @@ package jwtrsasecret
 
 import (
 	"crypto/rsa"
-	"log"
 
 	"github.com/caddyserver/caddy/v2"
-	jwt "github.com/golang-jwt/jwt"
+	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/modules/auth"
 	"github.com/spacecloud-io/space-cloud/modules/auth/types"
@@ -43,15 +42,14 @@ func (s *JWTRSASecretSource) Provision(ctx caddy.Context) error {
 	s.logger = ctx.Logger(s)
 
 	var err error
-	s.parsedPubKey, err = jwt.ParseRSAPublicKeyFromPEM([]byte(s.Spec.PublicValue))
+	s.parsedPubKey, err = jwt.ParseRSAPublicKeyFromPEM([]byte(s.Spec.PublicKey.Value))
 	if err != nil {
-		log.Fatal(err)
 		s.logger.Error("Unable to parse rsa public key", zap.Error(err))
 		return err
 	}
 
-	if s.Spec.PrivateValue != "" {
-		s.parsedPriKey, err = jwt.ParseRSAPrivateKeyFromPEM([]byte(s.Spec.PrivateValue))
+	if s.Spec.PrivateKey != nil {
+		s.parsedPriKey, err = jwt.ParseRSAPrivateKeyFromPEM([]byte(s.Spec.PrivateKey.Value))
 		if err != nil {
 			s.logger.Error("Unable to parse rsa private key", zap.Error(err))
 			return err

@@ -20,15 +20,11 @@ type JwtRSASecret struct {
 type JwtRSASecretSpec struct {
 	AuthSecret `json:",inline"`
 
-	// Value holds the content of the secret or jwk url
+	// Source for the AuthSecret's value
 	// +kubebuilder:validation:Optional
-	PublicValue string `json:"public,omitempty"`
+	PublicKey *SecretSource `json:"publicKey"`
 
-	PrivateValue string `json:"private,omitempty"`
-
-	// Source for the AuthSecret's value. Cannot be used if value is not empty.
-	// +kubebuilder:validation:Optional
-	ValueFrom *SecretSource `json:"valueFrom,omitempty"`
+	PrivateKey *SecretSource `json:"privateKey,omitempty"`
 }
 
 // JwtRSASecretStatus defines the observed state of RSASecret

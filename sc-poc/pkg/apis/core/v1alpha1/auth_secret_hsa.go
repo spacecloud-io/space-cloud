@@ -20,13 +20,9 @@ type JwtHSASecret struct {
 type JwtHSASecretSpec struct {
 	AuthSecret `json:",inline"`
 
-	// Value holds the content of the secret or jwk url
+	// Source for the AuthSecret's value.
 	// +kubebuilder:validation:Optional
-	Value string `json:"value,omitempty"`
-
-	// Source for the AuthSecret's value. Cannot be used if value is not empty.
-	// +kubebuilder:validation:Optional
-	ValueFrom *SecretSource `json:"valueFrom,omitempty"`
+	Secret *SecretSource `json:"secret,omitempty"`
 }
 
 // JwtHSASecretStatus defines the observed state of HSASecret

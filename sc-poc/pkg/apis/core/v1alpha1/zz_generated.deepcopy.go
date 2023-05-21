@@ -370,8 +370,8 @@ func (in *JwtHSASecretList) DeepCopyObject() runtime.Object {
 func (in *JwtHSASecretSpec) DeepCopyInto(out *JwtHSASecretSpec) {
 	*out = *in
 	in.AuthSecret.DeepCopyInto(&out.AuthSecret)
-	if in.ValueFrom != nil {
-		in, out := &in.ValueFrom, &out.ValueFrom
+	if in.Secret != nil {
+		in, out := &in.Secret, &out.Secret
 		*out = new(SecretSource)
 		(*in).DeepCopyInto(*out)
 	}
@@ -465,8 +465,13 @@ func (in *JwtRSASecretList) DeepCopyObject() runtime.Object {
 func (in *JwtRSASecretSpec) DeepCopyInto(out *JwtRSASecretSpec) {
 	*out = *in
 	in.AuthSecret.DeepCopyInto(&out.AuthSecret)
-	if in.ValueFrom != nil {
-		in, out := &in.ValueFrom, &out.ValueFrom
+	if in.PublicKey != nil {
+		in, out := &in.PublicKey, &out.PublicKey
+		*out = new(SecretSource)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.PrivateKey != nil {
+		in, out := &in.PrivateKey, &out.PrivateKey
 		*out = new(SecretSource)
 		(*in).DeepCopyInto(*out)
 	}
