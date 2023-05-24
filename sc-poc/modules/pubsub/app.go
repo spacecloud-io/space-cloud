@@ -65,10 +65,11 @@ func (a *App) Provision(ctx caddy.Context) error {
 	sourceMan := sourceManT.(*source.App)
 	sources := sourceMan.GetSources("pubsub")
 	for _, src := range sources {
-		channelSrc := src.(Source)
-		topic := channelSrc.GetChannel()
-
-		a.channels = append(a.channels, topic)
+		channelSrc, ok := src.(Source)
+		if ok {
+			topic := channelSrc.GetChannel()
+			a.channels = append(a.channels, topic)
+		}
 	}
 
 	// Generate publish and subscribe API for each channel

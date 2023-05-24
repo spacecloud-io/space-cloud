@@ -111,11 +111,14 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 							},
 						},
 						{
-							Name:        "Error",
+							Name:        "PublishError",
 							ContentType: "application/json",
 							Payload: map[string]interface{}{
 								"type": "object",
 								"properties": map[string]interface{}{
+									"id": map[string]interface{}{
+										"type": "string",
+									},
 									"message": map[string]interface{}{
 										"type": "string",
 									},

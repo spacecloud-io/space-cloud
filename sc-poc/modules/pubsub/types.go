@@ -125,6 +125,7 @@ type AsyncAPIComponents struct {
 
 // WebsocketErrorMessage defines the error message in websocket connection
 type WebsocketErrorMessage struct {
+	ID      string   `json:"id"`
 	Message string   `json:"message"`
 	Errors  []string `json:"errors,omitempty"`
 }
