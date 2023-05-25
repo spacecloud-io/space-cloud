@@ -37,6 +37,7 @@ func (s *PubsubChannelSource) GetProviders() []string {
 	return []string{"pubsub"}
 }
 
+// GetChannel returns the channel of this source.
 func (s *PubsubChannelSource) GetChannel() pubsub.Channel {
 	return pubsub.Channel{
 		Name: s.Spec.Channel,
