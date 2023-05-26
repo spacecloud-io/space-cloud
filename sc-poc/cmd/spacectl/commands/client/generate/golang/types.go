@@ -73,16 +73,62 @@ func generateTypesFromOperation(operation *openapi3.Operation, method string) st
 		}
 	}
 
-	// Prepare the response schema
-	responseSchema := operation.Responses["200"].Value.Content["application/json"].Schema
-
-	opName := getTypeName(operation.OperationID, false)
+	// Prepare the request and response schema
 	var s string
+	opName := getTypeName(operation.OperationID, false)
+
 	if len(requestSchema.Value.Properties) > 0 {
 		s += generateTypeDef(requestSchema, opName+"Request", opName)
 	}
 
-	s += generateTypeDef(responseSchema, opName+"Response", opName)
+	for statusCode, content := range operation.Responses {
+		responseSchema := content.Value.Content["application/json"].Schema
+		s += generateTypeDef(responseSchema, opName+"Response"+statusCode, opName)
+	}
+
+	// Prepare the result struct
+	structName := opName + "Result"
+	s += fmt.Sprintf(`
+	// %s produces API's response object
+	type %s struct {
+		httpResponse *http.Response
+	}
+
+	func (r *%s) Raw() io.Reader {
+		var buf bytes.Buffer
+		tee := io.TeeReader(r.httpResponse.Body, &buf)
+
+		return tee
+	}
+
+	func (r *%s) StatusCode() int {
+		return r.httpResponse.StatusCode
+	}
+	`, structName, structName, structName, structName)
+
+	for statusCode := range operation.Responses {
+		resultTypeName := opName + "Response" + statusCode
+		fnName := "Result"
+		if statusCode != "200" {
+			fnName += statusCode
+		}
+		s += fmt.Sprintf(`
+		func (r *%s) %s() (*%s, error) {
+			if r.StatusCode() != %s {
+				return nil, nil
+			}
+		
+			var obj %s
+			err := json.NewDecoder(r.Raw()).Decode(&obj)
+			if err != nil {
+				return nil, err
+			}
+		
+			return &obj, nil
+		}
+		`, structName, fnName, resultTypeName, statusCode, resultTypeName)
+	}
+
 	return s
 }
 
@@ -95,6 +141,7 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string, parent string) str
 	s += fmt.Sprintf("type %s struct {\n", name)
 	for k, nestedSchema := range schema.Value.Properties {
 		required := isRequired(schema.Value.Required, k)
+		primitiveGoType := getGoTypes(nestedSchema.Value.Type)
 		child := getTypeName(k, false)
 		s += fmt.Sprintf("	%s ", child)
 
@@ -114,7 +161,6 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string, parent string) str
 			s += "[]"
 			if !required {
 				k += ",omitempty"
-				s += "*"
 			}
 
 			arrayType := nestedSchema.Value.Items.Value.Type
@@ -122,27 +168,33 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string, parent string) str
 				s += fmt.Sprintf("%s `json:%q`\n", typeName, k)
 				pendingTypes[typeName] = nestedSchema.Value.Items
 				parentMapping[typeName] = child
+			} else if arrayType == "array" {
+				s += nestedArray(nestedSchema.Value.Items)
+				s += fmt.Sprintf(" `json:%q`\n", k)
 			} else {
-				s += fmt.Sprintf("%s `json:%q`\n", arrayType, k)
+				s += fmt.Sprintf("%s `json:%q`\n", getGoTypes(arrayType), k)
 			}
 
 		case "integer", "number":
 			if !required {
 				k += ",omitempty"
 			}
-			s += fmt.Sprintf("int32 `json:%q`\n", k)
+			s += primitiveGoType
+			s += fmt.Sprintf(" `json:%q`\n", k)
 
 		case "string":
 			if !required {
 				k += ",omitempty"
 			}
-			s += fmt.Sprintf("string `json:%q`\n", k)
+			s += primitiveGoType
+			s += fmt.Sprintf(" `json:%q`\n", k)
 
 		case "boolean":
 			if !required {
 				k += ",omitempty"
 			}
-			s += fmt.Sprintf("bool `json:%q`\n", k)
+			s += primitiveGoType
+			s += fmt.Sprintf(" `json:%q`\n", k)
 
 		}
 	}
@@ -185,4 +237,27 @@ func isRequired(required []string, name string) bool {
 		}
 	}
 	return false
+}
+
+func getGoTypes(jsonType string) string {
+	switch jsonType {
+	case "string":
+		return "string"
+	case "boolean":
+		return "bool"
+	case "integer", "number":
+		return "float32"
+	}
+	return ""
+}
+
+func nestedArray(schema *openapi3.SchemaRef) string {
+	s := ""
+	if schema.Value.Type == "array" {
+		s = "[]"
+		s += nestedArray(schema.Value.Items)
+	} else {
+		s += getGoTypes(schema.Value.Type)
+	}
+	return s
 }

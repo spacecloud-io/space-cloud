@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/spacecloud-io/space-cloud/utils"
 	"golang.org/x/tools/imports"
 )
 
@@ -43,6 +44,15 @@ func generateImports(pkgName string) string {
 
 func generateClient(doc *openapi3.T) string {
 	s := `
+// MiddlewareFn is the function signature for the MiddlewareFn callback function
+type MiddlewareFn func(ctx context.Context, req *http.Request) error
+
+// ClientConfig is the configuration object for client
+type ClientConfig struct {
+	BaseURL     string
+	Middlewares []MiddlewareFn
+}
+
 // Client which conforms to the OpenAPI3 specification for SpaceCloud.
 type Client struct {
 	// The endpoint of the server. All the paths in
@@ -51,13 +61,16 @@ type Client struct {
 
 	// Client for performing requests.
 	Client *http.Client
+
+	Middlewares []MiddlewareFn
 }
 
 // Creates a new SpaceCloud Client
-func NewClient(server string) (*Client, error) {
+func NewClient(config ClientConfig) (*Client, error) {
 	// create a client with sane default values
 	client := Client{
-		Server: server,
+		Server:      config.BaseURL,
+		Middlewares: config.Middlewares,
 	}
 
 	// create httpClient, if not already present
@@ -65,7 +78,17 @@ func NewClient(server string) (*Client, error) {
 		client.Client = &http.Client{}
 	}
 	return &client, nil
-}`
+}
+
+func (c *Client) applyMiddlewares(ctx context.Context, req *http.Request) error {
+	for _, r := range c.Middlewares {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+`
 
 	// Generate operation methods
 	s += "\n\n"
@@ -94,7 +117,7 @@ func getFuncFromOperation(path, method string, operation *openapi3.Operation) st
 	s += fmt.Sprintf("// %s\n", opName)
 	switch method {
 	case "GET":
-		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, %s) (*%s, error) {\n", opName, paramsArg, opName+"Response")
+		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, %s) (*%s, error) {\n", opName, paramsArg, opName+"Result")
 		s += addPadding(1)
 		s += fmt.Sprintf("path := c.Server + %q\n", path)
 		s += fmt.Sprintf(`
@@ -110,23 +133,26 @@ func getFuncFromOperation(path, method string, operation *openapi3.Operation) st
 		return nil, err
 	}
 
-	resp, err := c.Client.Do(req.WithContext(ctx))
+	req = req.WithContext(ctx)
+	if err := c.applyMiddlewares(ctx, req); err != nil {
+		return nil, err
+	}
+
+	httpResp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	var obj %s
-	err = json.NewDecoder(resp.Body).Decode(&obj)
-	if err != nil {
-		return nil, err
+	result := %s{
+		httpResponse: httpResp,
 	}
 
-	return &obj, nil
-}`, paramsOut, opName+"Response")
+	return &result, nil
+}`, paramsOut, opName+"Result")
 		s += "\n\n"
 
 	case "POST":
-		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, body %s) (*%s, error) {\n", opName, opName+"Request", opName+"Response")
+		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, body %s) (*%s, error) {\n", opName, opName+"Request", opName+"Result")
 		s += fmt.Sprintf("path := c.Server + %q\n", path)
 		s += fmt.Sprintf(`
 	url, err := url.Parse(path)
@@ -145,23 +171,26 @@ func getFuncFromOperation(path, method string, operation *openapi3.Operation) st
 		return nil, err
 	}
 
-	resp, err :=  c.Client.Do(req.WithContext(ctx))
+	req = req.WithContext(ctx)
+	if err := c.applyMiddlewares(ctx, req); err != nil {
+		return nil, err
+	}
+
+	httpResp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	var obj %s
-	err = json.NewDecoder(resp.Body).Decode(&obj)
-	if err != nil {
-		return nil, err
+	result := %s{
+		httpResponse: httpResp,
 	}
 
-	return &obj, nil
-}`, opName+"Response")
+	return &result, nil
+}`, opName+"Result")
 		s += "\n\n"
 
 	case "DELETE":
-		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, %s) (*%s, error) {\n", opName, paramsArg, opName+"Response")
+		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, %s) (*%s, error) {\n", opName, paramsArg, opName+"Result")
 		s += addPadding(1)
 		s += fmt.Sprintf("path := c.Server + %q\n", path)
 		s += fmt.Sprintf(`
@@ -177,23 +206,26 @@ func getFuncFromOperation(path, method string, operation *openapi3.Operation) st
 		return nil, err
 	}
 
-	resp, err := c.Client.Do(req.WithContext(ctx))
+	req = req.WithContext(ctx)
+	if err := c.applyMiddlewares(ctx, req); err != nil {
+		return nil, err
+	}
+
+	httpResp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	var obj %s
-	err = json.NewDecoder(resp.Body).Decode(&obj)
-	if err != nil {
-		return nil, err
+	result := %s{
+		httpResponse: httpResp,
 	}
 
-	return &obj, nil
-}`, paramsOut, opName+"Response")
+	return &result, nil
+}`, paramsOut, opName+"Result")
 		s += "\n\n"
 
 	case "PUT":
-		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, body %s) (*%s, error) {\n", opName, opName+"Request", opName+"Response")
+		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, body %s) (*%s, error) {\n", opName, opName+"Request", opName+"Result")
 		s += fmt.Sprintf("path := c.Server + %q\n", path)
 		s += fmt.Sprintf(`
 	url, err := url.Parse(path)
@@ -212,19 +244,22 @@ func getFuncFromOperation(path, method string, operation *openapi3.Operation) st
 		return nil, err
 	}
 
-	resp, err :=  c.Client.Do(req.WithContext(ctx))
+	req = req.WithContext(ctx)
+	if err := c.applyMiddlewares(ctx, req); err != nil {
+		return nil, err
+	}
+
+	httpResp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	var obj %s
-	err = json.NewDecoder(resp.Body).Decode(&obj)
-	if err != nil {
-		return nil, err
+	result := %s{
+		httpResponse: httpResp,
 	}
 
-	return &obj, nil
-}`, opName+"Response")
+	return &result, nil
+}`, opName+"Result")
 		s += "\n\n"
 	}
 
@@ -239,7 +274,7 @@ func getOpParams(params openapi3.Parameters) string {
 	s := "queryValues := url.Query()\n"
 	for _, p := range params {
 		typeName := getTypeName(p.Value.Name, false)
-		if p.Value.Schema.Value.Type == "object" {
+		if p.Value.Content != nil && utils.StringExists(p.Value.Content["application/json"].Schema.Value.Type, "object", "array") {
 			s += fmt.Sprintf(`
 			b, err := json.Marshal(params.%s)
 			if err != nil {

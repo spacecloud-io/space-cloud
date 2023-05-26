@@ -26,12 +26,14 @@ func NewCommand() *cobra.Command {
 			_ = viper.BindPFlag("output", cmd.Flags().Lookup("output"))
 			_ = viper.BindPFlag("name", cmd.Flags().Lookup("name"))
 			_ = viper.BindPFlag("lang", cmd.Flags().Lookup("lang"))
+			_ = viper.BindPFlag("package", cmd.Flags().Lookup("package"))
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := viper.GetString("config")
 			output := viper.GetString("output")
 			name := viper.GetString("name")
 			lang := viper.GetString("lang")
+			pkgName := viper.GetString("package")
 
 			doc, err := openapi3.NewLoader().LoadFromFile(config)
 			if err != nil {
@@ -50,7 +52,6 @@ func NewCommand() *cobra.Command {
 					_ = os.WriteFile(filepath.Join(output, "http.config.ts"), []byte(rtk.ConfigTS), 0777)
 				}
 			case "go":
-				pkgName := "openapi"
 				api, err := golang.GenerateAPI(doc, pkgName)
 				if err != nil {
 					fmt.Printf("error generating api: %s\n", err)
@@ -77,6 +78,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("output", "o", "client", "The directory to output the client to.")
 	cmd.Flags().StringP("name", "n", "my-api", "Name for the API.")
 	cmd.Flags().StringP("lang", "l", "go", "Language in which to generate code. Supported languages are 'rtk', 'Go'")
+	cmd.Flags().StringP("package", "p", "openapi", "The name of the package to generate.")
 
 	return cmd
 }
