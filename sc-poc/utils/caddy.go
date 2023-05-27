@@ -54,20 +54,29 @@ func GetByteStringArray(val ...string) []byte {
 	return data
 }
 
-// GetCaddyHandler returns a marshaled caddy handler config
-func GetCaddyHandler(handlerName string, params map[string]interface{}) []json.RawMessage {
-	handler := make(map[string]interface{})
+type Handler struct {
+	HandlerName string
+	Params      map[string]interface{}
+}
 
-	// Add the handler name / identifier
-	handler["handler"] = fmt.Sprintf("sc_%s_handler", handlerName)
+// GetCaddyHandlers returns marshaled caddy handlers config
+func GetCaddyHandlers(routes ...Handler) []json.RawMessage {
+	handlers := []json.RawMessage{}
+	for _, route := range routes {
+		handler := make(map[string]interface{})
 
-	// Add the params the handler needs
-	for k, v := range params {
-		handler[k] = v
+		// Add the handler name / identifier
+		handler["handler"] = fmt.Sprintf("sc_%s_handler", route.HandlerName)
+
+		// Add the params the handler needs
+		for k, v := range route.Params {
+			handler[k] = v
+		}
+		data, _ := json.Marshal(handler)
+		handlers = append(handlers, data)
+
 	}
-
-	data, _ := json.Marshal(handler)
-	return []json.RawMessage{data}
+	return handlers
 }
 
 // GetCaddySubrouter returns a marshaled caddy subrouter

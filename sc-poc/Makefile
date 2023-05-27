@@ -25,4 +25,4 @@ install:
 	cd cmd/spacectl && go install
 
 run: build
-	cd cmd/spacectl && ./spacectl run
+	cd cmd/spacectl && ./spacectl run --kratos-enable

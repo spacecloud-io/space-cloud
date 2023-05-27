@@ -110,15 +110,20 @@ func prepareRoute(api *API, path string, methods, indexes []string) caddyhttp.Ro
 		if len(p.Params.Raw) > 0 {
 			_ = json.Unmarshal(p.Params.Raw, &params)
 		}
-		apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, utils.GetCaddyHandler(p.Driver, params)...)
+		apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, utils.GetCaddyHandlers(utils.Handler{
+			HandlerName: p.Driver,
+			Params:      params,
+		})...)
 	}
 
 	// Finally comes the main api route
-	apiHandler := utils.GetCaddyHandler("api", map[string]interface{}{
-		"path":    path,
-		"indexes": indexes,
-		"app":     api.app,
-		"name":    api.Name,
+	apiHandler := utils.GetCaddyHandlers(utils.Handler{
+		HandlerName: "api",
+		Params: map[string]interface{}{
+			"path":    path,
+			"indexes": indexes,
+			"app":     api.app,
+			"name":    api.Name},
 	})
 	apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, apiHandler...)
 

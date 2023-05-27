@@ -11,23 +11,23 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-// AuthVerifyHandler is responsible to authenticate the incoming request
+// JWTAuthVerifyHandler is responsible to authenticate the incoming request
 // on a best effort basis
-type AuthVerifyHandler struct {
+type JWTAuthVerifyHandler struct {
 	logger  *zap.Logger
 	authApp *App
 }
 
 // CaddyModule returns the Caddy module information.
-func (AuthVerifyHandler) CaddyModule() caddy.ModuleInfo {
+func (JWTAuthVerifyHandler) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.sc_auth_verify_handler",
-		New: func() caddy.Module { return new(AuthVerifyHandler) },
+		ID:  "http.handlers.sc_jwt_auth_verify_handler",
+		New: func() caddy.Module { return new(JWTAuthVerifyHandler) },
 	}
 }
 
 // Provision sets up the auth verify module.
-func (h *AuthVerifyHandler) Provision(ctx caddy.Context) error {
+func (h *JWTAuthVerifyHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 
 	// Get the auth app
@@ -42,7 +42,7 @@ func (h *AuthVerifyHandler) Provision(ctx caddy.Context) error {
 }
 
 // ServeHTTP handles the http request
-func (h *AuthVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+func (h *JWTAuthVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	// Prepare authentication object
 	result := types.AuthResult{}
 	// Check if token is present in the header
@@ -64,5 +64,5 @@ func (h *AuthVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, ne
 }
 
 // Interface guard
-var _ caddy.Provisioner = (*AuthVerifyHandler)(nil)
-var _ caddyhttp.MiddlewareHandler = (*AuthVerifyHandler)(nil)
+var _ caddy.Provisioner = (*JWTAuthVerifyHandler)(nil)
+var _ caddyhttp.MiddlewareHandler = (*JWTAuthVerifyHandler)(nil)

@@ -44,8 +44,11 @@ func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 	return caddyhttp.RouteList{
 		// Routes for CORS
 		caddyhttp.Route{
-			Group:       "cors",
-			HandlersRaw: utils.GetCaddyHandler("cors", nil),
+			Group: "cors",
+			HandlersRaw: utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "cors",
+				Params:      nil,
+			}),
 		},
 
 		// TODO: Fix this
@@ -64,25 +67,34 @@ func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 }
 
 func getAPIRoutes() caddyhttp.Route {
-	// Make route list for the sub router
-	routeList := caddyhttp.RouteList{
-		caddyhttp.Route{
-			Group:       "api_auth",
-			HandlersRaw: utils.GetCaddyHandler("auth_verify", nil),
-		},
-		caddyhttp.Route{
-			Group:       "api_route",
-			HandlersRaw: utils.GetCaddyHandler("root_api", nil),
+	routes := []utils.Handler{
+		{
+			HandlerName: "jwt_auth_verify",
+			Params:      nil,
 		},
 	}
 
 	if viper.GetBool("kratos.enable") {
-		kratos := caddyhttp.Route{
-			Group:       "api_auth",
-			HandlersRaw: utils.GetCaddyHandler("auth_kratos_verify", nil),
+		route := utils.Handler{
+			HandlerName: "kratos_auth_verify",
+			Params:      nil,
 		}
+		routes = append(routes, route)
+	}
 
-		routeList = append(routeList, kratos)
+	// Make route list for the sub router
+	routeList := caddyhttp.RouteList{
+		caddyhttp.Route{
+			Group:       "api_auth",
+			HandlersRaw: utils.GetCaddyHandlers(routes...),
+		},
+		caddyhttp.Route{
+			Group: "api_route",
+			HandlersRaw: utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "root_api",
+				Params:      nil,
+			}),
+		},
 	}
 
 	// Create matcher and handler for subroute
@@ -111,21 +123,30 @@ func getConfigRoutes() caddyhttp.Route {
 		getRoute := caddyhttp.Route{
 			Group:          "config_get",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodGet}),
-			HandlersRaw:    utils.GetCaddyHandler("config_get", data),
+			HandlersRaw: utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "config_get",
+				Params:      data,
+			}),
 		}
 
 		// Route for Apply operation
 		applyRoute := caddyhttp.Route{
 			Group:          "config_apply",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodPut}),
-			HandlersRaw:    utils.GetCaddyHandler("config_apply", data),
+			HandlersRaw: utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "config_apply",
+				Params:      data,
+			}),
 		}
 
 		// Route for Delete operation
 		deleteRoute := caddyhttp.Route{
 			Group:          "config_delete",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodDelete}),
-			HandlersRaw:    utils.GetCaddyHandler("config_delete", data),
+			HandlersRaw: utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "config_delete",
+				Params:      data,
+			}),
 		}
 
 		configRoutes = append(configRoutes, getRoute, applyRoute, deleteRoute)

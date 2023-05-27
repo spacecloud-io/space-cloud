@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/caddyserver/caddy/v2"
@@ -11,23 +12,23 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-// AuthKratosVerifyHandler is responsible to authenticate the incoming request
+// KratosAuthVerifyHandler is responsible to authenticate the incoming request
 // using Kratos
-type AuthKratosVerifyHandler struct {
+type KratosAuthVerifyHandler struct {
 	logger *zap.Logger
 	//authApp *App
 }
 
 // CaddyModule returns the Caddy module information.
-func (AuthKratosVerifyHandler) CaddyModule() caddy.ModuleInfo {
+func (KratosAuthVerifyHandler) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.sc_auth__kratos_verify_handler",
-		New: func() caddy.Module { return new(AuthKratosVerifyHandler) },
+		ID:  "http.handlers.sc_kratos_auth_verify_handler",
+		New: func() caddy.Module { return new(KratosAuthVerifyHandler) },
 	}
 }
 
 // Provision sets up the auth verify module.
-func (h *AuthKratosVerifyHandler) Provision(ctx caddy.Context) error {
+func (h *KratosAuthVerifyHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 
 	// Get the auth app
@@ -42,12 +43,14 @@ func (h *AuthKratosVerifyHandler) Provision(ctx caddy.Context) error {
 }
 
 // ServeHTTP handles the http request
-func (h *AuthKratosVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+func (h *KratosAuthVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	// Prepare authentication object
 	result := types.AuthResult{}
 	// Check if token is present in the header
 	token, p := getTokenFromHeader(r)
+	fmt.Println(token)
 	if p {
+
 		// claims, err := h.authApp.Verify(token)
 		// if err != nil {
 		// 	SendUnauthenticatedResponse(w, r, h.logger, err)
@@ -64,5 +67,5 @@ func (h *AuthKratosVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 }
 
 // Interface guard
-var _ caddy.Provisioner = (*AuthVerifyHandler)(nil)
-var _ caddyhttp.MiddlewareHandler = (*AuthVerifyHandler)(nil)
+var _ caddy.Provisioner = (*JWTAuthVerifyHandler)(nil)
+var _ caddyhttp.MiddlewareHandler = (*JWTAuthVerifyHandler)(nil)
