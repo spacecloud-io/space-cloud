@@ -103,31 +103,18 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 											"ack": map[string]interface{}{
 												"type": "boolean",
 											},
+											"message": map[string]interface{}{
+												"type": "string",
+											},
+											"errors": map[string]interface{}{
+												"type": "array",
+												"items": map[string]interface{}{
+													"type": "string",
+												},
+												"required": []string{"message"},
+											},
 										},
 										"required": []string{"id", "ack"},
-									},
-								},
-								"required": []string{"event", "data"},
-							},
-						},
-						{
-							Name:        "PublishError",
-							ContentType: "application/json",
-							Payload: map[string]interface{}{
-								"type": "object",
-								"properties": map[string]interface{}{
-									"id": map[string]interface{}{
-										"type": "string",
-									},
-									"message": map[string]interface{}{
-										"type": "string",
-									},
-									"errors": map[string]interface{}{
-										"type": "array",
-										"items": map[string]interface{}{
-											"type": "string",
-										},
-										"required": []string{"message"},
 									},
 								},
 								"required": []string{"event", "data"},
