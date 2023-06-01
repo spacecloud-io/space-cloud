@@ -20,10 +20,11 @@ type JwtRSASecret struct {
 type JwtRSASecretSpec struct {
 	AuthSecret `json:",inline"`
 
-	// Source for the AuthSecret's value
-	// +kubebuilder:validation:Optional
-	PublicKey *SecretSource `json:"publicKey"`
+	// PublicKey holds the value of the public key
+	PublicKey SecretSource `json:"publicKey"`
 
+	// PrivateKey for the AuthSecret's value
+	// +kubebuilder:validation:Optional
 	PrivateKey *SecretSource `json:"privateKey,omitempty"`
 }
 
