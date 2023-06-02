@@ -78,12 +78,12 @@ func generateTypesFromOperation(operation *openapi3.Operation, method string) st
 	opName := getTypeName(operation.OperationID, false)
 
 	if len(requestSchema.Value.Properties) > 0 {
-		s += generateTypeDef(requestSchema, opName+"Request", opName)
+		s += generateTypeDef(requestSchema, opName+"Request")
 	}
 
 	for statusCode, content := range operation.Responses {
 		responseSchema := content.Value.Content["application/json"].Schema
-		s += generateTypeDef(responseSchema, opName+"Response"+statusCode, opName)
+		s += generateTypeDef(responseSchema, opName+"Response"+statusCode)
 	}
 
 	// Prepare the result struct
@@ -132,10 +132,9 @@ func generateTypesFromOperation(operation *openapi3.Operation, method string) st
 	return s
 }
 
-func generateTypeDef(schema *openapi3.SchemaRef, name string, parent string) string {
+func generateTypeDef(schema *openapi3.SchemaRef, name string) string {
 	var s string
 	pendingTypes := make(map[string]*openapi3.SchemaRef)
-	parentMapping := make(map[string]string)
 
 	s += fmt.Sprintf("// %s\n", name)
 	s += fmt.Sprintf("type %s struct {\n", name)
@@ -147,17 +146,16 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string, parent string) str
 
 		switch nestedSchema.Value.Type {
 		case "object":
-			typeName := parent + "_" + child
+			typeName := name + "_" + child
 			if !required {
 				k += ",omitempty"
 				s += "*"
 			}
 			s += fmt.Sprintf("%s `json:%q`\n", typeName, k)
 			pendingTypes[typeName] = nestedSchema
-			parentMapping[typeName] = child
 
 		case "array":
-			typeName := parent + "_" + child
+			typeName := name + "_" + child
 			s += "[]"
 			if !required {
 				k += ",omitempty"
@@ -167,7 +165,6 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string, parent string) str
 			if arrayType == "object" {
 				s += fmt.Sprintf("%s `json:%q`\n", typeName, k)
 				pendingTypes[typeName] = nestedSchema.Value.Items
-				parentMapping[typeName] = child
 			} else if arrayType == "array" {
 				s += nestedArray(nestedSchema.Value.Items)
 				s += fmt.Sprintf(" `json:%q`\n", k)
@@ -200,7 +197,7 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string, parent string) str
 	}
 	s += "}\n\n"
 	for name, schema := range pendingTypes {
-		s += generateTypeDef(schema, name, parentMapping[name])
+		s += generateTypeDef(schema, name)
 	}
 	return s
 }
