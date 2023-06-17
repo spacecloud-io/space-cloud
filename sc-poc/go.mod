@@ -16,6 +16,7 @@ require (
 	github.com/graphql-go/graphql v0.8.0
 	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0
 	github.com/invopop/jsonschema v0.6.0
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/rs/cors v1.8.2
 	github.com/segmentio/ksuid v1.0.4
 	github.com/spf13/cobra v1.6.1
@@ -37,6 +38,7 @@ require (
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
 	github.com/lithammer/shortuuid/v3 v3.0.7 // indirect
+	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/onsi/ginkgo/v2 v2.6.0 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
