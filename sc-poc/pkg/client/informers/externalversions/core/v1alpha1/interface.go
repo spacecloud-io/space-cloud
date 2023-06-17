@@ -34,6 +34,8 @@ type Interface interface {
 	OPAPolicies() OPAPolicyInformer
 	// OpenAPISources returns a OpenAPISourceInformer.
 	OpenAPISources() OpenAPISourceInformer
+	// PubsubChannels returns a PubsubChannelInformer.
+	PubsubChannels() PubsubChannelInformer
 }
 
 type version struct {
@@ -70,4 +72,9 @@ func (v *version) OPAPolicies() OPAPolicyInformer {
 // OpenAPISources returns a OpenAPISourceInformer.
 func (v *version) OpenAPISources() OpenAPISourceInformer {
 	return &openAPISourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// PubsubChannels returns a PubsubChannelInformer.
+func (v *version) PubsubChannels() PubsubChannelInformer {
+	return &pubsubChannelInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

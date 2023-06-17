@@ -1,5 +1,9 @@
 package pubsub
 
+import (
+	v1alpha1 "github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
+)
+
 type (
 	EventType string
 )
@@ -19,7 +23,7 @@ type Message struct {
 // PublishMessage defines the type for publishing a message
 type PublishMessage struct {
 	ID       string            `json:"id"`
-	MetaData map[string]string `json:"metadata"`
+	MetaData map[string]string `json:"metadata,omitempty"`
 	Payload  interface{}       `json:"payload"`
 }
 
@@ -50,9 +54,9 @@ type Channel struct {
 
 // ChannelPayload define channel's payload
 type ChannelPayload struct {
-	Schema   map[string]interface{} `json:"schema,omitempty"`
-	Example  interface{}            `json:"example,omitempty"`
-	Examples []interface{}          `json:"examples,omitempty"`
+	Schema   *v1alpha1.ChannelSchema `json:"schema,omitempty"`
+	Example  interface{}             `json:"example,omitempty"`
+	Examples []interface{}           `json:"examples,omitempty"`
 }
 
 // Components stores the components for the schema refs
@@ -117,4 +121,15 @@ type ServerItem struct {
 // AsyncAPIComponents defines the components specified by AsyncAPI standard.
 type AsyncAPIComponents struct {
 	Schemas map[string]interface{} `json:"schemas,omitempty"`
+}
+
+// WebsocketErrorMessage defines the error message in websocket connection
+type WebsocketErrorMessage struct {
+	ID      string   `json:"id"`
+	Message string   `json:"message"`
+	Errors  []string `json:"errors,omitempty"`
+}
+
+type Source interface {
+	GetChannel() Channel
 }

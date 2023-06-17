@@ -102,6 +102,16 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 										"ack": map[string]interface{}{
 											"type": "boolean",
 										},
+										"message": map[string]interface{}{
+											"type": "string",
+										},
+										"errors": map[string]interface{}{
+											"type": "array",
+											"items": map[string]interface{}{
+												"type": "string",
+											},
+											"required": []string{"message"},
+										},
 									},
 									"required": []string{"id", "ack"},
 								},
