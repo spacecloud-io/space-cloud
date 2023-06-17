@@ -32,37 +32,34 @@ func (a *App) Subscribe(ctx context.Context, clientID, topic string, options Sub
 }
 
 func (a *App) createInternalChannels() {
-	openapiProvisionChannel := Channel{
-		Name: "openapi-provision",
-		Payload: ChannelPayload{
-			Schema: &v1alpha1.ChannelSchema{
-				Type:                 "object",
-				AdditionalProperties: json.RawMessage(fmt.Sprintf(`%t`, true)),
-			},
+	openapiProvisionChannel := v1alpha1.PubsubChannelSpec{
+		Channel: "/openapi/provision",
+		Payload: &v1alpha1.ChannelSchema{
+			Type:                 "object",
+			AdditionalProperties: json.RawMessage(fmt.Sprintf(`%t`, true)),
 		},
 	}
 
-	asyncapiProvisionChannel := Channel{
-		Name: "asyncapi-provision",
-		Payload: ChannelPayload{
-			Schema: &v1alpha1.ChannelSchema{
-				Type:                 "object",
-				AdditionalProperties: json.RawMessage(fmt.Sprintf(`%t`, true)),
-			},
+	asyncapiProvisionChannel := v1alpha1.PubsubChannelSpec{
+		Channel: "/asyncapi/provision",
+		Payload: &v1alpha1.ChannelSchema{
+			Type:                 "object",
+			AdditionalProperties: json.RawMessage(fmt.Sprintf(`%t`, true)),
 		},
 	}
+
 	a.channels = append(a.channels, openapiProvisionChannel, asyncapiProvisionChannel)
 }
 
 // Channels return channels with their schema
 func (a *App) Channels() ChannelsWithSchema {
 	channels := ChannelsWithSchema{
-		Channels: make(map[string]Channel),
+		Channels: make(map[string]v1alpha1.PubsubChannelSpec),
 	}
 
-	for _, topic := range a.channels {
-		channelPath := getChannelPath(topic.Name)
-		channels.Channels[channelPath] = topic
+	for _, channel := range a.channels {
+		channelPath := getChannelPath(channel.Channel)
+		channels.Channels[channelPath] = channel
 	}
 	return channels
 }
