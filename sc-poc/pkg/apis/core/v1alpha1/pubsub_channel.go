@@ -24,24 +24,47 @@ type PubsubChannel struct {
 type PubsubChannelSpec struct {
 	// Channel describes the name of the pubsub channel
 	Channel string `json:"channel"`
+
 	// Payload describes the payload schema of the channel
-	Payload *ChannelSchema `json:"payload,omitempty"`
+	Payload *ChannelSchema `json:"payload"`
+
+	// ProducerOptions describes the options for a producer
+	// +kubebuilder:validation:Optional
+	ProducerOptions *ChannelOptions `json:"producerOptions,omitempty"`
+
+	// ConsumerOptions describes the options for a consumer
+	// +kubebuilder:validation:Optional
+	ConsumerOptions *ChannelOptions `json:"consumerOptions,omitempty"`
 }
 
 // ChannelSchema defines the schema of the payload that the channel accepts
 type ChannelSchema struct {
 	// Type defines the type of the data
+	// +kubebuilder:validation:Optional
 	Type string `json:"type,omitempty"`
 
 	// Items list the items of the array
+	// +kubebuilder:validation:Optional
 	Items *ChannelSchema `json:"items,omitempty"`
 
 	// Properties list additional properties of the object
+	// +kubebuilder:validation:Optional
 	Properties map[string]*ChannelSchema `json:"properties,omitempty"`
+
 	// Required specifies the required properties of the object
+	// +kubebuilder:validation:Optional
 	Required []string `json:"required,omitempty"`
+
 	// AdditionalProperties defines if the schema accepts properties other than the ones mentioned
+	// +kubebuilder:validation:Optional
 	AdditionalProperties json.RawMessage `json:"additionalProperties,omitempty"`
+}
+
+// ChannelOptions describes the options available for a producer/ consumer
+type ChannelOptions struct {
+	// Plugins describes the plugins to be used for this endpoint
+	// +kubebuilder:validation:Optional
+	Plugins []HTTPPlugin `json:"plugins,omitempty"`
 }
 
 // PubsubChannel defines the observed state of the pubsub channel
