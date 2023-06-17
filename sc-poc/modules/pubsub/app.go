@@ -8,6 +8,7 @@ import (
 	"github.com/spacecloud-io/space-cloud/managers/apis"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/modules/pubsub/connectors"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
 var connectorPool = caddy.NewUsagePool()
@@ -28,7 +29,7 @@ type App struct {
 	// For internal usage
 	logger      *zap.Logger
 	asyncapiDoc *AsyncAPI
-	channels    []Channel
+	channels    []v1alpha1.PubsubChannelSpec
 }
 
 // CaddyModule returns the Caddy module information.
@@ -75,8 +76,8 @@ func (a *App) Provision(ctx caddy.Context) error {
 	// Generate publish and subscribe API for each channel
 	for path, channel := range a.Channels().Channels {
 		// Get the publish and subscribe API of the channel
-		publisherAPI := a.getPublisherAPI(path, channel)
-		subscriberAPI := a.getSubscriberAPI(path, channel.Name)
+		publisherAPI := a.getProducerAPI(path, channel)
+		subscriberAPI := a.getConsumerAPI(path, channel)
 
 		a.apis = append(a.apis, publisherAPI, subscriberAPI)
 	}

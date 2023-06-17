@@ -38,13 +38,8 @@ func (s *PubsubChannelSource) GetProviders() []string {
 }
 
 // GetChannel returns the channel of this source.
-func (s *PubsubChannelSource) GetChannel() pubsub.Channel {
-	return pubsub.Channel{
-		Name: s.Spec.Channel,
-		Payload: pubsub.ChannelPayload{
-			Schema: s.Spec.Payload,
-		},
-	}
+func (s *PubsubChannelSource) GetChannel() v1alpha1.PubsubChannelSpec {
+	return s.Spec
 }
 
 // Interface guard

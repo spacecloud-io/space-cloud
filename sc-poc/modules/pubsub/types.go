@@ -42,14 +42,15 @@ type SubscribeOptions struct {
 
 // ChannelsWithSchema define the channels schema and component
 type ChannelsWithSchema struct {
-	Channels   map[string]Channel `json:"channels,omitempty"` // key is the url
-	Components *Components        `json:"components,omitempty"`
+	Channels   map[string]v1alpha1.PubsubChannelSpec `json:"channels,omitempty"` // key is the url
+	Components *Components                           `json:"components,omitempty"`
 }
 
 // Channel defines a single channel schema
 type Channel struct {
-	Name    string         `json:"name,omitempty"`
-	Payload ChannelPayload `json:"payload,omitempty"`
+	Name    string                   `json:"name,omitempty"`
+	Payload ChannelPayload           `json:"payload,omitempty"`
+	Options *v1alpha1.ChannelOptions `json:"channelOptions,omitempty"`
 }
 
 // ChannelPayload define channel's payload
@@ -131,5 +132,5 @@ type WebsocketErrorMessage struct {
 }
 
 type Source interface {
-	GetChannel() Channel
+	GetChannel() v1alpha1.PubsubChannelSpec
 }
