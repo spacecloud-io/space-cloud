@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: (devel)
+    controller-gen.kubebuilder.io/version: v0.12.0
   name: pubsubchannels.core.space-cloud.io
 spec:
   group: core.space-cloud.io
@@ -37,6 +37,34 @@ spec:
               channel:
                 description: Channel describes the name of the pubsub channel
                 type: string
+              consumerOptions:
+                description: ConsumerOptions describes the options for a consumer
+                properties:
+                  plugins:
+                    description: Plugins describes the plugins to be used for this
+                      endpoint
+                    items:
+                      description: HTTPPlugin describes a plugin to be used in an
+                        HTTP endpoint
+                      properties:
+                        driver:
+                          description: Driver describes the driver to use for the
+                            plugin
+                          type: string
+                        name:
+                          description: Name describes a name of the plugin
+                          type: string
+                        params:
+                          description: Params describes the additional properties
+                            which are required by the driver
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                      required:
+                      - driver
+                      - name
+                      type: object
+                    type: array
+                type: object
               payload:
                 description: Payload describes the payload schema of the channel
                 properties:
@@ -61,8 +89,37 @@ spec:
                     description: Type defines the type of the data
                     type: string
                 type: object
+              producerOptions:
+                description: ProducerOptions describes the options for a producer
+                properties:
+                  plugins:
+                    description: Plugins describes the plugins to be used for this
+                      endpoint
+                    items:
+                      description: HTTPPlugin describes a plugin to be used in an
+                        HTTP endpoint
+                      properties:
+                        driver:
+                          description: Driver describes the driver to use for the
+                            plugin
+                          type: string
+                        name:
+                          description: Name describes a name of the plugin
+                          type: string
+                        params:
+                          description: Params describes the additional properties
+                            which are required by the driver
+                          type: object
+                          x-kubernetes-preserve-unknown-fields: true
+                      required:
+                      - driver
+                      - name
+                      type: object
+                    type: array
+                type: object
             required:
             - channel
+            - payload
             type: object
           status:
             description: PubsubChannel defines the observed state of the pubsub channel
