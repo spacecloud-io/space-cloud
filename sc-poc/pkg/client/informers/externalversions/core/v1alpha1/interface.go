@@ -30,10 +30,14 @@ type Interface interface {
 	GraphqlSources() GraphqlSourceInformer
 	// JwtHSASecrets returns a JwtHSASecretInformer.
 	JwtHSASecrets() JwtHSASecretInformer
+	// JwtRSASecrets returns a JwtRSASecretInformer.
+	JwtRSASecrets() JwtRSASecretInformer
 	// OPAPolicies returns a OPAPolicyInformer.
 	OPAPolicies() OPAPolicyInformer
 	// OpenAPISources returns a OpenAPISourceInformer.
 	OpenAPISources() OpenAPISourceInformer
+	// PubsubChannels returns a PubsubChannelInformer.
+	PubsubChannels() PubsubChannelInformer
 }
 
 type version struct {
@@ -62,6 +66,11 @@ func (v *version) JwtHSASecrets() JwtHSASecretInformer {
 	return &jwtHSASecretInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
+// JwtRSASecrets returns a JwtRSASecretInformer.
+func (v *version) JwtRSASecrets() JwtRSASecretInformer {
+	return &jwtRSASecretInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
 // OPAPolicies returns a OPAPolicyInformer.
 func (v *version) OPAPolicies() OPAPolicyInformer {
 	return &oPAPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
@@ -70,4 +79,9 @@ func (v *version) OPAPolicies() OPAPolicyInformer {
 // OpenAPISources returns a OpenAPISourceInformer.
 func (v *version) OpenAPISources() OpenAPISourceInformer {
 	return &openAPISourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// PubsubChannels returns a PubsubChannelInformer.
+func (v *version) PubsubChannels() PubsubChannelInformer {
+	return &pubsubChannelInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

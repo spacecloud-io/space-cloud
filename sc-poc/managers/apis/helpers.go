@@ -106,11 +106,16 @@ func prepareRoute(api *API, path string, methods, indexes []string) caddyhttp.Ro
 
 	// First we add the handlers for all the plugins
 	for _, p := range api.Plugins {
-		var params map[string]interface{}
+		params := map[string]any{}
 		if len(p.Params.Raw) > 0 {
 			_ = json.Unmarshal(p.Params.Raw, &params)
 		}
-		apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, utils.GetCaddyHandler(p.Driver, params)...)
+
+		// Always inject the name as a parameter
+		params["name"] = p.Name
+
+		// Append the plugin to the handler's array
+		apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, utils.GetCaddyHandler(fmt.Sprintf("plugin_%s", p.Driver), params)...)
 	}
 
 	// Finally comes the main api route
