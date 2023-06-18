@@ -15,12 +15,13 @@ import (
 )
 
 // createRPC creates a RPC from an OpenAPI operation
-func (s *Source) createRPC(url, operationID, method string, respBody, reqBody *openapi3.Schema, parameters openapi3.Parameters) *rpc.RPC {
-	operationType := "mutation"
-	if method == http.MethodGet {
-		operationType = "query"
+func (s *Source) createRPC(url, operationID, operationType, method string, respBody, reqBody *openapi3.Schema, parameters openapi3.Parameters, plugins []v1alpha1.HTTPPlugin) *rpc.RPC {
+	if operationType == "" {
+		operationType = "mutation"
+		if method == http.MethodGet {
+			operationType = "query"
+		}
 	}
-
 	for _, param := range parameters {
 		if reqBody == nil {
 			reqBody = &openapi3.Schema{
@@ -62,7 +63,8 @@ func (s *Source) createRPC(url, operationID, method string, respBody, reqBody *o
 		HTTPOptions: &v1alpha1.HTTPOptions{
 			Method: method,
 		},
-		Call: s.createCall(url, operationID, method, reqBody, parameters),
+		Plugins: plugins,
+		Call:    s.createCall(url, operationID, method, reqBody, parameters),
 	}
 }
 

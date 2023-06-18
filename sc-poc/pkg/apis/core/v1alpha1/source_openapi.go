@@ -1,7 +1,8 @@
 package v1alpha1
 
 import (
-	"github.com/getkin/kin-openapi/openapi3"
+	"k8s.io/apimachinery/pkg/runtime"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,7 +31,7 @@ type OpenAPISourceSpec struct {
 
 type OpenAPISpec struct {
 	// Value stores the open api schema
-	Value *openapi3.T `json:"value,omitempty"`
+	Value runtime.RawExtension `json:"value,omitempty"`
 	// Ref stores the path from which openapi schema will be fetched if value is not provided
 	Ref *HTTPOptions `json:"ref,omitempty"`
 }

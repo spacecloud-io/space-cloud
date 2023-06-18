@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/modules/rpc"
 	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
@@ -83,7 +84,6 @@ func (s *Source) GetRPCs() rpc.RPCs {
 			s.logger.Error("Unable to marshal openapi spec", zap.Error(err))
 			return nil
 		}
-
 		// Load the OpenAPI specification from JSON data
 		schema, err = loader.LoadFromData(data)
 		if err != nil {
@@ -98,6 +98,9 @@ func (s *Source) GetRPCs() rpc.RPCs {
 		if getSpec := pathSpec.Get; getSpec != nil {
 			var respBody *openapi3.Schema
 			var reqBody *openapi3.Schema
+			var operationType string
+			var plugins []v1alpha1.HTTPPlugin
+
 			// Check if the response has a 200 status code
 			if res, ok := getSpec.Responses[strconv.FormatInt(int64(200), 10)]; ok {
 				// Check if the response has JSON content
@@ -105,13 +108,27 @@ func (s *Source) GetRPCs() rpc.RPCs {
 					respBody = content.Schema.Value
 				}
 			}
-			rpcs = append(rpcs, s.createRPC(url, getSpec.OperationID, http.MethodGet, respBody, reqBody, getSpec.Parameters))
+			// Check if operation type is present in extensions
+			if ext, ok := getSpec.Extensions["x-request-op-type"]; ok {
+				operationType = ext.(string)
+			}
+			// Check if plugins is present in extensions
+			if ext, ok := getSpec.Extensions["x-sc-plugins"]; ok {
+				// export value of ext to plugins variable
+				if err := mapstructure.Decode(ext, &plugins); err != nil {
+					s.logger.Error("Unable to decode x-sc-plugins", zap.Error(err))
+				}
+			}
+			rpcs = append(rpcs, s.createRPC(url, getSpec.OperationID, operationType, http.MethodGet, respBody, reqBody, getSpec.Parameters, plugins))
 		}
 
 		// Process POST requests
 		if postSpec := pathSpec.Post; postSpec != nil {
 			var respBody *openapi3.Schema
 			var reqBody *openapi3.Schema
+			var operationType string
+			var plugins []v1alpha1.HTTPPlugin
+
 			// Check if the response has a 200 status code
 			if res, ok := postSpec.Responses[strconv.FormatInt(int64(200), 10)]; ok {
 				// Check if the response has JSON content
@@ -132,13 +149,27 @@ func (s *Source) GetRPCs() rpc.RPCs {
 					reqBody = reqContent.Schema.Value
 				}
 			}
-			rpcs = append(rpcs, s.createRPC(url, postSpec.OperationID, http.MethodPost, respBody, reqBody, postSpec.Parameters))
+			// Check if operation type is present in extensions
+			if ext, ok := postSpec.Extensions["x-request-op-type"]; ok {
+				operationType = ext.(string)
+			}
+			// Check if plugins is present in extensions
+			if ext, ok := postSpec.Extensions["x-sc-plugins"]; ok {
+				// export value of ext to plugins variable
+				if err := mapstructure.Decode(ext, &plugins); err != nil {
+					s.logger.Error("Unable to decode x-sc-plugins", zap.Error(err))
+				}
+			}
+			rpcs = append(rpcs, s.createRPC(url, postSpec.OperationID, operationType, http.MethodPost, respBody, reqBody, postSpec.Parameters, plugins))
 		}
 
 		// Process PUT requests
 		if putSpec := pathSpec.Put; putSpec != nil {
 			var respBody *openapi3.Schema
 			var reqBody *openapi3.Schema
+			var operationType string
+			var plugins []v1alpha1.HTTPPlugin
+
 			// Check if the response has a 200 status code
 			if res, ok := putSpec.Responses[strconv.FormatInt(int64(200), 10)]; ok {
 				// Check if the response has JSON content
@@ -159,13 +190,27 @@ func (s *Source) GetRPCs() rpc.RPCs {
 					reqBody = reqContent.Schema.Value
 				}
 			}
-			rpcs = append(rpcs, s.createRPC(url, putSpec.OperationID, http.MethodPut, respBody, reqBody, putSpec.Parameters))
+			// Check if operation type is present in extensions
+			if ext, ok := putSpec.Extensions["x-request-op-type"]; ok {
+				operationType = ext.(string)
+			}
+			// Check if plugins is present in extensions
+			if ext, ok := putSpec.Extensions["x-sc-plugins"]; ok {
+				// export value of ext to plugins variable
+				if err := mapstructure.Decode(ext, &plugins); err != nil {
+					s.logger.Error("Unable to decode x-sc-plugins", zap.Error(err))
+				}
+			}
+			rpcs = append(rpcs, s.createRPC(url, putSpec.OperationID, operationType, http.MethodPut, respBody, reqBody, putSpec.Parameters, plugins))
 		}
 
 		// Process DELETE requests
 		if deleteSpec := pathSpec.Delete; deleteSpec != nil {
 			var respBody *openapi3.Schema
 			var reqBody *openapi3.Schema
+			var operationType string
+			var plugins []v1alpha1.HTTPPlugin
+
 			// Check if the response has a 200 status code
 			if res, ok := deleteSpec.Responses[strconv.FormatInt(int64(200), 10)]; ok {
 				// Check if the response has JSON content
@@ -186,7 +231,18 @@ func (s *Source) GetRPCs() rpc.RPCs {
 					reqBody = reqContent.Schema.Value
 				}
 			}
-			rpcs = append(rpcs, s.createRPC(url, deleteSpec.OperationID, http.MethodDelete, respBody, reqBody, deleteSpec.Parameters))
+			// Check if operation type is present in extensions
+			if ext, ok := deleteSpec.Extensions["x-request-op-type"]; ok {
+				operationType = ext.(string)
+			}
+			// Check if plugins is present in extensions
+			if ext, ok := deleteSpec.Extensions["x-sc-plugins"]; ok {
+				// export value of ext to plugins variable
+				if err := mapstructure.Decode(ext, &plugins); err != nil {
+					s.logger.Error("Unable to decode x-sc-plugins", zap.Error(err))
+				}
+			}
+			rpcs = append(rpcs, s.createRPC(url, deleteSpec.OperationID, operationType, http.MethodDelete, respBody, reqBody, deleteSpec.Parameters, plugins))
 		}
 	}
 
