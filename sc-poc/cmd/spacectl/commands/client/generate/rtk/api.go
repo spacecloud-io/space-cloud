@@ -1,4 +1,4 @@
-package generate
+package rtk
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-func generateAPI(name string, doc *openapi3.T) string {
+func GenerateAPI(name string, doc *openapi3.T) string {
 	var s string
 
 	s += apiPrefix
