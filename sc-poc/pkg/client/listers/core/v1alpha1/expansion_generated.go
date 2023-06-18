@@ -42,6 +42,14 @@ type JwtHSASecretListerExpansion interface{}
 // JwtHSASecretNamespaceLister.
 type JwtHSASecretNamespaceListerExpansion interface{}
 
+// JwtRSASecretListerExpansion allows custom methods to be added to
+// JwtRSASecretLister.
+type JwtRSASecretListerExpansion interface{}
+
+// JwtRSASecretNamespaceListerExpansion allows custom methods to be added to
+// JwtRSASecretNamespaceLister.
+type JwtRSASecretNamespaceListerExpansion interface{}
+
 // OPAPolicyListerExpansion allows custom methods to be added to
 // OPAPolicyLister.
 type OPAPolicyListerExpansion interface{}

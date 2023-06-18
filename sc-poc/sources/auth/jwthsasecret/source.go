@@ -44,7 +44,8 @@ func (s *JWTHSASecretSource) GetSecretInfo() *types.AuthSecret {
 	return &types.AuthSecret{
 		AuthSecret: s.Spec.AuthSecret,
 		Alg:        types.HS256,
-		Value:      s.Spec.Value,
+		PublicKey:  []byte(s.Spec.Secret.Value),
+		PrivateKey: []byte(s.Spec.Secret.Value),
 	}
 }
 

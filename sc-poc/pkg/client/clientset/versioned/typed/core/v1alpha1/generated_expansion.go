@@ -24,6 +24,8 @@ type GraphqlSourceExpansion interface{}
 
 type JwtHSASecretExpansion interface{}
 
+type JwtRSASecretExpansion interface{}
+
 type OPAPolicyExpansion interface{}
 
 type OpenAPISourceExpansion interface{}
