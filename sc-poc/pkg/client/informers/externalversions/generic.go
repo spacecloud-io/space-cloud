@@ -59,6 +59,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().GraphqlSources().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("jwthsasecrets"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().JwtHSASecrets().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("jwtrsasecrets"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().JwtRSASecrets().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("opapolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().OPAPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("openapisources"):
