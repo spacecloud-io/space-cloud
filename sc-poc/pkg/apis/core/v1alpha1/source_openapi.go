@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/getkin/kin-openapi/openapi3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,6 +23,16 @@ type OpenAPISource struct {
 type OpenAPISourceSpec struct {
 	// Sources descrives the remote OpenAPI endpoints that we want to federate
 	Source *HTTPSource `json:"source"`
+
+	// OpenAPI describes the value/ref for openapi schema
+	OpenAPI OpenAPISpec `json:"openApi"`
+}
+
+type OpenAPISpec struct {
+	// Value stores the open api schema
+	Value *openapi3.T `json:"value,omitempty"`
+	// Ref stores the path from which openapi schema will be fetched if value is not provided
+	Ref *HTTPOptions `json:"ref,omitempty"`
 }
 
 // OpenAPISourceStatus defines the observed state of OpenAPISource
