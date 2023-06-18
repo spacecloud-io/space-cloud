@@ -45,7 +45,7 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 		// Producer channel
 		asyncapi.AddChannel(channelPath+"/producer", ChannelItem{
 			Publish: &Operation{
-				ID: "producerPublish" + getID(channelObj.Name),
+				ID: "producerPublish" + getID(channelObj.Channel),
 				Message: MessageOneOrMany{
 					MessageEntity: MessageEntity{
 						Name:        "Message",
@@ -71,7 +71,7 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 										"requireAck": map[string]interface{}{
 											"type": "boolean",
 										},
-										"payload": channelObj.Payload.Schema,
+										"payload": channelObj.Payload,
 									},
 									"required": []string{"id", "payload"},
 								},
@@ -82,7 +82,7 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 				},
 			},
 			Subscribe: &Operation{
-				ID: "producerSubscribe" + getID(channelObj.Name),
+				ID: "producerSubscribe" + getID(channelObj.Channel),
 				Message: MessageOneOrMany{
 					MessageEntity: MessageEntity{
 						Name:        "Acknowledgement",
@@ -102,6 +102,16 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 										"ack": map[string]interface{}{
 											"type": "boolean",
 										},
+										"message": map[string]interface{}{
+											"type": "string",
+										},
+										"errors": map[string]interface{}{
+											"type": "array",
+											"items": map[string]interface{}{
+												"type": "string",
+											},
+											"required": []string{"message"},
+										},
 									},
 									"required": []string{"id", "ack"},
 								},
@@ -116,7 +126,7 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 		// Consumer channel
 		asyncapi.AddChannel(channelPath+"/consumer", ChannelItem{
 			Publish: &Operation{
-				ID: "consumerPublish" + getID(channelObj.Name),
+				ID: "consumerPublish" + getID(channelObj.Channel),
 				Message: MessageOneOrMany{
 					OneOf: []MessageEntity{
 						{
@@ -179,7 +189,7 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 				},
 			},
 			Subscribe: &Operation{
-				ID: "consumerSubscribe" + getID(channelObj.Name),
+				ID: "consumerSubscribe" + getID(channelObj.Channel),
 				Message: MessageOneOrMany{
 					MessageEntity: MessageEntity{
 						Name:        "Message",
@@ -202,7 +212,7 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 												"type": "string",
 											},
 										},
-										"payload": channelObj.Payload.Schema,
+										"payload": channelObj.Payload,
 									},
 									"required": []string{"id", "payload"},
 								},

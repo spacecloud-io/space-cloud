@@ -1,6 +1,6 @@
-package generate
+package rtk
 
-var indexTS string = `
+var IndexTS string = `
 export * from "./api";
 export * from "./helpers";
 export * from "./types";

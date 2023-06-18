@@ -65,3 +65,11 @@ type OpenAPISourceListerExpansion interface{}
 // OpenAPISourceNamespaceListerExpansion allows custom methods to be added to
 // OpenAPISourceNamespaceLister.
 type OpenAPISourceNamespaceListerExpansion interface{}
+
+// PubsubChannelListerExpansion allows custom methods to be added to
+// PubsubChannelLister.
+type PubsubChannelListerExpansion interface{}
+
+// PubsubChannelNamespaceListerExpansion allows custom methods to be added to
+// PubsubChannelNamespaceLister.
+type PubsubChannelNamespaceListerExpansion interface{}

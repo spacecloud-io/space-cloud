@@ -29,3 +29,5 @@ type JwtRSASecretExpansion interface{}
 type OPAPolicyExpansion interface{}
 
 type OpenAPISourceExpansion interface{}
+
+type PubsubChannelExpansion interface{}
