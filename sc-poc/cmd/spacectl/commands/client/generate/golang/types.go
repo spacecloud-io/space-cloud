@@ -95,10 +95,7 @@ func generateTypesFromOperation(operation *openapi3.Operation, method string) st
 	}
 
 	func (r *%s) Raw() io.Reader {
-		var buf bytes.Buffer
-		tee := io.TeeReader(r.httpResponse.Body, &buf)
-
-		return tee
+		return r.httpResponse.Body
 	}
 
 	func (r *%s) StatusCode() int {
@@ -172,27 +169,12 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string) string {
 				s += fmt.Sprintf("%s `json:%q`\n", getGoTypes(arrayType), k)
 			}
 
-		case "integer", "number":
+		case "integer", "number", "string", "boolean":
 			if !required {
 				k += ",omitempty"
 			}
 			s += primitiveGoType
 			s += fmt.Sprintf(" `json:%q`\n", k)
-
-		case "string":
-			if !required {
-				k += ",omitempty"
-			}
-			s += primitiveGoType
-			s += fmt.Sprintf(" `json:%q`\n", k)
-
-		case "boolean":
-			if !required {
-				k += ",omitempty"
-			}
-			s += primitiveGoType
-			s += fmt.Sprintf(" `json:%q`\n", k)
-
 		}
 	}
 	s += "}\n\n"
@@ -242,10 +224,12 @@ func getGoTypes(jsonType string) string {
 		return "string"
 	case "boolean":
 		return "bool"
-	case "integer", "number":
+	case "integer":
+		return "int32"
+	case "number":
 		return "float32"
 	}
-	return ""
+	return "any"
 }
 
 func nestedArray(schema *openapi3.SchemaRef) string {
