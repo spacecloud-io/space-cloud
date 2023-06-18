@@ -24,5 +24,8 @@ build:
 install:
 	cd cmd/spacectl && go install
 
+install-deps:
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.12.0
+
 run: build
 	cd cmd/spacectl && ./spacectl run
