@@ -1,6 +1,6 @@
-package generate
+package rtk
 
-var helperTS string = `
+var HelperTS string = `
 import { FetchArgs } from "@reduxjs/toolkit/dist/query";
 
 interface cacheTag {
