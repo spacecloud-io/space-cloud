@@ -17,7 +17,7 @@ type Adapter interface {
 	GetRawConfig() (common.ConfigType, error)
 
 	// List returns all registered sources of a specific source type
-	List(schema.GroupVersionResource) (*unstructured.UnstructuredList, error)
+	List(schema.GroupVersionResource, string) (*unstructured.UnstructuredList, error)
 
 	// Get returns a registered source
 	Get(schema.GroupVersionResource, string) (*unstructured.Unstructured, error)

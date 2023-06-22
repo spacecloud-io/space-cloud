@@ -58,8 +58,48 @@ func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 		// Config route handlers
 		getConfigRoutes(),
 
+		// Admin route handlers
+		getAdminRoutes(),
+
 		// API route handler
 		getAPIRoutes(),
+	}
+}
+
+func getAdminRoutes() caddyhttp.Route {
+	data := make(map[string]interface{})
+	data["secret"] = viper.GetString("admin.secret")
+	data["username"] = viper.GetString("admin.username")
+	data["password"] = viper.GetString("admin.password")
+
+	routeList := caddyhttp.RouteList{
+		caddyhttp.Route{
+			Group:          "list_sources",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/sources"}, []string{http.MethodGet}),
+			HandlersRaw:    utils.GetCaddyHandler("list_sources", nil),
+		},
+		caddyhttp.Route{
+			Group:          "admin_login",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/login"}, []string{http.MethodPost}),
+			HandlersRaw:    utils.GetCaddyHandler("admin_login", data),
+		},
+		caddyhttp.Route{
+			Group:          "admin_refresh",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/refresh-token"}, []string{http.MethodPost}),
+			HandlersRaw:    utils.GetCaddyHandler("admin_refresh", data),
+		},
+	}
+
+	// Create matcher and handler for subroute
+	handler := map[string]interface{}{
+		"handler": "subroute",
+		"routes":  routeList,
+	}
+	handlerRaw, _ := json.Marshal(handler)
+
+	return caddyhttp.Route{
+		Group:       "admin",
+		HandlersRaw: []json.RawMessage{handlerRaw},
 	}
 }
 
@@ -140,5 +180,5 @@ func createConfigPath(gvr schema.GroupVersionResource) string {
 	version := gvr.Version
 	resource := gvr.Resource
 
-	return fmt.Sprintf("/v1/config/%s/%s/%s/*", group, version, resource)
+	return fmt.Sprintf("/sc/v1/config/%s/%s/%s/*", group, version, resource)
 }

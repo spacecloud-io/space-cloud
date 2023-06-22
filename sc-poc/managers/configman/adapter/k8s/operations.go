@@ -14,7 +14,7 @@ import (
 )
 
 // List returns all the registered sources of a particular source type
-func (k *K8s) List(gvr schema.GroupVersionResource) (*unstructured.UnstructuredList, error) {
+func (k *K8s) List(gvr schema.GroupVersionResource, pkgName string) (*unstructured.UnstructuredList, error) {
 	list := &unstructured.UnstructuredList{}
 	key := source.GetModuleName(gvr)
 
@@ -24,7 +24,15 @@ func (k *K8s) List(gvr schema.GroupVersionResource) (*unstructured.UnstructuredL
 		return list, nil
 	}
 
-	list = common.ConvertToList(sources)
+	filteredSources := make([]*unstructured.Unstructured, 0)
+	for _, src := range sources {
+		labels := src.GetLabels()
+		if labels["space-cloud.io/package"] == pkgName {
+			filteredSources = append(filteredSources, src)
+		}
+	}
+
+	list = common.ConvertToList(filteredSources)
 	return list, nil
 }
 
