@@ -2,6 +2,7 @@ package login
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -62,42 +63,29 @@ func NewCommand() *cobra.Command {
 
 			req, err := http.NewRequest(http.MethodPost, path, bytes.NewBuffer(payload))
 			if err != nil {
-				return err
+				log.Fatal("Failed to create HTTP request: ", err)
 			}
 
 			req.Header.Set("Content-Type", "application/json")
 			resp, err := client.Do(req)
 			if err != nil {
-				return err
+				log.Fatal("Failed to send HTTP request: ", err)
 			}
 			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusOK {
-				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-					return err
-				}
-				log.Fatal(string(body))
+				body, _ := ioutil.ReadAll(resp.Body)
+				m := make(map[string]string)
+				json.Unmarshal(body, &m)
+				log.Fatal("Failed to authenticate with SpaceCloud: ", m["error"])
 			}
 
-			homeDir, _ := os.UserHomeDir()
-			dirPath := filepath.Join(homeDir, ".space-cloud")
-			_ = os.Mkdir(dirPath, 0777)
-
-			output := map[string]string{
-				"username": username,
-				"password": password,
-				"url":      url,
-			}
-
-			b, err := json.Marshal(output)
+			location, err := UpdateSpaceCloudCredsFile(username, password, url)
 			if err != nil {
-				return err
+				log.Fatal("Could not create creds.json file: ", err)
 			}
 
-			_ = os.WriteFile(filepath.Join(dirPath, "creds.json"), b, 0777)
-
-			fmt.Printf("Successfully log into SpaceCloud. Credentials saved at %s\n", filepath.Join(dirPath, "creds.json"))
+			fmt.Printf("Successfully log into SpaceCloud. Credentials saved at %s\n", location)
 			return nil
 		},
 	}
@@ -107,4 +95,25 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("password", "", "", "Password to log into SpaceCloud")
 
 	return cmd
+}
+
+func UpdateSpaceCloudCredsFile(username, password, url string) (string, error) {
+	homeDir, _ := os.UserHomeDir()
+	dirPath := filepath.Join(homeDir, ".space-cloud")
+	_ = os.Mkdir(dirPath, 0777)
+
+	output := map[string]string{
+		"username": base64.StdEncoding.EncodeToString([]byte(username)),
+		"password": base64.StdEncoding.EncodeToString([]byte(password)),
+		"url":      url,
+	}
+
+	b, err := json.Marshal(output)
+	if err != nil {
+		return "", err
+	}
+
+	location := filepath.Join(dirPath, "creds.json")
+	_ = os.WriteFile(location, b, 0777)
+	return location, nil
 }

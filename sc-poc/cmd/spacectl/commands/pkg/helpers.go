@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,9 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func listAllSources(client *http.Client, path string) ([]schema.GroupVersionResource, error) {
+func listAllSources(client *http.Client, baseUrl string) ([]schema.GroupVersionResource, error) {
 	var sourcesGVR []schema.GroupVersionResource
 
+	path := baseUrl + "/sc/v1/sources"
 	req, err := http.NewRequest("GET", path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch sources")
@@ -36,9 +38,10 @@ func listAllSources(client *http.Client, path string) ([]schema.GroupVersionReso
 	return sourcesGVR, nil
 }
 
-func getResources(client *http.Client, path string) (*unstructured.UnstructuredList, error) {
+func getResources(client *http.Client, gvr schema.GroupVersionResource, baseUrl string, pkgName string) (*unstructured.UnstructuredList, error) {
 	var unstr *unstructured.UnstructuredList
 
+	path := fmt.Sprintf("%s/sc/v1/config/%s/%s/%s/?package=%s", baseUrl, gvr.Group, gvr.Version, gvr.Resource, pkgName)
 	req, err := http.NewRequest("GET", path, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch resources from %s", path)
@@ -134,7 +137,17 @@ func getCredentials() (map[string]string, error) {
 	return m, nil
 }
 
-func login(client *http.Client, creds map[string]string) error {
+func login(client *http.Client) error {
+	creds, err := getCredentials()
+	if err != nil {
+		return err
+	}
+
+	b, _ := base64.StdEncoding.DecodeString(creds["username"])
+	creds["username"] = string(b)
+	b, _ = base64.StdEncoding.DecodeString(creds["password"])
+	creds["password"] = string(b)
+
 	path := fmt.Sprintf("%s/sc/v1/login", creds["url"])
 	payload, _ := json.Marshal(creds)
 

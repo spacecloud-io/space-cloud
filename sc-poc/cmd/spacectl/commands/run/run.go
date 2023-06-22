@@ -94,9 +94,9 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("debounce-interval", "", "500ms", "Debounce interval in milliseconds")
 
 	// Auth
-	cmd.Flags().StringP("admin-secret", "", "", "Set admin secret")
-	cmd.Flags().StringP("admin-username", "", "", "Set admin username")
-	cmd.Flags().StringP("admin-password", "", "", "Set admin password")
+	cmd.Flags().StringP("admin.secret", "", "", "Set admin secret")
+	cmd.Flags().StringP("admin.username", "", "", "Set admin username")
+	cmd.Flags().StringP("admin.password", "", "", "Set admin password")
 
 	return cmd
 }

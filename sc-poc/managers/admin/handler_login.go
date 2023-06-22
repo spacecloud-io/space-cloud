@@ -4,18 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/spacecloud-io/space-cloud/utils"
+	"go.uber.org/zap"
 )
 
 type Login struct {
-	Secret   string `json:"secret"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	logger   *zap.Logger
+	adminMan *App
 }
 
 func (Login) CaddyModule() caddy.ModuleInfo {
@@ -25,33 +23,36 @@ func (Login) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+func (h *Login) Provision(ctx caddy.Context) error {
+	h.logger = ctx.Logger(h)
+	adminManT, err := ctx.App("sc_admin")
+	if err != nil {
+		h.logger.Error("Unable to load the admin manager", zap.Error(err))
+	}
+	h.adminMan = adminManT.(*App)
+	return nil
+}
+
 func (h *Login) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	cred := struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}{}
-	if err := json.NewDecoder(r.Body).Decode(&cred); err != nil {
+	creds := make(map[string]string)
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		_ = utils.SendErrorResponse(w, http.StatusBadRequest, errors.New("invalid request payload received"))
 		return nil
 	}
 
-	if cred.Username != h.Username || cred.Password != h.Password {
-		_ = utils.SendErrorResponse(w, http.StatusUnauthorized, errors.New("invalid credentials provided"))
-		return nil
+	if err := h.adminMan.VerifyCredentials(creds); err != nil {
+		return utils.SendErrorResponse(w, http.StatusUnauthorized, err)
 	}
 
-	jwtClaims := make(jwt.MapClaims)
-	jwtClaims["sub"] = cred.Username
-	jwtClaims["exp"] = time.Now().Add(time.Hour * 2).Unix()
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims)
-	tokenString, err := token.SignedString([]byte(h.Secret))
+	tokenString, err := h.adminMan.SignSCToken()
 	if err != nil {
-		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, errors.New(err.Error()))
-		return nil
+		return utils.SendErrorResponse(w, http.StatusUnauthorized, err)
 	}
 
 	return utils.SendResponse(w, http.StatusOK, map[string]interface{}{"token": tokenString})
 }
 
-var _ caddyhttp.MiddlewareHandler = (*Login)(nil)
+var (
+	_ caddy.Provisioner           = (*Login)(nil)
+	_ caddyhttp.MiddlewareHandler = (*Login)(nil)
+)

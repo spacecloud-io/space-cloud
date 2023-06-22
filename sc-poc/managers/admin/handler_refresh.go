@@ -2,21 +2,18 @@ package admin
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/spacecloud-io/space-cloud/utils"
+	"go.uber.org/zap"
 )
 
 type Refresh struct {
-	Secret   string `json:"secret"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	logger   *zap.Logger
+	adminMan *App
 }
 
 func (Refresh) CaddyModule() caddy.ModuleInfo {
@@ -26,45 +23,25 @@ func (Refresh) CaddyModule() caddy.ModuleInfo {
 	}
 }
 
+func (h *Refresh) Provision(ctx caddy.Context) error {
+	h.logger = ctx.Logger(h)
+	adminManT, err := ctx.App("sc_admin")
+	if err != nil {
+		h.logger.Error("Unable to load the admin manager", zap.Error(err))
+	}
+	h.adminMan = adminManT.(*App)
+	return nil
+}
+
 func (h *Refresh) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	tokenString, ok := getTokenFromHeader(r)
 	if !ok {
-		utils.SendErrorResponse(w, http.StatusBadRequest, errors.New("token not found in header"))
-		return nil
+		return utils.SendErrorResponse(w, http.StatusBadRequest, errors.New("token not found in header"))
 	}
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Validate the signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(h.Secret), nil
-	})
+	tokenString, err := h.adminMan.VerifySCToken(tokenString)
 	if err != nil {
-		utils.SendErrorResponse(w, http.StatusInternalServerError, err)
-		return nil
-	}
-
-	// Check if the token is valid
-	if !token.Valid {
-		utils.SendErrorResponse(w, http.StatusBadRequest, errors.New("invalid token"))
-		return nil
-	}
-
-	// Get the claims from the existing token
-	claims := token.Claims.(jwt.MapClaims)
-
-	// Update the expiration time
-	claims["exp"] = time.Now().Add(time.Hour * 2).Unix()
-
-	// Create a new token with the updated claims
-	newToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Sign the new token with the secret key
-	tokenString, err = newToken.SignedString([]byte(h.Secret))
-	if err != nil {
-		utils.SendErrorResponse(w, http.StatusInternalServerError, err)
-		return nil
+		return utils.SendErrorResponse(w, http.StatusInternalServerError, err)
 	}
 
 	utils.SendResponse(w, http.StatusOK, map[string]interface{}{"token": tokenString})

@@ -67,11 +67,6 @@ func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 }
 
 func getAdminRoutes() caddyhttp.Route {
-	data := make(map[string]interface{})
-	data["secret"] = viper.GetString("admin.secret")
-	data["username"] = viper.GetString("admin.username")
-	data["password"] = viper.GetString("admin.password")
-
 	routeList := caddyhttp.RouteList{
 		caddyhttp.Route{
 			Group:          "list_sources",
@@ -81,12 +76,12 @@ func getAdminRoutes() caddyhttp.Route {
 		caddyhttp.Route{
 			Group:          "admin_login",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/login"}, []string{http.MethodPost}),
-			HandlersRaw:    utils.GetCaddyHandler("admin_login", data),
+			HandlersRaw:    utils.GetCaddyHandler("admin_login", nil),
 		},
 		caddyhttp.Route{
 			Group:          "admin_refresh",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/refresh-token"}, []string{http.MethodPost}),
-			HandlersRaw:    utils.GetCaddyHandler("admin_refresh", data),
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/refresh-token"}, []string{http.MethodGet}),
+			HandlersRaw:    utils.GetCaddyHandler("admin_refresh", nil),
 		},
 	}
 

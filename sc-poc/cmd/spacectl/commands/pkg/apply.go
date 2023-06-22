@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -19,12 +20,12 @@ func newCommandApply() *cobra.Command {
 			client := &http.Client{}
 			creds, err := getCredentials()
 			if err != nil {
-				return err
+				log.Fatal("Failed to get SpaceCloud credentials: ", err)
 			}
 
 			// Login to SpaceCloud
-			if err := login(client, creds); err != nil {
-				return err
+			if err := login(client); err != nil {
+				log.Fatal("Failed to authenticate with SpaceCloud: ", err)
 			}
 
 			cfg := ReadConfig()
@@ -34,15 +35,14 @@ func newCommandApply() *cobra.Command {
 			path := creds["url"] + "/sc/v1/sources"
 			sourcesGVR, err := listAllSources(client, path)
 			if err != nil {
-				return err
+				log.Fatal("Failed to list all registered sources: ", err)
 			}
 
 			// Get the resources present in the SpaceCloud
 			for _, gvr := range sourcesGVR {
-				path := fmt.Sprintf("%s/sc/v1/config/%s/%s/%s/?package=%s", creds["url"], gvr.Group, gvr.Version, gvr.Resource, cfg.Name)
-				resources, err := getResources(client, path)
+				resources, err := getResources(client, gvr, creds["url"], cfg.Name)
 				if err != nil {
-					return err
+					log.Fatal("Failed to get resources: ", err)
 				}
 				// Cache the resource's name in a map
 				m[gvr] = make([]string, 0)
@@ -57,13 +57,13 @@ func newCommandApply() *cobra.Command {
 			resDir := cfg.ResourceDir
 			files, err := os.ReadDir(resDir)
 			if err != nil {
-				return err
+				log.Fatal("Failed to open resource directory: ", err)
 			}
 
 			for _, file := range files {
 				arr, err := utils.ReadSpecObjectsFromFile(filepath.Join(resDir, file.Name()))
 				if err != nil {
-					return err
+					log.Fatal("Failed to read specs from resource directory: ", err)
 				}
 
 				for _, spec := range arr {
@@ -93,7 +93,7 @@ func newCommandApply() *cobra.Command {
 					path := fmt.Sprintf("%s/sc/v1/config/%s/%s/%s/", creds["url"], gvr.Group, gvr.Version, gvr.Resource)
 					err := applyResources(client, path, spec)
 					if err != nil {
-						return err
+						log.Fatal("Failed to apply resource: ", err)
 					}
 
 				}
@@ -104,7 +104,7 @@ func newCommandApply() *cobra.Command {
 						path := fmt.Sprintf("%s/sc/v1/config/%s/%s/%s/%s", creds["url"], gvr.Group, gvr.Version, gvr.Resource, name)
 						err := deleteResources(client, path)
 						if err != nil {
-							return err
+							log.Fatal("Failed to delete resource: ", err)
 						}
 					}
 				}

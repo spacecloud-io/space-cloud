@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -15,37 +15,35 @@ func newCommandGet() *cobra.Command {
 		Aliases: []string{"g"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
-				return fmt.Errorf("more than 1 or no resources specified")
+				log.Fatal("Invalid argument: more than 1 or no resources specified")
 			}
 
 			client := &http.Client{}
 			creds, err := getCredentials()
 			if err != nil {
-				return err
+				log.Fatal("Failed to get SpaceCloud credentials: ", err)
 			}
 
 			// Login to SpaceCloud
-			if err := login(client, creds); err != nil {
-				return err
+			if err := login(client); err != nil {
+				log.Fatal("Failed to authenticate with SpaceCloud: ", err)
 			}
 
 			cfg := ReadConfig()
 			resourceName := args[0]
 
 			// Get all registered sources' GVR
-			path := creds["url"] + "/sc/v1/sources"
-			sourcesGVR, err := listAllSources(client, path)
+			sourcesGVR, err := listAllSources(client, creds["url"])
 			if err != nil {
-				return err
+				log.Fatal("Failed to list all registered sources: ", err)
 			}
 
 			var data [][]string
 			if resourceName == "all" {
 				for _, gvr := range sourcesGVR {
-					path := fmt.Sprintf("%s/sc/v1/config/%s/%s/%s/?package=%s", creds["url"], gvr.Group, gvr.Version, gvr.Resource, cfg.Name)
-					unstrList, err := getResources(client, path)
+					unstrList, err := getResources(client, gvr, creds["url"], cfg.Name)
 					if err != nil {
-						return err
+						log.Fatal("Failed to get resources: ", err)
 					}
 
 					for _, item := range unstrList.Items {
@@ -58,10 +56,9 @@ func newCommandGet() *cobra.Command {
 
 			for _, gvr := range sourcesGVR {
 				if resourceName == gvr.Resource {
-					path := fmt.Sprintf("%s/sc/v1/config/%s/%s/%s/?package=%s", creds["url"], gvr.Group, gvr.Version, gvr.Resource, cfg.Name)
-					unstrList, err := getResources(client, path)
+					unstrList, err := getResources(client, gvr, creds["url"], cfg.Name)
 					if err != nil {
-						return err
+						log.Fatal("Failed to get resources: ", err)
 					}
 
 					for _, item := range unstrList.Items {
@@ -73,7 +70,8 @@ func newCommandGet() *cobra.Command {
 				}
 			}
 
-			return fmt.Errorf("invalid resource name specified")
+			log.Fatal("Invalid resource name specified")
+			return nil
 		},
 	}
 

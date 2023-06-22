@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spacecloud-io/space-cloud/managers/configman/adapter"
 	"github.com/spacecloud-io/space-cloud/managers/configman/common"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/utils"
@@ -13,7 +14,7 @@ import (
 )
 
 // List returns all registered sources of a specific source type
-func (f *File) List(gvr schema.GroupVersionResource, pkgName string) (*unstructured.UnstructuredList, error) {
+func (f *File) List(gvr schema.GroupVersionResource, listOptions adapter.ListOptions) (*unstructured.UnstructuredList, error) {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 
@@ -27,7 +28,7 @@ func (f *File) List(gvr schema.GroupVersionResource, pkgName string) (*unstructu
 	filteredSources := make([]*unstructured.Unstructured, 0)
 	for _, src := range sources {
 		labels := src.GetLabels()
-		if labels["space-cloud.io/package"] == pkgName {
+		if labels["space-cloud.io/package"] == listOptions.Labels["space-cloud.io/package"] {
 			filteredSources = append(filteredSources, src)
 		}
 	}

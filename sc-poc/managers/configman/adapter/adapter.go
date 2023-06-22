@@ -9,6 +9,10 @@ import (
 	"github.com/spacecloud-io/space-cloud/managers/configman/common"
 )
 
+type ListOptions struct {
+	Labels map[string]string `json:"labels"`
+}
+
 type Adapter interface {
 	// Run starts the watcher.
 	Run(context.Context) (chan common.ConfigType, error)
@@ -17,7 +21,7 @@ type Adapter interface {
 	GetRawConfig() (common.ConfigType, error)
 
 	// List returns all registered sources of a specific source type
-	List(schema.GroupVersionResource, string) (*unstructured.UnstructuredList, error)
+	List(schema.GroupVersionResource, ListOptions) (*unstructured.UnstructuredList, error)
 
 	// Get returns a registered source
 	Get(schema.GroupVersionResource, string) (*unstructured.Unstructured, error)
