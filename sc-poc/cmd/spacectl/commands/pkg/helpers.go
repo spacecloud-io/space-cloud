@@ -62,7 +62,9 @@ func getResources(client *http.Client, gvr schema.GroupVersionResource, baseUrl 
 	return unstr, nil
 }
 
-func applyResources(client *http.Client, path string, spec *unstructured.Unstructured) error {
+func applyResources(client *http.Client, gvr schema.GroupVersionResource, baseUrl string, spec *unstructured.Unstructured) error {
+	path := fmt.Sprintf("%s/sc/v1/config/%s/%s/%s/", baseUrl, gvr.Group, gvr.Version, gvr.Resource)
+
 	b, err := json.Marshal(spec)
 	if err != nil {
 		return fmt.Errorf("failed to apply resource to %s", path)
@@ -137,12 +139,7 @@ func getCredentials() (map[string]string, error) {
 	return m, nil
 }
 
-func login(client *http.Client) error {
-	creds, err := getCredentials()
-	if err != nil {
-		return err
-	}
-
+func login(client *http.Client, creds map[string]string) error {
 	b, _ := base64.StdEncoding.DecodeString(creds["username"])
 	creds["username"] = string(b)
 	b, _ = base64.StdEncoding.DecodeString(creds["password"])

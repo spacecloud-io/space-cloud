@@ -24,7 +24,7 @@ func newCommandApply() *cobra.Command {
 			}
 
 			// Login to SpaceCloud
-			if err := login(client); err != nil {
+			if err := login(client, creds); err != nil {
 				log.Fatal("Failed to authenticate with SpaceCloud: ", err)
 			}
 
@@ -90,8 +90,7 @@ func newCommandApply() *cobra.Command {
 					}
 
 					// Perform apply operation
-					path := fmt.Sprintf("%s/sc/v1/config/%s/%s/%s/", creds["url"], gvr.Group, gvr.Version, gvr.Resource)
-					err := applyResources(client, path, spec)
+					err := applyResources(client, gvr, creds["url"], spec)
 					if err != nil {
 						log.Fatal("Failed to apply resource: ", err)
 					}
