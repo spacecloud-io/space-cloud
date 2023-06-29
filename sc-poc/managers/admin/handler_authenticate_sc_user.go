@@ -11,13 +11,14 @@ import (
 )
 
 type AuthenticateSCUser struct {
+	Name     string `json:"name"`
 	logger   *zap.Logger
 	adminMan *App
 }
 
 func (AuthenticateSCUser) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.sc_authenticate_sc_user_handler",
+		ID:  "http.handlers.sc_plugin_authenticate_sc_user_handler",
 		New: func() caddy.Module { return new(AuthenticateSCUser) },
 	}
 }

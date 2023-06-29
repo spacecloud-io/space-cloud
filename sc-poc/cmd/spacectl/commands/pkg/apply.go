@@ -1,15 +1,16 @@
 package pkg
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/spacecloud-io/space-cloud/utils"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"github.com/spacecloud-io/space-cloud/utils"
+	clientutils "github.com/spacecloud-io/space-cloud/utils/client"
 )
 
 func newCommandApply() *cobra.Command {
@@ -17,14 +18,14 @@ func newCommandApply() *cobra.Command {
 		Use:     "apply",
 		Aliases: []string{"a"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			client := &http.Client{}
-			creds, err := getCredentials()
+			httpClient := &http.Client{}
+			creds, err := clientutils.GetCredentials()
 			if err != nil {
 				log.Fatal("Failed to get SpaceCloud credentials: ", err)
 			}
 
 			// Login to SpaceCloud
-			if err := login(client, creds); err != nil {
+			if err := clientutils.Login(httpClient, creds); err != nil {
 				log.Fatal("Failed to authenticate with SpaceCloud: ", err)
 			}
 
@@ -32,15 +33,14 @@ func newCommandApply() *cobra.Command {
 			m := make(map[schema.GroupVersionResource][]string)
 
 			// Get all registered sources' GVR
-			path := creds["url"] + "/sc/v1/sources"
-			sourcesGVR, err := listAllSources(client, path)
+			sourcesGVR, err := listAllSources(httpClient, creds.BaseUrl)
 			if err != nil {
 				log.Fatal("Failed to list all registered sources: ", err)
 			}
 
 			// Get the resources present in the SpaceCloud
 			for _, gvr := range sourcesGVR {
-				resources, err := getResources(client, gvr, creds["url"], cfg.Name)
+				resources, err := getResources(httpClient, gvr, creds.BaseUrl, cfg.Name)
 				if err != nil {
 					log.Fatal("Failed to get resources: ", err)
 				}
@@ -90,7 +90,7 @@ func newCommandApply() *cobra.Command {
 					}
 
 					// Perform apply operation
-					err := applyResources(client, gvr, creds["url"], spec)
+					err := applyResources(httpClient, gvr, creds.BaseUrl, spec)
 					if err != nil {
 						log.Fatal("Failed to apply resource: ", err)
 					}
@@ -100,8 +100,7 @@ func newCommandApply() *cobra.Command {
 				// Delete the resources in SpaceCloud which are still present in cache
 				for gvr, names := range m {
 					for _, name := range names {
-						path := fmt.Sprintf("%s/sc/v1/config/%s/%s/%s/%s", creds["url"], gvr.Group, gvr.Version, gvr.Resource, name)
-						err := deleteResources(client, path)
+						err := deleteResources(httpClient, gvr, creds.BaseUrl, name)
 						if err != nil {
 							log.Fatal("Failed to delete resource: ", err)
 						}

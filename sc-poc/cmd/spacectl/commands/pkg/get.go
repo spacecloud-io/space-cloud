@@ -7,6 +7,8 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+
+	clientutils "github.com/spacecloud-io/space-cloud/utils/client"
 )
 
 func newCommandGet() *cobra.Command {
@@ -18,14 +20,14 @@ func newCommandGet() *cobra.Command {
 				log.Fatal("Invalid argument: more than 1 or no resources specified")
 			}
 
-			client := &http.Client{}
-			creds, err := getCredentials()
+			httpClient := &http.Client{}
+			creds, err := clientutils.GetCredentials()
 			if err != nil {
 				log.Fatal("Failed to get SpaceCloud credentials: ", err)
 			}
 
 			// Login to SpaceCloud
-			if err := login(client, creds); err != nil {
+			if err := clientutils.Login(httpClient, creds); err != nil {
 				log.Fatal("Failed to authenticate with SpaceCloud: ", err)
 			}
 
@@ -33,7 +35,7 @@ func newCommandGet() *cobra.Command {
 			resourceName := args[0]
 
 			// Get all registered sources' GVR
-			sourcesGVR, err := listAllSources(client, creds["url"])
+			sourcesGVR, err := listAllSources(httpClient, creds.BaseUrl)
 			if err != nil {
 				log.Fatal("Failed to list all registered sources: ", err)
 			}
@@ -41,7 +43,7 @@ func newCommandGet() *cobra.Command {
 			var data [][]string
 			if resourceName == "all" {
 				for _, gvr := range sourcesGVR {
-					unstrList, err := getResources(client, gvr, creds["url"], cfg.Name)
+					unstrList, err := getResources(httpClient, gvr, creds.BaseUrl, cfg.Name)
 					if err != nil {
 						log.Fatal("Failed to get resources: ", err)
 					}
@@ -56,7 +58,7 @@ func newCommandGet() *cobra.Command {
 
 			for _, gvr := range sourcesGVR {
 				if resourceName == gvr.Resource {
-					unstrList, err := getResources(client, gvr, creds["url"], cfg.Name)
+					unstrList, err := getResources(httpClient, gvr, creds.BaseUrl, cfg.Name)
 					if err != nil {
 						log.Fatal("Failed to get resources: ", err)
 					}

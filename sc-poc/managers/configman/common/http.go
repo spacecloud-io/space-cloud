@@ -83,10 +83,6 @@ func getAdminRoutes() caddyhttp.Route {
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/refresh-token"}, []string{http.MethodGet}),
 			HandlersRaw:    utils.GetCaddyHandler("admin_refresh", nil),
 		},
-		caddyhttp.Route{
-			Group:       "authenticate_sc_user",
-			HandlersRaw: utils.GetCaddyHandler("authenticate_sc_user", nil),
-		},
 	}
 
 	// Create matcher and handler for subroute
