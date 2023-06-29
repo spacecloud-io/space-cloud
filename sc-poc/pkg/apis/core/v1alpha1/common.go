@@ -12,6 +12,10 @@ type SecretSource struct {
 	// EnvRef selects value from an environment variable
 	// +kubebuilder:validation:Optional
 	EnvRef *EnvRef `json:"envRef,omitempty"`
+
+	// Value holds the content of the secret or jwk url
+	// +kubebuilder:validation:Optional
+	Value string `json:"value,omitempty"`
 }
 
 type SecretKeyRef struct {

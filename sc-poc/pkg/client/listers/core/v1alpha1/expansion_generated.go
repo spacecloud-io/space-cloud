@@ -42,6 +42,14 @@ type JwtHSASecretListerExpansion interface{}
 // JwtHSASecretNamespaceLister.
 type JwtHSASecretNamespaceListerExpansion interface{}
 
+// JwtRSASecretListerExpansion allows custom methods to be added to
+// JwtRSASecretLister.
+type JwtRSASecretListerExpansion interface{}
+
+// JwtRSASecretNamespaceListerExpansion allows custom methods to be added to
+// JwtRSASecretNamespaceLister.
+type JwtRSASecretNamespaceListerExpansion interface{}
+
 // OPAPolicyListerExpansion allows custom methods to be added to
 // OPAPolicyLister.
 type OPAPolicyListerExpansion interface{}
@@ -57,3 +65,11 @@ type OpenAPISourceListerExpansion interface{}
 // OpenAPISourceNamespaceListerExpansion allows custom methods to be added to
 // OpenAPISourceNamespaceLister.
 type OpenAPISourceNamespaceListerExpansion interface{}
+
+// PubsubChannelListerExpansion allows custom methods to be added to
+// PubsubChannelLister.
+type PubsubChannelListerExpansion interface{}
+
+// PubsubChannelNamespaceListerExpansion allows custom methods to be added to
+// PubsubChannelNamespaceLister.
+type PubsubChannelNamespaceListerExpansion interface{}

@@ -8,4 +8,5 @@ func init() {
 	caddy.RegisterModule(AuthOPAHandler{})
 	caddy.RegisterModule(DenyUser{})
 	caddy.RegisterModule(AuthenticateUser{})
+	caddy.RegisterModule(OPAPlugin{})
 }

@@ -6,8 +6,9 @@ type (
 	// AuthSecret exposes a custom type made to manage authentication
 	AuthSecret struct {
 		v1alpha1.AuthSecret
-		Alg   JWTAlg
-		Value string
+		Alg        JWTAlg
+		PublicKey  interface{}
+		PrivateKey interface{}
 	}
 
 	// JWTAlg is type of method used for signing token
