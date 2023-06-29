@@ -39,9 +39,14 @@ func (h *Refresh) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyht
 		return utils.SendErrorResponse(w, http.StatusBadRequest, errors.New("token not found in header"))
 	}
 
-	tokenString, err := h.adminMan.VerifySCToken(tokenString)
+	err := h.adminMan.VerifySCToken(tokenString)
 	if err != nil {
 		return utils.SendErrorResponse(w, http.StatusInternalServerError, err)
+	}
+
+	tokenString, err = h.adminMan.SignSCToken()
+	if err != nil {
+		return utils.SendErrorResponse(w, http.StatusUnauthorized, err)
 	}
 
 	utils.SendResponse(w, http.StatusOK, map[string]interface{}{"token": tokenString})

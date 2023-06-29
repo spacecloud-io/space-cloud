@@ -6,4 +6,5 @@ func init() {
 	caddy.RegisterModule(ListSources{})
 	caddy.RegisterModule(Login{})
 	caddy.RegisterModule(Refresh{})
+	caddy.RegisterModule(AuthenticateSCUser{})
 }

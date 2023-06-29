@@ -61,7 +61,7 @@ func (a *App) VerifyCredentials(creds map[string]string) error {
 	return nil
 }
 
-func (a *App) VerifySCToken(tokenString string) (string, error) {
+func (a *App) VerifySCToken(tokenString string) error {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Validate the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -70,15 +70,15 @@ func (a *App) VerifySCToken(tokenString string) (string, error) {
 		return []byte(a.secret), nil
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Check if the token is valid
 	if !token.Valid {
-		return "", fmt.Errorf("invalid token found in the Authorization Header")
+		return fmt.Errorf("invalid token found in the Authorization Header")
 	}
 
-	return a.SignSCToken()
+	return nil
 }
 
 // Start begins the source manager operations
