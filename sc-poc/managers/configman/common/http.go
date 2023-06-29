@@ -58,6 +58,9 @@ func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 		// Config route handlers
 		getConfigRoutes(),
 
+		// Source route handlers
+		getSourceRoutes(),
+
 		// API route handler
 		getAPIRoutes(),
 	}
@@ -74,6 +77,14 @@ func getAPIRoutes() caddyhttp.Route {
 			Group:       "api_route",
 			HandlersRaw: utils.GetCaddyHandler("root_api", nil),
 		},
+		caddyhttp.Route{
+			Group:       "deny_user",
+			HandlersRaw: utils.GetCaddyHandler("deny_user", nil),
+		},
+		caddyhttp.Route{
+			Group:       "authenticate_user",
+			HandlersRaw: utils.GetCaddyHandler("authenticate_user", nil),
+		},
 	}
 
 	// Create matcher and handler for subroute
@@ -86,6 +97,14 @@ func getAPIRoutes() caddyhttp.Route {
 	return caddyhttp.Route{
 		Group:       "api",
 		HandlersRaw: []json.RawMessage{handlerRaw},
+	}
+}
+
+func getSourceRoutes() caddyhttp.Route {
+	return caddyhttp.Route{
+		Group:          "source",
+		MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/plugins"}, []string{http.MethodGet}),
+		HandlersRaw:    utils.GetCaddyHandler("list_plugins", nil),
 	}
 }
 

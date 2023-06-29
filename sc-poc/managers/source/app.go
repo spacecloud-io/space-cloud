@@ -2,6 +2,7 @@ package source
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/caddyserver/caddy/v2"
 	"go.uber.org/zap"
@@ -18,6 +19,7 @@ type App struct {
 	// Internal stuff
 	logger    *zap.Logger
 	sourceMap map[string]Sources
+	plugins   []PluginInfo
 }
 
 // CaddyModule returns the Caddy module information.
@@ -51,6 +53,23 @@ func (a *App) Provision(ctx caddy.Context) error {
 			if !ok {
 				a.logger.Error("Loaded source is not of a valid type", zap.String("group", gvr.Group), zap.String("version", gvr.Version), zap.String("resource", gvr.Resource))
 				continue
+			}
+
+			fmt.Println(source.GetName())
+			a.plugins = make([]PluginInfo, 0)
+			defaultPlugins := []PluginInfo{
+				{
+					Name:   "",
+					Driver: "deny-user",
+				},
+				{
+					Name:   "",
+					Driver: "authenticate-user",
+				},
+			}
+			a.plugins = append(a.plugins, defaultPlugins...)
+			if plugin, ok := source.(Plugin); ok {
+				a.plugins = append(a.plugins, plugin.GetPluginDetails())
 			}
 
 			// Add the provider for all supported providers

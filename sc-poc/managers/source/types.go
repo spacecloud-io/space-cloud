@@ -17,6 +17,15 @@ type (
 
 	// Sources is an array of Source
 	Sources []Source
+
+	PluginInfo struct {
+		Name   string `json:"name"`
+		Driver string `json:"driver"`
+	}
+
+	Plugin interface {
+		GetPluginDetails() PluginInfo
+	}
 )
 
 // Sort sorts the array of sources based on their priority

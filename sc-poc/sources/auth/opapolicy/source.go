@@ -105,10 +105,18 @@ func (s *OPAPolicySource) SetCompiledQueries(compiledQueries map[string]*graphql
 	s.compiledGraphQLQueries = compiledQueries
 }
 
+func (s *OPAPolicySource) GetPluginDetails() source.PluginInfo {
+	return source.PluginInfo{
+		Name:   s.GetName(),
+		Driver: "opa",
+	}
+}
+
 // Interface guard
 var (
 	_ caddy.Provisioner             = (*OPAPolicySource)(nil)
 	_ source.Source                 = (*OPAPolicySource)(nil)
 	_ auth.PolicySource             = (*OPAPolicySource)(nil)
 	_ graphql.CompiledQueryReceiver = (*OPAPolicySource)(nil)
+	_ source.Plugin                 = (*OPAPolicySource)(nil)
 )
