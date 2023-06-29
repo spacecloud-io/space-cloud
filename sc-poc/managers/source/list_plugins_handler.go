@@ -5,12 +5,13 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"github.com/spacecloud-io/space-cloud/utils"
 	"go.uber.org/zap"
 )
 
 type ListPlugins struct {
-	Plugins []PluginInfo `json:"plugins"`
+	Plugins []v1alpha1.HTTPPlugin `json:"plugins"`
 	logger  *zap.Logger
 }
 

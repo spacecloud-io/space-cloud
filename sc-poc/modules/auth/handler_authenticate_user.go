@@ -14,7 +14,7 @@ type AuthenticateUser struct{}
 
 func (AuthenticateUser) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.sc_authenticate_user_handler",
+		ID:  "http.handlers.sc_plugin_authenticate_user_handler",
 		New: func() caddy.Module { return new(AuthenticateUser) },
 	}
 }

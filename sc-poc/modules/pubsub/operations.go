@@ -38,6 +38,22 @@ func (a *App) createInternalChannels() {
 			Type:                 "object",
 			AdditionalProperties: json.RawMessage(fmt.Sprintf(`%t`, true)),
 		},
+		ProducerOptions: &v1alpha1.ChannelOptions{
+			Plugins: []v1alpha1.HTTPPlugin{
+				{
+					Name:   "",
+					Driver: "deny-user",
+				},
+			},
+		},
+		ConsumerOptions: &v1alpha1.ChannelOptions{
+			Plugins: []v1alpha1.HTTPPlugin{
+				{
+					Name:   "",
+					Driver: "authenticate-sc-user",
+				},
+			},
+		},
 	}
 
 	asyncapiProvisionChannel := v1alpha1.PubsubChannelSpec{
@@ -45,6 +61,22 @@ func (a *App) createInternalChannels() {
 		Payload: &v1alpha1.ChannelSchema{
 			Type:                 "object",
 			AdditionalProperties: json.RawMessage(fmt.Sprintf(`%t`, true)),
+		},
+		ProducerOptions: &v1alpha1.ChannelOptions{
+			Plugins: []v1alpha1.HTTPPlugin{
+				{
+					Name:   "",
+					Driver: "deny-user",
+				},
+			},
+		},
+		ConsumerOptions: &v1alpha1.ChannelOptions{
+			Plugins: []v1alpha1.HTTPPlugin{
+				{
+					Name:   "",
+					Driver: "authenticate-sc-user",
+				},
+			},
 		},
 	}
 

@@ -105,8 +105,8 @@ func (s *OPAPolicySource) SetCompiledQueries(compiledQueries map[string]*graphql
 	s.compiledGraphQLQueries = compiledQueries
 }
 
-func (s *OPAPolicySource) GetPluginDetails() source.PluginInfo {
-	return source.PluginInfo{
+func (s *OPAPolicySource) GetPluginDetails() v1alpha1.HTTPPlugin {
+	return v1alpha1.HTTPPlugin{
 		Name:   s.GetName(),
 		Driver: "opa",
 	}

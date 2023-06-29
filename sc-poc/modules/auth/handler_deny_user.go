@@ -14,7 +14,7 @@ type DenyUser struct{}
 
 func (DenyUser) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.sc_deny_user_handler",
+		ID:  "http.handlers.sc_plugin_deny_user_handler",
 		New: func() caddy.Module { return new(DenyUser) },
 	}
 }

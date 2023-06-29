@@ -3,6 +3,7 @@ package source
 import (
 	"sort"
 
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -18,13 +19,8 @@ type (
 	// Sources is an array of Source
 	Sources []Source
 
-	PluginInfo struct {
-		Name   string `json:"name"`
-		Driver string `json:"driver"`
-	}
-
 	Plugin interface {
-		GetPluginDetails() PluginInfo
+		GetPluginDetails() v1alpha1.HTTPPlugin
 	}
 )
 

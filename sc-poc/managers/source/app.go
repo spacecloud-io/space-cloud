@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/caddyserver/caddy/v2"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"go.uber.org/zap"
 )
 
@@ -19,7 +20,7 @@ type App struct {
 	// Internal stuff
 	logger    *zap.Logger
 	sourceMap map[string]Sources
-	plugins   []PluginInfo
+	plugins   []v1alpha1.HTTPPlugin
 }
 
 // CaddyModule returns the Caddy module information.
@@ -56,8 +57,8 @@ func (a *App) Provision(ctx caddy.Context) error {
 			}
 
 			fmt.Println(source.GetName())
-			a.plugins = make([]PluginInfo, 0)
-			defaultPlugins := []PluginInfo{
+			a.plugins = make([]v1alpha1.HTTPPlugin, 0)
+			defaultPlugins := []v1alpha1.HTTPPlugin{
 				{
 					Name:   "",
 					Driver: "deny-user",
