@@ -2,16 +2,11 @@ package source
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"go.uber.org/zap"
 )
-
-func init() {
-	caddy.RegisterModule(App{})
-}
 
 // App describes the source manager app
 type App struct {
@@ -56,12 +51,11 @@ func (a *App) Provision(ctx caddy.Context) error {
 				continue
 			}
 
-			fmt.Println(source.GetName())
 			a.plugins = make([]v1alpha1.HTTPPlugin, 0)
 			defaultPlugins := []v1alpha1.HTTPPlugin{
 				{
 					Name:   "",
-					Driver: "deny-user",
+					Driver: "deny_user",
 				},
 				{
 					Name:   "",

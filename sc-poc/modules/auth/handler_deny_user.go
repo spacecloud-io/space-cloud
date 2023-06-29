@@ -10,7 +10,9 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-type DenyUser struct{}
+type DenyUser struct {
+	Name string `json:"name"`
+}
 
 func (DenyUser) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{

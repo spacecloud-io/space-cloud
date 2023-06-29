@@ -42,7 +42,7 @@ func (a *App) createInternalChannels() {
 			Plugins: []v1alpha1.HTTPPlugin{
 				{
 					Name:   "",
-					Driver: "deny-user",
+					Driver: "deny_user",
 				},
 			},
 		},
@@ -50,7 +50,7 @@ func (a *App) createInternalChannels() {
 			Plugins: []v1alpha1.HTTPPlugin{
 				{
 					Name:   "",
-					Driver: "authenticate-sc-user",
+					Driver: "authenticate_sc_user",
 				},
 			},
 		},
@@ -66,7 +66,7 @@ func (a *App) createInternalChannels() {
 			Plugins: []v1alpha1.HTTPPlugin{
 				{
 					Name:   "",
-					Driver: "deny-user",
+					Driver: "deny_user",
 				},
 			},
 		},
@@ -74,7 +74,7 @@ func (a *App) createInternalChannels() {
 			Plugins: []v1alpha1.HTTPPlugin{
 				{
 					Name:   "",
-					Driver: "authenticate-sc-user",
+					Driver: "authenticate_sc_user",
 				},
 			},
 		},

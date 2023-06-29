@@ -10,7 +10,9 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-type AuthenticateUser struct{}
+type AuthenticateUser struct {
+	Name string `json:"name"`
+}
 
 func (AuthenticateUser) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{

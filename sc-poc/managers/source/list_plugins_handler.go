@@ -29,7 +29,7 @@ func (h *ListPlugins) Provision(ctx caddy.Context) error {
 		h.logger.Error("Unable to load the source manager", zap.Error(err))
 	}
 	sourceMan := sourceManT.(*App)
-	h.Plugins = sourceMan.plugins
+	h.Plugins = sourceMan.GetPlugins()
 	return nil
 }
 
