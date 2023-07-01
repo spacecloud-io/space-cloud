@@ -1,4 +1,4 @@
-.PHONY: pre-hook test-all generate manifest build run install
+.PHONY: pre-hook test-all gen gen-all manifest build run install install-deps
 
 pre-hook:
 	go mod tidy

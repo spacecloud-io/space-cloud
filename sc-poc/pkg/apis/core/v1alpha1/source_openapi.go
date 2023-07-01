@@ -31,8 +31,10 @@ type OpenAPISourceSpec struct {
 
 type OpenAPISpec struct {
 	// Value stores the open api schema
+	// +kubebuilder:validation:Optional
 	Value runtime.RawExtension `json:"value,omitempty"`
 	// Ref stores the path from which openapi schema will be fetched if value is not provided
+	// +kubebuilder:validation:Optional
 	Ref *HTTPOptions `json:"ref,omitempty"`
 }
 
