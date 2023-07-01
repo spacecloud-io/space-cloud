@@ -11,19 +11,19 @@ import (
 	"go.uber.org/zap"
 )
 
-type Refresh struct {
+type RefreshHandler struct {
 	logger   *zap.Logger
 	adminMan *App
 }
 
-func (Refresh) CaddyModule() caddy.ModuleInfo {
+func (RefreshHandler) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "http.handlers.sc_admin_refresh_handler",
-		New: func() caddy.Module { return new(Refresh) },
+		New: func() caddy.Module { return new(RefreshHandler) },
 	}
 }
 
-func (h *Refresh) Provision(ctx caddy.Context) error {
+func (h *RefreshHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 	adminManT, err := ctx.App("sc_admin")
 	if err != nil {
@@ -33,7 +33,7 @@ func (h *Refresh) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-func (h *Refresh) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+func (h *RefreshHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	tokenString, ok := getTokenFromHeader(r)
 	if !ok {
 		return utils.SendErrorResponse(w, http.StatusBadRequest, errors.New("token not found in header"))
@@ -68,4 +68,4 @@ func getTokenFromHeader(r *http.Request) (string, bool) {
 	return "", false
 }
 
-var _ caddyhttp.MiddlewareHandler = (*Refresh)(nil)
+var _ caddyhttp.MiddlewareHandler = (*RefreshHandler)(nil)

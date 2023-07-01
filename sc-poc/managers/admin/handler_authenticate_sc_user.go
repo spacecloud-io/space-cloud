@@ -10,20 +10,20 @@ import (
 	"go.uber.org/zap"
 )
 
-type AuthenticateSCUser struct {
+type AuthenticateSCUserPlugin struct {
 	Name     string `json:"name"`
 	logger   *zap.Logger
 	adminMan *App
 }
 
-func (AuthenticateSCUser) CaddyModule() caddy.ModuleInfo {
+func (AuthenticateSCUserPlugin) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "http.handlers.sc_plugin_authenticate_sc_user_handler",
-		New: func() caddy.Module { return new(AuthenticateSCUser) },
+		New: func() caddy.Module { return new(AuthenticateSCUserPlugin) },
 	}
 }
 
-func (h *AuthenticateSCUser) Provision(ctx caddy.Context) error {
+func (h *AuthenticateSCUserPlugin) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 	adminManT, err := ctx.App("sc_admin")
 	if err != nil {
@@ -33,7 +33,7 @@ func (h *AuthenticateSCUser) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-func (h *AuthenticateSCUser) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+func (h *AuthenticateSCUserPlugin) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	tokenString, ok := getTokenFromHeader(r)
 	if !ok {
 		return utils.SendErrorResponse(w, http.StatusForbidden, errors.New("token not found in header"))
@@ -44,7 +44,7 @@ func (h *AuthenticateSCUser) ServeHTTP(w http.ResponseWriter, r *http.Request, n
 		return utils.SendErrorResponse(w, http.StatusInternalServerError, err)
 	}
 
-	return utils.SendOkayResponse(w, http.StatusOK)
+	return next.ServeHTTP(w, r)
 }
 
-var _ caddyhttp.MiddlewareHandler = (*AuthenticateSCUser)(nil)
+var _ caddyhttp.MiddlewareHandler = (*AuthenticateSCUserPlugin)(nil)

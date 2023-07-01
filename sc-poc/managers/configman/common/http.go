@@ -71,7 +71,7 @@ func getAdminRoutes() caddyhttp.Route {
 		caddyhttp.Route{
 			Group:          "list_sources",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/sources"}, []string{http.MethodGet}),
-			HandlersRaw:    utils.GetCaddyHandler("list_sources", nil),
+			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("list_sources", nil)),
 		},
 		caddyhttp.Route{
 			Group:          "admin_login",
@@ -137,21 +137,21 @@ func getConfigRoutes() caddyhttp.Route {
 		getRoute := caddyhttp.Route{
 			Group:          "config_get",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodGet}),
-			HandlersRaw:    utils.GetCaddyHandler("config_get", data),
+			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("config_get", data)),
 		}
 
 		// Route for Apply operation
 		applyRoute := caddyhttp.Route{
 			Group:          "config_apply",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodPut}),
-			HandlersRaw:    utils.GetCaddyHandler("config_apply", data),
+			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("config_apply", data)),
 		}
 
 		// Route for Delete operation
 		deleteRoute := caddyhttp.Route{
 			Group:          "config_delete",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodDelete}),
-			HandlersRaw:    utils.GetCaddyHandler("config_delete", data),
+			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("config_delete", data)),
 		}
 
 		configRoutes = append(configRoutes, getRoute, applyRoute, deleteRoute)
@@ -176,4 +176,10 @@ func createConfigPath(gvr schema.GroupVersionResource) string {
 	resource := gvr.Resource
 
 	return fmt.Sprintf("/sc/v1/config/%s/%s/%s/*", group, version, resource)
+}
+
+func addAuthenticateSCUserPluginMiddleware(handler []json.RawMessage) []json.RawMessage {
+	authenticateSCUserPluginHandlerRaw, _ := json.Marshal(map[string]string{"handler": "sc_plugin_authenticate_sc_user_handler"})
+	data := []json.RawMessage{authenticateSCUserPluginHandlerRaw}
+	return append(data, handler...)
 }

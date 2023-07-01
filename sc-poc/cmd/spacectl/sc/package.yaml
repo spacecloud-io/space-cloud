@@ -1,5 +1,0 @@
-name: spacectl
-output:
-  language: go
-  outputDir: sc/output
-sourceDir: sc/resources

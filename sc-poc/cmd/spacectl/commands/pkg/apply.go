@@ -33,14 +33,14 @@ func newCommandApply() *cobra.Command {
 			m := make(map[schema.GroupVersionResource][]string)
 
 			// Get all registered sources' GVR
-			sourcesGVR, err := listAllSources(httpClient, creds.BaseUrl)
+			sourcesGVR, err := clientutils.ListAllSources(httpClient, creds.BaseUrl)
 			if err != nil {
 				log.Fatal("Failed to list all registered sources: ", err)
 			}
 
 			// Get the resources present in the SpaceCloud
 			for _, gvr := range sourcesGVR {
-				resources, err := getResources(httpClient, gvr, creds.BaseUrl, cfg.Name)
+				resources, err := clientutils.GetResources(httpClient, gvr, creds.BaseUrl, cfg.Name)
 				if err != nil {
 					log.Fatal("Failed to get resources: ", err)
 				}
@@ -76,7 +76,7 @@ func newCommandApply() *cobra.Command {
 					// If resource exists in SpaceCloud, remove from the cache.
 					index := findElement(m[gvr], name)
 					if index != -1 {
-						m[gvr] = DeleteElement(m[gvr], index)
+						m[gvr] = deleteElement(m[gvr], index)
 					}
 
 					// Inject the labels into the spec
@@ -90,7 +90,7 @@ func newCommandApply() *cobra.Command {
 					}
 
 					// Perform apply operation
-					err := applyResources(httpClient, gvr, creds.BaseUrl, spec)
+					err := clientutils.ApplyResources(httpClient, gvr, creds.BaseUrl, spec)
 					if err != nil {
 						log.Fatal("Failed to apply resource: ", err)
 					}
@@ -100,7 +100,7 @@ func newCommandApply() *cobra.Command {
 				// Delete the resources in SpaceCloud which are still present in cache
 				for gvr, names := range m {
 					for _, name := range names {
-						err := deleteResources(httpClient, gvr, creds.BaseUrl, name)
+						err := clientutils.DeleteResources(httpClient, gvr, creds.BaseUrl, name)
 						if err != nil {
 							log.Fatal("Failed to delete resource: ", err)
 						}

@@ -11,19 +11,19 @@ import (
 	"go.uber.org/zap"
 )
 
-type Login struct {
+type LoginHandler struct {
 	logger   *zap.Logger
 	adminMan *App
 }
 
-func (Login) CaddyModule() caddy.ModuleInfo {
+func (LoginHandler) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "http.handlers.sc_admin_login_handler",
-		New: func() caddy.Module { return new(Login) },
+		New: func() caddy.Module { return new(LoginHandler) },
 	}
 }
 
-func (h *Login) Provision(ctx caddy.Context) error {
+func (h *LoginHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 	adminManT, err := ctx.App("sc_admin")
 	if err != nil {
@@ -33,7 +33,7 @@ func (h *Login) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-func (h *Login) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+func (h *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	creds := make(map[string]string)
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		_ = utils.SendErrorResponse(w, http.StatusBadRequest, errors.New("invalid request payload received"))
@@ -53,6 +53,6 @@ func (h *Login) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp
 }
 
 var (
-	_ caddy.Provisioner           = (*Login)(nil)
-	_ caddyhttp.MiddlewareHandler = (*Login)(nil)
+	_ caddy.Provisioner           = (*LoginHandler)(nil)
+	_ caddyhttp.MiddlewareHandler = (*LoginHandler)(nil)
 )

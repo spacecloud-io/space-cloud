@@ -30,7 +30,11 @@ func (h *Get) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.H
 	name := getName(r.URL.Path)
 	if name == "" {
 		vars := r.URL.Query()
-		resp, err := configman.List(h.GVR, adapter.ListOptions{Labels: map[string]string{"space-cloud.io/package": vars.Get("package")}})
+		listOptions := adapter.ListOptions{Labels: make(map[string]string)}
+		if vars.Get("package") != "" {
+			listOptions.Labels["space-cloud.io/package"] = vars.Get("package")
+		}
+		resp, err := configman.List(h.GVR, listOptions)
 		if err != nil {
 			return utils.SendErrorResponse(w, http.StatusInternalServerError, err)
 		}

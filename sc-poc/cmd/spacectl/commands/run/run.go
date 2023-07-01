@@ -28,13 +28,13 @@ func NewCommand() *cobra.Command {
 			_ = viper.BindPFlag("config.path", cmd.Flags().Lookup("config-path"))
 			_ = viper.BindPFlag("config.debounce-interval", cmd.Flags().Lookup("debounce-interval"))
 
-			_ = viper.BindPFlag("admin.secret", cmd.Flags().Lookup("admin-secret"))
-			_ = viper.BindPFlag("admin.username", cmd.Flags().Lookup("admin-username"))
-			_ = viper.BindPFlag("admin.password", cmd.Flags().Lookup("admin-password"))
+			_ = viper.BindPFlag("admin.secret", cmd.Flags().Lookup("admin.secret"))
+			_ = viper.BindPFlag("admin.username", cmd.Flags().Lookup("admin.username"))
+			_ = viper.BindPFlag("admin.password", cmd.Flags().Lookup("admin.password"))
 
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !cmd.Flags().Changed("admin-secret") {
+			if !cmd.Flags().Changed("admin.secret") {
 				secret := ""
 				prompt := &survey.Input{
 					Message: "HSA256 Secret?",
@@ -44,7 +44,7 @@ func NewCommand() *cobra.Command {
 				viper.Set("admin.secret", secret)
 			}
 
-			if !cmd.Flags().Changed("admin-username") {
+			if !cmd.Flags().Changed("admin.username") {
 				username := ""
 				prompt := &survey.Input{
 					Message: "Username?",
@@ -54,7 +54,7 @@ func NewCommand() *cobra.Command {
 				viper.Set("admin.username", username)
 			}
 
-			if !cmd.Flags().Changed("admin-password") {
+			if !cmd.Flags().Changed("admin.password") {
 				password := ""
 				prompt := &survey.Input{
 					Message: "Password?",

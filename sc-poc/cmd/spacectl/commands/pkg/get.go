@@ -35,7 +35,7 @@ func newCommandGet() *cobra.Command {
 			resourceName := args[0]
 
 			// Get all registered sources' GVR
-			sourcesGVR, err := listAllSources(httpClient, creds.BaseUrl)
+			sourcesGVR, err := clientutils.ListAllSources(httpClient, creds.BaseUrl)
 			if err != nil {
 				log.Fatal("Failed to list all registered sources: ", err)
 			}
@@ -43,7 +43,7 @@ func newCommandGet() *cobra.Command {
 			var data [][]string
 			if resourceName == "all" {
 				for _, gvr := range sourcesGVR {
-					unstrList, err := getResources(httpClient, gvr, creds.BaseUrl, cfg.Name)
+					unstrList, err := clientutils.GetResources(httpClient, gvr, creds.BaseUrl, cfg.Name)
 					if err != nil {
 						log.Fatal("Failed to get resources: ", err)
 					}
@@ -58,7 +58,7 @@ func newCommandGet() *cobra.Command {
 
 			for _, gvr := range sourcesGVR {
 				if resourceName == gvr.Resource {
-					unstrList, err := getResources(httpClient, gvr, creds.BaseUrl, cfg.Name)
+					unstrList, err := clientutils.GetResources(httpClient, gvr, creds.BaseUrl, cfg.Name)
 					if err != nil {
 						log.Fatal("Failed to get resources: ", err)
 					}

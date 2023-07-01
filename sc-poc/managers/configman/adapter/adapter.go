@@ -9,10 +9,6 @@ import (
 	"github.com/spacecloud-io/space-cloud/managers/configman/common"
 )
 
-type ListOptions struct {
-	Labels map[string]string `json:"labels"`
-}
-
 type Adapter interface {
 	// Run starts the watcher.
 	Run(context.Context) (chan common.ConfigType, error)

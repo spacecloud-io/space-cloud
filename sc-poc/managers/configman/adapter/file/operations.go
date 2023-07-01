@@ -28,7 +28,14 @@ func (f *File) List(gvr schema.GroupVersionResource, listOptions adapter.ListOpt
 	filteredSources := make([]*unstructured.Unstructured, 0)
 	for _, src := range sources {
 		labels := src.GetLabels()
-		if labels["space-cloud.io/package"] == listOptions.Labels["space-cloud.io/package"] {
+		matched := true
+		for k, v := range listOptions.Labels {
+			if labels[k] != v {
+				matched = false
+				break
+			}
+		}
+		if matched {
 			filteredSources = append(filteredSources, src)
 		}
 	}

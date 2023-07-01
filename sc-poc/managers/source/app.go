@@ -7,10 +7,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func init() {
-	caddy.RegisterModule(App{})
-}
-
 // App describes the source manager app
 type App struct {
 	Config map[string][]json.RawMessage `json:"config"`

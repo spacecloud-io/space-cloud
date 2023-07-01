@@ -1,11 +1,10 @@
-package admin
+package source
 
 import (
 	"net/http"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
@@ -19,7 +18,7 @@ func (ListSources) CaddyModule() caddy.ModuleInfo {
 }
 
 func (h *ListSources) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
-	sourcesGVR := source.GetRegisteredSources()
+	sourcesGVR := GetRegisteredSources()
 	return utils.SendResponse(w, http.StatusOK, sourcesGVR)
 }
 
