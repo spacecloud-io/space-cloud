@@ -9,12 +9,13 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/spacecloud-io/space-cloud/managers/configman/adapter"
 	"github.com/spacecloud-io/space-cloud/managers/configman/common"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 )
 
 // List returns all the registered sources of a particular source type
-func (k *K8s) List(gvr schema.GroupVersionResource) (*unstructured.UnstructuredList, error) {
+func (k *K8s) List(gvr schema.GroupVersionResource, listOptions adapter.ListOptions) (*unstructured.UnstructuredList, error) {
 	list := &unstructured.UnstructuredList{}
 	key := source.GetModuleName(gvr)
 
@@ -24,7 +25,22 @@ func (k *K8s) List(gvr schema.GroupVersionResource) (*unstructured.UnstructuredL
 		return list, nil
 	}
 
-	list = common.ConvertToList(sources)
+	filteredSources := make([]*unstructured.Unstructured, 0)
+	for _, src := range sources {
+		labels := src.GetLabels()
+		matched := true
+		for k, v := range listOptions.Labels {
+			if labels[k] != v {
+				matched = false
+				break
+			}
+		}
+		if matched {
+			filteredSources = append(filteredSources, src)
+		}
+	}
+
+	list = common.ConvertToList(filteredSources)
 	return list, nil
 }
 

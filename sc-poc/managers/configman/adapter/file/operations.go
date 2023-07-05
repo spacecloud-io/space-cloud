@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spacecloud-io/space-cloud/managers/configman/adapter"
 	"github.com/spacecloud-io/space-cloud/managers/configman/common"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/utils"
@@ -13,7 +14,7 @@ import (
 )
 
 // List returns all registered sources of a specific source type
-func (f *File) List(gvr schema.GroupVersionResource) (*unstructured.UnstructuredList, error) {
+func (f *File) List(gvr schema.GroupVersionResource, listOptions adapter.ListOptions) (*unstructured.UnstructuredList, error) {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
 
@@ -24,7 +25,22 @@ func (f *File) List(gvr schema.GroupVersionResource) (*unstructured.Unstructured
 		return list, nil
 	}
 
-	list = common.ConvertToList(sources)
+	filteredSources := make([]*unstructured.Unstructured, 0)
+	for _, src := range sources {
+		labels := src.GetLabels()
+		matched := true
+		for k, v := range listOptions.Labels {
+			if labels[k] != v {
+				matched = false
+				break
+			}
+		}
+		if matched {
+			filteredSources = append(filteredSources, src)
+		}
+	}
+
+	list = common.ConvertToList(filteredSources)
 	return list, nil
 }
 
@@ -54,13 +70,7 @@ func (f *File) Apply(gvr schema.GroupVersionResource, spec *unstructured.Unstruc
 		return err
 	}
 
-	// Get spec in bytes
-	data, err := utils.GetBytesFromSpec(spec)
-	if err != nil {
-		return err
-	}
-
-	return f.persistConfig(gvr, data)
+	return f.persistConfig(gvr, spec)
 }
 
 // Delete deletes a source
