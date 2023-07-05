@@ -60,9 +60,6 @@ func (s *Source) createRPC(url, operationID, operationType, method string, respB
 		OperationType:  operationType,
 		RequestSchema:  reqSchema,
 		ResponseSchema: respSchema,
-		HTTPOptions: &v1alpha1.HTTPOptions{
-			Method: method,
-		},
 		Plugins: plugins,
 		Call:    s.createCall(url, operationID, method, reqBody, parameters),
 	}
@@ -85,7 +82,7 @@ func (s *Source) createCall(url, operationID, method string, reqBody *openapi3.S
 		}
 
 		// Set request body for POST method
-		if method != http.MethodGet {
+		if method != http.MethodGet || method != http.MethodDelete {
 			data, err := json.Marshal(vars)
 			if err != nil {
 				return nil, err
