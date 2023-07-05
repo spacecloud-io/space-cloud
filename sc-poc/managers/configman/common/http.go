@@ -58,6 +58,9 @@ func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 		// Config route handlers
 		getConfigRoutes(),
 
+		// Source route handlers
+		getSourceRoutes(),
+
 		// Admin route handlers
 		getAdminRoutes(),
 
@@ -68,11 +71,6 @@ func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 
 func getAdminRoutes() caddyhttp.Route {
 	routeList := caddyhttp.RouteList{
-		caddyhttp.Route{
-			Group:          "list_sources",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/sources"}, []string{http.MethodGet}),
-			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("list_sources", nil)),
-		},
 		caddyhttp.Route{
 			Group:          "admin_login",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/login"}, []string{http.MethodPost}),
@@ -120,6 +118,34 @@ func getAPIRoutes() caddyhttp.Route {
 
 	return caddyhttp.Route{
 		Group:       "api",
+		HandlersRaw: []json.RawMessage{handlerRaw},
+	}
+}
+
+func getSourceRoutes() caddyhttp.Route {
+	// Make route list for the sub router
+	routeList := caddyhttp.RouteList{
+		caddyhttp.Route{
+			Group:          "source_lists",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/sources"}, []string{http.MethodGet}),
+			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("list_sources", nil)),
+		},
+		caddyhttp.Route{
+			Group:          "source_plugins",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/plugins"}, []string{http.MethodGet}),
+			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("list_plugins", nil)),
+		},
+	}
+
+	// Create matcher and handler for subroute
+	handler := map[string]interface{}{
+		"handler": "subroute",
+		"routes":  routeList,
+	}
+	handlerRaw, _ := json.Marshal(handler)
+
+	return caddyhttp.Route{
+		Group:       "source",
 		HandlersRaw: []json.RawMessage{handlerRaw},
 	}
 }

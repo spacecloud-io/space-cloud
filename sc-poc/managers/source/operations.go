@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/caddyserver/caddy/v2"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -73,4 +74,8 @@ func ResolveDependencies(ctx caddy.Context, callerAppName string, source Source)
 	}
 
 	return nil
+}
+
+func (a *App) GetPlugins() []v1alpha1.HTTPPlugin {
+	return a.plugins
 }

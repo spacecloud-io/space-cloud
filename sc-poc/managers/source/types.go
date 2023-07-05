@@ -3,6 +3,7 @@ package source
 import (
 	"sort"
 
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -17,6 +18,10 @@ type (
 
 	// Sources is an array of Source
 	Sources []Source
+
+	Plugin interface {
+		GetPluginDetails() v1alpha1.HTTPPlugin
+	}
 )
 
 // Sort sorts the array of sources based on their priority

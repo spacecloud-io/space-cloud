@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/caddyserver/caddy/v2"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"go.uber.org/zap"
 )
 
@@ -14,6 +15,7 @@ type App struct {
 	// Internal stuff
 	logger    *zap.Logger
 	sourceMap map[string]Sources
+	plugins   []v1alpha1.HTTPPlugin
 }
 
 // CaddyModule returns the Caddy module information.
@@ -30,6 +32,16 @@ func (a *App) Provision(ctx caddy.Context) error {
 
 	// Create a map of sources
 	a.sourceMap = make(map[string]Sources, len(a.Config))
+	a.plugins = []v1alpha1.HTTPPlugin{
+		{
+			Name:   "",
+			Driver: "deny_user",
+		},
+		{
+			Name:   "",
+			Driver: "authenticate-user",
+		},
+	}
 	for key, list := range a.Config {
 		gvr := GetResourceGVR(key)
 
@@ -47,6 +59,10 @@ func (a *App) Provision(ctx caddy.Context) error {
 			if !ok {
 				a.logger.Error("Loaded source is not of a valid type", zap.String("group", gvr.Group), zap.String("version", gvr.Version), zap.String("resource", gvr.Resource))
 				continue
+			}
+
+			if plugin, ok := source.(Plugin); ok {
+				a.plugins = append(a.plugins, plugin.GetPluginDetails())
 			}
 
 			// Add the provider for all supported providers
