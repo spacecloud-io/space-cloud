@@ -32,6 +32,16 @@ func (a *App) Provision(ctx caddy.Context) error {
 
 	// Create a map of sources
 	a.sourceMap = make(map[string]Sources, len(a.Config))
+	a.plugins = []v1alpha1.HTTPPlugin{
+		{
+			Name:   "",
+			Driver: "deny_user",
+		},
+		{
+			Name:   "",
+			Driver: "authenticate-user",
+		},
+	}
 	for key, list := range a.Config {
 		gvr := GetResourceGVR(key)
 
@@ -51,18 +61,6 @@ func (a *App) Provision(ctx caddy.Context) error {
 				continue
 			}
 
-			a.plugins = make([]v1alpha1.HTTPPlugin, 0)
-			defaultPlugins := []v1alpha1.HTTPPlugin{
-				{
-					Name:   "",
-					Driver: "deny_user",
-				},
-				{
-					Name:   "",
-					Driver: "authenticate-user",
-				},
-			}
-			a.plugins = append(a.plugins, defaultPlugins...)
 			if plugin, ok := source.(Plugin); ok {
 				a.plugins = append(a.plugins, plugin.GetPluginDetails())
 			}
