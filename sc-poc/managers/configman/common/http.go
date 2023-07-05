@@ -58,8 +58,43 @@ func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 		// Config route handlers
 		getConfigRoutes(),
 
+		// Admin route handlers
+		getAdminRoutes(),
+
 		// API route handler
 		getAPIRoutes(),
+	}
+}
+
+func getAdminRoutes() caddyhttp.Route {
+	routeList := caddyhttp.RouteList{
+		caddyhttp.Route{
+			Group:          "list_sources",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/sources"}, []string{http.MethodGet}),
+			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("list_sources", nil)),
+		},
+		caddyhttp.Route{
+			Group:          "admin_login",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/login"}, []string{http.MethodPost}),
+			HandlersRaw:    utils.GetCaddyHandler("admin_login", nil),
+		},
+		caddyhttp.Route{
+			Group:          "admin_refresh",
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/refresh-token"}, []string{http.MethodGet}),
+			HandlersRaw:    utils.GetCaddyHandler("admin_refresh", nil),
+		},
+	}
+
+	// Create matcher and handler for subroute
+	handler := map[string]interface{}{
+		"handler": "subroute",
+		"routes":  routeList,
+	}
+	handlerRaw, _ := json.Marshal(handler)
+
+	return caddyhttp.Route{
+		Group:       "admin",
+		HandlersRaw: []json.RawMessage{handlerRaw},
 	}
 }
 
@@ -102,21 +137,21 @@ func getConfigRoutes() caddyhttp.Route {
 		getRoute := caddyhttp.Route{
 			Group:          "config_get",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodGet}),
-			HandlersRaw:    utils.GetCaddyHandler("config_get", data),
+			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("config_get", data)),
 		}
 
 		// Route for Apply operation
 		applyRoute := caddyhttp.Route{
 			Group:          "config_apply",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodPut}),
-			HandlersRaw:    utils.GetCaddyHandler("config_apply", data),
+			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("config_apply", data)),
 		}
 
 		// Route for Delete operation
 		deleteRoute := caddyhttp.Route{
 			Group:          "config_delete",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodDelete}),
-			HandlersRaw:    utils.GetCaddyHandler("config_delete", data),
+			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("config_delete", data)),
 		}
 
 		configRoutes = append(configRoutes, getRoute, applyRoute, deleteRoute)
@@ -140,5 +175,11 @@ func createConfigPath(gvr schema.GroupVersionResource) string {
 	version := gvr.Version
 	resource := gvr.Resource
 
-	return fmt.Sprintf("/v1/config/%s/%s/%s/*", group, version, resource)
+	return fmt.Sprintf("/sc/v1/config/%s/%s/%s/*", group, version, resource)
+}
+
+func addAuthenticateSCUserPluginMiddleware(handler []json.RawMessage) []json.RawMessage {
+	authenticateSCUserPluginHandlerRaw, _ := json.Marshal(map[string]string{"handler": "sc_plugin_authenticate_sc_user_handler"})
+	data := []json.RawMessage{authenticateSCUserPluginHandlerRaw}
+	return append(data, handler...)
 }

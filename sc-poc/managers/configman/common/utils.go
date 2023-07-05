@@ -4,6 +4,10 @@ import "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 func ConvertToList(sources []*unstructured.Unstructured) *unstructured.UnstructuredList {
 	list := &unstructured.UnstructuredList{}
+	if len(sources) == 0 {
+		return list
+	}
+
 	kind := sources[0].GetKind() + "List"
 	apiVersion := sources[0].GetAPIVersion()
 
