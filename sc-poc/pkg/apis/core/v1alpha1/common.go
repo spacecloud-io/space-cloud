@@ -70,11 +70,11 @@ type HTTPSource struct {
 // HTTPPlugin describes a plugin to be used in an HTTP endpoint
 type HTTPPlugin struct {
 	// Name describes a name of the plugin
-	Name string `json:"name"`
+	Name string `json:"name" mapstructure:"name"`
 
 	// Driver describes the driver to use for the plugin
-	Driver string `json:"driver"`
+	Driver string `json:"driver" mapstructure:"driver"`
 
 	// Params describes the additional properties which are required by the driver
-	Params runtime.RawExtension `json:"params,omitempty"`
+	Params runtime.RawExtension `json:"params,omitempty" mapstructure:"params,omitempty"`
 }

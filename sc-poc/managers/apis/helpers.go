@@ -56,7 +56,7 @@ func generateOpenAPIDocAndAPIs(ctx caddy.Context) (*openapi3.T, []*API, error) {
 			Version:     "v0.22.0",
 		},
 		Paths: paths,
-		Components: openapi3.Components{
+		Components: &openapi3.Components{
 			Schemas: schemas,
 			SecuritySchemes: openapi3.SecuritySchemes{
 				"bearerAuth": &openapi3.SecuritySchemeRef{

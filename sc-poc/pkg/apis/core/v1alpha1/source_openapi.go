@@ -1,6 +1,8 @@
 package v1alpha1
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,6 +24,18 @@ type OpenAPISource struct {
 type OpenAPISourceSpec struct {
 	// Sources descrives the remote OpenAPI endpoints that we want to federate
 	Source *HTTPSource `json:"source"`
+
+	// OpenAPI describes the value/ref for openapi schema
+	OpenAPI OpenAPISpec `json:"openApi"`
+}
+
+type OpenAPISpec struct {
+	// Value stores the open api schema
+	// +kubebuilder:validation:Optional
+	Value runtime.RawExtension `json:"value,omitempty"`
+	// Ref stores the path from which openapi schema will be fetched if value is not provided
+	// +kubebuilder:validation:Optional
+	Ref *HTTPOptions `json:"ref,omitempty"`
 }
 
 // OpenAPISourceStatus defines the observed state of OpenAPISource
