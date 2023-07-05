@@ -3,6 +3,7 @@ module github.com/spacecloud-io/space-cloud
 go 1.19
 
 require (
+	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/bep/debounce v1.2.1
 	github.com/caddyserver/caddy/v2 v2.6.4
@@ -12,7 +13,6 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gobwas/ws v1.2.0
 	github.com/golang-jwt/jwt/v4 v4.4.2
-	github.com/gorilla/mux v1.8.0
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
 	github.com/graphql-go/graphql v0.8.0
 	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0
@@ -31,7 +31,6 @@ require (
 )
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
