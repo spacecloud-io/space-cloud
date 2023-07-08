@@ -6,15 +6,18 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/managers/apis"
+	"github.com/spacecloud-io/space-cloud/managers/provider"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 )
 
 func init() {
 	caddy.RegisterModule(App{})
-	apis.RegisterApp("graphql", 100)
+	provider.Register("graphql", 100)
 }
 
 type App struct {
+	Workspace string `json:"workspace"`
+
 	// For internal use
 	logger *zap.Logger
 
@@ -31,7 +34,7 @@ type App struct {
 // CaddyModule returns the Caddy module information.
 func (App) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "graphql",
+		ID:  "provider.graphql",
 		New: func() caddy.Module { return new(App) },
 	}
 }
@@ -71,17 +74,11 @@ func (a *App) Provision(ctx caddy.Context) error {
 	sourceMan := sourceManT.(*source.App)
 
 	// Get all relevant sources
-	sources := sourceMan.GetSources("graphql")
+	sources := sourceMan.GetSources(a.Workspace, "graphql")
 
 	// Iterate over all the sources to add them to the app
 	for _, src := range sources {
 		name := src.GetName()
-
-		// First resolve the source's dependencies
-		if err := source.ResolveDependencies(ctx, "graphql", src); err != nil {
-			a.logger.Error("Unable to resolve source's dependency", zap.String("source", src.GetName()), zap.Error(err))
-			return err
-		}
 
 		// Extract graphql types from the source
 		graphqlSource, ok := src.(Source)

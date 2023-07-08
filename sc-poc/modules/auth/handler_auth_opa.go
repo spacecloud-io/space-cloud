@@ -11,6 +11,8 @@ import (
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"go.uber.org/zap"
 
+	"github.com/spacecloud-io/space-cloud/managers/provider"
+	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
@@ -19,8 +21,8 @@ type OPAPlugin struct {
 	Name string `json:"name"`
 	Rego string `json:"rego"`
 
-	logger  *zap.Logger
-	authApp *App
+	logger      *zap.Logger
+	providerMan *provider.App
 }
 
 // CaddyModule returns the Caddy module information.
@@ -35,14 +37,22 @@ func (OPAPlugin) CaddyModule() caddy.ModuleInfo {
 func (h *OPAPlugin) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 
-	// Get the auth app
-	app, _ := ctx.App("auth")
-	h.authApp = app.(*App)
+	providerManT, err := ctx.App("provider")
+	if err != nil {
+		return err
+	}
+	h.providerMan = providerManT.(*provider.App)
 	return nil
 }
 
 // ServeHTTP handles the http request
 func (h *OPAPlugin) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+	// Get the auth app
+	ws := source.GetWorkspaceNameFromHeaders(r)
+	app, _ := h.providerMan.GetProvider(ws, "auth")
+	authApp := app.(*App)
+
+	// Get auth result
 	authResult, p := utils.GetAuthenticationResult(r.Context())
 	if !p {
 		h.logger.Error("Unable to load authentication result")
@@ -83,7 +93,7 @@ func (h *OPAPlugin) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddy
 		policyName = utils.Hash(h.Rego)
 	}
 
-	allowed, reason, err := h.authApp.EvaluatePolicy(r.Context(), policyName, input)
+	allowed, reason, err := authApp.EvaluatePolicy(r.Context(), policyName, input)
 	if err != nil {
 		h.logger.Error("Unable to run opa policy", zap.Error(err))
 		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err)

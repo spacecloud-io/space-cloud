@@ -101,21 +101,21 @@ func getConfigRoutes() caddyhttp.Route {
 		// Route for List/Get operation
 		getRoute := caddyhttp.Route{
 			Group:          "config_get",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodGet}),
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodGet}, nil),
 			HandlersRaw:    utils.GetCaddyHandler("config_get", data),
 		}
 
 		// Route for Apply operation
 		applyRoute := caddyhttp.Route{
 			Group:          "config_apply",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodPut}),
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodPut}, nil),
 			HandlersRaw:    utils.GetCaddyHandler("config_apply", data),
 		}
 
 		// Route for Delete operation
 		deleteRoute := caddyhttp.Route{
 			Group:          "config_delete",
-			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodDelete}),
+			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodDelete}, nil),
 			HandlersRaw:    utils.GetCaddyHandler("config_delete", data),
 		}
 

@@ -15,7 +15,7 @@ import (
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-// GetRoutes returns all the apis that are exposed by this app
+// GetAPIRoutes returns all the apis that are exposed by this app
 func (a *App) GetAPIRoutes() apis.APIs {
 
 	// Prepare schema for request body

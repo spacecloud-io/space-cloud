@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/managers/apis"
+	"github.com/spacecloud-io/space-cloud/managers/provider"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/modules/pubsub/connectors"
 	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
@@ -15,11 +16,13 @@ var connectorPool = caddy.NewUsagePool()
 
 func init() {
 	caddy.RegisterModule(App{})
-	apis.RegisterApp("pubsub", 100)
+	provider.Register("pubsub", 50)
 }
 
 // App defines struct for pubsub app
 type App struct {
+	Workspace string `json:"workspace"`
+
 	// For pubsub engine
 	pubSub *gochannel.GoChannel
 
@@ -35,7 +38,7 @@ type App struct {
 // CaddyModule returns the Caddy module information.
 func (App) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "pubsub",
+		ID:  "provider.pubsub",
 		New: func() caddy.Module { return new(App) },
 	}
 }
@@ -64,7 +67,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 		a.logger.Error("Unable to load the source manager", zap.Error(err))
 	}
 	sourceMan := sourceManT.(*source.App)
-	sources := sourceMan.GetSources("pubsub")
+	sources := sourceMan.GetSources(a.Workspace, "pubsub")
 	for _, src := range sources {
 		channelSrc, ok := src.(Source)
 		if ok {

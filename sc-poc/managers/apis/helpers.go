@@ -81,7 +81,7 @@ func makeSubRouter(ctx caddy.Context, allAPIs []*API) (caddyhttp.Handler, error)
 		// Get the methods to be used
 		methods := getMethods(api)
 
-		handlerObj := prepareRoute(api, path, methods, indexes)
+		handlerObj := prepareRoute(api, path, methods, api.Headers, indexes)
 		routeList = append(routeList, handlerObj)
 	}
 
@@ -93,11 +93,11 @@ func makeSubRouter(ctx caddy.Context, allAPIs []*API) (caddyhttp.Handler, error)
 	return routeList.Compile(emptyHandler), nil
 }
 
-func prepareRoute(api *API, path string, methods, indexes []string) caddyhttp.Route {
+func prepareRoute(api *API, path string, methods []string, headers map[string][]string, indexes []string) caddyhttp.Route {
 	// Create the route for this api
 	apiRoute := caddyhttp.Route{
 		Group:          api.app,
-		MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, methods),
+		MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, methods, headers),
 		HandlersRaw:    make([]json.RawMessage, 0, len(api.Plugins)+1),
 	}
 
