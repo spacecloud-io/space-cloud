@@ -40,6 +40,11 @@ func (a *App) prepareAPIs(rpcSource Source) {
 
 		if !(httpOpts.Method == http.MethodPost || httpOpts.Method == http.MethodPut) {
 			// Need to add the variables as query parameters
+			if requestSchema == nil {
+				requestSchema = &openapi3.SchemaRef{
+					Value: &openapi3.Schema{},
+				}
+			}
 			parameters := make(openapi3.Parameters, 0, len(requestSchema.Value.Properties))
 			for propertyKey, schemaRef := range requestSchema.Value.Properties {
 

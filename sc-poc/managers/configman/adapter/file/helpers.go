@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/spacecloud-io/space-cloud/managers/configman/common"
@@ -138,22 +139,59 @@ func generateYAMLFileName(group, resource string) string {
 	return fileName
 }
 
-func (f *File) persistConfig(gvr schema.GroupVersionResource, data []byte) error {
+func (f *File) persistConfig(gvr schema.GroupVersionResource, newSpec *unstructured.Unstructured) error {
 	fileName := generateYAMLFileName(gvr.Group, gvr.Resource)
 	// Check if the source file exists
 	_, err := os.Stat(filepath.Join(f.path, fileName))
 	// If source file does not exists create a new one and
 	// write this spec into this file
 	if os.IsNotExist(err) {
-		err := os.WriteFile(filepath.Join(f.path, fileName), data, 0777)
+		// Get spec in bytes
+		data, err := utils.GetBytesFromSpec(newSpec)
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(filepath.Join(f.path, fileName), data, 0777)
 		if err != nil {
 			return err
 		}
 	} else {
-		// If source file exists append the spec.
-		err := utils.AppendToFile(filepath.Join(f.path, fileName), data)
+		// If source file exists add the new spec. If spec with same name
+		// already exists, delete it.
+		arr, err := utils.ReadSpecObjectsFromFile(filepath.Join(f.path, fileName))
+		if err != nil {
+			f.logger.Error("Unable to parse config file", zap.String("file", fileName), zap.Error(err))
+			return err
+		}
+
+		newArr := make([]*unstructured.Unstructured, 0)
+		for _, spec := range arr {
+			if spec.GetName() != newSpec.GetName() {
+				newArr = append(newArr, spec)
+			}
+		}
+		newArr = append(newArr, newSpec)
+
+		// Truncate the file content
+		file, err := os.OpenFile(filepath.Join(f.path, fileName), os.O_WRONLY|os.O_TRUNC, 0777)
 		if err != nil {
 			return err
+		}
+		defer file.Close()
+
+		// Add the new specs to the file
+		for _, spec := range newArr {
+			// Get spec in bytes
+			data, err := utils.GetBytesFromSpec(spec)
+			if err != nil {
+				return err
+			}
+
+			// If source file exists append the spec.
+			err = utils.AppendToFile(filepath.Join(f.path, fileName), data)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

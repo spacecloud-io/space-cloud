@@ -6,6 +6,7 @@ import (
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/spacecloud-io/space-cloud/managers/configman"
+	"github.com/spacecloud-io/space-cloud/managers/configman/adapter"
 	"github.com/spacecloud-io/space-cloud/utils"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -28,7 +29,12 @@ func (h *Get) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.H
 	// Get the path params
 	name := getName(r.URL.Path)
 	if name == "" {
-		resp, err := configman.List(h.GVR)
+		vars := r.URL.Query()
+		listOptions := adapter.ListOptions{Labels: make(map[string]string)}
+		if vars.Get("package") != "" {
+			listOptions.Labels["space-cloud.io/package"] = vars.Get("package")
+		}
+		resp, err := configman.List(h.GVR, listOptions)
 		if err != nil {
 			return utils.SendErrorResponse(w, http.StatusInternalServerError, err)
 		}

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/caddyserver/caddy/v2"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -127,4 +128,8 @@ func GetWorkspaceNameFromHeaders(r *http.Request) string {
 
 func getUniqueSourceName(s Source) string {
 	return fmt.Sprintf("%s-%s", s.GroupVersionKind().String(), s.GetName())
+}
+
+func (a *App) GetPlugins() []v1alpha1.HTTPPlugin {
+	return a.plugins
 }

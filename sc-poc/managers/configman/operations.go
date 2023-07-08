@@ -1,13 +1,14 @@
 package configman
 
 import (
+	"github.com/spacecloud-io/space-cloud/managers/configman/adapter"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // List returns all the registered sources of a particular source type
-func List(gvr schema.GroupVersionResource) (*unstructured.UnstructuredList, error) {
-	return configLoader.adapter.List(gvr)
+func List(gvr schema.GroupVersionResource, listOptions adapter.ListOptions) (*unstructured.UnstructuredList, error) {
+	return configLoader.adapter.List(gvr, listOptions)
 }
 
 // Get returns a registered source

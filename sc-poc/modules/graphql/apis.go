@@ -37,10 +37,10 @@ func (a *App) GetAPIRoutes() apis.APIs {
 	responseSchemaJSON, _ := json.Marshal(m{
 		"type": openapi3.TypeObject,
 		"properties": m{
-			"data": m{"type": openapi3.TypeObject, "additionalProperites": true},
+			"data": m{"type": openapi3.TypeObject, "additionalProperties": true},
 			"errors": m{
 				"type":  openapi3.TypeArray,
-				"items": m{"type": openapi3.TypeObject, "additionalProperites": true},
+				"items": m{"type": openapi3.TypeObject, "additionalProperties": true},
 			},
 		},
 	})
