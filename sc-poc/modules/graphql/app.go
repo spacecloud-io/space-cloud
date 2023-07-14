@@ -69,7 +69,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 
 	sourceManT, err := ctx.App("source")
 	if err != nil {
-		a.logger.Error("Unable to load the source manager", zap.Error(err))
+		a.logger.Error("Unable to load the source manager", zap.String("workspace", a.Workspace), zap.Error(err))
 	}
 	sourceMan := sourceManT.(*source.App)
 
@@ -83,12 +83,14 @@ func (a *App) Provision(ctx caddy.Context) error {
 		// Extract graphql types from the source
 		graphqlSource, ok := src.(Source)
 		if ok {
-			queryFields, mutationFields := graphqlSource.GetTypes()
+			types := graphqlSource.GetGraphQLTypes()
+
+			queryFields, mutationFields := types.QueryTypes, types.MutationTypes
 			a.addToRootType(name, queryType, queryFields, true)
 			a.addToRootType(name, mutationType, mutationFields, false)
 
 			// Extract all the types in this source's type system
-			for k, v := range graphqlSource.GetAllTypes() {
+			for k, v := range types.AllTypes {
 				// Skip if we already have a types by this key
 				if _, p := a.graphqlTypes[k]; p {
 					continue
@@ -100,7 +102,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 	}
 
 	//Added default field in graphql schema
-	addInternalScField(queryType)
+	addInternalScField(a.Workspace, queryType)
 
 	// Merge root types with schema if they are not empty
 	schemaConfig := graphql.SchemaConfig{}
@@ -140,7 +142,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 	// Finally compile the graphql schema
 	schema, err := graphql.NewSchema(schemaConfig)
 	if err != nil {
-		a.logger.Error("Unable to build schema object", zap.Error(err))
+		a.logger.Error("Unable to build schema object", zap.String("workspace", a.Workspace), zap.Error(err))
 		return err
 	}
 	a.schema = schema
@@ -152,7 +154,7 @@ func (a *App) Provision(ctx caddy.Context) error {
 		dependantSource, ok := src.(Compiler)
 		if ok {
 			if err := dependantSource.GraphqlCompiler(a.Compile); err != nil {
-				a.logger.Error("Unable to resolve dependencies for source", zap.String("name", name), zap.Error(err))
+				a.logger.Error("Unable to resolve dependencies for source", zap.String("workspace", a.Workspace), zap.String("name", name), zap.Error(err))
 				return err
 			}
 
@@ -172,20 +174,8 @@ func (a *App) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-// Start begins the graphql app operations
-func (a *App) Start() error {
-
-	return nil
-}
-
-// Stop ends the graphql app operations
-func (a *App) Stop() error {
-	return nil
-}
-
 // Interface guards
 var (
 	_ caddy.Provisioner = (*App)(nil)
-	_ caddy.App         = (*App)(nil)
 	_ apis.App          = (*App)(nil)
 )

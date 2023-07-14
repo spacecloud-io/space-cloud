@@ -34,7 +34,12 @@ func GetRegisteredSources() []schema.GroupVersionResource {
 
 // GetWorkspaces returns a list of workspaces registered with this SC instance
 func (a *App) GetWorkspaces() []string {
-	return a.workspaces
+	workspaces := make([]string, 0, len(a.sourceMap))
+	for workspace := range a.sourceMap {
+		workspaces = append(workspaces, workspace)
+	}
+
+	return workspaces
 }
 
 // GetSources returns an array of sources applicable for that provider
@@ -127,7 +132,12 @@ func GetWorkspaceNameFromHeaders(r *http.Request) string {
 }
 
 func getUniqueSourceName(s Source) string {
-	return fmt.Sprintf("%s-%s", s.GroupVersionKind().String(), s.GetName())
+	ws := GetWorkspaceNameFromSource(s)
+
+	// We trim the workspace name from the suffix since that's what our
+	// cli will add in dev mode.
+	name := strings.TrimSuffix(s.GetName(), fmt.Sprintf("-%s", ws))
+	return fmt.Sprintf("%s-%s", s.GroupVersionKind().String(), name)
 }
 
 func (a *App) GetPlugins() []v1alpha1.HTTPPlugin {

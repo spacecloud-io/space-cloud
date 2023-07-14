@@ -12,11 +12,6 @@ const (
 )
 
 type (
-	// Workspace describes a workspace module
-	Workspace interface {
-		GetWorkspaceName() string
-	}
-
 	// Source describes a source module
 	Source interface {
 		GetPriority() int

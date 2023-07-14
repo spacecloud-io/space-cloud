@@ -1,6 +1,8 @@
 package provider
 
-import "github.com/spacecloud-io/space-cloud/managers/apis"
+import (
+	"github.com/spacecloud-io/space-cloud/managers/apis"
+)
 
 // GetAPIRoutes returns all the apis that are exposed by this app
 func (a *App) GetAPIRoutes() apis.APIs {
@@ -30,6 +32,9 @@ func (a *App) prepareAPIRoutes() {
 				if workspace.name != "main" {
 					api.Headers["x-sc-workspace"] = []string{workspace.name}
 				}
+
+				// Add the workspace name to the api to gurantee uniqueness
+				api.Name += workspace.name
 
 				a.apis = append(a.apis, api)
 			}

@@ -28,7 +28,6 @@ func GetCredentials() (Credentials, error) {
 	if err != nil {
 		return creds, err
 	}
-	fmt.Println(creds)
 	return creds, nil
 }
 

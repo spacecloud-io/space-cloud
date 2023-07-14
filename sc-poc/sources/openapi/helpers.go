@@ -60,8 +60,8 @@ func (s *Source) createRPC(url, operationID, operationType, method string, respB
 		OperationType:  operationType,
 		RequestSchema:  reqSchema,
 		ResponseSchema: respSchema,
-		Plugins: plugins,
-		Call:    s.createCall(url, operationID, method, reqBody, parameters),
+		Plugins:        plugins,
+		Call:           s.createCall(url, operationID, method, reqBody, parameters),
 	}
 }
 
@@ -82,7 +82,7 @@ func (s *Source) createCall(url, operationID, method string, reqBody *openapi3.S
 		}
 
 		// Set request body for POST method
-		if method != http.MethodGet || method != http.MethodDelete {
+		if method != http.MethodGet && method != http.MethodDelete {
 			data, err := json.Marshal(vars)
 			if err != nil {
 				return nil, err
@@ -135,7 +135,6 @@ func createRequestParams(urlPath string, reqBodySchema *openapi3.Schema, params 
 		// if the parameter is in the query location
 		if param.Value.In == openapi3.ParameterInQuery {
 			// get the value of the parameter from the vars map
-			queryVal := vars[param.Value.Name]
 			queryVal, ok := vars[param.Value.Name]
 			if !ok {
 				continue
@@ -148,7 +147,7 @@ func createRequestParams(urlPath string, reqBodySchema *openapi3.Schema, params 
 					return "", nil, nil, err
 				}
 				// append the parameter name and value to queryString with an equal sign
-				queryString.Set(param.Value.Name, fmt.Sprintf("%s", string(queryVal)))
+				queryString.Set(param.Value.Name, string(queryVal))
 			} else {
 				// otherwise, append the parameter name and value to queryString with an equal sign and replace any spaces with plus signs
 				queryString.Set(param.Value.Name, fmt.Sprintf("%v", queryVal))

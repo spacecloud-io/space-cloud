@@ -10,7 +10,7 @@ type (
 		Deny   bool   `mapstructure:"deny"`
 	}
 
-	// PluginOPAParams describes the params of the `auth_opa` plugin
+	// PluginOPAParams describes the params of the `opa` plugin
 	PluginOPAParams struct {
 		Rego      string                `json:"rego"`
 		PolicyRef *v1alpha1.ResourceRef `json:"ref"`

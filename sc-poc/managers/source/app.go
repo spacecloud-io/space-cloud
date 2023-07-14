@@ -14,10 +14,9 @@ type App struct {
 	Config map[string][]json.RawMessage `json:"config"`
 
 	// Internal stuff
-	logger     *zap.Logger
-	sourceMap  map[string]map[string]Sources // [workspace] -> [provider] -> source
-	workspaces []string
-	plugins    []v1alpha1.HTTPPlugin
+	logger    *zap.Logger
+	sourceMap map[string]map[string]Sources // [workspace] -> [provider] -> source
+	plugins   []v1alpha1.HTTPPlugin
 }
 
 // CaddyModule returns the Caddy module information.
@@ -57,20 +56,6 @@ func (a *App) Provision(ctx caddy.Context) error {
 			t, err := ctx.LoadModuleByID(key, c)
 			if err != nil {
 				a.logger.Warn("Unable to load module for source", zap.String("group", gvr.Group), zap.String("version", gvr.Version), zap.String("resource", gvr.Resource))
-				continue
-			}
-
-			// Register the workspace name if the source was of type workspace
-			if ws, ok := t.(Workspace); ok {
-				name := ws.GetWorkspaceName()
-
-				// Skip if this was the main or root workspace
-				if name == "main" || name == "root" {
-					continue
-				}
-
-				// Add to list of workspaces
-				a.workspaces = append(a.workspaces, name)
 				continue
 			}
 

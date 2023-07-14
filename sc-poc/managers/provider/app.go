@@ -46,6 +46,12 @@ func (a *App) Provision(ctx caddy.Context) error {
 
 	// Initialise a Provider set for each workspace
 	for _, ws := range workspaces {
+		// Skip if its the main workspace. We want it to be the last one to be initialized.
+		if ws == "main" {
+			continue
+		}
+
+		// Generate providers for this workspace
 		providers, err := a.generateProviders(ctx, ws)
 		if err != nil {
 			return err

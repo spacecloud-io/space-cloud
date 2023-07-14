@@ -38,5 +38,11 @@ func (a *App) GetProvider(workspace, provider string) (any, error) {
 		return p, nil
 	}
 
+	// Get the provider from the main workspace if it sin't present in the
+	// provided workspace
+	if workspace != "main" {
+		return a.GetProvider("main", provider)
+	}
+
 	return nil, fmt.Errorf("unable to find workspace '%s' to get provider '%s'", workspace, provider)
 }

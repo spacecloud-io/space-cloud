@@ -21,10 +21,7 @@ type GraphqlSource struct {
 	v1alpha1.GraphqlSource
 
 	// Internal stuff
-	graphqlTypes map[string]graphql.Type
-
-	queryRootType    graphql.Fields
-	mutationRootType graphql.Fields
+	rawSchema *introspectionResponse
 }
 
 // CaddyModule returns the Caddy module information.
@@ -37,24 +34,7 @@ func (GraphqlSource) CaddyModule() caddy.ModuleInfo {
 
 // Provision provisions the source
 func (s *GraphqlSource) Provision(ctx caddy.Context) error {
-	s.graphqlTypes = map[string]graphql.Type{
-		graphql.Boolean.Name():  graphql.Boolean,
-		graphql.String.Name():   graphql.String,
-		graphql.Int.Name():      graphql.Int,
-		graphql.Float.Name():    graphql.Float,
-		graphql.ID.Name():       graphql.ID,
-		graphql.DateTime.Name(): graphql.DateTime,
-	}
-
-	s.queryRootType = graphql.Fields{}
-	s.mutationRootType = graphql.Fields{}
-
-	// Fetch the graphql schema from the url
-	if err := s.getSchemaFromSource(); err != nil {
-		return err
-	}
-
-	return nil
+	return s.getRawGraphqlSchema()
 }
 
 // GetPriority returns the priority of the source. Higher
@@ -63,13 +43,27 @@ func (s *GraphqlSource) GetPriority() int {
 }
 
 // GetTypes returns the root graphql types for this source
-func (s *GraphqlSource) GetTypes() (queryTypes, mutationTypes graphql.Fields) {
-	return s.queryRootType, s.mutationRootType
-}
+func (s *GraphqlSource) GetGraphQLTypes() *graphqlProvider.Types {
+	graphqlTypes := map[string]graphql.Type{
+		graphql.Boolean.Name():  graphql.Boolean,
+		graphql.String.Name():   graphql.String,
+		graphql.Int.Name():      graphql.Int,
+		graphql.Float.Name():    graphql.Float,
+		graphql.ID.Name():       graphql.ID,
+		graphql.DateTime.Name(): graphql.DateTime,
+	}
 
-// GetAllTypes returns the all types in the source's type system
-func (s *GraphqlSource) GetAllTypes() map[string]graphql.Type {
-	return s.graphqlTypes
+	queryRootType := graphql.Fields{}
+	mutationRootType := graphql.Fields{}
+
+	// Fetch the graphql schema from the url
+	s.prepareGraphqlTypes(queryRootType, mutationRootType, graphqlTypes)
+
+	return &graphqlProvider.Types{
+		QueryTypes:    queryRootType,
+		MutationTypes: mutationRootType,
+		AllTypes:      graphqlTypes,
+	}
 }
 
 // GetProviders returns the providers this source is applicable for

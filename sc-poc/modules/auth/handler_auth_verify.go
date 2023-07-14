@@ -45,7 +45,11 @@ func (h *AuthVerifyHandler) Provision(ctx caddy.Context) error {
 func (h *AuthVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	// Get the auth app
 	ws := source.GetWorkspaceNameFromHeaders(r)
-	app, _ := h.providerMan.GetProvider(ws, "auth")
+	app, err := h.providerMan.GetProvider(ws, "auth")
+	if err != nil {
+		h.logger.Error("Unable to load auth module", zap.String("workspace", ws), zap.Error(err))
+		return err
+	}
 	authApp := app.(*App)
 
 	// Prepare authentication object

@@ -9,8 +9,8 @@ import (
 	"github.com/spacecloud-io/space-cloud/modules/graphql/types"
 )
 
-func (s *GraphqlSource) addToRootType(rootTypeName string, rootType graphql.Fields) {
-	if t, p := s.graphqlTypes[fmt.Sprintf("%s_%s", s.Name, rootTypeName)]; p {
+func (s *GraphqlSource) addToRootType(rootTypeName string, rootType graphql.Fields, graphqlTypes map[string]graphql.Type) {
+	if t, p := graphqlTypes[fmt.Sprintf("%s_%s", s.Name, rootTypeName)]; p {
 		q := t.(*graphql.Object)
 		for fieldName, field := range q.Fields() {
 			// Skip _join fields

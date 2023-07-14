@@ -1,8 +1,6 @@
 package compiledgraphql
 
 import (
-	"sync"
-
 	"github.com/caddyserver/caddy/v2"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -23,7 +21,7 @@ type Source struct {
 	v1alpha1.CompiledGraphqlSource
 
 	// Internal stuff
-	wg            *sync.WaitGroup
+	isReady       bool
 	compiledQuery *graphql.CompiledQuery
 }
 
@@ -37,8 +35,6 @@ func (Source) CaddyModule() caddy.ModuleInfo {
 
 // Provision provisions the source
 func (s *Source) Provision(ctx caddy.Context) error {
-	s.wg = &sync.WaitGroup{}
-	s.wg.Add(1)
 	return nil
 }
 
@@ -58,7 +54,14 @@ func (s *Source) GetProviders() []string {
 
 // Compiler resolves the graphql dependency
 func (s *Source) GraphqlCompiler(fn graphql.CompilerFn) error {
-	defer s.wg.Done()
+	if s.isReady {
+		return nil
+	}
+
+	// Mark the source as ready once compilation was successful
+	defer func() {
+		s.isReady = true
+	}()
 	return s.compile(fn)
 }
 
@@ -68,9 +71,6 @@ func (s *Source) GetCompiledQuery() *graphql.CompiledQuery {
 }
 
 func (s *Source) GetRPCs() rpc.RPCs {
-	// Wait for the graphql configuration to be done
-	s.wg.Wait()
-
 	requestSchema, responseSchema := s.getSchemas()
 	r := &rpc.RPC{
 		Name:          s.Name,
