@@ -1,11 +1,13 @@
 package auth
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/modules/auth/types"
@@ -31,14 +33,6 @@ func (KratosAuthVerifyHandler) CaddyModule() caddy.ModuleInfo {
 func (h *KratosAuthVerifyHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 
-	// Get the auth app
-	// app, err := ctx.App("auth")
-	// if err != nil {
-	// 	h.logger.Error("Unable to load the auth provider", zap.Error(err))
-	// 	return err
-	// }
-
-	// h.authApp = app.(*App)
 	return nil
 }
 
@@ -47,19 +41,47 @@ func (h *KratosAuthVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	// Prepare authentication object
 	result := types.AuthResult{}
 	// Check if token is present in the header
-	token, p := getTokenFromHeader(r)
-	fmt.Println(token)
-	if p {
 
-		// claims, err := h.authApp.Verify(token)
-		// if err != nil {
-		// 	SendUnauthenticatedResponse(w, r, h.logger, err)
-		// 	return nil
-		// }
+	var foo map[string]interface{}
+	client := &http.Client{}
 
-		// result.IsAuthenticated = true
-		// result.Claims = claims
+	kratosEndpoint := viper.GetString("kratos.endpoint")
+	// Create a new GET request to the /sessions/whoami endpoint
+	req, err := http.NewRequest("GET", kratosEndpoint+"/sessions/whoami", nil)
+	if err != nil {
+		fmt.Println("Error creating GET request:", err)
+		return err
 	}
+	if cookie := r.Header.Get("Cookie"); len(cookie) != 0 {
+		req.Header.Set("Cookie", cookie)
+	}
+	if cookie := r.Header.Get("Cookie"); len(cookie) != 0 {
+		req.Header.Set("Cookie", cookie)
+	}
+	if token, p := getTokenFromHeader(r); p {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	//token := "ory_st_94jGcnytycUNCtKIVchOfiyWrs8wlJYY"
+	//req.Header.Set("Authorization", "Bearer "+token)
+	// Send the request
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error sending GET request:", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	err = json.NewDecoder(resp.Body).Decode(&foo)
+	//body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return err
+	}
+	// Print the response body
+	//fmt.Println(string(body))
+	j, _ := json.MarshalIndent(foo, "", " ")
+	fmt.Println(string(j))
 
 	// Add the result in the context object
 	r = utils.StoreAuthenticationResult(r, &result)
