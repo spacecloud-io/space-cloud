@@ -9,14 +9,14 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-func GenerateAPI(name string, doc *openapi3.T) string {
+func (r *RTK) GenerateAPIs(doc *openapi3.T) (string, string, error) {
+	fileName := "api.ts"
 	var s string
-
 	s += apiPrefix
 	s += "\n"
 	s += "// Define a service using a base URL and expected endpoints\n"
 	s += "export const api = createApi({\n"
-	s += fmt.Sprintf("  reducerPath: \"%s\",\n", name)
+	s += fmt.Sprintf("  reducerPath: \"%s\",\n", r.name)
 	s += "  baseQuery: fetchBaseQuery(config),\n"
 
 	tagsJSON, _ := json.Marshal(getAllTags(doc))
@@ -26,7 +26,7 @@ func GenerateAPI(name string, doc *openapi3.T) string {
 	s += "  }),\n"
 	s += "});\n\n"
 	s += generateAPIExport(doc)
-	return s
+	return s, fileName, nil
 }
 
 func generateAPIExport(doc *openapi3.T) string {
@@ -44,17 +44,6 @@ func generateAPIExport(doc *openapi3.T) string {
 	return ops
 }
 
-func getQueries(doc *openapi3.T) string {
-	var s string
-	for path, pathDef := range doc.Paths {
-		s += getQueryFromOperation(path, http.MethodGet, pathDef.Get)
-		s += getQueryFromOperation(path, http.MethodDelete, pathDef.Delete)
-		s += getQueryFromOperation(path, http.MethodPost, pathDef.Post)
-		s += getQueryFromOperation(path, http.MethodPut, pathDef.Put)
-	}
-	return s
-}
-
 func getExportedFuncFromOperation(operation *openapi3.Operation) string {
 	if !isOperationValidForTypeGen(operation) {
 		return ""
@@ -64,61 +53,6 @@ func getExportedFuncFromOperation(operation *openapi3.Operation) string {
 	ops += strings.Title(getQueryType(operation))
 	ops += ", "
 	return ops
-}
-
-func getQueryFromOperation(path, method string, operation *openapi3.Operation) string {
-	if !isOperationValidForTypeGen(operation) {
-		return ""
-	}
-
-	s := addPadding(2)
-	s += getTypeName(operation.OperationID, true)
-	s += ": "
-	s += fmt.Sprintf("builder.%s%s({\n",
-		getQueryType(operation), getAPITypes(operation))
-	s += fmt.Sprintf("      query: helpers.prepareQuery(\"%s\", \"%s\"),\n", path, method)
-
-	// Check if caching tags are provided
-	if tags, p := operation.Extensions["x-tags"]; p {
-		if getQueryType(operation) == "query" {
-			s += fmt.Sprintf("      providesTags: helpers.getTags(%s),\n", tags.(json.RawMessage))
-		} else {
-			s += fmt.Sprintf("      invalidatesTags: helpers.getTags(%s),\n", tags.(json.RawMessage))
-		}
-	}
-	s += "    }),\n"
-	return s
-}
-
-func getQueryType(operation *openapi3.Operation) string {
-	opType := operation.Extensions["x-request-op-type"].(json.RawMessage)
-
-	return string(opType)[1 : len(opType)-1]
-}
-
-func getAPITypes(operation *openapi3.Operation) string {
-	s := "<"
-	s += fmt.Sprintf("httpTypes.%sResponse", getTypeName(operation.OperationID, false))
-	s += ", "
-
-	// Prepare the request schema
-	requestSchema := &openapi3.SchemaRef{Value: &openapi3.Schema{Properties: openapi3.Schemas{}}}
-	if operation.RequestBody != nil {
-		requestSchema = operation.RequestBody.Value.Content["application/json"].Schema
-	}
-	for _, param := range operation.Parameters {
-		requestSchema.Value.Properties[param.Value.Name] = param.Value.Schema
-	}
-
-	if len(requestSchema.Value.Properties) > 0 {
-		s += fmt.Sprintf("httpTypes.%sRequest", getTypeName(operation.OperationID, false))
-	} else {
-		s += "void"
-	}
-
-	s += ">"
-
-	return s
 }
 
 func getAllTags(doc *openapi3.T) []string {
@@ -167,6 +101,72 @@ func getTagsFromOperation(operation *openapi3.Operation) map[string]struct{} {
 		finalTags[t.Type] = struct{}{}
 	}
 	return finalTags
+}
+
+func getQueries(doc *openapi3.T) string {
+	var s string
+	for path, pathDef := range doc.Paths {
+		s += getQueryFromOperation(path, http.MethodGet, pathDef.Get)
+		s += getQueryFromOperation(path, http.MethodDelete, pathDef.Delete)
+		s += getQueryFromOperation(path, http.MethodPost, pathDef.Post)
+		s += getQueryFromOperation(path, http.MethodPut, pathDef.Put)
+	}
+	return s
+}
+
+func getQueryFromOperation(path, method string, operation *openapi3.Operation) string {
+	if !isOperationValidForTypeGen(operation) {
+		return ""
+	}
+
+	s := addPadding(2)
+	s += getTypeName(operation.OperationID, true)
+	s += ": "
+	s += fmt.Sprintf("builder.%s%s({\n",
+		getQueryType(operation), getAPITypes(operation))
+	s += fmt.Sprintf("      query: helpers.prepareQuery(\"%s\", \"%s\"),\n", path, method)
+
+	// Check if caching tags are provided
+	if tags, p := operation.Extensions["x-tags"]; p {
+		if getQueryType(operation) == "query" {
+			s += fmt.Sprintf("      providesTags: helpers.getTags(%s),\n", tags.(json.RawMessage))
+		} else {
+			s += fmt.Sprintf("      invalidatesTags: helpers.getTags(%s),\n", tags.(json.RawMessage))
+		}
+	}
+	s += "    }),\n"
+	return s
+}
+
+func getQueryType(operation *openapi3.Operation) string {
+	opType := operation.Extensions["x-request-op-type"].(string)
+
+	return string(opType)[1 : len(opType)-1]
+}
+
+func getAPITypes(operation *openapi3.Operation) string {
+	s := "<"
+	s += fmt.Sprintf("httpTypes.%sResponse", getTypeName(operation.OperationID, false))
+	s += ", "
+
+	// Prepare the request schema
+	requestSchema := &openapi3.SchemaRef{Value: &openapi3.Schema{Properties: openapi3.Schemas{}}}
+	if operation.RequestBody != nil {
+		requestSchema = operation.RequestBody.Value.Content["application/json"].Schema
+	}
+	for _, param := range operation.Parameters {
+		requestSchema.Value.Properties[param.Value.Name] = param.Value.Schema
+	}
+
+	if len(requestSchema.Value.Properties) > 0 {
+		s += fmt.Sprintf("httpTypes.%sRequest", getTypeName(operation.OperationID, false))
+	} else {
+		s += "void"
+	}
+
+	s += ">"
+
+	return s
 }
 
 var apiPrefix string = `

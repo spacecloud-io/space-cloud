@@ -7,8 +7,9 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/golang"
-	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/rtk"
+	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver"
+	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver/golang"
+	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver/rtk"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -41,35 +42,40 @@ func NewCommand() *cobra.Command {
 				os.Exit(1)
 			}
 
+			var driver driver.Driver
+
 			switch lang {
 			case "rtk":
+				driver = rtk.MakeRTKDriver(name)
+
 				_ = os.MkdirAll(output, 0777)
-				_ = os.WriteFile(filepath.Join(output, "types.ts"), []byte(rtk.GenerateTypes(doc)), 0777)
 				_ = os.WriteFile(filepath.Join(output, "helpers.ts"), []byte(rtk.HelperTS), 0777)
-				_ = os.WriteFile(filepath.Join(output, "api.ts"), []byte(rtk.GenerateAPI(name, doc)), 0777)
 				_ = os.WriteFile(filepath.Join(output, "index.ts"), []byte(rtk.IndexTS), 0777)
 				if _, err = os.Stat(filepath.Join(output, "http.config.ts")); os.IsNotExist(err) {
 					_ = os.WriteFile(filepath.Join(output, "http.config.ts"), []byte(rtk.ConfigTS), 0777)
 				}
 			case "go":
-				api, err := golang.GenerateAPI(doc, pkgName)
-				if err != nil {
-					fmt.Printf("error generating api: %s\n", err)
-					os.Exit(1)
-				}
-
-				types, err := golang.GenerateTypes(doc, pkgName)
-				if err != nil {
-					fmt.Printf("error generating types: %s\n", err)
-					os.Exit(1)
-				}
-
-				_ = os.MkdirAll(output, 0777)
-				_ = os.WriteFile(filepath.Join(output, "api.gen.go"), []byte(api), 0777)
-				_ = os.WriteFile(filepath.Join(output, "types.gen.go"), []byte(types), 0777)
+				driver = golang.MakeGoDriver(pkgName)
 			default:
 				fmt.Printf("Invalid language name or language %s not supported.\n", lang)
+				return nil
 			}
+
+			_ = os.MkdirAll(output, 0777)
+			api, fileName, err := driver.GenerateAPIs(doc)
+			if err != nil {
+				fmt.Printf("error generating api: %s\n", err)
+				os.Exit(1)
+			}
+			_ = os.WriteFile(filepath.Join(output, fileName), []byte(api), 0777)
+
+			types, fileName, err := driver.GenerateTypes(doc)
+			if err != nil {
+				fmt.Printf("error generating types: %s\n", err)
+				os.Exit(1)
+			}
+			_ = os.WriteFile(filepath.Join(output, fileName), []byte(types), 0777)
+
 			return nil
 		},
 	}

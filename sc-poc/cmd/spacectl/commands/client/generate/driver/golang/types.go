@@ -8,11 +8,12 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-func GenerateTypes(spec *openapi3.T, pkgName string) (string, error) {
+func (goDriver *Golang) GenerateTypes(spec *openapi3.T) (string, string, error) {
+	fileName := "types.gen.go"
 	var b strings.Builder
 
 	// package name and imports
-	pkgOut := fmt.Sprintf("package %s\n\n", pkgName)
+	pkgOut := fmt.Sprintf("package %s\n\n", goDriver.pkgName)
 	_, _ = b.WriteString(pkgOut)
 
 	// types
@@ -21,11 +22,11 @@ func GenerateTypes(spec *openapi3.T, pkgName string) (string, error) {
 
 	// The generation code produces unindented horrors. Use the Go Imports
 	// to make it all pretty.
-	outBytes, err := imports.Process(pkgName+".go", []byte(b.String()), nil)
+	outBytes, err := imports.Process(goDriver.pkgName+".go", []byte(b.String()), nil)
 	if err != nil {
-		return "", fmt.Errorf("error formatting Go code: %w", err)
+		return "", "", fmt.Errorf("error formatting Go code: %w", err)
 	}
-	return string(outBytes), nil
+	return string(outBytes), fileName, nil
 }
 
 func generateTypes(doc *openapi3.T) string {
@@ -182,31 +183,6 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string) string {
 		s += generateTypeDef(schema, name)
 	}
 	return s
-}
-
-func getTypeName(name string, skipFirst bool) string {
-	arr := strings.Split(name, "-")
-	for i, item := range arr {
-		if i == 0 && skipFirst {
-			arr[i] = item
-			continue
-		}
-
-		arr[i] = strings.Title(item)
-	}
-	s1 := strings.Join(arr, "")
-
-	arr = strings.Split(s1, "_")
-	for i, item := range arr {
-		if i == 0 && skipFirst {
-			arr[i] = item
-			continue
-		}
-
-		arr[i] = strings.Title(item)
-	}
-
-	return strings.Join(arr, "")
 }
 
 func isRequired(required []string, name string) bool {
