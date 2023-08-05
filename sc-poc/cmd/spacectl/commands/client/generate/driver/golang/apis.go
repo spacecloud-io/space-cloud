@@ -10,28 +10,29 @@ import (
 	"golang.org/x/tools/imports"
 )
 
-func GenerateAPI(spec *openapi3.T, pkgName string) (string, error) {
+func (goDriver *Golang) GenerateAPIs(spec *openapi3.T) (string, string, error) {
+	fileName := "api.gen.go"
 	var b strings.Builder
 
 	// package name and imports
-	importsOut := generateImports(pkgName)
+	importsOut := goDriver.generateImports()
 	_, _ = b.WriteString(importsOut)
 
 	// client
-	clientOut := generateClient(spec)
+	clientOut := goDriver.generateClient(spec)
 	_, _ = b.WriteString(clientOut)
 
 	// The generation code produces unindented horrors. Use the Go Imports
 	// to make it all pretty.
-	outBytes, err := imports.Process(pkgName+".go", []byte(b.String()), nil)
+	outBytes, err := imports.Process(goDriver.pkgName+".go", []byte(b.String()), nil)
 	if err != nil {
-		return "", fmt.Errorf("error formatting Go code: %w", err)
+		return "", "", fmt.Errorf("error formatting Go code: %w", err)
 	}
-	return string(outBytes), nil
+	return string(outBytes), fileName, nil
 }
 
-func generateImports(pkgName string) string {
-	s := fmt.Sprintf("package %s\n\n", pkgName)
+func (goDriver *Golang) generateImports() string {
+	s := fmt.Sprintf("package %s\n\n", goDriver.pkgName)
 
 	imports := []string{"context", "net/http", "net/url", "bytes", "encoding/json"}
 	s += "import (\n"
@@ -42,7 +43,7 @@ func generateImports(pkgName string) string {
 	return s
 }
 
-func generateClient(doc *openapi3.T) string {
+func (goDriver *Golang) generateClient(spec *openapi3.T) string {
 	s := `
 // MiddlewareFn is the function signature for the MiddlewareFn callback function
 type MiddlewareFn func(ctx context.Context, req *http.Request) error
@@ -92,7 +93,7 @@ func (c *Client) applyMiddlewares(ctx context.Context, req *http.Request) error 
 
 	// Generate operation methods
 	s += "\n\n"
-	for path, pathDef := range doc.Paths {
+	for path, pathDef := range spec.Paths {
 		s += getFuncFromOperation(path, http.MethodGet, pathDef.Get)
 		s += getFuncFromOperation(path, http.MethodPost, pathDef.Post)
 		s += getFuncFromOperation(path, http.MethodPut, pathDef.Put)

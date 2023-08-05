@@ -5,10 +5,12 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-func GenerateTypes(doc *openapi3.T) string {
+func (r *RTK) GenerateTypes(doc *openapi3.T) (string, string, error) {
+	fileName := "types.ts"
 	var b strings.Builder
 	for _, pathDef := range doc.Paths {
 		if isOperationValidForTypeGen(pathDef.Get) {
@@ -31,19 +33,7 @@ func GenerateTypes(doc *openapi3.T) string {
 			_, _ = b.WriteString(s)
 		}
 	}
-	return b.String()
-}
-
-func isOperationValidForTypeGen(operation *openapi3.Operation) bool {
-	if operation == nil {
-		return false
-	}
-
-	if _, p := operation.Extensions["x-client-gen"]; p {
-		return true
-	}
-
-	return false
+	return b.String(), fileName, nil
 }
 
 func generateTypesFromOperation(operation *openapi3.Operation) string {
@@ -114,27 +104,4 @@ func generateTypeDef(schema *openapi3.SchemaRef, depth int) string {
 	}
 
 	return ""
-}
-
-func getTypeName(name string, skipFirst bool) string {
-	arr := strings.Split(name, "-")
-	for i, item := range arr {
-		if i == 0 && skipFirst {
-			arr[i] = item
-			continue
-		}
-
-		arr[i] = strings.Title(item)
-	}
-
-	return strings.Join(arr, "")
-}
-
-func addPadding(depth int) string {
-	s := ""
-	for i := 0; i < depth; i++ {
-		s += "  "
-	}
-
-	return s
 }
