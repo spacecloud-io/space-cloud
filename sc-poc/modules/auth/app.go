@@ -12,6 +12,8 @@ import (
 
 // App describes the state of the auth app
 type App struct {
+	Workspace string `json:"workspace"`
+
 	// For internal use
 	logger   *zap.Logger
 	secrets  []SecretSource
@@ -21,7 +23,7 @@ type App struct {
 // CaddyModule returns the Caddy module information.
 func (App) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "auth",
+		ID:  "provider.auth",
 		New: func() caddy.Module { return new(App) },
 	}
 }
@@ -35,17 +37,12 @@ func (a *App) Provision(ctx caddy.Context) error {
 	sourceMan := sourceManT.(*source.App)
 
 	// Get all relevant sources
-	sources := sourceMan.GetSources("auth")
+	sources := sourceMan.GetSources(a.Workspace, "auth")
+
 	a.secrets = []SecretSource{}
 	a.policies = make(map[string]PolicySource)
 	for _, src := range sources {
 		name := src.GetName()
-
-		// First resolve the source's dependencies
-		if err := source.ResolveDependencies(ctx, "auth", src); err != nil {
-			a.logger.Error("Unable to resolve source's dependency", zap.String("source", src.GetName()), zap.Error(err))
-			return err
-		}
 
 		// Get sources with secret
 		s, ok := src.(SecretSource)

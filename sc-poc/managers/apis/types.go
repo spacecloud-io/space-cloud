@@ -47,6 +47,7 @@ type (
 	API struct {
 		Name    string
 		Path    string
+		Headers map[string][]string
 		OpenAPI *OpenAPI
 		Handler http.Handler
 		Plugins []v1alpha1.HTTPPlugin

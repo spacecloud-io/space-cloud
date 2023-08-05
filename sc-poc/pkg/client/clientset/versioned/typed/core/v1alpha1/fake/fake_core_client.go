@@ -40,12 +40,20 @@ func (c *FakeCoreV1alpha1) JwtHSASecrets(namespace string) v1alpha1.JwtHSASecret
 	return &FakeJwtHSASecrets{c, namespace}
 }
 
+func (c *FakeCoreV1alpha1) JwtRSASecrets(namespace string) v1alpha1.JwtRSASecretInterface {
+	return &FakeJwtRSASecrets{c, namespace}
+}
+
 func (c *FakeCoreV1alpha1) OPAPolicies(namespace string) v1alpha1.OPAPolicyInterface {
 	return &FakeOPAPolicies{c, namespace}
 }
 
 func (c *FakeCoreV1alpha1) OpenAPISources(namespace string) v1alpha1.OpenAPISourceInterface {
 	return &FakeOpenAPISources{c, namespace}
+}
+
+func (c *FakeCoreV1alpha1) PubsubChannels(namespace string) v1alpha1.PubsubChannelInterface {
+	return &FakePubsubChannels{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

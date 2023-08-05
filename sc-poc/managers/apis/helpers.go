@@ -56,7 +56,7 @@ func generateOpenAPIDocAndAPIs(ctx caddy.Context) (*openapi3.T, []*API, error) {
 			Version:     "v0.22.0",
 		},
 		Paths: paths,
-		Components: openapi3.Components{
+		Components: &openapi3.Components{
 			Schemas: schemas,
 			SecuritySchemes: openapi3.SecuritySchemes{
 				"bearerAuth": &openapi3.SecuritySchemeRef{
@@ -81,7 +81,7 @@ func makeSubRouter(ctx caddy.Context, allAPIs []*API) (caddyhttp.Handler, error)
 		// Get the methods to be used
 		methods := getMethods(api)
 
-		handlerObj := prepareRoute(api, path, methods, indexes)
+		handlerObj := prepareRoute(api, path, methods, api.Headers, indexes)
 		routeList = append(routeList, handlerObj)
 	}
 
@@ -93,11 +93,11 @@ func makeSubRouter(ctx caddy.Context, allAPIs []*API) (caddyhttp.Handler, error)
 	return routeList.Compile(emptyHandler), nil
 }
 
-func prepareRoute(api *API, path string, methods, indexes []string) caddyhttp.Route {
+func prepareRoute(api *API, path string, methods []string, headers map[string][]string, indexes []string) caddyhttp.Route {
 	// Create the route for this api
 	apiRoute := caddyhttp.Route{
 		Group:          api.app,
-		MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, methods),
+		MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, methods, headers),
 		HandlersRaw:    make([]json.RawMessage, 0, len(api.Plugins)+1),
 	}
 
@@ -106,12 +106,17 @@ func prepareRoute(api *API, path string, methods, indexes []string) caddyhttp.Ro
 
 	// First we add the handlers for all the plugins
 	for _, p := range api.Plugins {
-		var params map[string]interface{}
+		params := map[string]any{}
 		if len(p.Params.Raw) > 0 {
 			_ = json.Unmarshal(p.Params.Raw, &params)
 		}
+
+		// Always inject the name as a parameter
+		params["name"] = p.Name
+
+		// Append the plugin to the handler's array
 		apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, utils.GetCaddyHandlers(utils.Handler{
-			HandlerName: p.Driver,
+			HandlerName: fmt.Sprintf("plugin_%s", p.Driver),
 			Params:      params,
 		})...)
 	}

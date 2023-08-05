@@ -5,8 +5,14 @@ import "github.com/graphql-go/graphql"
 type (
 	// Source describes the implementation of source from the graphql module
 	Source interface {
-		GetTypes() (queryTypes, mutationTypes graphql.Fields)
-		GetAllTypes() map[string]graphql.Type
+		GetGraphQLTypes() *Types
+	}
+
+	// Types describes all the types required by graphql provider
+	Types struct {
+		QueryTypes    graphql.Fields
+		MutationTypes graphql.Fields
+		AllTypes      map[string]graphql.Type
 	}
 
 	// Compiler describes the impmentation of a source which requires access to the query compiler

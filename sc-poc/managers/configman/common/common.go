@@ -24,14 +24,9 @@ func PrepareConfig(configuration ConfigType) (*caddy.Config, error) {
 	// Load all the managers
 	c.AppsRaw = make(caddy.ModuleMap)
 	c.AppsRaw["http"] = prepareHTTPHandlerApp(configuration)
+	c.AppsRaw["provider"] = prepareEmptyApp()
 	c.AppsRaw["source"] = prepareSourceManagerApp(configuration)
-
-	// Load our providers
-	c.AppsRaw["graphql"] = prepareEmptyApp()
-	c.AppsRaw["rpc"] = prepareEmptyApp()
-	c.AppsRaw["auth"] = prepareEmptyApp()
-	c.AppsRaw["pubsub"] = prepareEmptyApp()
-
+	c.AppsRaw["sc_admin"] = prepareEmptyApp()
 	return c, nil
 }
 

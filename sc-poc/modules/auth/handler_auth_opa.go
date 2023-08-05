@@ -11,39 +11,48 @@ import (
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"go.uber.org/zap"
 
-	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
+	"github.com/spacecloud-io/space-cloud/managers/provider"
+	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-// AuthOPAHandler is responsible to run OPA policy on the incomming request
-type AuthOPAHandler struct {
-	Rego      string                `json:"rego"`
-	PolicyRef *v1alpha1.ResourceRef `json:"ref"`
+// OPAPlugin is responsible to run OPA policy on the incomming request
+type OPAPlugin struct {
+	Name string `json:"name"`
+	Rego string `json:"rego"`
 
-	logger  *zap.Logger
-	authApp *App
+	logger      *zap.Logger
+	providerMan *provider.App
 }
 
 // CaddyModule returns the Caddy module information.
-func (AuthOPAHandler) CaddyModule() caddy.ModuleInfo {
+func (OPAPlugin) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "http.handlers.sc_auth_opa_handler",
-		New: func() caddy.Module { return new(AuthOPAHandler) },
+		ID:  "http.handlers.sc_plugin_opa_handler",
+		New: func() caddy.Module { return new(OPAPlugin) },
 	}
 }
 
 // Provision sets up the opa handler module.
-func (h *AuthOPAHandler) Provision(ctx caddy.Context) error {
+func (h *OPAPlugin) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 
-	// Get the auth app
-	app, _ := ctx.App("auth")
-	h.authApp = app.(*App)
+	providerManT, err := ctx.App("provider")
+	if err != nil {
+		return err
+	}
+	h.providerMan = providerManT.(*provider.App)
 	return nil
 }
 
 // ServeHTTP handles the http request
-func (h *AuthOPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+func (h *OPAPlugin) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+	// Get the auth app
+	ws := source.GetWorkspaceNameFromHeaders(r)
+	app, _ := h.providerMan.GetProvider(ws, "auth")
+	authApp := app.(*App)
+
+	// Get auth result
 	authResult, p := utils.GetAuthenticationResult(r.Context())
 	if !p {
 		h.logger.Error("Unable to load authentication result")
@@ -78,13 +87,13 @@ func (h *AuthOPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next 
 
 	// Calculate the policy name
 	var policyName string
-	if h.PolicyRef != nil {
-		policyName = h.PolicyRef.Name
+	if h.Name != "" {
+		policyName = h.Name
 	} else {
 		policyName = utils.Hash(h.Rego)
 	}
 
-	allowed, reason, err := h.authApp.EvaluatePolicy(r.Context(), policyName, input)
+	allowed, reason, err := authApp.EvaluatePolicy(r.Context(), policyName, input)
 	if err != nil {
 		h.logger.Error("Unable to run opa policy", zap.Error(err))
 		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err)
@@ -103,5 +112,5 @@ func (h *AuthOPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next 
 }
 
 // Interface guard
-var _ caddy.Provisioner = (*AuthOPAHandler)(nil)
-var _ caddyhttp.MiddlewareHandler = (*AuthOPAHandler)(nil)
+var _ caddy.Provisioner = (*OPAPlugin)(nil)
+var _ caddyhttp.MiddlewareHandler = (*OPAPlugin)(nil)

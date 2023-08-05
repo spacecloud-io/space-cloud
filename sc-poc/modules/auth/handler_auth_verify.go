@@ -7,6 +7,8 @@ import (
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"go.uber.org/zap"
 
+	"github.com/spacecloud-io/space-cloud/managers/provider"
+	"github.com/spacecloud-io/space-cloud/managers/source"
 	"github.com/spacecloud-io/space-cloud/modules/auth/types"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
@@ -14,8 +16,9 @@ import (
 // JWTAuthVerifyHandler is responsible to authenticate the incoming request
 // on a best effort basis
 type JWTAuthVerifyHandler struct {
-	logger  *zap.Logger
-	authApp *App
+	logger      *zap.Logger
+	authApp     *App
+	providerMan *provider.App
 }
 
 // CaddyModule returns the Caddy module information.
@@ -30,25 +33,32 @@ func (JWTAuthVerifyHandler) CaddyModule() caddy.ModuleInfo {
 func (h *JWTAuthVerifyHandler) Provision(ctx caddy.Context) error {
 	h.logger = ctx.Logger(h)
 
-	// Get the auth app
-	app, err := ctx.App("auth")
+	// Get the provider manager
+	providerManT, err := ctx.App("provider")
 	if err != nil {
-		h.logger.Error("Unable to load the auth provider", zap.Error(err))
 		return err
 	}
-
-	h.authApp = app.(*App)
+	h.providerMan = providerManT.(*provider.App)
 	return nil
 }
 
 // ServeHTTP handles the http request
 func (h *JWTAuthVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+	// Get the auth app
+	ws := source.GetWorkspaceNameFromHeaders(r)
+	app, err := h.providerMan.GetProvider(ws, "auth")
+	if err != nil {
+		h.logger.Error("Unable to load auth module", zap.String("workspace", ws), zap.Error(err))
+		return err
+	}
+	authApp := app.(*App)
+
 	// Prepare authentication object
 	result := types.AuthResult{}
 	// Check if token is present in the header
 	token, p := getTokenFromHeader(r)
 	if p {
-		claims, err := h.authApp.Verify(token)
+		claims, err := authApp.Verify(token)
 		if err != nil {
 			SendUnauthenticatedResponse(w, r, h.logger, err)
 			return nil

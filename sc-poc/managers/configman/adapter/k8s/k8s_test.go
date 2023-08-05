@@ -50,7 +50,7 @@ func TestAddOrUpdateConfig(t *testing.T) {
 				},
 				"plugins": []interface{}{
 					map[string]interface{}{
-						"driver": "auth_opa",
+						"driver": "opa",
 						"name":   "only-admins",
 						"params": map[string]interface{}{
 							"ref": map[string]interface{}{

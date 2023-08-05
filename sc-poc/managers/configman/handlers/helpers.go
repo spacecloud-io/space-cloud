@@ -4,7 +4,7 @@ import "strings"
 
 func getName(path string) string {
 	arr := strings.Split(path, "/")
-	if len(arr) != 7 {
+	if len(arr) != 8 {
 		return ""
 	}
 

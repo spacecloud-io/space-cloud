@@ -27,6 +27,10 @@ func (s mockSource) GroupVersionKind() schema.GroupVersionKind {
 	return schema.GroupVersionKind{}
 }
 
+func (s mockSource) GetLabels() map[string]string {
+	return map[string]string{}
+}
+
 func TestSources_Sort(t *testing.T) {
 
 	tests := []struct {

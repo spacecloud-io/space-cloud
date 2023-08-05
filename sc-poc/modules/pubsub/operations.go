@@ -3,8 +3,11 @@ package pubsub
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 )
 
 // Publish publishes message to a topic
@@ -28,26 +31,74 @@ func (a *App) Subscribe(ctx context.Context, clientID, topic string, options Sub
 	return messages, nil
 }
 
-// Channels return channels with their schema
-func (a *App) Channels() ChannelsWithSchema {
-	return ChannelsWithSchema{
-		Channels: map[string]Channel{
-			"/sc/api": {
-				Name: "api-provision",
-				Payload: ChannelPayload{
-					Schema: map[string]interface{}{
-						"$ref": "#/components/schemas/APIManMsg",
-					},
+func (a *App) createInternalChannels() {
+	openapiProvisionChannel := v1alpha1.PubsubChannelSpec{
+		Channel: "/openapi/provision",
+		Payload: &v1alpha1.ChannelSchema{
+			Type:                 "object",
+			AdditionalProperties: json.RawMessage(fmt.Sprintf(`%t`, true)),
+		},
+		ProducerOptions: &v1alpha1.ChannelOptions{
+			Plugins: []v1alpha1.HTTPPlugin{
+				{
+					Name:   "",
+					Driver: "deny_user",
 				},
 			},
 		},
-		Components: &Components{
-			Schemas: map[string]interface{}{
-				"APIManMsg": map[string]interface{}{
-					"type":                 "object",
-					"additionalProperties": true,
+		ConsumerOptions: &v1alpha1.ChannelOptions{
+			Plugins: []v1alpha1.HTTPPlugin{
+				{
+					Name:   "",
+					Driver: "authenticate_sc_user",
 				},
 			},
 		},
 	}
+
+	asyncapiProvisionChannel := v1alpha1.PubsubChannelSpec{
+		Channel: "/asyncapi/provision",
+		Payload: &v1alpha1.ChannelSchema{
+			Type:                 "object",
+			AdditionalProperties: json.RawMessage(fmt.Sprintf(`%t`, true)),
+		},
+		ProducerOptions: &v1alpha1.ChannelOptions{
+			Plugins: []v1alpha1.HTTPPlugin{
+				{
+					Name:   "",
+					Driver: "deny_user",
+				},
+			},
+		},
+		ConsumerOptions: &v1alpha1.ChannelOptions{
+			Plugins: []v1alpha1.HTTPPlugin{
+				{
+					Name:   "",
+					Driver: "authenticate_sc_user",
+				},
+			},
+		},
+	}
+
+	a.channels = append(a.channels, openapiProvisionChannel, asyncapiProvisionChannel)
+}
+
+// Channels return channels with their schema
+func (a *App) Channels() ChannelsWithSchema {
+	channels := ChannelsWithSchema{
+		Channels: make(map[string]v1alpha1.PubsubChannelSpec),
+	}
+
+	for _, channel := range a.channels {
+		channelPath := getChannelPath(channel.Channel)
+		channels.Channels[channelPath] = channel
+	}
+	return channels
+}
+
+func getChannelPath(name string) string {
+	if name[0] != '/' {
+		name = "/" + name
+	}
+	return strings.ReplaceAll(name, "-", "/")
 }

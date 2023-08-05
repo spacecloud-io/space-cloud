@@ -5,11 +5,9 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"go.uber.org/zap"
-)
 
-func init() {
-	caddy.RegisterModule(App{})
-}
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
+)
 
 // App describes the source manager app
 type App struct {
@@ -17,7 +15,8 @@ type App struct {
 
 	// Internal stuff
 	logger    *zap.Logger
-	sourceMap map[string]Sources
+	sourceMap map[string]map[string]Sources // [workspace] -> [provider] -> source
+	plugins   []v1alpha1.HTTPPlugin
 }
 
 // CaddyModule returns the Caddy module information.
@@ -32,8 +31,21 @@ func (App) CaddyModule() caddy.ModuleInfo {
 func (a *App) Provision(ctx caddy.Context) error {
 	a.logger = ctx.Logger(a)
 
+	// Initialise internal datastructures
+	a.sourceMap = make(map[string]map[string]Sources, len(a.Config))
+
 	// Create a map of sources
-	a.sourceMap = make(map[string]Sources, len(a.Config))
+	a.plugins = []v1alpha1.HTTPPlugin{
+		{
+			Name:   "",
+			Driver: "deny_user",
+		},
+		{
+			Name:   "",
+			Driver: "authenticate-user",
+		},
+	}
+
 	for key, list := range a.Config {
 		gvr := GetResourceGVR(key)
 
@@ -53,16 +65,33 @@ func (a *App) Provision(ctx caddy.Context) error {
 				continue
 			}
 
+			// Extract the workspace this source belongs to
+			workspace := GetWorkspaceNameFromSource(source)
+
+			// Add the workspace to the source map if it doesn't already exist
+			if _, p := a.sourceMap[workspace]; !p {
+				a.sourceMap[workspace] = make(map[string]Sources, 1)
+			}
+
 			// Add the provider for all supported providers
 			for _, provider := range source.GetProviders() {
-				a.sourceMap[provider] = append(a.sourceMap[provider], source)
+				a.sourceMap[workspace][provider] = append(a.sourceMap[workspace][provider], source)
+			}
+
+			// Register the source against all requested providers
+			if plugin, ok := source.(Plugin); ok {
+				a.plugins = append(a.plugins, plugin.GetPluginDetails())
 			}
 		}
 	}
 
-	// Sort the sources for each provider
-	for _, s := range a.sourceMap {
-		s.Sort()
+	// Delete the `main` and `root` workspaces since they are internal
+
+	// Sort the sources for each provider in each workspace
+	for _, workspace := range a.sourceMap {
+		for _, sources := range workspace {
+			sources.Sort()
+		}
 	}
 
 	return nil

@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/caddyserver/caddy/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,10 +28,44 @@ func NewCommand() *cobra.Command {
 			_ = viper.BindPFlag("config.path", cmd.Flags().Lookup("config-path"))
 			_ = viper.BindPFlag("config.debounce-interval", cmd.Flags().Lookup("debounce-interval"))
 
+			_ = viper.BindPFlag("admin.secret", cmd.Flags().Lookup("admin.secret"))
+			_ = viper.BindPFlag("admin.username", cmd.Flags().Lookup("admin.username"))
+			_ = viper.BindPFlag("admin.password", cmd.Flags().Lookup("admin.password"))
+
 			_ = viper.BindPFlag("kratos.enable", cmd.Flags().Lookup("kratos-enable"))
 			_ = viper.BindPFlag("kratos.endpoint", cmd.Flags().Lookup("kratos-endpoint"))
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if !cmd.Flags().Changed("admin.secret") {
+				secret := ""
+				prompt := &survey.Input{
+					Message: "HSA256 Secret?",
+					Default: "your-256-bit-secret",
+				}
+				survey.AskOne(prompt, &secret)
+				viper.Set("admin.secret", secret)
+			}
+
+			if !cmd.Flags().Changed("admin.username") {
+				username := ""
+				prompt := &survey.Input{
+					Message: "Username?",
+					Default: "admin",
+				}
+				survey.AskOne(prompt, &username)
+				viper.Set("admin.username", username)
+			}
+
+			if !cmd.Flags().Changed("admin.password") {
+				password := ""
+				prompt := &survey.Input{
+					Message: "Password?",
+					Default: "admin",
+				}
+				survey.AskOne(prompt, &password)
+				viper.Set("admin.password", password)
+			}
+
 			if err := configman.InitializeConfigLoader(); err != nil {
 				log.Fatal("Unable to initialize config loader: ", err)
 			}
@@ -59,10 +94,6 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("config-adapter", "", "file", "Set the configuration loader to be used [file | k8s]")
 	cmd.Flags().StringP("config-path", "", "./sc-config", "Directory to use to manage SpaceCloud configuration")
 	cmd.Flags().StringP("debounce-interval", "", "500ms", "Debounce interval in milliseconds")
-
-	// kratos
-	cmd.Flags().BoolP("kratos-enable", "", false, "To enable kratos for authorisation")
-	cmd.Flags().StringP("kratos-endpoint", "", "", "The endpoint to send the request to kratos server")
 
 	return cmd
 }

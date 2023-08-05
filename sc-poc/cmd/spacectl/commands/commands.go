@@ -4,6 +4,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client"
+	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/login"
+	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/pkg"
 	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/run"
 )
 
@@ -20,6 +22,8 @@ func NewRootCommand() *cobra.Command {
 	// Add all sub commands
 	cmd.AddCommand(run.NewCommand())
 	cmd.AddCommand(client.NewCommand())
+	cmd.AddCommand(pkg.NewCommand())
+	cmd.AddCommand(login.NewCommand())
 
 	return cmd
 }

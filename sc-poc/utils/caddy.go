@@ -33,7 +33,7 @@ func LoadAdminConfig() (*caddy.Config, error) {
 }
 
 // GetCaddyMatcherSet returns a caddy matcher set
-func GetCaddyMatcherSet(path []string, methods []string) []caddy.ModuleMap {
+func GetCaddyMatcherSet(path []string, methods []string, headers map[string][]string) []caddy.ModuleMap {
 	// We will always need to match based on the path
 	set := map[string]json.RawMessage{
 		"path": GetByteStringArray(path...),
@@ -42,6 +42,12 @@ func GetCaddyMatcherSet(path []string, methods []string) []caddy.ModuleMap {
 	// Match on method if provided
 	if len(methods) > 0 {
 		set["method"] = GetByteStringArray(methods...)
+	}
+
+	// Match on headers if provided
+	if len(headers) > 0 {
+		data, _ := json.Marshal(headers)
+		set["header"] = data
 	}
 
 	// Return the match set

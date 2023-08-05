@@ -5,16 +5,19 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/spacecloud-io/space-cloud/managers/apis"
+	"github.com/spacecloud-io/space-cloud/managers/provider"
 	"github.com/spacecloud-io/space-cloud/managers/source"
 )
 
 func init() {
 	caddy.RegisterModule(App{})
-	apis.RegisterApp("rpc", 200)
+	provider.Register("rpc", 0)
 }
 
 // App describes the state of the auth app
 type App struct {
+	Workspace string `json:"workspace"`
+
 	// For internal use
 	logger *zap.Logger
 
@@ -25,7 +28,7 @@ type App struct {
 // CaddyModule returns the Caddy module information.
 func (App) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
-		ID:  "rpc",
+		ID:  "provider.rpc",
 		New: func() caddy.Module { return new(App) },
 	}
 }
@@ -36,16 +39,10 @@ func (a *App) Provision(ctx caddy.Context) error {
 	a.logger = ctx.Logger(a)
 
 	// Get all the dependencies
-	sourceAppT, _ := ctx.App("source")
-	sourceApp := sourceAppT.(*source.App)
+	sourceManT, _ := ctx.App("source")
+	sourceMan := sourceManT.(*source.App)
 
-	for _, s := range sourceApp.GetSources("rpc") {
-		// First resolve the source's dependencies
-		if err := source.ResolveDependencies(ctx, "rpc", s); err != nil {
-			a.logger.Error("Unable to resolve source's dependency", zap.String("source", s.GetName()), zap.Error(err))
-			return err
-		}
-
+	for _, s := range sourceMan.GetSources(a.Workspace, "rpc") {
 		rpcSource, ok := s.(Source)
 		if ok {
 			a.prepareAPIs(rpcSource)
