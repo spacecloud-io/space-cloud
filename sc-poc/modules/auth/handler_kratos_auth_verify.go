@@ -89,5 +89,5 @@ func (h *KratosAuthVerifyHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 }
 
 // Interface guard
-var _ caddy.Provisioner = (*JWTAuthVerifyHandler)(nil)
-var _ caddyhttp.MiddlewareHandler = (*JWTAuthVerifyHandler)(nil)
+var _ caddy.Provisioner = (*KratosAuthVerifyHandler)(nil)
+var _ caddyhttp.MiddlewareHandler = (*KratosAuthVerifyHandler)(nil)
