@@ -10,6 +10,7 @@ import (
 	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver"
 	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver/golang"
 	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver/rtk"
+	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver/typescript"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -56,6 +57,8 @@ func NewCommand() *cobra.Command {
 				}
 			case "go":
 				driver = golang.MakeGoDriver(pkgName)
+			case "typescript":
+				driver = typescript.MakeTSDriver()
 			default:
 				fmt.Printf("Invalid language name or language %s not supported.\n", lang)
 				return nil

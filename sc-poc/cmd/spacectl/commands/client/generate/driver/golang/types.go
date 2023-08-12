@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver"
 	"golang.org/x/tools/imports"
 )
 
@@ -33,22 +34,22 @@ func generateTypes(doc *openapi3.T) string {
 	var b strings.Builder
 
 	for _, pathDef := range doc.Paths {
-		if isOperationValidForTypeGen(pathDef.Get) {
+		if driver.IsOperationValidForTypeGen(pathDef.Get) {
 			s := generateTypesFromOperation(pathDef.Get, "Get")
 			_, _ = b.WriteString(s)
 		}
 
-		if isOperationValidForTypeGen(pathDef.Delete) {
+		if driver.IsOperationValidForTypeGen(pathDef.Delete) {
 			s := generateTypesFromOperation(pathDef.Delete, "Delete")
 			_, _ = b.WriteString(s)
 		}
 
-		if isOperationValidForTypeGen(pathDef.Post) {
+		if driver.IsOperationValidForTypeGen(pathDef.Post) {
 			s := generateTypesFromOperation(pathDef.Post, "Post")
 			_, _ = b.WriteString(s)
 		}
 
-		if isOperationValidForTypeGen(pathDef.Put) {
+		if driver.IsOperationValidForTypeGen(pathDef.Put) {
 			s := generateTypesFromOperation(pathDef.Put, "Put")
 			_, _ = b.WriteString(s)
 		}

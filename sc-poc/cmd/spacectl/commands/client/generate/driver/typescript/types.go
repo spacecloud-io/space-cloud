@@ -1,16 +1,15 @@
-package rtk
+package typescript
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-
 	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
-func (r *RTK) GenerateTypes(doc *openapi3.T) (string, string, error) {
+func (t *Typescript) GenerateTypes(doc *openapi3.T) (string, string, error) {
 	fileName := "types.ts"
 	var b strings.Builder
 	for _, pathDef := range doc.Paths {
