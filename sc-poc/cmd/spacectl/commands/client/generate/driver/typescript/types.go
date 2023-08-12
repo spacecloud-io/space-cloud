@@ -76,6 +76,10 @@ func generateTypeDef(schema *openapi3.SchemaRef, depth int) string {
 	case "object":
 		s := "{\n"
 		for k, nestedSchema := range schema.Value.Properties {
+			if nestedSchema.Value.Type == "null" {
+				continue
+			}
+
 			s += driver.AddPadding(depth + 1)
 			s += k
 			if !utils.StringExists(k, schema.Value.Required...) {
@@ -100,6 +104,9 @@ func generateTypeDef(schema *openapi3.SchemaRef, depth int) string {
 		return s
 	case "integer":
 		s := "number"
+		return s
+	case "undefined":
+		s := "any"
 		return s
 	}
 

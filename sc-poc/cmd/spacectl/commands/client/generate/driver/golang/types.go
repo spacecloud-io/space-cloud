@@ -138,6 +138,10 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string) string {
 	s += fmt.Sprintf("// %s\n", name)
 	s += fmt.Sprintf("type %s struct {\n", name)
 	for k, nestedSchema := range schema.Value.Properties {
+		if nestedSchema.Value.Type == "null" {
+			continue
+		}
+
 		required := isRequired(schema.Value.Required, k)
 		primitiveGoType := getGoTypes(nestedSchema.Value.Type)
 		child := getTypeName(k, false)
@@ -176,6 +180,12 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string) string {
 				k += ",omitempty"
 			}
 			s += primitiveGoType
+			s += fmt.Sprintf(" `json:%q`\n", k)
+		case "undefined":
+			if !required {
+				k += ",omitempty"
+			}
+			s += "any"
 			s += fmt.Sprintf(" `json:%q`\n", k)
 		}
 	}
