@@ -77,7 +77,7 @@ func generateTypeDef(schema *openapi3.SchemaRef, depth int) string {
 	case "object":
 		s := "{\n"
 		for k, nestedSchema := range schema.Value.Properties {
-			if nestedSchema.Value.Type == "null" {
+			if nestedSchema.Value.Type == "" || nestedSchema.Value.Type == "null" {
 				continue
 			}
 
@@ -106,10 +106,8 @@ func generateTypeDef(schema *openapi3.SchemaRef, depth int) string {
 	case "integer":
 		s := "number"
 		return s
-	case "undefined":
+	default:
 		s := "any"
 		return s
 	}
-
-	return ""
 }
