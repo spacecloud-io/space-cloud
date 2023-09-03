@@ -103,7 +103,7 @@ func (c *Client) applyMiddlewares(ctx context.Context, req *http.Request) error 
 }
 
 func getFuncFromOperation(path, method string, operation *openapi3.Operation) string {
-	if !isOperationValidForTypeGen(operation) {
+	if !utils.IsOperationValidForTypeGen(operation) {
 		return ""
 	}
 
@@ -119,7 +119,7 @@ func getFuncFromOperation(path, method string, operation *openapi3.Operation) st
 	switch method {
 	case "GET":
 		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, %s) (*%s, error) {\n", opName, paramsArg, opName+"Result")
-		s += addPadding(1)
+		s += utils.AddPadding(1)
 		s += fmt.Sprintf("path := c.Server + %q\n", path)
 		s += fmt.Sprintf(`
 	url, err := url.Parse(path)
@@ -192,7 +192,7 @@ func getFuncFromOperation(path, method string, operation *openapi3.Operation) st
 
 	case "DELETE":
 		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, %s) (*%s, error) {\n", opName, paramsArg, opName+"Result")
-		s += addPadding(1)
+		s += utils.AddPadding(1)
 		s += fmt.Sprintf("path := c.Server + %q\n", path)
 		s += fmt.Sprintf(`
 	url, err := url.Parse(path)
