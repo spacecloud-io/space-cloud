@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver"
 	"github.com/spacecloud-io/space-cloud/utils"
 	"golang.org/x/tools/imports"
 )
@@ -104,7 +103,7 @@ func (c *Client) applyMiddlewares(ctx context.Context, req *http.Request) error 
 }
 
 func getFuncFromOperation(path, method string, operation *openapi3.Operation) string {
-	if !driver.IsOperationValidForTypeGen(operation) {
+	if !utils.IsOperationValidForTypeGen(operation) {
 		return ""
 	}
 
@@ -120,7 +119,7 @@ func getFuncFromOperation(path, method string, operation *openapi3.Operation) st
 	switch method {
 	case "GET":
 		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, %s) (*%s, error) {\n", opName, paramsArg, opName+"Result")
-		s += driver.AddPadding(1)
+		s += utils.AddPadding(1)
 		s += fmt.Sprintf("path := c.Server + %q\n", path)
 		s += fmt.Sprintf(`
 	url, err := url.Parse(path)
@@ -193,7 +192,7 @@ func getFuncFromOperation(path, method string, operation *openapi3.Operation) st
 
 	case "DELETE":
 		s += fmt.Sprintf("func (c *Client) %s(ctx context.Context, %s) (*%s, error) {\n", opName, paramsArg, opName+"Result")
-		s += driver.AddPadding(1)
+		s += utils.AddPadding(1)
 		s += fmt.Sprintf("path := c.Server + %q\n", path)
 		s += fmt.Sprintf(`
 	url, err := url.Parse(path)

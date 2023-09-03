@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver"
+	"github.com/spacecloud-io/space-cloud/utils"
 )
 
 func (t *Typescript) GenerateAPIs(doc *openapi3.T) (string, string, error) {
@@ -48,7 +48,7 @@ func generateAPIs(spec *openapi3.T) string {
 }
 
 func getFuncFromOperation(path string, method string, operation *openapi3.Operation) string {
-	if !driver.IsOperationValidForTypeGen(operation) {
+	if !utils.IsOperationValidForTypeGen(operation) {
 		return ""
 	}
 
@@ -76,10 +76,10 @@ func getFuncFromOperation(path string, method string, operation *openapi3.Operat
 	}
 
 	s := ""
-	s += driver.AddPadding(1)
+	s += utils.AddPadding(1)
 	s += fmt.Sprintf("%s = async (%s): Promise<httpTypes.%s> => {\n", opName, paramsArg, opName+"Response")
 	s += queryParams
-	s += driver.AddPadding(2)
+	s += utils.AddPadding(2)
 	s += pathVar
 	s += fmt.Sprintf(`
 		const options: RequestInit = {

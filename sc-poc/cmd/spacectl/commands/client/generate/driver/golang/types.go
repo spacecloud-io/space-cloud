@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver"
+	"github.com/spacecloud-io/space-cloud/utils"
 	"golang.org/x/tools/imports"
 )
 
@@ -34,22 +34,22 @@ func generateTypes(doc *openapi3.T) string {
 	var b strings.Builder
 
 	for _, pathDef := range doc.Paths {
-		if driver.IsOperationValidForTypeGen(pathDef.Get) {
+		if utils.IsOperationValidForTypeGen(pathDef.Get) {
 			s := generateTypesFromOperation(pathDef.Get, "Get")
 			_, _ = b.WriteString(s)
 		}
 
-		if driver.IsOperationValidForTypeGen(pathDef.Delete) {
+		if utils.IsOperationValidForTypeGen(pathDef.Delete) {
 			s := generateTypesFromOperation(pathDef.Delete, "Delete")
 			_, _ = b.WriteString(s)
 		}
 
-		if driver.IsOperationValidForTypeGen(pathDef.Post) {
+		if utils.IsOperationValidForTypeGen(pathDef.Post) {
 			s := generateTypesFromOperation(pathDef.Post, "Post")
 			_, _ = b.WriteString(s)
 		}
 
-		if driver.IsOperationValidForTypeGen(pathDef.Put) {
+		if utils.IsOperationValidForTypeGen(pathDef.Put) {
 			s := generateTypesFromOperation(pathDef.Put, "Put")
 			_, _ = b.WriteString(s)
 		}
@@ -138,7 +138,6 @@ func generateTypeDef(schema *openapi3.SchemaRef, name string) string {
 	s += fmt.Sprintf("// %s\n", name)
 	s += fmt.Sprintf("type %s struct {\n", name)
 	for k, nestedSchema := range schema.Value.Properties {
-		fmt.Println(k, nestedSchema.Value.Type)
 		if nestedSchema.Value.Type == "" || nestedSchema.Value.Type == "null" {
 			continue
 		}

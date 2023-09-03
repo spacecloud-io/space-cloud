@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver"
+	"github.com/spacecloud-io/space-cloud/utils"
 )
 
 func (r *RTK) GenerateAPIs(doc *openapi3.T) (string, string, error) {
@@ -46,7 +46,7 @@ func generateAPIExport(doc *openapi3.T) string {
 }
 
 func getExportedFuncFromOperation(operation *openapi3.Operation) string {
-	if !driver.IsOperationValidForTypeGen(operation) {
+	if !utils.IsOperationValidForTypeGen(operation) {
 		return ""
 	}
 	ops := "use"
@@ -116,11 +116,11 @@ func getQueries(doc *openapi3.T) string {
 }
 
 func getQueryFromOperation(path, method string, operation *openapi3.Operation) string {
-	if !driver.IsOperationValidForTypeGen(operation) {
+	if !utils.IsOperationValidForTypeGen(operation) {
 		return ""
 	}
 
-	s := driver.AddPadding(2)
+	s := utils.AddPadding(2)
 	s += getTypeName(operation.OperationID, true)
 	s += ": "
 	s += fmt.Sprintf("builder.%s%s({\n",

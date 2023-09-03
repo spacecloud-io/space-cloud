@@ -6,7 +6,6 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 
-	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver"
 	"github.com/spacecloud-io/space-cloud/utils"
 )
 
@@ -14,22 +13,22 @@ func (r *RTK) GenerateTypes(doc *openapi3.T) (string, string, error) {
 	fileName := "types.ts"
 	var b strings.Builder
 	for _, pathDef := range doc.Paths {
-		if driver.IsOperationValidForTypeGen(pathDef.Get) {
+		if utils.IsOperationValidForTypeGen(pathDef.Get) {
 			s := generateTypesFromOperation(pathDef.Get)
 			_, _ = b.WriteString(s)
 		}
 
-		if driver.IsOperationValidForTypeGen(pathDef.Delete) {
+		if utils.IsOperationValidForTypeGen(pathDef.Delete) {
 			s := generateTypesFromOperation(pathDef.Delete)
 			_, _ = b.WriteString(s)
 		}
 
-		if driver.IsOperationValidForTypeGen(pathDef.Post) {
+		if utils.IsOperationValidForTypeGen(pathDef.Post) {
 			s := generateTypesFromOperation(pathDef.Post)
 			_, _ = b.WriteString(s)
 		}
 
-		if driver.IsOperationValidForTypeGen(pathDef.Put) {
+		if utils.IsOperationValidForTypeGen(pathDef.Put) {
 			s := generateTypesFromOperation(pathDef.Put)
 			_, _ = b.WriteString(s)
 		}
@@ -81,7 +80,7 @@ func generateTypeDef(schema *openapi3.SchemaRef, depth int) string {
 				continue
 			}
 
-			s += driver.AddPadding(depth + 1)
+			s += utils.AddPadding(depth + 1)
 			s += k
 			if !utils.StringExists(k, schema.Value.Required...) {
 				s += "?"
@@ -90,7 +89,7 @@ func generateTypeDef(schema *openapi3.SchemaRef, depth int) string {
 			s += generateTypeDef(nestedSchema, depth+1)
 			s += ";\n"
 		}
-		s += driver.AddPadding(depth)
+		s += utils.AddPadding(depth)
 		s += "}"
 
 		return s

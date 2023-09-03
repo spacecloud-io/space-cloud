@@ -1,4 +1,4 @@
-package driver
+package utils
 
 import "github.com/getkin/kin-openapi/openapi3"
 
