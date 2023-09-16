@@ -1,0 +1,161 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.0
+  name: redissources.core.space-cloud.io
+spec:
+  group: core.space-cloud.io
+  names:
+    kind: RedisSource
+    listKind: RedisSourceList
+    plural: redissources
+    singular: redissource
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: RedisSource is the schema for the RedisSource source
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Redis describes the specification of the Redis source
+            properties:
+              host:
+                description: Host describes the host of the Redis instance
+                properties:
+                  envRef:
+                    description: EnvRef selects value from an environment variable
+                    properties:
+                      name:
+                        description: Name of the environment variable
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  secretKeyRef:
+                    description: SecretKeyRef selects a key of a secret in the pod's
+                      namespace
+                    properties:
+                      key:
+                        description: Key of the secret
+                        type: string
+                      name:
+                        description: Name of the secret
+                        type: string
+                      source:
+                        description: Source describes which secret manager to use.
+                          By default its k8s
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  value:
+                    description: Value holds the content of the secret or jwk url
+                    type: string
+                type: object
+              password:
+                description: Password describes the password to use to connect to
+                  the Redis instance
+                properties:
+                  envRef:
+                    description: EnvRef selects value from an environment variable
+                    properties:
+                      name:
+                        description: Name of the environment variable
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  secretKeyRef:
+                    description: SecretKeyRef selects a key of a secret in the pod's
+                      namespace
+                    properties:
+                      key:
+                        description: Key of the secret
+                        type: string
+                      name:
+                        description: Name of the secret
+                        type: string
+                      source:
+                        description: Source describes which secret manager to use.
+                          By default its k8s
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  value:
+                    description: Value holds the content of the secret or jwk url
+                    type: string
+                type: object
+              port:
+                description: Port describes the port of the Redis instance
+                properties:
+                  envRef:
+                    description: EnvRef selects value from an environment variable
+                    properties:
+                      name:
+                        description: Name of the environment variable
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  secretKeyRef:
+                    description: SecretKeyRef selects a key of a secret in the pod's
+                      namespace
+                    properties:
+                      key:
+                        description: Key of the secret
+                        type: string
+                      name:
+                        description: Name of the secret
+                        type: string
+                      source:
+                        description: Source describes which secret manager to use.
+                          By default its k8s
+                        type: string
+                    required:
+                    - key
+                    - name
+                    type: object
+                  value:
+                    description: Value holds the content of the secret or jwk url
+                    type: string
+                type: object
+              taskQueueConfig:
+                description: TaskQueueConfig describes the configuration to use when
+                  using Redis as a task queue.
+                properties:
+                  maxQueueSize:
+                    description: MaxQueueSize specifies the maximum length of the
+                      Redis queue.
+                    type: integer
+                type: object
+            required:
+            - host
+            - port
+            type: object
+          status:
+            description: RedisSourceStatus defines the observed state of the RedisSource
+              source
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

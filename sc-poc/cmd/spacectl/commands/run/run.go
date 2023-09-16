@@ -21,6 +21,8 @@ func NewCommand() *cobra.Command {
 			viper.AutomaticEnv()
 			viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
+			_ = viper.BindPFlag("id", cmd.Flags().Lookup("id"))
+
 			_ = viper.BindPFlag("caddy.log-level", cmd.Flags().Lookup("log-level"))
 			_ = viper.BindPFlag("caddy.port", cmd.Flags().Lookup("port"))
 
@@ -83,6 +85,8 @@ func NewCommand() *cobra.Command {
 			select {}
 		},
 	}
+
+	cmd.Flags().String("id", "sc-id", "Set a unique id for this SpaceCloud instance")
 
 	// Caddy config
 	cmd.Flags().StringP("log-level", "", "DEBUG", "Set the log level [DEBUG | INFO | WARN | ERROR | PANIC | FATAL]")

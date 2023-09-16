@@ -31,3 +31,7 @@ type OPAPolicyExpansion interface{}
 type OpenAPISourceExpansion interface{}
 
 type PubsubChannelExpansion interface{}
+
+type RedisSourceExpansion interface{}
+
+type TaskQueueExpansion interface{}

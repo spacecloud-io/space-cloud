@@ -56,6 +56,14 @@ func (c *FakeCoreV1alpha1) PubsubChannels(namespace string) v1alpha1.PubsubChann
 	return &FakePubsubChannels{c, namespace}
 }
 
+func (c *FakeCoreV1alpha1) RedisSources(namespace string) v1alpha1.RedisSourceInterface {
+	return &FakeRedisSources{c, namespace}
+}
+
+func (c *FakeCoreV1alpha1) TaskQueues(namespace string) v1alpha1.TaskQueueInterface {
+	return &FakeTaskQueues{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeCoreV1alpha1) RESTClient() rest.Interface {

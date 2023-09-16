@@ -73,3 +73,19 @@ type PubsubChannelListerExpansion interface{}
 // PubsubChannelNamespaceListerExpansion allows custom methods to be added to
 // PubsubChannelNamespaceLister.
 type PubsubChannelNamespaceListerExpansion interface{}
+
+// RedisSourceListerExpansion allows custom methods to be added to
+// RedisSourceLister.
+type RedisSourceListerExpansion interface{}
+
+// RedisSourceNamespaceListerExpansion allows custom methods to be added to
+// RedisSourceNamespaceLister.
+type RedisSourceNamespaceListerExpansion interface{}
+
+// TaskQueueListerExpansion allows custom methods to be added to
+// TaskQueueLister.
+type TaskQueueListerExpansion interface{}
+
+// TaskQueueNamespaceListerExpansion allows custom methods to be added to
+// TaskQueueNamespaceLister.
+type TaskQueueNamespaceListerExpansion interface{}

@@ -24,7 +24,7 @@ func (a *AsyncAPI) AddChannel(name string, channel ChannelItem) {
 	a.Channels[name] = &channel
 }
 
-func (a *App) generateASyncAPIDoc() *AsyncAPI {
+func (a *Module) generateASyncAPIDoc() *AsyncAPI {
 	// Add general Info
 	asyncapi := AsyncAPI{}
 	asyncapi.SpecVersion = "2.6.0"
@@ -235,7 +235,7 @@ func (a *App) generateASyncAPIDoc() *AsyncAPI {
 	return &asyncapi
 }
 
-func (a *App) exposeAsyncAPIDoc() *apis.API {
+func (a *Module) exposeAsyncAPIDoc() *apis.API {
 	return &apis.API{
 		Name: "asyncapi",
 		Path: "/v1/api/asyncapi.json",
