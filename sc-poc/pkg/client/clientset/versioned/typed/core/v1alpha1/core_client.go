@@ -35,6 +35,8 @@ type CoreV1alpha1Interface interface {
 	OPAPoliciesGetter
 	OpenAPISourcesGetter
 	PubsubChannelsGetter
+	RedisSourcesGetter
+	TaskQueuesGetter
 }
 
 // CoreV1alpha1Client is used to interact with features provided by the core.space-cloud.io group.
@@ -68,6 +70,14 @@ func (c *CoreV1alpha1Client) OpenAPISources(namespace string) OpenAPISourceInter
 
 func (c *CoreV1alpha1Client) PubsubChannels(namespace string) PubsubChannelInterface {
 	return newPubsubChannels(c, namespace)
+}
+
+func (c *CoreV1alpha1Client) RedisSources(namespace string) RedisSourceInterface {
+	return newRedisSources(c, namespace)
+}
+
+func (c *CoreV1alpha1Client) TaskQueues(namespace string) TaskQueueInterface {
+	return newTaskQueues(c, namespace)
 }
 
 // NewForConfig creates a new CoreV1alpha1Client for the given config.

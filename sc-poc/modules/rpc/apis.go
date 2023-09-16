@@ -16,11 +16,11 @@ import (
 )
 
 // GetRoutes returns all the apis that are exposed by this app
-func (a *App) GetAPIRoutes() apis.APIs {
-	return a.apis
+func (m *Module) GetAPIRoutes() apis.APIs {
+	return m.apis
 }
 
-func (a *App) prepareAPIs(rpcSource Source) {
+func (m *Module) prepareAPIs(rpcSource Source) {
 	for _, rpc := range rpcSource.GetRPCs() {
 		httpOpts := processHTTPOptions(rpc.Name, rpc.HTTPOptions)
 
@@ -35,6 +35,7 @@ func (a *App) prepareAPIs(rpcSource Source) {
 		if rpc.Authenticate == nil {
 			operation.Security = &openapi3.SecurityRequirements{{"bearerAuth": []string{}}}
 		}
+
 		// Get request and response schemas
 		requestSchema, responseSchema := rpc.RequestSchema, rpc.ResponseSchema
 
@@ -118,7 +119,7 @@ func (a *App) prepareAPIs(rpcSource Source) {
 		// 	schemas[propertyName] = schemaRef
 		// }
 
-		a.apis = append(a.apis, &apis.API{
+		m.apis = append(m.apis, &apis.API{
 			Name: fmt.Sprintf("complied_query_%s", rpc.Name),
 			Path: httpOpts.URL,
 			OpenAPI: &apis.OpenAPI{
@@ -126,12 +127,12 @@ func (a *App) prepareAPIs(rpcSource Source) {
 				// Schemas: schemas,
 			},
 			Plugins: rpc.Plugins,
-			Handler: a.handleRPCRequest(rpc, operation),
+			Handler: m.handleRPCRequest(rpc, operation),
 		})
 	}
 }
 
-func (a *App) handleRPCRequest(rpc *RPC, operation *openapi3.Operation) http.HandlerFunc {
+func (m *Module) handleRPCRequest(rpc *RPC, operation *openapi3.Operation) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Prepare context object
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Minute)
@@ -158,7 +159,7 @@ func (a *App) handleRPCRequest(rpc *RPC, operation *openapi3.Operation) http.Han
 				if len(param.Value.Content) > 0 {
 					var data interface{}
 					if err := json.Unmarshal([]byte(stringData[0]), &data); err != nil {
-						a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
+						m.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
 						_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request payload received for param '%s'", param.Value.Name))
 						return
 					}
@@ -172,7 +173,7 @@ func (a *App) handleRPCRequest(rpc *RPC, operation *openapi3.Operation) http.Han
 					case "integer":
 						num, err := strconv.Atoi(stringData[0])
 						if err != nil {
-							a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
+							m.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
 							_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request payload received for param '%s'", param.Value.Name))
 							return
 						}
@@ -181,7 +182,7 @@ func (a *App) handleRPCRequest(rpc *RPC, operation *openapi3.Operation) http.Han
 					case "number":
 						num, err := strconv.ParseFloat(stringData[0], 64)
 						if err != nil {
-							a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
+							m.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
 							_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request payload received for param '%s'", param.Value.Name))
 							return
 						}
@@ -190,7 +191,7 @@ func (a *App) handleRPCRequest(rpc *RPC, operation *openapi3.Operation) http.Han
 					case "boolean":
 						b, err := strconv.ParseBool(stringData[0])
 						if err != nil {
-							a.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
+							m.logger.Error("Invalid graphql variable parameter provided", zap.String("param", param.Value.Name), zap.Error(err))
 							_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid request payload received for param '%s'", param.Value.Name))
 							return
 						}
@@ -202,7 +203,7 @@ func (a *App) handleRPCRequest(rpc *RPC, operation *openapi3.Operation) http.Han
 		} else {
 			// For all other methods
 			if err := json.NewDecoder(r.Body).Decode(&variables); err != nil {
-				a.logger.Error("Invalid graphql request payload provided", zap.Error(err))
+				m.logger.Error("Invalid graphql request payload provided", zap.Error(err))
 				_ = utils.SendErrorResponse(w, http.StatusBadRequest, errors.New("invalid request payload received"))
 				return
 			}
@@ -212,7 +213,7 @@ func (a *App) handleRPCRequest(rpc *RPC, operation *openapi3.Operation) http.Han
 			// We need to throw an error if the request is not authenticated
 			if err := rpc.Authenticate(ctx, variables); err != nil {
 				// We need to throw an error if requested claim is not present in token
-				a.logger.Error("Unable to authenticate request",
+				m.logger.Error("Unable to authenticate request",
 					zap.String("rpc", rpc.Name), zap.Error(err))
 				_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err)
 				return
@@ -221,7 +222,7 @@ func (a *App) handleRPCRequest(rpc *RPC, operation *openapi3.Operation) http.Han
 
 		result, err := rpc.Call(ctx, variables)
 		if err != nil {
-			a.logger.Error("Unable to execute request",
+			m.logger.Error("Unable to execute request",
 				zap.String("rpc", rpc.Name), zap.Error(err))
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, errors.New("unable to execute request"))
 			return

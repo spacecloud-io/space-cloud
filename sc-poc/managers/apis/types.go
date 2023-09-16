@@ -62,6 +62,12 @@ type (
 
 	// APIs is a collection of APIs
 	APIs []*API
+
+	// OpenAPIPayloadModifier describes schema modifies the request/ response payload.
+	OpenAPIPayloadModifier struct {
+		Description string
+		Ptr         any
+	}
 )
 
 const (

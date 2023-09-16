@@ -15,12 +15,12 @@ import (
 var connectorPool = caddy.NewUsagePool()
 
 func init() {
-	caddy.RegisterModule(App{})
+	caddy.RegisterModule(Module{})
 	provider.Register("pubsub", 50)
 }
 
-// App defines struct for pubsub app
-type App struct {
+// Module defines struct for pubsub app
+type Module struct {
 	Workspace string `json:"workspace"`
 
 	// For pubsub engine
@@ -36,76 +36,76 @@ type App struct {
 }
 
 // CaddyModule returns the Caddy module information.
-func (App) CaddyModule() caddy.ModuleInfo {
+func (Module) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "provider.pubsub",
-		New: func() caddy.Module { return new(App) },
+		New: func() caddy.Module { return new(Module) },
 	}
 }
 
 // Provision sets up the pubsub module.
-func (a *App) Provision(ctx caddy.Context) error {
-	a.logger = ctx.Logger(a)
+func (m *Module) Provision(ctx caddy.Context) error {
+	m.logger = ctx.Logger(m)
 
 	poolKey := getPoolKey()
 	val, _, err := connectorPool.LoadOrNew(poolKey, func() (caddy.Destructor, error) {
 		return connectors.New()
 	})
 	if err != nil {
-		a.logger.Error("Unable to open pubsub connector", zap.Error(err))
+		m.logger.Error("Unable to open pubsub connector", zap.Error(err))
 		return err
 	}
 	connector := val.(*connectors.Connector)
-	a.pubSub = connector.GetPubsubClient()
+	m.pubSub = connector.GetPubsubClient()
 
 	// Get all space-cloud defined pubsub channel sources
-	a.createInternalChannels()
+	m.createInternalChannels()
 
 	// Get all user defined pubsub channel sources
 	sourceManT, err := ctx.App("source")
 	if err != nil {
-		a.logger.Error("Unable to load the source manager", zap.Error(err))
+		m.logger.Error("Unable to load the source manager", zap.Error(err))
 	}
 	sourceMan := sourceManT.(*source.App)
-	sources := sourceMan.GetSources(a.Workspace, "pubsub")
+	sources := sourceMan.GetSources(m.Workspace, "pubsub")
 	for _, src := range sources {
 		channelSrc, ok := src.(Source)
 		if ok {
 			topic := channelSrc.GetChannel()
-			a.channels = append(a.channels, topic)
+			m.channels = append(m.channels, topic)
 		}
 	}
 
 	// Generate publish and subscribe API for each channel
-	for path, channel := range a.Channels().Channels {
+	for path, channel := range m.Channels().Channels {
 		// Get the publish and subscribe API of the channel
-		publisherAPI := a.getProducerAPI(path, channel)
-		subscriberAPI := a.getConsumerAPI(path, channel)
+		publisherAPI := m.getProducerAPI(path, channel)
+		subscriberAPI := m.getConsumerAPI(path, channel)
 
-		a.apis = append(a.apis, publisherAPI, subscriberAPI)
+		m.apis = append(m.apis, publisherAPI, subscriberAPI)
 	}
 
 	// Generate AsyncAPI Doc and expose it via an API
-	a.asyncapiDoc = a.generateASyncAPIDoc()
-	a.apis = append(a.apis, a.exposeAsyncAPIDoc())
+	m.asyncapiDoc = m.generateASyncAPIDoc()
+	m.apis = append(m.apis, m.exposeAsyncAPIDoc())
 	return nil
 }
 
 // Start begins the pubsub app operations
-func (a *App) Start() error {
+func (m *Module) Start() error {
 	return nil
 }
 
 // Stop ends the pubsub app operations
-func (a *App) Stop() error {
+func (m *Module) Stop() error {
 	return nil
 }
 
 // Cleanup cleans up the app
-func (a *App) Cleanup() error {
+func (m *Module) Cleanup() error {
 	_, err := connectorPool.Delete(getPoolKey())
 	if err != nil {
-		a.logger.Error("Unable to gracefully close  pubsub connector", zap.Error(err))
+		m.logger.Error("Unable to gracefully close  pubsub connector", zap.Error(err))
 		return err
 	}
 	return nil
@@ -113,6 +113,6 @@ func (a *App) Cleanup() error {
 
 // Interface guards
 var (
-	_ caddy.Provisioner = (*App)(nil)
-	_ caddy.App         = (*App)(nil)
+	_ caddy.Provisioner = (*Module)(nil)
+	_ caddy.App         = (*Module)(nil)
 )

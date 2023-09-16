@@ -38,6 +38,10 @@ type Interface interface {
 	OpenAPISources() OpenAPISourceInformer
 	// PubsubChannels returns a PubsubChannelInformer.
 	PubsubChannels() PubsubChannelInformer
+	// RedisSources returns a RedisSourceInformer.
+	RedisSources() RedisSourceInformer
+	// TaskQueues returns a TaskQueueInformer.
+	TaskQueues() TaskQueueInformer
 }
 
 type version struct {
@@ -84,4 +88,14 @@ func (v *version) OpenAPISources() OpenAPISourceInformer {
 // PubsubChannels returns a PubsubChannelInformer.
 func (v *version) PubsubChannels() PubsubChannelInformer {
 	return &pubsubChannelInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// RedisSources returns a RedisSourceInformer.
+func (v *version) RedisSources() RedisSourceInformer {
+	return &redisSourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// TaskQueues returns a TaskQueueInformer.
+func (v *version) TaskQueues() TaskQueueInformer {
+	return &taskQueueInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

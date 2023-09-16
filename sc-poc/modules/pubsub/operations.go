@@ -11,7 +11,7 @@ import (
 )
 
 // Publish publishes message to a topic
-func (a *App) Publish(topic string, msg PublishMessage, options PublishOptions) error {
+func (a *Module) Publish(topic string, msg PublishMessage, options PublishOptions) error {
 	b, err := json.Marshal(msg.Payload)
 	if err != nil {
 		return err
@@ -23,7 +23,7 @@ func (a *App) Publish(topic string, msg PublishMessage, options PublishOptions) 
 }
 
 // Subscribe subscribes to a topic
-func (a *App) Subscribe(ctx context.Context, clientID, topic string, options SubscribeOptions) (<-chan *message.Message, error) {
+func (a *Module) Subscribe(ctx context.Context, clientID, topic string, options SubscribeOptions) (<-chan *message.Message, error) {
 	messages, err := a.pubSub.Subscribe(ctx, topic)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (a *App) Subscribe(ctx context.Context, clientID, topic string, options Sub
 	return messages, nil
 }
 
-func (a *App) createInternalChannels() {
+func (a *Module) createInternalChannels() {
 	openapiProvisionChannel := v1alpha1.PubsubChannelSpec{
 		Channel: "/openapi/provision",
 		Payload: &v1alpha1.ChannelSchema{
@@ -84,7 +84,7 @@ func (a *App) createInternalChannels() {
 }
 
 // Channels return channels with their schema
-func (a *App) Channels() ChannelsWithSchema {
+func (a *Module) Channels() ChannelsWithSchema {
 	channels := ChannelsWithSchema{
 		Channels: make(map[string]v1alpha1.PubsubChannelSpec),
 	}

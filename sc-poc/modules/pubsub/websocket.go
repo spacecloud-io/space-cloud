@@ -21,12 +21,12 @@ import (
 // TODO: channels may or may not have prefix slash
 
 // GetRoutes returns all the apis that are exposed by this app
-func (a *App) GetAPIRoutes() apis.APIs {
+func (a *Module) GetAPIRoutes() apis.APIs {
 	return a.apis
 }
 
 // getProducerAPI creates a websocket API for sending messages in the channel
-func (a *App) getProducerAPI(channelPath string, channel v1alpha1.PubsubChannelSpec) *apis.API {
+func (a *Module) getProducerAPI(channelPath string, channel v1alpha1.PubsubChannelSpec) *apis.API {
 	// Create a schema validator for incoming messages
 	channelSchema := channel.Payload
 	schemaLoader := gojsonschema.NewGoLoader(channelSchema)
@@ -116,7 +116,7 @@ func (a *App) getProducerAPI(channelPath string, channel v1alpha1.PubsubChannelS
 }
 
 // getConsumerAPI creates a websocket API for receiving messages from the channel
-func (a *App) getConsumerAPI(channelPath string, channel v1alpha1.PubsubChannelSpec) *apis.API {
+func (a *Module) getConsumerAPI(channelPath string, channel v1alpha1.PubsubChannelSpec) *apis.API {
 	// Add the plugins provided in the channel options
 	var plugins []v1alpha1.HTTPPlugin
 	if channel.ConsumerOptions != nil {

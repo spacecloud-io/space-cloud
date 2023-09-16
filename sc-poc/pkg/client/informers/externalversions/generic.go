@@ -67,6 +67,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().OpenAPISources().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("pubsubchannels"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().PubsubChannels().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("redissources"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().RedisSources().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("taskqueues"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Core().V1alpha1().TaskQueues().Informer()}, nil
 
 	}
 

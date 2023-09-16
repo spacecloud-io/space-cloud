@@ -78,3 +78,15 @@ type HTTPPlugin struct {
 	// Params describes the additional properties which are required by the driver
 	Params runtime.RawExtension `json:"params,omitempty" mapstructure:"params,omitempty"`
 }
+
+// CommonTaskQueueConfig define the common config items every task queue implementation must define
+type CommonTaskQueueConfig struct {
+	// DefaultWaitTime specifies the max time to wait for dequeuing messages. Primarily used for source
+	// which support long polling
+	// +kubebuilder:validation:Optional
+	DefaultWaitTime string `json:"defaultWaitTime,omitempty"`
+
+	// DefaultIdleTime specifies the max time to wait before considering a delivered message as unresponsive.
+	// +kubebuilder:validation:Optional
+	DefaultIdleTime string `json:"defaultIdleTime,omitempty"`
+}

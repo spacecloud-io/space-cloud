@@ -10,12 +10,12 @@ import (
 )
 
 func init() {
-	caddy.RegisterModule(App{})
+	caddy.RegisterModule(Module{})
 	provider.Register("rpc", 0)
 }
 
-// App describes the state of the auth app
-type App struct {
+// Module describes the state of the auth app
+type Module struct {
 	Workspace string `json:"workspace"`
 
 	// For internal use
@@ -26,26 +26,26 @@ type App struct {
 }
 
 // CaddyModule returns the Caddy module information.
-func (App) CaddyModule() caddy.ModuleInfo {
+func (Module) CaddyModule() caddy.ModuleInfo {
 	return caddy.ModuleInfo{
 		ID:  "provider.rpc",
-		New: func() caddy.Module { return new(App) },
+		New: func() caddy.Module { return new(Module) },
 	}
 }
 
 // Provision sets up the auth module.
-func (a *App) Provision(ctx caddy.Context) error {
+func (m *Module) Provision(ctx caddy.Context) error {
 	// Get the logger
-	a.logger = ctx.Logger(a)
+	m.logger = ctx.Logger(m)
 
 	// Get all the dependencies
 	sourceManT, _ := ctx.App("source")
 	sourceMan := sourceManT.(*source.App)
 
-	for _, s := range sourceMan.GetSources(a.Workspace, "rpc") {
+	for _, s := range sourceMan.GetSources(m.Workspace, "rpc") {
 		rpcSource, ok := s.(Source)
 		if ok {
-			a.prepareAPIs(rpcSource)
+			m.prepareAPIs(rpcSource)
 		}
 	}
 
@@ -58,19 +58,8 @@ func (a *App) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-// Start begins the rest app operations
-func (a *App) Start() error {
-	return nil
-}
-
-// Stop ends the rest app operations
-func (a *App) Stop() error {
-	return nil
-}
-
 // Interface guards
 var (
-	_ caddy.Provisioner = (*App)(nil)
-	_ caddy.App         = (*App)(nil)
-	_ apis.App          = (*App)(nil)
+	_ caddy.Provisioner = (*Module)(nil)
+	_ apis.App          = (*Module)(nil)
 )
