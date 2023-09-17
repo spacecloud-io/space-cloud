@@ -48,24 +48,33 @@ func (m *Module) Provision(ctx caddy.Context) error {
 
 	// First get all the task queue sources
 	for _, s := range sourceMan.GetSources(m.Workspace, "tasks") {
-		switch v := s.(type) {
-		case TaskQueueSource:
-			// Store the task queue for future reference
-			m.taskQueueSources[s.GetName()] = v
-		case *tasks.Queue:
-			// Check if the task queue has a corresponding source.
-			// TODO: Have the sources they target automatically create the queue
-			// For eg. Create a queue object in SQS.
-			if _, p := m.taskQueueSources[v.Spec.Source]; !p {
-				m.logger.Error("No source found for taskqueue",
-					zap.String("source", v.Spec.Source),
-					zap.String("taskqueue", v.GetName()))
-				continue
-			}
-
-			// Add the task queue object for future reference
-			m.taskQueues = append(m.taskQueues, v)
+		v, ok := s.(TaskQueueSource)
+		if !ok {
+			continue
 		}
+		// Store the task queue for future reference
+		m.taskQueueSources[s.GetName()] = v
+	}
+
+	// Then we get the task queues
+	for _, s := range sourceMan.GetSources(m.Workspace, "tasks") {
+		v, ok := s.(*tasks.Queue)
+		if !ok {
+			continue
+		}
+
+		// Check if the task queue has a corresponding source.
+		// TODO: Have the sources they target automatically create the queue
+		// For eg. Create a queue object in SQS.
+		if _, p := m.taskQueueSources[v.Spec.Source]; !p {
+			m.logger.Error("No source found for taskqueue",
+				zap.String("source", v.Spec.Source),
+				zap.String("taskqueue", v.GetName()))
+			continue
+		}
+
+		// Add the task queue object for future reference
+		m.taskQueues = append(m.taskQueues, v)
 	}
 
 	// Add apis for each task queue
