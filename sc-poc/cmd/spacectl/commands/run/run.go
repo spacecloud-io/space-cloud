@@ -34,6 +34,8 @@ func NewCommand() *cobra.Command {
 			_ = viper.BindPFlag("admin.username", cmd.Flags().Lookup("admin.username"))
 			_ = viper.BindPFlag("admin.password", cmd.Flags().Lookup("admin.password"))
 
+			_ = viper.BindPFlag("kratos.enable", cmd.Flags().Lookup("kratos-enable"))
+			_ = viper.BindPFlag("kratos.endpoint", cmd.Flags().Lookup("kratos-endpoint"))
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !cmd.Flags().Changed("admin.secret") {
@@ -96,11 +98,6 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("config-adapter", "", "file", "Set the configuration loader to be used [file | k8s]")
 	cmd.Flags().StringP("config-path", "", "./sc-config", "Directory to use to manage SpaceCloud configuration")
 	cmd.Flags().StringP("debounce-interval", "", "500ms", "Debounce interval in milliseconds")
-
-	// Auth
-	cmd.Flags().StringP("admin.secret", "", "", "Set admin secret")
-	cmd.Flags().StringP("admin.username", "", "", "Set admin username")
-	cmd.Flags().StringP("admin.password", "", "", "Set admin password")
 
 	return cmd
 }

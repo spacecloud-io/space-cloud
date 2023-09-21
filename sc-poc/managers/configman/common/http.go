@@ -44,8 +44,11 @@ func getRootRoutes(config ConfigType) caddyhttp.RouteList {
 	return caddyhttp.RouteList{
 		// Routes for CORS
 		caddyhttp.Route{
-			Group:       "cors",
-			HandlersRaw: utils.GetCaddyHandler("cors", nil),
+			Group: "cors",
+			HandlersRaw: utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "cors",
+				Params:      nil,
+			}),
 		},
 
 		// TODO: Fix this
@@ -74,12 +77,18 @@ func getAdminRoutes() caddyhttp.Route {
 		caddyhttp.Route{
 			Group:          "admin_login",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/login"}, []string{http.MethodPost}, nil),
-			HandlersRaw:    utils.GetCaddyHandler("admin_login", nil),
+			HandlersRaw: utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "admin_login",
+				Params:      nil,
+			}),
 		},
 		caddyhttp.Route{
 			Group:          "admin_refresh",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/refresh-token"}, []string{http.MethodGet}, nil),
-			HandlersRaw:    utils.GetCaddyHandler("admin_refresh", nil),
+			HandlersRaw: utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "admin_refresh",
+				Params:      nil,
+			}),
 		},
 	}
 
@@ -97,15 +106,33 @@ func getAdminRoutes() caddyhttp.Route {
 }
 
 func getAPIRoutes() caddyhttp.Route {
+	routes := []utils.Handler{
+		{
+			HandlerName: "jwt_auth_verify",
+			Params:      nil,
+		},
+	}
+
+	if viper.GetBool("kratos.enable") {
+		route := utils.Handler{
+			HandlerName: "kratos_auth_verify",
+			Params:      nil,
+		}
+		routes = append(routes, route)
+	}
+
 	// Make route list for the sub router
 	routeList := caddyhttp.RouteList{
 		caddyhttp.Route{
 			Group:       "api_auth",
-			HandlersRaw: utils.GetCaddyHandler("auth_verify", nil),
+			HandlersRaw: utils.GetCaddyHandlers(routes...),
 		},
 		caddyhttp.Route{
-			Group:       "api_route",
-			HandlersRaw: utils.GetCaddyHandler("root_api", nil),
+			Group: "api_route",
+			HandlersRaw: utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "root_api",
+				Params:      nil,
+			}),
 		},
 	}
 
@@ -128,12 +155,18 @@ func getSourceRoutes() caddyhttp.Route {
 		caddyhttp.Route{
 			Group:          "source_lists",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/sources"}, []string{http.MethodGet}, nil),
-			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("list_sources", nil)),
+			HandlersRaw: addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "list_sources",
+				Params:      nil,
+			})),
 		},
 		caddyhttp.Route{
 			Group:          "source_plugins",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{"/sc/v1/plugins"}, []string{http.MethodGet}, nil),
-			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("list_plugins", nil)),
+			HandlersRaw: addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "list_plugins",
+				Params:      nil,
+			})),
 		},
 	}
 
@@ -163,21 +196,30 @@ func getConfigRoutes() caddyhttp.Route {
 		getRoute := caddyhttp.Route{
 			Group:          "config_get",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodGet}, nil),
-			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("config_get", data)),
+			HandlersRaw: addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "config_get",
+				Params:      data,
+			})),
 		}
 
 		// Route for Apply operation
 		applyRoute := caddyhttp.Route{
 			Group:          "config_apply",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodPut}, nil),
-			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("config_apply", data)),
+			HandlersRaw: addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "config_apply",
+				Params:      data,
+			})),
 		}
 
 		// Route for Delete operation
 		deleteRoute := caddyhttp.Route{
 			Group:          "config_delete",
 			MatcherSetsRaw: utils.GetCaddyMatcherSet([]string{path}, []string{http.MethodDelete}, nil),
-			HandlersRaw:    addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandler("config_delete", data)),
+			HandlersRaw: addAuthenticateSCUserPluginMiddleware(utils.GetCaddyHandlers(utils.Handler{
+				HandlerName: "config_delete",
+				Params:      data,
+			})),
 		}
 
 		configRoutes = append(configRoutes, getRoute, applyRoute, deleteRoute)

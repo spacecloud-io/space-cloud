@@ -115,15 +115,20 @@ func prepareRoute(api *API, path string, methods []string, headers map[string][]
 		params["name"] = p.Name
 
 		// Append the plugin to the handler's array
-		apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, utils.GetCaddyHandler(fmt.Sprintf("plugin_%s", p.Driver), params)...)
+		apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, utils.GetCaddyHandlers(utils.Handler{
+			HandlerName: fmt.Sprintf("plugin_%s", p.Driver),
+			Params:      params,
+		})...)
 	}
 
 	// Finally comes the main api route
-	apiHandler := utils.GetCaddyHandler("api", map[string]interface{}{
-		"path":    path,
-		"indexes": indexes,
-		"app":     api.app,
-		"name":    api.Name,
+	apiHandler := utils.GetCaddyHandlers(utils.Handler{
+		HandlerName: "api",
+		Params: map[string]interface{}{
+			"path":    path,
+			"indexes": indexes,
+			"app":     api.app,
+			"name":    api.Name},
 	})
 	apiRoute.HandlersRaw = append(apiRoute.HandlersRaw, apiHandler...)
 

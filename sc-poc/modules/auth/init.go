@@ -8,7 +8,8 @@ import (
 func init() {
 	provider.Register("auth", 99)
 	caddy.RegisterModule(App{})
-	caddy.RegisterModule(AuthVerifyHandler{})
+	caddy.RegisterModule(JWTAuthVerifyHandler{})
+	caddy.RegisterModule(KratosAuthVerifyHandler{})
 	caddy.RegisterModule(OPAPlugin{})
 	caddy.RegisterModule(DenyUser{})
 	caddy.RegisterModule(AuthenticateUser{})
