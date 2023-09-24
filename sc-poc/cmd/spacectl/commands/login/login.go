@@ -60,7 +60,7 @@ func NewCommand() *cobra.Command {
 				Password: base64.StdEncoding.EncodeToString([]byte(password)),
 				BaseUrl:  baseUrl,
 			}
-			err := clientutils.Login(httpClient, creds)
+			_, err := clientutils.Login(httpClient, creds)
 			if err != nil {
 				log.Fatal("Failed to authenticate with SpaceCloud", err)
 			}

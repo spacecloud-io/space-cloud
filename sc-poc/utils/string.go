@@ -21,3 +21,10 @@ func Pluralize(word string) string {
 	plural := pluralize.Plural(word)
 	return strings.ToLower(plural)
 }
+
+func EnsureTrailingSlash(url string) string {
+	if !strings.HasSuffix(url, "/") {
+		return url + "/"
+	}
+	return url
+}

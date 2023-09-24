@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/spacecloud-io/space-cloud/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -96,4 +97,28 @@ func DeleteResources(client *http.Client, gvr schema.GroupVersionResource, baseU
 	defer resp.Body.Close()
 
 	return nil
+}
+
+func ListAllPlugins(client *http.Client, baseUrl string, token string) ([]v1alpha1.HTTPPlugin, error) {
+	var allPlugins []v1alpha1.HTTPPlugin
+
+	path := baseUrl + "/sc/v1/plugins"
+	req, err := http.NewRequest("GET", path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch plugins")
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch plugins")
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch plugins")
+	}
+
+	json.Unmarshal(body, &allPlugins)
+	return allPlugins, nil
 }

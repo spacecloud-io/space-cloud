@@ -31,7 +31,7 @@ func GetCredentials() (Credentials, error) {
 	return creds, nil
 }
 
-func Login(client *http.Client, creds Credentials) error {
+func Login(client *http.Client, creds Credentials) (string, error) {
 	b, _ := base64.StdEncoding.DecodeString(creds.Username)
 	creds.Username = string(b)
 	b, _ = base64.StdEncoding.DecodeString(creds.Password)
@@ -42,24 +42,27 @@ func Login(client *http.Client, creds Credentials) error {
 
 	req, err := http.NewRequest(http.MethodPost, path, bytes.NewBuffer(payload))
 	if err != nil {
-		return err
+		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		return fmt.Errorf(string(body))
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
 	}
 
-	return nil
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf(string(body))
+	}
+
+	var m map[string]string
+	json.Unmarshal(body, &m)
+	return m["token"], nil
 }
 
 func UpdateSpaceCloudCredsFile(creds Credentials) (string, error) {
