@@ -1,7 +1,9 @@
 package generate
 
 import (
-	"fmt"
+	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,6 +13,8 @@ import (
 	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver/golang"
 	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver/rtk"
 	"github.com/spacecloud-io/space-cloud/cmd/spacectl/commands/client/generate/driver/typescript"
+	"github.com/spacecloud-io/space-cloud/utils"
+	clientutils "github.com/spacecloud-io/space-cloud/utils/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -29,6 +33,7 @@ func NewCommand() *cobra.Command {
 			_ = viper.BindPFlag("name", cmd.Flags().Lookup("name"))
 			_ = viper.BindPFlag("lang", cmd.Flags().Lookup("lang"))
 			_ = viper.BindPFlag("package", cmd.Flags().Lookup("package"))
+			_ = viper.BindPFlag("sc-url", cmd.Flags().Lookup("sc-url"))
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := viper.GetString("config")
@@ -36,11 +41,25 @@ func NewCommand() *cobra.Command {
 			name := viper.GetString("name")
 			lang := viper.GetString("lang")
 			pkgName := viper.GetString("package")
+			scUrl := viper.GetString("sc-url")
 
-			doc, err := openapi3.NewLoader().LoadFromFile(config)
-			if err != nil {
-				fmt.Println("Unable to openapi doc:", err)
-				os.Exit(1)
+			var doc *openapi3.T
+			if scUrl != "" {
+				urlStr := utils.EnsureTrailingSlash(scUrl) + "v1/api/openapi.json"
+				configUrl, err := url.Parse(urlStr)
+				if err != nil {
+					log.Fatal("Error parsing URL:", err)
+				}
+				doc, err = openapi3.NewLoader().LoadFromURI(configUrl)
+				if err != nil {
+					log.Fatal("Unable to openapi doc:", err)
+				}
+			} else {
+				fileDoc, err := openapi3.NewLoader().LoadFromFile(config)
+				if err != nil {
+					log.Fatal("Unable to openapi doc:", err)
+				}
+				doc = fileDoc
 			}
 
 			var driver driver.Driver
@@ -52,7 +71,7 @@ func NewCommand() *cobra.Command {
 				_ = os.MkdirAll(output, 0777)
 				_ = os.WriteFile(filepath.Join(output, "helpers.ts"), []byte(rtk.HelperTS), 0777)
 				_ = os.WriteFile(filepath.Join(output, "index.ts"), []byte(rtk.IndexTS), 0777)
-				if _, err = os.Stat(filepath.Join(output, "http.config.ts")); os.IsNotExist(err) {
+				if _, err := os.Stat(filepath.Join(output, "http.config.ts")); os.IsNotExist(err) {
 					_ = os.WriteFile(filepath.Join(output, "http.config.ts"), []byte(rtk.ConfigTS), 0777)
 				}
 			case "go":
@@ -60,24 +79,45 @@ func NewCommand() *cobra.Command {
 			case "typescript":
 				driver = typescript.MakeTSDriver()
 			default:
-				fmt.Printf("Invalid language name or language %s not supported.\n", lang)
-				return nil
+				log.Fatalf("Invalid language name or language %s not supported.\n", lang)
 			}
 
 			_ = os.MkdirAll(output, 0777)
 			api, fileName, err := driver.GenerateAPIs(doc)
 			if err != nil {
-				fmt.Printf("error generating api: %s\n", err)
-				os.Exit(1)
+				log.Fatalf("error generating api: %s\n", err)
 			}
 			_ = os.WriteFile(filepath.Join(output, fileName), []byte(api), 0777)
 
 			types, fileName, err := driver.GenerateTypes(doc)
 			if err != nil {
-				fmt.Printf("error generating types: %s\n", err)
-				os.Exit(1)
+				log.Fatalf("error generating types: %s\n", err)
 			}
 			_ = os.WriteFile(filepath.Join(output, fileName), []byte(types), 0777)
+
+			if scUrl != "" && lang != "rtk" {
+				creds, err := clientutils.GetCredentials()
+				if err != nil {
+					log.Fatal("Failed to get SpaceCloud credentials: ", err)
+				}
+
+				httpClient := &http.Client{}
+				token, err := clientutils.Login(httpClient, creds)
+				if err != nil {
+					log.Fatal("Failed to authenticate with SpaceCloud: ", err)
+				}
+
+				allPlugins, err := clientutils.ListAllPlugins(httpClient, creds.BaseUrl, token)
+				if err != nil {
+					log.Fatal("Failed to list all plugins: ", err)
+				}
+
+				plugins, fileName, err := driver.GeneratePlugins(allPlugins)
+				if err != nil {
+					log.Fatalf("error generating plugins: %s\n", err)
+				}
+				_ = os.WriteFile(filepath.Join(output, fileName), []byte(plugins), 0777)
+			}
 
 			return nil
 		},
@@ -88,6 +128,7 @@ func NewCommand() *cobra.Command {
 	cmd.Flags().StringP("name", "n", "my-api", "Name for the API.")
 	cmd.Flags().StringP("lang", "l", "go", "Language in which to generate code. Supported languages are 'rtk', 'Go'")
 	cmd.Flags().StringP("package", "p", "openapi", "The name of the package to generate.")
+	cmd.Flags().StringP("sc-url", "", "http://localhost:4122", "URL where SpaceCloud is running.")
 
 	return cmd
 }

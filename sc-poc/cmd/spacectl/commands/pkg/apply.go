@@ -25,7 +25,7 @@ func newCommandApply() *cobra.Command {
 			}
 
 			// Login to SpaceCloud
-			if err := clientutils.Login(httpClient, creds); err != nil {
+			if _, err := clientutils.Login(httpClient, creds); err != nil {
 				log.Fatal("Failed to authenticate with SpaceCloud: ", err)
 			}
 
