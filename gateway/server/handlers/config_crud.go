@@ -297,7 +297,7 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 		projectID := vars["project"]
 		id := vars["id"]
 
-		v := config.DatbasePreparedQuery{}
+		v := config.DatabasePreparedQuery{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 

@@ -215,7 +215,7 @@ func (s *Manager) validateResource(ctx context.Context, eventType string, resour
 	case config.ResourceDatabasePreparedQuery:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
-			value := new(config.DatbasePreparedQuery)
+			value := new(config.DatabasePreparedQuery)
 			if err := mapstructure.Decode(resource, value); err != nil {
 				return false, helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.Auth{}", reflect.TypeOf(resource)), nil, nil)
 			}
@@ -551,9 +551,9 @@ func updateResource(ctx context.Context, eventType string, globalConfig *config.
 	case config.ResourceDatabasePreparedQuery:
 		switch eventType {
 		case config.ResourceAddEvent, config.ResourceUpdateEvent:
-			value := new(config.DatbasePreparedQuery)
+			value := new(config.DatabasePreparedQuery)
 			if err := mapstructure.Decode(resource, value); err != nil {
-				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.DatbasePreparedQuery{}", reflect.TypeOf(resource)), nil, nil)
+				return helpers.Logger.LogError(helpers.GetRequestID(ctx), fmt.Sprintf("invalid type provided for resource (%s) expecting (%v) got (%v)", resourceType, "config.DatabasePreparedQuery{}", reflect.TypeOf(resource)), nil, nil)
 			}
 
 			if project.DatabasePreparedQueries == nil {

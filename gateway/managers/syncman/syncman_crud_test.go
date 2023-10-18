@@ -355,33 +355,33 @@ func TestManager_GetPreparedQuery(t *testing.T) {
 		},
 		{
 			name: "dbAlias is empty",
-			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "id"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "id"): &config.DatabasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "*", id: "id", project: "1"},
-			want: []interface{}{&config.DatbasePreparedQuery{ID: "id", DbAlias: "alias", SQL: "field"}},
+			want: []interface{}{&config.DatabasePreparedQuery{ID: "id", DbAlias: "alias", SQL: "field"}},
 		},
 		{
 			name:    "dbAlias is not present in config",
-			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "id"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
+			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "id"): &config.DatabasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
 			args:    args{ctx: context.Background(), dbAlias: "notAlias", id: "id", project: "1"},
 			wantErr: true,
 		},
 		{
 			name:    "id is not empty but not present in prepared queries",
-			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DBName: "DBName", DbAlias: "alias"}}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "id"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
+			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DBName: "DBName", DbAlias: "alias"}}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "id"): &config.DatabasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
 			args:    args{ctx: context.Background(), dbAlias: "alias", id: "notKey", project: "1"},
 			wantErr: true,
 		},
 		{
 			name: "id is not empty and present in prepared queries",
-			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DBName: "DBName", DbAlias: "alias"}}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "key"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "key", SQL: "field"}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DBName: "DBName", DbAlias: "alias"}}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "key"): &config.DatabasePreparedQuery{DbAlias: "alias", ID: "key", SQL: "field"}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", id: "key", project: "1"},
-			want: []interface{}{&config.DatbasePreparedQuery{ID: "key", DbAlias: "alias", SQL: "field"}},
+			want: []interface{}{&config.DatabasePreparedQuery{ID: "key", DbAlias: "alias", SQL: "field"}},
 		},
 		{
 			name: "id is empty",
-			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DBName: "DBName", DbAlias: "alias"}}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "key"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "key", SQL: "field"}}}}}},
+			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DBName: "DBName", DbAlias: "alias"}}, DatabasePreparedQueries: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "key"): &config.DatabasePreparedQuery{DbAlias: "alias", ID: "key", SQL: "field"}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", id: "*", project: "1"},
-			want: []interface{}{&config.DatbasePreparedQuery{ID: "key", DbAlias: "alias", SQL: "field"}},
+			want: []interface{}{&config.DatabasePreparedQuery{ID: "key", DbAlias: "alias", SQL: "field"}},
 		},
 	}
 	for _, tt := range tests {
@@ -411,7 +411,7 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 		project string
 		dbAlias string
 		id      string
-		v       *config.DatbasePreparedQuery
+		v       *config.DatabasePreparedQuery
 	}
 	tests := []struct {
 		name            string
@@ -423,24 +423,24 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project",
-			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabasePreparedQueries: config.DatabasePreparedQueries{"resourceId": &config.DatbasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
-			args:    args{ctx: context.Background(), dbAlias: "alias", id: "id", project: "2", v: &config.DatbasePreparedQuery{ID: "queryID", SQL: "field"}},
+			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabasePreparedQueries: config.DatabasePreparedQueries{"resourceId": &config.DatabasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
+			args:    args{ctx: context.Background(), dbAlias: "alias", id: "id", project: "2", v: &config.DatabasePreparedQuery{ID: "queryID", SQL: "field"}},
 			wantErr: true,
 		},
 		{
 			name:    "database not present in config",
-			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabasePreparedQueries: config.DatabasePreparedQueries{"resourceId": &config.DatbasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
-			args:    args{ctx: context.Background(), dbAlias: "notAlias", id: "id", project: "1", v: &config.DatbasePreparedQuery{ID: "queryID", SQL: "field"}},
+			s:       &Manager{projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabasePreparedQueries: config.DatabasePreparedQueries{"resourceId": &config.DatabasePreparedQuery{DbAlias: "alias", ID: "id", SQL: "field"}}}}}},
+			args:    args{ctx: context.Background(), dbAlias: "notAlias", id: "id", project: "1", v: &config.DatabasePreparedQuery{ID: "queryID", SQL: "field"}},
 			wantErr: true,
 		},
 		{
 			name: "unable to set crud config",
 			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{ProjectConfig: &config.ProjectConfig{ID: "1"}, DatabaseConfigs: map[string]*config.DatabaseConfig{"resourceId": {DbAlias: "alias"}}}}}},
-			args: args{ctx: context.Background(), dbAlias: "alias", id: "queryID", project: "1", v: &config.DatbasePreparedQuery{ID: "queryID", SQL: "field"}},
+			args: args{ctx: context.Background(), dbAlias: "alias", id: "queryID", project: "1", v: &config.DatabasePreparedQuery{ID: "queryID", SQL: "field"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabasePreparedQueryConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "queryID"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "queryID", SQL: "field"}}},
+					args:           []interface{}{mock.Anything, "1", config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "queryID"): &config.DatabasePreparedQuery{DbAlias: "alias", ID: "queryID", SQL: "field"}}},
 					paramsReturned: []interface{}{errors.New("unable to set db config")},
 				},
 			},
@@ -449,18 +449,18 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 		{
 			name: "prepared queries are set",
 			s:    &Manager{clusterID: "chicago", projectConfig: &config.Config{Projects: config.Projects{"1": &config.Project{DatabaseConfigs: config.DatabaseConfigs{config.GenerateResourceID("chicago", "1", config.ResourceDatabaseConfig, "alias"): &config.DatabaseConfig{DBName: "DBName", DbAlias: "alias"}}, ProjectConfig: &config.ProjectConfig{ID: "1"}}}}},
-			args: args{ctx: context.Background(), dbAlias: "alias", id: "queryID", project: "1", v: &config.DatbasePreparedQuery{ID: "queryID", SQL: "field"}},
+			args: args{ctx: context.Background(), dbAlias: "alias", id: "queryID", project: "1", v: &config.DatabasePreparedQuery{ID: "queryID", SQL: "field"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method:         "SetDatabasePreparedQueryConfig",
-					args:           []interface{}{mock.Anything, "1", config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "queryID"): &config.DatbasePreparedQuery{DbAlias: "alias", ID: "queryID", SQL: "field"}}},
+					args:           []interface{}{mock.Anything, "1", config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "queryID"): &config.DatabasePreparedQuery{DbAlias: "alias", ID: "queryID", SQL: "field"}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			storeMockArgs: []mockArgs{
 				{
 					method:         "SetResource",
-					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "queryID"), &config.DatbasePreparedQuery{DbAlias: "alias", ID: "queryID", SQL: "field"}},
+					args:           []interface{}{context.Background(), config.GenerateResourceID("chicago", "1", config.ResourceDatabasePreparedQuery, "alias", "queryID"), &config.DatabasePreparedQuery{DbAlias: "alias", ID: "queryID", SQL: "field"}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -561,7 +561,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 								},
 							},
 							DatabasePreparedQueries: config.DatabasePreparedQueries{
-								config.GenerateResourceID("chicago", "myproject", config.ResourceDatabasePreparedQuery, "db", "id"): &config.DatbasePreparedQuery{
+								config.GenerateResourceID("chicago", "myproject", config.ResourceDatabasePreparedQuery, "db", "id"): &config.DatabasePreparedQuery{
 									DbAlias: "db",
 									ID:      "id",
 								},
@@ -594,7 +594,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 								},
 							},
 							DatabasePreparedQueries: config.DatabasePreparedQueries{
-								config.GenerateResourceID("chicago", "myproject", config.ResourceDatabasePreparedQuery, "db", "fetchInstruments"): &config.DatbasePreparedQuery{
+								config.GenerateResourceID("chicago", "myproject", config.ResourceDatabasePreparedQuery, "db", "fetchInstruments"): &config.DatabasePreparedQuery{
 									DbAlias: "db",
 									SQL:     "select * from instruments;",
 									ID:      "fetchInstruments",

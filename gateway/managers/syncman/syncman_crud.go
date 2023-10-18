@@ -254,7 +254,7 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 }
 
 // SetPreparedQueries sets database preparedqueries
-func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id string, v *config.DatbasePreparedQuery, params model.RequestParams) (int, error) {
+func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id string, v *config.DatabasePreparedQuery, params model.RequestParams) (int, error) {
 	// Check if the request has been hijacked
 	hookResponse := s.integrationMan.InvokeHook(ctx, params)
 	if hookResponse.CheckResponse() {

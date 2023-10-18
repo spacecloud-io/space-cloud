@@ -19,7 +19,7 @@ func GenerateEmptyProject(project *ProjectConfig) *Project {
 		DatabaseConfigs:         make(map[string]*DatabaseConfig),
 		DatabaseSchemas:         make(map[string]*DatabaseSchema),
 		DatabaseRules:           make(map[string]*DatabaseRule),
-		DatabasePreparedQueries: make(map[string]*DatbasePreparedQuery),
+		DatabasePreparedQueries: make(map[string]*DatabasePreparedQuery),
 		EventingConfig:          new(EventingConfig),
 		EventingSchemas:         make(map[string]*EventingSchema),
 		EventingRules:           make(map[string]*Rule),

@@ -33,7 +33,7 @@ type DatabaseSchemas map[string]*DatabaseSchema // Key here is resource id --> c
 type DatabaseRules map[string]*DatabaseRule // Key here is resource id --> clusterId--projectId--resourceType--dbAlias-tableName-rule
 
 // DatabasePreparedQueries is a map which stores database prepared query information
-type DatabasePreparedQueries map[string]*DatbasePreparedQuery // Key here is resource id --> clusterId--projectId--resourceType--dbAlias-prepareQueryId
+type DatabasePreparedQueries map[string]*DatabasePreparedQuery // Key here is resource id --> clusterId--projectId--resourceType--dbAlias-prepareQueryId
 
 // EventingSchemas is a map which stores eventing schema information
 type EventingSchemas map[string]*EventingSchema // Key here is resource id --> clusterId--projectId--resourceType--schemaId
@@ -233,7 +233,7 @@ type CrudStub struct {
 	DBName          string                           `json:"name,omitempty" yaml:"name" mapstructure:"name"` // name of the logical database or schema name according to the database type
 	Conn            string                           `json:"conn,omitempty" yaml:"conn" mapstructure:"conn"`
 	Collections     map[string]*TableRule            `json:"collections,omitempty" yaml:"collections" mapstructure:"collections"` // The key here is table name
-	PreparedQueries map[string]*DatbasePreparedQuery `json:"preparedQueries,omitempty" yaml:"preparedQueries" mapstructure:"preparedQueries"`
+	PreparedQueries map[string]*DatabasePreparedQuery `json:"preparedQueries,omitempty" yaml:"preparedQueries" mapstructure:"preparedQueries"`
 	IsPrimary       bool                             `json:"isPrimary" yaml:"isPrimary" mapstructure:"isPrimary"`
 	Enabled         bool                             `json:"enabled" yaml:"enabled" mapstructure:"enabled"`
 	BatchTime       int                              `json:"batchTime,omitempty" yaml:"batchTime" mapstructure:"batchTime"`          // time in milli seconds
@@ -241,8 +241,8 @@ type CrudStub struct {
 	Limit           int64                            `json:"limit,omitempty" yaml:"limit" mapstructure:"limit"`                      // indicates number of records per batch
 }
 
-// DatbasePreparedQuery stores information of prepared query
-type DatbasePreparedQuery struct {
+// DatabasePreparedQuery stores information of prepared query
+type DatabasePreparedQuery struct {
 	ID        string   `json:"id" yaml:"id" mapstructure:"id"`
 	SQL       string   `json:"sql" yaml:"sql" mapstructure:"sql"`
 	Rule      *Rule    `json:"rule" yaml:"rule" mapstructure:"rule"`
