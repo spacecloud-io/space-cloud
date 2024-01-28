@@ -1,3 +1,6 @@
+> SpaceCloud is currently in maintaiance mode.
+> Checkout [Hasura](https://hasura.io) or [Wundergraph](https://wundergraph.com) instead.
+> 
 <p align="center"><a href="https://space-cloud.io"><img src="https://space-cloud.io/images/kit/logo_full.svg" alt="Space Cloud"></a></p>
 
 <h3 align="center">
