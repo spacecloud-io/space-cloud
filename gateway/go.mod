@@ -27,7 +27,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jmoiron/sqlx v1.3.1
-	github.com/lestrrat-go/jwx v1.0.4
+	github.com/lestrrat-go/jwx v1.2.26
 	github.com/lib/pq v1.10.0
 	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/mitchellh/mapstructure v1.3.3
@@ -37,15 +37,12 @@ require (
 	github.com/segmentio/ksuid v1.0.3
 	github.com/spaceuptech/helpers v0.2.1
 	github.com/spaceuptech/space-api-go v0.18.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli v1.22.2
 	go.etcd.io/bbolt v1.3.5
 	go.mongodb.org/mongo-driver v1.7.1
-	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
-	golang.org/x/mod v0.3.1-0.20200828183125-ce943fd02449 // indirect
-	golang.org/x/net v0.0.0-20210224082022-3d97a244fca7
-	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a // indirect
-	golang.org/x/tools v0.1.0 // indirect
+	golang.org/x/crypto v0.9.0
+	golang.org/x/net v0.10.0
 	google.golang.org/api v0.20.0
 	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a // indirect
 	k8s.io/api v0.21.0
