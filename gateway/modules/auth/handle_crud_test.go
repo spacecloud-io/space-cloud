@@ -346,7 +346,7 @@ func TestIsPreparedQueryAuthorised(t *testing.T) {
 	}
 	project := "project"
 	dbPrepRules := config.DatabasePreparedQueries{
-		config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatbasePreparedQuery{Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
+		config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatabasePreparedQuery{Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
 	}
 	auth := Init("chicago", "1", &crud.Module{}, nil, nil)
 	if er := auth.SetConfig(context.TODO(), "local", &config.ProjectConfig{ID: project, Secrets: []*config.Secret{}}, config.DatabaseRules{}, dbPrepRules, config.FileStoreRules{}, config.Services{}, config.EventingRules{}); er != nil {
@@ -374,7 +374,7 @@ func Test_authenticatePreparedQueryRequest(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "Successful Test for authenticate Prepared Query Request", dbAlias: "mongo", id: "tweet", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
-			module:   &Module{clusterID: "chicago", dbPrepQueryRules: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatbasePreparedQuery{ID: "tweet", Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
+			module:   &Module{clusterID: "chicago", dbPrepQueryRules: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatabasePreparedQuery{ID: "tweet", Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
 			project:  "project",
 			wantRule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
 			wantAuth: nil,
@@ -382,7 +382,7 @@ func Test_authenticatePreparedQueryRequest(t *testing.T) {
 		},
 		{
 			name: "Unsuccessful Test-authenticate Prepared Query Request", dbAlias: "pongo", id: "tweet", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
-			module:   &Module{clusterID: "chicago", dbPrepQueryRules: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatbasePreparedQuery{ID: "tweet", Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
+			module:   &Module{clusterID: "chicago", dbPrepQueryRules: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatabasePreparedQuery{ID: "tweet", Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
 			project:  "project",
 			wantRule: nil,
 			wantAuth: nil,
@@ -417,21 +417,21 @@ func Test_getPrepareQueryRule(t *testing.T) {
 	}{
 		{
 			name: "Successful Test to get Prepare Query Rule", dbAlias: "mongo", id: "tweet",
-			module:  &Module{clusterID: "chicago", dbPrepQueryRules: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatbasePreparedQuery{ID: "tweet", Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
+			module:  &Module{clusterID: "chicago", dbPrepQueryRules: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatabasePreparedQuery{ID: "tweet", Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
 			project: "project",
 			want:    &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
 			wantErr: false,
 		},
 		{
 			name: "Unsuccessful Test- Prepared Query Rule Request", dbAlias: "pongo", id: "tweet",
-			module:  &Module{clusterID: "chicago", dbPrepQueryRules: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatbasePreparedQuery{ID: "tweet", Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
+			module:  &Module{clusterID: "chicago", dbPrepQueryRules: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatabasePreparedQuery{ID: "tweet", Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
 			project: "project",
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name: "Successful Test to get default Prepare Query Rule", dbAlias: "mongo", id: "tweet",
-			module:  &Module{clusterID: "chicago", dbPrepQueryRules: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatbasePreparedQuery{ID: "tweet", Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
+			module:  &Module{clusterID: "chicago", dbPrepQueryRules: config.DatabasePreparedQueries{config.GenerateResourceID("chicago", "project", config.ResourceDatabasePreparedQuery, "mongo", "tweet"): &config.DatabasePreparedQuery{ID: "tweet", Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
 			project: "project",
 			want:    &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
 			wantErr: false,
