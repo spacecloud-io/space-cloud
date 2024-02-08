@@ -54,6 +54,7 @@ roleRef:
   name: space-cloud-runner
   apiGroup: rbac.authorization.k8s.io
 ---
+{{ if .Values.istio.enabled }}
 #############################################################################################
 ################################### Istio related config  ###################################
 #############################################################################################
@@ -133,6 +134,7 @@ spec:
             port:
               number: 4060
 ---
+{{ end }}
 #############################################################################################
 ##################################### Kubernetes config  ####################################
 #############################################################################################
@@ -176,7 +178,7 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: "{{ .Values.runner.image.name }}:{{ .Chart.Version }}"
+          image: "{{ .Values.runner.image.name }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.runner.image.pullPolicy }}
           env:
             - name: "LOG_LEVEL"
