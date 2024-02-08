@@ -109,7 +109,7 @@ dbEvents:
       cpu: "500m"
 
 istio:
-  enabled: true
+  enabled: false
 
 # Connection string used by gateway & runner to connect to other services
 connections:
