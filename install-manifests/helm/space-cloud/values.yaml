@@ -5,6 +5,7 @@
 clusterId: "default"
 devMode: "true" # Turn this to false for production mode
 isKedaEnabled: true # Set this to false to skip installing keda
+createNamespace: true
 
 admin:
   username: "admin" # Log in username
@@ -79,6 +80,7 @@ redis:
 
 # Prometheus service configuration
 prometheus:
+  enabled: true
   image:
     name: "prom/prometheus"
     version: "v2.19.0"
@@ -106,7 +108,10 @@ dbEvents:
       memory: "512Mi"
       cpu: "500m"
 
+istio:
+  enabled: false
+
 # Connection string used by gateway & runner to connect to other services
 connections:
   redisConn: "redis.space-cloud.svc.cluster.local:6379"
-  prometheusConn: "http://prometheus.space-cloud.svc.cluster.local:9090" 
+  prometheusConn: "http://prometheus.space-cloud.svc.cluster.local:9090"
