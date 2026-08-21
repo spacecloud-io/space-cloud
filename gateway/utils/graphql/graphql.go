@@ -293,12 +293,14 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		if schema != nil {
 			fieldStruct, p := schema[field.Name.Value]
-			if p && fieldStruct.IsLinked {
+			switch {
+			case p && fieldStruct.IsLinked:
 				linkedInfo := fieldStruct.LinkedTable
 				schema, _ = graph.schema.GetSchema(linkedInfo.DBType, linkedInfo.Table)
+			case p && fieldStruct.Kind == model.TypeObject && fieldStruct.NestedObject != nil:
+				schema = fieldStruct.NestedObject
 			}
 		}
-
 		graph.processQueryResult(ctx, field, token, store, currentValue, schema, cb)
 		return
 

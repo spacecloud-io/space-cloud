@@ -3001,6 +3001,91 @@ var queryTestCases = []tests{
 		},
 		wantErr:    false,
 		wantResult: map[string]interface{}{"trainers": []interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}, map[string]interface{}{"id": "2", "name": "james", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}}}},
+	},
+	{
+		name: "Query: Link present inside a nested object",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"mg"},
+				paramsReturned: []interface{}{"mongo", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"mg", "person"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "mg", "person", &model.ReadRequest{
+					Extras:    map[string]interface{}{},
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"_id": 1, "job": 1},
+					},
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"person": &model.PostProcess{}},
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"_id": "p1", "job": map[string]interface{}{"salary": 1000, "addressId": "a1"}}}, new(model.SQLMetaData), nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "mg", "address", &model.ReadRequest{
+					Find:        map[string]interface{}{"_id": "a1"},
+					Aggregate:   map[string][]string{},
+					GroupBy:     []interface{}{},
+					Operation:   utils.All,
+					Options:     &model.ReadOptions{},
+					IsBatch:     true,
+					PostProcess: map[string]*model.PostProcess{"address": &model.PostProcess{}},
+				}, model.RequestParams{}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"_id": "a1", "country": "india"}}, new(model.SQLMetaData), nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"mg", "person"},
+				paramsReturned: []interface{}{model.Fields{"_id": &model.FieldType{FieldName: "_id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "job": &model.FieldType{FieldName: "job", Kind: model.TypeObject, NestedObject: model.Fields{"salary": &model.FieldType{FieldName: "salary", Kind: model.TypeFloat}, "addressId": &model.FieldType{FieldName: "addressId", Kind: model.TypeString}, "address": &model.FieldType{FieldName: "address", Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "address", DBType: "mg", From: "addressId", To: "_id"}}}}}, true},
+			},
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"mg", "address"},
+				paramsReturned: []interface{}{model.Fields{"_id": &model.FieldType{FieldName: "_id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "country": &model.FieldType{FieldName: "country", Kind: model.TypeString}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, model.RequestParams{}, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								person @mg {
+									_id
+									job {
+										salary
+										addressId
+										address {
+											_id
+											country
+										}
+									}
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"person": []interface{}{map[string]interface{}{"_id": "p1", "job": map[string]interface{}{"salary": 1000, "addressId": "a1", "address": map[string]interface{}{"_id": "a1", "country": "india"}}}}},
 	}}
 
 var mutationTestCases = []tests{
