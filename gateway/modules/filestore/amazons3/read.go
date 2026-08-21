@@ -70,7 +70,7 @@ func (a *AmazonS3) ReadFile(ctx context.Context, path string) (*model.File, erro
 
 	downloader := s3manager.NewDownloader(a.client)
 
-	_, err = downloader.Download(tmpfile,
+	_, err = downloader.DownloadWithContext(ctx, tmpfile,
 		&s3.GetObjectInput{
 			Bucket: aws.String(a.bucket),
 			Key:    aws.String(path),
